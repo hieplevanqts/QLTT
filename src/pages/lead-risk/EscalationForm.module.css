@@ -1,0 +1,635 @@
+.container {
+  padding: 0;
+  max-width: 100%;
+  margin: 0;
+  background: var(--background);
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+  margin: 24px 24px 16px 24px;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--foreground);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.backButton:hover {
+  background: var(--muted);
+}
+
+.titleGroup {
+  flex: 1;
+}
+
+.title {
+  font-size: var(--text-page-title);
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+  margin: 0 0 var(--spacing-1) 0;
+}
+
+.subtitle {
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  margin: 0;
+}
+
+/* Flow Section */
+.flowSection {
+  margin: 0 24px 24px 24px;
+  padding: var(--spacing-6);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+
+.flowContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.flowItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.flowNode {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+  border: 3px solid var(--border);
+  color: var(--muted-foreground);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.flowNodeCurrent {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(0, 92, 182, 0.2);
+}
+
+.flowNodeTarget {
+  background: rgba(34, 197, 94, 1);
+  color: white;
+  border-color: rgba(34, 197, 94, 1);
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);
+}
+
+.flowNodePassed {
+  background: var(--muted);
+  border-color: var(--border);
+  opacity: 0.5;
+}
+
+.targetIndicator {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(34, 197, 94, 1);
+  color: white;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--card);
+}
+
+.flowLabel {
+  margin-top: var(--spacing-2);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+}
+
+.flowConnector {
+  position: absolute;
+  top: 32px;
+  left: 80px;
+  width: 60px;
+  height: 3px;
+  background: var(--border);
+  transition: all 0.3s ease;
+}
+
+.flowConnectorActive {
+  background: var(--primary);
+}
+
+/* Form */
+.form {
+  max-width: 900px;
+  margin: 0 auto 24px auto;
+  padding: 0 24px;
+}
+
+.formCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--elevation-sm);
+}
+
+.section {
+  padding: var(--spacing-6);
+  border-bottom: 1px solid var(--border);
+}
+
+.section:last-child {
+  border-bottom: none;
+}
+
+.sectionTitle {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+  margin: 0 0 var(--spacing-4) 0;
+}
+
+.required {
+  color: rgba(239, 68, 68, 1);
+}
+
+/* Level Grid */
+.levelGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-3);
+}
+
+.radioCard {
+  position: relative;
+  display: flex;
+  cursor: pointer;
+}
+
+.radioCard input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+}
+
+.radioCardContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-4);
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+}
+
+.radioCard input[type="radio"]:checked + .radioCardContent {
+  border-color: var(--primary);
+  background: rgba(0, 92, 182, 0.05);
+}
+
+.radioCardLabel {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+}
+
+.radioCardHint {
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}
+
+/* Recipient */
+.recipientList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.recipientCard {
+  display: flex;
+  gap: var(--spacing-3);
+  padding: var(--spacing-4);
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.recipientCard:hover {
+  border-color: var(--primary);
+}
+
+.recipientCard input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  margin-top: 2px;
+}
+
+.recipientCard input[type="radio"]:checked {
+  accent-color: var(--primary);
+}
+
+.recipientInfo {
+  flex: 1;
+}
+
+.recipientName {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+  margin-bottom: var(--spacing-1);
+}
+
+.recipientPosition {
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  margin-bottom: var(--spacing-0-5);
+}
+
+.recipientUnit {
+  font-size: var(--text-sm);
+  color: var(--primary);
+}
+
+/* Select & Input */
+.select,
+.input,
+.textarea {
+  width: 100%;
+  padding: var(--spacing-2-5) var(--spacing-3);
+  background: var(--input-background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  transition: all 0.2s ease;
+}
+
+.select:focus,
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0, 92, 182, 0.1);
+}
+
+.inputError {
+  border-color: rgba(239, 68, 68, 1);
+}
+
+.inputError:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.charCount {
+  margin-top: var(--spacing-1);
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+  text-align: right;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  margin-top: var(--spacing-2);
+  font-size: var(--text-sm);
+  color: rgba(239, 68, 68, 1);
+}
+
+/* Urgency */
+.urgencyGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-3);
+}
+
+.urgencyCard {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3);
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.urgencyCard:hover {
+  border-color: var(--primary);
+}
+
+.urgencyCard input[type="radio"] {
+  cursor: pointer;
+}
+
+.urgencyDot {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+/* Support */
+.supportGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-3);
+}
+
+.checkboxCard {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3);
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.checkboxCard:hover {
+  border-color: var(--primary);
+}
+
+.checkboxCard input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+/* Upload */
+.uploadArea {
+  position: relative;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: var(--spacing-6);
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.uploadArea:hover {
+  border-color: var(--primary);
+  background: rgba(0, 92, 182, 0.02);
+}
+
+.fileInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.uploadLabel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-2);
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.uploadLabel span:first-of-type {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+}
+
+.uploadHint {
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}
+
+.attachmentList {
+  margin-top: var(--spacing-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.attachmentItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3);
+  border-bottom: 1px solid var(--border);
+  transition: all 0.2s ease;
+}
+
+.attachmentItem:last-child {
+  border-bottom: none;
+}
+
+.attachmentItem:hover {
+  background: var(--muted);
+}
+
+.attachmentName {
+  flex: 1;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachmentSize {
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}
+
+.removeAttachment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-1);
+  background: transparent;
+  border: none;
+  color: var(--destructive);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.removeAttachment:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* CC */
+.ccInput {
+  margin-bottom: var(--spacing-3);
+}
+
+.ccList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+}
+
+.ccTag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-1) var(--spacing-2);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.ccTag button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--primary-foreground);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.ccTag button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--spacing-6);
+  padding: var(--spacing-4);
+  background: var(--muted);
+  border-radius: var(--radius-card);
+}
+
+.actionsSpacer {
+  flex: 1;
+}
+
+.cancelButton,
+.submitButton {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2-5) var(--spacing-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancelButton {
+  background: var(--card);
+  color: var(--foreground);
+}
+
+.cancelButton:hover:not(:disabled) {
+  background: var(--muted);
+}
+
+.submitButton {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+
+.submitButton:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 92, 182, 0.3);
+}
+
+.submitButton:disabled,
+.cancelButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--primary-foreground);
+  border-top-color: transparent;
+  border-radius: var(--radius-full);
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .flowContainer {
+    flex-wrap: wrap;
+    gap: var(--spacing-4);
+  }
+  
+  .flowConnector {
+    display: none;
+  }
+  
+  .levelGrid,
+  .urgencyGrid,
+  .supportGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .actions {
+    flex-direction: column;
+    gap: var(--spacing-3);
+  }
+  
+  .actionsSpacer {
+    display: none;
+  }
+  
+  .cancelButton,
+  .submitButton {
+    width: 100%;
+    justify-content: center;
+  }
+}

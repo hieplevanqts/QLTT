@@ -1,0 +1,87 @@
+/* Trend Indicator Container */
+.container {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1-5);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius);
+  padding: var(--spacing-1) var(--spacing-2);
+  transition: all 0.2s;
+}
+
+/* Sizes */
+.sm {
+  font-size: var(--text-xs);
+  gap: var(--spacing-1);
+  padding: 2px var(--spacing-1-5);
+}
+
+.md {
+  font-size: var(--text-sm);
+}
+
+.lg {
+  font-size: var(--text-base);
+  gap: var(--spacing-2);
+  padding: var(--spacing-1-5) var(--spacing-2-5);
+}
+
+/* Direction Colors */
+.up {
+  color: rgba(34, 197, 94, 1);
+  background: rgba(220, 252, 231, 0.5);
+}
+
+.down {
+  color: rgba(239, 68, 68, 1);
+  background: rgba(254, 226, 226, 0.5);
+}
+
+.stable {
+  color: var(--muted-foreground);
+  background: var(--muted);
+}
+
+/* Icon */
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Value */
+.value {
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+}
+
+/* Label */
+.label {
+  font-weight: var(--font-weight-normal);
+  opacity: 0.9;
+  white-space: nowrap;
+}
+
+/* Hover Effect */
+.container:hover {
+  opacity: 0.9;
+}
+
+/* Standalone Icons (without container styles) */
+.iconOnly {
+  display: inline-flex;
+  align-items: center;
+}
+
+.iconOnly.up {
+  color: rgba(34, 197, 94, 1);
+}
+
+.iconOnly.down {
+  color: rgba(239, 68, 68, 1);
+}
+
+.iconOnly.stable {
+  color: var(--muted-foreground);
+}

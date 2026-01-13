@@ -1,0 +1,206 @@
+/* Overlay */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: var(--spacing-4);
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Dialog */
+.dialog {
+  background: var(--card);
+  border-radius: var(--radius-card);
+  width: 100%;
+  max-width: 480px;
+  box-shadow: var(--elevation-lg);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Header */
+.header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-5) var(--spacing-6);
+  border-bottom: 1px solid var(--border);
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.headerIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius);
+}
+
+.headerIconWarning {
+  background: rgba(254, 243, 199, 1);
+  color: var(--chart-3);
+}
+
+.headerIconDanger {
+  background: rgba(254, 226, 226, 1);
+  color: var(--destructive);
+}
+
+.headerIconSuccess {
+  background: rgba(220, 252, 231, 1);
+  color: var(--chart-2);
+}
+
+.headerIconInfo {
+  background: rgba(239, 246, 255, 1);
+  color: var(--primary);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+}
+
+.leadCode {
+  margin-bottom: var(--spacing-3);
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--muted);
+  border-radius: var(--radius);
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+}
+
+.leadCode strong {
+  color: var(--foreground);
+  font-family: monospace;
+}
+
+.message {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  line-height: 1.6;
+}
+
+/* Close Button */
+.closeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.closeBtn:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+/* Body */
+.body {
+  padding: var(--spacing-6);
+}
+
+/* Footer */
+.footer {
+  display: flex;
+  gap: var(--spacing-3);
+  padding: var(--spacing-4) var(--spacing-6) var(--spacing-6);
+}
+
+.cancelBtn,
+.confirmBtn {
+  flex: 1;
+  padding: var(--spacing-3);
+  border-radius: var(--radius);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid var(--border);
+}
+
+.cancelBtn {
+  background: var(--card);
+  color: var(--foreground);
+}
+
+.cancelBtn:hover {
+  background: var(--muted);
+}
+
+.confirmBtn {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+
+.confirmBtn:hover {
+  opacity: 0.9;
+}
+
+/* Confirm button variants */
+.confirmBtnWarning {
+  background: var(--chart-3);
+  border-color: var(--chart-3);
+  color: white;
+}
+
+.confirmBtnDanger {
+  background: var(--destructive);
+  border-color: var(--destructive);
+  color: white;
+}
+
+.confirmBtnSuccess {
+  background: var(--chart-2);
+  border-color: var(--chart-2);
+  color: white;
+}
+
+.confirmBtnInfo {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+}

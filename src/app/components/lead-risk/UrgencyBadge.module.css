@@ -1,0 +1,64 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--radius);
+  font-family: 'Inter', sans-serif;
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+.badge.sm {
+  padding: 2px 8px;
+  font-size: var(--text-xs);
+}
+
+.badge.sm .icon {
+  width: 12px;
+  height: 12px;
+}
+
+.badge.md {
+  padding: 4px 12px;
+  font-size: var(--text-sm);
+}
+
+.badge.md .icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* Urgency variants */
+.badge.low {
+  background-color: rgba(243, 244, 246, 1);
+  color: rgba(75, 85, 99, 1);
+  border: 1px solid rgba(209, 213, 219, 1);
+}
+
+.badge.medium {
+  background-color: rgba(254, 243, 199, 1);
+  color: rgba(180, 83, 9, 1);
+  border: 1px solid rgba(253, 230, 138, 1);
+}
+
+.badge.high {
+  background-color: rgba(254, 215, 170, 1);
+  color: rgba(194, 65, 12, 1);
+  border: 1px solid rgba(251, 191, 36, 1);
+}
+
+.badge.critical {
+  background-color: rgba(254, 226, 226, 1);
+  color: var(--destructive);
+  border: 1px solid rgba(252, 165, 165, 1);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}

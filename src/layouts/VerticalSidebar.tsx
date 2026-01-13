@@ -32,7 +32,20 @@ const mappaModules = [
   { path: '/overview', label: 'Tổng quan', icon: LayoutDashboard },
   { path: '/map', label: 'Bản đồ điều hành', icon: Map },
   { path: '/stores', label: 'Cơ sở & Địa bàn', icon: Building2 },
-  { path: '/leads', label: 'Nguồn tin / Risk', icon: TriangleAlert },
+  {
+    path: '/leads',
+    label: 'Nguồn tin / Risk',
+    icon: TriangleAlert,
+    hasSubmenu: true,
+    submenu: [
+      { path: '/lead-risk/inbox', label: 'Xử lý nguồn tin hằng ngày' },
+      { path: '/lead-risk/dashboard', label: 'Tổng quan rủi ro' },
+      { path: '/lead-risk/hotspots', label: 'Phân tích điểm nóng' },
+      { path: '/lead-risk/quality-metrics', label: 'Phân tích chất lượng' },
+      { path: '/lead-risk/workload-dashboard', label: 'Quản lý công việc' },
+      { path: '/lead-risk/sla-dashboard', label: 'Giám sát SLA' },
+    ],
+  },
   { path: '/plans', label: 'Kế hoạch tác nghiệp', icon: ClipboardList },
   { path: '/tasks', label: 'Nhiệm vụ hiện trường', icon: MapPin },
   { path: '/evidence', label: 'Kho chứng cứ', icon: FileBox },
@@ -51,6 +64,7 @@ export default function VerticalSidebar({
 }: VerticalSidebarProps) {
   const location = useLocation();
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
+  const [submenuOpen, setSubmenuOpen] = useState<string | null>(null);
   const { setLayoutMode } = useLayout();
 
   // Mock permissions - In real app, this would come from user context/auth
@@ -165,14 +179,105 @@ export default function VerticalSidebar({
       <nav className="flex-1 p-2 overflow-y-auto">
         {mappaModules.map((module) => {
           const Icon = module.icon;
-          const isActive = location.pathname === module.path;
+          const isModuleActive = (module as any).hasSubmenu 
+            ? location.pathname.startsWith('/lead-risk') || location.pathname === '/leads'
+            : location.pathname === module.path;
+          
+          // If module has submenu
+          if ((module as any).hasSubmenu && (module as any).submenu) {
+            const isOpen = submenuOpen === module.path;
+            
+            // If collapsed, show as dropdown
+            if (collapsed) {
+              return (
+                <DropdownMenu key={module.path}>
+                  <DropdownMenuTrigger asChild>
+                    <div
+                      className={cn(
+                        'flex items-center justify-center p-3 rounded-lg transition-colors mb-1 cursor-pointer',
+                        isModuleActive
+                          ? 'text-primary bg-primary/10'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                      )}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="right" align="start" className="w-56">
+                    <div className="px-2 py-1.5 text-sm font-semibold text-foreground">
+                      {module.label}
+                    </div>
+                    {(module as any).submenu.map((item: any) => (
+                      <DropdownMenuItem key={item.path} asChild>
+                        <Link
+                          to={item.path}
+                          className={cn(
+                            'cursor-pointer',
+                            location.pathname === item.path && 'bg-primary/10 text-primary'
+                          )}
+                        >
+                          {item.label}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            }
+            
+            // If expanded, show inline submenu
+            return (
+              <div key={module.path}>
+                <button
+                  onClick={() => setSubmenuOpen(isOpen ? null : module.path)}
+                  className={cn(
+                    'flex items-center justify-between w-full px-3 py-2.5 rounded-lg transition-colors mb-1',
+                    isModuleActive
+                      ? 'text-primary bg-primary/10 font-medium'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className="h-5 w-5 shrink-0" />
+                    <span className="text-sm">{module.label}</span>
+                  </div>
+                  <ChevronDown 
+                    className={cn(
+                      "h-4 w-4 transition-transform",
+                      isOpen && "rotate-180"
+                    )} 
+                  />
+                </button>
+                
+                {isOpen && (
+                  <div className="ml-8 mb-2 space-y-1">
+                    {(module as any).submenu.map((item: any) => (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        className={cn(
+                          'block px-3 py-2 rounded-lg text-sm transition-colors',
+                          location.pathname === item.path
+                            ? 'text-primary bg-primary/10 font-medium'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                        )}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          }
 
+          // Regular menu item without submenu
           return (
             <Link key={module.path} to={module.path}>
               <div
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors mb-1',
-                  isActive
+                  isModuleActive
                     ? 'text-primary bg-primary/10 font-medium'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 )}

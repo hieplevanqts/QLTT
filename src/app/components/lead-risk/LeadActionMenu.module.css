@@ -1,0 +1,198 @@
+.container {
+  position: relative;
+  display: inline-block;
+  /* Ensure container doesn't clip dropdown */
+  overflow: visible;
+}
+
+.quickButtons {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.quickButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.quickButton:hover {
+  background: transparent;
+  color: var(--primary);
+  border-color: transparent;
+  transform: scale(1.1);
+}
+
+.quickButtonPrimary:hover {
+  color: var(--primary);
+}
+
+.quickButtonDanger:hover {
+  color: var(--destructive);
+}
+
+.quickButton:active {
+  transform: scale(1);
+}
+
+/* Tooltips */
+.quickButton[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--primary);
+  color: white;
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  z-index: 100;
+  pointer-events: none;
+  box-shadow: var(--elevation-md);
+}
+
+.quickButton[title]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--primary);
+  margin-bottom: -2px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.menuButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.menuButton:hover {
+  background: transparent;
+  border-color: transparent;
+  color: var(--primary);
+  transform: scale(1.1);
+}
+
+.menuButton:active {
+  transform: scale(1);
+}
+
+/* Dropdown Menu - Fixed Position (Floats above everything) */
+.dropdown {
+  position: fixed;
+  min-width: 200px;
+  width: 240px;
+  max-width: 280px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  z-index: 99999;
+  overflow: hidden;
+  animation: slideDown 0.15s ease;
+}
+
+/* Dropdown Above - Fixed Position (when space below is not enough) */
+.dropdownAbove {
+  position: fixed;
+  min-width: 200px;
+  width: 240px;
+  max-width: 280px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  z-index: 99999;
+  overflow: hidden;
+  animation: slideUp 0.15s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  width: 100%;
+  padding: var(--spacing-3) var(--spacing-4);
+  background: transparent;
+  border: none;
+  color: var(--foreground);
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-bottom: 1px solid var(--border);
+}
+
+.menuItem:last-child {
+  border-bottom: none;
+}
+
+.menuItem:hover {
+  background: var(--muted);
+  color: var(--primary);
+}
+
+.menuItemPrimary:hover {
+  background: rgba(0, 92, 182, 0.1);
+  color: var(--primary);
+}
+
+.menuItemDanger:hover {
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--destructive);
+}
+
+.menuItem:active {
+  transform: scale(0.98);
+}
+
+.menuItem svg {
+  flex-shrink: 0;
+}
