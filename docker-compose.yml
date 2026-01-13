@@ -8,8 +8,14 @@ services:
     ports:
       - "5173:5173"
     volumes:
+      # Mount source code for hot reload
       - .:/app
-      - /app/node_modules
+      # Named volume for node_modules to preserve dependencies
+      - node_modules:/app/node_modules
+      # Cache volumes for package managers (improves performance)
+      - npm_cache:/root/.npm
+      - yarn_cache:/usr/local/share/.cache/yarn
+      - pnpm_cache:/root/.local/share/pnpm/store
     environment:
       - NODE_ENV=development
       - VITE_SUPABASE_URL=${VITE_SUPABASE_URL:-}
@@ -40,3 +46,15 @@ services:
 networks:
   mappa-network:
     driver: bridge
+
+volumes:
+  # Named volume for node_modules (persists between container restarts)
+  node_modules:
+    driver: local
+  # Cache volumes for package managers
+  npm_cache:
+    driver: local
+  yarn_cache:
+    driver: local
+  pnpm_cache:
+    driver: local
