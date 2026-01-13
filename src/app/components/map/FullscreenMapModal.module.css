@@ -1,0 +1,217 @@
+/* ========================================
+   FULLSCREEN MAP MODAL
+   ======================================== */
+
+/* Overlay */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 9998;
+  display: flex;
+  animation: overlayFadeIn 0.2s ease-out;
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Container */
+.container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  animation: containerSlideIn 0.3s ease-out;
+}
+
+@keyframes containerSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Close Button - Floating */
+.closeBtn {
+  position: fixed;
+  top: 12px; /* Align with StatsCard top position */
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: white;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  border-radius: 0;
+  color: var(--foreground);
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  font-family: 'Inter', sans-serif;
+}
+
+.closeBtn:hover {
+  background: var(--muted);
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: scale(1.05);
+}
+
+.closeBtn:active {
+  transform: scale(0.95);
+}
+
+/* Map Wrapper */
+.mapWrapper {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .closeBtn {
+    width: 36px;
+    height: 36px;
+    top: 16px;
+    right: 16px;
+  }
+}
+
+/* Filter Panel Wrapper - Only contains toggle buttons */
+.filterPanelWrapper {
+  position: absolute;
+  pointer-events: none; /* Allow clicks to pass through */
+}
+
+.filterPanelWrapper > button {
+  pointer-events: auto; /* But buttons should be clickable */
+}
+
+/* Filter Toggle Button */
+.filterToggleBtn {
+  position: fixed;
+  top: 84px; /* Position below zoom controls (10px top + 30px zoom in + 30px zoom out + 14px gap) */
+  left: 10px;
+  z-index: 1000; /* Same z-index as Leaflet controls */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: white;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px; /* Match Leaflet controls */
+  color: rgba(0, 0, 0, 0.75);
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+  font-family: 'Inter', sans-serif;
+  line-height: 1;
+}
+
+.filterToggleBtn:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.filterToggleBtn:active {
+  transform: scale(0.95);
+}
+
+/* Stats Toggle Button */
+.statsToggleBtn {
+  position: fixed;
+  top: 126px; /* Position below filter button (84px + 34px button + 8px gap) */
+  left: 10px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: white;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  color: rgba(0, 0, 0, 0.75);
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+  font-family: 'Inter', sans-serif;
+  line-height: 1;
+}
+
+.statsToggleBtn:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.statsToggleBtn:active {
+  transform: scale(0.95);
+}
+
+/* Legend Toggle Button */
+.legendToggleBtn {
+  position: fixed;
+  top: 168px; /* Position below stats button (126px + 34px button + 8px gap) */
+  left: 10px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: white;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  color: rgba(0, 0, 0, 0.75);
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+  font-family: 'Inter', sans-serif;
+  line-height: 1;
+}
+
+.legendToggleBtn:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.legendToggleBtn:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 768px) {
+  .filterToggleBtn {
+    width: 34px;
+    height: 34px;
+    top: 84px; /* Keep same position on mobile */
+    left: 10px;
+  }
+
+  .statsToggleBtn {
+    width: 34px;
+    height: 34px;
+    top: 126px; /* Keep same position on mobile */
+    left: 10px;
+  }
+
+  .legendToggleBtn {
+    width: 34px;
+    height: 34px;
+    top: 168px; /* Keep same position on mobile */
+    left: 10px;
+  }
+}

@@ -1,0 +1,586 @@
+/* Container */
+.matrixContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5, 20px);
+  font-family: Inter, sans-serif;
+}
+
+/* Header */
+.matrixHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-4, 16px);
+  padding: var(--spacing-5, 20px);
+  background: var(--card, #ffffff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: var(--radius, 6px);
+}
+
+.matrixTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--foreground, #111827);
+  margin: 0 0 var(--spacing-2, 8px) 0;
+  font-family: Inter, sans-serif;
+}
+
+.matrixDesc {
+  font-size: 13px;
+  color: var(--muted-foreground, #6b7280);
+  margin: 0;
+  font-family: Inter, sans-serif;
+}
+
+.headerActions {
+  display: flex;
+  gap: var(--spacing-3, 12px);
+  flex-shrink: 0;
+}
+
+/* Stats Grid */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-4, 16px);
+}
+
+.statCard {
+  padding: var(--spacing-4, 16px);
+  background: var(--card, #ffffff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: var(--radius, 6px);
+}
+
+.statLabel {
+  font-size: 13px;
+  font-family: Inter, sans-serif;
+  color: var(--muted-foreground, #6b7280);
+  margin-bottom: var(--spacing-2, 8px);
+}
+
+.statValue {
+  font-size: 24px;
+  font-weight: 700;
+  font-family: Inter, sans-serif;
+  color: var(--foreground, #111827);
+}
+
+/* Matrix Table */
+.matrixTable {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3, 12px);
+}
+
+/* Module Section */
+.moduleSection {
+  background: var(--card, #ffffff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: var(--radius, 6px);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.moduleSection:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Module Header */
+.moduleHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-4, 16px);
+  cursor: pointer;
+  background: var(--muted, #f9fafb);
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  transition: background 0.2s ease;
+}
+
+.moduleHeader:hover {
+  background: var(--muted, #f3f4f6);
+}
+
+.moduleHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3, 12px);
+  flex: 1;
+}
+
+.moduleHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3, 12px);
+}
+
+.expandBtn {
+  background: none;
+  border: none;
+  padding: var(--spacing-1, 4px);
+  cursor: pointer;
+  color: var(--muted-foreground, #6b7280);
+  display: flex;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.expandBtn:hover {
+  color: var(--primary, #005cb6);
+}
+
+.moduleIcon {
+  color: var(--primary, #005cb6);
+  flex-shrink: 0;
+}
+
+.moduleName {
+  font-size: 14px;
+  font-weight: 600;
+  font-family: Inter, sans-serif;
+  color: var(--foreground, #111827);
+  margin-bottom: 2px;
+}
+
+.moduleDesc {
+  font-size: 12px;
+  font-family: Inter, sans-serif;
+  color: var(--muted-foreground, #6b7280);
+}
+
+.permissionCount {
+  font-size: 12px;
+  font-family: Inter, sans-serif;
+  color: var(--muted-foreground, #6b7280);
+  padding: 4px 12px;
+  background: var(--card, #ffffff);
+  border-radius: calc(var(--radius, 6px) * 0.75);
+  border: 1px solid var(--border, #e5e7eb);
+}
+
+.selectedBadge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: Inter, sans-serif;
+  color: #ffffff;
+  padding: 4px 12px;
+  background: linear-gradient(135deg, var(--primary, #005cb6) 0%, #004a94 100%);
+  border-radius: calc(var(--radius, 6px) * 0.75);
+}
+
+/* Permissions Table */
+.permissionsTable {
+  display: flex;
+  flex-direction: column;
+}
+
+.tableHeader {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 2.5fr 120px;
+  gap: var(--spacing-4, 16px);
+  padding: var(--spacing-4, 16px);
+  background: var(--muted, #f9fafb);
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: Inter, sans-serif;
+  color: var(--muted-foreground, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.permNameCol {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 8px);
+}
+
+.permCodeCol {
+  display: flex;
+  align-items: center;
+}
+
+.permDescCol {
+  display: flex;
+  align-items: center;
+}
+
+.permActionCol {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* Permission Row */
+.permissionRow {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 2.5fr 120px;
+  gap: var(--spacing-4, 16px);
+  padding: var(--spacing-4, 16px);
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  transition: all 0.15s ease;
+}
+
+.permissionRow:hover {
+  background: var(--muted, #f9fafb);
+}
+
+.permissionRow.selected {
+  background: rgba(0, 92, 182, 0.05);
+  border-left: 3px solid var(--primary, #005cb6);
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 8px);
+  cursor: pointer;
+  font-family: Inter, sans-serif;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--primary, #005cb6);
+  flex-shrink: 0;
+}
+
+.permName {
+  font-size: 13px;
+  font-weight: 500;
+  font-family: Inter, sans-serif;
+  color: var(--foreground, #111827);
+}
+
+.customBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: Inter, sans-serif;
+  color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.1);
+  border-radius: calc(var(--radius, 6px) * 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-left: var(--spacing-2, 8px);
+}
+
+.permCode {
+  font-size: 11px;
+  font-family: 'Courier New', monospace;
+  color: var(--muted-foreground, #6b7280);
+  background: var(--muted, #f3f4f6);
+  padding: 4px 8px;
+  border-radius: calc(var(--radius, 6px) * 0.5);
+  border: 1px solid var(--border, #e5e7eb);
+}
+
+.permDesc {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 8px);
+  font-size: 12px;
+  font-family: Inter, sans-serif;
+  color: var(--muted-foreground, #6b7280);
+  line-height: 1.5;
+}
+
+.infoBtn {
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: help;
+  color: var(--muted-foreground, #9ca3af);
+  display: flex;
+  align-items: center;
+  transition: color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.infoBtn:hover {
+  color: var(--primary, #005cb6);
+}
+
+.removeBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  background: none;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: calc(var(--radius, 6px) * 0.75);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: Inter, sans-serif;
+  color: var(--muted-foreground, #6b7280);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.removeBtn:hover {
+  background: #fee;
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+/* Empty State */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-3, 12px);
+  padding: var(--spacing-8, 32px);
+  color: var(--muted-foreground, #6b7280);
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+}
+
+/* Add Permission Section */
+.addPermissionSection {
+  padding: var(--spacing-4, 16px);
+  border-top: 2px dashed var(--border, #e5e7eb);
+}
+
+.addPermissionBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 8px);
+  padding: var(--spacing-3, 12px) var(--spacing-4, 16px);
+  background: var(--muted, #f9fafb);
+  border: 1px dashed var(--border, #d1d5db);
+  border-radius: var(--radius, 6px);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: Inter, sans-serif;
+  color: var(--primary, #005cb6);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.addPermissionBtn:hover {
+  background: var(--card, #ffffff);
+  border-color: var(--primary, #005cb6);
+  box-shadow: 0 2px 4px rgba(0, 92, 182, 0.1);
+}
+
+/* Add Permission Dropdown */
+.addPermissionDropdown {
+  background: var(--card, #ffffff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: var(--radius, 6px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.dropdownHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-4, 16px);
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: Inter, sans-serif;
+  color: var(--foreground, #111827);
+}
+
+.closeDropdownBtn {
+  background: none;
+  border: none;
+  padding: var(--spacing-1, 4px);
+  cursor: pointer;
+  color: var(--muted-foreground, #6b7280);
+  display: flex;
+  align-items: center;
+  transition: color 0.2s ease;
+}
+
+.closeDropdownBtn:hover {
+  color: var(--foreground, #111827);
+}
+
+.dropdownList {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-4, 16px);
+  padding: var(--spacing-4, 16px);
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  cursor: pointer;
+  transition: background 0.2s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.dropdownItem:hover {
+  background: var(--muted, #f9fafb);
+}
+
+.dropdownItem:last-child {
+  border-bottom: none;
+}
+
+.dropdownItemName {
+  font-size: 13px;
+  font-weight: 500;
+  font-family: Inter, sans-serif;
+  color: var(--foreground, #111827);
+  margin-bottom: 4px;
+}
+
+.dropdownItemDesc {
+  font-size: 12px;
+  font-family: Inter, sans-serif;
+  color: var(--muted-foreground, #6b7280);
+}
+
+.dropdownItemCode {
+  font-size: 11px;
+  font-family: 'Courier New', monospace;
+  color: var(--muted-foreground, #6b7280);
+  background: var(--muted, #f3f4f6);
+  padding: 4px 8px;
+  border-radius: calc(var(--radius, 6px) * 0.5);
+  border: 1px solid var(--border, #e5e7eb);
+  flex-shrink: 0;
+}
+
+/* Footer */
+.matrixFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-4, 16px);
+  padding: var(--spacing-5, 20px);
+  background: var(--card, #ffffff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: var(--radius, 6px);
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.footerInfo {
+  font-size: 13px;
+  font-family: Inter, sans-serif;
+  color: var(--muted-foreground, #6b7280);
+}
+
+.footerInfo strong {
+  font-weight: 600;
+  color: var(--foreground, #111827);
+}
+
+.footerActions {
+  display: flex;
+  gap: var(--spacing-3, 12px);
+}
+
+/* Buttons */
+.primaryBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 8px);
+  padding: var(--spacing-3, 12px) var(--spacing-5, 20px);
+  background: linear-gradient(135deg, var(--primary, #005cb6) 0%, #004a94 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius, 6px);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: Inter, sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.primaryBtn:hover {
+  box-shadow: 0 4px 12px rgba(0, 92, 182, 0.3);
+  transform: translateY(-1px);
+}
+
+.secondaryBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 8px);
+  padding: var(--spacing-3, 12px) var(--spacing-5, 20px);
+  background: var(--card, #ffffff);
+  color: var(--foreground, #111827);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: var(--radius, 6px);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: Inter, sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.secondaryBtn:hover {
+  background: var(--muted, #f3f4f6);
+  border-color: var(--border, #d1d5db);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .tableHeader,
+  .permissionRow {
+    grid-template-columns: 2fr 1fr 2fr 100px;
+  }
+}
+
+@media (max-width: 768px) {
+  .matrixHeader,
+  .matrixFooter {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .headerActions,
+  .footerActions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .headerActions button,
+  .footerActions button {
+    flex: 1;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .tableHeader {
+    display: none;
+  }
+
+  .permissionRow {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-2, 8px);
+  }
+
+  .permCodeCol,
+  .permDescCol {
+    margin-left: 26px;
+  }
+
+  .permActionCol {
+    justify-content: flex-start;
+    margin-left: 26px;
+  }
+}

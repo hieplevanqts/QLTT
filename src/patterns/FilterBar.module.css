@@ -1,0 +1,113 @@
+.filterBar {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  padding: 16px 24px;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  align-items: start;
+}
+
+.filterBarIcon {
+  display: flex;
+  align-items: center;
+  padding-top: 8px;
+}
+
+.filterContent {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.filterLabel {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+  white-space: nowrap;
+}
+
+.filterControl {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filterControlLabel {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+
+.select {
+  width: 100%;
+  height: 38px;
+  padding: 8px 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  background-color: var(--input-background);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.select:hover {
+  border-color: var(--primary);
+}
+
+.select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+.filterActions {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 1280px) {
+  .filterContent {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 1024px) {
+  .filterBar {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .filterBarIcon {
+    padding-top: 0;
+  }
+
+  .filterContent {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .filterBar {
+    padding: 12px 16px;
+  }
+
+  .filterContent {
+    grid-template-columns: 1fr;
+  }
+
+  .filterActions {
+    width: 100%;
+  }
+
+  .filterActions button {
+    flex: 1;
+  }
+}

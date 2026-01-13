@@ -1,0 +1,127 @@
+/* Evidence List Page - Exact copy from StoresListPage.module.css */
+
+.pageContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.summaryContainer {
+  padding: 16px 24px;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.tableContainer {
+  flex: 1;
+  padding: 0 24px 24px 24px;
+}
+
+.tableCard {
+  padding: 0;
+}
+
+.evidenceName {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+}
+
+.evidenceType {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  margin-top: 2px;
+}
+
+.drawerLabel {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--muted-foreground);
+}
+
+.drawerValue {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  margin-top: 4px;
+}
+
+.drawerField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.drawerContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.historyTimeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+}
+
+.historyItem {
+  display: flex;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.historyItem:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.historyDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.historyDotMuted {
+  background-color: var(--muted-foreground);
+}
+
+.historyContent {
+  flex: 1;
+}
+
+.historyTitle {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+}
+
+.historyDetail {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+  margin-top: 4px;
+}
+
+.drawerFooter {
+  display: flex;
+  gap: 8px;
+}
+
+.drawerFooterButton {
+  flex: 1;
+}

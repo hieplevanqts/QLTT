@@ -1,0 +1,65 @@
+.actionColumn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.iconButton {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  transition: all 0.15s ease;
+}
+
+.iconButton:hover {
+  background-color: var(--muted);
+}
+
+.iconButton svg {
+  width: 16px;
+  height: 16px;
+  color: var(--foreground);
+}
+
+.iconButton:hover svg {
+  color: var(--primary);
+}
+
+.actionWrapper {
+  /* Wrapper for menu items with separators */
+}
+
+.actionLabel {
+  margin-left: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--foreground);
+}
+
+.destructiveAction {
+  color: var(--destructive);
+}
+
+.destructiveAction svg {
+  color: var(--destructive);
+}
+
+.destructiveAction .actionLabel {
+  color: var(--destructive);
+}
+
+.destructiveAction:hover {
+  background-color: var(--destructive);
+  color: var(--destructive-foreground);
+}
+
+.destructiveAction:hover svg,
+.destructiveAction:hover .actionLabel {
+  color: var(--destructive-foreground);
+}

@@ -1,0 +1,70 @@
+.filterActionBar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+  width: 100%;
+}
+
+.filtersSection {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, auto));
+  gap: 12px;
+  align-items: center;
+  max-width: fit-content;
+}
+
+.actionsSection {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1280px) {
+  .filtersSection {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 1024px) {
+  .filterActionBar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .filtersSection {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  .actionsSection {
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 768px) {
+  .filtersSection {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .filtersSection {
+    grid-template-columns: 1fr;
+  }
+
+  .actionsSection {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .actionsSection > * {
+    flex: 1;
+  }
+}

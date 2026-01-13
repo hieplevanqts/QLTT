@@ -1,0 +1,433 @@
+/* Stats Cards */
+.statCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  box-shadow: var(--elevation-sm);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.statCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: transparent;
+  transition: background 0.3s ease;
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Active/Selected state */
+.statCard:active {
+  transform: translateY(0);
+}
+
+/* Add data attributes for selected states */
+.statCard[data-selected="all"]::before {
+  background: var(--primary);
+}
+
+.statCard[data-selected="certified"]::before {
+  background: var(--chart-4);
+}
+
+.statCard[data-selected="hotspot"]::before {
+  background: var(--destructive);
+}
+
+.statCard[data-selected="scheduled"]::before {
+  background: var(--chart-5);
+}
+
+.statCard[data-selected="all"],
+.statCard[data-selected="certified"],
+.statCard[data-selected="hotspot"],
+.statCard[data-selected="scheduled"] {
+  border-color: color-mix(in srgb, var(--primary) 30%, transparent);
+  background: color-mix(in srgb, var(--primary) 2%, var(--card));
+  box-shadow: 
+    0 0 0 1px color-mix(in srgb, var(--primary) 15%, transparent),
+    var(--elevation-sm);
+}
+
+.statCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.statIconWrapper {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 80%, white) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.statIconWrapperSuccess {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--chart-4) 0%, color-mix(in srgb, var(--chart-4) 80%, white) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.statIconWrapperDanger {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--destructive) 0%, color-mix(in srgb, var(--destructive) 80%, white) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.statIconWrapperWarning {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--chart-5) 0%, color-mix(in srgb, var(--chart-5) 80%, white) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.statIcon {
+  width: 16px;
+  height: 16px;
+  color: white;
+  stroke-width: 2.5;
+}
+
+.statCardLabel {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--muted-foreground);
+  line-height: 1.2;
+}
+
+.statCardValue {
+  font-family: 'Inter', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--foreground);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+/* Map Container */
+.mapContainer {
+  flex: 1;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--elevation-sm);
+  min-height: 600px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Legend */
+.legendTitle {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 8px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+}
+
+.legendLabel {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+}
+
+/* Dynamic legend marker - color from inline style */
+.legendMarker {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Legacy color-specific markers (can be removed if fully dynamic) */
+.legendMarkerGreen {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--chart-4);
+  flex-shrink: 0;
+}
+
+.legendMarkerRed {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--destructive);
+  flex-shrink: 0;
+}
+
+.legendMarkerYellow {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--chart-5);
+  flex-shrink: 0;
+}
+
+.legendMarkerBlue {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex-shrink: 0;
+}
+
+/* Search Container */
+.searchContainer {
+  position: relative;
+  width: 100%;
+  overflow: visible;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--muted-foreground);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.searchInput:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+.searchInput::placeholder {
+  color: var(--muted-foreground);
+}
+
+.searchResults {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  padding: 4px 0;
+}
+
+/* Autocomplete Dropdown */
+.autocompleteDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--elevation-md);
+  max-height: 280px;
+  overflow-y: auto;
+  z-index: 1000;
+  animation: slideDown 0.15s ease-out;
+}
+
+.autocompleteItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.12s ease;
+  text-align: left;
+}
+
+.autocompleteItem:last-child {
+  border-bottom: none;
+}
+
+.autocompleteItem:hover {
+  background: var(--muted);
+}
+
+.autocompleteIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+}
+
+.autocompleteContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.autocompleteName {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--foreground);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.autocompleteAddress {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scrollbar Styling */
+.autocompleteDropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.autocompleteDropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.autocompleteDropdown::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.autocompleteDropdown::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+/* Location Dropdowns */
+.locationSelect {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.locationSelect:hover {
+  border-color: var(--primary);
+}
+
+.locationSelect:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+.locationDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--elevation-sm), 0 10px 30px rgba(0, 0, 0, 0.12);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 1000;
+  animation: slideDown 0.15s ease-out;
+}
+
+.locationOption {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 10px 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.12s ease;
+  text-align: left;
+}
+
+.locationOption:last-child {
+  border-bottom: none;
+}
+
+.locationOption:hover {
+  background: var(--muted);
+}

@@ -1,0 +1,66 @@
+.otpInputs {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.otpInput {
+  width: 56px;
+  height: 56px;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+  background-color: var(--input-background);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  outline: none;
+  transition: all 0.2s;
+}
+
+.otpInput:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(127, 86, 217, 0.1);
+}
+
+.otpInput:not(:placeholder-shown) {
+  border-color: var(--primary);
+}
+
+.errorText {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--destructive);
+  text-align: center;
+  margin-top: 8px;
+}
+
+.resendSection {
+  text-align: center;
+}
+
+.resendText {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  margin: 0;
+}
+
+.resendButton {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 0.2s;
+}
+
+.resendButton:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}

@@ -1,0 +1,80 @@
+.input {
+  width: 100%;
+  height: 40px;
+  padding: 8px 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-normal);
+  line-height: 1.5;
+  color: var(--foreground);
+  background-color: var(--input-background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  outline: none;
+  transition: all 0.2s;
+}
+
+.input::placeholder {
+  color: var(--muted-foreground);
+}
+
+.input:hover:not(:disabled) {
+  border-color: var(--primary);
+}
+
+.input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(127, 86, 217, 0.1);
+}
+
+.input:disabled {
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+  cursor: not-allowed;
+}
+
+.inputError {
+  border-color: var(--destructive);
+}
+
+.inputError:focus {
+  box-shadow: 0 0 0 3px rgba(217, 45, 32, 0.1);
+}
+
+.inputWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.inputWithIcon {
+  padding-left: 40px;
+}
+
+.inputIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted-foreground);
+  pointer-events: none;
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+}
+
+.helperText {
+  margin-top: 4px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}
+
+.errorText {
+  color: var(--destructive);
+}

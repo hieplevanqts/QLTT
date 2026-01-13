@@ -1,0 +1,365 @@
+/* EvidenceReviewDetailPage.module.css - WEB-05-10, WEB-05-11, WEB-05-12 */
+
+.container {
+  padding: 0;
+  max-width: 100%;
+  margin: 0;
+}
+
+.content {
+  padding: 24px;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 480px;
+  gap: 24px;
+}
+
+/* Viewer Section */
+.viewerSection {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.viewerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  background: var(--background);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+}
+
+.sectionTitle {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.viewerTools {
+  display: flex;
+  gap: 8px;
+}
+
+.viewer {
+  background: var(--background);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 500px;
+}
+
+.evidenceImage {
+  max-width: 100%;
+  max-height: 600px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.evidenceInfo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px 20px;
+  background: var(--background);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+}
+
+.infoItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.infoItem svg {
+  color: var(--text-tertiary);
+}
+
+/* Comment Section */
+.commentSection {
+  background: var(--background);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.commentList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.commentItem {
+  padding: 16px;
+  background: var(--background-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+}
+
+.commentHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.commentAuthor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.authorName {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+}
+
+.commentTime {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.commentContent {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin: 0 0 8px 0;
+}
+
+/* Review Panel */
+.reviewPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.checklistSection,
+.decisionSection,
+.sealSection {
+  background: var(--background);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.checklistItems {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.checklistItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  background: var(--background-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.checklistItem:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary)05;
+}
+
+.checklistItem input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.checklistSuccess {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #22c55e15;
+  border: 1px solid #22c55e;
+  border-radius: var(--radius-md);
+  color: #22c55e;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  margin-top: 12px;
+}
+
+/* Decision Section */
+.decisionOptions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.decisionButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: var(--background-secondary);
+  border: 2px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.decisionButton:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary)10;
+  color: var(--color-primary);
+}
+
+.decisionApprove {
+  border-color: #22c55e;
+  background: #22c55e15;
+  color: #22c55e;
+}
+
+.decisionApprove:hover {
+  border-color: #22c55e;
+  background: #22c55e25;
+}
+
+.decisionNeedInfo {
+  border-color: #f59e0b;
+  background: #f59e0b15;
+  color: #f59e0b;
+}
+
+.decisionNeedInfo:hover {
+  border-color: #f59e0b;
+  background: #f59e0b25;
+}
+
+.decisionReject {
+  border-color: #ef4444;
+  background: #ef444415;
+  color: #ef4444;
+}
+
+.decisionReject:hover {
+  border-color: #ef4444;
+  background: #ef444425;
+}
+
+.requestInfoSection {
+  margin-top: 16px;
+  padding: 16px;
+  background: #f59e0b08;
+  border: 1px solid #f59e0b;
+  border-radius: var(--radius-md);
+}
+
+.commentField {
+  margin-top: 16px;
+}
+
+.fieldLabel {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.required {
+  color: #ef4444;
+}
+
+.textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  background: var(--background);
+  resize: vertical;
+  font-family: inherit;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary)15;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.actionButtons button {
+  flex: 1;
+}
+
+/* Seal Section */
+.sealDescription {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 12px 0 16px 0;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .reviewPanel {
+    order: 2;
+  }
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: 16px;
+  }
+  
+  .viewerHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .viewerTools {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .evidenceInfo {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .actionButtons {
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,82 @@
+/* ========================================
+   MAP LEGEND - HORIZONTAL COMPACT
+   ======================================== */
+
+.legend {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 400; /* Above map (z-index: 1) but below modals */
+  background: white;
+  border: none; /* Removed border */
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  padding: 8px 16px;
+  max-width: calc(100% - 120px); /* Leave space for controls */
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.legendItems {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  flex: 1;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.marker {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.label {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-xs);
+  color: var(--foreground);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.5;
+}
+
+.count {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.5;
+}
+
+/* Close Button - Standardized */
+.closeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.closeBtn:hover {
+  background: var(--muted);
+  border-color: var(--primary);
+  color: var(--primary);
+}

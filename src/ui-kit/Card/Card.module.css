@@ -1,0 +1,47 @@
+.card {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--elevation-sm);
+  overflow: hidden;
+}
+
+.cardHeader {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cardTitle {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--card-foreground);
+  margin: 0;
+}
+
+.cardDescription {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  margin-top: 4px;
+}
+
+.cardContent {
+  padding: 24px;
+}
+
+.cardFooter {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  background-color: var(--muted);
+}
+
+.cardHoverable {
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.cardHoverable:hover {
+  box-shadow: 0px 10px 15px -3px rgba(16,24,40,0.1), 0px 4px 6px -2px rgba(16,24,40,0.05);
+  transform: translateY(-2px);
+}

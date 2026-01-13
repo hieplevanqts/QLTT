@@ -1,0 +1,47 @@
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--radius);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+.icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+/* Status variants */
+.pending {
+  background: color-mix(in srgb, var(--chart-5) 10%, transparent);
+  color: var(--chart-5); /* Warning yellow */
+  border: 1px solid color-mix(in srgb, var(--chart-5) 30%, transparent);
+}
+
+.active {
+  background: color-mix(in srgb, var(--chart-4) 10%, transparent);
+  color: var(--chart-4); /* Success green */
+  border: 1px solid color-mix(in srgb, var(--chart-4) 30%, transparent);
+}
+
+.underInspection {
+  background: color-mix(in srgb, var(--chart-2) 10%, transparent);
+  color: var(--chart-2); /* Info blue */
+  border: 1px solid color-mix(in srgb, var(--chart-2) 30%, transparent);
+}
+
+.suspended {
+  background: color-mix(in srgb, var(--destructive) 10%, transparent);
+  color: var(--destructive); /* Destructive red */
+  border: 1px solid color-mix(in srgb, var(--destructive) 30%, transparent);
+}
+
+.closed {
+  background: color-mix(in srgb, var(--muted-foreground) 10%, transparent);
+  color: var(--muted-foreground);
+  border: 1px solid color-mix(in srgb, var(--muted-foreground) 30%, transparent);
+}
