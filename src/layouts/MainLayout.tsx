@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useLayout } from '../contexts/LayoutContext';
 import { SessionTimeoutDialog } from '../app/components/auth/SessionTimeoutDialog';
@@ -6,6 +6,40 @@ import TopUtilityBar from './TopUtilityBar';
 import HorizontalNavBar from './HorizontalNavBar';
 import VerticalSidebar from './VerticalSidebar';
 import { cn } from '../app/components/ui/utils';
+
+// Inline page loader for route transitions
+function InlinePageLoader() {
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 'calc(100vh - 120px)',
+      backgroundColor: 'transparent',
+    }}>
+      <div style={{
+        textAlign: 'center',
+      }}>
+        <div style={{
+          width: '32px',
+          height: '32px',
+          border: '3px solid var(--border)',
+          borderTopColor: 'var(--primary)',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+          margin: '0 auto 12px',
+        }} />
+        <p style={{
+          fontFamily: 'Inter, sans-serif',
+          fontSize: 'var(--text-sm)',
+          color: 'var(--muted-foreground)',
+        }}>
+          Đang tải...
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function MainLayout() {
   const { layoutMode } = useLayout();
@@ -24,7 +58,9 @@ export default function MainLayout() {
             onClose={() => setMobileMenuOpen(false)}
           />
           <main className="flex-1">
-            <Outlet />
+            <Suspense fallback={<InlinePageLoader />}>
+              <Outlet />
+            </Suspense>
           </main>
         </>
       ) : (
@@ -42,7 +78,9 @@ export default function MainLayout() {
           >
             <TopUtilityBar onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} />
             <main className="flex-1">
-              <Outlet />
+              <Suspense fallback={<InlinePageLoader />}>
+                <Outlet />
+              </Suspense>
             </main>
           </div>
         </>

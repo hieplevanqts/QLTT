@@ -57,6 +57,7 @@ import styles from './EvidenceListPage.module.css';
 import { generateMockEvidenceItems } from '../../data/evidence-mock-data';
 import { EvidenceItem, getStatusLabel, getTypeLabel, getStatusColor } from '../../types/evidence.types';
 import { EvidenceType, SensitivityLabel } from '../../types/evidence.types';
+import { exportToCSV, exportToExcel, exportToJSON, getExportFilename } from '../../utils/exportUtils';
 
 export default function EvidenceListPage() {
   const navigate = useNavigate();
@@ -83,16 +84,25 @@ export default function EvidenceListPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingEvidence, setDeletingEvidence] = useState<EvidenceItem | null>(null);
 
+  // Upload state
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [isUploading, setIsUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const [uploadingEvidence, setUploadingEvidence] = useState<EvidenceItem | null>(null);
+
   // Import state
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importProgress, setImportProgress] = useState(0);
   const [isImporting, setIsImporting] = useState(false);
 
   // Export state
-  const [exportFormat, setExportFormat] = useState<'excel' | 'csv' | 'pdf'>('excel');
+  const [exportFormat, setExportFormat] = useState<'excel' | 'csv' | 'json'>('excel');
   const [exportScope, setExportScope] = useState<'all' | 'filtered' | 'selected'>('filtered');
   const [exportColumns, setExportColumns] = useState<string[]>([
     'evidenceId',
+    'evidenceName',
     'filename',
     'type',
     'status',
@@ -104,6 +114,7 @@ export default function EvidenceListPage() {
 
   // Form state
   const [formData, setFormData] = useState({
+    evidenceName: '',
     filename: '',
     type: 'PHOTO' as EvidenceType,
     capturedAt: new Date().toISOString().split('T')[0],
@@ -130,6 +141,15 @@ export default function EvidenceListPage() {
     
     actions.push(
       CommonActions.view(() => navigate(`/evidence/${evidence.evidenceId}`)),
+      {
+        label: 'Tải lên',
+        icon: <Upload size={16} />,
+        onClick: () => {
+          setUploadingEvidence(evidence);
+          setIsUploadDialogOpen(true);
+        },
+        priority: 8,
+      },
       CommonActions.edit(() => {
         setEditingEvidence(evidence);
         setIsEditDialogOpen(true);
@@ -155,10 +175,13 @@ export default function EvidenceListPage() {
       filtered = filtered.filter(e => e.status === statusFilter);
     }
     if (searchValue) {
-      filtered = filtered.filter(e => 
-        e.file.filename.toLowerCase().includes(searchValue.toLowerCase()) ||
-        e.evidenceId.toLowerCase().includes(searchValue.toLowerCase())
-      );
+      filtered = filtered.filter(e => {
+        const firstFilename = e.files?.[0]?.filename || '';
+        const evidenceName = e.evidenceName || '';
+        return firstFilename.toLowerCase().includes(searchValue.toLowerCase()) ||
+          e.evidenceId.toLowerCase().includes(searchValue.toLowerCase()) ||
+          evidenceName.toLowerCase().includes(searchValue.toLowerCase());
+      });
     }
     if (activeFilter) {
       filtered = filtered.filter(e => e.status === activeFilter);
@@ -181,8 +204,28 @@ export default function EvidenceListPage() {
 
   const bulkActions: BulkAction[] = [
     {
+      label: 'Chuyển sang INS',
+      onClick: () => {
+        toast.success(`Đang chuyển ${selectedRows.size} chứng cứ sang INS...`);
+        // TODO: Implement transfer to INS logic
+        setTimeout(() => {
+          toast.success('Đã chuyển chứng cứ sang INS thành công!');
+          setSelectedRows(new Set());
+        }, 1500);
+      },
+      variant: 'default',
+      icon: <ClipboardList size={16} />,
+    },
+    {
       label: 'Xuất đã chọn',
-      onClick: () => console.log('Export selected'),
+      onClick: () => {
+        if (selectedRows.size === 0) {
+          toast.error('Vui lòng chọn ít nhất một bản ghi');
+          return;
+        }
+        setExportScope('selected');
+        setIsExportDialogOpen(true);
+      },
       variant: 'secondary',
       icon: <Download size={16} />,
     },
@@ -196,15 +239,54 @@ export default function EvidenceListPage() {
       render: (evidence) => evidence.evidenceId,
     },
     {
+      key: 'evidenceName',
+      label: 'Tên chứng cứ',
+      sortable: true,
+      render: (evidence) => (
+        <div style={{ 
+          fontSize: 'var(--text-sm)', 
+          fontWeight: 500,
+          color: 'var(--text-primary)' 
+        }}>
+          {evidence.evidenceName || <span style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>Chưa đặt tên</span>}
+        </div>
+      ),
+    },
+    {
       key: 'file',
       label: 'Tên file',
       sortable: true,
-      render: (evidence) => (
-        <div>
-          <div className={styles.evidenceName}>{evidence.file.filename}</div>
-          <div className={styles.evidenceType}>{getTypeLabel(evidence.type)}</div>
-        </div>
-      ),
+      render: (evidence) => {
+        const files = evidence.files || [];
+        
+        if (files.length === 0 || !files[0]) {
+          return (
+            <div>
+              <div className={styles.evidenceName}>Chưa có file</div>
+              <div className={styles.evidenceType}>{getTypeLabel(evidence.type)}</div>
+            </div>
+          );
+        }
+        
+        if (files.length === 1) {
+          return (
+            <div>
+              <div className={styles.evidenceName}>{files[0]?.filename || 'Chưa rõ tên'}</div>
+              <div className={styles.evidenceType}>{getTypeLabel(evidence.type)}</div>
+            </div>
+          );
+        }
+        
+        // Multiple files
+        return (
+          <div>
+            <div className={styles.evidenceName}>{files[0]?.filename || 'Chưa rõ tên'}</div>
+            <div className={styles.evidenceType}>
+              {getTypeLabel(evidence.type)} • {files.length} file
+            </div>
+          </div>
+        );
+      },
     },
     {
       key: 'scope',
@@ -253,31 +335,37 @@ export default function EvidenceListPage() {
           );
         }
         
-        // Group by entity type and count
-        const grouped = links.reduce((acc, link) => {
-          acc[link.entityType] = (acc[link.entityType] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
+        // Display entity IDs (e.g., CASE-2026-048, RISK-2026-001)
+        const entityIds = links.map(link => link.entityId);
         
-        // Format display text - mapping khớp với SummaryCard
-        const displayText = Object.entries(grouped)
-          .map(([type, count]) => {
-            const typeLabels: Record<string, string> = {
-              'LEAD': 'Nguồn tin',
-              'RISK': 'Rủi ro',
-              'TASK': 'Phiên kiểm tra',
-              'STORE': 'Cửa hàng',
-            };
-            return `${count} ${typeLabels[type] || type}`;
-          })
-          .join(', ');
+        // If more than 2 links, show first 2 + count
+        if (entityIds.length > 2) {
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={{ 
+                fontSize: 'var(--text-sm)', 
+                color: 'var(--text-primary)',
+                fontFamily: 'var(--font-mono)',
+              }}>
+                {entityIds.slice(0, 2).join(', ')}
+              </span>
+              <span style={{ 
+                fontSize: 'var(--text-xs)', 
+                color: 'var(--text-tertiary)',
+              }}>
+                +{entityIds.length - 2} khác
+              </span>
+            </div>
+          );
+        }
         
         return (
           <span style={{ 
             fontSize: 'var(--text-sm)', 
             color: 'var(--text-primary)',
+            fontFamily: 'var(--font-mono)',
           }}>
-            {displayText}
+            {entityIds.join(', ')}
           </span>
         );
       },
@@ -325,6 +413,7 @@ export default function EvidenceListPage() {
     // Create new evidence item (simplified - in real app this would call API)
     const newEvidence: EvidenceItem = {
       evidenceId: `EV-${Date.now()}`,
+      evidenceName: formData.evidenceName || undefined,
       type: formData.type,
       status: 'Draft',
       scope: {
@@ -364,6 +453,7 @@ export default function EvidenceListPage() {
     
     // Reset form
     setFormData({
+      evidenceName: '',
       filename: '',
       type: 'PHOTO',
       capturedAt: new Date().toISOString().split('T')[0],
@@ -425,29 +515,64 @@ export default function EvidenceListPage() {
     toast.success('Đã tải xuống file mẫu nhập liệu');
   };
 
-  const handleExportSubmit = () => {
-    let exportData: EvidenceItem[] = [];
-    let exportCount = 0;
+  const handleExportSubmit = async () => {
+    try {
+      let exportData: EvidenceItem[] = [];
+      let exportCount = 0;
 
-    switch (exportScope) {
-      case 'all':
-        exportData = evidenceItems;
-        exportCount = evidenceItems.length;
-        break;
-      case 'filtered':
-        exportData = filteredData;
-        exportCount = filteredData.length;
-        break;
-      case 'selected':
-        exportData = evidenceItems.filter(e => selectedRows.has(e.evidenceId));
-        exportCount = selectedRows.size;
-        break;
+      switch (exportScope) {
+        case 'all':
+          exportData = evidenceItems;
+          exportCount = evidenceItems.length;
+          break;
+        case 'filtered':
+          exportData = filteredData;
+          exportCount = filteredData.length;
+          break;
+        case 'selected':
+          exportData = evidenceItems.filter(e => selectedRows.has(e.evidenceId));
+          exportCount = selectedRows.size;
+          break;
+      }
+
+      if (exportData.length === 0) {
+        toast.error('Không có dữ liệu để xuất');
+        return;
+      }
+
+      if (exportColumns.length === 0) {
+        toast.error('Vui lòng chọn ít nhất một cột để xuất');
+        return;
+      }
+
+      toast.loading('Đang xuất dữ liệu...');
+
+      // Generate filename with timestamp
+      const filename = getExportFilename(
+        exportFormat === 'excel' ? 'excel' : exportFormat === 'csv' ? 'csv' : 'json',
+        'evidence-export'
+      );
+
+      // Export based on format
+      switch (exportFormat) {
+        case 'excel':
+          exportToExcel(exportData, exportColumns, filename);
+          break;
+        case 'csv':
+          exportToCSV(exportData, exportColumns, filename);
+          break;
+        default:
+          exportToJSON(exportData, exportColumns, filename);
+          break;
+      }
+
+      const formatName = exportFormat === 'excel' ? 'Excel' : exportFormat === 'csv' ? 'CSV' : 'JSON';
+      toast.success(`Đã xuất ${exportCount} bản ghi sang ${formatName}`);
+      setIsExportDialogOpen(false);
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Lỗi khi xuất dữ liệu');
     }
-
-    // In real app, would generate file with selected columns
-    const formatName = exportFormat === 'excel' ? 'Excel' : exportFormat === 'csv' ? 'CSV' : 'PDF';
-    toast.success(`Đã xuất ${exportCount} bản ghi sang ${formatName}`);
-    setIsExportDialogOpen(false);
   };
 
   const toggleExportColumn = (column: string) => {
@@ -476,6 +601,7 @@ export default function EvidenceListPage() {
     // Update evidence item
     const updatedEvidence: EvidenceItem = {
       ...editingEvidence,
+      evidenceName: formData.evidenceName || undefined,
       type: formData.type,
       scope: {
         province: formData.province || undefined,
@@ -486,10 +612,9 @@ export default function EvidenceListPage() {
         lng: parseFloat(formData.lng) || editingEvidence.location.lng,
         addressText: formData.addressText,
       },
-      file: {
-        ...editingEvidence.file,
-        filename: formData.filename,
-      },
+      files: (editingEvidence.files || []).map((f, idx) => 
+        idx === 0 ? { ...f, filename: formData.filename } : f
+      ),
       sensitivityLabel: formData.sensitivityLabel,
       capturedAt: new Date(formData.capturedAt).toISOString(),
       updatedAt: new Date().toISOString(),
@@ -507,6 +632,146 @@ export default function EvidenceListPage() {
     toast.success('Đã cập nhật chứng cứ thành công!');
   };
 
+  // Upload handlers
+  const handleUploadFiles = (files: FileList | null) => {
+    if (!files) return;
+    
+    const fileArray = Array.from(files);
+    const validFiles: File[] = [];
+    
+    // Validate file types
+    fileArray.forEach(file => {
+      const validTypes = [
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+        'video/mp4', 'video/quicktime', 'video/x-msvideo',
+        'audio/mpeg', 'audio/wav', 'audio/mp4', 'audio/x-m4a',
+        'application/pdf',
+        'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/zip', 'application/x-zip-compressed'
+      ];
+      
+      if (validTypes.includes(file.type) || file.name.match(/\.(jpg|jpeg|png|gif|webp|mp4|mov|avi|mp3|wav|m4a|pdf|doc|docx|zip)$/i)) {
+        validFiles.push(file);
+      } else {
+        toast.error(`File không được hỗ trợ: ${file.name}`);
+      }
+    });
+    
+    setUploadFiles(prev => [...prev, ...validFiles]);
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleUploadFiles(e.dataTransfer.files);
+    }
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      handleUploadFiles(e.target.files);
+    }
+  };
+
+  const removeUploadFile = (index: number) => {
+    setUploadFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const getFileType = (file: File): EvidenceType => {
+    if (file.type.startsWith('image/')) return 'PHOTO';
+    if (file.type.startsWith('video/')) return 'VIDEO';
+    if (file.type.startsWith('audio/')) return 'AUDIO';
+    if (file.type === 'application/pdf') return 'PDF';
+    if (file.type.includes('document') || file.type.includes('word')) return 'DOC';
+    return 'OTHER';
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  };
+
+  const handleUploadSubmit = () => {
+    if (uploadFiles.length === 0) {
+      toast.error('Vui lòng chọn file để tải lên');
+      return;
+    }
+
+    if (!uploadingEvidence) {
+      toast.error('Không tìm thấy bản ghi chứng cứ');
+      return;
+    }
+
+    setIsUploading(true);
+    
+    // Support multiple files upload
+    const totalFiles = uploadFiles.length;
+    let completedFiles = 0;
+    
+    uploadFiles.forEach((file, index) => {
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 10;
+        setUploadProgress(prev => ({
+          ...prev,
+          [file.name]: progress
+        }));
+        
+        if (progress >= 100) {
+          clearInterval(interval);
+          completedFiles++;
+          
+          // When all files are uploaded, update the evidence item
+          if (completedFiles === totalFiles) {
+            setTimeout(() => {
+              // Create new file entries
+              const newFiles = uploadFiles.map((f, idx) => ({
+                storageKey: `storage/${Date.now()}-${idx}/${f.name}`,
+                filename: f.name,
+                mimeType: f.type,
+                sizeBytes: f.size,
+              }));
+              
+              const updatedEvidence: EvidenceItem = {
+                ...uploadingEvidence,
+                files: [...uploadingEvidence.files, ...newFiles],
+                uploadedAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              };
+              
+              setEvidenceItems(evidenceItems.map(e => 
+                e.evidenceId === uploadingEvidence.evidenceId ? updatedEvidence : e
+              ));
+              
+              setIsUploading(false);
+              setIsUploadDialogOpen(false);
+              setUploadFiles([]);
+              setUploadProgress({});
+              setUploadingEvidence(null);
+              toast.success(`Đã tải lên ${totalFiles} file thành công!`);
+            }, 500);
+          }
+        }
+      }, 100);
+    });
+  };
+
   const handleDeleteSubmit = () => {
     if (!deletingEvidence) return;
 
@@ -522,8 +787,10 @@ export default function EvidenceListPage() {
   // Load data when opening edit dialog
   React.useEffect(() => {
     if (editingEvidence && isEditDialogOpen) {
+      const firstFile = editingEvidence.files?.[0];
       setFormData({
-        filename: editingEvidence.file.filename,
+        evidenceName: editingEvidence.evidenceName || '',
+        filename: firstFile?.filename || 'Chưa có file',
         type: editingEvidence.type,
         capturedAt: new Date(editingEvidence.capturedAt).toISOString().split('T')[0],
         province: editingEvidence.scope.province || '',
@@ -724,6 +991,16 @@ export default function EvidenceListPage() {
                 </h3>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <Label htmlFor="evidenceName">Tên chứng cứ</Label>
+                    <Input
+                      id="evidenceName"
+                      value={formData.evidenceName}
+                      onChange={(e) => setFormData({ ...formData, evidenceName: e.target.value })}
+                      placeholder="Ví dụ: Vi phạm vệ sinh tại nhà hàng ABC"
+                    />
+                  </div>
+
                   <div style={{ gridColumn: '1 / -1' }}>
                     <Label htmlFor="filename">Tên file chứng cứ <span style={{ color: '#ef4444' }}>*</span></Label>
                     <Input
@@ -1088,7 +1365,7 @@ export default function EvidenceListPage() {
               
               <Select 
                 value={exportFormat} 
-                onValueChange={(value) => setExportFormat(value as 'excel' | 'csv' | 'pdf')}
+                onValueChange={(value) => setExportFormat(value as 'excel' | 'csv' | 'json')}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -1097,7 +1374,7 @@ export default function EvidenceListPage() {
                   <SelectItem value="excel">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <FileSpreadsheet size={16} />
-                      Excel (.xlsx)
+                      Excel (.xls)
                     </div>
                   </SelectItem>
                   <SelectItem value="csv">
@@ -1106,10 +1383,10 @@ export default function EvidenceListPage() {
                       CSV (.csv)
                     </div>
                   </SelectItem>
-                  <SelectItem value="pdf">
+                  <SelectItem value="json">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <File size={16} />
-                      PDF (.pdf)
+                      JSON (.json)
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -1168,6 +1445,7 @@ export default function EvidenceListPage() {
               }}>
                 {[
                   { key: 'evidenceId', label: 'Mã chứng cứ' },
+                  { key: 'evidenceName', label: 'Tên chứng cứ' },
                   { key: 'filename', label: 'Tên file' },
                   { key: 'type', label: 'Loại' },
                   { key: 'status', label: 'Trạng thái' },
@@ -1175,6 +1453,13 @@ export default function EvidenceListPage() {
                   { key: 'capturedAt', label: 'Ngày thu thập' },
                   { key: 'uploadedAt', label: 'Ngày tải lên' },
                   { key: 'sensitivityLabel', label: 'Độ bảo mật' },
+                  { key: 'submitter', label: 'Người nộp' },
+                  { key: 'source', label: 'Nguồn' },
+                  { key: 'fileCount', label: 'Số lượng file' },
+                  { key: 'totalSize', label: 'Dung lượng' },
+                  { key: 'hash', label: 'Hash (SHA-256)' },
+                  { key: 'location', label: 'Địa điểm' },
+                  { key: 'linkedEntities', label: 'Liên kết' },
                 ].map(column => (
                   <div key={column.key} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Checkbox
@@ -1242,6 +1527,16 @@ export default function EvidenceListPage() {
                 </h3>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <Label htmlFor="evidenceName-edit">Tên chứng cứ</Label>
+                    <Input
+                      id="evidenceName-edit"
+                      value={formData.evidenceName}
+                      onChange={(e) => setFormData({ ...formData, evidenceName: e.target.value })}
+                      placeholder="Ví dụ: Vi phạm vệ sinh tại nhà hàng ABC"
+                    />
+                  </div>
+
                   <div style={{ gridColumn: '1 / -1' }}>
                     <Label htmlFor="filename">Tên file chứng cứ <span style={{ color: '#ef4444' }}>*</span></Label>
                     <Input
@@ -1469,7 +1764,7 @@ export default function EvidenceListPage() {
                   <File size={24} style={{ color: '#ef4444' }} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: '4px' }}>
-                      {deletingEvidence.file.filename}
+                      {deletingEvidence.files?.[0]?.filename || 'Chưa có file'}
                     </div>
                     <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
                       {deletingEvidence.evidenceId}
@@ -1506,6 +1801,309 @@ export default function EvidenceListPage() {
               >
                 <Trash2 size={16} />
                 Xóa chứng cứ
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]" style={{ maxHeight: '90vh', overflow: 'auto' }}>
+          <DialogHeader>
+            <DialogTitle>Tải lên file</DialogTitle>
+            <DialogDescription>
+              Tải lên file mới cho bản ghi chứng cứ này. Có thể tải lên nhiều file cùng lúc.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div style={{ paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            
+            {/* Current Evidence Info */}
+            {uploadingEvidence && (
+              <div style={{
+                padding: '16px',
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-md)',
+              }}>
+                <div style={{
+                  fontSize: 'var(--text-xs)',
+                  fontWeight: 600,
+                  color: 'var(--text-secondary)',
+                  marginBottom: '12px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                }}>
+                  Bản ghi chứng cứ
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                  <FileText size={20} style={{ color: 'var(--color-primary)' }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: '4px' }}>
+                      {uploadingEvidence.evidenceId} • {getTypeLabel(uploadingEvidence.type)}
+                    </div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+                      {uploadingEvidence.files.length} file hiện có
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Show existing files */}
+                <div style={{ 
+                  fontSize: 'var(--text-xs)',
+                  color: 'var(--text-tertiary)',
+                  paddingTop: '8px',
+                  borderTop: '1px solid var(--border)',
+                }}>
+                  {uploadingEvidence.files.slice(0, 3).map((f, idx) => (
+                    <div key={idx} style={{ marginBottom: '4px' }}>• {f?.filename || 'Chưa rõ tên'}</div>
+                  ))}
+                  {uploadingEvidence.files.length > 3 && (
+                    <div style={{ fontStyle: 'italic' }}>+{uploadingEvidence.files.length - 3} file khác...</div>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* Drag & Drop Zone */}
+            <div
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+              style={{
+                border: `2px dashed ${dragActive ? 'var(--color-primary)' : 'var(--border)'}`,
+                borderRadius: 'var(--radius-lg)',
+                padding: '40px',
+                textAlign: 'center',
+                backgroundColor: dragActive ? 'var(--color-primary)10' : 'var(--bg-secondary)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onClick={() => document.getElementById('upload-file-input')?.click()}
+            >
+              <input
+                id="upload-file-input"
+                type="file"
+                multiple
+                onChange={handleFileInputChange}
+                style={{ display: 'none' }}
+                accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.zip"
+                disabled={isUploading}
+              />
+              
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                <div style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: 'var(--radius-full)',
+                  background: 'var(--color-primary)15',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <Upload size={32} style={{ color: 'var(--color-primary)' }} />
+                </div>
+                
+                <div>
+                  <div style={{ fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: '8px' }}>
+                    {dragActive ? 'Thả file tại đây' : 'Chọn file'}
+                  </div>
+                  <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+                    Hỗ trợ: Ảnh, Video, Audio, PDF, DOC, ZIP
+                  </div>
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+                    Có thể chọn nhiều file • Tối đa 100MB/file
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Selected File */}
+            {uploadFiles.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  paddingBottom: '8px',
+                  borderBottom: '1px solid var(--border)',
+                }}>
+                  <h3 style={{ fontSize: 'var(--text-md)', fontWeight: 600, margin: 0 }}>
+                    File đã chọn ({uploadFiles.length})
+                  </h3>
+                  {!isUploading && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setUploadFiles([])}
+                    >
+                      Xóa tất cả
+                    </Button>
+                  )}
+                </div>
+                
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                }}>
+                  {uploadFiles.map((file, index) => {
+                    const progress = uploadProgress[file.name] || 0;
+                    const isComplete = progress >= 100;
+                    const fileType = getFileType(file);
+                    
+                    return (
+                      <div
+                        key={`${file.name}-${index}`}
+                        style={{
+                          padding: '12px',
+                          border: '1px solid var(--border)',
+                          borderRadius: 'var(--radius-md)',
+                          background: 'var(--bg-primary)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          {/* File Icon */}
+                          <div style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: 'var(--radius-sm)',
+                            background: isComplete ? 'var(--color-success)15' : 'var(--bg-secondary)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}>
+                            {isComplete ? (
+                              <CheckCircle size={20} style={{ color: 'var(--color-success)' }} />
+                            ) : fileType === 'PHOTO' ? (
+                              <FileText size={20} style={{ color: 'var(--color-primary)' }} />
+                            ) : fileType === 'VIDEO' ? (
+                              <File size={20} style={{ color: 'var(--color-info)' }} />
+                            ) : (
+                              <FileText size={20} style={{ color: 'var(--text-secondary)' }} />
+                            )}
+                          </div>
+                          
+                          {/* File Info */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{
+                              fontSize: 'var(--text-sm)',
+                              fontWeight: 500,
+                              marginBottom: '4px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}>
+                              {file.name}
+                            </div>
+                            <div style={{
+                              fontSize: 'var(--text-xs)',
+                              color: 'var(--text-secondary)',
+                              display: 'flex',
+                              gap: '12px',
+                            }}>
+                              <span>{formatFileSize(file.size)}</span>
+                              <span>•</span>
+                              <span>{getTypeLabel(fileType)}</span>
+                            </div>
+                            
+                            {/* Progress Bar */}
+                            {isUploading && (
+                              <div style={{ marginTop: '8px' }}>
+                                <div style={{
+                                  width: '100%',
+                                  height: '4px',
+                                  background: 'var(--border)',
+                                  borderRadius: 'var(--radius-full)',
+                                  overflow: 'hidden',
+                                }}>
+                                  <div
+                                    style={{
+                                      height: '100%',
+                                      background: isComplete ? 'var(--color-success)' : 'var(--color-primary)',
+                                      borderRadius: 'var(--radius-full)',
+                                      transition: 'width 0.3s ease',
+                                      width: `${progress}%`,
+                                    }}
+                                  />
+                                </div>
+                                <div style={{
+                                  fontSize: 'var(--text-xs)',
+                                  color: 'var(--text-tertiary)',
+                                  marginTop: '4px',
+                                }}>
+                                  {isComplete ? 'Hoàn thành' : `Đang tải lên... ${progress}%`}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Remove Button */}
+                          {!isUploading && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeUploadFile(index)}
+                            >
+                              <X size={16} />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Info Message */}
+            <div style={{
+              padding: '12px 16px',
+              background: '#f59e0b15',
+              border: '1px solid #f59e0b30',
+              borderRadius: 'var(--radius-md)',
+              fontSize: 'var(--text-sm)',
+              color: 'var(--text-secondary)',
+            }}>
+              <div style={{ fontWeight: 600, marginBottom: '4px', color: '#f59e0b' }}>
+                ⚠️ Lưu ý quan trọng
+              </div>
+              <ul style={{ margin: '4px 0 0 20px', padding: 0 }}>
+                <li>File mới sẽ <strong>thay thế hoàn toàn</strong> file hiện tại</li>
+                <li>Loại chứng cứ (EvidenceType) sẽ được cập nhật theo file mới</li>
+                <li>Các thông tin khác (địa bàn, metadata) vẫn được giữ nguyên</li>
+              </ul>
+            </div>
+
+            {/* Actions */}
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'flex-end',
+              paddingTop: '8px',
+              borderTop: '1px solid var(--border)',
+            }}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsUploadDialogOpen(false);
+                  setUploadFiles([]);
+                  setUploadProgress({});
+                  setUploadingEvidence(null);
+                }}
+                disabled={isUploading}
+              >
+                {isUploading ? 'Đóng' : 'Hủy bỏ'}
+              </Button>
+              <Button
+                onClick={handleUploadSubmit}
+                disabled={uploadFiles.length === 0 || isUploading}
+              >
+                <Upload size={16} />
+                {isUploading ? 'Đang tải lên...' : 'Tải lên file mới'}
               </Button>
             </div>
           </div>

@@ -8,7 +8,7 @@ import DataExportPage from '../pages/DataExportPage';
 import LeadsPage from '../pages/LeadsPage';
 import PlansPage from '../pages/PlansPage';
 import TasksPage from '../pages/TasksPage';
-import EvidencePage from '../pages/EvidencePage';
+import EvidenceRoutes from '../app/routes/EvidenceRoutes';
 import ReportsPage from '../pages/ReportsPage';
 import AdminPage from '../pages/AdminPage';
 import Profile from '../pages/account/Profile';
@@ -79,8 +79,8 @@ export const router = createBrowserRouter([
             element: <TasksPage />,
           },
           {
-            path: 'evidence',
-            element: <EvidencePage />,
+            path: 'evidence/*',
+            element: <EvidenceRoutes />,
           },
           {
             path: 'reports',

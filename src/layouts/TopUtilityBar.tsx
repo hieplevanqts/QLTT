@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Globe, Moon, Sun, Grid3x3, Bell, User, Menu, HelpCircle, LayoutGrid, LayoutList } from 'lucide-react';
+import { Globe, Moon, Sun, Grid3x3, Bell, User, Menu, MessageSquare, LayoutGrid, LayoutList } from 'lucide-react';
 import { Button } from '../app/components/ui/button';
 import { GlobalSearch } from '../app/components/header/GlobalSearch';
 import { NotificationPanel } from '../app/components/header/NotificationPanel';
-import { HelpPanel } from '../app/components/header/HelpPanel';
+import { FeedbackModal } from '../app/components/header/FeedbackModal';
+import { ScopeSelector } from '../app/components/scope-selector/ScopeSelector';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,7 +28,7 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('light');
   const [language, setLanguage] = useState<'vi' | 'en'>('vi');
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const { layoutMode, toggleLayoutMode } = useLayout();
 
@@ -98,8 +99,13 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
           </button>
         )}
 
+        {/* Scope Selector - Show on desktop */}
+        <div className="hidden lg:block flex-shrink-0">
+          <ScopeSelector />
+        </div>
+
         {/* Global Search - Centered */}
-        <div className="hidden md:flex flex-1 max-w-xl mx-auto" style={{ overflow: 'visible' }}>
+        <div className="hidden md:flex flex-1 max-w-xl mx-auto">
           <GlobalSearch />
         </div>
 
@@ -129,17 +135,17 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Help Button */}
+          {/* Feedback Button */}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => {
-              setShowHelp(!showHelp);
+              setShowFeedback(!showFeedback);
               setShowNotifications(false);
             }}
-            title="Trợ giúp"
+            title="Gửi phản hồi"
           >
-            <HelpCircle className="h-5 w-5" style={{ color: '#005cb6' }} />
+            <MessageSquare className="h-5 w-5" style={{ color: '#005cb6' }} />
           </Button>
 
           {/* Notifications */}
@@ -149,7 +155,7 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
             className="relative"
             onClick={() => {
               setShowNotifications(!showNotifications);
-              setShowHelp(false);
+              setShowFeedback(false);
             }}
             title="Thông báo"
           >
@@ -210,8 +216,8 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
       )}
 
       {/* Help Panel */}
-      {showHelp && (
-        <HelpPanel onClose={() => setShowHelp(false)} />
+      {showFeedback && (
+        <FeedbackModal onClose={() => setShowFeedback(false)} />
       )}
     </>
   );

@@ -104,7 +104,7 @@ export default function ScopeFilteringDemoPage() {
     {
       key: 'file',
       label: 'Tên file',
-      render: (evidence) => evidence.file.filename,
+      render: (evidence) => evidence.files?.[0]?.filename || 'Chưa có file',
     },
     {
       key: 'scope',

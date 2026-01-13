@@ -142,6 +142,9 @@ export interface EvidenceItem {
   /** Unique Evidence ID */
   evidenceId: string;
   
+  /** Evidence Name/Title (optional, descriptive name) */
+  evidenceName?: string;
+  
   /** Evidence Type */
   type: EvidenceType;
   
@@ -163,8 +166,8 @@ export interface EvidenceItem {
   /** Location information */
   location: EvidenceLocation;
   
-  /** File information */
-  file: EvidenceFile;
+  /** File information - MULTIPLE FILES SUPPORTED */
+  files: EvidenceFile[];
   
   /** Hash values (SWGDE - multiple algorithms) */
   hashes: EvidenceHash[];
@@ -547,7 +550,7 @@ export function validateEvidenceItem(item: Partial<EvidenceItem>): {
     'capturedAt',
     'uploadedAt',
     'location',
-    'file',
+    'files',
     'hashes',
     'sensitivityLabel',
     'submitter',
@@ -749,7 +752,7 @@ export function createEvidenceItem(
     capturedAt: baseData.capturedAt,
     uploadedAt: now,
     location: baseData.location,
-    file: baseData.file,
+    files: baseData.file ? [baseData.file] : [],
     hashes: baseData.hashes || [],
     sensitivityLabel: baseData.sensitivityLabel || 'Internal',
     submitter: baseData.submitter,

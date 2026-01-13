@@ -82,12 +82,12 @@
 }
 
 .filterActive {
-  background: var(--primary);
+  background: #005cb6;
   color: white;
 }
 
 .filterActive:hover {
-  background: color-mix(in srgb, var(--primary) 85%, black);
+  background: #004a94;
   color: white;
 }
 
@@ -99,7 +99,7 @@
   font-family: 'Inter', sans-serif;
   font-size: 13px;
   font-weight: 500;
-  color: var(--primary);
+  color: #005cb6;
   background: none;
   border: none;
   padding: 6px 12px;
@@ -109,7 +109,7 @@
 }
 
 .markAllButton:hover {
-  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  background: rgba(0, 92, 182, 0.1);
 }
 
 /* Notification List */
@@ -137,7 +137,7 @@
 }
 
 .unread {
-  background: color-mix(in srgb, var(--primary) 3%, transparent);
+  background: rgba(0, 92, 182, 0.03);
 }
 
 .notificationIcon {
@@ -152,19 +152,19 @@
 }
 
 .iconSuccess {
-  color: var(--chart-4);
+  color: #10b981;
 }
 
 .iconError {
-  color: var(--destructive);
+  color: #ef4444;
 }
 
 .iconWarning {
-  color: var(--chart-5);
+  color: #f59e0b;
 }
 
 .iconInfo {
-  color: var(--chart-3);
+  color: #3b82f6;
 }
 
 .notificationContent {
@@ -200,7 +200,7 @@
   right: 20px;
   width: 8px;
   height: 8px;
-  background: var(--primary);
+  background: #005cb6;
   border-radius: 50%;
 }
 
@@ -239,7 +239,7 @@
   font-family: 'Inter', sans-serif;
   font-size: 14px;
   font-weight: 500;
-  color: var(--primary);
+  color: #005cb6;
   background: none;
   border: none;
   border-radius: var(--radius-md);
@@ -248,7 +248,7 @@
 }
 
 .viewAllButton:hover {
-  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  background: rgba(0, 92, 182, 0.1);
 }
 
 /* Scrollbar */

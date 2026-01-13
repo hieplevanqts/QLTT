@@ -6,7 +6,7 @@ import styles from './PageHeader.module.css';
 
 interface PageHeaderProps {
   breadcrumbs?: { label: string; href?: string }[];
-  title: string;
+  title: string | ReactNode;
   actions?: ReactNode;
 }
 

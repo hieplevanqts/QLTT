@@ -10,14 +10,11 @@ import {
   Download,
   Share2,
   MoreVertical,
-  Lock,
   Edit,
   Hash,
   MapPin,
   Calendar,
   User,
-  HardDrive,
-  Tag,
   AlertCircle,
   CheckCircle,
   ExternalLink,
@@ -37,16 +34,65 @@ import PageHeader from '../../../layouts/PageHeader';
 import { toast } from 'sonner';
 import type { EvidenceItem, CustodyEvent } from '../../types/evidence.types';
 import { getStatusLabel, getStatusColor, getTypeLabel } from '../../types/evidence.types';
+import EvidenceOverviewTab from '../../components/evidence/EvidenceOverviewTab';
+import EvidenceFileViewerTab from '../../components/evidence/EvidenceFileViewerTab';
+import { getFileTypeInfo, getFileExtension, formatFileSize } from '@/app/utils/fileUtils';
 
 export default function EvidenceDetailPage() {
   const { evidenceId } = useParams<{ evidenceId: string }>();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'overview' | 'viewer' | 'metadata' | 'links' | 'custody' | 'review'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'viewer' | 'metadata' | 'links'>('overview');
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [isAddLinkModalOpen, setIsAddLinkModalOpen] = useState(false);
+  const [newLink, setNewLink] = useState({
+    type: 'lead' as 'lead' | 'task' | 'plan' | 'store',
+    id: '',
+    name: '',
+  });
+  const [linkedEntities, setLinkedEntities] = useState([
+    { type: 'lead' as const, id: 'LEAD-2026-048', name: 'Tố giác vi phạm ATTP từ người dân' },
+    { type: 'task' as const, id: 'TASK-2026-091', name: 'Nguy cơ ngộ độc thực phẩm cao' },
+    { type: 'plan' as const, id: 'PLAN-2026-015', name: 'Thanh tra cơ sở kinh doanh thực phẩm - Quận 1' },
+    { type: 'store' as const, id: 'STORE-2026-234', name: 'Nhà hàng Phố Việt - 123 Nguyễn Huệ' }
+  ]);
 
   // Mock data
   const evidenceData = {
     id: evidenceId || 'EVD-2026-1252',
     fileName: 'anh_vi_pham_ve_sinh.jpg',
+    files: [
+      { 
+        filename: 'anh_vi_pham_ve_sinh.jpg', 
+        sizeBytes: 2457600, 
+        mimeType: 'image/jpeg',
+        imageUrl: 'https://images.unsplash.com/photo-1720213620000-83166fc0af2b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZXN0YXVyYW50JTIwa2l0Y2hlbiUyMGluc3BlY3Rpb258ZW58MXx8fHwxNzY4MjE1NjI0fDA&ixlib=rb-4.1.0&q=80&w=1080' 
+      },
+      { 
+        filename: 'anh_vi_pham_close_up.jpg', 
+        sizeBytes: 1834500, 
+        mimeType: 'image/jpeg',
+        imageUrl: 'https://images.unsplash.com/photo-1758369636932-36fdcf1314fc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmb29kJTIwc2FmZXR5JTIwa2l0Y2hlbixlbnwxfHx8fDE3NjgyMTU2Mjd8MA&ixlib=rb-4.1.0&q=80&w=1080' 
+      },
+      { 
+        filename: 'khu_vuc_luu_tru.jpg', 
+        sizeBytes: 2156700, 
+        mimeType: 'image/jpeg',
+        imageUrl: 'https://images.unsplash.com/photo-1589109807644-924edf14ee09?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb21tZXJjaWFsJTIwa2l0Y2hlbiUyMGVxdWlwbWVudHxlbnwxfHx8fDE3NjgxODg4Mzl8MA&ixlib=rb-4.1.0&q=80&w=1080' 
+      },
+      { 
+        filename: 'khu_vuc_che_bien.jpg', 
+        sizeBytes: 3124800, 
+        mimeType: 'image/jpeg',
+        imageUrl: 'https://images.unsplash.com/photo-1763219805214-91fa634e6006?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmb29kJTIwcHJlcGFyYXRpb24lMjBhcmVhfGVufDF8fHx8MTc2ODIxNTc2Nnww&ixlib=rb-4.1.0&q=80&w=1080' 
+      },
+      { 
+        filename: 'thiet_bi_bep_ban.jpg', 
+        sizeBytes: 2892100, 
+        mimeType: 'image/jpeg',
+        imageUrl: 'https://images.unsplash.com/photo-1727591092022-c43808617daa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxraXRjaGVuJTIwc3RvcmFnZSUyMHJvb218ZW58MXx8fHwxNzY4MjE1NzY3fDA&ixlib=rb-4.1.0&q=80&w=1080' 
+      },
+    ],
     type: 'image' as const,
     status: 'Approved' as const,
     sensitivityLabel: 'Restricted' as const,
@@ -66,51 +112,8 @@ export default function EvidenceDetailPage() {
     source: 'Mobile App',
     deviceInfo: 'iPhone 14 Pro - iOS 17.2',
     notes: 'Vi phạm vệ sinh tại bếp chế biến, phát hiện côn trùng trong khu vực lưu trữ thực phẩm',
-    linkedEntities: [
-      { type: 'lead' as const, id: 'CASE-2026-048', name: 'Vi phạm ATTP tại Quận 1' },
-      { type: 'task' as const, id: 'TASK-2026-091', name: 'Thanh tra cơ sở kinh doanh thực phẩm' }
-    ],
     size: '2.4 MB'
   };
-
-  const custodyEvents = [
-    {
-      id: '1',
-      eventType: 'Upload' as const,
-      actor: 'Nguyễn Văn A',
-      timestamp: '10/01/2026 09:30:15',
-      action: 'Tải lên chứng cứ từ Mobile App',
-      ipAddress: '113.161.xxx.xxx',
-      device: 'iPhone 14 Pro'
-    },
-    {
-      id: '2',
-      eventType: 'View' as const,
-      actor: 'Trần Thị B',
-      timestamp: '10/01/2026 10:15:42',
-      action: 'Xem chi tiết chứng cứ',
-      ipAddress: '14.231.xxx.xxx',
-      device: 'Chrome - Windows 11'
-    },
-    {
-      id: '3',
-      eventType: 'Review' as const,
-      actor: 'Lê Văn C (Reviewer)',
-      timestamp: '10/01/2026 11:20:33',
-      action: 'Bắt đầu xét duyệt',
-      ipAddress: '14.231.xxx.xxx',
-      device: 'Chrome - Windows 11'
-    },
-    {
-      id: '4',
-      eventType: 'Edit' as const,
-      actor: 'Lê Văn C',
-      timestamp: '10/01/2026 11:22:10',
-      action: 'Cập nhật metadata - Thêm nhãn bảo mật: Confidential',
-      ipAddress: '14.231.xxx.xxx',
-      device: 'Chrome - Windows 11'
-    },
-  ];
 
   const getSensitivityBadge = (label: string) => {
     const labelConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -128,41 +131,169 @@ export default function EvidenceDetailPage() {
     );
   };
 
-  const getEventIcon = (eventType: string) => {
-    const icons: Record<string, React.ReactNode> = {
-      Upload: <Upload size={16} />,
-      Submit: <Upload size={16} />,
-      View: <Eye size={16} />,
-      Edit: <Edit size={16} />,
-      Review: <ShieldCheck size={16} />,
-      Approve: <CheckCircle size={16} />,
-      Reject: <AlertCircle size={16} />,
-      Download: <Download size={16} />,
-      Export: <Download size={16} />,
-      Seal: <Lock size={16} />,
-      Unseal: <Lock size={16} />,
-      Archive: <HardDrive size={16} />,
-    };
-    return icons[eventType] || <Clock size={16} />;
-  };
-
-  const getEventColor = (eventType: string) => {
-    const colors: Record<string, string> = {
-      Upload: '#005cb6',
-      Submit: '#005cb6',
-      Approve: '#22c55e',
-      Reject: '#ef4444',
-      Seal: '#8b5cf6',
-      Unseal: '#8b5cf6',
-      Archive: '#9ca3af',
-    };
-    return colors[eventType] || '#6b7280';
-  };
-
   const statusConfig = getStatusColor(evidenceData.status);
 
   return (
     <div style={{ padding: 0, maxWidth: '100%', margin: 0 }}>
+      {/* Lightbox Modal */}
+      {isLightboxOpen && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.95)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '40px',
+          }}
+          onClick={() => setIsLightboxOpen(false)}
+        >
+          {/* Close Button */}
+          <button
+            onClick={() => setIsLightboxOpen(false)}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              width: '48px',
+              height: '48px',
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '2px solid rgba(255, 255, 255, 0.3)',
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              fontSize: '24px',
+              fontWeight: 700,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+            }}
+          >
+            ×
+          </button>
+
+          {/* Previous Button */}
+          {selectedImageIndex > 0 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedImageIndex(selectedImageIndex - 1);
+              }}
+              style={{
+                position: 'absolute',
+                left: '40px',
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                background: 'rgba(255, 255, 255, 0.1)',
+                border: '2px solid rgba(255, 255, 255, 0.3)',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+              }}
+            >
+              <ArrowLeft size={28} />
+            </button>
+          )}
+
+          {/* Next Button */}
+          {selectedImageIndex < evidenceData.files.length - 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedImageIndex(selectedImageIndex + 1);
+              }}
+              style={{
+                position: 'absolute',
+                right: '40px',
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                background: 'rgba(255, 255, 255, 0.1)',
+                border: '2px solid rgba(255, 255, 255, 0.3)',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                transform: 'rotate(180deg)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+              }}
+            >
+              <ArrowLeft size={28} />
+            </button>
+          )}
+
+          {/* Image */}
+          <div 
+            style={{ 
+              maxWidth: '90%', 
+              maxHeight: '90%', 
+              display: 'flex', 
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '20px',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img 
+              src={evidenceData.files[selectedImageIndex].imageUrl} 
+              alt={evidenceData.files[selectedImageIndex].filename}
+              style={{
+                maxWidth: '100%',
+                maxHeight: 'calc(90vh - 100px)',
+                objectFit: 'contain',
+                borderRadius: 'var(--radius-md)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+              }}
+            />
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(10px)',
+              padding: '16px 24px',
+              borderRadius: 'var(--radius-md)',
+              color: 'white',
+              fontSize: 'var(--text-sm)',
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+            }}>
+              <span>{selectedImageIndex + 1} / {evidenceData.files.length}</span>
+              <span style={{ opacity: 0.5 }}>•</span>
+              <span>{evidenceData.files[selectedImageIndex].filename}</span>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <PageHeader
         breadcrumbs={[
           { label: 'Trang chủ', href: '/' },
@@ -275,11 +406,6 @@ export default function EvidenceDetailPage() {
                 >
                   {getStatusLabel(evidenceData.status)}
                 </Badge>
-                {getSensitivityBadge(evidenceData.sensitivityLabel)}
-                <Badge variant="outline" style={{ borderColor: '#22c55e', color: '#22c55e', background: '#22c55e15' }}>
-                  <CheckCircle size={12} />
-                  Verified
-                </Badge>
               </div>
             </div>
           </CardContent>
@@ -297,8 +423,6 @@ export default function EvidenceDetailPage() {
             { key: 'viewer', label: 'Xem chứng cứ', icon: <ImageIcon size={16} /> },
             { key: 'metadata', label: 'Metadata', icon: <FileText size={16} /> },
             { key: 'links', label: 'Liên kết', icon: <LinkIcon size={16} /> },
-            { key: 'custody', label: 'Chain of Custody', icon: <Clock size={16} /> },
-            { key: 'review', label: 'Review', icon: <ShieldCheck size={16} /> },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -331,336 +455,25 @@ export default function EvidenceDetailPage() {
           
           {/* Overview Tab */}
           {activeTab === 'overview' && (
-            <div style={{ display: 'grid', gap: '24px' }}>
-              
-              {/* Info Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
-                
-                {/* Basic Info */}
-                <Card>
-                  <CardContent style={{ padding: '20px' }}>
-                    <h3 style={{
-                      fontSize: 'var(--text-lg)',
-                      fontWeight: 600,
-                      color: 'var(--text-primary)',
-                      margin: '0 0 16px 0',
-                      paddingBottom: '12px',
-                      borderBottom: '1px solid var(--border)',
-                    }}>
-                      Thông tin cơ bản
-                    </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                      {[
-                        { label: 'Mã chứng cứ', value: evidenceData.id },
-                        { label: 'Loại file', value: 'Ảnh' },
-                        { label: 'Kích thước', value: evidenceData.size },
-                        { label: 'Người nộp', value: evidenceData.submitter },
-                        { label: 'Nguồn', value: evidenceData.source },
-                        { label: 'Thiết bị', value: evidenceData.deviceInfo },
-                      ].map((item, idx) => (
-                        <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <div style={{
-                            fontSize: 'var(--text-xs)',
-                            fontWeight: 600,
-                            color: 'var(--text-tertiary)',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.05em',
-                          }}>
-                            {item.label}
-                          </div>
-                          <div style={{
-                            fontSize: 'var(--text-sm)',
-                            fontWeight: 500,
-                            color: 'var(--text-primary)',
-                          }}>
-                            {item.value}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Timestamps */}
-                <Card>
-                  <CardContent style={{ padding: '20px' }}>
-                    <h3 style={{
-                      fontSize: 'var(--text-lg)',
-                      fontWeight: 600,
-                      color: 'var(--text-primary)',
-                      margin: '0 0 16px 0',
-                      paddingBottom: '12px',
-                      borderBottom: '1px solid var(--border)',
-                    }}>
-                      <Calendar size={18} style={{ verticalAlign: 'middle', marginRight: '8px' }} />
-                      Thời gian
-                    </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <div style={{
-                          fontSize: 'var(--text-xs)',
-                          fontWeight: 600,
-                          color: 'var(--text-tertiary)',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.05em',
-                        }}>
-                          Ngày chụp/thu thập
-                        </div>
-                        <div style={{
-                          fontSize: 'var(--text-sm)',
-                          fontWeight: 500,
-                          color: 'var(--text-primary)',
-                        }}>
-                          {evidenceData.capturedAt}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <div style={{
-                          fontSize: 'var(--text-xs)',
-                          fontWeight: 600,
-                          color: 'var(--text-tertiary)',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.05em',
-                        }}>
-                          Ngày tải lên
-                        </div>
-                        <div style={{
-                          fontSize: 'var(--text-sm)',
-                          fontWeight: 500,
-                          color: 'var(--text-primary)',
-                        }}>
-                          {evidenceData.uploadedAt}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Hash & Integrity */}
-              <Card>
-                <CardContent style={{ padding: '24px' }}>
-                  <h3 style={{
-                    fontSize: 'var(--text-lg)',
-                    fontWeight: 600,
-                    color: 'var(--text-primary)',
-                    margin: '0 0 20px 0',
-                    paddingBottom: '12px',
-                    borderBottom: '1px solid var(--border)',
-                  }}>
-                    <Hash size={18} style={{ verticalAlign: 'middle', marginRight: '8px' }} />
-                    Hash & Integrity (SWGDE Compliant)
-                  </h3>
-                  
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    {/* Hash values */}
-                    {[
-                      { algo: 'SHA-256', value: evidenceData.hash_values.sha256, badge: 'Verified' },
-                      { algo: 'SHA-512', value: evidenceData.hash_values.sha512, badge: 'Verified' },
-                      { algo: 'MD5', value: evidenceData.hash_values.md5, badge: 'Legacy' },
-                    ].map((hash, idx) => (
-                      <div key={idx} style={{
-                        padding: '16px',
-                        background: 'var(--background-secondary)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 'var(--radius-md)',
-                      }}>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          marginBottom: '10px',
-                        }}>
-                          <span style={{
-                            fontSize: 'var(--text-sm)',
-                            fontWeight: 700,
-                            color: 'var(--text-primary)',
-                            fontFamily: 'monospace',
-                          }}>
-                            {hash.algo}
-                          </span>
-                          {hash.badge === 'Verified' ? (
-                            <Badge variant="outline" style={{ borderColor: '#22c55e', color: '#22c55e', background: '#22c55e15' }}>
-                              <CheckCircle size={12} />
-                              Verified
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" style={{ borderColor: '#f59e0b', color: '#f59e0b' }}>
-                              Legacy
-                            </Badge>
-                          )}
-                        </div>
-                        <div style={{
-                          fontFamily: 'monospace',
-                          fontSize: 'var(--text-xs)',
-                          color: 'var(--text-secondary)',
-                          padding: '10px 12px',
-                          background: 'var(--background)',
-                          border: '1px solid var(--border)',
-                          borderRadius: 'var(--radius-sm)',
-                          wordBreak: 'break-all',
-                        }}>
-                          {hash.value}
-                        </div>
-                      </div>
-                    ))}
-
-                    {/* Verification status */}
-                    <div style={{
-                      padding: '16px',
-                      background: '#22c55e15',
-                      border: '1px solid #22c55e',
-                      borderRadius: 'var(--radius-md)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: '12px',
-                      flexWrap: 'wrap',
-                    }}>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        fontSize: 'var(--text-sm)',
-                        color: '#22c55e',
-                        fontWeight: 500,
-                      }}>
-                        <Clock size={16} />
-                        <span>Lần xác thực cuối: {evidenceData.hash_computed_at} bởi {evidenceData.computed_by}</span>
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => toast.success('Đang xác thực hash... Integrity check passed!')}
-                      >
-                        <CheckCircle size={14} />
-                        Re-verify Integrity
-                      </Button>
-                    </div>
-
-                    {/* Compliance notice */}
-                    <div style={{
-                      padding: '14px',
-                      background: '#005cb615',
-                      border: '1px solid #005cb6',
-                      borderRadius: 'var(--radius-md)',
-                      display: 'flex',
-                      gap: '10px',
-                      color: '#005cb6',
-                    }}>
-                      <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
-                      <span style={{ fontSize: 'var(--text-xs)', lineHeight: '1.6', fontWeight: 500 }}>
-                        SWGDE: Multiple hash algorithms để giảm rủi ro va chạm | 
-                        ISO/IEC 27037: Acquisition hash đảm bảo integrity
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Notes */}
-              <Card>
-                <CardContent style={{ padding: '20px' }}>
-                  <h3 style={{
-                    fontSize: 'var(--text-lg)',
-                    fontWeight: 600,
-                    color: 'var(--text-primary)',
-                    margin: '0 0 16px 0',
-                    paddingBottom: '12px',
-                    borderBottom: '1px solid var(--border)',
-                  }}>
-                    Ghi chú
-                  </h3>
-                  <p style={{
-                    fontSize: 'var(--text-sm)',
-                    color: 'var(--text-secondary)',
-                    lineHeight: '1.6',
-                    margin: 0,
-                  }}>
-                    {evidenceData.notes}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+            <EvidenceOverviewTab 
+              evidenceData={evidenceData}
+              onImageClick={(index) => {
+                setSelectedImageIndex(index);
+                setIsLightboxOpen(true);
+              }}
+              onViewAllFiles={() => setActiveTab('viewer')}
+            />
           )}
 
           {/* Viewer Tab */}
           {activeTab === 'viewer' && (
-            <Card>
-              <CardContent style={{ padding: '24px' }}>
-                {/* Toolbar */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '12px 16px',
-                  background: 'var(--background-secondary)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-md)',
-                  marginBottom: '20px',
-                }}>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <Button variant="outline" size="sm" onClick={() => toast.info('Zoom In')}>
-                      <ZoomIn size={16} />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => toast.info('Zoom Out')}>
-                      <ZoomOut size={16} />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => toast.info('Rotate')}>
-                      <RotateCw size={16} />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => toast.info('Fullscreen')}>
-                      <Maximize size={16} />
-                    </Button>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => toast.success('Đang tải xuống...')}>
-                    <Download size={16} />
-                    Tải xuống
-                  </Button>
-                </div>
-
-                {/* Image viewer */}
-                <div style={{
-                  background: 'var(--background-secondary)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '32px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '20px',
-                  minHeight: '600px',
-                }}>
-                  <img 
-                    src="https://images.unsplash.com/photo-1720213620000-83166fc0af2b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZXN0YXVyYW50JTIwa2l0Y2hlbiUyMGluc3BlY3Rpb258ZW58MXx8fHwxNzY4MDMyMDkwfDA&ixlib=rb-4.1.0&q=80&w=1080" 
-                    alt={evidenceData.fileName}
-                    style={{
-                      maxWidth: '100%',
-                      maxHeight: '600px',
-                      borderRadius: 'var(--radius-md)',
-                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-                      objectFit: 'contain',
-                    }}
-                  />
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '12px 20px',
-                    background: 'var(--background)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-md)',
-                    fontSize: 'var(--text-sm)',
-                    color: 'var(--text-secondary)',
-                  }}>
-                    <ImageIcon size={16} />
-                    <span>{evidenceData.fileName}</span>
-                    <Badge variant="secondary">{evidenceData.size}</Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <EvidenceFileViewerTab
+              evidenceData={evidenceData}
+              selectedImageIndex={selectedImageIndex}
+              setSelectedImageIndex={setSelectedImageIndex}
+              isLightboxOpen={isLightboxOpen}
+              setIsLightboxOpen={setIsLightboxOpen}
+            />
           )}
 
           {/* Metadata Tab */}
@@ -821,14 +634,14 @@ export default function EvidenceDetailPage() {
                   }}>
                     Liên kết vụ việc
                   </h3>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => setIsAddLinkModalOpen(true)}>
                     <LinkIcon size={14} />
                     Thêm liên kết
                   </Button>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {evidenceData.linkedEntities.map((entity, idx) => (
+                  {linkedEntities.map((entity, idx) => (
                     <div key={idx} style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -870,9 +683,9 @@ export default function EvidenceDetailPage() {
                           textTransform: 'uppercase',
                           letterSpacing: '0.05em',
                         }}>
-                          {entity.type === 'lead' ? 'Vụ việc' :
-                           entity.type === 'task' ? 'Nhiệm vụ' :
-                           entity.type === 'plan' ? 'Kế hoạch' : 'Cơ sở'}
+                          {entity.type === 'lead' ? 'Nguồn tin' :
+                           entity.type === 'task' ? 'Rủi ro' :
+                           entity.type === 'plan' ? 'Phiên kiểm tra' : 'Cửa hàng'}
                         </div>
                         <div style={{
                           fontSize: 'var(--text-md)',
@@ -903,177 +716,202 @@ export default function EvidenceDetailPage() {
             </Card>
           )}
 
-          {/* Chain of Custody Tab */}
-          {activeTab === 'custody' && (
-            <Card>
-              <CardContent style={{ padding: '24px' }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  marginBottom: '24px',
-                  flexWrap: 'wrap',
-                  gap: '16px',
+
+        </div>
+      </div>
+
+      {/* Add Link Modal */}
+      {isAddLinkModalOpen && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '40px',
+          }}
+          onClick={() => {
+            setIsAddLinkModalOpen(false);
+            setNewLink({ type: 'lead', id: '', name: '' });
+          }}
+        >
+          <div 
+            style={{ 
+              width: '100%',
+              maxWidth: '500px',
+              background: 'var(--background)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '32px',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{
+              fontSize: 'var(--text-xl)',
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              margin: '0 0 24px 0',
+            }}>
+              Thêm Liên Kết
+            </h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Entity Type Select */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <label style={{
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 600,
+                  color: 'var(--text-secondary)',
                 }}>
-                  <h3 style={{
-                    fontSize: 'var(--text-xl)',
-                    fontWeight: 700,
-                    color: 'var(--text-primary)',
-                    margin: 0,
-                  }}>
-                    Chain of Custody Log
-                  </h3>
-                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <select style={{
-                      padding: '8px 12px',
+                  Loại liên kết
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <LinkIcon 
+                    size={16} 
+                    style={{ 
+                      position: 'absolute', 
+                      left: '12px', 
+                      top: '50%', 
+                      transform: 'translateY(-50%)',
+                      color: 'var(--text-tertiary)',
+                    }} 
+                  />
+                  <select
+                    value={newLink.type}
+                    onChange={(e) => setNewLink({ ...newLink, type: e.target.value as 'lead' | 'task' | 'plan' | 'store' })}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px 10px 40px',
                       border: '1px solid var(--border)',
                       borderRadius: 'var(--radius-md)',
                       fontSize: 'var(--text-sm)',
                       color: 'var(--text-primary)',
                       background: 'var(--background)',
-                    }}>
-                      <option value="">Tất cả sự kiện</option>
-                      <option value="upload">Upload</option>
-                      <option value="view">View</option>
-                      <option value="edit">Edit</option>
-                      <option value="review">Review</option>
-                    </select>
-                    <Button variant="outline" size="sm">
-                      <Download size={14} />
-                      Export Log
-                    </Button>
-                  </div>
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <option value="lead">Nguồn tin</option>
+                    <option value="task">Rủi ro</option>
+                    <option value="plan">Phiên kiểm tra</option>
+                    <option value="store">Cửa hàng</option>
+                  </select>
                 </div>
+              </div>
 
-                {/* Timeline */}
-                <div style={{ position: 'relative' }}>
-                  {custodyEvents.map((event, idx) => (
-                    <div key={event.id} style={{
-                      display: 'flex',
-                      gap: '20px',
-                      paddingBottom: idx === custodyEvents.length - 1 ? '0' : '32px',
-                      position: 'relative',
-                    }}>
-                      {/* Timeline line */}
-                      {idx < custodyEvents.length - 1 && (
-                        <div style={{
-                          position: 'absolute',
-                          left: '19px',
-                          top: '44px',
-                          bottom: '0',
-                          width: '2px',
-                          background: 'var(--border)',
-                        }} />
-                      )}
-                      
-                      {/* Icon */}
-                      <div style={{
-                        width: '40px',
-                        height: '40px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderRadius: '50%',
-                        flexShrink: 0,
-                        background: `${getEventColor(event.eventType)}15`,
-                        color: getEventColor(event.eventType),
-                        border: `2px solid ${getEventColor(event.eventType)}`,
-                        position: 'relative',
-                        zIndex: 1,
-                      }}>
-                        {getEventIcon(event.eventType)}
-                      </div>
-
-                      {/* Content */}
-                      <div style={{
-                        flex: 1,
-                        padding: '8px 0',
-                      }}>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          marginBottom: '6px',
-                          flexWrap: 'wrap',
-                          gap: '8px',
-                        }}>
-                          <span style={{
-                            fontSize: 'var(--text-sm)',
-                            fontWeight: 600,
-                            color: 'var(--text-primary)',
-                          }}>
-                            {event.actor}
-                          </span>
-                          <span style={{
-                            fontSize: 'var(--text-xs)',
-                            color: 'var(--text-tertiary)',
-                          }}>
-                            {event.timestamp}
-                          </span>
-                        </div>
-                        <p style={{
-                          fontSize: 'var(--text-sm)',
-                          color: 'var(--text-secondary)',
-                          margin: '0 0 8px 0',
-                        }}>
-                          {event.action}
-                        </p>
-                        {(event.ipAddress || event.device) && (
-                          <div style={{
-                            display: 'flex',
-                            gap: '16px',
-                            fontSize: 'var(--text-xs)',
-                            color: 'var(--text-tertiary)',
-                          }}>
-                            {event.ipAddress && <span>IP: {event.ipAddress}</span>}
-                            {event.device && <span>Device: {event.device}</span>}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Review Tab */}
-          {activeTab === 'review' && (
-            <Card>
-              <CardContent style={{
-                padding: '60px 40px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '20px',
-                textAlign: 'center',
-              }}>
-                <div style={{
-                  display: 'flex',
-                  gap: '12px',
-                  padding: '16px 20px',
-                  background: '#005cb610',
-                  border: '1px solid #005cb6',
-                  borderRadius: 'var(--radius-md)',
-                  color: '#005cb6',
+              {/* ID Input */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <label style={{
                   fontSize: 'var(--text-sm)',
-                  maxWidth: '600px',
+                  fontWeight: 600,
+                  color: 'var(--text-secondary)',
                 }}>
-                  <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
-                  <p style={{ margin: 0, textAlign: 'left' }}>
-                    Chứng cứ này đang trong quá trình xét duyệt. Vui lòng truy cập trang Review Detail để thực hiện xét duyệt.
-                  </p>
+                  Mã ID
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <Hash 
+                    size={16} 
+                    style={{ 
+                      position: 'absolute', 
+                      left: '12px', 
+                      top: '50%', 
+                      transform: 'translateY(-50%)',
+                      color: 'var(--text-tertiary)',
+                    }} 
+                  />
+                  <input
+                    type="text"
+                    value={newLink.id}
+                    onChange={(e) => setNewLink({ ...newLink, id: e.target.value })}
+                    placeholder="VD: CASE-2026-048"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px 10px 40px',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-md)',
+                      fontSize: 'var(--text-sm)',
+                      color: 'var(--text-primary)',
+                      background: 'var(--background)',
+                    }}
+                  />
                 </div>
-                <Button onClick={() => navigate(`/evidence/review/${evidenceData.id}`)}>
-                  <ShieldCheck size={16} />
-                  Đi tới Review Detail
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+              </div>
+
+              {/* Name Input */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <label style={{
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 600,
+                  color: 'var(--text-secondary)',
+                }}>
+                  Tên mô tả
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <FileText 
+                    size={16} 
+                    style={{ 
+                      position: 'absolute', 
+                      left: '12px', 
+                      top: '50%', 
+                      transform: 'translateY(-50%)',
+                      color: 'var(--text-tertiary)',
+                    }} 
+                  />
+                  <input
+                    type="text"
+                    value={newLink.name}
+                    onChange={(e) => setNewLink({ ...newLink, name: e.target.value })}
+                    placeholder="VD: Vi phạm ATTP tại Quận 1"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px 10px 40px',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-md)',
+                      fontSize: 'var(--text-sm)',
+                      color: 'var(--text-primary)',
+                      background: 'var(--background)',
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '12px', marginTop: '32px', justifyContent: 'flex-end' }}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsAddLinkModalOpen(false);
+                  setNewLink({ type: 'lead', id: '', name: '' });
+                }}
+              >
+                Hủy
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!newLink.id.trim() || !newLink.name.trim()) {
+                    toast.error('Vui lòng nhập đầy đủ thông tin');
+                    return;
+                  }
+                  setLinkedEntities([...linkedEntities, { ...newLink }]);
+                  setNewLink({ type: 'lead', id: '', name: '' });
+                  setIsAddLinkModalOpen(false);
+                  toast.success('Liên kết đã được thêm');
+                }}
+              >
+                <LinkIcon size={14} />
+                Thêm liên kết
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Building2, FileText, TrendingUp, Calendar, ClipboardCheck, FolderOpen, X, Clock, AlertTriangle, FileSearch, MapPin } from 'lucide-react';
+import { Search, Building2, FileText, TrendingUp, Calendar, ClipboardCheck, FolderOpen, X, Clock, AlertTriangle, FileSearch } from 'lucide-react';
 import { 
   searchAllData, 
   getRecentSearches, 
@@ -131,27 +131,8 @@ export function GlobalSearch() {
   const handleSearch = () => {
     if (searchQuery.trim()) {
       console.log('Search for all results:', searchQuery);
-      
-      // 🔥 NEW: Check if current page is MapPage
-      const isOnMapPage = window.location.pathname === '/map';
-      
-      if (isOnMapPage) {
-        // 🔥 Update MapPage search via URL params
-        const url = new URL(window.location.href);
-        url.searchParams.set('q', searchQuery);
-        window.history.pushState({}, '', url.toString());
-        
-        // 🔥 Dispatch custom event for MapPage to listen
-        window.dispatchEvent(new CustomEvent('globalSearchUpdate', { 
-          detail: { query: searchQuery } 
-        }));
-        
-        console.log('🔍 GlobalSearch: Updated MapPage search query:', searchQuery);
-      } else {
-        // Navigate to MapPage with search query
-        window.location.href = `/map?q=${encodeURIComponent(searchQuery)}`;
-      }
-      
+      // TODO: Navigate to search results page with query
+      // window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
       setIsOpen(false);
     }
   };
@@ -244,21 +225,6 @@ export function GlobalSearch() {
                 Thử tìm kiếm theo các danh mục sau:
               </div>
               <div className={styles.categoryList}>
-                {/* 🔥 NEW: Search on Map shortcut */}
-                <button 
-                  className={styles.categoryItem} 
-                  onClick={() => {
-                    window.location.href = `/map?q=${encodeURIComponent(searchQuery)}`;
-                  }}
-                  style={{
-                    backgroundColor: 'var(--color-primary)',
-                    color: 'white',
-                    fontWeight: '500'
-                  }}
-                >
-                  <MapPin size={14} />
-                  <span>Tìm trên bản đồ</span>
-                </button>
                 <button className={styles.categoryItem} onClick={() => setIsOpen(false)}>
                   <TrendingUp size={14} />
                   <span>Nguồn tin / Rủi ro</span>

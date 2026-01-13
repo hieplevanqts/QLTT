@@ -73,11 +73,13 @@ export default function EvidenceReviewQueuePage() {
     // Search filter
     if (filters.search.trim()) {
       const searchLower = filters.search.toLowerCase();
-      result = result.filter(item => 
-        item.evidenceId.toLowerCase().includes(searchLower) ||
-        item.file.filename.toLowerCase().includes(searchLower) ||
-        item.submitter.userId.toLowerCase().includes(searchLower) ||
-        item.notes?.toLowerCase().includes(searchLower)
+      result = result.filter(item => {
+        const firstFilename = item.files?.[0]?.filename || '';
+        return item.evidenceId.toLowerCase().includes(searchLower) ||
+          firstFilename.toLowerCase().includes(searchLower) ||
+          item.submitter.userId.toLowerCase().includes(searchLower) ||
+          item.notes?.toLowerCase().includes(searchLower);
+      }
       );
     }
 
@@ -525,7 +527,7 @@ export default function EvidenceReviewQueuePage() {
                             {getFileIcon(item.type)}
                           </div>
                           <div className={styles.fileDetails}>
-                            <div className={styles.fileName}>{item.file.filename}</div>
+                            <div className={styles.fileName}>{item.files?.[0]?.filename || 'Chưa có file'}</div>
                             <div className={styles.fileMeta}>
                               <span className={styles.fileType}>{getTypeLabel(item.type)}</span>
                               <span className={styles.fileSeparator}>•</span>

@@ -24,9 +24,10 @@ import {
 export function generateMockEvidenceItems(count: number = 50): EvidenceItem[] {
   const items: EvidenceItem[] = [];
 
-  // Evidence 1: Photo - Approved
-  items.push(createEvidenceItem({
+  // Evidence 1: Photo - Approved - MULTIPLE FILES EXAMPLE
+  const evidence1 = createEvidenceItem({
     evidenceId: 'EVD-2026-1250',
+    evidenceName: 'Vi phạm vệ sinh tại nhà hàng Quận 1',
     type: 'PHOTO',
     status: 'Approved',
     scope: {
@@ -77,11 +78,42 @@ export function generateMockEvidenceItems(count: number = 50): EvidenceItem[] {
     updatedAt: '2026-01-10T14:30:00Z',
     notes: 'Vi phạm vệ sinh tại bếp chế biến, phát hiện côn trùng trong khu vực lưu trữ thực phẩm',
     tags: ['food-safety', 'inspection', 'violation'],
-  }));
+  });
+  
+  // Add 2 more files to evidence 1 (multiple files example)
+  evidence1.files.push(
+    {
+      storageKey: 'evidence/EVD-2026-1250-2.jpg',
+      filename: 'vi_pham_ve_sinh_close_up.jpg',
+      mimeType: 'image/jpeg',
+      sizeBytes: 1834500
+    },
+    {
+      storageKey: 'evidence/EVD-2026-1250-3.jpg',
+      filename: 'khu_vuc_luu_tru.jpg',
+      mimeType: 'image/jpeg',
+      sizeBytes: 2156700
+    },
+    {
+      storageKey: 'evidence/EVD-2026-1250-4.jpg',
+      filename: 'thiet_bi_bep_ban.jpg',
+      mimeType: 'image/jpeg',
+      sizeBytes: 2892100
+    },
+    {
+      storageKey: 'evidence/EVD-2026-1250-5.jpg',
+      filename: 'khu_vuc_che_bien.jpg',
+      mimeType: 'image/jpeg',
+      sizeBytes: 3124800
+    }
+  );
+  
+  items.push(evidence1);
 
   // Evidence 2: Video - InReview
-  items.push(createEvidenceItem({
+  const evidence2 = createEvidenceItem({
     evidenceId: 'EVD-2026-1251',
+    evidenceName: 'Quy trình chế biến thực phẩm tại nhà hàng Quận 3',
     type: 'VIDEO',
     status: 'InReview',
     scope: {
@@ -129,11 +161,14 @@ export function generateMockEvidenceItems(count: number = 50): EvidenceItem[] {
     updatedAt: '2026-01-11T10:45:00Z',
     notes: 'Video ghi lại quy trình chế biến món ăn tại nhà hàng',
     tags: ['food-handling', 'inspection'],
-  }));
+  });
+
+  items.push(evidence2);
 
   // Evidence 3: PDF - Sealed
   items.push(createEvidenceItem({
     evidenceId: 'EVD-2026-1252',
+    evidenceName: 'Giấy phép kinh doanh thực phẩm hết hạn',
     type: 'PDF',
     status: 'Sealed',
     scope: {
@@ -188,8 +223,9 @@ export function generateMockEvidenceItems(count: number = 50): EvidenceItem[] {
   }));
 
   // Evidence 4: Photo - Submitted
-  items.push(createEvidenceItem({
+  const evidence4 = createEvidenceItem({
     evidenceId: 'EVD-2026-1253',
+    evidenceName: 'Mẫu thực phẩm nghi ngờ nhiễm khuẩn',
     type: 'PHOTO',
     status: 'Submitted',
     scope: {
@@ -234,11 +270,30 @@ export function generateMockEvidenceItems(count: number = 50): EvidenceItem[] {
     updatedAt: '2026-01-12T11:30:00Z',
     notes: 'Mẫu thực phẩm nghi ngờ bị nhiễm khuẩn',
     tags: ['food-sample', 'contamination'],
-  }));
+  });
+  
+  // Add more image files to evidence 4
+  evidence4.files.push(
+    {
+      storageKey: 'evidence/EVD-2026-1253-2.jpg',
+      filename: 'food_sample_microscope.jpg',
+      mimeType: 'image/jpeg',
+      sizeBytes: 2345678
+    },
+    {
+      storageKey: 'evidence/EVD-2026-1253-3.jpg',
+      filename: 'package_label.jpg',
+      mimeType: 'image/jpeg',
+      sizeBytes: 1234567
+    }
+  );
+  
+  items.push(evidence4);
 
   // Evidence 5: DOC - Draft
   items.push(createEvidenceItem({
     evidenceId: 'EVD-2026-1254',
+    evidenceName: 'Báo cáo sơ bộ kết quả thanh tra',
     type: 'DOC',
     status: 'Draft',
     scope: {
@@ -280,6 +335,7 @@ export function generateMockEvidenceItems(count: number = 50): EvidenceItem[] {
   // Evidence 6: AUDIO - Approved
   items.push(createEvidenceItem({
     evidenceId: 'EVD-2026-1255',
+    evidenceName: 'Phỏng vấn chủ nhà hàng về vi phạm ATVSTP',
     type: 'AUDIO',
     status: 'Approved',
     scope: {
@@ -358,6 +414,30 @@ export function generateMockEvidenceItems(count: number = 50): EvidenceItem[] {
   const sensitivityLabels: SensitivityLabel[] = ['Public', 'Internal', 'Restricted', 'Secret-lite'];
 
   const entityTypes: Array<'LEAD' | 'RISK' | 'TASK' | 'STORE'> = ['LEAD', 'RISK', 'TASK', 'STORE'];
+
+  // Evidence name templates for realistic data
+  const evidenceNameTemplates = [
+    'Vi phạm vệ sinh an toàn thực phẩm',
+    'Kiểm tra nguồn gốc xuất xứ hàng hóa',
+    'Phát hiện thực phẩm không rõ nguồn gốc',
+    'Giấy chứng nhận kinh doanh hết hạn',
+    'Báo cáo thanh tra định kỳ',
+    'Không gian bếp không đảm bảo vệ sinh',
+    'Nhân viên không có giấy khám sức khỏe',
+    'Thực phẩm quá hạn sử dụng',
+    'Vi phạm quy định bảo quản thực phẩm',
+    'Hồ sơ chứng từ không đầy đủ',
+    'Phát hiện côn trùng trong khu vực chế biến',
+    'Thiết bị chế biến không đảm bảo',
+    'Ghi nhận quy trình chế biến món ăn',
+    'Phỏng vấn chủ cơ sở kinh doanh',
+    'Mẫu thực phẩm gửi kiểm nghiệm',
+    'Biên bản vi phạm hành chính',
+    'Cam kết khắc phục vi phạm',
+    'Ảnh hiện trường kiểm tra',
+    'Tài liệu hướng dẫn an toàn thực phẩm',
+    'Báo cáo kết quả kiểm nghiệm mẫu'
+  ];
 
   for (let i = 0; i < 44; i++) {
     const evidenceId = `EVD-2026-${1256 + i}`;
@@ -479,6 +559,23 @@ export function generateMockEvidenceItems(count: number = 50): EvidenceItem[] {
       notes: `Evidence ${i + 1} - ${type} from ${province.name}`,
       tags: [`tag-${i % 5}`, type.toLowerCase()],
     });
+    
+    // Add multiple image files for PHOTO evidence
+    if (type === 'PHOTO') {
+      const additionalFileCount = 2 + (i % 4); // 2-5 additional files
+      for (let f = 0; f < additionalFileCount; f++) {
+        evidence.files.push({
+          storageKey: `evidence/${evidenceId}-${f + 2}.jpg`,
+          filename: `evidence_${i + 1}_${f + 2}.jpg`,
+          mimeType: 'image/jpeg',
+          sizeBytes: 1000000 + Math.floor(Math.random() * 3000000)
+        });
+      }
+    }
+
+    // Assign a random evidence name template
+    const evidenceNameIndex = i % evidenceNameTemplates.length;
+    evidence.evidenceName = evidenceNameTemplates[evidenceNameIndex];
 
     items.push(evidence);
   }
