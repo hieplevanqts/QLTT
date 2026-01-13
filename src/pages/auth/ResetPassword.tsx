@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PasswordInput } from '../../ui-kit/PasswordInput/PasswordInput';
 import { Button } from '../../app/components/ui/button';
-import mappaLogo from 'figma:asset/79505e63e97894ec2d06837c57cf53a19680f611.png';
+import mappaLogo from '../../assets/79505e63e97894ec2d06837c57cf53a19680f611.png';
 import styles from './Login.module.css';
 
 export default function ResetPassword() {

@@ -89,20 +89,18 @@ type SubTab = string;
 
 interface User {
   id: string;
-  username: string;
-  fullName: string;
-  email: string;
-  phone: string;
-  role: string;
-  roleId: string;
-  unit: string;
-  unitId: string;
-  territory: string;
-  territoryId: string;
-  status: 'active' | 'locked' | 'pending';
-  lastLogin?: string;
-  createdAt: string;
-  createdBy: string;
+  username?: string;
+  full_name: string;
+  email?: string;
+  phone?: string;
+  avatar_url?: string;
+  status: number; // 1 = active, 0 = inactive (matches database schema)
+  created_at: string;
+  updated_at: string;
+  lastLoginAt?: string; // camelCase as per schema
+  role?: string; // varchar(20), default 'VIEWER'
+  departmentId?: string; // uuid, nullable
+  avatarUrl?: string; // text, nullable (also exists in schema)
 }
 
 interface Role {

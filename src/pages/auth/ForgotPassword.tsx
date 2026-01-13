@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Phone, Mail, ArrowLeft } from 'lucide-react';
 import { Input } from '../../ui-kit/Input/Input';
 import { Button } from '../../app/components/ui/button';
-import mappaLogo from 'figma:asset/79505e63e97894ec2d06837c57cf53a19680f611.png';
+import mappaLogo from '../../assets/79505e63e97894ec2d06837c57cf53a19680f611.png';
 import styles from './Login.module.css';
 import resetStyles from './ForgotPassword.module.css';
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Plus,
   Download,
@@ -40,7 +40,8 @@ import { EditStoreDialog } from '../ui-kit/EditStoreDialog';
 import { ImportDialog } from '../ui-kit/ImportDialog';
 import { ExportDialog, ExportOptions } from '../ui-kit/ExportDialog';
 import { AddStoreDialog, NewStoreData } from '../ui-kit/AddStoreDialog';
-import { mockStores, Store } from '../data/mockStores';
+import { Store } from '../data/mockStores';
+import { fetchMapPoints } from '../utils/api/mapPointsApi';
 import styles from './StoresListPage.module.css';
 
 export default function StoresListPage() {
@@ -48,6 +49,8 @@ export default function StoresListPage() {
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [selectedTab, setSelectedTab] = useState<string>('overview'); // Track which tab to open
   const [searchValue, setSearchValue] = useState('');
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [dataError, setDataError] = useState<string | null>(null);
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   
@@ -89,8 +92,46 @@ export default function StoresListPage() {
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
 
-  // Data state (mock - in production this would be from API)
-  const [stores, setStores] = useState<Store[]>(mockStores);
+  // Data state - fetch from Postgres table map_points
+  const [stores, setStores] = useState<Store[]>([]);
+
+  // Fetch data from API on mount
+  useEffect(() => {
+    const loadStores = async () => {
+      try {
+        console.log('📋 StoresListPage: Fetching stores from Postgres...');
+        setIsLoadingData(true);
+        setDataError(null);
+        
+        const data = await fetchMapPoints();
+        
+        // Map Restaurant type to Store type
+        const mappedStores: Store[] = data.map((restaurant: any, index: number) => ({
+          id: restaurant.id ? (typeof restaurant.id === 'string' ? index + 1 : restaurant.id) : index + 1,
+          name: restaurant.name || 'Unknown',
+          address: restaurant.address || 'No address',
+          type: restaurant.type || 'Restaurant',
+          status: (restaurant.status || 'active') as FacilityStatus,
+          riskLevel: (['high', 'medium', 'low'].includes(restaurant.category) 
+            ? restaurant.category 
+            : 'none') as 'low' | 'medium' | 'high' | 'none',
+          lastInspection: restaurant.lastInspection || 'Chưa kiểm tra',
+          jurisdiction: restaurant.district || restaurant.province || 'Unknown',
+          managementUnit: restaurant.ward || 'Unknown'
+        }));
+        
+        console.log(`✅ StoresListPage: Successfully loaded ${mappedStores.length} stores`);
+        setStores(mappedStores);
+      } catch (error: any) {
+        console.error('❌ StoresListPage: Failed to fetch stores:', error);
+        setDataError(error.message || 'Không thể tải dữ liệu cơ sở');
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+    
+    loadStores();
+  }, []);
 
   // Action handlers
   const handleEdit = (store: Store) => {
@@ -216,7 +257,7 @@ export default function StoresListPage() {
     }
 
     return filtered;
-  }, [jurisdictionFilter, statusFilter, searchValue, activeFilter]);
+  }, [stores, jurisdictionFilter, statusFilter, searchValue, activeFilter]);
 
   const paginatedData = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
@@ -375,9 +416,99 @@ export default function StoresListPage() {
   };
 
   // Reset to page 1 when filters change
-  React.useEffect(() => {
+  useEffect(() => {
     setCurrentPage(1);
   }, [jurisdictionFilter, statusFilter, searchValue, activeFilter]);
+
+  // Loading state
+  if (isLoadingData) {
+    return (
+      <div className={styles.pageContainer}>
+        <PageHeader
+          breadcrumbs={[
+            { label: 'Trang chủ', href: '/' },
+            { label: 'Cơ sở & Địa bàn' }
+          ]}
+          title="Cơ sở & Địa bàn"
+        />
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '400px',
+          color: 'var(--color-text-secondary)',
+          fontFamily: 'var(--font-family-base)',
+          fontSize: 'var(--font-size-base)'
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              border: '4px solid var(--color-border)',
+              borderTop: '4px solid var(--color-primary)',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto var(--spacing-4)'
+            }} />
+            <div>Đang tải dữ liệu cơ sở...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (dataError) {
+    return (
+      <div className={styles.pageContainer}>
+        <PageHeader
+          breadcrumbs={[
+            { label: 'Trang chủ', href: '/' },
+            { label: 'Cơ sở & Địa bàn' }
+          ]}
+          title="Cơ sở & Địa bàn"
+        />
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '400px',
+          padding: 'var(--spacing-6)'
+        }}>
+          <div style={{
+            maxWidth: '500px',
+            padding: 'var(--spacing-6)',
+            backgroundColor: 'var(--color-surface)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--color-border)',
+            textAlign: 'center',
+            fontFamily: 'var(--font-family-base)'
+          }}>
+            <div style={{ fontSize: '48px', marginBottom: 'var(--spacing-4)' }}>⚠️</div>
+            <h3 style={{
+              fontSize: 'var(--font-size-lg)',
+              fontWeight: '600',
+              marginBottom: 'var(--spacing-3)',
+              color: 'var(--color-text)'
+            }}>
+              Không thể tải dữ liệu
+            </h3>
+            <p style={{
+              fontSize: 'var(--font-size-sm)',
+              color: 'var(--color-text-secondary)',
+              marginBottom: 'var(--spacing-5)',
+              lineHeight: 1.6
+            }}>
+              {dataError}
+            </p>
+            <Button onClick={() => window.location.reload()}>
+              Thử lại
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.pageContainer}>

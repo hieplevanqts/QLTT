@@ -15,7 +15,7 @@
 
 .authRight {
   flex: 1;
-  background: linear-gradient(135deg, #005cb6 0%, #0077d4 50%, #00a3e0 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 85%, white) 50%, color-mix(in srgb, var(--primary) 70%, white) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -248,7 +248,7 @@
   font-family: 'Inter', sans-serif;
   font-size: 24px;
   font-weight: 700;
-  color: #005cb6;
+  color: var(--primary);
 }
 
 .authTitle {
@@ -280,7 +280,7 @@
 .toggleLink {
   font-family: 'Inter', sans-serif;
   font-size: 14px;
-  color: #005cb6;
+  color: var(--primary);
   text-decoration: none;
   font-weight: 500;
   cursor: pointer;
@@ -311,7 +311,7 @@
   border: 1.5px solid var(--border);
   border-radius: 4px;
   cursor: pointer;
-  accent-color: #005cb6;
+  accent-color: var(--primary);
 }
 
 .checkboxLabel {
@@ -325,7 +325,7 @@
 .forgotPassword {
   font-family: 'Inter', sans-serif;
   font-size: 14px;
-  color: #005cb6;
+  color: var(--primary);
   text-decoration: none;
   font-weight: 500;
 }
@@ -347,7 +347,7 @@
 }
 
 .helpLink {
-  color: #005cb6;
+  color: var(--primary);
   text-decoration: none;
   font-weight: 500;
 }

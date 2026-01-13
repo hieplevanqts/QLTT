@@ -25,19 +25,19 @@
 }
 
 .error403 {
-  background: linear-gradient(135deg, #F79009 0%, #FDB022 100%);
+  background: linear-gradient(135deg, var(--chart-5) 0%, color-mix(in srgb, var(--chart-5) 85%, white) 100%);
 }
 
 .error404 {
-  background: linear-gradient(135deg, #7F56D9 0%, #9E77ED 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 90%, purple) 0%, color-mix(in srgb, var(--primary) 75%, purple) 100%);
 }
 
 .error500 {
-  background: linear-gradient(135deg, #D92D20 0%, #F04438 100%);
+  background: linear-gradient(135deg, var(--destructive) 0%, color-mix(in srgb, var(--destructive) 85%, white) 100%);
 }
 
 .errorMaintenance {
-  background: linear-gradient(135deg, #12B76A 0%, #0FCA7A 100%);
+  background: linear-gradient(135deg, var(--chart-4) 0%, color-mix(in srgb, var(--chart-4) 90%, white) 100%);
 }
 
 .errorCode {

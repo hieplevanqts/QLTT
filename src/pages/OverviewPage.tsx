@@ -11,7 +11,6 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import PageHeader from '../layouts/PageHeader';
-import FilterBar from '../patterns/FilterBar';
 import OperationalContext from '../patterns/OperationalContext';
 import { Button } from '../app/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../app/components/ui/card';
@@ -124,12 +123,6 @@ export default function OverviewPage() {
           unit="Chi cục QLTT Quận 1"
           jurisdiction="Quận 1, TP. Hồ Chí Minh"
           onEdit={() => window.location.href = '/auth/select-jurisdiction'}
-        />
-
-        {/* Filter Bar with 4 controls */}
-        <FilterBar
-          onFilterChange={(filters) => console.log('Filters changed:', filters)}
-          onReset={() => console.log('Filters reset')}
         />
       </div>
 

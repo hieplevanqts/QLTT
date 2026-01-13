@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import { Button } from '../../app/components/ui/button';
 import { Card, CardContent, CardHeader } from '../../ui-kit/Card/Card';
-import mappaLogo from 'figma:asset/79505e63e97894ec2d06837c57cf53a19680f611.png';
+import mappaLogo from '../../assets/79505e63e97894ec2d06837c57cf53a19680f611.png';
 import styles from './Login.module.css';
 import selectStyles from './SelectJurisdiction.module.css';
 

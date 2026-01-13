@@ -4,8 +4,8 @@ import { Phone, Mail } from 'lucide-react';
 import { Input } from '../../ui-kit/Input/Input';
 import { PasswordInput } from '../../ui-kit/PasswordInput/PasswordInput';
 import { Button } from '../../app/components/ui/button';
-import mappaLogo from 'figma:asset/79505e63e97894ec2d06837c57cf53a19680f611.png';
-import dashboardMockup from 'figma:asset/2b1097cb77fa180f7d977d1131a32542b655ede2.png';
+import mappaLogo from '../../assets/79505e63e97894ec2d06837c57cf53a19680f611.png';
+import dashboardMockup from '../../assets/2b1097cb77fa180f7d977d1131a32542b655ede2.png';
 import styles from './Login.module.css';
 
 export default function Login() {
