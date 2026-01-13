@@ -8,8 +8,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
 
-// Debug logging
-console.log('🔧 Supabase Client Initialization:');
+// Debug log for initialization
+console.debug('🔧 Initializing Supabase Client...');
 console.log('  projectId:', projectId);
 console.log('  publicAnonKey exists:', !!publicAnonKey);
 console.log('  publicAnonKey length:', publicAnonKey?.length);
