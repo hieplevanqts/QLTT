@@ -14,6 +14,7 @@ export type FacilityStatus =
   | 'active'            // Đang hoạt động
   | 'underInspection'   // Đang xử lý kiểm tra
   | 'suspended'         // Tạm ngưng hoạt động
+  | 'rejected'          // Từ chối phê duyệt
   | 'closed';           // Ngừng hoạt động
 
 interface StatusConfig {
@@ -47,6 +48,12 @@ const statusConfig: Record<FacilityStatus, StatusConfig> = {
     icon: CirclePause,
     variant: 'suspended',
     allowedActions: ['view', 'resume', 'close'],
+  },
+  rejected: {
+    label: 'Từ chối phê duyệt',
+    icon: CircleX,
+    variant: 'rejected',
+    allowedActions: ['verify', 'edit', 'delete'],
   },
   closed: {
     label: 'Ngừng hoạt động',

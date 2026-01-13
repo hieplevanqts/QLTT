@@ -1,0 +1,355 @@
+/* ===== EMPTY STATE ===== */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-12) var(--spacing-6);
+  text-align: center;
+}
+
+.emptyIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  margin-bottom: var(--spacing-4);
+  background: var(--muted);
+  border-radius: var(--radius-lg);
+  color: var(--text-tertiary);
+}
+
+.emptyTitle {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-2);
+}
+
+.emptyText {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  max-width: 400px;
+}
+
+/* ===== TIMELINE CONTAINER ===== */
+.timeline {
+  padding: var(--spacing-2) 0;
+}
+
+.timelineList {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== TIMELINE ITEM ===== */
+.timelineItem {
+  display: flex;
+  gap: var(--spacing-4);
+  position: relative;
+}
+
+.timelineItem:not(:last-child) {
+  margin-bottom: var(--spacing-6);
+}
+
+/* Highlight first (newest) item */
+.timelineItemFirst .inspectionCard {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary), var(--shadow-sm);
+}
+
+/* ===== TIMELINE CONNECTOR (Icon + Line) ===== */
+.timelineConnector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  padding-top: 4px;
+}
+
+.timelineIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--card);
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+  z-index: 2;
+  transition: all 0.2s ease;
+}
+
+.timelineItem:hover .timelineIconWrapper {
+  transform: scale(1.1);
+  box-shadow: 0 0 0 4px var(--muted);
+}
+
+.timelineLine {
+  width: 2px;
+  flex: 1;
+  min-height: 70px;
+  background: var(--border);
+  margin-top: var(--spacing-2);
+}
+
+/* ===== TIMELINE CONTENT ===== */
+.timelineContent {
+  flex: 1;
+  padding-bottom: var(--spacing-1);
+}
+
+.inspectionCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-5); /* 20px padding as required */
+  transition: all 0.2s ease;
+}
+
+.inspectionCard:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
+}
+
+/* ===== INSPECTION HEADER ===== */
+.inspectionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+  margin-bottom: var(--spacing-4);
+}
+
+.inspectionMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.inspectionType {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-1) 0;
+  line-height: 1.4;
+}
+
+.inspectionDate {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ===== STATUS BADGE ===== */
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-1) var(--spacing-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ===== INSPECTION DETAILS ===== */
+.inspectionDetails {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-4);
+}
+
+.detailRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--text-sm);
+}
+
+.detailIcon {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.detailLabel {
+  color: var(--text-secondary);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.detailValue {
+  color: var(--text-primary);
+  font-weight: 400;
+}
+
+/* ===== VIOLATION BADGE (Warning highlight) ===== */
+.violationRow {
+  margin-top: var(--spacing-1);
+}
+
+.violationBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--warning);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.violationBadge strong {
+  font-weight: 700;
+}
+
+/* ===== NOTES SECTION ===== */
+.notesSection {
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--border);
+}
+
+.notesLabel {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-2);
+}
+
+.notesText {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+/* ===== LOADING SKELETON ===== */
+.skeleton {
+  pointer-events: none;
+}
+
+.timelineIconWrapper.skeleton {
+  background: var(--muted);
+  border-color: var(--border);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeletonCircle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.inspectionCard.skeleton {
+  border-color: var(--border);
+}
+
+.skeletonHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+  margin-bottom: var(--spacing-4);
+}
+
+.skeletonTitle {
+  height: 20px;
+  width: 200px;
+  background: var(--muted);
+  border-radius: var(--radius-sm);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeletonBadge {
+  height: 24px;
+  width: 80px;
+  background: var(--muted);
+  border-radius: var(--radius-sm);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeletonLine {
+  height: 14px;
+  background: var(--muted);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--spacing-2);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeletonLineShort {
+  height: 14px;
+  width: 70%;
+  background: var(--muted);
+  border-radius: var(--radius-sm);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 640px) {
+  .timelineConnector {
+    gap: var(--spacing-2);
+  }
+
+  .timelineIconWrapper {
+    width: 36px;
+    height: 36px;
+  }
+
+  .timelineIconWrapper svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .inspectionCard {
+    padding: var(--spacing-4); /* 16px on mobile */
+  }
+
+  .inspectionHeader {
+    flex-direction: column;
+    gap: var(--spacing-2);
+    align-items: flex-start;
+  }
+
+  .statusBadge {
+    align-self: flex-start;
+  }
+
+  .detailRow {
+    flex-wrap: wrap;
+  }
+
+  .emptyState {
+    padding: var(--spacing-8) var(--spacing-4);
+  }
+}
+
+/* ===== DARK MODE ===== */
+@media (prefers-color-scheme: dark) {
+  .timelineIconWrapper {
+    background: var(--card);
+    border-color: var(--border);
+  }
+
+  .emptyIcon {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .violationBadge {
+    background: var(--warning-bg);
+    color: var(--warning-text);
+  }
+}

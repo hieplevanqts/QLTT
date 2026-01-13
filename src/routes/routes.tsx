@@ -4,6 +4,7 @@ import MainLayout from '../layouts/MainLayout';
 import OverviewPage from '../pages/OverviewPage';
 import MapPage from '../pages/MapPage';
 import StoresListPage from '../pages/StoresListPage';
+import StoreDetailPage from '../pages/StoreDetailPage';
 import DataExportPage from '../pages/DataExportPage';
 import LeadsPage from '../pages/LeadsPage';
 import PlansPage from '../pages/PlansPage';
@@ -61,6 +62,10 @@ export const router = createBrowserRouter([
           {
             path: 'stores',
             element: <StoresListPage />,
+          },
+          {
+            path: 'stores/:id',
+            element: <StoreDetailPage />,
           },
           {
             path: 'data-export',

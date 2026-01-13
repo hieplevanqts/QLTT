@@ -88,6 +88,18 @@ export const CommonActions = {
     onClick,
     priority: 5,
   }),
+  viewViolations: (onClick: () => void): Action => ({
+    label: 'Vi phạm & xử lý',
+    icon: <TriangleAlert size={16} />,
+    onClick,
+    priority: 6,
+  }),
+  viewLegal: (onClick: () => void): Action => ({
+    label: 'Hồ sơ pháp lý',
+    icon: <FileText size={16} />,
+    onClick,
+    priority: 5,
+  }),
   resume: (onClick: () => void): Action => ({
     label: 'Kích hoạt lại',
     icon: <CirclePlay size={16} />,

@@ -1,0 +1,156 @@
+/* Legal Document Item Styles */
+
+.documentItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+  padding: var(--spacing-5) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+  background: white !important;
+  cursor: pointer;
+}
+
+.documentItem:hover {
+  background: var(--muted) !important;
+  border-color: var(--foreground) !important;
+}
+
+/* Missing status - not clickable */
+.documentItemMissing {
+  cursor: default;
+}
+
+.documentItemMissing:hover {
+  background: white !important;
+  border-color: var(--border) !important;
+}
+
+/* Icon */
+.documentIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.iconValid {
+  background: rgba(168, 85, 247, 0.1); /* Purple light background */
+  color: rgba(168, 85, 247, 1); /* Purple */
+}
+
+.iconExpiring {
+  background: rgba(249, 115, 22, 0.1); /* Orange light background */
+  color: rgba(249, 115, 22, 1); /* Orange */
+}
+
+.iconMissing {
+  background: var(--muted);
+  color: var(--muted-foreground);
+}
+
+/* Content */
+.documentContent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.documentTitle {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--foreground);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.documentStatus {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+/* Badge variants */
+.badgeValid {
+  background: rgba(168, 85, 247, 0.1); /* Purple light */
+  color: rgba(147, 51, 234, 1); /* Purple dark */
+  border: none;
+}
+
+.badgeExpiring {
+  background: rgba(249, 115, 22, 0.1); /* Orange light */
+  color: rgba(234, 88, 12, 1); /* Orange dark */
+  border: none;
+}
+
+.badgePending {
+  background: rgba(251, 191, 36, 0.1); /* Yellow light */
+  color: rgba(217, 119, 6, 1); /* Yellow dark */
+  border: none;
+}
+
+.badgeApproved {
+  background: rgba(34, 197, 94, 0.1); /* Green light */
+  color: rgba(22, 163, 74, 1); /* Green dark */
+  border: none;
+}
+
+.badgeRejected {
+  background: rgba(239, 68, 68, 0.1); /* Red light */
+  color: rgba(220, 38, 38, 1); /* Red dark */
+  border: none;
+}
+
+/* Action */
+.documentAction {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.chevron {
+  color: var(--muted-foreground);
+  transition: transform 0.2s ease;
+}
+
+.documentItem:hover .chevron {
+  transform: translateX(4px);
+  color: var(--foreground);
+}
+
+.uploadButton {
+  gap: var(--spacing-2);
+  background: rgba(168, 85, 247, 1); /* Purple */
+  color: white;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+}
+
+.uploadButton:hover {
+  background: rgba(147, 51, 234, 1); /* Purple dark */
+}
+
+.editButton {
+  gap: var(--spacing-2);
+  background: white;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  transition: all 0.2s ease;
+}
+
+.editButton:hover {
+  background: var(--muted);
+  border-color: var(--primary);
+  color: var(--primary);
+}

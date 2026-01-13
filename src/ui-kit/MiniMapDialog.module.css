@@ -1,0 +1,107 @@
+/* Dialog Content */
+.dialogContent {
+  max-width: 800px;
+  width: 90vw;
+  padding: 0;
+  gap: 0;
+}
+
+/* Header */
+.dialogHeader {
+  padding: var(--spacing-6);
+  border-bottom: 1px solid var(--border);
+}
+
+.headerContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--spacing-4);
+}
+
+.title {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  padding-right: var(--spacing-4);
+}
+
+.description {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-top: var(--spacing-2);
+  padding-right: var(--spacing-4);
+}
+
+.closeButton {
+  flex-shrink: 0;
+}
+
+/* Map Container */
+.mapContainer {
+  width: 100%;
+  height: 500px;
+  position: relative;
+  background: var(--muted);
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Footer */
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-6);
+  border-top: 1px solid var(--border);
+  gap: var(--spacing-4);
+}
+
+.coordinates {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.coordLabel {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.coordValue {
+  font-family: 'Inter', monospace;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dialogContent {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .mapContainer {
+    height: calc(100vh - 200px);
+  }
+
+  .footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .footer button {
+    width: 100%;
+  }
+}

@@ -466,3 +466,44 @@ export function getDistrictsByProvince(provinceName: string): District[] {
 export function getWardsByDistrict(districtName: string): Ward[] {
   return wards[districtName] || [];
 }
+
+export function getWardsByProvince(provinceName: string): Ward[] {
+  // Get all districts in this province
+  const provinceDistricts = getDistrictsByProvince(provinceName);
+  const districtNames = provinceDistricts.map(d => d.name);
+  
+  // Get all wards in those districts
+  const allWards: Ward[] = [];
+  districtNames.forEach(districtName => {
+    const districtWards = wards[districtName] || [];
+    allWards.push(...districtWards);
+  });
+  
+  return allWards;
+}
+
+// Helper functions for code-based lookups (from phuc)
+export const getProvinceByCode = (code: string): Province | undefined => {
+  // Note: Current implementation uses name-based keys, not codes
+  // This function may need adjustment based on actual data structure
+  return undefined; // Placeholder - needs implementation based on actual data
+};
+
+export const getDistrictByName = (name: string, provinceCode: string): District | undefined => {
+  // Find district by name within a province
+  for (const [provinceName, provinceDistricts] of Object.entries(districts)) {
+    const district = provinceDistricts.find(d => d.name === name);
+    if (district) return district;
+  }
+  return undefined;
+};
+
+export const getWardByCode = (code: string): Ward | undefined => {
+  // Note: Current implementation uses name-based keys, not codes
+  // This function may need adjustment based on actual data structure
+  for (const [, wardList] of Object.entries(wards)) {
+    const ward = wardList.find(w => (w as any).code === code);
+    if (ward) return ward;
+  }
+  return undefined;
+};

@@ -1,0 +1,130 @@
+/* Legal Document Dialog Styles */
+
+.dialogContent {
+  max-width: 720px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 16px 0;
+}
+
+/* Image Preview */
+.imagePreview {
+  position: relative;
+  width: 100%;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: 500px;
+}
+
+.previewImage {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  background: white;
+}
+
+.downloadButton {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  z-index: 10;
+  gap: 8px;
+  background: white;
+  border: 1px solid var(--border);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.downloadButton:hover {
+  background: var(--muted);
+}
+
+/* Details Section */
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.detailRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.detailColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detailLabel {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  font-weight: var(--font-weight-medium);
+}
+
+.detailValue {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-base);
+  color: var(--foreground);
+}
+
+/* Badge styles */
+.badgeValid {
+  background: rgba(168, 85, 247, 0.1);
+  color: rgba(147, 51, 234, 1);
+  border: none;
+  width: fit-content;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+}
+
+.badgeExpiring {
+  background: rgba(249, 115, 22, 0.1);
+  color: rgba(234, 88, 12, 1);
+  border: none;
+  width: fit-content;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+}
+
+/* Notes Section */
+.notesSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.notesBox {
+  padding: 12px;
+  background: rgba(249, 115, 22, 0.05);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  border-radius: var(--radius-md);
+  color: var(--foreground);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+/* Footer */
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}

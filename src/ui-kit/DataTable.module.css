@@ -1,0 +1,13 @@
+/* Table Wrapper - Enable horizontal scroll */
+.tableWrapper {
+  position: relative;
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+}
+
+/* Force table to use fixed layout for consistent column widths */
+.tableWrapper table {
+  table-layout: fixed;
+  width: 100%;
+}

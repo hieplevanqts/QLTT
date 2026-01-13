@@ -40,6 +40,12 @@
   border: 1px solid color-mix(in srgb, var(--destructive) 30%, transparent);
 }
 
+.rejected {
+  background: color-mix(in srgb, var(--destructive) 10%, transparent);
+  color: var(--destructive); /* Destructive red */
+  border: 1px solid color-mix(in srgb, var(--destructive) 30%, transparent);
+}
+
 .closed {
   background: color-mix(in srgb, var(--muted-foreground) 10%, transparent);
   color: var(--muted-foreground);

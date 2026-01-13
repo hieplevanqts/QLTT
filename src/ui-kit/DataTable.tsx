@@ -10,12 +10,17 @@ import {
 } from '../app/components/ui/table';
 import { Button } from '../app/components/ui/button';
 import { Checkbox } from '../app/components/ui/checkbox';
+import styles from './DataTable.module.css';
 
 export interface Column<T> {
   key: string;
   label: string;
   sortable?: boolean;
   render?: (item: T) => ReactNode;
+  width?: string; // Fixed width (e.g., '140px', '200px')
+  sticky?: 'left' | 'right'; // Sticky position
+  className?: string; // Additional className
+  truncate?: boolean; // Enable text truncation with ellipsis
 }
 
 interface DataTableProps<T> {
@@ -27,6 +32,7 @@ interface DataTableProps<T> {
   onSelectRow?: (id: string | number) => void;
   onSelectAll?: (selected: boolean) => void;
   getRowId?: (item: T) => string | number;
+  getRowClassName?: (item: T) => string;
   sortColumn?: string;
   sortDirection?: 'asc' | 'desc';
   onSort?: (column: string) => void;
@@ -41,14 +47,58 @@ export function DataTableComponent<T>({
   onSelectRow,
   onSelectAll,
   getRowId = (item: any) => item.id,
+  getRowClassName,
   sortColumn,
   sortDirection,
   onSort,
 }: DataTableProps<T>) {
   const allSelected = data.length > 0 && data.every((item) => selectedRows.has(getRowId(item)));
 
+  // Helper to get cell class names
+  const getCellClassName = (column: Column<T>) => {
+    const classes = [column.className || ''];
+    
+    if (column.sticky === 'right') {
+      classes.push(styles.stickyRight);
+    } else if (column.sticky === 'left') {
+      classes.push(styles.stickyLeft);
+    }
+    
+    if (column.truncate) {
+      classes.push(styles.truncate);
+    }
+    
+    return classes.filter(Boolean).join(' ');
+  };
+
+  // Helper to get cell inline styles
+  const getCellStyle = (column: Column<T>): React.CSSProperties => {
+    const style: React.CSSProperties = {};
+    
+    if (column.width) {
+      style.width = column.width;
+      style.minWidth = column.width;
+      style.maxWidth = column.width;
+    }
+    
+    return style;
+  };
+
+  // Helper to render cell content with tooltip for truncated text
+  const renderCellContent = (column: Column<T>, item: T) => {
+    const content = column.render
+      ? column.render(item)
+      : String((item as any)[column.key] ?? '');
+
+    if (column.truncate && typeof content === 'string') {
+      return <span title={content}>{content}</span>;
+    }
+
+    return content;
+  };
+
   return (
-    <div className="rounded-lg overflow-hidden">
+    <div className={styles.tableWrapper}>
       <Table>
         <TableHeader>
           <TableRow>
@@ -61,7 +111,11 @@ export function DataTableComponent<T>({
               </TableHead>
             )}
             {columns.map((column) => (
-              <TableHead key={column.key}>
+              <TableHead 
+                key={column.key} 
+                className={getCellClassName(column)}
+                style={getCellStyle(column)}
+              >
                 {column.sortable && onSort ? (
                   <Button
                     variant="ghost"
@@ -101,11 +155,12 @@ export function DataTableComponent<T>({
             data.map((item, index) => {
               const rowId = getRowId(item);
               const isSelected = selectedRows.has(rowId);
+              const customClassName = getRowClassName ? getRowClassName(item) : '';
 
               return (
                 <TableRow
                   key={rowId}
-                  className={onRowClick ? 'cursor-pointer hover:bg-muted/50' : ''}
+                  className={`${onRowClick ? 'cursor-pointer hover:bg-muted/50' : ''} ${customClassName}`}
                   onClick={() => onRowClick?.(item)}
                 >
                   {selectable && (
@@ -117,10 +172,12 @@ export function DataTableComponent<T>({
                     </TableCell>
                   )}
                   {columns.map((column) => (
-                    <TableCell key={column.key}>
-                      {column.render
-                        ? column.render(item)
-                        : String((item as any)[column.key] ?? '')}
+                    <TableCell 
+                      key={column.key}
+                      className={getCellClassName(column)}
+                      style={getCellStyle(column)}
+                    >
+                      {renderCellContent(column, item)}
                     </TableCell>
                   ))}
                 </TableRow>

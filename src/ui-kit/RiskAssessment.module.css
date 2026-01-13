@@ -1,0 +1,481 @@
+/* ===== CONTAINER ===== */
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6); /* 24px giữa các khối */
+  font-family: 'Inter', sans-serif;
+}
+
+/* ===== CARD (Mỗi khối) ===== */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-5); /* 20px - theo yêu cầu 16-20px */
+  transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.cardTitle {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-4) 0;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ===== 1. KHỐI ĐÁNH GIÁ RỦI RO (Overview Grid) ===== */
+.overviewGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-6);
+}
+
+.overviewItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.overviewLabel {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-family: 'Inter', sans-serif;
+}
+
+.overviewValue {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+}
+
+.overviewIcon {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.riskBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+}
+
+.scoreText {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--primary);
+  font-family: 'Inter', sans-serif;
+}
+
+/* ===== 2. KHỐI CÁC YẾU TỐ ĐÁNH GIÁ ===== */
+.factorsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--spacing-4);
+  margin-top: var(--spacing-4);
+}
+
+.factorCard {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-4);
+  transition: all 0.2s ease;
+}
+
+.factorCard:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+}
+
+.factorHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-2);
+}
+
+.factorName {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  font-family: 'Inter', sans-serif;
+}
+
+.factorScore {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--primary);
+  white-space: nowrap;
+  font-family: 'Inter', sans-serif;
+}
+
+.factorDescription {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: var(--spacing-3);
+  font-family: 'Inter', sans-serif;
+}
+
+.factorFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding-top: var(--spacing-3);
+  border-top: 1px solid var(--border);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-family: 'Inter', sans-serif;
+}
+
+.factorWeight,
+.factorContribution {
+  font-weight: 500;
+}
+
+/* ===== 3. KHỐI KHUYẾN NGHỊ ===== */
+.recommendationsBox {
+  display: flex;
+  gap: var(--spacing-4);
+  padding: var(--spacing-4);
+  background: rgba(59, 130, 246, 0.05); /* Light blue background */
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-left: 4px solid rgb(59, 130, 246);
+  border-radius: var(--radius-md);
+  margin-top: var(--spacing-4);
+}
+
+.recommendationsIcon {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  color: rgb(59, 130, 246);
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.recommendationsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  flex: 1;
+}
+
+.recommendationItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-2);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  line-height: 1.6;
+  font-family: 'Inter', sans-serif;
+}
+
+.recommendationIcon {
+  color: rgb(59, 130, 246);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ===== 4. KHỐI GHI CHÚ NỘI BỘ ===== */
+.internalNotesBox {
+  display: flex;
+  gap: var(--spacing-4);
+  padding: var(--spacing-4);
+  background: var(--muted); /* Nền nhạt để phân biệt */
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--warning);
+  border-radius: var(--radius-md);
+  margin-top: var(--spacing-4);
+}
+
+.internalNotesIcon {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  color: var(--warning);
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.internalNotesText {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  line-height: 1.6;
+  flex: 1;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ===== 5. KHỐI LỊCH SỬ THEO DÕI (Bảng) ===== */
+.tableContainer {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-top: var(--spacing-4);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Inter', sans-serif;
+}
+
+.tableHeader {
+  background: var(--muted);
+  border-bottom: 2px solid var(--border);
+}
+
+.th {
+  padding: var(--spacing-3) var(--spacing-4);
+  text-align: left;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  font-family: 'Inter', sans-serif;
+}
+
+.tableBody {
+  background: var(--card);
+}
+
+.tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s ease;
+}
+
+.tr:hover {
+  background: var(--accent);
+}
+
+.tr:last-child {
+  border-bottom: none;
+}
+
+.td {
+  padding: var(--spacing-3) var(--spacing-4);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  vertical-align: top;
+  font-family: 'Inter', sans-serif;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-1) var(--spacing-3);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ===== EMPTY STATE (Monitoring) ===== */
+.emptyMonitoring {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-8) var(--spacing-4);
+  text-align: center;
+  margin-top: var(--spacing-4);
+}
+
+.emptyMonitoringIcon {
+  color: var(--text-tertiary);
+  margin-bottom: var(--spacing-2);
+}
+
+.emptyMonitoringText {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ===== EMPTY STATE (Main) ===== */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-12) var(--spacing-6);
+  text-align: center;
+  min-height: 400px;
+}
+
+.emptyIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  margin-bottom: var(--spacing-4);
+  background: var(--muted);
+  border-radius: var(--radius-lg);
+  color: var(--text-tertiary);
+}
+
+.emptyTitle {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-2);
+  font-family: 'Inter', sans-serif;
+}
+
+.emptyText {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  max-width: 400px;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ===== LOADING SKELETON ===== */
+.skeletonLabel,
+.skeletonValue,
+.skeletonTitle,
+.skeletonFactorCard {
+  background: var(--muted);
+  border-radius: var(--radius-sm);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeletonLabel {
+  height: 14px;
+  width: 100px;
+  margin-bottom: var(--spacing-2);
+}
+
+.skeletonValue {
+  height: 20px;
+  width: 150px;
+}
+
+.skeletonTitle {
+  height: 20px;
+  width: 200px;
+  margin-bottom: var(--spacing-4);
+}
+
+.skeletonFactorCard {
+  height: 120px;
+  margin-bottom: var(--spacing-4);
+  border-radius: var(--radius-md);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .card {
+    padding: var(--spacing-4); /* 16px on mobile */
+  }
+
+  .overviewGrid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-4);
+  }
+
+  .factorsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .factorHeader {
+    flex-direction: column;
+    gap: var(--spacing-2);
+  }
+
+  .factorFooter {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-1);
+  }
+
+  .recommendationsBox,
+  .internalNotesBox {
+    flex-direction: column;
+    gap: var(--spacing-3);
+  }
+
+  .tableContainer {
+    border-radius: var(--radius-sm);
+  }
+
+  .th,
+  .td {
+    padding: var(--spacing-2) var(--spacing-3);
+    font-size: var(--text-xs);
+  }
+
+  .emptyState {
+    padding: var(--spacing-8) var(--spacing-4);
+    min-height: 300px;
+  }
+
+  .emptyIcon {
+    width: 64px;
+    height: 64px;
+  }
+
+  .emptyIcon svg {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* ===== DARK MODE ===== */
+@media (prefers-color-scheme: dark) {
+  .factorCard {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .recommendationsBox {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+
+  .internalNotesBox {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .tableHeader {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .emptyIcon {
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
