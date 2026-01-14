@@ -18,6 +18,10 @@ services:
       - pnpm_cache:/root/.local/share/pnpm/store
     environment:
       - NODE_ENV=development
+      # Supabase configuration (có thể dùng một trong hai cách)
+      - VITE_SUPABASE_PROJECT_ID=${VITE_SUPABASE_PROJECT_ID:-}
+      - VITE_SUPABASE_PUBLIC_ANON_KEY=${VITE_SUPABASE_PUBLIC_ANON_KEY:-}
+      # Hoặc sử dụng format cũ (tương thích ngược)
       - VITE_SUPABASE_URL=${VITE_SUPABASE_URL:-}
       - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY:-}
     networks:

@@ -120,22 +120,40 @@ docker-compose --profile prod up -d
 
 #### Environment Variables
 
-1. Copy file `.env.example` thành `.env`:
+1. Tạo file `.env` trong thư mục gốc của project:
+
 ```bash
-cp .env.example .env
+# Trên Linux/Mac:
+touch .env
+
+# Trên Windows:
+type nul > .env
 ```
 
 2. Chỉnh sửa file `.env` và điền thông tin Supabase của bạn:
 
+**Cách 1 (Khuyến nghị):**
+```env
+VITE_SUPABASE_PROJECT_ID=your-project-id-here
+VITE_SUPABASE_PUBLIC_ANON_KEY=your-public-anon-key-here
+```
+
+**Cách 2 (Tương thích với format cũ):**
 ```env
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key-here
 ```
 
+**Lấy thông tin Supabase:**
+- Truy cập: https://app.supabase.com/project/_/settings/api
+- **Project ID**: Copy phần ID trong `Project URL` (ví dụ: từ `https://mwuhuixkybbwrnoqcibg.supabase.co` → `mwuhuixkybbwrnoqcibg`)
+- **Public Anon Key**: Copy `anon public` key (bắt đầu bằng `sb_publishable_` hoặc `eyJ...`)
+
 **Lưu ý:** 
 - File `.env` đã được ignore trong `.gitignore`, không được commit lên repository
-- Lấy thông tin Supabase tại: https://app.supabase.com/project/_/settings/api
+- Thông tin Supabase được đọc từ file `utils/supabase/info.tsx` (giờ sử dụng biến môi trường thay vì hardcode)
 - Docker Compose sẽ tự động load các biến môi trường từ file `.env`
+- Nếu không cấu hình, hệ thống sẽ hiển thị cảnh báo trong console
 
 #### Docker Commands hữu ích
 
@@ -258,15 +276,25 @@ Xem thêm các file documentation khác trong thư mục `docs/`.
 
 ### Environment Variables
 
-1. Copy file `.env.example` thành `.env`:
+1. Tạo file `.env` trong thư mục gốc của project:
+
 ```bash
-cp .env.example .env
+# Trên Linux/Mac:
+touch .env
+
 # Trên Windows:
-copy .env.example .env
+type nul > .env
 ```
 
 2. Chỉnh sửa file `.env` với thông tin Supabase của bạn:
 
+**Cách 1 (Khuyến nghị):**
+```env
+VITE_SUPABASE_PROJECT_ID=your-project-id-here
+VITE_SUPABASE_PUBLIC_ANON_KEY=your-public-anon-key-here
+```
+
+**Cách 2 (Tương thích với format cũ):**
 ```env
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key-here
@@ -274,10 +302,13 @@ VITE_SUPABASE_ANON_KEY=your-anon-key-here
 
 **Lấy thông tin Supabase:**
 - Truy cập: https://app.supabase.com/project/_/settings/api
-- Copy `Project URL` → `VITE_SUPABASE_URL`
-- Copy `anon public` key → `VITE_SUPABASE_ANON_KEY`
+- **Project ID**: Copy phần ID trong `Project URL` (ví dụ: từ `https://mwuhuixkybbwrnoqcibg.supabase.co` → `mwuhuixkybbwrnoqcibg`)
+- **Public Anon Key**: Copy `anon public` key (bắt đầu bằng `sb_publishable_` hoặc `eyJ...`)
 
-**Lưu ý:** File `.env` không được commit lên repository (đã được ignore trong `.gitignore`)
+**Lưu ý:** 
+- File `.env` không được commit lên repository (đã được ignore trong `.gitignore`)
+- Thông tin Supabase được đọc từ file `utils/supabase/info.tsx` (giờ sử dụng biến môi trường thay vì hardcode)
+- Nếu không cấu hình, hệ thống sẽ hiển thị cảnh báo trong console
 
 ### Feature Toggles
 
