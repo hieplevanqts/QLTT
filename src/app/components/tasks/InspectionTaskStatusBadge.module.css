@@ -1,0 +1,48 @@
+/* Badge Base */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', sans-serif;
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius);
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+/* Sizes */
+.sizeSm {
+  padding: 2px 8px;
+  font-size: var(--text-xs);
+}
+
+.sizeMd {
+  padding: 4px 12px;
+  font-size: var(--text-sm);
+}
+
+.sizeLg {
+  padding: 6px 16px;
+  font-size: var(--text-base);
+}
+
+/* Task Status */
+.statusNotStarted {
+  background: #6B728015;
+  color: #6B7280;
+}
+
+.statusInProgress {
+  background: #005cb615;
+  color: #005cb6;
+}
+
+.statusCompleted {
+  background: #10B98115;
+  color: #10B981;
+}
+
+.statusClosed {
+  background: #64748B15;
+  color: #64748B;
+}

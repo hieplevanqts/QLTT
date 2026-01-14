@@ -1,0 +1,876 @@
+import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Eye, Edit, Send, Trash2, CheckCircle2, XCircle, PlayCircle, PauseCircle, 
+  FileText, Calendar, RefreshCw, Download, ClipboardList, FileEdit, Clock, 
+  CircleCheck, Filter, Plus 
+} from 'lucide-react';
+import { toast } from 'sonner';
+import PageHeader from '../../../layouts/PageHeader';
+import EmptyState from '../../../ui-kit/EmptyState';
+import DataTable, { Column } from '../../../ui-kit/DataTable';
+import { SearchInput } from '../../../ui-kit/SearchInput';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent } from '../../components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+import SummaryCard from '../../../patterns/SummaryCard';
+import ModernSummaryCard from '../../../patterns/ModernSummaryCard';
+import BulkActionBar, { BulkAction } from '../../../patterns/BulkActionBar';
+import FilterActionBar from '../../../patterns/FilterActionBar';
+import ActionColumn, { Action } from '../../../patterns/ActionColumn';
+import TableFooter from '../../../ui-kit/TableFooter';
+import { KeHoachTacNghiepStatusBadge } from '../../components/plans/KeHoachTacNghiepStatusBadge';
+import { type Plan, type PlanType } from '../../data/kehoach-mock-data';
+import styles from './PlansList.module.css';
+import {
+  SendForApprovalModal,
+  ApproveModal,
+  RejectModal,
+  RecallModal,
+  DeployModal,
+  PauseModal,
+  DeletePlanModal
+} from '../../components/plans/PlanActionModals';
+import AdvancedFilterModal, { FilterConfig } from '../../../ui-kit/AdvancedFilterModal';
+import { DateRange } from '../../../ui-kit/DateRangePicker';
+import { usePlans } from '../../contexts/PlansContext';
+import { PlanDocumentDrawer } from '../../components/documents/PlanDocumentDrawer';
+import { SelectFromInsModal, type InsDocument } from '../../components/documents/SelectFromInsModal';
+import { DocumentFormModal, type DocumentFormData } from '../../components/documents/DocumentFormModal';
+import { InsSyncLogDrawer } from '../../components/documents/InsSyncLogDrawer';
+import type { DocumentCode } from '../../../types/ins-documents';
+
+export function PlansList() {
+  const navigate = useNavigate();
+  const { plans } = usePlans();
+  
+  // State management
+  const [searchValue, setSearchValue] = useState('');
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  
+  // Filter states
+  const [planTypeFilter, setPlanTypeFilter] = useState<string>('periodic'); // Default to first tab
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [dateRangeFilter, setDateRangeFilter] = useState<DateRange>({ startDate: null, endDate: null });
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
+  // Modal states
+  const [modalState, setModalState] = useState<{
+    type: 'sendApproval' | 'approve' | 'reject' | 'recall' | 'deploy' | 'pause' | 'delete' | null;
+    plan: Plan | null;
+  }>({ type: null, plan: null });
+
+  // Document management states
+  const [documentDrawerOpen, setDocumentDrawerOpen] = useState(false);
+  const [documentDrawerPlan, setDocumentDrawerPlan] = useState<Plan | null>(null);
+  const [highlightMissingDocs, setHighlightMissingDocs] = useState(false);
+  const [showSelectInsModal, setShowSelectInsModal] = useState(false);
+  const [showDocumentFormModal, setShowDocumentFormModal] = useState(false);
+  const [showSyncLogDrawer, setShowSyncLogDrawer] = useState(false);
+  const [selectedDocumentCode, setSelectedDocumentCode] = useState<DocumentCode>('M03');
+
+  const closeModal = () => setModalState({ type: null, plan: null });
+  const openModal = (type: typeof modalState.type, plan: Plan) => setModalState({ type, plan });
+
+  // Calculate stats
+  const stats = useMemo(() => {
+    return {
+      total: plans.length,
+      draft: plans.filter(p => p.status === 'draft').length,
+      pending: plans.filter(p => p.status === 'pending_approval').length,
+      active: plans.filter(p => p.status === 'active').length,
+      completed: plans.filter(p => p.status === 'completed').length,
+      // Count by plan type
+      periodic: plans.filter(p => p.planType === 'periodic').length,
+      thematic: plans.filter(p => p.planType === 'thematic').length,
+      urgent: plans.filter(p => p.planType === 'urgent').length,
+    };
+  }, [plans]);
+
+  // Apply filters
+  const filteredData = useMemo(() => {
+    return plans.filter(plan => {
+      const matchesSearch = plan.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+                           plan.id.toLowerCase().includes(searchValue.toLowerCase());
+      const matchesType = planTypeFilter === 'all' || plan.planType === planTypeFilter;
+      const matchesStatus = statusFilter === 'all' || plan.status === statusFilter;
+      const matchesPriority = priorityFilter === 'all' || plan.priority === priorityFilter;
+      const matchesActiveFilter = activeFilter === null || plan.status === activeFilter;
+      
+      // Date range filter
+      const matchesDateRange = (() => {
+        if (!dateRangeFilter.startDate && !dateRangeFilter.endDate) return true;
+        
+        const planDate = new Date(plan.startDate);
+        
+        if (dateRangeFilter.startDate && dateRangeFilter.endDate) {
+          const start = new Date(dateRangeFilter.startDate);
+          const end = new Date(dateRangeFilter.endDate);
+          end.setHours(23, 59, 59, 999);
+          return planDate >= start && planDate <= end;
+        } else if (dateRangeFilter.startDate) {
+          const start = new Date(dateRangeFilter.startDate);
+          return planDate >= start;
+        } else if (dateRangeFilter.endDate) {
+          const end = new Date(dateRangeFilter.endDate);
+          end.setHours(23, 59, 59, 999);
+          return planDate <= end;
+        }
+        return true;
+      })();
+      
+      return matchesSearch && matchesType && matchesStatus && matchesPriority && matchesActiveFilter && matchesDateRange;
+    });
+  }, [searchValue, planTypeFilter, statusFilter, priorityFilter, activeFilter, dateRangeFilter]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredData.length / pageSize);
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredData.slice(startIndex, startIndex + pageSize);
+  }, [filteredData, currentPage, pageSize]);
+
+  // Get actions for each plan
+  const getPlanActions = (plan: Plan): Action[] => {
+    const actions: Action[] = [];
+
+    // ⭐ ALWAYS ADD: Hồ sơ biểu mẫu (first in all cases)
+    actions.push({
+      label: 'Hồ sơ biểu mẫu',
+      icon: <FileText size={16} />,
+      onClick: () => {
+        setDocumentDrawerPlan(plan);
+        setHighlightMissingDocs(false);
+        setDocumentDrawerOpen(true);
+      },
+      priority: 11, // Highest priority to show first
+    });
+
+    switch (plan.status) {
+      case 'draft':
+        // Nháp: Xem chi tiết, Chỉnh sửa, Gửi duyệt, Xóa
+        actions.push(
+          {
+            label: 'Xem chi tiết',
+            icon: <Eye size={16} />,
+            onClick: () => navigate(`/plans/${encodeURIComponent(plan.id)}`),
+            priority: 10,
+          },
+          {
+            label: 'Chỉnh sửa',
+            icon: <Edit size={16} />,
+            onClick: () => navigate(`/plans/${encodeURIComponent(plan.id)}/edit`),
+            priority: 8,
+          },
+          {
+            label: 'Gửi duyệt',
+            icon: <Send size={16} />,
+            onClick: () => openModal('sendApproval', plan),
+            priority: 9,
+          },
+          {
+            label: 'Xóa',
+            icon: <Trash2 size={16} />,
+            onClick: () => openModal('delete', plan),
+            variant: 'destructive' as const,
+            separator: true,
+            priority: 1,
+          }
+        );
+        break;
+
+      case 'pending_approval':
+        // Chờ duyệt: Xem chi tiết, Phê duyệt, Từ chối
+        actions.push(
+          {
+            label: 'Xem chi tiết',
+            icon: <Eye size={16} />,
+            onClick: () => navigate(`/plans/${encodeURIComponent(plan.id)}`),
+            priority: 10,
+          },
+          {
+            label: 'Phê duyệt',
+            icon: <CheckCircle2 size={16} />,
+            onClick: () => openModal('approve', plan),
+            priority: 9,
+          },
+          {
+            label: 'Từ chối',
+            icon: <XCircle size={16} />,
+            onClick: () => openModal('reject', plan),
+            variant: 'destructive' as const,
+            separator: true,
+            priority: 5,
+          }
+        );
+        break;
+
+      case 'approved':
+        // Đã duyệt: Xem chi tiết, Triển khai, Chỉnh sửa
+        actions.push(
+          {
+            label: 'Xem chi tiết',
+            icon: <Eye size={16} />,
+            onClick: () => navigate(`/plans/${encodeURIComponent(plan.id)}`),
+            priority: 10,
+          },
+          {
+            label: 'Triển khai',
+            icon: <PlayCircle size={16} />,
+            onClick: () => openModal('deploy', plan),
+            priority: 9,
+          },
+          {
+            label: 'Chỉnh sửa',
+            icon: <Edit size={16} />,
+            onClick: () => navigate(`/plans/${encodeURIComponent(plan.id)}/edit`),
+            priority: 8,
+          }
+        );
+        break;
+
+      case 'active':
+        // Đang thực hiện: Xem chi tiết, Phiên làm việc, Tạm dừng
+        actions.push(
+          {
+            label: 'Xem chi tiết',
+            icon: <Eye size={16} />,
+            onClick: () => navigate(`/plans/${encodeURIComponent(plan.id)}`),
+            priority: 10,
+          },
+          {
+            label: 'Phiên làm việc',
+            icon: <Calendar size={16} />,
+            onClick: () => navigate(`/plans/inspection-session?planId=${encodeURIComponent(plan.id)}`),
+            priority: 9,
+          },
+          {
+            label: 'Tạm dừng',
+            icon: <PauseCircle size={16} />,
+            onClick: () => openModal('pause', plan),
+            variant: 'destructive' as const,
+            separator: true,
+            priority: 3,
+          }
+        );
+        break;
+
+      case 'completed':
+        // Hoàn thành: Xem chi tiết, Báo cáo
+        actions.push(
+          {
+            label: 'Xem chi tiết',
+            icon: <Eye size={16} />,
+            onClick: () => navigate(`/plans/${encodeURIComponent(plan.id)}`),
+            priority: 10,
+          },
+          {
+            label: 'Báo cáo',
+            icon: <FileText size={16} />,
+            onClick: () => {
+              toast.info('Tải báo cáo kết quả thực hiện');
+              console.log('Download report', plan.id);
+            },
+            priority: 8,
+          }
+        );
+        break;
+
+      case 'cancelled':
+        // Đã hủy: Xem chi tiết
+        actions.push(
+          {
+            label: 'Xem chi tiết',
+            icon: <Eye size={16} />,
+            onClick: () => navigate(`/plans/${encodeURIComponent(plan.id)}`),
+            priority: 10,
+          }
+        );
+        break;
+
+      default:
+        actions.push(
+          {
+            label: 'Xem chi tiết',
+            icon: <Eye size={16} />,
+            onClick: () => navigate(`/plans/${encodeURIComponent(plan.id)}`),
+            priority: 10,
+          }
+        );
+    }
+
+    return actions;
+  };
+
+  // Define table columns
+  const columns: Column<Plan>[] = [
+    {
+      key: 'id',
+      label: 'Số/ký hiệu',
+      sortable: true,
+      render: (plan) => (
+        <div>
+          <div className={styles.planIdBadgeRow}>
+            <KeHoachTacNghiepStatusBadge type="planType" value={plan.planType} size="sm" />
+          </div>
+          <div className={styles.planId}>{plan.id}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'name',
+      label: 'Tiêu đề',
+      sortable: true,
+      render: (plan) => (
+        <div>
+          <div className={styles.planName}>{plan.name}</div>
+          <div className={styles.planTopic}>{plan.topic}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'scope',
+      label: 'Phạm vi',
+      sortable: true,
+      render: (plan) => (
+        <span className={styles.planScope}>{plan.scopeLocation}</span>
+      ),
+    },
+    {
+      key: 'leadUnit',
+      label: 'Đơn vị chủ trì',
+      sortable: true,
+      render: (plan) => (
+        <span className={styles.planLeadUnit}>{plan.responsibleUnit}</span>
+      ),
+    },
+    {
+      key: 'time',
+      label: 'Thời gian',
+      sortable: true,
+      render: (plan) => {
+        const startDate = new Date(plan.startDate);
+        const endDate = new Date(plan.endDate);
+        return (
+          <span className={styles.timeRange}>
+            {startDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+            {' - '}
+            {endDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'priority',
+      label: 'Ưu tiên',
+      sortable: true,
+      render: (plan) => <KeHoachTacNghiepStatusBadge type="priority" value={plan.priority} size="sm" />,
+    },
+    {
+      key: 'status',
+      label: 'Trạng thái',
+      render: (plan) => <KeHoachTacNghiepStatusBadge type="plan" value={plan.status} size="sm" />,
+    },
+    {
+      key: 'creator',
+      label: 'Người lập',
+      sortable: true,
+      render: (plan) => <span className={styles.creator}>{plan.createdBy}</span>,
+    },
+    {
+      key: 'actions',
+      label: 'Thao tác',
+      sticky: 'right',
+      width: '120px',
+      render: (plan) => (
+        <ActionColumn actions={getPlanActions(plan)} />
+      ),
+    },
+  ];
+
+  // Handle row selection
+  const handleSelectRow = (id: string) => {
+    const newSelected = new Set(selectedRows);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedRows(newSelected);
+  };
+
+  const handleSelectAll = (selected: boolean) => {
+    if (selected) {
+      setSelectedRows(new Set(paginatedData.map(p => p.id)));
+    } else {
+      setSelectedRows(new Set());
+    }
+  };
+
+  // Reset to page 1 when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [planTypeFilter, statusFilter, priorityFilter, searchValue, activeFilter]);
+
+  // Filter configurations for Advanced Filter Modal
+  const filterConfigs: FilterConfig[] = [
+    {
+      key: 'status',
+      label: 'Trạng thái',
+      type: 'select',
+      options: [
+        { value: 'all', label: 'Tất cả trạng thái' },
+        { value: 'draft', label: 'Nháp' },
+        { value: 'pending_approval', label: 'Chờ phê duyệt' },
+        { value: 'approved', label: 'Đã phê duyệt' },
+        { value: 'active', label: 'Đang thực hiện' },
+        { value: 'completed', label: 'Hoàn thành' },
+        { value: 'cancelled', label: 'Đã hủy' },
+      ],
+    },
+    {
+      key: 'priority',
+      label: 'Độ ưu tiên',
+      type: 'select',
+      options: [
+        { value: 'all', label: 'Tất cả ưu tiên' },
+        { value: 'low', label: 'Thấp' },
+        { value: 'medium', label: 'Trung bình' },
+        { value: 'high', label: 'Cao' },
+        { value: 'critical', label: 'Khẩn cấp' },
+      ],
+    },
+    {
+      key: 'dateRange',
+      label: 'Thời gian triển khai',
+      type: 'daterange',
+    },
+  ];
+
+  const filterValues = {
+    status: statusFilter,
+    priority: priorityFilter,
+    dateRange: dateRangeFilter,
+  };
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (statusFilter !== 'all') count++;
+    if (priorityFilter !== 'all') count++;
+    if (dateRangeFilter.startDate || dateRangeFilter.endDate) count++;
+    return count;
+  }, [statusFilter, priorityFilter, dateRangeFilter]);
+
+  const handleFilterChange = (values: Record<string, any>) => {
+    setStatusFilter(values.status || 'all');
+    setPriorityFilter(values.priority || 'all');
+    setDateRangeFilter(values.dateRange || { startDate: null, endDate: null });
+  };
+
+  const handleFilterApply = () => {
+    toast.success('Đã áp dụng bộ lọc');
+  };
+
+  const handleFilterClear = () => {
+    setStatusFilter('all');
+    setPriorityFilter('all');
+    setDateRangeFilter({ startDate: null, endDate: null });
+    toast.info('Đã xóa bộ lọc');
+  };
+
+  // Bulk actions
+  const bulkActions: BulkAction[] = [
+    {
+      label: 'Gửi duyệt',
+      onClick: () => {
+        toast.success(`Đã gửi ${selectedRows.size} kế hoạch đi phê duyệt`);
+        setSelectedRows(new Set());
+      },
+      icon: <Send size={16} />,
+    },
+    {
+      label: 'Xuất dữ liệu',
+      onClick: () => {
+        toast.success(`Đã xuất ${selectedRows.size} kế hoạch`);
+      },
+      variant: 'secondary',
+      icon: <Download size={16} />,
+    },
+    {
+      label: 'Xóa',
+      onClick: () => {
+        toast.error(`Đã xóa ${selectedRows.size} kế hoạch`);
+        setSelectedRows(new Set());
+      },
+      variant: 'destructive',
+      icon: <Trash2 size={16} />,
+    },
+  ];
+
+  return (
+    <div className={styles.pageContainer}>
+      <PageHeader
+        breadcrumbs={[
+          { label: 'Trang chủ', href: '/' },
+          { label: 'Kế hoạch tác nghiệp' }
+        ]}
+        title="Kế hoạch tác nghiệp"
+        actions={
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <Button variant="outline" size="sm" onClick={() => {
+              setSearchValue('');
+              setPlanTypeFilter('periodic');
+              setStatusFilter('all');
+              setPriorityFilter('all');
+              setDateRangeFilter({ startDate: null, endDate: null });
+              setActiveFilter(null);
+              toast.success('Đã tải lại dữ liệu');
+            }}>
+              <RefreshCw size={16} />
+              Tải lại
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => toast.success('Xuất dữ liệu thành công')}>
+              <Download size={16} />
+              Xuất dữ liệu
+            </Button>
+          </div>
+        }
+      />
+
+      {/* Summary Cards */}
+      <div className={styles.summaryContainer}>
+        <div className={styles.summaryGrid}>
+          <ModernSummaryCard
+            label="Tổng số kế hoạch"
+            value={stats.total}
+            icon={ClipboardList}
+            variant="info"
+            active={activeFilter === null}
+            onClick={() => setActiveFilter(null)}
+          />
+          <ModernSummaryCard
+            label="Nháp"
+            value={stats.draft}
+            icon={FileEdit}
+            variant="neutral"
+            active={activeFilter === 'draft'}
+            onClick={() => setActiveFilter('draft')}
+          />
+          <ModernSummaryCard
+            label="Chờ phê duyệt"
+            value={stats.pending}
+            icon={Clock}
+            variant="warning"
+            active={activeFilter === 'pending_approval'}
+            onClick={() => setActiveFilter('pending_approval')}
+          />
+          <ModernSummaryCard
+            label="Đang thực hiện"
+            value={stats.active}
+            icon={CircleCheck}
+            variant="success"
+            active={activeFilter === 'active'}
+            onClick={() => setActiveFilter('active')}
+          />
+          <ModernSummaryCard
+            label="Hoàn thành"
+            value={stats.completed}
+            icon={CircleCheck}
+            variant="primary"
+            active={activeFilter === 'completed'}
+            onClick={() => setActiveFilter('completed')}
+          />
+        </div>
+
+        {/* QLTT Standard: Filters and Search on SAME ROW */}
+        <FilterActionBar
+          filters={
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsFilterModalOpen(true)}
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Bộ lọc
+              {activeFilterCount > 0 && (
+                <span style={{
+                  marginLeft: '8px',
+                  padding: '2px 8px',
+                  background: 'var(--color-primary)',
+                  color: 'white',
+                  borderRadius: 'var(--radius-full)',
+                  fontSize: 'var(--font-size-xs)',
+                  fontWeight: 600,
+                }}>
+                  {activeFilterCount}
+                </span>
+              )}
+            </Button>
+          }
+          searchInput={
+            <SearchInput
+              placeholder="Tìm theo mã hoặc tên kế hoạch"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              style={{ width: '400px' }}
+            />
+          }
+        />
+      </div>
+
+      {/* Tabs for Plan Types */}
+      <Tabs value={planTypeFilter} onValueChange={setPlanTypeFilter} className={styles.planTabs}>
+        <div className={styles.tabsHeader}>
+          <TabsList>
+            <TabsTrigger value="periodic">
+              Định kỳ <span className={styles.tabCount}>({stats.periodic})</span>
+            </TabsTrigger>
+            <TabsTrigger value="thematic">
+              Chuyên đề <span className={styles.tabCount}>({stats.thematic})</span>
+            </TabsTrigger>
+            <TabsTrigger value="urgent">
+              Đột xuất <span className={styles.tabCount}>({stats.urgent})</span>
+            </TabsTrigger>
+          </TabsList>
+          
+          <Button 
+            size="sm" 
+            onClick={() => {
+              navigate(`/plans/create-new?type=${planTypeFilter}`);
+            }}
+          >
+            <Plus size={16} />
+            Thêm {planTypeFilter === 'periodic' ? 'định kỳ' : planTypeFilter === 'thematic' ? 'chuyên đề' : 'đột xuất'}
+          </Button>
+        </div>
+
+        <TabsContent value={planTypeFilter} className={styles.tabContent}>
+          {/* Content renders below based on current tab */}
+        </TabsContent>
+      </Tabs>
+
+      {/* Bulk Action Bar */}
+      {selectedRows.size > 0 && (
+        <BulkActionBar
+          selectedCount={selectedRows.size}
+          actions={bulkActions}
+          onClearSelection={() => setSelectedRows(new Set())}
+        />
+      )}
+
+      {/* Data Table */}
+      <div className={styles.tableContainer}>
+        <Card>
+          <CardContent className={styles.tableCard}>
+            {filteredData.length === 0 ? (
+              <EmptyState
+                icon={ClipboardList}
+                title="Không tìm thấy kế hoạch"
+                description="Không có kế hoạch nào phù hợp với bộ lọc hiện tại"
+              />
+            ) : (
+              <>
+                <DataTable
+                  columns={columns}
+                  data={paginatedData}
+                  selectable={true}
+                  selectedRows={selectedRows}
+                  onSelectRow={handleSelectRow}
+                  onSelectAll={handleSelectAll}
+                  getRowId={(plan) => plan.id}
+                />
+                
+                {/* QLTT Standard: Footer with Pagination */}
+                <TableFooter
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalRecords={filteredData.length}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={(size) => {
+                    setPageSize(size);
+                    setCurrentPage(1);
+                  }}
+                />
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Modals */}
+      {modalState.plan && (
+        <>
+          <SendForApprovalModal 
+            isOpen={modalState.type === 'sendApproval'} 
+            onClose={closeModal}
+            plan={modalState.plan}
+            onConfirm={(note) => {
+              toast.success(`Đã gửi kế hoạch "${modalState.plan?.name}" đi phê duyệt`);
+              console.log('Send approval with note:', note);
+            }}
+          />
+          <ApproveModal 
+            isOpen={modalState.type === 'approve'} 
+            onClose={closeModal}
+            plan={modalState.plan}
+            onConfirm={(note) => {
+              toast.success(`Kế hoạch "${modalState.plan?.name}" đã được phê duyệt`);
+              console.log('Approve with note:', note);
+            }}
+          />
+          <RejectModal 
+            isOpen={modalState.type === 'reject'} 
+            onClose={closeModal}
+            plan={modalState.plan}
+            onConfirm={(reason) => {
+              toast.error(`Kế hoạch "${modalState.plan?.name}" đã bị từ chối`);
+              console.log('Reject reason:', reason);
+            }}
+          />
+          <RecallModal 
+            isOpen={modalState.type === 'recall'} 
+            onClose={closeModal}
+            plan={modalState.plan}
+            onConfirm={() => {
+              toast.info(`Đã thu hồi kế hoạch "${modalState.plan?.name}"`);
+              console.log('Recall plan');
+            }}
+          />
+          <DeployModal 
+            isOpen={modalState.type === 'deploy'} 
+            onClose={closeModal}
+            plan={modalState.plan}
+            onConfirm={(startDate) => {
+              toast.success(`Đã triển khai kế hoạch "${modalState.plan?.name}" từ ${startDate}`);
+              console.log('Deploy from:', startDate);
+            }}
+          />
+          <PauseModal 
+            isOpen={modalState.type === 'pause'} 
+            onClose={closeModal}
+            plan={modalState.plan}
+            onConfirm={(reason) => {
+              toast.warning(`Đã tạm dừng kế hoạch "${modalState.plan?.name}"`);
+              console.log('Pause reason:', reason);
+            }}
+          />
+          <DeletePlanModal 
+            isOpen={modalState.type === 'delete'} 
+            onClose={closeModal}
+            plan={modalState.plan}
+            onConfirm={() => {
+              toast.success(`Đã xóa kế hoạch "${modalState.plan?.name}"`);
+              console.log('Delete plan');
+            }}
+          />
+        </>
+      )}
+
+      {/* Advanced Filter Modal */}
+      <AdvancedFilterModal
+        isOpen={isFilterModalOpen}
+        onClose={() => setIsFilterModalOpen(false)}
+        filters={filterConfigs}
+        values={filterValues}
+        onChange={handleFilterChange}
+        onApply={handleFilterApply}
+        onClear={handleFilterClear}
+      />
+
+      {/* Document Management Drawers & Modals */}
+      {documentDrawerPlan && (
+        <>
+          <PlanDocumentDrawer
+            open={documentDrawerOpen}
+            onOpenChange={setDocumentDrawerOpen}
+            plan={documentDrawerPlan}
+            highlightMissingDocs={highlightMissingDocs}
+            onImportClick={(code) => {
+              setSelectedDocumentCode(code);
+              setShowSelectInsModal(true);
+            }}
+            onCreateClick={(code) => {
+              setSelectedDocumentCode(code);
+              setShowDocumentFormModal(true);
+            }}
+            onEditClick={(code) => {
+              setSelectedDocumentCode(code);
+              setShowDocumentFormModal(true);
+            }}
+            onViewPdfClick={(code) => {
+              toast.info('Xem PDF biểu mẫu (chức năng đang phát triển)');
+            }}
+            onPushToInsClick={(code) => {
+              toast.success('Đã đẩy biểu mẫu sang INS thành công');
+            }}
+            onSyncClick={(code) => {
+              toast.success('Đã đồng bộ lại biểu mẫu từ INS');
+            }}
+            onViewLogClick={() => setShowSyncLogDrawer(true)}
+          />
+
+          <SelectFromInsModal
+            open={showSelectInsModal}
+            onOpenChange={setShowSelectInsModal}
+            documentCode={selectedDocumentCode}
+            documentName={
+              selectedDocumentCode === 'M03'
+                ? 'Quyết định về việc giao quyền ban hành quyết định kiểm tra'
+                : selectedDocumentCode === 'M09'
+                ? 'Đề xuất kiểm tra đột xuất việc chấp hành pháp luật/Khám theo thủ tục hành chính'
+                : 'Báo cáo'
+            }
+            onSelect={(doc: InsDocument) => {
+              toast.success(`Đã import ${doc.code} từ INS thành công`);
+              setShowSelectInsModal(false);
+            }}
+          />
+
+          <DocumentFormModal
+            open={showDocumentFormModal}
+            onOpenChange={setShowDocumentFormModal}
+            documentCode={selectedDocumentCode}
+            documentName={
+              selectedDocumentCode === 'M03'
+                ? 'Quyết định về việc giao quyền ban hành quyết định kiểm tra'
+                : selectedDocumentCode === 'M09'
+                ? 'Đề xuất kiểm tra đột xuất việc chấp hành pháp luật/Khám theo thủ tục hành chính'
+                : 'Báo cáo'
+            }
+            mode="create"
+            onSave={(data: DocumentFormData, saveAsDraft: boolean) => {
+              if (saveAsDraft) {
+                toast.success('Đã lưu nháp biểu mẫu');
+              } else {
+                toast.success('Đã tạo biểu mẫu thành công');
+              }
+              setShowDocumentFormModal(false);
+            }}
+            onGeneratePdf={() => {
+              toast.success('Đã sinh file PDF thành công');
+            }}
+          />
+
+          <InsSyncLogDrawer
+            open={showSyncLogDrawer}
+            onOpenChange={setShowSyncLogDrawer}
+          />
+        </>
+      )}
+    </div>
+  );
+}

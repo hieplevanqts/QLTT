@@ -2,6 +2,7 @@ import { RouterProvider } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { router } from '../routes/routes';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { PlansProvider } from './contexts/PlansContext';
 // Import export functions for mock data
 import '../utils/exportMockData';
 
@@ -12,8 +13,10 @@ import '../utils/exportMockData';
 export default function App() {
   return (
     <ErrorBoundary>
-      <RouterProvider router={router} />
-      <Toaster position="top-right" richColors />
+      <PlansProvider>
+        <RouterProvider router={router} />
+        <Toaster position="top-right" richColors />
+      </PlansProvider>
     </ErrorBoundary>
   );
 }

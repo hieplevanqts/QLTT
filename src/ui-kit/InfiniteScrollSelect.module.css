@@ -1,0 +1,228 @@
+.container {
+  position: relative;
+  width: 100%;
+}
+
+/* Trigger Button */
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--card);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-md);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--font-size-sm);
+  color: var(--foreground);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  outline: none;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.trigger:hover {
+  border-color: var(--color-primary);
+}
+
+.trigger:focus,
+.triggerOpen {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 92, 182, 0.1);
+}
+
+.triggerValue {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--font-size-sm);
+  color: var(--foreground);
+  line-height: 1.5;
+}
+
+.triggerPlaceholder {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--font-size-sm);
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+.triggerIcon {
+  color: var(--muted-foreground);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.triggerIconOpen {
+  transform: rotate(180deg);
+}
+
+/* Dropdown */
+.dropdown {
+  position: fixed;
+  z-index: 9999;
+  background: var(--card);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  max-height: 320px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-top: var(--spacing-1);
+}
+
+/* Search Container */
+.searchContainer {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3);
+  border-bottom: var(--border-width) solid var(--border);
+  flex-shrink: 0;
+}
+
+.searchIcon {
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 0;
+  background: transparent;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--font-size-sm);
+  color: var(--foreground);
+  outline: none;
+  line-height: 1.5;
+}
+
+.searchInput::placeholder {
+  color: var(--muted-foreground);
+}
+
+/* Options List */
+.optionsList {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-1);
+}
+
+/* Custom Scrollbar */
+.optionsList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.optionsList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.optionsList::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: var(--radius-full);
+}
+
+.optionsList::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+/* Option Item */
+.option {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: var(--spacing-2) var(--spacing-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--font-size-sm);
+  color: var(--foreground);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  line-height: 1.5;
+}
+
+.option:hover {
+  background: var(--accent);
+}
+
+.optionSelected {
+  background: var(--color-primary);
+  color: white;
+}
+
+.optionSelected:hover {
+  background: var(--color-primary-dark);
+}
+
+.optionContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+}
+
+.optionLabel {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.5;
+}
+
+.optionSubtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--font-size-xs);
+  color: var(--muted-foreground);
+  line-height: 1.4;
+}
+
+.optionSelected .optionSubtitle {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Loading State */
+.loadingContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-4);
+}
+
+.loadingIcon {
+  color: var(--color-primary);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loadingText {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--font-size-sm);
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+/* Empty State */
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-6);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--font-size-sm);
+  color: var(--muted-foreground);
+  text-align: center;
+  line-height: 1.5;
+}

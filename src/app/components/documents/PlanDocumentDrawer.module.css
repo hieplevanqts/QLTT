@@ -1,0 +1,292 @@
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.headerTitle {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-foreground);
+}
+
+.planInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3);
+  background-color: var(--color-background);
+  border-radius: var(--radius);
+}
+
+.planInfoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--font-size-sm);
+}
+
+.planInfoLabel {
+  color: var(--color-text-secondary);
+}
+
+.planInfoValue {
+  color: var(--color-foreground);
+  font-weight: var(--font-weight-medium);
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.controlGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.controlLabel {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-foreground);
+}
+
+.toggleGroup {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+.toggleButton {
+  flex: 1;
+  padding: var(--spacing-2) var(--spacing-3);
+  border: var(--border-width) solid var(--color-border);
+  background-color: var(--color-card);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggleButton:hover {
+  background-color: var(--color-muted);
+  border-color: var(--color-primary);
+}
+
+.toggleButton.active {
+  background-color: var(--color-primary);
+  color: var(--color-primary-foreground);
+  border-color: var(--color-primary);
+}
+
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-3);
+  background-color: rgba(251, 146, 60, 0.1);
+  border-left: 3px solid var(--color-warning);
+  font-size: var(--font-size-sm);
+}
+
+.bannerIcon {
+  flex-shrink: 0;
+  color: var(--color-warning);
+  margin-top: 2px;
+}
+
+.bannerText {
+  flex: 1;
+  color: var(--color-text-secondary);
+}
+
+.bannerText strong {
+  color: var(--color-warning);
+  font-weight: var(--font-weight-semibold);
+}
+
+.successBanner {
+  background-color: rgba(15, 202, 122, 0.1);
+  border-left-color: var(--color-success);
+}
+
+.successBanner .bannerIcon {
+  color: var(--color-success);
+}
+
+.successBanner .bannerText strong {
+  color: var(--color-success);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+}
+
+.documentItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3);
+  background-color: var(--color-card);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+}
+
+.documentItem:hover {
+  background-color: var(--color-muted);
+}
+
+.documentItem.highlighted {
+  border-color: var(--color-warning);
+  background-color: rgba(251, 146, 60, 0.05);
+  box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.1);
+}
+
+.documentHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+}
+
+.documentInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.documentTitle {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-foreground);
+  line-height: 1.4;
+}
+
+.documentMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sourceBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.sourceBadge.import {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #3B82F6;
+}
+
+.sourceBadge.export {
+  background-color: rgba(139, 92, 246, 0.1);
+  color: #8B5CF6;
+}
+
+.requiredBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  background-color: rgba(217, 45, 32, 0.1);
+  color: var(--color-destructive);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.documentActions {
+  display: flex;
+  gap: var(--spacing-1);
+}
+
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.actionButton:hover:not(:disabled) {
+  background-color: var(--color-muted);
+  color: var(--color-primary);
+}
+
+.actionButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.footer {
+  padding: var(--spacing-md);
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.footerLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footerLink:hover {
+  text-decoration: underline;
+}
+
+.emptyState {
+  padding: var(--spacing-8);
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
