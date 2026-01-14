@@ -11,6 +11,8 @@ import { LocationStatsCard } from '../app/components/map/LocationStatsCard';
 import { MapLegend } from '../app/components/map/MapLegend';
 import { OfficerInfoModal } from '../app/components/map/OfficerInfoModal';
 import { DateRangePicker } from '../app/components/map/DateRangePicker';
+import { UploadExcelModal } from '../app/components/map/UploadExcelModal';
+import { Toaster } from 'sonner';
 import styles from './MapPage.module.css';
 import { Restaurant } from '../data/restaurantData';
 import { getProvinceNames, getDistrictsByProvince, getWardsByDistrict } from '../data/vietnamLocations';
@@ -75,6 +77,9 @@ export default function MapPage() {
   const [selectedOfficer, setSelectedOfficer] = useState<Officer | null>(null);
   const [selectedWardName, setSelectedWardName] = useState<string>('');
   const [isOfficerModalOpen, setIsOfficerModalOpen] = useState(false);
+  
+  // 🔥 NEW: Upload Excel modal state
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   
   // Map UI state (similar to FullscreenMapModal)
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
@@ -991,8 +996,7 @@ export default function MapPage() {
               </select>
             </div>
             <Button variant="outline" onClick={handleResetAllFilters}>🔄 Reset</Button>
-            <Button variant="outline">Xuất bản đồ</Button>
-            <Button>Thêm điểm</Button>
+            <Button onClick={() => setIsUploadModalOpen(true)}>Thêm điểm</Button>
           </div>
         }
       />
@@ -1340,6 +1344,15 @@ export default function MapPage() {
           setSelectedWard(ward);
         }}
       />
+      
+      {/* 🔥 NEW: Upload Excel Modal */}
+      <UploadExcelModal 
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+      />
+      
+      {/* 🔥 NEW: Toast Notifications */}
+      <Toaster position="top-right" richColors />
     </div>
   );
 }

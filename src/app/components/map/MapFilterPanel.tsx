@@ -80,6 +80,11 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
     
     // 🔥 NEW: State for business type search
     const [businessTypeSearch, setBusinessTypeSearch] = useState('');
+    
+    // 🔥 NEW: State for location search
+    const [provinceSearch, setProvinceSearch] = useState('');
+    const [districtSearch, setDistrictSearch] = useState('');
+    const [wardSearch, setWardSearch] = useState('');
 
     if (!isOpen) return null;
 
@@ -271,6 +276,20 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
                 
                 {showProvinceDropdown && (
                   <div className={styles.locationDropdown}>
+                    {/* 🔥 NEW: Search input */}
+                    <div className={styles.locationSearchWrapper}>
+                      <Search size={14} className={styles.searchIcon} />
+                      <input
+                        type="text"
+                        value={provinceSearch}
+                        onChange={(e) => setProvinceSearch(e.target.value)}
+                        placeholder="Tìm tỉnh/thành phố..."
+                        className={styles.locationSearchInput}
+                        autoFocus
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                    
                     <button
                       className={styles.locationOption}
                       onClick={() => {
@@ -278,24 +297,31 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
                         onDistrictChange?.('');
                         onWardChange?.('');
                         setShowProvinceDropdown(false);
+                        setProvinceSearch('');
                       }}
                     >
                       <span>Tất cả</span>
                     </button>
-                    {provinces.map((province) => (
-                      <button
-                        key={province}
-                        className={styles.locationOption}
-                        onClick={() => {
-                          onProvinceChange?.(province);
-                          onDistrictChange?.(''); // Reset district when province changes
-                          onWardChange?.(''); // Reset ward when province changes
-                          setShowProvinceDropdown(false);
-                        }}
-                      >
-                        <span>{province}</span>
-                      </button>
-                    ))}
+                    {provinces
+                      .filter(province => 
+                        !provinceSearch.trim() || 
+                        province.toLowerCase().includes(provinceSearch.toLowerCase())
+                      )
+                      .map((province) => (
+                        <button
+                          key={province}
+                          className={styles.locationOption}
+                          onClick={() => {
+                            onProvinceChange?.(province);
+                            onDistrictChange?.(''); // Reset district when province changes
+                            onWardChange?.(''); // Reset ward when province changes
+                            setShowProvinceDropdown(false);
+                            setProvinceSearch('');
+                          }}
+                        >
+                          <span>{province}</span>
+                        </button>
+                      ))}
                   </div>
                 )}
               </div>
@@ -320,29 +346,50 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
                   
                   {showDistrictDropdown && (
                     <div className={styles.locationDropdown}>
+                      {/* 🔥 NEW: Search input */}
+                      <div className={styles.locationSearchWrapper}>
+                        <Search size={14} className={styles.searchIcon} />
+                        <input
+                          type="text"
+                          value={districtSearch}
+                          onChange={(e) => setDistrictSearch(e.target.value)}
+                          placeholder="Tìm quận/huyện..."
+                          className={styles.locationSearchInput}
+                          autoFocus
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                      
                       <button
                         className={styles.locationOption}
                         onClick={() => {
                           onDistrictChange?.('');
                           onWardChange?.('');
                           setShowDistrictDropdown(false);
+                          setDistrictSearch('');
                         }}
                       >
                         <span>Tất cả</span>
                       </button>
-                      {availableDistricts.map((district) => (
-                        <button
-                          key={district}
-                          className={styles.locationOption}
-                          onClick={() => {
-                            onDistrictChange?.(district);
-                            onWardChange?.(''); // Reset ward when district changes
-                            setShowDistrictDropdown(false);
-                          }}
-                        >
-                          <span>{district}</span>
-                        </button>
-                      ))}
+                      {availableDistricts
+                        .filter(district => 
+                          !districtSearch.trim() || 
+                          district.toLowerCase().includes(districtSearch.toLowerCase())
+                        )
+                        .map((district) => (
+                          <button
+                            key={district}
+                            className={styles.locationOption}
+                            onClick={() => {
+                              onDistrictChange?.(district);
+                              onWardChange?.(''); // Reset ward when district changes
+                              setShowDistrictDropdown(false);
+                              setDistrictSearch('');
+                            }}
+                          >
+                            <span>{district}</span>
+                          </button>
+                        ))}
                     </div>
                   )}
                 </div>
@@ -368,27 +415,48 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
                   
                   {showWardDropdown && (
                     <div className={styles.locationDropdown}>
+                      {/* 🔥 NEW: Search input */}
+                      <div className={styles.locationSearchWrapper}>
+                        <Search size={14} className={styles.searchIcon} />
+                        <input
+                          type="text"
+                          value={wardSearch}
+                          onChange={(e) => setWardSearch(e.target.value)}
+                          placeholder="Tìm phường/xã..."
+                          className={styles.locationSearchInput}
+                          autoFocus
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                      
                       <button
                         className={styles.locationOption}
                         onClick={() => {
                           onWardChange?.('');
                           setShowWardDropdown(false);
+                          setWardSearch('');
                         }}
                       >
                         <span>Tất cả</span>
                       </button>
-                      {availableWards.map((ward) => (
-                        <button
-                          key={ward}
-                          className={styles.locationOption}
-                          onClick={() => {
-                            onWardChange?.(ward);
-                            setShowWardDropdown(false);
-                          }}
-                        >
-                          <span>{ward}</span>
-                        </button>
-                      ))}
+                      {availableWards
+                        .filter(ward => 
+                          !wardSearch.trim() || 
+                          ward.toLowerCase().includes(wardSearch.toLowerCase())
+                        )
+                        .map((ward) => (
+                          <button
+                            key={ward}
+                            className={styles.locationOption}
+                            onClick={() => {
+                              onWardChange?.(ward);
+                              setShowWardDropdown(false);
+                              setWardSearch('');
+                            }}
+                          >
+                            <span>{ward}</span>
+                          </button>
+                        ))}
                     </div>
                   )}
                 </div>

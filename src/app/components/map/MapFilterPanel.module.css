@@ -378,12 +378,54 @@
   right: 0;
   background: white;
   border: 1px solid var(--color-border);
-  border-radius: 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  max-height: 240px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  max-height: 280px;
   overflow-y: auto;
-  z-index: 100;
-  animation: slideDown 0.2s ease-out;
+  z-index: 50;
+}
+
+/* 🔥 NEW: Search input wrapper in location dropdown */
+.locationSearchWrapper {
+  position: sticky;
+  top: 0;
+  padding: 8px;
+  background: white;
+  border-bottom: 1px solid var(--color-border);
+  z-index: 10;
+  position: relative;
+}
+
+.locationSearchInput {
+  width: 100%;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  padding: 6px 8px 6px 40px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.locationSearchInput:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 92, 182, 0.1);
+}
+
+.locationSearchInput::placeholder {
+  color: var(--color-text-secondary);
+}
+
+.locationSearchWrapper .searchIcon {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-secondary);
+  pointer-events: none;
+  z-index: 1;
 }
 
 @keyframes slideDown {
