@@ -65,6 +65,10 @@ import {
   getDistrictsByProvince, 
   getWardsByDistrict 
 } from '../data/vietnamLocations';
+// Provide an array form of provinces for components that expect an array
+const provinceList = Array.isArray(provinces)
+  ? provinces
+  : Object.entries(provinces).map(([key, val]) => ({ code: key, name: (val as any).name || key }));
 import { toast } from 'sonner';
 import styles from './AddStoreDialog.module.css';
 
@@ -1551,7 +1555,7 @@ export function AddStoreDialog({ open, onOpenChange, onSubmit }: AddStoreDialogP
               setIsPinConfirmed={setIsPinConfirmed}
               wards={wards}
               districts={districts}
-              provinces={provinces}
+              provinces={provinceList}
               geocodeSuggestions={geocodeSuggestions}
               isValidPhone={isValidPhone}
             />
@@ -1588,7 +1592,7 @@ export function AddStoreDialog({ open, onOpenChange, onSubmit }: AddStoreDialogP
                       <SelectValue placeholder="Chọn tỉnh/thành phố" />
                     </SelectTrigger>
                     <SelectContent>
-                      {provinces.map(province => (
+                      {provinceList.map((province: any) => (
                         <SelectItem key={province.code} value={province.code}>
                           {province.name}
                         </SelectItem>
