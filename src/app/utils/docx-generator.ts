@@ -1,4 +1,4 @@
-import { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle } from 'docx';
+import { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle, Table, TableRow, TableCell, WidthType, VerticalAlign } from 'docx';
 import { saveAs } from 'file-saver';
 
 // Helper function to create Times New Roman styled text
@@ -331,7 +331,7 @@ export async function generateM09Document(data: {
           new Paragraph({
             alignment: AlignmentType.CENTER,
             children: [
-              createTNR(`Kiểm tra đột xuất việc chấp hành pháp luật trong sản xuất, kinh doanh hàng hóa, dịch vụ/Khám ${data.subject || '....(4).....'} theo thủ tục hành chính*`, { italic: true, size: 13 }),
+              createTNR(`Kiểm tra đột xuất việc chấp hành pháp luật trong sản xuất, kinh doanh hàng hóa, dịch v/Khám ${data.subject || '....(4).....'} theo thủ tục hành chính*`, { italic: true, size: 13 }),
             ],
             spacing: { after: 200 },
           }),
@@ -502,4 +502,567 @@ export async function generateM09Document(data: {
 
   const blob = await Packer.toBlob(doc);
   saveAs(blob, `Mau09-DeXuat-${Date.now()}.docx`);
+}
+
+// Generate Form06 Inspection Report Document
+export async function generateForm06Document(data: {
+  formNumber: string;
+  issueDate: string;
+  issuePlace: string;
+  organization: string;
+  legalBasis: string[];
+  decisionNumber: string;
+  decisionDate: string;
+  facilityName: string;
+  facilityAddress: string;
+  facilityRep: string;
+  facilityPosition: string;
+  businessLicense: string;
+  teamLeader: string;
+  teamMembers: string[];
+  startTime: string;
+  endTime: string;
+  location: string;
+  inspectionContent: string;
+  violations: string;
+  subjectOpinion: string;
+  teamOpinion: string;
+}) {
+  const doc = new Document({
+    sections: [
+      {
+        properties: {
+          page: {
+            margin: {
+              top: 1440,
+              right: 1080,
+              bottom: 1440,
+              left: 1080,
+            },
+          },
+        },
+        children: [
+          // Header row - two columns
+          new Paragraph({
+            children: [
+              createTNR(data.organization.toUpperCase(), { bold: true, size: 13 }),
+              new TextRun({ text: '\t\t\t', font: 'Times New Roman' }),
+              createTNR('CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM', { bold: true, size: 13 }),
+            ],
+            tabStops: [
+              {
+                type: 'right' as any,
+                position: 9000,
+              },
+            ],
+          }),
+          
+          // Underline and subtitle
+          new Paragraph({
+            children: [
+              createTNR('_______________', { size: 13 }),
+              new TextRun({ text: '\t\t\t', font: 'Times New Roman' }),
+              createTNR('Độc lập - Tự do - Hạnh phúc', { bold: true, size: 13 }),
+            ],
+            tabStops: [
+              {
+                type: 'right' as any,
+                position: 9000,
+              },
+            ],
+          }),
+          
+          // Form number and date
+          new Paragraph({
+            children: [
+              createTNR(`Số: ${data.formNumber}`, { bold: true, size: 13 }),
+              new TextRun({ text: '\t\t\t', font: 'Times New Roman' }),
+              createTNR(`${data.issuePlace}, ${data.issueDate}`, { italic: true, size: 13 }),
+            ],
+            tabStops: [
+              {
+                type: 'right' as any,
+                position: 9000,
+              },
+            ],
+            spacing: { after: 400 },
+          }),
+          
+          // Title
+          new Paragraph({
+            children: [createTNR('BIÊN BẢN KIỂM TRA', { bold: true, size: 16 })],
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 400, after: 200 },
+          }),
+          
+          // Subtitle
+          new Paragraph({
+            children: [createTNR('(Ban hành kèm theo Thông tư số 27/2018/TT-BCT)', { italic: true, size: 12 })],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 400 },
+          }),
+          
+          // Legal basis
+          new Paragraph({
+            children: [
+              createTNR('Căn cứ pháp lý: ', { bold: true, size: 13 }),
+              createTNR(data.legalBasis.join('; '), { size: 13 }),
+            ],
+            spacing: { after: 200 },
+          }),
+          
+          new Paragraph({
+            children: [
+              createTNR('Quyết định kiểm tra số: ', { bold: true, size: 13 }),
+              createTNR(`${data.decisionNumber} ngày ${data.decisionDate}`, { size: 13 }),
+            ],
+            spacing: { after: 400 },
+          }),
+          
+          // Section I: Facility Info
+          new Paragraph({
+            children: [createTNR('I. THÔNG TIN CƠ SỞ KIỂM TRA', { bold: true, size: 13 })],
+            spacing: { before: 200, after: 200 },
+          }),
+          
+          new Paragraph({
+            children: [createTNR(`- Tên cơ sở: ${data.facilityName}`, { size: 13 })],
+            spacing: { after: 100 },
+          }),
+          
+          new Paragraph({
+            children: [createTNR(`- Địa chỉ: ${data.facilityAddress}`, { size: 13 })],
+            spacing: { after: 100 },
+          }),
+          
+          new Paragraph({
+            children: [createTNR(`- Người đại diện: ${data.facilityRep} - Chức vụ: ${data.facilityPosition}`, { size: 13 })],
+            spacing: { after: 100 },
+          }),
+          
+          new Paragraph({
+            children: [createTNR(`- Giấy phép kinh doanh số: ${data.businessLicense}`, { size: 13 })],
+            spacing: { after: 300 },
+          }),
+          
+          // Section II: Inspection Team
+          new Paragraph({
+            children: [createTNR('II. ĐOÀN KIỂM TRA', { bold: true, size: 13 })],
+            spacing: { before: 200, after: 200 },
+          }),
+          
+          new Paragraph({
+            children: [createTNR(`- Cơ quan: ${data.organization}`, { size: 13 })],
+            spacing: { after: 100 },
+          }),
+          
+          new Paragraph({
+            children: [createTNR(`- Trưởng đoàn: ${data.teamLeader}`, { size: 13 })],
+            spacing: { after: 100 },
+          }),
+          
+          new Paragraph({
+            children: [createTNR(`- Thành viên: ${data.teamMembers.join('; ')}`, { size: 13 })],
+            spacing: { after: 300 },
+          }),
+          
+          // Section III: Timing
+          new Paragraph({
+            children: [createTNR('III. THỜI GIAN VÀ ĐỊA ĐIỂM', { bold: true, size: 13 })],
+            spacing: { before: 200, after: 200 },
+          }),
+          
+          new Paragraph({
+            children: [createTNR(`- Thời gian bắt đầu: ${data.startTime}`, { size: 13 })],
+            spacing: { after: 100 },
+          }),
+          
+          new Paragraph({
+            children: [createTNR(`- Thời gian kết thúc: ${data.endTime}`, { size: 13 })],
+            spacing: { after: 100 },
+          }),
+          
+          new Paragraph({
+            children: [createTNR(`- Địa điểm: ${data.location}`, { size: 13 })],
+            spacing: { after: 300 },
+          }),
+          
+          // Section IV: Content
+          new Paragraph({
+            children: [createTNR('IV. NỘI DUNG KIỂM TRA', { bold: true, size: 13 })],
+            spacing: { before: 200, after: 200 },
+          }),
+          
+          new Paragraph({
+            children: [createTNR(data.inspectionContent, { size: 13 })],
+            alignment: AlignmentType.JUSTIFIED,
+            spacing: { after: 300, line: 360 },
+          }),
+          
+          // Section V: Violations
+          new Paragraph({
+            children: [createTNR('V. VI PHẠT HIỆN', { bold: true, size: 13 })],
+            spacing: { before: 200, after: 200 },
+          }),
+          
+          new Paragraph({
+            children: [createTNR(data.violations, { size: 13 })],
+            alignment: AlignmentType.JUSTIFIED,
+            spacing: { after: 300, line: 360 },
+          }),
+          
+          // Section VI: Subject Opinion
+          new Paragraph({
+            children: [createTNR('VI. Ý KIẾN CỦA ĐỐI TƯỢNG KIỂM TRA', { bold: true, size: 13 })],
+            spacing: { before: 200, after: 200 },
+          }),
+          
+          new Paragraph({
+            children: [createTNR(data.subjectOpinion, { size: 13 })],
+            alignment: AlignmentType.JUSTIFIED,
+            spacing: { after: 300, line: 360 },
+          }),
+          
+          // Section VII: Team Opinion
+          new Paragraph({
+            children: [createTNR('VII. Ý KIẾN CỦA ĐOÀN KIỂM TRA', { bold: true, size: 13 })],
+            spacing: { before: 200, after: 200 },
+          }),
+          
+          new Paragraph({
+            children: [createTNR(data.teamOpinion, { size: 13 })],
+            alignment: AlignmentType.JUSTIFIED,
+            spacing: { after: 600, line: 360 },
+          }),
+          
+          // Signature section
+          new Paragraph({
+            children: [
+              createTNR('ĐẠI DIỆN CƠ SỞ', { bold: true, size: 13 }),
+              new TextRun({ text: '\t\t\t\t\t', font: 'Times New Roman' }),
+              createTNR('TRƯỞNG ĐOÀN KIỂM TRA', { bold: true, size: 13 }),
+            ],
+            tabStops: [
+              {
+                type: 'right' as any,
+                position: 9000,
+              },
+            ],
+            spacing: { before: 400, after: 100 },
+          }),
+          
+          new Paragraph({
+            children: [
+              createTNR('(Ký và ghi rõ họ tên)', { italic: true, size: 12 }),
+              new TextRun({ text: '\t\t\t\t\t\t', font: 'Times New Roman' }),
+              createTNR('(Ký và ghi rõ họ tên)', { italic: true, size: 12 }),
+            ],
+            tabStops: [
+              {
+                type: 'right' as any,
+                position: 9000,
+              },
+            ],
+            spacing: { after: 800 },
+          }),
+          
+          // Signer names
+          new Paragraph({
+            children: [
+              createTNR(data.facilityRep, { bold: true, size: 13 }),
+              new TextRun({ text: '\t\t\t\t\t\t\t', font: 'Times New Roman' }),
+              createTNR(data.teamLeader, { bold: true, size: 13 }),
+            ],
+            tabStops: [
+              {
+                type: 'right' as any,
+                position: 9000,
+              },
+            ],
+          }),
+        ],
+      },
+    ],
+  });
+
+  const blob = await Packer.toBlob(doc);
+  saveAs(blob, `Mau06-BienBan-${Date.now()}.docx`);
+}
+
+// Generate Form10 Inventory List Document
+export async function generateForm10Document(data: {
+  formNumber: string;
+  issueDate: string;
+  issuePlace: string;
+  relatedForm06: string;
+  organization: string;
+  teamLeader: string;
+  facilityName: string;
+  facilityAddress: string;
+  items: Array<{
+    stt: string;
+    name: string; // Tên tang vật/phương tiện/giấy tờ
+    specifications: string; // Chủng loại, nhãn hiệu, xuất xứ, số đăng ký
+    unit: string; // Đơn vị tính
+    quantity: string; // Số lượng
+    condition: string; // Tình trạng, đặc điểm
+  }>;
+}) {
+  // Use static imports instead of dynamic import to avoid build warnings
+  
+  // Create table rows for items
+  const itemRows = data.items.map(item => 
+    new TableRow({
+      children: [
+        new TableCell({
+          children: [new Paragraph({
+            children: [createTNR(item.stt, { size: 12 })],
+            alignment: AlignmentType.CENTER,
+          })],
+          verticalAlign: VerticalAlign.CENTER,
+          width: { size: 5, type: WidthType.PERCENTAGE },
+        }),
+        new TableCell({
+          children: [new Paragraph({
+            children: [createTNR(item.name, { size: 12 })],
+          })],
+          verticalAlign: VerticalAlign.CENTER,
+          width: { size: 25, type: WidthType.PERCENTAGE },
+        }),
+        new TableCell({
+          children: [new Paragraph({
+            children: [createTNR(item.specifications, { size: 12 })],
+          })],
+          verticalAlign: VerticalAlign.CENTER,
+          width: { size: 30, type: WidthType.PERCENTAGE },
+        }),
+        new TableCell({
+          children: [new Paragraph({
+            children: [createTNR(item.unit, { size: 12 })],
+            alignment: AlignmentType.CENTER,
+          })],
+          verticalAlign: VerticalAlign.CENTER,
+          width: { size: 10, type: WidthType.PERCENTAGE },
+        }),
+        new TableCell({
+          children: [new Paragraph({
+            children: [createTNR(item.quantity, { size: 12 })],
+            alignment: AlignmentType.RIGHT,
+          })],
+          verticalAlign: VerticalAlign.CENTER,
+          width: { size: 10, type: WidthType.PERCENTAGE },
+        }),
+        new TableCell({
+          children: [new Paragraph({
+            children: [createTNR(item.condition, { size: 12 })],
+          })],
+          verticalAlign: VerticalAlign.CENTER,
+          width: { size: 20, type: WidthType.PERCENTAGE },
+        }),
+      ],
+    })
+  );
+
+  const doc = new Document({
+    sections: [
+      {
+        properties: {
+          page: {
+            margin: {
+              top: 1440,
+              right: 1080,
+              bottom: 1440,
+              left: 1080,
+            },
+          },
+        },
+        children: [
+          // Header row - two columns
+          new Paragraph({
+            children: [
+              createTNR(data.organization.toUpperCase(), { bold: true, size: 13 }),
+              new TextRun({ text: '\t\t\t', font: 'Times New Roman' }),
+              createTNR('CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM', { bold: true, size: 13 }),
+            ],
+            tabStops: [
+              {
+                type: 'right' as any,
+                position: 9000,
+              },
+            ],
+          }),
+          
+          // Underline and subtitle
+          new Paragraph({
+            children: [
+              createTNR('_______________', { size: 13 }),
+              new TextRun({ text: '\t\t\t', font: 'Times New Roman' }),
+              createTNR('Độc lập - Tự do - Hạnh phúc', { bold: true, size: 13 }),
+            ],
+            tabStops: [
+              {
+                type: 'right' as any,
+                position: 9000,
+              },
+            ],
+          }),
+          
+          // Form number and date
+          new Paragraph({
+            children: [
+              createTNR(`Số: ${data.formNumber}`, { bold: true, size: 13 }),
+              new TextRun({ text: '\t\t\t', font: 'Times New Roman' }),
+              createTNR(`${data.issuePlace}, ${data.issueDate}`, { italic: true, size: 13 }),
+            ],
+            tabStops: [
+              {
+                type: 'right' as any,
+                position: 9000,
+              },
+            ],
+            spacing: { after: 400 },
+          }),
+          
+          // Title
+          new Paragraph({
+            children: [createTNR('BẢNG KÊ', { bold: true, size: 16 })],
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 400, after: 100 },
+          }),
+          
+          // Subtitle 1
+          new Paragraph({
+            children: [createTNR('Tang vật, phương tiện, hàng hóa, giấy tờ', { bold: true, size: 13 })],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 100 },
+          }),
+          
+          // Subtitle 2
+          new Paragraph({
+            children: [createTNR(`(Kèm theo Biên bản kiểm tra số: ${data.relatedForm06})`, { italic: true, size: 12 })],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 400 },
+          }),
+          
+          // Table
+          new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows: [
+              // Header row
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [new Paragraph({
+                      children: [createTNR('STT', { bold: true, size: 11 })],
+                      alignment: AlignmentType.CENTER,
+                    })],
+                    verticalAlign: VerticalAlign.CENTER,
+                    width: { size: 5, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({
+                      children: [createTNR('Tên tang vật/ phương tiện/giấy tờ', { bold: true, size: 11 })],
+                      alignment: AlignmentType.CENTER,
+                    })],
+                    verticalAlign: VerticalAlign.CENTER,
+                    width: { size: 25, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({
+                      children: [createTNR('Chủng loại, nhãn hiệu, xuất xứ, số đăng ký của tang vật/ phương tiện/giấy tờ', { bold: true, size: 11 })],
+                      alignment: AlignmentType.CENTER,
+                    })],
+                    verticalAlign: VerticalAlign.CENTER,
+                    width: { size: 30, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({
+                      children: [createTNR('Đơn vị tính', { bold: true, size: 11 })],
+                      alignment: AlignmentType.CENTER,
+                    })],
+                    verticalAlign: VerticalAlign.CENTER,
+                    width: { size: 10, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({
+                      children: [createTNR('Số lượng', { bold: true, size: 11 })],
+                      alignment: AlignmentType.CENTER,
+                    })],
+                    verticalAlign: VerticalAlign.CENTER,
+                    width: { size: 10, type: WidthType.PERCENTAGE },
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({
+                      children: [createTNR('Tình trạng, đặc điểm', { bold: true, size: 11 })],
+                      alignment: AlignmentType.CENTER,
+                    })],
+                    verticalAlign: VerticalAlign.CENTER,
+                    width: { size: 20, type: WidthType.PERCENTAGE },
+                  }),
+                ],
+              }),
+              // Data rows
+              ...itemRows,
+            ],
+          }),
+          
+          // Note
+          new Paragraph({
+            children: [createTNR('(NGỊ KÝ TÊN CỦA CÁC BÊN LIÊN QUAN)', { italic: true, size: 11 })],
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 200, after: 400 },
+          }),
+          
+          // Signature section
+          new Paragraph({
+            children: [
+              createTNR('NGƯỜI LẬT BẢNG', { bold: true, size: 13 }),
+              new TextRun({ text: '\t\t\t\t\t', font: 'Times New Roman' }),
+              createTNR('TRƯỞNG ĐOÀN KIỂM TRA', { bold: true, size: 13 }),
+            ],
+            tabStops: [
+              {
+                type: 'right' as any,
+                position: 9000,
+              },
+            ],
+            spacing: { before: 400, after: 100 },
+          }),
+          
+          new Paragraph({
+            children: [
+              createTNR('(Ký và ghi rõ họ tên)', { italic: true, size: 12 }),
+              new TextRun({ text: '\t\t\t\t\t\t', font: 'Times New Roman' }),
+              createTNR('(Ký và ghi rõ họ tên)', { italic: true, size: 12 }),
+            ],
+            tabStops: [
+              {
+                type: 'right' as any,
+                position: 9000,
+              },
+            ],
+            spacing: { after: 800 },
+          }),
+          
+          // Signer names
+          new Paragraph({
+            children: [
+              createTNR(data.teamLeader, { bold: true, size: 13 }),
+              new TextRun({ text: '\t\t\t\t\t\t\t', font: 'Times New Roman' }),
+              createTNR(data.teamLeader, { bold: true, size: 13 }),
+            ],
+            tabStops: [
+              {
+                type: 'right' as any,
+                position: 9000,
+              },
+            ],
+          }),
+        ],
+      },
+    ],
+  });
+
+  const blob = await Packer.toBlob(doc);
+  saveAs(blob, `Mau10-BangKe-${Date.now()}.docx`);
 }

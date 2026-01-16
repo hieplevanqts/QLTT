@@ -1,18 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import { ArrowLeft, AlertCircle } from 'lucide-react';
+import { ArrowLeft, AlertCircle, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import styles from './PlanCreate.module.css';
 import DateRangePicker, { DateRange } from '../../../ui-kit/DateRangePicker';
 import { RichTextEditor } from '../../../ui-kit/RichTextEditor';
 import { usePlans } from '../../contexts/PlansContext';
 import { type Plan, type PlanType, type Priority } from '../../data/kehoach-mock-data';
-import { FormDocumentChecklist } from '../../components/documents/FormDocumentChecklist';
-import { SelectFromInsModal, type InsDocument } from '../../components/documents/SelectFromInsModal';
-import { DocumentFormModal, type DocumentFormData } from '../../components/documents/DocumentFormModal';
-import { InsSyncLogDrawer } from '../../components/documents/InsSyncLogDrawer';
-import { useDocumentChecklist, canProceedWithAction } from '../../../hooks/useDocumentChecklist';
-import type { DocumentCode } from '../../../types/ins-documents';
+import { SelectInsDecisionModal, type InsDecision } from '../../components/plans/SelectInsDecisionModal';
 
 type PlanTypeTab = 'periodic' | 'thematic' | 'urgent';
 
@@ -57,24 +52,11 @@ export function PlanCreate() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [dateRange, setDateRange] = useState<DateRange>({ startDate: null, endDate: null });
-
-  // Document checklist state
-  const [hasAuthorization, setHasAuthorization] = useState(false);
-  const [showSelectInsModal, setShowSelectInsModal] = useState(false);
-  const [showDocumentFormModal, setShowDocumentFormModal] = useState(false);
-  const [showSyncLogDrawer, setShowSyncLogDrawer] = useState(false);
-  const [selectedDocumentId, setSelectedDocumentId] = useState<string>('');
-  const [selectedDocumentCode, setSelectedDocumentCode] = useState<DocumentCode>('M03');
-
-  // Get document checklist based on context
-  const { documents, validation } = useDocumentChecklist(
-    isEditMode ? 'plan_edit' : 'plan_create',
-    {
-      planType: activeTab,
-      hasAuthorization,
-    }
-  );
   
+  // M03 - Quyết định giao quyền
+  const [selectedM03, setSelectedM03] = useState<InsDecision | null>(null);
+  const [showM03Modal, setShowM03Modal] = useState(false);
+
   // Helper functions - must be defined before useEffect
   const getPlanTypeLabel = (type: PlanTypeTab): string => {
     switch(type) {
@@ -236,6 +218,14 @@ export function PlanCreate() {
         endDate: formData.endDate || formData.startDate,
         createdBy: 'Người tạo hiện tại',
         createdAt: new Date().toISOString(),
+        // Save M03 if selected
+        insDecisionM03: selectedM03 ? {
+          id: selectedM03.id,
+          code: selectedM03.code,
+          title: selectedM03.title,
+          issueDate: selectedM03.issueDate,
+          signer: selectedM03.signer,
+        } : undefined,
         stats: {
           totalTargets: 0,
           totalTasks: 0,
@@ -441,6 +431,41 @@ export function PlanCreate() {
             />
           </div>
 
+          {/* M03 - Quyết định giao quyền */}
+          <div className={styles.formGroup}>
+            <label className={styles.label}>
+              Quyết định giao quyền (M03)
+              <span className={styles.helpText}> - Tùy chọn</span>
+            </label>
+            {selectedM03 ? (
+              <div className={styles.selectedDecision}>
+                <div className={styles.selectedDecisionContent}>
+                  <FileText size={20} className={styles.selectedDecisionIcon} />
+                  <div className={styles.selectedDecisionInfo}>
+                    <div className={styles.selectedDecisionCode}>{selectedM03.code}</div>
+                    <div className={styles.selectedDecisionTitle}>{selectedM03.title}</div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedM03(null)}
+                  className={styles.removeButton}
+                >
+                  ×
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowM03Modal(true)}
+                className={styles.selectButton}
+              >
+                <FileText size={16} />
+                Chọn từ hệ thống INS
+              </button>
+            )}
+          </div>
+
           {/* Mức độ ưu tiên */}
           <div className={styles.formGroup}>
             <label className={styles.label}>
@@ -500,66 +525,6 @@ export function PlanCreate() {
             />
           </div>
 
-          {/* Authorization Toggle */}
-          <div className={styles.formGroup}>
-            <label className={styles.label} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={hasAuthorization}
-                onChange={(e) => setHasAuthorization(e.target.checked)}
-                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-              />
-              <span>Có ủy quyền ban hành quyết định kiểm tra</span>
-            </label>
-            <small style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-xs)', marginTop: '4px', display: 'block' }}>
-              Đánh dấu nếu người có thẩm quyền đã ủy quyền cho cấp dưới ban hành quyết định
-            </small>
-          </div>
-
-          {/* Document Checklist */}
-          <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
-            <FormDocumentChecklist
-              title="Hồ sơ biểu mẫu (INS)"
-              subtitle="Các biểu mẫu cần thiết cho việc tạo kế hoạch. Hệ thống sẽ kiểm tra biểu mẫu bắt buộc trước khi cho phép gửi trình duyệt."
-              documents={documents}
-              onImportClick={(docId) => {
-                setSelectedDocumentId(docId);
-                const doc = documents.find(d => d.instance.id === docId);
-                if (doc) {
-                  setSelectedDocumentCode(doc.template.code);
-                  setShowSelectInsModal(true);
-                }
-              }}
-              onCreateClick={(docId) => {
-                setSelectedDocumentId(docId);
-                const doc = documents.find(d => d.instance.id === docId);
-                if (doc) {
-                  setSelectedDocumentCode(doc.template.code);
-                  setShowDocumentFormModal(true);
-                }
-              }}
-              onEditClick={(docId) => {
-                setSelectedDocumentId(docId);
-                const doc = documents.find(d => d.instance.id === docId);
-                if (doc) {
-                  setSelectedDocumentCode(doc.template.code);
-                  setShowDocumentFormModal(true);
-                }
-              }}
-              onViewPdfClick={(docId) => {
-                toast.info('Xem PDF biểu mẫu (chức năng đang phát triển)');
-              }}
-              onPushToInsClick={(docId) => {
-                toast.success('Đã đẩy biểu mẫu sang INS thành công');
-              }}
-              onSyncClick={(docId) => {
-                toast.success('Đã đồng bộ lại biểu mẫu từ INS');
-              }}
-              onViewLogClick={() => setShowSyncLogDrawer(true)}
-              showWarnings={true}
-            />
-          </div>
-
           {/* Form Actions */}
           <div className={styles.actions}>
             <button
@@ -579,40 +544,16 @@ export function PlanCreate() {
         </form>
       </div>
 
-      {/* INS Modals */}
-      <SelectFromInsModal
-        open={showSelectInsModal}
-        onOpenChange={setShowSelectInsModal}
-        documentCode={selectedDocumentCode}
-        documentName={documents.find(d => d.template.code === selectedDocumentCode)?.template.name || ''}
-        onSelect={(doc: InsDocument) => {
-          toast.success(`Đã import ${doc.code} từ INS thành công`);
-          setShowSelectInsModal(false);
+      {/* M03 Modal */}
+      <SelectInsDecisionModal
+        open={showM03Modal}
+        onOpenChange={setShowM03Modal}
+        documentCode="M03"
+        documentName="Quyết định giao quyền ban hành quyết định kiểm tra"
+        onSelect={(decision) => {
+          setSelectedM03(decision);
+          toast.success(`Đã chọn ${decision.code}`);
         }}
-      />
-
-      <DocumentFormModal
-        open={showDocumentFormModal}
-        onOpenChange={setShowDocumentFormModal}
-        documentCode={selectedDocumentCode}
-        documentName={documents.find(d => d.template.code === selectedDocumentCode)?.template.name || ''}
-        mode="create"
-        onSave={(data: DocumentFormData, saveAsDraft: boolean) => {
-          if (saveAsDraft) {
-            toast.success('Đã lưu nháp biểu mẫu');
-          } else {
-            toast.success('Đã tạo biểu mẫu thành công');
-          }
-          setShowDocumentFormModal(false);
-        }}
-        onGeneratePdf={() => {
-          toast.success('Đã sinh file PDF thành công');
-        }}
-      />
-
-      <InsSyncLogDrawer
-        open={showSyncLogDrawer}
-        onOpenChange={setShowSyncLogDrawer}
       />
     </div>
   );

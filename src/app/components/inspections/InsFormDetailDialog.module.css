@@ -1,0 +1,458 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.dialog {
+  background: var(--card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--elevation-lg);
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.dialogHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dialogHeaderLeft {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  flex: 1;
+}
+
+.dialogIcon {
+  color: var(--primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.dialogTitle {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+  margin: 0 0 4px 0;
+}
+
+.dialogSubtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  margin: 0;
+}
+
+.closeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--foreground);
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.closeButton:hover {
+  background: var(--muted);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.dialogContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px 40px;
+}
+
+.dialogFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid var(--border);
+}
+
+/* Form Content Styles */
+.formContent {
+  font-family: 'Inter', sans-serif;
+  color: var(--foreground);
+  line-height: 1.8;
+}
+
+.formHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 40px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--border);
+}
+
+.formHeaderUnit {
+  text-align: left;
+}
+
+.unitName {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.unitSubname {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+}
+
+.formHeaderInfo {
+  text-align: right;
+  font-size: var(--text-sm);
+}
+
+.formLocation {
+  font-style: italic;
+  margin-top: 4px;
+}
+
+.formTitle {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.country {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.motto {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: 16px;
+}
+
+.separator {
+  width: 80px;
+  height: 2px;
+  background: var(--foreground);
+  margin: 16px auto;
+}
+
+.docTitle {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  margin: 16px 0 8px 0;
+  color: var(--foreground);
+}
+
+.docSubtitle {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  margin: 0;
+  font-style: italic;
+}
+
+.formBody {
+  font-size: var(--text-sm);
+}
+
+.issuerSection {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.issuerUnit {
+  margin-top: 4px;
+  font-weight: var(--font-weight-medium);
+}
+
+.legalBasis {
+  margin-bottom: 24px;
+}
+
+.legalBasis strong,
+.decisionSection strong,
+.bbSection strong {
+  display: block;
+  margin-bottom: 12px;
+  font-weight: var(--font-weight-semibold);
+}
+
+.legalBasis ul,
+.teamInfo ul,
+.notificationInfo ul,
+.bbInfo ul,
+.bbSection ul {
+  margin: 8px 0 8px 24px;
+  padding: 0;
+  list-style-type: disc;
+}
+
+.legalBasis li,
+.teamInfo li,
+.notificationInfo li,
+.bbInfo li,
+.bbSection li {
+  margin: 6px 0;
+  line-height: 1.8;
+}
+
+.decisionSection {
+  margin-bottom: 32px;
+}
+
+.article {
+  margin: 20px 0;
+  text-align: justify;
+}
+
+.teamInfo {
+  margin: 16px 0;
+  padding-left: 16px;
+}
+
+.teamInfo strong {
+  display: block;
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+.signature {
+  margin-top: 48px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.signatureBlock {
+  text-align: center;
+  min-width: 250px;
+}
+
+.signatureTitle {
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.signatureInstruction {
+  font-style: italic;
+  font-size: var(--text-xs);
+  margin-bottom: 60px;
+}
+
+.signerName {
+  font-weight: var(--font-weight-bold);
+  margin-top: 8px;
+}
+
+.signatures {
+  margin-top: 48px;
+  display: flex;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+.signatureColumn {
+  text-align: center;
+  flex: 1;
+}
+
+/* Notification specific */
+.recipient {
+  margin-bottom: 24px;
+  font-size: var(--text-sm);
+}
+
+.recipient div {
+  margin: 6px 0;
+}
+
+.notificationBody {
+  text-align: justify;
+}
+
+.notificationBody p {
+  margin: 16px 0;
+}
+
+.notificationInfo {
+  margin: 20px 0;
+}
+
+.notificationInfo strong {
+  display: block;
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+/* Inspection record specific */
+.bbInfo {
+  margin-bottom: 24px;
+}
+
+.bbSection {
+  margin: 24px 0;
+}
+
+.bbSubsection {
+  margin: 16px 0;
+  padding-left: 16px;
+}
+
+.bbSubsection strong {
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* Violation specific */
+.violationList {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.violationItem {
+  padding: 16px;
+  background: var(--muted);
+  border-left: 4px solid #DC2626;
+  border-radius: var(--radius);
+}
+
+.violationItem strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #DC2626;
+}
+
+.violationItem p {
+  margin: 8px 0;
+  font-size: var(--text-sm);
+}
+
+/* Buttons */
+.primaryButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: var(--radius);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.primaryButton:hover {
+  opacity: 0.9;
+}
+
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--card);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondaryButton:hover {
+  background: var(--muted);
+  border-color: var(--primary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dialog {
+    max-height: 95vh;
+    margin: 10px;
+  }
+
+  .dialogContent {
+    padding: 20px 16px;
+  }
+
+  .formHeader {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .formHeaderInfo {
+    text-align: left;
+  }
+
+  .docTitle {
+    font-size: var(--text-xl);
+  }
+
+  .signatures {
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .dialogFooter {
+    flex-wrap: wrap;
+  }
+
+  .dialogFooter button {
+    flex: 1;
+    min-width: 120px;
+  }
+}

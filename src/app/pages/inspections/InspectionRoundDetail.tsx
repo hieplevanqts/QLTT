@@ -18,19 +18,27 @@ import {
   AlertCircle,
   Store,
   Eye,
+  History,
+  UserCircle,
+  RefreshCw,
+  Trash2,
+  Upload,
+  Settings,
 } from 'lucide-react';
 import styles from './InspectionRoundDetail.module.css';
 import { InspectionRoundStatusBadge } from '../../components/inspections/InspectionRoundStatusBadge';
 import { CreateSessionDialog } from '../../components/inspections/CreateSessionDialog';
 import { Button } from '../../components/ui/button';
+import { InsFormDetailDialog } from '../../components/inspections/InsFormDetailDialog';
 
-type TabType = 'overview' | 'sessions' | 'team' | 'scope';
+type TabType = 'overview' | 'sessions' | 'team' | 'scope' | 'history';
 
 const TABS = [
   { id: 'overview' as TabType, label: 'Tổng quan' },
   { id: 'sessions' as TabType, label: 'Phiên kiểm tra', badge: 6 },
   { id: 'team' as TabType, label: 'Nhân sự', badge: 4 },
   { id: 'scope' as TabType, label: 'Phạm vi' },
+  { id: 'history' as TabType, label: 'Lịch sử cập nhật', badge: 12 },
 ];
 
 interface InspectionRoundData {
@@ -41,7 +49,7 @@ interface InspectionRoundData {
   planName: string;
   quarter: string;
   status: 'planning' | 'preparing' | 'in_progress' | 'reporting' | 'completed' | 'cancelled';
-  type: 'scheduled' | 'unannounced' | 'followup' | 'complaint';
+  type: 'routine' | 'targeted' | 'sudden' | 'followup';
   startDate: string;
   endDate: string;
   scope: string;
@@ -74,7 +82,7 @@ const mockRoundData: InspectionRoundData = {
   planName: 'Kế hoạch kiểm tra định kỳ của hàng',
   quarter: 'Q1/2025',
   status: 'in_progress',
-  type: 'scheduled',
+  type: 'routine',
   startDate: '2025-01-01',
   endDate: '2025-01-31',
   scope: '3 phường/xã',
@@ -200,12 +208,158 @@ const mockTeamMembers = [
   },
 ];
 
+// Mock history data với tham chiếu biểu mẫu INS
+const mockHistory = [
+  {
+    id: 'h-12',
+    timestamp: '2025-01-15T16:30:00',
+    user: 'Nguyễn Văn A',
+    action: 'Cập nhật tiến độ đợt kiểm tra',
+    type: 'update' as const,
+    description: 'Đã hoàn thành 9/15 phiên kiểm tra, cập nhật tiến độ từ 55% lên 65%',
+    insForm: null,
+  },
+  {
+    id: 'h-11',
+    timestamp: '2025-01-14T10:15:00',
+    user: 'Trần Thị B',
+    action: 'Hoàn thành phiên kiểm tra',
+    type: 'session_complete' as const,
+    description: 'Đã hoàn thành phiên kiểm tra PS-009 tại Siêu thị CoopMart',
+    insForm: {
+      code: 'BB-KT-009',
+      type: 'Mẫu 06',
+      name: 'Biên bản kiểm tra',
+    },
+  },
+  {
+    id: 'h-10',
+    timestamp: '2025-01-12T14:45:00',
+    user: 'Nguyễn Văn A',
+    action: 'Chỉnh sửa thông tin đợt kiểm tra',
+    type: 'edit' as const,
+    description: 'Cập nhật phạm vi kiểm tra: thêm phường Nguyễn Cư Trinh vào danh sách',
+    insForm: {
+      code: '01/QĐ-KT',
+      type: 'Mẫu 01',
+      name: 'Quyết định kiểm tra',
+    },
+  },
+  {
+    id: 'h-9',
+    timestamp: '2025-01-10T09:20:00',
+    user: 'Lê Văn C',
+    action: 'Tạo phiên kiểm tra mới',
+    type: 'session_create' as const,
+    description: 'Đã tạo phiên kiểm tra PS-008 tại Cửa hàng Thực phẩm Sạch',
+    insForm: null,
+  },
+  {
+    id: 'h-8',
+    timestamp: '2025-01-09T11:00:00',
+    user: 'Nguyễn Văn A',
+    action: 'Import biểu mẫu từ INS',
+    type: 'import' as const,
+    description: 'Đã import Thông báo KT-TB từ hệ thống INS',
+    insForm: {
+      code: '03/KT-TB',
+      type: 'Mẫu 03',
+      name: 'Thông báo kiểm tra',
+    },
+  },
+  {
+    id: 'h-7',
+    timestamp: '2025-01-08T15:30:00',
+    user: 'Phạm Thị D',
+    action: 'Xóa phiên kiểm tra',
+    type: 'session_delete' as const,
+    description: 'Đã xóa phiên kiểm tra PS-007 do cơ sở đã ngưng hoạt động',
+    insForm: null,
+  },
+  {
+    id: 'h-6',
+    timestamp: '2025-01-07T08:45:00',
+    user: 'Nguyễn Văn A',
+    action: 'Cập nhật nhân sự',
+    type: 'team_update' as const,
+    description: 'Thêm Phạm Thị D vào đội kiểm tra',
+    insForm: {
+      code: '05/QĐ-PC',
+      type: 'Mẫu 02',
+      name: 'Quyết định phân công',
+    },
+  },
+  {
+    id: 'h-5',
+    timestamp: '2025-01-05T16:00:00',
+    user: 'Trần Thị B',
+    action: 'Hoàn thành phiên kiểm tra',
+    type: 'session_complete' as const,
+    description: 'Đã hoàn thành phiên kiểm tra PS-002 tại Siêu thị mini Phú Thọ - Không vi phạm',
+    insForm: {
+      code: 'BB-KT-002',
+      type: 'Mẫu 06',
+      name: 'Biên bản kiểm tra',
+    },
+  },
+  {
+    id: 'h-4',
+    timestamp: '2025-01-05T13:30:00',
+    user: 'Nguyễn Văn A',
+    action: 'Hoàn thành phiên kiểm tra',
+    type: 'session_complete' as const,
+    description: 'Đã hoàn thành phiên kiểm tra PS-001 tại Cửa hàng Thực phẩm An Khang - Phát hiện 2 vi phạm',
+    insForm: {
+      code: 'BB-KT-001',
+      type: 'Mẫu 06',
+      name: 'Biên bản kiểm tra',
+    },
+  },
+  {
+    id: 'h-3',
+    timestamp: '2025-01-03T10:00:00',
+    user: 'Nguyễn Văn A',
+    action: 'Import biểu mẫu từ INS',
+    type: 'import' as const,
+    description: 'Đã import Quyết định phân công từ hệ thống INS',
+    insForm: {
+      code: '05/QĐ-PC',
+      type: 'Mẫu 02',
+      name: 'Quyết định phân công',
+    },
+  },
+  {
+    id: 'h-2',
+    timestamp: '2025-01-02T14:30:00',
+    user: 'Nguyễn Văn A',
+    action: 'Import biểu mẫu từ INS',
+    type: 'import' as const,
+    description: 'Đã import Quyết định kiểm tra từ hệ thống INS',
+    insForm: {
+      code: '01/QĐ-KT',
+      type: 'Mẫu 01',
+      name: 'Quyết định kiểm tra',
+    },
+  },
+  {
+    id: 'h-1',
+    timestamp: '2025-01-01T09:00:00',
+    user: 'Nguyễn Văn A',
+    action: 'Tạo đợt kiểm tra',
+    type: 'create' as const,
+    description: 'Đã tạo đợt kiểm tra mới "Kiểm tra Tết Nguyên Đán 2025"',
+    insForm: null,
+  },
+];
+
 export default function InspectionRoundDetail() {
   const { roundId } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [sessions, setSessions] = useState(mockSessions);
+  const [showInsFormDetail, setShowInsFormDetail] = useState(false);
+  const [selectedInsForm, setSelectedInsForm] = useState<{ code: string; type: string; name: string } | null>(null);
 
   const decodedRoundId = roundId ? decodeURIComponent(roundId) : undefined;
   const data = mockRoundData; // In real app: fetch by roundId
@@ -264,6 +418,11 @@ export default function InspectionRoundDetail() {
 
   const handleComplete = () => {
     console.log('Complete round');
+  };
+
+  const handleInsFormClick = (insForm: { code: string; type: string; name: string }) => {
+    setSelectedInsForm(insForm);
+    setShowInsFormDetail(true);
   };
 
   return (
@@ -450,6 +609,33 @@ export default function InspectionRoundDetail() {
               </div>
             </div>
 
+            {/* Biểu mẫu từ INS */}
+            <div className={styles.infoContent}>
+              <h2 className={styles.sectionTitle}>Biểu mẫu từ INS</h2>
+              <div className={styles.decisionsGrid}>
+                <div className={styles.decisionCard}>
+                  <div className={styles.decisionHeader}>
+                    <FileText size={20} className={styles.decisionIcon} style={{ color: '#005cb6' }} />
+                    <div>
+                      <div className={styles.decisionLabel}>Quyết định kiểm tra</div>
+                      <div className={styles.decisionCode}>01/QĐ-KT</div>
+                      <div className={styles.decisionTitle}>QĐ kiểm tra việc chấp hành pháp luật trong sản xuất Q1/2026</div>
+                    </div>
+                  </div>
+                </div>
+                <div className={styles.decisionCard}>
+                  <div className={styles.decisionHeader}>
+                    <Users size={20} className={styles.decisionIcon} style={{ color: '#10B981' }} />
+                    <div>
+                      <div className={styles.decisionLabel}>Quyết định phân công</div>
+                      <div className={styles.decisionCode}>05/QĐ-PC</div>
+                      <div className={styles.decisionTitle}>QĐ phân công công chức thực hiện biện pháp nghiệp vụ</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Quick Actions */}
             <div className={styles.infoContent}>
               <h2 className={styles.sectionTitle}>Thao tác nhanh</h2>
@@ -468,7 +654,7 @@ export default function InspectionRoundDetail() {
                     <div className={styles.actionButtonDesc}>Bổ nhiệm đội ngũ</div>
                   </div>
                 </button>
-                <button className={styles.actionButton}>
+                <button className={styles.actionButton} onClick={() => navigate(`/plans/inspection-rounds/${encodeURIComponent(data.id)}/statistics`)}>
                   <BarChart3 size={20} />
                   <div>
                     <div className={styles.actionButtonTitle}>Theo dõi tiến độ</div>
@@ -649,6 +835,52 @@ export default function InspectionRoundDetail() {
             </div>
           </div>
         )}
+
+        {activeTab === 'history' && (
+          <div className={styles.historyContent}>
+            <h2 className={styles.sectionTitle}>Lịch sử cập nhật</h2>
+            
+            <div className={styles.historyList}>
+              {mockHistory.map((historyItem) => (
+                <div key={historyItem.id} className={styles.historyItem}>
+                  <div className={styles.historyIcon}>
+                    {historyItem.type === 'create' && <Plus size={20} />}
+                    {historyItem.type === 'update' && <RefreshCw size={20} />}
+                    {historyItem.type === 'edit' && <Edit size={20} />}
+                    {historyItem.type === 'import' && <Upload size={20} />}
+                    {historyItem.type === 'session_create' && <Plus size={20} />}
+                    {historyItem.type === 'session_complete' && <CheckCircle size={20} />}
+                    {historyItem.type === 'session_delete' && <Trash2 size={20} />}
+                    {historyItem.type === 'team_update' && <Users size={20} />}
+                  </div>
+                  <div className={styles.historyInfo}>
+                    <div className={styles.historyDate}>
+                      {new Date(historyItem.timestamp).toLocaleString('vi-VN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </div>
+                    <div className={styles.historyAction}>
+                      <strong>{historyItem.user}</strong> - {historyItem.action}
+                    </div>
+                    <div className={styles.historyDescription}>{historyItem.description}</div>
+                    {historyItem.insForm && (
+                      <div className={styles.historyInsForm} onClick={() => handleInsFormClick(historyItem.insForm)}>
+                        <FileText size={16} className={styles.historyInsFormIcon} />
+                        <span>
+                          <strong>{historyItem.insForm.type}</strong> - {historyItem.insForm.name} ({historyItem.insForm.code})
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Create Session Dialog */}
@@ -658,6 +890,28 @@ export default function InspectionRoundDetail() {
         roundId={data.id}
         roundName={data.name}
         onCreateSession={handleCreateSession}
+      />
+
+      {/* InsForm Detail Dialog */}
+      <InsFormDetailDialog
+        isOpen={showInsFormDetail}
+        onClose={() => setShowInsFormDetail(false)}
+        formData={selectedInsForm ? {
+          type: selectedInsForm.type.includes('01') ? 'decision' : 
+                selectedInsForm.type.includes('02') ? 'assignment' : 
+                selectedInsForm.type.includes('03') ? 'notification' : 
+                selectedInsForm.type.includes('06') ? 'inspection' : 
+                'violation',
+          code: selectedInsForm.code,
+          title: selectedInsForm.name,
+          issueDate: '15/01/2026',
+          issuer: {
+            name: 'Nguyễn Văn Long',
+            position: 'Chi cục trưởng',
+            unit: 'Chi cục Quản lý thị trường Quận 1',
+          },
+          content: {},
+        } : null}
       />
     </div>
   );

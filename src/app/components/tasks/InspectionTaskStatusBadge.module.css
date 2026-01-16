@@ -37,9 +37,19 @@
   color: #005cb6;
 }
 
+.statusPendingApproval {
+  background: #f59e0b15;
+  color: #f59e0b;
+}
+
 .statusCompleted {
   background: #10B98115;
   color: #10B981;
+}
+
+.statusCancelled {
+  background: #ef444415;
+  color: #ef4444;
 }
 
 .statusClosed {

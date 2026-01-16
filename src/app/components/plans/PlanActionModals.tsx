@@ -392,7 +392,7 @@ export function PauseModal({ isOpen, onClose, plan, onConfirm }: PauseModalProps
 
         <div className={styles.warningBox}>
           <AlertTriangle size={20} />
-          <p>Kế hoạch sẽ được tạm dừng và có thể tiếp tục sau</p>
+          <p>Kế hoạch sẽ được chuyển sang trạng thái <strong>"Tạm dừng"</strong> và có thể tiếp tục sau</p>
         </div>
       </div>
 
@@ -413,7 +413,143 @@ export function PauseModal({ isOpen, onClose, plan, onConfirm }: PauseModalProps
   );
 }
 
-// 7. Xóa Modal
+// 7. Tiếp tục Modal (Resume từ Paused)
+interface ResumeModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  plan: Plan;
+  onConfirm: (note: string) => void;
+}
+
+export function ResumeModal({ isOpen, onClose, plan, onConfirm }: ResumeModalProps) {
+  const [note, setNote] = useState('');
+
+  const handleSubmit = () => {
+    onConfirm(note);
+    setNote('');
+    onClose();
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <div className={styles.modalHeader}>
+        <div className={styles.modalIconWrapper} style={{ background: '#10B981' }}>
+          <PlayCircle size={24} color="white" />
+        </div>
+        <div className={styles.modalHeaderContent}>
+          <h3 className={styles.modalTitle}>Tiếp tục kế hoạch</h3>
+          <p className={styles.modalSubtitle}>Kế hoạch: {plan.name}</p>
+        </div>
+        <button className={styles.closeButton} onClick={onClose}>
+          <X size={20} />
+        </button>
+      </div>
+
+      <div className={styles.modalBody}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Ghi chú (không bắt buộc)</label>
+          <textarea
+            className={styles.textarea}
+            placeholder="Nhập ghi chú kèm theo..."
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={4}
+          />
+        </div>
+
+        <div className={styles.infoBox} style={{ background: '#10B98115', borderColor: '#10B981' }}>
+          <p>Kế hoạch sẽ được chuyển sang trạng thái <strong>"Đang thực hiện"</strong></p>
+        </div>
+      </div>
+
+      <div className={styles.modalFooter}>
+        <button className={styles.cancelButton} onClick={onClose}>
+          Hủy
+        </button>
+        <button 
+          className={styles.primaryButton} 
+          onClick={handleSubmit}
+          style={{ background: '#10B981' }}
+        >
+          <PlayCircle size={18} />
+          Tiếp tục
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+// 8. Hủy kế hoạch Modal (Cancel - khác với Pause)
+interface CancelPlanModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  plan: Plan;
+  onConfirm: (reason: string) => void;
+}
+
+export function CancelPlanModal({ isOpen, onClose, plan, onConfirm }: CancelPlanModalProps) {
+  const [reason, setReason] = useState('');
+
+  const handleSubmit = () => {
+    if (!reason.trim()) return;
+    onConfirm(reason);
+    setReason('');
+    onClose();
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <div className={styles.modalHeader}>
+        <div className={styles.modalIconWrapper} style={{ background: '#EF4444' }}>
+          <XCircle size={24} color="white" />
+        </div>
+        <div className={styles.modalHeaderContent}>
+          <h3 className={styles.modalTitle}>Hủy kế hoạch</h3>
+          <p className={styles.modalSubtitle}>Kế hoạch: {plan.name}</p>
+        </div>
+        <button className={styles.closeButton} onClick={onClose}>
+          <X size={20} />
+        </button>
+      </div>
+
+      <div className={styles.modalBody}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>
+            Lý do hủy <span className={styles.required}>*</span>
+          </label>
+          <textarea
+            className={styles.textarea}
+            placeholder="Nhập lý do hủy kế hoạch..."
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            rows={5}
+          />
+        </div>
+
+        <div className={styles.warningBox} style={{ background: '#EF444415', borderColor: '#EF4444' }}>
+          <AlertTriangle size={20} color="#EF4444" />
+          <p>Kế hoạch sẽ được chuyển sang trạng thái <strong>"Đã hủy"</strong> và không thể tiếp tục</p>
+        </div>
+      </div>
+
+      <div className={styles.modalFooter}>
+        <button className={styles.cancelButton} onClick={onClose}>
+          Quay lại
+        </button>
+        <button 
+          className={styles.destructiveButton} 
+          onClick={handleSubmit}
+          disabled={!reason.trim()}
+        >
+          <XCircle size={18} />
+          Hủy kế hoạch
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+// 9. Xóa Modal
 interface DeletePlanModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -465,6 +601,63 @@ export function DeletePlanModal({ isOpen, onClose, plan, onConfirm }: DeletePlan
         >
           <Trash2 size={18} />
           Xóa vĩnh viễn
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+// 10. Hoàn thành kế hoạch Modal
+interface CompletePlanModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  plan: Plan;
+  onConfirm: () => void;
+}
+
+export function CompletePlanModal({ isOpen, onClose, plan, onConfirm }: CompletePlanModalProps) {
+  const handleSubmit = () => {
+    onConfirm();
+    onClose();
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <div className={styles.modalHeader}>
+        <div className={styles.modalIconWrapper} style={{ background: '#10B981' }}>
+          <CheckCircle2 size={24} color="white" />
+        </div>
+        <div className={styles.modalHeaderContent}>
+          <h3 className={styles.modalTitle}>Xác nhận hoàn thành kế hoạch</h3>
+          <p className={styles.modalSubtitle}>Kế hoạch: {plan.name}</p>
+        </div>
+        <button className={styles.closeButton} onClick={onClose}>
+          <X size={20} />
+        </button>
+      </div>
+
+      <div className={styles.modalBody}>
+        <div className={styles.infoBox} style={{ background: '#10B98115', borderColor: '#10B981' }}>
+          <CheckCircle2 size={20} color="#10B981" />
+          <p>Kế hoạch sẽ chuyển sang trạng thái <strong>Hoàn thành</strong></p>
+        </div>
+
+        <p className={styles.modalDescription}>
+          Bạn có chắc chắn muốn đánh dấu kế hoạch này là hoàn thành không? 
+          Kế hoạch sẽ được chuyển sang trạng thái hoàn thành và không thể thay đổi.
+        </p>
+      </div>
+
+      <div className={styles.modalFooter}>
+        <button className={styles.cancelButton} onClick={onClose}>
+          Hủy
+        </button>
+        <button 
+          className={styles.successButton} 
+          onClick={handleSubmit}
+        >
+          <CheckCircle2 size={18} />
+          Xác nhận hoàn thành
         </button>
       </div>
     </Modal>

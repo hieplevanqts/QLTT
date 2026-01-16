@@ -13,8 +13,7 @@ interface CreateTaskModalProps {
 export interface CreateTaskFormData {
   title: string;
   description: string;
-  targetName: string;
-  targetAddress: string;
+  targetName: string; // Tên cửa hàng
   roundId: string;
   planId?: string;
   assigneeId: string;
@@ -51,6 +50,18 @@ const MOCK_ROUNDS = [
   { value: 'DKT-2024-003', label: 'Đợt kiểm tra Q2/2024 - Đà Nẵng' },
 ];
 
+// Mock danh sách cửa hàng
+const MOCK_STORES = [
+  { value: 'CH-001', label: 'Siêu thị CoopMart Quận 1' },
+  { value: 'CH-002', label: 'Cửa hàng thực phẩm Bách Hóa Xanh Lê Lợi' },
+  { value: 'CH-003', label: 'Nhà hàng Phở 24 Nguyễn Huệ' },
+  { value: 'CH-004', label: 'Quán café Highlands Coffee Đồng Khởi' },
+  { value: 'CH-005', label: 'Siêu thị Mini Big C Quận 3' },
+  { value: 'CH-006', label: 'Cửa hàng thực phẩm sạch Organica' },
+  { value: 'CH-007', label: 'Nhà hàng lẩu Haidilao Vincom' },
+  { value: 'CH-008', label: 'Cửa hàng bánh ngọt ABC Bakery' },
+];
+
 const MOCK_ASSIGNEES = [
   { value: 'user-1', label: 'Nguyễn Văn A' },
   { value: 'user-2', label: 'Trần Thị B' },
@@ -58,19 +69,28 @@ const MOCK_ASSIGNEES = [
   { value: 'user-4', label: 'Phạm Thị D' },
 ];
 
+// Helper to get today's date in YYYY-MM-DD format
+const getTodayDate = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalProps) {
+  // Set giá trị mặc định ngay từ đầu
   const [formData, setFormData] = useState<CreateTaskFormData>({
     title: '',
     description: '',
     targetName: '',
-    targetAddress: '',
     roundId: '',
     planId: '',
     assigneeId: '',
-    priority: 'medium',
-    status: 'not_started',
+    priority: 'medium', // Mặc định Trung bình
+    status: 'not_started', // Mặc định Chưa bắt đầu
     dueDate: '',
-    startDate: '',
+    startDate: getTodayDate(), // Mặc định ngày hiện tại
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof CreateTaskFormData, string>>>({});
@@ -88,35 +108,36 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalPr
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof CreateTaskFormData, string>> = {};
 
+    // Tên nhiệm vụ - bắt buộc, ≤ 255 ký tự
     if (!formData.title.trim()) {
       newErrors.title = 'Vui lòng nhập tên nhiệm vụ';
+    } else if (formData.title.length > 255) {
+      newErrors.title = 'Tên nhiệm vụ không được vượt quá 255 ký tự';
     }
 
+    // Tên cửa hàng - bắt buộc
     if (!formData.targetName.trim()) {
-      newErrors.targetName = 'Vui lòng nhập tên đối tượng kiểm tra';
+      newErrors.targetName = 'Vui lòng nhập tên cửa hàng';
     }
 
-    if (!formData.targetAddress.trim()) {
-      newErrors.targetAddress = 'Vui lòng nhập địa chỉ';
-    }
+    // Kế hoạch kiểm tra - KHÔNG bắt buộc (removed validation)
 
-    if (!formData.planId) {
-      newErrors.planId = 'Vui lòng chọn kế hoạch';
-    }
-
+    // Đợt kiểm tra - bắt buộc
     if (!formData.roundId) {
       newErrors.roundId = 'Vui lòng chọn đợt kiểm tra';
     }
 
+    // Người thực hiện - bắt buộc
     if (!formData.assigneeId) {
       newErrors.assigneeId = 'Vui lòng chọn người thực hiện';
     }
 
+    // Hạn hoàn thành - bắt buộc
     if (!formData.dueDate) {
       newErrors.dueDate = 'Vui lòng chọn hạn hoàn thành';
     }
 
-    // Validate dates
+    // Validate dates: Hạn hoàn thành ≥ ngày bắt đầu
     if (formData.startDate && formData.dueDate) {
       const start = new Date(formData.startDate);
       const due = new Date(formData.dueDate);
@@ -143,14 +164,13 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalPr
       title: '',
       description: '',
       targetName: '',
-      targetAddress: '',
       roundId: '',
       planId: '',
       assigneeId: '',
-      priority: 'medium',
-      status: 'not_started',
+      priority: 'medium', // Reset về mặc định
+      status: 'not_started', // Reset về mặc định
       dueDate: '',
-      startDate: '',
+      startDate: getTodayDate(), // Reset về ngày hiện tại
     });
     setErrors({});
     onClose();
@@ -224,7 +244,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalPr
             {/* Kế hoạch */}
             <div className={styles.field}>
               <label className={styles.label} htmlFor="planId">
-                Kế hoạch <span className={styles.required}>*</span>
+                Kế hoạch kiểm tra
               </label>
               <select
                 id="planId"
@@ -232,7 +252,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalPr
                 onChange={(e) => handleChange('planId', e.target.value)}
                 className={`${styles.select} ${errors.planId ? styles.inputError : ''}`}
               >
-                <option value="">Chọn kế hoạch</option>
+                <option value="">Chọn kế hoạch (không bắt buộc)</option>
                 {MOCK_PLANS.map(plan => (
                   <option key={plan.value} value={plan.value}>
                     {plan.label}
@@ -271,52 +291,106 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalPr
               )}
             </div>
 
-            {/* Đối tượng kiểm tra */}
+            {/* Tên cửa hàng - SELECT */}
+            <div className={styles.field}>
+              <label className={styles.label} htmlFor="targetName">
+                <MapPin size={14} />
+                Tên cửa hàng <span className={styles.required}>*</span>
+              </label>
+              <select
+                id="targetName"
+                value={formData.targetName}
+                onChange={(e) => handleChange('targetName', e.target.value)}
+                className={`${styles.select} ${errors.targetName ? styles.inputError : ''}`}
+              >
+                <option value="">Chọn cửa hàng</option>
+                {MOCK_STORES.map(store => (
+                  <option key={store.value} value={store.value}>
+                    {store.label}
+                  </option>
+                ))}
+              </select>
+              {errors.targetName && (
+                <span className={styles.errorText}>
+                  <AlertCircle size={14} /> {errors.targetName}
+                </span>
+              )}
+            </div>
+
+            {/* Người thực hiện */}
+            <div className={styles.field}>
+              <label className={styles.label} htmlFor="assigneeId">
+                <User size={14} />
+                Người thực hiện <span className={styles.required}>*</span>
+              </label>
+              <select
+                id="assigneeId"
+                value={formData.assigneeId}
+                onChange={(e) => handleChange('assigneeId', e.target.value)}
+                className={`${styles.select} ${errors.assigneeId ? styles.inputError : ''}`}
+              >
+                <option value="">Chọn người thực hiện</option>
+                {MOCK_ASSIGNEES.map(assignee => (
+                  <option key={assignee.value} value={assignee.value}>
+                    {assignee.label}
+                  </option>
+                ))}
+              </select>
+              {errors.assigneeId && (
+                <span className={styles.errorText}>
+                  <AlertCircle size={14} /> {errors.assigneeId}
+                </span>
+              )}
+            </div>
+
+            {/* Ngày bắt đầu & Hạn hoàn thành */}
             <div className={styles.fieldGroup}>
               <div className={styles.field}>
-                <label className={styles.label} htmlFor="targetName">
-                  <MapPin size={14} />
-                  Tên cơ sở/đối tượng <span className={styles.required}>*</span>
+                <label className={styles.label}>
+                  <Calendar size={14} />
+                  Ngày bắt đầu
                 </label>
-                <input
-                  id="targetName"
-                  type="text"
-                  value={formData.targetName}
-                  onChange={(e) => handleChange('targetName', e.target.value)}
-                  placeholder="Nhập tên cơ sở"
-                  className={`${styles.input} ${errors.targetName ? styles.inputError : ''}`}
+                <DateRangePicker
+                  mode="single"
+                  placeholder="Chọn ngày bắt đầu"
+                  value={{
+                    startDate: formData.startDate || null,
+                    endDate: formData.startDate || null
+                  }}
+                  onChange={(range) => handleChange('startDate', range.startDate || '')}
                 />
-                {errors.targetName && (
-                  <span className={styles.errorText}>
-                    <AlertCircle size={14} /> {errors.targetName}
-                  </span>
-                )}
+                <div className={styles.hint}>
+                  Mặc định: Ngày hiện tại
+                </div>
               </div>
 
               <div className={styles.field}>
-                <label className={styles.label} htmlFor="targetAddress">
-                  Địa chỉ <span className={styles.required}>*</span>
+                <label className={styles.label}>
+                  <Clock size={14} />
+                  Hạn hoàn thành <span className={styles.required}>*</span>
                 </label>
-                <input
-                  id="targetAddress"
-                  type="text"
-                  value={formData.targetAddress}
-                  onChange={(e) => handleChange('targetAddress', e.target.value)}
-                  placeholder="Nhập địa chỉ cơ sở"
-                  className={`${styles.input} ${errors.targetAddress ? styles.inputError : ''}`}
+                <DateRangePicker
+                  mode="single"
+                  placeholder="Chọn hạn hoàn thành"
+                  value={{
+                    startDate: formData.dueDate || null,
+                    endDate: formData.dueDate || null
+                  }}
+                  onChange={(range) => handleChange('dueDate', range.startDate || '')}
+                  className={errors.dueDate ? styles.inputError : ''}
                 />
-                {errors.targetAddress && (
+                {errors.dueDate && (
                   <span className={styles.errorText}>
-                    <AlertCircle size={14} /> {errors.targetAddress}
+                    <AlertCircle size={14} /> {errors.dueDate}
                   </span>
                 )}
               </div>
             </div>
 
-            {/* Trạng thái */}
+            {/* Trạng thái nhiệm vụ */}
             <div className={styles.field}>
               <label className={styles.label}>
-                Trạng thái
+                Trạng thái nhiệm vụ <span className={styles.required}>*</span>
               </label>
               <div className={styles.statusGrid}>
                 {STATUS_OPTIONS.map(status => (
@@ -330,6 +404,9 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalPr
                     <span>{status.label}</span>
                   </button>
                 ))}
+              </div>
+              <div className={styles.hint}>
+                Mặc định: Chưa bắt đầu
               </div>
             </div>
 
@@ -360,72 +437,8 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalPr
                   </button>
                 ))}
               </div>
-            </div>
-
-            {/* Người thực hiện */}
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="assigneeId">
-                <User size={14} />
-                Người thực hiện <span className={styles.required}>*</span>
-              </label>
-              <select
-                id="assigneeId"
-                value={formData.assigneeId}
-                onChange={(e) => handleChange('assigneeId', e.target.value)}
-                className={`${styles.select} ${errors.assigneeId ? styles.inputError : ''}`}
-              >
-                <option value="">Chọn người thực hiện</option>
-                {MOCK_ASSIGNEES.map(assignee => (
-                  <option key={assignee.value} value={assignee.value}>
-                    {assignee.label}
-                  </option>
-                ))}
-              </select>
-              {errors.assigneeId && (
-                <span className={styles.errorText}>
-                  <AlertCircle size={14} /> {errors.assigneeId}
-                </span>
-              )}
-            </div>
-
-            {/* Ngày tháng */}
-            <div className={styles.fieldGroup}>
-              <div className={styles.field}>
-                <label className={styles.label}>
-                  <Calendar size={14} />
-                  Ngày bắt đầu
-                </label>
-                <DateRangePicker
-                  mode="single"
-                  placeholder="Chọn ngày bắt đầu"
-                  value={{
-                    startDate: formData.startDate || null,
-                    endDate: formData.startDate || null
-                  }}
-                  onChange={(range) => handleChange('startDate', range.startDate || '')}
-                />
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label}>
-                  <Clock size={14} />
-                  Hạn hoàn thành <span className={styles.required}>*</span>
-                </label>
-                <DateRangePicker
-                  mode="single"
-                  placeholder="Chọn hạn hoàn thành"
-                  value={{
-                    startDate: formData.dueDate || null,
-                    endDate: formData.dueDate || null
-                  }}
-                  onChange={(range) => handleChange('dueDate', range.startDate || '')}
-                  className={errors.dueDate ? styles.inputError : ''}
-                />
-                {errors.dueDate && (
-                  <span className={styles.errorText}>
-                    <AlertCircle size={14} /> {errors.dueDate}
-                  </span>
-                )}
+              <div className={styles.hint}>
+                Mặc định: Trung bình
               </div>
             </div>
           </div>

@@ -24,12 +24,7 @@ export function InspectionRoundStatusBadge({
     return (
       <Badge 
         variant={config.variant}
-        style={{
-          fontSize: size === 'sm' ? 'var(--text-xs)' : 'var(--text-sm)',
-          padding: size === 'sm' ? '2px 8px' : '4px 12px',
-          fontFamily: 'Inter, sans-serif',
-          fontWeight: 'var(--font-weight-medium)',
-        }}
+        className={size === 'sm' ? 'text-xs px-2 py-0.5' : 'text-sm px-3 py-1'}
       >
         {config.label}
       </Badge>
@@ -43,12 +38,7 @@ export function InspectionRoundStatusBadge({
     return (
       <Badge 
         variant={config.variant}
-        style={{
-          fontSize: size === 'sm' ? 'var(--text-xs)' : 'var(--text-sm)',
-          padding: size === 'sm' ? '2px 8px' : '4px 12px',
-          fontFamily: 'Inter, sans-serif',
-          fontWeight: 'var(--font-weight-medium)',
-        }}
+        className={size === 'sm' ? 'text-xs px-2 py-0.5' : 'text-sm px-3 py-1'}
       >
         {config.label}
       </Badge>
@@ -64,17 +54,29 @@ function getStatusConfig(status: InspectionRoundStatus) {
       label: 'Nháp',
       variant: 'secondary',
     },
-    preparing: {
-      label: 'Chuẩn bị',
-      variant: 'default',
+    pending_approval: {
+      label: 'Chờ duyệt',
+      variant: 'warning',
+    },
+    approved: {
+      label: 'Đã duyệt',
+      variant: 'info',
+    },
+    rejected: {
+      label: 'Từ chối duyệt',
+      variant: 'destructive',
+    },
+    active: {
+      label: 'Đang triển khai',
+      variant: 'info',
+    },
+    paused: {
+      label: 'Tạm dừng',
+      variant: 'warning',
     },
     in_progress: {
       label: 'Đang kiểm tra',
       variant: 'info',
-    },
-    reporting: {
-      label: 'Hoàn thành báo cáo',
-      variant: 'warning',
     },
     completed: {
       label: 'Hoàn thành',
@@ -91,21 +93,21 @@ function getStatusConfig(status: InspectionRoundStatus) {
 
 function getInspectionTypeConfig(inspectionType: InspectionType) {
   const configs: Record<InspectionType, { label: string; variant: any }> = {
-    scheduled: {
-      label: 'Theo kế hoạch',
-      variant: 'default',
+    routine: {
+      label: 'Định kỳ',
+      variant: 'secondary', // Màu xám nhẹ
     },
-    unannounced: {
+    targeted: {
+      label: 'Chuyên đề',
+      variant: 'info',
+    },
+    sudden: {
       label: 'Đột xuất',
       variant: 'warning',
     },
     followup: {
       label: 'Tái kiểm tra',
       variant: 'info',
-    },
-    complaint: {
-      label: 'Theo khiếu nại',
-      variant: 'destructive',
     },
   };
   

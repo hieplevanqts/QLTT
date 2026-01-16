@@ -22,47 +22,46 @@ import {
   Filter
 } from 'lucide-react';
 import { toast } from 'sonner';
-import PageHeader from '../../../layouts/PageHeader';
-import EmptyState from '../../../ui-kit/EmptyState';
-import DataTable, { Column } from '../../../ui-kit/DataTable';
-import { SearchInput } from '../../../ui-kit/SearchInput';
-import { Button } from '../../components/ui/button';
-import { Card, CardContent } from '../../components/ui/card';
+import PageHeader from '@/layouts/PageHeader';
+import EmptyState from '@/ui-kit/EmptyState';
+import DataTable, { Column } from '@/ui-kit/DataTable';
+import { SearchInput } from '@/ui-kit/SearchInput';
+import { Button } from '@/app/components/ui/button';
+import { Card, CardContent } from '@/app/components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../components/ui/select';
-import SummaryCard from '../../../patterns/SummaryCard';
-import ModernSummaryCard from '../../../patterns/ModernSummaryCard';
-import BulkActionBar, { BulkAction } from '../../../patterns/BulkActionBar';
-import FilterActionBar from '../../../patterns/FilterActionBar';
-import ActionColumn, { Action } from '../../../patterns/ActionColumn';
-import TableFooter from '../../../ui-kit/TableFooter';
-import { InspectionRoundStatusBadge } from '../../components/inspections/InspectionRoundStatusBadge';
-import { mockInspectionRounds, type InspectionRound } from '../../data/inspection-rounds-mock-data';
+} from '@/app/components/ui/select';
+import SummaryCard from '@/patterns/SummaryCard';
+import ModernSummaryCard from '@/patterns/ModernSummaryCard';
+import BulkActionBar, { BulkAction } from '@/patterns/BulkActionBar';
+import FilterActionBar from '@/patterns/FilterActionBar';
+import ActionColumn, { Action } from '@/patterns/ActionColumn';
+import TableFooter from '@/ui-kit/TableFooter';
+import { InspectionRoundStatusBadge } from '@/app/components/inspections/InspectionRoundStatusBadge';
+import { type InspectionRound } from '@/app/data/inspection-rounds-mock-data';
+import { useInspectionRounds } from '@/contexts/InspectionRoundsContext';
 import styles from './InspectionRoundsList.module.css';
-import AdvancedFilterModal, { FilterConfig } from '../../../ui-kit/AdvancedFilterModal';
-import DateRangePicker, { DateRange } from '../../../ui-kit/DateRangePicker';
-import {
+import AdvancedFilterModal, { FilterConfig } from '@/ui-kit/AdvancedFilterModal';
+import DateRangePicker, { DateRange } from '@/ui-kit/DateRangePicker';
+import { 
   SendForApprovalModal,
   StartInspectionModal,
   CompleteInspectionModal,
   CompleteRoundModal,
   CancelRoundModal,
-  DeleteRoundModal
-} from '../../components/inspections/InspectionRoundActionModals';
-import { exportToCSV, formatDateForExport, type ExportColumn } from '../../../utils/exportToExcel';
-import { InspectionRoundDocumentDrawer } from '../../components/documents/InspectionRoundDocumentDrawer';
-import { SelectFromInsModal, type InsDocument } from '../../components/documents/SelectFromInsModal';
-import { InsSyncLogDrawer } from '../../components/documents/InsSyncLogDrawer';
-import { useDocumentChecklist } from '../../../hooks/useDocumentChecklist';
-import type { DocumentCode } from '../../../types/ins-documents';
+  DeleteRoundModal,
+  RejectRoundModal
+} from '@/app/components/inspections/InspectionRoundActionModals';
+import { CreateSessionDialog } from '@/app/components/inspections/CreateSessionDialog';
+import { exportToCSV, formatDateForExport, type ExportColumn } from '@/utils/exportToExcel';
 
 export function InspectionRoundsList() {
   const navigate = useNavigate();
+  const { rounds: mockInspectionRounds, deleteRound, updateRound } = useInspectionRounds();
   
   // State management
   const [searchValue, setSearchValue] = useState('');
@@ -80,20 +79,19 @@ export function InspectionRoundsList() {
 
   // Modal states
   const [modalState, setModalState] = useState<{
-    type: 'sendApproval' | 'startInspection' | 'completeInspection' | 'completeRound' | 'cancel' | 'delete' | null;
+    type: 'sendApproval' | 'startInspection' | 'completeInspection' | 'completeRound' | 'cancel' | 'delete' | 'reject' | null;
     round: InspectionRound | null;
   }>({ type: null, round: null });
 
   // Advanced Filter Modal state
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-
-  // Document management states
-  const [documentDrawerOpen, setDocumentDrawerOpen] = useState(false);
-  const [documentDrawerRound, setDocumentDrawerRound] = useState<InspectionRound | null>(null);
-  const [highlightMissingDocs, setHighlightMissingDocs] = useState(false);
-  const [showSelectInsModal, setShowSelectInsModal] = useState(false);
-  const [showSyncLogDrawer, setShowSyncLogDrawer] = useState(false);
-  const [selectedDocumentCode, setSelectedDocumentCode] = useState<DocumentCode>('M01');
+  
+  // Create Session Dialog state
+  const [createSessionDialog, setCreateSessionDialog] = useState<{
+    open: boolean;
+    roundId: string;
+    roundName: string;
+  }>({ open: false, roundId: '', roundName: '' });
 
   const closeModal = () => setModalState({ type: null, round: null });
   const openModal = (type: typeof modalState.type, round: InspectionRound) => setModalState({ type, round });
@@ -103,12 +101,16 @@ export function InspectionRoundsList() {
     return {
       total: mockInspectionRounds.length,
       draft: mockInspectionRounds.filter(r => r.status === 'draft').length,
-      preparing: mockInspectionRounds.filter(r => r.status === 'preparing').length,
+      pendingApproval: mockInspectionRounds.filter(r => r.status === 'pending_approval').length,
+      approved: mockInspectionRounds.filter(r => r.status === 'approved').length,
+      rejected: mockInspectionRounds.filter(r => r.status === 'rejected').length,
+      active: mockInspectionRounds.filter(r => r.status === 'active').length,
+      paused: mockInspectionRounds.filter(r => r.status === 'paused').length,
       inProgress: mockInspectionRounds.filter(r => r.status === 'in_progress').length,
-      reporting: mockInspectionRounds.filter(r => r.status === 'reporting').length,
       completed: mockInspectionRounds.filter(r => r.status === 'completed').length,
+      cancelled: mockInspectionRounds.filter(r => r.status === 'cancelled').length,
     };
-  }, []);
+  }, [mockInspectionRounds]);
 
   // Apply filters
   const filteredData = useMemo(() => {
@@ -136,7 +138,7 @@ export function InspectionRoundsList() {
       
       return matchesSearch && matchesType && matchesPlan && matchesActiveFilter && matchesDateRange;
     });
-  }, [searchValue, typeFilter, planFilter, activeFilter, dateRange]);
+  }, [mockInspectionRounds, searchValue, typeFilter, planFilter, activeFilter, dateRange]);
 
   // Pagination
   const totalPages = Math.ceil(filteredData.length / pageSize);
@@ -149,39 +151,23 @@ export function InspectionRoundsList() {
   const getRoundActions = (round: InspectionRound): Action[] => {
     const actions: Action[] = [];
 
-    // ⭐ ALWAYS ADD: Hồ sơ biểu mẫu (first in all cases)
-    actions.push({
-      label: 'Hồ sơ biểu mẫu',
-      icon: <FileText size={16} />,
-      onClick: () => {
-        setDocumentDrawerRound(round);
-        setHighlightMissingDocs(false);
-        setDocumentDrawerOpen(true);
-      },
-      priority: 11, // Highest priority to show first
-    });
-
     switch (round.status) {
       case 'draft':
-        // Nháp: Chỉnh sửa, Phân công lực lượng, Gửi duyệt, Xóa
+        // Nháp: Xem, Chỉnh sửa, Gửi duyệt, Xóa
         actions.push(
+          {
+            label: 'Xem chi tiết',
+            icon: <Eye size={16} />,
+            onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}`),
+            priority: 11,
+          },
           {
             label: 'Chỉnh sửa',
             icon: <Edit size={16} />,
             onClick: () => {
-              toast.info('Mở form chnh sửa đợt kiểm tra');
-              console.log('Edit round', round.id);
+              navigate(`/plans/inspection-rounds/create-new?mode=edit&id=${encodeURIComponent(round.id)}`);
             },
             priority: 10,
-          },
-          {
-            label: 'Phân công lực lượng',
-            icon: <Users size={16} />,
-            onClick: () => {
-              toast.info('Mở trang phân công lực lượng kiểm tra');
-              console.log('Assign team', round.id);
-            },
-            priority: 9,
           },
           {
             label: 'Gửi duyệt',
@@ -200,21 +186,66 @@ export function InspectionRoundsList() {
         );
         break;
 
-      case 'preparing':
-        // Chuẩn bị: Xem chi tiết, Phân công, Bắt đầu kiểm tra, Hủy
+      case 'pending_approval':
+        // Chờ duyệt: Xem, Chỉnh sửa, Phê duyệt, Từ chối (đã bỏ Hủy đợt kiểm tra)
         actions.push(
           {
             label: 'Xem chi tiết',
             icon: <Eye size={16} />,
             onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}`),
+            priority: 11,
+          },
+          {
+            label: 'Chỉnh sửa',
+            icon: <Edit size={16} />,
+            onClick: () => {
+              navigate(`/plans/inspection-rounds/create-new?mode=edit&id=${encodeURIComponent(round.id)}`);
+            },
             priority: 10,
           },
           {
-            label: 'Phân công lực lượng',
-            icon: <Users size={16} />,
+            label: 'Phê duyệt',
+            icon: <CheckCircle2 size={16} />,
+            onClick: () => openModal('startInspection', round),
+            priority: 9,
+          },
+          {
+            label: 'Từ chối',
+            icon: <XCircle size={16} />,
+            onClick: () => openModal('reject', round),
+            variant: 'destructive' as const,
+            separator: true,
+            priority: 8,
+          }
+        );
+        break;
+
+      case 'approved':
+        // Đã duyệt: Xem, Chỉnh sửa, Tạo phiên làm việc, Bắt đầu kiểm tra, Hủy
+        actions.push(
+          {
+            label: 'Xem chi tiết',
+            icon: <Eye size={16} />,
+            onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}`),
+            priority: 11,
+          },
+          {
+            label: 'Chỉnh sửa',
+            icon: <Edit size={16} />,
             onClick: () => {
-              toast.info('Mở trang phân công lực lượng kiểm tra');
-              console.log('Assign team', round.id);
+              navigate(`/plans/inspection-rounds/create-new?mode=edit&id=${encodeURIComponent(round.id)}`);
+            },
+            priority: 10,
+          },
+          {
+            label: 'Tạo phiên làm việc',
+            icon: <Calendar size={16} />,
+            onClick: () => {
+              setCreateSessionDialog({
+                open: true,
+                roundId: round.id,
+                roundName: round.name,
+              });
             },
             priority: 9,
           },
@@ -236,73 +267,99 @@ export function InspectionRoundsList() {
         break;
 
       case 'in_progress':
-        // Đang kiểm tra: Xem chi tiết, Nhiệm vụ, Hoàn thành
+        // Đang kiểm tra: Xem, Chỉnh sửa, Tạo phiên làm việc, Hoàn thành
         actions.push(
           {
             label: 'Xem chi tiết',
             icon: <Eye size={16} />,
             onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}`),
-            priority: 10,
+            priority: 11,
           },
           {
-            label: 'Nhiệm vụ',
-            icon: <Calendar size={16} />,
-            onClick: () => navigate(`/plans/inspection-session?inspectionRound=${encodeURIComponent(round.id)}`),
-            priority: 9,
-          },
-          {
-            label: 'Hoàn thành kiểm tra',
-            icon: <CheckCircle2 size={16} />,
-            onClick: () => openModal('completeInspection', round),
-            priority: 6,
-          }
-        );
-        break;
-
-      case 'reporting':
-        // Hoàn thành báo cáo: Xem chi tiết, Chỉnh sửa báo cáo, Hoàn thành
-        actions.push(
-          {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}`),
-            priority: 10,
-          },
-          {
-            label: 'Chỉnh sửa báo cáo',
-            icon: <FileText size={16} />,
+            label: 'Chỉnh sửa',
+            icon: <Edit size={16} />,
             onClick: () => {
-              toast.info('Mở form chỉnh sửa báo cáo');
-              console.log('Edit report', round.id);
+              navigate(`/plans/inspection-rounds/create-new?mode=edit&id=${encodeURIComponent(round.id)}`);
             },
-            priority: 8,
+            priority: 10,
+          },
+          {
+            label: 'Tạo phiên làm việc',
+            icon: <Calendar size={16} />,
+            onClick: () => {
+              setCreateSessionDialog({
+                open: true,
+                roundId: round.id,
+                roundName: round.name,
+              });
+            },
+            priority: 9,
           },
           {
             label: 'Hoàn thành',
             icon: <CheckCircle2 size={16} />,
-            onClick: () => openModal('completeRound', round),
+            onClick: () => openModal('completeInspection', round),
             priority: 7,
+          },
+          {
+            label: 'Hủy đợt kiểm tra',
+            icon: <XCircle size={16} />,
+            onClick: () => openModal('cancel', round),
+            variant: 'destructive' as const,
+            separator: true,
+            priority: 2,
           }
         );
         break;
 
       case 'completed':
-        // Hoàn thành: Xem chi tit, Tải báo cáo
+        // Hoàn thành: Xem chi tiết, Thống kê
         actions.push(
           {
             label: 'Xem chi tiết',
             icon: <Eye size={16} />,
             onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}`),
+            priority: 11,
+          },
+          {
+            label: 'Thống kê',
+            icon: <BarChart3 size={16} />,
+            onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}/statistics`),
+            priority: 8,
+          }
+        );
+        break;
+
+      case 'rejected':
+        // Từ chối duyệt: Xem, Chỉnh sửa, Gửi lại
+        actions.push(
+          {
+            label: 'Xem chi tiết',
+            icon: <Eye size={16} />,
+            onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}`),
+            priority: 11,
+          },
+          {
+            label: 'Chỉnh sửa',
+            icon: <Edit size={16} />,
+            onClick: () => {
+              navigate(`/plans/inspection-rounds/create-new?mode=edit&id=${encodeURIComponent(round.id)}`);
+            },
             priority: 10,
           },
           {
-            label: 'Tải báo cáo',
-            icon: <Download size={16} />,
-            onClick: () => {
-              toast.success('Đang tải báo cáo...');
-              console.log('Download report', round.id);
-            },
-            priority: 8,
+            label: 'Gửi lại duyệt',
+            icon: <Send size={16} />,
+            onClick: () => openModal('sendApproval', round),
+            priority: 9,
+          },
+          {
+            label: 'Xóa',
+            icon: <Trash2 size={16} />,
+            onClick: () => openModal('delete', round),
+            variant: 'destructive' as const,
+            separator: true,
+            priority: 1,
           }
         );
         break;
@@ -314,7 +371,14 @@ export function InspectionRoundsList() {
             label: 'Xem chi tiết',
             icon: <Eye size={16} />,
             onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}`),
-            priority: 10,
+            priority: 11,
+          },
+          {
+            label: 'Xóa',
+            icon: <Trash2 size={16} />,
+            onClick: () => openModal('delete', round),
+            variant: 'destructive' as const,
+            priority: 1,
           }
         );
         break;
@@ -325,7 +389,7 @@ export function InspectionRoundsList() {
             label: 'Xem chi tiết',
             icon: <Eye size={16} />,
             onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}`),
-            priority: 10,
+            priority: 11,
           }
         );
     }
@@ -504,7 +568,7 @@ export function InspectionRoundsList() {
   // Handle apply filters
   const handleApplyFilters = () => {
     setIsFilterModalOpen(false);
-    toast.success('Đã áp d���ng bộ lọc');
+    toast.success('Đã áp dụng bộ lọc');
   };
 
   // Handle clear filters
@@ -512,17 +576,18 @@ export function InspectionRoundsList() {
     // AdvancedFilterModal handles local state clearing
   };
 
-  // Export to Excel function
+  // Handle export to Excel (for exporting all filtered data)
   const handleExportToExcel = () => {
     try {
       // Get status label
       const getStatusLabel = (status: string): string => {
         const statusMap: Record<string, string> = {
           draft: 'Nháp',
-          preparing: 'Chuẩn bị',
+          pending_approval: 'Chờ duyệt',
+          approved: 'Đã duyệt',
           in_progress: 'Đang kiểm tra',
-          reporting: 'Hoàn thành báo cáo',
           completed: 'Hoàn thành',
+          rejected: 'Từ chối duyệt',
           cancelled: 'Đã hủy',
         };
         return statusMap[status] || status;
@@ -598,32 +663,215 @@ export function InspectionRoundsList() {
     }
   };
 
-  // Bulk actions
-  const bulkActions: BulkAction[] = [
-    {
-      label: 'Gửi duyệt',
-      onClick: () => {
-        toast.success(`Đã gửi ${selectedRows.size} đợt kiểm tra đi phê duyệt`);
-        setSelectedRows(new Set());
-      },
-      icon: <Send size={16} />,
-    },
-    {
+  // Bulk actions - dynamically generated based on selected rounds' statuses
+  const bulkActions: BulkAction[] = useMemo(() => {
+    if (selectedRows.size === 0) return [];
+
+    // Get selected rounds
+    const selectedRounds = filteredData.filter(r => selectedRows.has(r.id));
+    const selectedStatuses = new Set(selectedRounds.map(r => r.status));
+
+    const actions: BulkAction[] = [];
+
+    // "Gửi duyệt" - Only if ALL selected rounds are draft or rejected
+    const canSendApproval = selectedRounds.every(r => r.status === 'draft' || r.status === 'rejected');
+    if (canSendApproval && selectedRounds.length > 0) {
+      actions.push({
+        label: 'Gửi duyệt',
+        onClick: () => {
+          selectedRounds.forEach(round => {
+            updateRound(round.id, { status: 'pending_approval' });
+          });
+          toast.success(`Đã gửi ${selectedRows.size} đợt kiểm tra đi phê duyệt`);
+          setSelectedRows(new Set());
+        },
+        icon: <Send size={16} />,
+      });
+    }
+
+    // "Phê duyệt" - Only if ALL selected rounds are pending_approval
+    const canApprove = selectedRounds.every(r => r.status === 'pending_approval');
+    if (canApprove && selectedRounds.length > 0) {
+      actions.push({
+        label: 'Phê duyệt',
+        onClick: () => {
+          selectedRounds.forEach(round => {
+            updateRound(round.id, { status: 'approved' });
+          });
+          toast.success(`Đã phê duyệt ${selectedRows.size} đợt kiểm tra`);
+          setSelectedRows(new Set());
+        },
+        icon: <CheckCircle2 size={16} />,
+      });
+    }
+
+    // "Bắt đầu kiểm tra" - Only if ALL selected rounds are approved
+    const canStart = selectedRounds.every(r => r.status === 'approved');
+    if (canStart && selectedRounds.length > 0) {
+      actions.push({
+        label: 'Bắt đầu kiểm tra',
+        onClick: () => {
+          selectedRounds.forEach(round => {
+            updateRound(round.id, { status: 'in_progress' });
+          });
+          toast.success(`Đã bắt đầu ${selectedRows.size} đợt kiểm tra`);
+          setSelectedRows(new Set());
+        },
+        icon: <PlayCircle size={16} />,
+      });
+    }
+
+    // "Hoàn thành" - Only if ALL selected rounds are in_progress
+    const canComplete = selectedRounds.every(r => r.status === 'in_progress');
+    if (canComplete && selectedRounds.length > 0) {
+      actions.push({
+        label: 'Hoàn thành',
+        onClick: () => {
+          selectedRounds.forEach(round => {
+            updateRound(round.id, { status: 'completed' });
+          });
+          toast.success(`Đã hoàn thành ${selectedRows.size} đợt kiểm tra`);
+          setSelectedRows(new Set());
+        },
+        icon: <CheckCircle2 size={16} />,
+      });
+    }
+
+    // "Hủy đợt kiểm tra" - Only if ALL selected rounds are approved or in_progress (removed pending_approval)
+    const canCancel = selectedRounds.every(r => 
+      r.status === 'approved' || 
+      r.status === 'in_progress'
+    );
+    if (canCancel && selectedRounds.length > 0) {
+      actions.push({
+        label: 'Hủy đợt kiểm tra',
+        onClick: () => {
+          selectedRounds.forEach(round => {
+            updateRound(round.id, { status: 'cancelled' });
+          });
+          toast.warning(`Đã hủy ${selectedRows.size} đợt kiểm tra`);
+          setSelectedRows(new Set());
+        },
+        variant: 'destructive',
+        icon: <XCircle size={16} />,
+      });
+    }
+
+    // "Xuất dữ liệu" - Always available
+    actions.push({
       label: 'Xuất dữ liệu',
-      onClick: handleExportToExcel,
+      onClick: () => {
+        try {
+          // Get status label
+          const getStatusLabel = (status: string): string => {
+            const statusMap: Record<string, string> = {
+              draft: 'Nháp',
+              pending_approval: 'Chờ duyệt',
+              approved: 'Đã duyệt',
+              in_progress: 'Đang kiểm tra',
+              completed: 'Hoàn thành',
+              rejected: 'Từ chối duyệt',
+              cancelled: 'Đã hủy',
+            };
+            return statusMap[status] || status;
+          };
+
+          // Get type label
+          const getTypeLabel = (type: string): string => {
+            const typeMap: Record<string, string> = {
+              routine: 'Định kỳ',
+              targeted: 'Chuyên đề',
+              sudden: 'Đột xuất',
+              followup: 'Tái kiểm tra',
+            };
+            return typeMap[type] || type;
+          };
+
+          // Define export columns
+          const exportColumns: ExportColumn<InspectionRound>[] = [
+            { key: 'code', label: 'Mã đợt' },
+            { key: 'name', label: 'Tên đợt kiểm tra' },
+            { 
+              key: 'type', 
+              label: 'Loại đợt',
+              format: (value) => getTypeLabel(value)
+            },
+            { key: 'planName', label: 'Kế hoạch' },
+            { 
+              key: 'startDate', 
+              label: 'Ngày bắt đầu',
+              format: (value) => formatDateForExport(value)
+            },
+            { 
+              key: 'endDate', 
+              label: 'Ngày kết thúc',
+              format: (value) => formatDateForExport(value)
+            },
+            { key: 'leadUnit', label: 'Đơn vị chủ trì' },
+            { 
+              key: 'teamSize', 
+              label: 'Lực lượng',
+              format: (value) => value > 0 ? `${value} người` : 'Chưa phân công'
+            },
+            { 
+              key: 'totalTargets', 
+              label: 'Tổng số cơ sở'
+            },
+            { 
+              key: 'inspectedTargets', 
+              label: 'Đã kiểm tra'
+            },
+            { 
+              key: 'status', 
+              label: 'Trạng thái',
+              format: (value) => getStatusLabel(value)
+            },
+            { key: 'createdBy', label: 'Người tạo' },
+            { 
+              key: 'createdAt', 
+              label: 'Ngày tạo',
+              format: (value) => formatDateForExport(value)
+            },
+          ];
+
+          // Export only selected rows
+          exportToCSV(selectedRounds, exportColumns, {
+            filename: 'Danh_sach_dot_kiem_tra_da_chon',
+          });
+
+          toast.success(`Đã xuất ${selectedRounds.length} đợt kiểm tra ra Excel`);
+        } catch (error) {
+          console.error('Export error:', error);
+          toast.error('Có lỗi khi xuất dữ liệu. Vui lòng thử lại.');
+        }
+      },
       variant: 'secondary',
       icon: <Download size={16} />,
-    },
-    {
-      label: 'Xóa',
-      onClick: () => {
-        toast.error(`Đã xóa ${selectedRows.size} đợt kiểm tra`);
-        setSelectedRows(new Set());
-      },
-      variant: 'destructive',
-      icon: <Trash2 size={16} />,
-    },
-  ];
+    });
+
+    // "Xóa" - Only if ALL selected rounds are draft, cancelled, or rejected
+    const canDelete = selectedRounds.every(r => 
+      r.status === 'draft' || 
+      r.status === 'cancelled' || 
+      r.status === 'rejected'
+    );
+    if (canDelete && selectedRounds.length > 0) {
+      actions.push({
+        label: 'Xóa',
+        onClick: () => {
+          selectedRounds.forEach(round => {
+            deleteRound(round.id);
+          });
+          toast.success(`Đã xóa ${selectedRows.size} đợt kiểm tra`);
+          setSelectedRows(new Set());
+        },
+        variant: 'destructive',
+        icon: <Trash2 size={16} />,
+      });
+    }
+
+    return actions;
+  }, [selectedRows, filteredData, updateRound, deleteRound]);
 
   return (
     <div className={styles.pageContainer}>
@@ -678,12 +926,36 @@ export function InspectionRoundsList() {
             onClick={() => setActiveFilter('draft')}
           />
           <ModernSummaryCard
-            label="Chuẩn bị"
-            value={stats.preparing.toString()}
+            label="Chờ duyệt"
+            value={stats.pendingApproval.toString()}
             icon={Clock}
             variant="warning"
-            active={activeFilter === 'preparing'}
-            onClick={() => setActiveFilter('preparing')}
+            active={activeFilter === 'pending_approval'}
+            onClick={() => setActiveFilter('pending_approval')}
+          />
+          <ModernSummaryCard
+            label="Đã duyệt"
+            value={stats.approved.toString()}
+            icon={CheckCircle2}
+            variant="info"
+            active={activeFilter === 'approved'}
+            onClick={() => setActiveFilter('approved')}
+          />
+          <ModernSummaryCard
+            label="Đang triển khai"
+            value={stats.active.toString()}
+            icon={PlayCircle}
+            variant="info"
+            active={activeFilter === 'active'}
+            onClick={() => setActiveFilter('active')}
+          />
+          <ModernSummaryCard
+            label="Tạm dừng"
+            value={stats.paused.toString()}
+            icon={PauseCircle}
+            variant="warning"
+            active={activeFilter === 'paused'}
+            onClick={() => setActiveFilter('paused')}
           />
           <ModernSummaryCard
             label="Đang kiểm tra"
@@ -693,14 +965,7 @@ export function InspectionRoundsList() {
             active={activeFilter === 'in_progress'}
             onClick={() => setActiveFilter('in_progress')}
           />
-          <ModernSummaryCard
-            label="Hoàn thành"
-            value={stats.completed.toString()}
-            icon={CheckCircle2}
-            variant="success"
-            active={activeFilter === 'completed'}
-            onClick={() => setActiveFilter('completed')}
-          />
+          {/* Hidden: Hoàn thành and Từ chối cards as per user request */}
         </div>
 
         {/* QLTT Standard: Filters and Search on SAME ROW */}
@@ -731,7 +996,7 @@ export function InspectionRoundsList() {
         <BulkActionBar
           selectedCount={selectedRows.size}
           actions={bulkActions}
-          onClearSelection={() => setSelectedRows(new Set())}
+          onClear={() => setSelectedRows(new Set())}
         />
       )}
 
@@ -781,9 +1046,12 @@ export function InspectionRoundsList() {
         round={modalState.round}
         onClose={closeModal}
         onConfirm={(note) => {
+          if (modalState.round) {
+            updateRound(modalState.round.id, { status: 'pending_approval' });
+            toast.success('Đã gửi đợt kiểm tra đi phê duyệt');
+            console.log('Send for approval with note:', note);
+          }
           closeModal();
-          toast.success('Đã gửi đợt kiểm tra đi phê duyệt');
-          console.log('Send for approval with note:', note);
         }}
       />
       <StartInspectionModal
@@ -791,9 +1059,15 @@ export function InspectionRoundsList() {
         round={modalState.round}
         onClose={closeModal}
         onConfirm={(note) => {
+          if (modalState.round) {
+            // Depending on current status: pending_approval -> approved, approved -> in_progress
+            const newStatus = modalState.round.status === 'pending_approval' ? 'approved' : 'in_progress';
+            updateRound(modalState.round.id, { status: newStatus });
+            const statusLabel = newStatus === 'approved' ? 'Đã duyệt' : 'Đang kiểm tra';
+            toast.success(`Đã chuyển sang trạng thái ${statusLabel}`);
+            console.log('Start inspection with note:', note);
+          }
           closeModal();
-          toast.success('Đã chuyển sang trạng thái Đang kiểm tra');
-          console.log('Start inspection with note:', note);
         }}
       />
       <CompleteInspectionModal
@@ -801,9 +1075,12 @@ export function InspectionRoundsList() {
         round={modalState.round}
         onClose={closeModal}
         onConfirm={(summary) => {
+          if (modalState.round) {
+            updateRound(modalState.round.id, { status: 'completed' });
+            toast.success('Đã chuyển sang trạng thái Hoàn thành');
+            console.log('Complete inspection with summary:', summary);
+          }
           closeModal();
-          toast.success('Đã chuyển sang trạng thái Hoàn thành báo cáo');
-          console.log('Complete inspection with summary:', summary);
         }}
       />
       <CompleteRoundModal
@@ -811,9 +1088,12 @@ export function InspectionRoundsList() {
         round={modalState.round}
         onClose={closeModal}
         onConfirm={() => {
+          if (modalState.round) {
+            updateRound(modalState.round.id, { status: 'completed' });
+            toast.success('Đã hoàn thành đợt kiểm tra');
+            console.log('Complete round');
+          }
           closeModal();
-          toast.success('Đã hoàn thành đợt kiểm tra');
-          console.log('Complete round');
         }}
       />
       <CancelRoundModal
@@ -821,9 +1101,12 @@ export function InspectionRoundsList() {
         round={modalState.round}
         onClose={closeModal}
         onConfirm={(reason) => {
+          if (modalState.round) {
+            updateRound(modalState.round.id, { status: 'cancelled' });
+            toast.warning('Đã hủy đợt kiểm tra');
+            console.log('Cancel round with reason:', reason);
+          }
           closeModal();
-          toast.warning('Đã hủy đợt kiểm tra');
-          console.log('Cancel round with reason:', reason);
         }}
       />
       <DeleteRoundModal
@@ -831,9 +1114,25 @@ export function InspectionRoundsList() {
         round={modalState.round}
         onClose={closeModal}
         onConfirm={() => {
+          if (modalState.round) {
+            deleteRound(modalState.round.id);
+            toast.success('Đã xóa đợt kiểm tra');
+            console.log('Delete round');
+          }
           closeModal();
-          toast.success('Đã xóa đợt kiểm tra');
-          console.log('Delete round');
+        }}
+      />
+      <RejectRoundModal
+        isOpen={modalState.type === 'reject'}
+        round={modalState.round}
+        onClose={closeModal}
+        onConfirm={(reason) => {
+          if (modalState.round) {
+            updateRound(modalState.round.id, { status: 'rejected' });
+            toast.warning('Đã từ chối phê duyệt đợt kiểm tra');
+            console.log('Reject round with reason:', reason);
+          }
+          closeModal();
         }}
       />
 
@@ -848,52 +1147,17 @@ export function InspectionRoundsList() {
         onClear={handleClearFilters}
       />
 
-      {/* Document Management Drawers & Modals */}
-      {documentDrawerRound && (
-        <>
-          <InspectionRoundDocumentDrawer
-            open={documentDrawerOpen}
-            onOpenChange={setDocumentDrawerOpen}
-            round={documentDrawerRound}
-            highlightMissingDocs={highlightMissingDocs}
-            onImportClick={(code) => {
-              setSelectedDocumentCode(code);
-              setShowSelectInsModal(true);
-            }}
-            onViewPdfClick={(code) => {
-              toast.info('Xem PDF biểu mẫu (chức năng đang phát triển)');
-            }}
-            onSyncClick={(code) => {
-              toast.success('Đã đồng bộ lại biểu mẫu từ INS');
-            }}
-            onViewLogClick={() => setShowSyncLogDrawer(true)}
-          />
-
-          <SelectFromInsModal
-            open={showSelectInsModal}
-            onOpenChange={setShowSelectInsModal}
-            documentCode={selectedDocumentCode}
-            documentName={
-              selectedDocumentCode === 'M01'
-                ? 'Quyết định kiểm tra việc chấp hành pháp luật'
-                : selectedDocumentCode === 'M04'
-                ? 'Quyết định phân công công chức thực hiện biện pháp nghiệp vụ'
-                : selectedDocumentCode === 'M02'
-                ? 'Quyết định sửa đổi, bổ sung Quyết định kiểm tra'
-                : 'Quyết định kéo dài/Gia hạn thời hạn thẩm tra'
-            }
-            onSelect={(doc: InsDocument) => {
-              toast.success(`Đã import ${doc.code} từ INS thành công`);
-              setShowSelectInsModal(false);
-            }}
-          />
-
-          <InsSyncLogDrawer
-            open={showSyncLogDrawer}
-            onOpenChange={setShowSyncLogDrawer}
-          />
-        </>
-      )}
+      {/* Create Session Dialog */}
+      <CreateSessionDialog
+        open={createSessionDialog.open}
+        onOpenChange={(open) => setCreateSessionDialog({ ...createSessionDialog, open })}
+        roundId={createSessionDialog.roundId}
+        roundName={createSessionDialog.roundName}
+        onCreateSession={(sessionData) => {
+          console.log('Created session:', sessionData);
+          // Handle session creation here - could update context or make API call
+        }}
+      />
     </div>
   );
 }

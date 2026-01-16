@@ -1196,6 +1196,7 @@ export default function MapPage() {
               selectedWard={selectedWard}
               restaurants={filteredRestaurants}  // 🔥 CRITICAL: Pass filtered array, not restaurants
               showWardBoundaries={showOfficers}
+              showMerchants={showMerchants}
               onPointClick={(point) => {
                 setDetailModalPoint(point);
                 setIsDetailModalOpen(true);

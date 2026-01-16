@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FileDown, Upload, Eye, X, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { type Plan } from '../../data/kehoach-mock-data';
-import { generateM09Document } from '../../utils/docx-generator';
+import { generateM09Document } from '@/app/utils/docx-generator';
 import styles from './M09ProposalModal.module.css';
 
 interface M09ProposalModalProps {

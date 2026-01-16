@@ -3,6 +3,7 @@ import { Toaster } from 'sonner';
 import { router } from '../routes/routes';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { PlansProvider } from './contexts/PlansContext';
+import { InspectionRoundsProvider } from '../contexts/InspectionRoundsContext';
 // Import export functions for mock data
 import '../utils/exportMockData';
 
@@ -14,8 +15,10 @@ export default function App() {
   return (
     <ErrorBoundary>
       <PlansProvider>
-        <RouterProvider router={router} />
-        <Toaster position="top-right" richColors />
+        <InspectionRoundsProvider>
+          <RouterProvider router={router} />
+          <Toaster position="top-right" richColors />
+        </InspectionRoundsProvider>
       </PlansProvider>
     </ErrorBoundary>
   );

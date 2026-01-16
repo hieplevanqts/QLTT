@@ -13,7 +13,10 @@ import {
   RotateCcw,
   XCircle,
   Info,
-  Search as SearchIcon
+  Edit,
+  Search as SearchIcon,
+  Table,
+  BookOpen
 } from 'lucide-react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -34,13 +37,21 @@ import AdvancedFilterModal, { type FilterConfig, type InfiniteScrollSelectOption
 import { type DateRange } from '../../../ui-kit/DateRangePicker';
 import { toast } from 'sonner';
 import CreateTaskModal, { type CreateTaskFormData } from '../../components/tasks/CreateTaskModal';
-import TaskDetailModal from '../../components/tasks/TaskDetailModal';
-import EnterResultsModal from '../../components/tasks/EnterResultsModal';
-import ReopenTaskModal from '../../components/tasks/ReopenTaskModal';
-import AttachEvidenceModal from '../../components/tasks/AttachEvidenceModal';
+import { EditTaskModal, type EditTaskFormData } from '../../components/tasks/EditTaskModal';
+import { InspectionTaskFilterModal, type InspectionTaskFilters } from '../../components/tasks/InspectionTaskFilterModal';
+import { TaskDetailModal } from '../../components/tasks/TaskDetailModal';
+import InspectionResultModal, { type InspectionResultData } from '../../components/sessions/InspectionResultModal';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../../components/ui/select';
 import ActionColumn, { type Action } from '../../../patterns/ActionColumn';
 import { Card, CardContent } from '../../components/ui/card';
 import TableFooter from '../../../ui-kit/TableFooter';
+import ReopenTaskModal from '../../components/tasks/ReopenTaskModal';
+import AttachEvidenceModal from '../../components/tasks/AttachEvidenceModal';
+import { generateForm06PDF, createForm06DataFromTask } from '@/app/utils/generateForm06PDF';
+import { Form06Modal } from '@/app/components/tasks/Form06Modal';
+import { Form10Modal } from '@/app/components/tasks/Form10Modal';
+import { Form12Modal } from '@/app/components/tasks/Form12Modal';
+import { Form11Modal } from '@/app/components/tasks/Form11Modal';
 
 type ViewMode = 'kanban' | 'list';
 
@@ -69,9 +80,10 @@ const STATUS_COLUMNS: { key: TaskStatus; label: string; color: string }[] = [
 interface DraggableTaskProps {
   task: InspectionTask;
   onClick: (task: InspectionTask) => void;
+  actions: Action[]; // Add actions
 }
 
-function DraggableTask({ task, onClick }: DraggableTaskProps) {
+function DraggableTask({ task, onClick, actions }: DraggableTaskProps) {
   const [{ isDragging }, drag] = useDrag({
     type: 'TASK',
     item: { id: task.id, status: task.status },
@@ -89,7 +101,7 @@ function DraggableTask({ task, onClick }: DraggableTaskProps) {
         transition: 'opacity 0.2s ease',
       }}
     >
-      <TaskCard task={task} onClick={onClick} />
+      <TaskCard task={task} onClick={onClick} actions={actions} />
     </div>
   );
 }
@@ -100,9 +112,10 @@ interface KanbanColumnProps {
   tasks: InspectionTask[];
   onTaskClick: (task: InspectionTask) => void;
   onDropTask: (taskId: string, newStatus: TaskStatus) => void;
+  getTaskActions: (task: InspectionTask) => Action[]; // Add this prop
 }
 
-function KanbanColumn({ column, tasks, onTaskClick, onDropTask }: KanbanColumnProps) {
+function KanbanColumn({ column, tasks, onTaskClick, onDropTask, getTaskActions }: KanbanColumnProps) {
   const [{ isOver, canDrop }, drop] = useDrop({
     accept: 'TASK',
     canDrop: (item: { id: string; status: TaskStatus }) => {
@@ -172,6 +185,7 @@ function KanbanColumn({ column, tasks, onTaskClick, onDropTask }: KanbanColumnPr
               key={task.id}
               task={task}
               onClick={onTaskClick}
+              actions={getTaskActions(task)}
             />
           ))
         )}
@@ -194,6 +208,7 @@ export function TaskBoard() {
 
   // Modal state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<InspectionTask | null>(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
@@ -203,6 +218,10 @@ export function TaskBoard() {
   const [isReopenModalOpen, setIsReopenModalOpen] = useState(false);
   const [isAttachEvidenceModalOpen, setIsAttachEvidenceModalOpen] = useState(false);
   const [actionTask, setActionTask] = useState<InspectionTask | null>(null);
+  const [isForm06ModalOpen, setIsForm06ModalOpen] = useState(false);
+  const [isForm10ModalOpen, setIsForm10ModalOpen] = useState(false);
+  const [isForm12ModalOpen, setIsForm12ModalOpen] = useState(false);
+  const [isForm11ModalOpen, setIsForm11ModalOpen] = useState(false);
 
   // Filters
   const [searchValue, setSearchValue] = useState('');
@@ -229,8 +248,36 @@ export function TaskBoard() {
     const planParam = searchParams.get('planId') || searchParams.get('plan');
     if (planParam) {
       setPlanFilter(decodeURIComponent(planParam));
+    } else {
+      // Auto-select the latest plan if no plan is selected
+      const latestPlan = findLatestPlan();
+      if (latestPlan) {
+        setPlanFilter(latestPlan.id);
+      }
     }
   }, [searchParams]);
+
+  // Find the latest plan based on startDate (closest to today) and status
+  const findLatestPlan = () => {
+    const today = new Date();
+    
+    // Priority order: active plans first, then by start date closest to today
+    const sortedPlans = [...mockPlans].sort((a, b) => {
+      // Prioritize active plans
+      if (a.status === 'active' && b.status !== 'active') return -1;
+      if (b.status === 'active' && a.status !== 'active') return 1;
+      
+      // Then sort by start date (closest to today)
+      const dateA = new Date(a.startDate);
+      const dateB = new Date(b.startDate);
+      const diffA = Math.abs(today.getTime() - dateA.getTime());
+      const diffB = Math.abs(today.getTime() - dateB.getTime());
+      
+      return diffA - diffB;
+    });
+    
+    return sortedPlans[0] || null;
+  };
 
   // Prepare plan options with pagination
   const planOptions: InfiniteScrollSelectOption[] = useMemo(() => {
@@ -238,7 +285,7 @@ export function TaskBoard() {
     return plans.map(plan => ({
       value: plan.id,
       label: plan.name,
-      subtitle: `${plan.id} - ${plan.planType === 'periodic' ? 'Định kỳ' : plan.planType === 'thematic' ? 'Chuyên đề' : 'Đột xuất'}`,
+      subtitle: `${plan.id} - ${plan.planType === 'periodic' ? 'Định kỳ' : plan.planType === 'thematic' ? 'Chuyên đề' : 'Đt xuất'}`,
     }));
   }, [planPage]);
 
@@ -331,12 +378,11 @@ export function TaskBoard() {
     });
   }, [tasks, searchValue, statusFilter, priorityFilter, roundFilter, planFilter, assigneeFilter, dateRangeFilter]);
 
-  // Calculate summary stats
-  const summaryStats = useMemo(() => {
-    const total = filteredTasks.length;
+  // Count tasks for summary cards
+  const getSummaryCounts = () => {
     const notStarted = filteredTasks.filter(t => t.status === 'not_started').length;
     const inProgress = filteredTasks.filter(t => t.status === 'in_progress').length;
-    const pendingReview = filteredTasks.filter(t => t.status === 'pending_review').length;
+    const pendingApproval = filteredTasks.filter(t => t.status === 'pending_approval').length;
     const completed = filteredTasks.filter(t => t.status === 'completed').length;
     
     // Calculate overdue
@@ -346,8 +392,8 @@ export function TaskBoard() {
       return new Date(t.dueDate) < today;
     }).length;
 
-    return { total, notStarted, inProgress, pendingReview, completed, overdue };
-  }, [filteredTasks]);
+    return { notStarted, inProgress, pendingApproval, completed, overdue };
+  };
 
   // Group tasks by status for Kanban
   const tasksByStatus = useMemo(() => {
@@ -610,6 +656,34 @@ export function TaskBoard() {
     toast.success(`Đã tạo nhiệm vụ "${formData.title}" thành công!`);
   };
 
+  // Handle edit task
+  const handleEditTask = (taskId: string, formData: EditTaskFormData) => {
+    const taskIndex = tasks.findIndex(t => t.id === taskId);
+    if (taskIndex === -1) return;
+
+    const updatedTask: InspectionTask = {
+      ...tasks[taskIndex],
+      title: formData.title,
+      description: formData.description,
+      targetName: formData.targetName,
+      roundId: formData.roundId,
+      planId: formData.planId,
+      assignee: {
+        id: formData.assigneeId,
+        name: 'Người thực hiện', // In production, look up from user list
+      },
+      status: formData.status,
+      priority: formData.priority,
+      dueDate: formData.dueDate,
+      startDate: formData.startDate || new Date().toISOString(),
+    };
+
+    const updatedTasks = [...tasks];
+    updatedTasks[taskIndex] = updatedTask;
+    setTasks(updatedTasks);
+    toast.success(`Đã cập nhật nhiệm vụ \"${formData.title}\" thành công!`);
+  };
+
   // Action handlers for task actions
   const handleStartTask = (task: InspectionTask) => {
     handleStatusChange(task.id, 'in_progress');
@@ -633,7 +707,16 @@ export function TaskBoard() {
 
   const handleCloseTask = (task: InspectionTask) => {
     handleStatusChange(task.id, 'closed');
-    toast.success(`Đã đóng phiên làm việc "${task.title}"`);
+    toast.success(`Đã đóng phiên làm việc \"${task.title}\"`);
+  };
+
+  // Handle edit task button click
+  const handleEditTaskClick = (task: InspectionTask) => {
+    console.log('[TaskBoard] handleEditTaskClick called with task:', task.id, task.title);
+    setSelectedTask(task);
+    setIsDetailModalOpen(false); // Close detail modal if open
+    setIsEditModalOpen(true);
+    console.log('[TaskBoard] State should be updated - isEditModalOpen: true, selectedTask:', task.id);
   };
 
   // Generate actions for task based on status (like InspectionRoundsList)
@@ -642,79 +725,151 @@ export function TaskBoard() {
 
     switch (task.status) {
       case 'not_started':
-        // Chưa bắt đầu: Xem chi tiết, Bắt đầu
+        // Chưa bắt đầu: Xem chi tiết, Chỉnh sửa, Bắt đầu
         actions.push(
           {
             label: 'Xem chi tiết',
             icon: <Info size={16} />,
             onClick: () => handleTaskClick(task),
             priority: 10,
+          },
+          {
+            label: 'Chỉnh sửa',
+            icon: <Edit size={16} />,
+            onClick: () => handleEditTaskClick(task),
+            priority: 9,
           },
           {
             label: 'Bắt đầu',
             icon: <Play size={16} />,
             onClick: () => handleStartTask(task),
-            priority: 9,
+            priority: 8,
           }
         );
         break;
 
       case 'in_progress':
-        // Đang thực hiện: Xem chi tiết, Nhập kết quả, Đính kèm chứng cứ
+        // Đang thực hiện: Xem chi tiết, Chỉnh sửa, Nhập kết quả, Đính kèm chứng cứ
         actions.push(
           {
             label: 'Xem chi tiết',
             icon: <Info size={16} />,
             onClick: () => handleTaskClick(task),
             priority: 10,
+          },
+          {
+            label: 'Chỉnh sửa',
+            icon: <Edit size={16} />,
+            onClick: () => handleEditTaskClick(task),
+            priority: 9,
           },
           {
             label: 'Nhập kết quả',
             icon: <FileText size={16} />,
             onClick: () => handleEnterResults(task),
-            priority: 9,
+            priority: 8,
           },
           {
             label: 'Đính kèm chứng cứ',
             icon: <Paperclip size={16} />,
             onClick: () => handleAttachEvidence(task),
-            priority: 8,
+            priority: 7,
           }
         );
         break;
 
       case 'completed':
-        // Hoàn thành: Xem chi tiết, Mở lại, Đóng
+        // Hoàn thành: Xem chi tiết, Biên bản kiểm tra, Bảng kê, Phụ lục, Chỉnh sửa, Mở lại, Đóng
         actions.push(
           {
             label: 'Xem chi tiết',
             icon: <Info size={16} />,
             onClick: () => handleTaskClick(task),
             priority: 10,
+          },
+          {
+            label: 'Biên bản kiểm tra',
+            icon: <FileText size={16} />,
+            onClick: () => {
+              setActionTask(task);
+              setIsForm06ModalOpen(true);
+            },
+            priority: 9,
+          },
+          {
+            label: 'Bảng kê',
+            icon: <Table size={16} />,
+            onClick: () => {
+              setActionTask(task);
+              setIsForm10ModalOpen(true);
+            },
+            priority: 8,
+          },
+          {
+            label: 'Phụ lục',
+            icon: <FileText size={16} />,
+            onClick: () => {
+              setActionTask(task);
+              setIsForm11ModalOpen(true);
+            },
+            priority: 7,
+          },
+          {
+            label: 'Chỉnh sửa',
+            icon: <Edit size={16} />,
+            onClick: () => handleEditTaskClick(task),
+            priority: 6,
           },
           {
             label: 'Mở lại',
             icon: <RotateCcw size={16} />,
             onClick: () => handleReopen(task),
-            priority: 9,
+            priority: 5,
           },
           {
             label: 'Đóng',
             icon: <XCircle size={16} />,
             onClick: () => handleCloseTask(task),
-            priority: 8,
+            priority: 4,
           }
         );
         break;
 
       case 'closed':
-        // Đã đóng: Xem chi tiết only
+        // Đã đóng: Xem chi tiết, Biên bản kiểm tra, Bảng kê, Phụ lục
         actions.push(
           {
             label: 'Xem chi tiết',
             icon: <Info size={16} />,
             onClick: () => handleTaskClick(task),
             priority: 10,
+          },
+          {
+            label: 'Biên bản kiểm tra',
+            icon: <FileText size={16} />,
+            onClick: () => {
+              setActionTask(task);
+              setIsForm06ModalOpen(true);
+            },
+            priority: 9,
+          },
+          {
+            label: 'Bảng kê',
+            icon: <Table size={16} />,
+            onClick: () => {
+              setActionTask(task);
+              setIsForm10ModalOpen(true);
+            },
+            priority: 8,
+          },
+          {
+            label: 'Phụ lục',
+            icon: <FileText size={16} />,
+            onClick: () => {
+              setActionTask(task);
+              setIsForm11ModalOpen(true);
+            },
+            priority: 7,
           }
         );
         break;
@@ -736,16 +891,6 @@ export function TaskBoard() {
   // Table columns for list view
   const columns: Column<InspectionTask>[] = [
     {
-      key: 'code',
-      label: 'Mã nhiệm vụ',
-      sortable: true,
-      render: (task) => (
-        <span className={styles.taskCodeLink} onClick={() => handleTaskClick(task)}>
-          {task?.code || 'N/A'}
-        </span>
-      ),
-    },
-    {
       key: 'title',
       label: 'Tên nhiệm vụ',
       sortable: true,
@@ -755,6 +900,25 @@ export function TaskBoard() {
           <div className={styles.taskTargetCell}>{task?.targetName || ''}</div>
         </div>
       ),
+    },
+    {
+      key: 'roundId',
+      label: 'Đợt kiểm tra',
+      sortable: true,
+      render: (task) => (
+        <div>
+          <div className={styles.taskTitleCell}>{task?.roundId || 'N/A'}</div>
+          {task?.planName && (
+            <div className={styles.taskTargetCell}>{task.planName}</div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'targetName',
+      label: 'Tên cửa hàng',
+      sortable: true,
+      render: (task) => task?.targetName || 'N/A',
     },
     {
       key: 'status',
@@ -789,12 +953,6 @@ export function TaskBoard() {
       render: (task) => task?.assignee?.name || 'N/A',
     },
     {
-      key: 'roundId',
-      label: 'Đợt kiểm tra',
-      sortable: true,
-      render: (task) => task?.roundId || 'N/A',
-    },
-    {
       key: 'dueDate',
       label: 'Hạn hoàn thành',
       sortable: true,
@@ -808,25 +966,6 @@ export function TaskBoard() {
           <span className={isOverdue ? styles.overdueDateCell : ''}>
             {dueDate.toLocaleDateString('vi-VN')}
           </span>
-        );
-      },
-    },
-    {
-      key: 'progress',
-      label: 'Tiến độ',
-      sortable: true,
-      render: (task) => {
-        const progress = task?.progress ?? 0;
-        return (
-          <div className={styles.progressCell}>
-            <div className={styles.progressBarSmall}>
-              <div 
-                className={styles.progressFillSmall} 
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <span>{progress}%</span>
-          </div>
         );
       },
     },
@@ -851,60 +990,96 @@ export function TaskBoard() {
           { label: 'Trang chủ', path: '/' },
           { label: 'Phiên làm việc' },
         ]}
+        actions={
+          <>
+            <div className={styles.viewToggle}>
+              <Button
+                variant={viewMode === 'kanban' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('kanban')}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <Button variant="outline" size="sm" onClick={handleRefresh}>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+
+            <Button variant="outline" size="sm" onClick={() => setIsForm12ModalOpen(true)}>
+              <BookOpen className="h-4 w-4 mr-2" />
+              Nhật ký kiểm tra
+            </Button>
+
+            <Button variant="outline" size="sm" onClick={handleExport}>
+              <Download className="h-4 w-4 mr-2" />
+              Xuất dữ liệu
+            </Button>
+
+            <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Tạo phiên làm việc
+            </Button>
+          </>
+        }
       />
 
-      {/* Filters & Actions Bar */}
+      {/* Filters Bar */}
       <div className={styles.summaryContainer}>
         <FilterActionBar
           filters={
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setIsFilterModalOpen(true)}
-            >
-              <Filter size={16} />
-              Bộ lọc
-            </Button>
-          }
-          searchInput={
-            <SearchInput
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              placeholder="Tìm kiếm phiên làm việc..."
-              style={{ width: '280px' }}
-            />
-          }
-          actions={
             <>
-              <div className={styles.viewToggle}>
-                <Button
-                  variant={viewMode === 'kanban' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setViewMode('kanban')}
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setViewMode('list')}
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-              </div>
+              <SearchInput
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                placeholder="Tìm kiếm phiên làm việc..."
+                style={{ width: '280px' }}
+              />
+              
+              {/* Kế hoạch kiểm tra filter */}
+              <Select value={planFilter} onValueChange={setPlanFilter}>
+                <SelectTrigger style={{ width: '240px' }}>
+                  <SelectValue placeholder="Kế hoạch kiểm tra" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả kế hoạch</SelectItem>
+                  {planOptions.slice(0, 10).map(plan => (
+                    <SelectItem key={plan.value} value={plan.value}>
+                      {plan.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-              <Button variant="outline" size="sm" onClick={handleRefresh}>
-                <RefreshCw className="h-4 w-4" />
-              </Button>
+              {/* Đợt kiểm tra filter */}
+              <Select value={roundFilter} onValueChange={setRoundFilter}>
+                <SelectTrigger style={{ width: '240px' }}>
+                  <SelectValue placeholder="Đợt kiểm tra" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả đợt</SelectItem>
+                  {roundOptions.slice(0, 10).map(round => (
+                    <SelectItem key={round.value} value={round.value}>
+                      {round.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-              <Button variant="outline" size="sm" onClick={handleExport}>
-                <Download className="h-4 w-4 mr-2" />
-                Xuất dữ liệu
-              </Button>
-
-              <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Tạo phiên làm việc
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setIsFilterModalOpen(true)}
+              >
+                <Filter size={16} />
+                Bộ lọc khác
               </Button>
             </>
           }
@@ -952,6 +1127,7 @@ export function TaskBoard() {
                       tasks={tasks}
                       onTaskClick={handleTaskClick}
                       onDropTask={handleDropTask}
+                      getTaskActions={getTaskActions} // Add this prop
                     />
                   );
                 })}
@@ -1021,12 +1197,21 @@ export function TaskBoard() {
         onSubmit={handleCreateTask}
       />
 
+      {/* Edit Task Modal */}
+      <EditTaskModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSubmit={handleEditTask}
+        task={selectedTask}
+      />
+
       {/* Task Detail Modal */}
       <TaskDetailModal
         task={selectedTask}
         isOpen={isDetailModalOpen}
         onClose={() => setIsDetailModalOpen(false)}
         onStatusChange={handleStatusChange}
+        onEdit={handleEditTaskClick}
       />
 
       {/* Advanced Filter Modal */}
@@ -1041,15 +1226,19 @@ export function TaskBoard() {
       />
 
       {/* Action Modals */}
-      <EnterResultsModal
+      <InspectionResultModal
+        session={actionTask ? {
+          id: actionTask.id,
+          code: actionTask.code,
+          title: actionTask.title,
+          date: new Date(actionTask.dueDate).toLocaleDateString('vi-VN')
+        } : null}
         isOpen={isEnterResultsModalOpen}
         onClose={() => setIsEnterResultsModalOpen(false)}
-        taskTitle={actionTask?.title || ''}
-        taskId={actionTask?.id || ''}
-        onSave={(results) => {
-          toast.success('Đã lưu kết quả');
+        onSave={(data: InspectionResultData) => {
+          toast.success('Đã lưu kết quả kiểm tra');
         }}
-        onComplete={(results) => {
+        onComplete={(data: InspectionResultData) => {
           if (actionTask) {
             handleStatusChange(actionTask.id, 'completed');
           }
@@ -1084,6 +1273,29 @@ export function TaskBoard() {
         onSubmit={(files) => {
           toast.success(`Đã đính kèm ${files.length} file chứng cứ`);
         }}
+      />
+
+      <Form06Modal
+        open={isForm06ModalOpen}
+        onOpenChange={setIsForm06ModalOpen}
+        task={actionTask}
+      />
+
+      <Form10Modal
+        open={isForm10ModalOpen}
+        onOpenChange={setIsForm10ModalOpen}
+        task={actionTask}
+      />
+
+      <Form12Modal
+        open={isForm12ModalOpen}
+        onOpenChange={setIsForm12ModalOpen}
+      />
+
+      <Form11Modal
+        open={isForm11ModalOpen}
+        onOpenChange={setIsForm11ModalOpen}
+        task={actionTask}
       />
     </div>
   );

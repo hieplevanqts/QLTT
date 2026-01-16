@@ -14,28 +14,14 @@ const LAYOUT_STORAGE_KEY = 'mappa-layout-mode';
 
 export function LayoutProvider({ children }: { children: React.ReactNode }) {
   const [layoutMode, setLayoutModeState] = useState<LayoutMode>(() => {
-    // Check if we're in browser environment
-    if (typeof window === 'undefined') {
-      return 'horizontal';
-    }
     // Load from localStorage on init
-    try {
-      const saved = localStorage.getItem(LAYOUT_STORAGE_KEY);
-      return (saved === 'horizontal' || saved === 'vertical') ? saved : 'horizontal';
-    } catch {
-      return 'horizontal';
-    }
+    const saved = localStorage.getItem(LAYOUT_STORAGE_KEY);
+    return (saved === 'horizontal' || saved === 'vertical') ? saved : 'horizontal';
   });
 
   const setLayoutMode = (mode: LayoutMode) => {
     setLayoutModeState(mode);
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(LAYOUT_STORAGE_KEY, mode);
-      } catch {
-        // Ignore localStorage errors
-      }
-    }
+    localStorage.setItem(LAYOUT_STORAGE_KEY, mode);
   };
 
   const toggleLayoutMode = () => {

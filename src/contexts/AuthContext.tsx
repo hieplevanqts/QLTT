@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
 export type UserLevel = 'cuc' | 'chicuc' | 'doi';
 export type UserRole = 'lanhdao' | 'kehoach' | 'doitruong' | 'thanhtra' | 'canbohosocanbo' | 'phantich';
@@ -25,7 +25,6 @@ export interface UserInfo {
 interface AuthContextType {
   user: UserInfo | null;
   isAuthenticated: boolean;
-  isLoading: boolean;
   login: (username: string, password: string) => Promise<{ success: boolean; requiresUnitSelection?: boolean }>;
   selectUnit: (unitCode: string) => void;
   logout: () => void;
@@ -143,46 +142,32 @@ function getUserRoleInfo(username: string): Pick<UserInfo, 'role' | 'roleDisplay
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Auto-restore session on mount
-  useEffect(() => {
-    // Check if we're in browser environment
-    if (typeof window === 'undefined') {
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const storedUser = localStorage.getItem('mappa-user');
-      const sessionExpiry = localStorage.getItem('mappa-session-expiry');
-      
-      if (storedUser && sessionExpiry) {
-        const expiryTime = parseInt(sessionExpiry);
-        if (Date.now() < expiryTime) {
-          setUser(JSON.parse(storedUser));
-          setIsAuthenticated(true);
-        } else {
-          // Session expired
-          localStorage.removeItem('mappa-user');
-          localStorage.removeItem('mappa-session-expiry');
-        }
-      }
-    } catch (error) {
-      console.error('Error restoring session:', error);
-    }
-    
-    setIsLoading(false);
-  }, []);
+  // DISABLED: Auto-restore session on mount
+  // Người dùng luôn phải đăng nhập khi refresh/mở ứng dụng
+  // useEffect(() => {
+  //   const storedUser = localStorage.getItem('mappa-user');
+  //   const sessionExpiry = localStorage.getItem('mappa-session-expiry');
+  //   
+  //   if (storedUser && sessionExpiry) {
+  //     const expiryTime = parseInt(sessionExpiry);
+  //     if (Date.now() < expiryTime) {
+  //       setUser(JSON.parse(storedUser));
+  //       setIsAuthenticated(true);
+  //     } else {
+  //       // Session expired
+  //       localStorage.removeItem('mappa-user');
+  //       localStorage.removeItem('mappa-session-expiry');
+  //     }
+  //   }
+  // }, []);
 
   const login = async (username: string, password: string): Promise<{ success: boolean; requiresUnitSelection?: boolean }> => {
-    setIsLoading(true);
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Validate username và password không rỗng
     if (!username || !password) {
-      setIsLoading(false);
       return { success: false };
     }
     
@@ -209,7 +194,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // Nếu SAI FORMAT → trả về lỗi
     if (!isValidFormat) {
-      setIsLoading(false);
       return { success: false };
     }
     
@@ -234,95 +218,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     if (hasMultipleUnits) {
       // Store partial user info and require unit selection
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem('mappa-user-pending', JSON.stringify(userInfo));
-        } catch (error) {
-          console.error('Error storing pending user:', error);
-        }
-      }
-      setIsLoading(false);
+      localStorage.setItem('mappa-user-pending', JSON.stringify(userInfo));
       return { success: true, requiresUnitSelection: true };
     }
     
     // Set session (8 hours)
-    if (typeof window !== 'undefined') {
-      try {
-        const sessionExpiry = Date.now() + (8 * 60 * 60 * 1000);
-        localStorage.setItem('mappa-user', JSON.stringify(userInfo));
-        localStorage.setItem('mappa-session-expiry', sessionExpiry.toString());
-      } catch (error) {
-        console.error('Error storing session:', error);
-      }
-    }
+    const sessionExpiry = Date.now() + (8 * 60 * 60 * 1000);
+    localStorage.setItem('mappa-user', JSON.stringify(userInfo));
+    localStorage.setItem('mappa-session-expiry', sessionExpiry.toString());
     
     setUser(userInfo);
     setIsAuthenticated(true);
-    setIsLoading(false);
     
     return { success: true, requiresUnitSelection: false };
   };
 
   const selectUnit = (unitCode: string) => {
-    if (typeof window === 'undefined') return;
+    const pendingUser = localStorage.getItem('mappa-user-pending');
+    if (!pendingUser) return;
     
-    try {
-      const pendingUser = localStorage.getItem('mappa-user-pending');
-      if (!pendingUser) return;
-      
-      const userInfo = JSON.parse(pendingUser) as UserInfo;
-      
-      // Update user info with selected unit
-      // This would update provinceCode/teamCode based on selection
-      
-      const sessionExpiry = Date.now() + (8 * 60 * 60 * 1000);
-      localStorage.setItem('mappa-user', JSON.stringify(userInfo));
-      localStorage.setItem('mappa-session-expiry', sessionExpiry.toString());
-      localStorage.removeItem('mappa-user-pending');
-      
-      setUser(userInfo);
-      setIsAuthenticated(true);
-    } catch (error) {
-      console.error('Error selecting unit:', error);
-    }
+    const userInfo = JSON.parse(pendingUser) as UserInfo;
+    
+    // Update user info with selected unit
+    // This would update provinceCode/teamCode based on selection
+    
+    const sessionExpiry = Date.now() + (8 * 60 * 60 * 1000);
+    localStorage.setItem('mappa-user', JSON.stringify(userInfo));
+    localStorage.setItem('mappa-session-expiry', sessionExpiry.toString());
+    localStorage.removeItem('mappa-user-pending');
+    
+    setUser(userInfo);
+    setIsAuthenticated(true);
   };
 
   const logout = () => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.removeItem('mappa-user');
-        localStorage.removeItem('mappa-session-expiry');
-        localStorage.removeItem('mappa-user-pending');
-      } catch (error) {
-        console.error('Error during logout:', error);
-      }
-    }
+    localStorage.removeItem('mappa-user');
+    localStorage.removeItem('mappa-session-expiry');
+    localStorage.removeItem('mappa-user-pending');
     setUser(null);
     setIsAuthenticated(false);
   };
 
   const checkSession = (): boolean => {
-    if (typeof window === 'undefined') return false;
+    const sessionExpiry = localStorage.getItem('mappa-session-expiry');
+    if (!sessionExpiry) return false;
     
-    try {
-      const sessionExpiry = localStorage.getItem('mappa-session-expiry');
-      if (!sessionExpiry) return false;
-      
-      const expiryTime = parseInt(sessionExpiry);
-      if (Date.now() >= expiryTime) {
-        logout();
-        return false;
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Error checking session:', error);
+    const expiryTime = parseInt(sessionExpiry);
+    if (Date.now() >= expiryTime) {
+      logout();
       return false;
     }
+    
+    return true;
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, selectUnit, logout, checkSession }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, login, selectUnit, logout, checkSession }}>
       {children}
     </AuthContext.Provider>
   );

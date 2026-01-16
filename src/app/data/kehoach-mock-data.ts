@@ -1,6 +1,6 @@
 // Mock data cho module Kế hoạch tác nghiệp
 
-export type PlanStatus = 'draft' | 'pending_approval' | 'approved' | 'rejected' | 'active' | 'completed' | 'cancelled';
+export type PlanStatus = 'draft' | 'pending_approval' | 'approved' | 'rejected' | 'active' | 'paused' | 'completed' | 'cancelled';
 export type PlanType = 'periodic' | 'thematic' | 'urgent';
 export type TargetType = 'STORE' | 'LEAD' | 'RISK_ZONE' | 'POINT';
 export type Priority = 'low' | 'medium' | 'high' | 'critical';
@@ -25,7 +25,6 @@ export interface Plan {
   endDate: string;
   createdBy: string;
   createdAt: string;
-  hasAuthorization?: boolean; // Có sử dụng ủy quyền?
   // M03 - Quyết định giao quyền từ INS
   insDecisionM03?: {
     id: string;
@@ -34,7 +33,20 @@ export interface Plan {
     issueDate: string;
     signer: string;
   };
-  requirements?: string[]; // Yêu cầu thực hiện
+  // Metadata for status changes
+  rejectionReason?: string; // Lý do từ chối
+  rejectedBy?: string; // Người từ chối
+  rejectedAt?: string; // Thời gian từ chối
+  approvedBy?: string; // Người phê duyệt
+  approvedAt?: string; // Thời gian phê duyệt
+  deployedBy?: string; // Người triển khai
+  deployedAt?: string; // Thời gian triển khai
+  pausedReason?: string; // Lý do tạm dừng
+  pausedBy?: string; // Người tạm dừng
+  pausedAt?: string; // Thời gian tạm dừng
+  cancelledReason?: string; // Lý do hủy
+  cancelledBy?: string; // Người hủy
+  cancelledAt?: string; // Thời gian hủy
   stats: {
     totalTargets: number;
     totalTasks: number;
@@ -1049,10 +1061,10 @@ export type InspectionRoundStatus =
   | 'cancelled';         // Đã hủy
 
 export type InspectionType = 
-  | 'scheduled'          // Theo kế hoạch
-  | 'unannounced'        // Đột xuất
-  | 'followup'           // Tái kiểm tra
-  | 'complaint';         // Theo khiếu nại
+  | 'routine'            // Định kỳ
+  | 'targeted'           // Chuyên đề
+  | 'sudden'             // Đột xuất
+  | 'followup';          // Tái kiểm tra
 
 export interface InspectionTeamMember {
   id: string;
@@ -1144,7 +1156,7 @@ export const mockInspectionRounds: InspectionRound[] = mockPlans.flatMap((plan, 
     
     if (i === 0) {
       status = 'in_progress';
-      type = 'scheduled';
+      type = 'routine';
       inspectedTargets = Math.floor(totalTargets * 0.6);
       passedCount = Math.floor(inspectedTargets * 0.7);
       warningCount = Math.floor(inspectedTargets * 0.2);
@@ -1152,11 +1164,11 @@ export const mockInspectionRounds: InspectionRound[] = mockPlans.flatMap((plan, 
       actualStartDate = `${planYear}-${String(planQuarter * 3 - 2).padStart(2, '0')}-${String(5 + i * 2).padStart(2, '0')}`;
     } else if (i === 1) {
       status = 'preparing';
-      type = 'scheduled';
+      type = 'routine';
       inspectedTargets = 0;
     } else if (i === 2) {
       status = 'completed';
-      type = 'scheduled';
+      type = 'routine';
       inspectedTargets = totalTargets;
       passedCount = Math.floor(totalTargets * 0.65);
       warningCount = Math.floor(totalTargets * 0.25);
@@ -1165,7 +1177,7 @@ export const mockInspectionRounds: InspectionRound[] = mockPlans.flatMap((plan, 
       actualEndDate = `${planYear}-${String(planQuarter * 3 - 2).padStart(2, '0')}-${String(10 + i * 2).padStart(2, '0')}`;
     } else if (i === 3) {
       status = 'reporting';
-      type = 'scheduled';
+      type = 'routine';
       inspectedTargets = totalTargets;
       passedCount = Math.floor(totalTargets * 0.7);
       warningCount = Math.floor(totalTargets * 0.2);
@@ -1174,11 +1186,11 @@ export const mockInspectionRounds: InspectionRound[] = mockPlans.flatMap((plan, 
       actualEndDate = `${planYear}-${String(planQuarter * 3 - 2).padStart(2, '0')}-${String(13 + i * 2).padStart(2, '0')}`;
     } else if (i === 4) {
       status = 'draft';
-      type = i % 2 === 0 ? 'unannounced' : 'followup';
+      type = i % 2 === 0 ? 'sudden' : 'followup';
       inspectedTargets = 0;
     } else {
       status = 'preparing';
-      type = 'scheduled';
+      type = 'routine';
       inspectedTargets = 0;
     }
     

@@ -13,7 +13,9 @@ export function InspectionTaskStatusBadge({ type, value, size = 'md' }: Inspecti
     const configs = {
       not_started: { label: 'Chưa bắt đầu', className: styles.statusNotStarted },
       in_progress: { label: 'Đang thực hiện', className: styles.statusInProgress },
+      pending_approval: { label: 'Chờ duyệt', className: styles.statusPendingApproval },
       completed: { label: 'Hoàn thành', className: styles.statusCompleted },
+      cancelled: { label: 'Đã hủy', className: styles.statusCancelled },
       closed: { label: 'Đã đóng', className: styles.statusClosed },
     };
     return configs[status];

@@ -23,6 +23,7 @@ interface LeafletMapProps {
   selectedWard?: string;
   restaurants?: Restaurant[]; // Add restaurants prop
   showWardBoundaries?: boolean; // 🔥 NEW: Show ward boundaries instead of points
+  showMerchants?: boolean; // 🔥 NEW: Show merchants layer
   onPointClick?: (point: Restaurant) => void;
   onWardClick?: (wardName: string, district: string) => void; // 🔥 NEW: Ward click handler
   onFullscreenClick?: () => void;
@@ -130,7 +131,7 @@ function getCategoryLabel(category: Restaurant['category']) {
   }
 }
 
-export function LeafletMap({ filters, businessTypeFilters, searchQuery, selectedRestaurant, selectedProvince, selectedDistrict, selectedWard, restaurants = [], showWardBoundaries = false, onPointClick, onWardClick, onFullscreenClick }: LeafletMapProps) {
+export function LeafletMap({ filters, businessTypeFilters, searchQuery, selectedRestaurant, selectedProvince, selectedDistrict, selectedWard, restaurants = [], showWardBoundaries = false, showMerchants = false, onPointClick, onWardClick, onFullscreenClick }: LeafletMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const leafletRef = useRef<any>(null);
@@ -146,6 +147,7 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
   const userInteractedRef = useRef<boolean>(false); // Track if user manually zoomed/panned
   const previousSelectedRestaurantIdRef = useRef<string | null>(null); // Track selected restaurant changes
   const updateMarkersRef = useRef<(() => void) | null>(null); // 🔥 NEW: Ref to hold updateMarkers function
+  const previousShowMerchantsRef = useRef<boolean>(false); // Track previous showMerchants state
 
   // Calculate marker size - fixed, no scaling
   const getMarkerSize = (zoom: number) => {
@@ -909,6 +911,30 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       previousWardRef.current = selectedWard || '';
     }
   }, [selectedProvince, selectedDistrict, selectedWard]);
+
+  // 🔥 NEW: Handle zoom to Hà Nội when merchants layer is activated
+  useEffect(() => {
+    if (!mapInstanceRef.current || !leafletRef.current) return;
+    
+    // Check if showMerchants changed from false to true
+    if (showMerchants && !previousShowMerchantsRef.current) {
+      console.log('📍 Merchants layer activated - zooming to Hà Nội');
+      
+      // Hà Nội coordinates: 21.0285, 105.8542
+      // Zoom level 13 for a good view of Hà Nội
+      mapInstanceRef.current.setView(
+        [21.0285, 105.8542], 
+        13,
+        { animate: true, duration: 0.8 }
+      );
+      
+      // Reset user interaction flag to allow auto-zoom
+      userInteractedRef.current = false;
+    }
+    
+    // Update previous state
+    previousShowMerchantsRef.current = showMerchants;
+  }, [showMerchants]);
 
   return (
     <>

@@ -14,6 +14,7 @@ const planStatusLabels: Record<PlanStatus, string> = {
   approved: 'Đã duyệt',
   rejected: 'Đã từ chối',
   active: 'Đang thực hiện',
+  paused: 'Tạm dừng',
   completed: 'Hoàn thành',
   cancelled: 'Đã hủy'
 };

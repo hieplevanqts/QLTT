@@ -14,6 +14,19 @@ export default defineConfig({
     alias: {
       // Alias @ to the src directory
       '@': path.resolve(__dirname, './src'),
+      // Explicitly resolve jspdf
+      'jspdf': path.resolve(__dirname, './node_modules/jspdf/dist/jspdf.es.min.js'),
+    },
+    dedupe: ['jspdf'],
+    conditions: ['import', 'module', 'browser', 'default'],
+  },
+  optimizeDeps: {
+    include: ['jspdf', 'jspdf-autotable'],
+    exclude: [],
+  },
+  build: {
+    commonjsOptions: {
+      include: [/jspdf/, /node_modules/],
     },
   },
   server: {

@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate, createHashRouter } from 'react-router-dom';
+import { Navigate, createHashRouter } from 'react-router-dom';
 import RootLayout from '../layouts/RootLayout';
 import MainLayout from '../layouts/MainLayout';
 import OverviewPage from '../pages/OverviewPage';
@@ -6,9 +6,6 @@ import MapPage from '../pages/MapPage';
 import StoresListPage from '../pages/StoresListPage';
 import StoreDetailPage from '../pages/StoreDetailPage';
 import DataExportPage from '../pages/DataExportPage';
-import LeadsPage from '../pages/LeadsPage';
-import PlansPage from '../pages/PlansPage';
-import TasksPage from '../pages/TasksPage';
 import EvidenceRoutes from '../app/routes/EvidenceRoutes';
 import ReportsPage from '../pages/ReportsPage';
 import AdminPage from '../pages/AdminPage';
@@ -30,6 +27,7 @@ import { PlanTaskBoard } from '../app/pages/plans/PlanTaskBoard';
 import { InspectionRoundsList } from '../app/pages/inspections/InspectionRoundsList';
 import InspectionRoundDetail from '../app/pages/inspections/InspectionRoundDetail';
 import InspectionRoundCreate from '../app/pages/inspections/InspectionRoundCreate';
+import InspectionRoundStatistics from '../app/pages/inspections/InspectionRoundStatistics';
 import { InspectionTasksList } from '../app/pages/tasks/InspectionTasksList';
 import { TaskBoard } from '../app/pages/tasks/TaskBoard';
 
@@ -157,6 +155,10 @@ export const router = createHashRouter([
           {
             path: 'plans/inspection-rounds/:roundId',
             element: <InspectionRoundDetail />,
+          },
+          {
+            path: 'plans/inspection-rounds/:roundId/statistics',
+            element: <InspectionRoundStatistics />,
           },
           {
             path: 'plans/inspection-rounds/:roundId/tasks',

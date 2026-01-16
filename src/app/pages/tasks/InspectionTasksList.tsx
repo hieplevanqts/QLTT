@@ -56,17 +56,15 @@ export function InspectionTasksList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
-  // Calculate stats
-  const stats = useMemo(() => {
-    return {
-      total: mockInspectionTasks.length,
-      notStarted: mockInspectionTasks.filter(t => t.status === 'not_started').length,
-      inProgress: mockInspectionTasks.filter(t => t.status === 'in_progress').length,
-      pendingReview: mockInspectionTasks.filter(t => t.status === 'pending_review').length,
-      completed: mockInspectionTasks.filter(t => t.status === 'completed').length,
-      urgent: mockInspectionTasks.filter(t => t.priority === 'urgent').length,
-    };
-  }, []);
+  // Calculate summary stats from mock data
+  const stats = {
+    total: mockInspectionTasks.length,
+    notStarted: mockInspectionTasks.filter(t => t.status === 'not_started').length,
+    inProgress: mockInspectionTasks.filter(t => t.status === 'in_progress').length,
+    pendingApproval: mockInspectionTasks.filter(t => t.status === 'pending_approval').length,
+    completed: mockInspectionTasks.filter(t => t.status === 'completed').length,
+    urgent: mockInspectionTasks.filter(t => t.priority === 'urgent').length,
+  };
 
   // Apply filters
   const filteredData = useMemo(() => {
@@ -173,7 +171,7 @@ export function InspectionTasksList() {
             label: 'Hoàn thành',
             icon: <CheckCircle2 size={16} />,
             onClick: () => {
-              toast.success('Đã chuyển sang trạng thái Chờ kiểm tra');
+              toast.success('Đã chuyển sang trạng thái Chờ duyệt');
               console.log('Complete task', task.id);
             },
             priority: 7,
@@ -181,8 +179,8 @@ export function InspectionTasksList() {
         );
         break;
 
-      case 'pending_review':
-        // Chờ kiểm tra: Xem chi tiết, Phê duyệt, Yêu cầu chỉnh sửa
+      case 'pending_approval':
+        // Chờ duyệt: Xem chi tiết, Phê duyệt, Yêu cầu chỉnh sửa
         actions.push(
           {
             label: 'Xem chi tiết',
@@ -463,12 +461,12 @@ export function InspectionTasksList() {
             onClick={() => setActiveFilter('in_progress')}
           />
           <SummaryCard
-            label="Chờ kiểm tra"
-            value={stats.pendingReview}
+            label="Chờ duyệt"
+            value={stats.pendingApproval}
             icon={AlertCircle}
             variant="warning"
-            active={activeFilter === 'pending_review'}
-            onClick={() => setActiveFilter('pending_review')}
+            active={activeFilter === 'pending_approval'}
+            onClick={() => setActiveFilter('pending_approval')}
           />
           <SummaryCard
             label="Hoàn thành"

@@ -5,7 +5,9 @@
 export type TaskStatus = 
   | 'not_started'        // Chưa bắt đầu
   | 'in_progress'        // Đang thực hiện
+  | 'pending_approval'   // Chờ duyệt
   | 'completed'          // Hoàn thành
+  | 'cancelled'          // Đã hủy
   | 'closed';            // Đã đóng
 
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';

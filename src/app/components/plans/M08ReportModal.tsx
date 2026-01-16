@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FileText, Upload, Eye, X, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { type Plan } from '../../data/kehoach-mock-data';
-import { generateM08Document } from '../../utils/docx-generator';
+import { generateM08Document } from '@/app/utils/docx-generator';
 import styles from './M08ReportModal.module.css';
 
 interface M08ReportModalProps {

@@ -381,6 +381,31 @@ select.input option {
   cursor: not-allowed;
 }
 
+.successButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #10B981;
+  color: white;
+  border: none;
+  border-radius: var(--radius-card);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.successButton:hover:not(:disabled) {
+  background: #059669;
+}
+
+.successButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .modalContent {
@@ -406,7 +431,8 @@ select.input option {
   .cancelButton,
   .primaryButton,
   .destructiveButton,
-  .warningButton {
+  .warningButton,
+  .successButton {
     width: 100%;
     justify-content: center;
   }

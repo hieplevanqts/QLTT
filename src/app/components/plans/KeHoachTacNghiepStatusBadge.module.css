@@ -54,9 +54,14 @@
   color: rgba(3, 152, 85, 1);
 }
 
+.paused {
+  background: rgba(247, 162, 59, 0.15);
+  color: rgba(194, 120, 3, 1);
+}
+
 .completed {
-  background: rgba(102, 112, 133, 0.1);
-  color: rgba(52, 64, 84, 1);
+  background: rgba(15, 202, 122, 0.1);
+  color: rgba(3, 152, 85, 1);
 }
 
 .cancelled {

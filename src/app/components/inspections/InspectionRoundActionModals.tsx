@@ -98,6 +98,17 @@ export function StartInspectionModal({ isOpen, onClose, round, onConfirm }: Star
   if (!round) return null;
   
   const [note, setNote] = useState('');
+  
+  // Determine if this is approval or start action based on current status
+  const isApprovalAction = round.status === 'pending_approval';
+  const title = isApprovalAction ? 'Phê duyệt đợt kiểm tra' : 'Bắt đầu kiểm tra';
+  const statusText = isApprovalAction ? 'Đã duyệt' : 'Đang kiểm tra';
+  const description = isApprovalAction 
+    ? 'Xác nhận phê duyệt đợt kiểm tra này? Sau khi được duyệt, có thể bắt đầu thực hiện kiểm tra.'
+    : 'Xác nhận bắt đầu đợt kiểm tra này? Lực lượng kiểm tra sẽ được thông báo và có thể bắt đầu thực hiện nhiệm vụ.';
+  const buttonText = isApprovalAction ? 'Phê duyệt' : 'Bắt đầu kiểm tra';
+  const iconComponent = isApprovalAction ? <CheckCircle2 size={24} color="white" /> : <PlayCircle size={24} color="white" />;
+  const buttonIcon = isApprovalAction ? <CheckCircle2 size={18} /> : <PlayCircle size={18} />;
 
   const handleSubmit = () => {
     onConfirm(note);
@@ -109,10 +120,10 @@ export function StartInspectionModal({ isOpen, onClose, round, onConfirm }: Star
     <Modal isOpen={isOpen} onClose={onClose}>
       <div className={styles.modalHeader}>
         <div className={styles.modalIconWrapper} style={{ background: '#10B981' }}>
-          <PlayCircle size={24} color="white" />
+          {iconComponent}
         </div>
         <div className={styles.modalHeaderContent}>
-          <h3 className={styles.modalTitle}>Bắt đầu kiểm tra</h3>
+          <h3 className={styles.modalTitle}>{title}</h3>
           <p className={styles.modalSubtitle}>Đợt kiểm tra: {round.name}</p>
         </div>
         <button className={styles.closeButton} onClick={onClose}>
@@ -123,18 +134,18 @@ export function StartInspectionModal({ isOpen, onClose, round, onConfirm }: Star
       <div className={styles.modalBody}>
         <div className={styles.infoBox} style={{ background: '#10B98115', borderColor: '#10B981' }}>
           <CheckCircle2 size={20} color="#10B981" />
-          <p>Đợt kiểm tra sẽ chuyển sang trạng thái <strong>Đang kiểm tra</strong></p>
+          <p>Đợt kiểm tra sẽ chuyển sang trạng thái <strong>{statusText}</strong></p>
         </div>
 
         <p className={styles.modalDescription}>
-          Xác nhận bắt đầu đợt kiểm tra này? Lực lượng kiểm tra sẽ được thông báo và có thể bắt đầu thực hiện nhiệm vụ.
+          {description}
         </p>
 
         <div className={styles.formGroup}>
           <label className={styles.formLabel}>Ghi chú (không bắt buộc)</label>
           <textarea
             className={styles.textarea}
-            placeholder="Nhập ghi chú về việc bắt đầu kiểm tra..."
+            placeholder={isApprovalAction ? 'Nhập ghi chú về quyết định phê duyệt...' : 'Nhập ghi chú về việc bắt đầu kiểm tra...'}
             rows={3}
             value={note}
             onChange={(e) => setNote(e.target.value)}
@@ -147,8 +158,8 @@ export function StartInspectionModal({ isOpen, onClose, round, onConfirm }: Star
           Hủy
         </button>
         <button className={styles.successButton} onClick={handleSubmit}>
-          <PlayCircle size={18} />
-          Bắt đầu kiểm tra
+          {buttonIcon}
+          {buttonText}
         </button>
       </div>
     </Modal>
@@ -354,6 +365,81 @@ export function CancelRoundModal({ isOpen, onClose, round, onConfirm }: CancelRo
         >
           <XCircle size={18} />
           Hủy đợt kiểm tra
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+// 5a. Từ chối duyệt Modal (NEW - for pending_approval status)
+interface RejectRoundModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  round: InspectionRound | null;
+  onConfirm: (reason: string) => void;
+}
+
+export function RejectRoundModal({ isOpen, onClose, round, onConfirm }: RejectRoundModalProps) {
+  if (!round) return null;
+  
+  const [reason, setReason] = useState('');
+
+  const handleSubmit = () => {
+    onConfirm(reason);
+    setReason('');
+    onClose();
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <div className={styles.modalHeader}>
+        <div className={styles.modalIconWrapper} style={{ background: '#EF4444' }}>
+          <XCircle size={24} color="white" />
+        </div>
+        <div className={styles.modalHeaderContent}>
+          <h3 className={styles.modalTitle}>Từ chối duyệt đợt kiểm tra</h3>
+          <p className={styles.modalSubtitle}>Đợt kiểm tra: {round.name}</p>
+        </div>
+        <button className={styles.closeButton} onClick={onClose}>
+          <X size={20} />
+        </button>
+      </div>
+
+      <div className={styles.modalBody}>
+        <div className={styles.warningBox} style={{ background: '#EF444415', borderColor: '#EF4444' }}>
+          <AlertTriangle size={20} color="#EF4444" />
+          <p><strong>Lưu ý:</strong> Đợt kiểm tra sẽ chuyển sang trạng thái "Từ chối duyệt"</p>
+        </div>
+
+        <p className={styles.modalDescription}>
+          Vui lòng cung cấp lý do từ chối để người tạo đợt kiểm tra có thể chỉnh sửa và gửi lại.
+        </p>
+
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>
+            Lý do từ chối <span className={styles.required}>*</span>
+          </label>
+          <textarea
+            className={styles.textarea}
+            placeholder="Nhập lý do từ chối phê duyệt..."
+            rows={4}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className={styles.modalFooter}>
+        <button className={styles.cancelButton} onClick={onClose}>
+          Hủy
+        </button>
+        <button 
+          className={styles.destructiveButton} 
+          onClick={handleSubmit}
+          disabled={!reason.trim()}
+        >
+          <XCircle size={18} />
+          Từ chối duyệt
         </button>
       </div>
     </Modal>

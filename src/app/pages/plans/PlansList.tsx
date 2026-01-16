@@ -1,9 +1,30 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Eye, Edit, Send, Trash2, CheckCircle2, XCircle, PlayCircle, PauseCircle, 
-  FileText, Calendar, RefreshCw, Download, ClipboardList, FileEdit, Clock, 
-  CircleCheck, Filter, Plus 
+  Plus, 
+  Download, 
+  RefreshCw, 
+  ClipboardList, 
+  CircleCheck, 
+  Clock, 
+  AlertCircle,
+  CircleX,
+  Eye,
+  Edit,
+  Calendar,
+  FileEdit,
+  Send,
+  CheckCircle2,
+  PlayCircle,
+  PauseCircle,
+  FileText,
+  Trash2,
+  XCircle,
+  X,
+  AlertTriangle,
+  Filter,
+  FileDown,
+  BarChart3
 } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '../../../layouts/PageHeader';
@@ -38,14 +59,11 @@ import {
   PauseModal,
   DeletePlanModal
 } from '../../components/plans/PlanActionModals';
+import { M09ProposalModal } from '../../components/plans/M09ProposalModal';
+import { M08ReportModal } from '../../components/plans/M08ReportModal';
 import AdvancedFilterModal, { FilterConfig } from '../../../ui-kit/AdvancedFilterModal';
 import { DateRange } from '../../../ui-kit/DateRangePicker';
 import { usePlans } from '../../contexts/PlansContext';
-import { PlanDocumentDrawer } from '../../components/documents/PlanDocumentDrawer';
-import { SelectFromInsModal, type InsDocument } from '../../components/documents/SelectFromInsModal';
-import { DocumentFormModal, type DocumentFormData } from '../../components/documents/DocumentFormModal';
-import { InsSyncLogDrawer } from '../../components/documents/InsSyncLogDrawer';
-import type { DocumentCode } from '../../../types/ins-documents';
 
 export function PlansList() {
   const navigate = useNavigate();
@@ -73,14 +91,10 @@ export function PlansList() {
     plan: Plan | null;
   }>({ type: null, plan: null });
 
-  // Document management states
-  const [documentDrawerOpen, setDocumentDrawerOpen] = useState(false);
-  const [documentDrawerPlan, setDocumentDrawerPlan] = useState<Plan | null>(null);
-  const [highlightMissingDocs, setHighlightMissingDocs] = useState(false);
-  const [showSelectInsModal, setShowSelectInsModal] = useState(false);
-  const [showDocumentFormModal, setShowDocumentFormModal] = useState(false);
-  const [showSyncLogDrawer, setShowSyncLogDrawer] = useState(false);
-  const [selectedDocumentCode, setSelectedDocumentCode] = useState<DocumentCode>('M03');
+  // M09 & M08 Modal states
+  const [m09ModalOpen, setM09ModalOpen] = useState(false);
+  const [m08ModalOpen, setM08ModalOpen] = useState(false);
+  const [selectedPlanForDocument, setSelectedPlanForDocument] = useState<Plan | null>(null);
 
   const closeModal = () => setModalState({ type: null, plan: null });
   const openModal = (type: typeof modalState.type, plan: Plan) => setModalState({ type, plan });
@@ -147,21 +161,9 @@ export function PlansList() {
   const getPlanActions = (plan: Plan): Action[] => {
     const actions: Action[] = [];
 
-    // ⭐ ALWAYS ADD: Hồ sơ biểu mẫu (first in all cases)
-    actions.push({
-      label: 'Hồ sơ biểu mẫu',
-      icon: <FileText size={16} />,
-      onClick: () => {
-        setDocumentDrawerPlan(plan);
-        setHighlightMissingDocs(false);
-        setDocumentDrawerOpen(true);
-      },
-      priority: 11, // Highest priority to show first
-    });
-
     switch (plan.status) {
       case 'draft':
-        // Nháp: Xem chi tiết, Chỉnh sửa, Gửi duyệt, Xóa
+        // Nháp: Xem chi tiết, Chỉnh sửa, Gửi duyệt, Tải đề xuất, Xóa
         actions.push(
           {
             label: 'Xem chi tiết',
@@ -182,6 +184,15 @@ export function PlansList() {
             priority: 9,
           },
           {
+            label: 'Tải đề xuất',
+            icon: <FileDown size={16} />,
+            onClick: () => {
+              setSelectedPlanForDocument(plan);
+              setM09ModalOpen(true);
+            },
+            priority: 7,
+          },
+          {
             label: 'Xóa',
             icon: <Trash2 size={16} />,
             onClick: () => openModal('delete', plan),
@@ -193,7 +204,7 @@ export function PlansList() {
         break;
 
       case 'pending_approval':
-        // Chờ duyệt: Xem chi tiết, Phê duyệt, Từ chối
+        // Chờ duyệt: Xem chi tiết, Phê duyệt, Tải đề xuất, Từ chối
         actions.push(
           {
             label: 'Xem chi tiết',
@@ -208,6 +219,15 @@ export function PlansList() {
             priority: 9,
           },
           {
+            label: 'Tải đề xuất',
+            icon: <FileDown size={16} />,
+            onClick: () => {
+              setSelectedPlanForDocument(plan);
+              setM09ModalOpen(true);
+            },
+            priority: 7,
+          },
+          {
             label: 'Từ chối',
             icon: <XCircle size={16} />,
             onClick: () => openModal('reject', plan),
@@ -219,7 +239,7 @@ export function PlansList() {
         break;
 
       case 'approved':
-        // Đã duyệt: Xem chi tiết, Triển khai, Chỉnh sửa
+        // Đã duyệt: Xem chi tiết, Triển khai, Tải đề xuất, Chỉnh sửa
         actions.push(
           {
             label: 'Xem chi tiết',
@@ -234,6 +254,15 @@ export function PlansList() {
             priority: 9,
           },
           {
+            label: 'Tải đề xuất',
+            icon: <FileDown size={16} />,
+            onClick: () => {
+              setSelectedPlanForDocument(plan);
+              setM09ModalOpen(true);
+            },
+            priority: 7,
+          },
+          {
             label: 'Chỉnh sửa',
             icon: <Edit size={16} />,
             onClick: () => navigate(`/plans/${encodeURIComponent(plan.id)}/edit`),
@@ -243,7 +272,7 @@ export function PlansList() {
         break;
 
       case 'active':
-        // Đang thực hiện: Xem chi tiết, Phiên làm việc, Tạm dừng
+        // Đang thực hiện: Xem chi tiết, Phiên làm việc, Báo cáo, Tải đề xuất, Tạm dừng
         actions.push(
           {
             label: 'Xem chi tiết',
@@ -258,6 +287,24 @@ export function PlansList() {
             priority: 9,
           },
           {
+            label: 'Báo cáo (M08)',
+            icon: <BarChart3 size={16} />,
+            onClick: () => {
+              setSelectedPlanForDocument(plan);
+              setM08ModalOpen(true);
+            },
+            priority: 8,
+          },
+          {
+            label: 'Tải đề xuất',
+            icon: <FileDown size={16} />,
+            onClick: () => {
+              setSelectedPlanForDocument(plan);
+              setM09ModalOpen(true);
+            },
+            priority: 7,
+          },
+          {
             label: 'Tạm dừng',
             icon: <PauseCircle size={16} />,
             onClick: () => openModal('pause', plan),
@@ -269,7 +316,7 @@ export function PlansList() {
         break;
 
       case 'completed':
-        // Hoàn thành: Xem chi tiết, Báo cáo
+        // Hoàn thành: Xem chi tiết, Báo cáo, Tải đề xuất
         actions.push(
           {
             label: 'Xem chi tiết',
@@ -278,13 +325,22 @@ export function PlansList() {
             priority: 10,
           },
           {
-            label: 'Báo cáo',
-            icon: <FileText size={16} />,
+            label: 'Báo cáo (M08)',
+            icon: <BarChart3 size={16} />,
             onClick: () => {
-              toast.info('Tải báo cáo kết quả thực hiện');
-              console.log('Download report', plan.id);
+              setSelectedPlanForDocument(plan);
+              setM08ModalOpen(true);
             },
-            priority: 8,
+            priority: 9,
+          },
+          {
+            label: 'Tải đề xuất',
+            icon: <FileDown size={16} />,
+            onClick: () => {
+              setSelectedPlanForDocument(plan);
+              setM09ModalOpen(true);
+            },
+            priority: 7,
           }
         );
         break;
@@ -791,85 +847,22 @@ export function PlansList() {
         onClear={handleFilterClear}
       />
 
-      {/* Document Management Drawers & Modals */}
-      {documentDrawerPlan && (
-        <>
-          <PlanDocumentDrawer
-            open={documentDrawerOpen}
-            onOpenChange={setDocumentDrawerOpen}
-            plan={documentDrawerPlan}
-            highlightMissingDocs={highlightMissingDocs}
-            onImportClick={(code) => {
-              setSelectedDocumentCode(code);
-              setShowSelectInsModal(true);
-            }}
-            onCreateClick={(code) => {
-              setSelectedDocumentCode(code);
-              setShowDocumentFormModal(true);
-            }}
-            onEditClick={(code) => {
-              setSelectedDocumentCode(code);
-              setShowDocumentFormModal(true);
-            }}
-            onViewPdfClick={(code) => {
-              toast.info('Xem PDF biểu mẫu (chức năng đang phát triển)');
-            }}
-            onPushToInsClick={(code) => {
-              toast.success('Đã đẩy biểu mẫu sang INS thành công');
-            }}
-            onSyncClick={(code) => {
-              toast.success('Đã đồng bộ lại biểu mẫu từ INS');
-            }}
-            onViewLogClick={() => setShowSyncLogDrawer(true)}
-          />
+      {/* M09 Proposal Modal */}
+      {selectedPlanForDocument && (
+        <M09ProposalModal
+          open={m09ModalOpen}
+          onOpenChange={setM09ModalOpen}
+          plan={selectedPlanForDocument}
+        />
+      )}
 
-          <SelectFromInsModal
-            open={showSelectInsModal}
-            onOpenChange={setShowSelectInsModal}
-            documentCode={selectedDocumentCode}
-            documentName={
-              selectedDocumentCode === 'M03'
-                ? 'Quyết định về việc giao quyền ban hành quyết định kiểm tra'
-                : selectedDocumentCode === 'M09'
-                ? 'Đề xuất kiểm tra đột xuất việc chấp hành pháp luật/Khám theo thủ tục hành chính'
-                : 'Báo cáo'
-            }
-            onSelect={(doc: InsDocument) => {
-              toast.success(`Đã import ${doc.code} từ INS thành công`);
-              setShowSelectInsModal(false);
-            }}
-          />
-
-          <DocumentFormModal
-            open={showDocumentFormModal}
-            onOpenChange={setShowDocumentFormModal}
-            documentCode={selectedDocumentCode}
-            documentName={
-              selectedDocumentCode === 'M03'
-                ? 'Quyết định về việc giao quyền ban hành quyết định kiểm tra'
-                : selectedDocumentCode === 'M09'
-                ? 'Đề xuất kiểm tra đột xuất việc chấp hành pháp luật/Khám theo thủ tục hành chính'
-                : 'Báo cáo'
-            }
-            mode="create"
-            onSave={(data: DocumentFormData, saveAsDraft: boolean) => {
-              if (saveAsDraft) {
-                toast.success('Đã lưu nháp biểu mẫu');
-              } else {
-                toast.success('Đã tạo biểu mẫu thành công');
-              }
-              setShowDocumentFormModal(false);
-            }}
-            onGeneratePdf={() => {
-              toast.success('Đã sinh file PDF thành công');
-            }}
-          />
-
-          <InsSyncLogDrawer
-            open={showSyncLogDrawer}
-            onOpenChange={setShowSyncLogDrawer}
-          />
-        </>
+      {/* M08 Report Modal */}
+      {selectedPlanForDocument && (
+        <M08ReportModal
+          open={m08ModalOpen}
+          onOpenChange={setM08ModalOpen}
+          plan={selectedPlanForDocument}
+        />
       )}
     </div>
   );

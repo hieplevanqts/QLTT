@@ -1,55 +1,253 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, AlertCircle, Users, MapPin, Calendar, FileText, Plus, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { 
+  ArrowLeft, 
+  AlertCircle, 
+  ChevronRight,
+  ChevronLeft,
+  FileText,
+  Store,
+  CheckCircle2,
+  Filter,
+  Eye,
+  X,
+  Search,
+  Upload
+} from 'lucide-react';
 import { toast } from 'sonner';
 import styles from './InspectionRoundCreate.module.css';
-import DateRangePicker, { DateRange } from '../../../ui-kit/DateRangePicker';
-import { mockPlans } from '../../data/kehoach-mock-data';
-import { FormDocumentChecklist } from '../../components/documents/FormDocumentChecklist';
-import { SelectFromInsModal, type InsDocument } from '../../components/documents/SelectFromInsModal';
-import { DocumentFormModal } from '../../components/documents/DocumentFormModal';
-import { InsSyncLogDrawer } from '../../components/documents/InsSyncLogDrawer';
-import { useDocumentChecklist } from '../../../hooks/useDocumentChecklist';
-import type { DocumentCode } from '../../../types/ins-documents';
+import DateRangePicker, { DateRange } from '@/ui-kit/DateRangePicker';
+import { mockPlans } from '@/app/data/kehoach-mock-data';
+import { mockStores } from '@/data/mockStores';
+import { useInspectionRounds } from '@/contexts/InspectionRoundsContext';
+import type { InspectionRound } from '@/app/data/inspection-rounds-mock-data';
+import {
+  InspectionDecisionModal,
+  AssignmentDecisionModal,
+  AmendmentDecisionModal,
+  ExtensionDecisionModal,
+  type InsDecision,
+} from '@/app/components/inspections/InspectionRoundDecisionModals';
 
-interface TeamMember {
-  id: string;
+type PriorityLevel = 'low' | 'medium' | 'high';
+
+interface FormData {
+  // Step 1: Thông tin chung
+  code: string; // Auto-generated
   name: string;
-  role: 'leader' | 'member' | 'expert';
+  relatedPlanId: string;
+  startDate: string | null;
+  endDate: string | null;
+  leadUnit: string;
+  scopeArea: string;
+  priority: PriorityLevel;
+  
+  // Step 2: Tiêu chí kiểm tra
+  selectedForms: string[];
+  
+  // Step 3: Cửa hàng
+  selectedStores: number[];
 }
+
+// Mock biểu mẫu data
+const mockForms = [
+  { 
+    id: 'M01', 
+    name: 'Mẫu 01 - An toàn thực phẩm',
+    criteria: [
+      'Giấy chứng nhận đủ điều kiện an toàn thực phẩm',
+      'Nguồn gốc xuất xứ nguyên liệu',
+      'Điều kiện bảo quản thực phẩm',
+      'Vệ sinh cơ sở sản xuất',
+      'Sức khỏe người trực tiếp sản xuất, chế biến',
+      'Quy trình sản xuất, chế biến',
+      'Nhãn mác sản phẩm',
+      'Hồ sơ lưu trữ về nguồn gốc, xuất xứ',
+      'Kiểm nghiệm định kỳ sản phẩm',
+      'Công bố chất lượng sản phẩm'
+    ]
+  },
+  { 
+    id: 'M02', 
+    name: 'Mẫu 02 - Phòng cháy chữa cháy',
+    criteria: [
+      'Phương án phòng cháy chữa cháy',
+      'Hệ thống báo cháy tự động',
+      'Bình chữa cháy và thiết bị PCCC',
+      'Lối thoát hiểm và biển chỉ dẫn',
+      'Hệ thống điện an toàn',
+      'Đào tạo nghiệp vụ PCCC cho nhân viên',
+      'Kế hoạch diễn tập PCCC',
+      'Kiểm tra, bảo dưỡng thiết bị PCCC định kỳ'
+    ]
+  },
+  { 
+    id: 'M03', 
+    name: 'Mẫu 03 - Môi trường',
+    criteria: [
+      'Giấy phép môi trường',
+      'Hệ thống xử lý nước thải',
+      'Quản lý chất thải rắn',
+      'Kiểm soát khí thải, bụi',
+      'Phân loại rác tại nguồn',
+      'Báo cáo giám sát môi trường định kỳ',
+      'Kế hoạch ứng phó sự cố môi trường',
+      'Cam kết bảo vệ môi trường'
+    ]
+  },
+  { 
+    id: 'M04', 
+    name: 'Mẫu 04 - Vệ sinh môi trường kinh doanh',
+    criteria: [
+      'Vệ sinh khu vực bán hàng',
+      'Vệ sinh kho bãi, nơi chứa hàng',
+      'Thu gom và xử lý rác thải',
+      'Vệ sinh nhà vệ sinh công cộng',
+      'Không lấn chiếm vỉa hè',
+      'Biển hiệu, bảng quảng cáo đúng quy định',
+      'Không gây ô nhiễm tiếng ồn'
+    ]
+  },
+  { 
+    id: 'M05', 
+    name: 'Mẫu 05 - Thuế và kế toán',
+    criteria: [
+      'Giấy chứng nhận đăng ký kinh doanh',
+      'Mã số thuế',
+      'Hóa đơn chứng từ hợp pháp',
+      'Kê khai thuế đầy đủ, đúng hạn',
+      'Sổ sách kế toán theo quy định',
+      'Nộp thuế đầy đủ, đúng hạn',
+      'Báo cáo tài chính định kỳ'
+    ]
+  },
+  { 
+    id: 'M06', 
+    name: 'Mẫu 06 - Biên bản làm việc (BB-KT)',
+    criteria: [
+      'Ghi nhận vi phạm tại hiện trường',
+      'Chụp ảnh chứng cứ vi phạm',
+      'Thu thập mẫu vật vi phạm',
+      'Lập biên bản vi phạm hành chính',
+      'Chữ ký xác nhận của chủ cơ sở',
+      'Biện pháp xử lý vi phạm',
+      'Thời hạn khắc phục',
+      'Cam kết không tái phạm'
+    ]
+  },
+  { 
+    id: 'M07', 
+    name: 'Mẫu 07 - Quản lý giá cả',
+    criteria: [
+      'Niêm yết giá rõ ràng',
+      'Không bán hàng cao hơn giá niêm yết',
+      'Không tăng giá đột biến',
+      'Bán đúng giá quy định với hàng bình ổn giá',
+      'Hóa đơn ghi đầy đủ giá bán',
+      'Không gian lận về giá cả'
+    ]
+  },
+];
 
 export default function InspectionRoundCreate() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const planIdFromUrl = searchParams.get('planId');
+  const editMode = searchParams.get('mode') === 'edit';
+  const editId = searchParams.get('id');
   
-  const [formData, setFormData] = useState({
-    name: '',
-    code: '',
-    planId: '',
-    type: 'scheduled' as 'scheduled' | 'unannounced' | 'followup' | 'complaint',
+  const { addRound, updateRound, getRoundById } = useInspectionRounds();
+  
+  const [currentStep, setCurrentStep] = useState(1);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  // Generate code first
+  const generatedCode = `DKT-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
+  
+  const [formData, setFormData] = useState<FormData>({
+    code: generatedCode,
+    name: `Đợt kiểm tra ${generatedCode}`,
+    relatedPlanId: planIdFromUrl || '',
+    startDate: null,
+    endDate: null,
     leadUnit: '',
     scopeArea: '',
-    totalTargets: '',
-    objectives: '',
-    notes: '',
+    priority: 'medium',
+    selectedForms: [],
+    selectedStores: [],
   });
 
-  const [dateRange, setDateRange] = useState<DateRange>({ startDate: null, endDate: null });
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [newMember, setNewMember] = useState({ name: '', role: 'member' as 'leader' | 'member' | 'expert' });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  // Load data if in edit mode
+  useEffect(() => {
+    if (editMode && editId) {
+      const existingRound = getRoundById(editId);
+      if (existingRound) {
+        // Map existing round data to form data
+        setFormData({
+          code: existingRound.code,
+          name: existingRound.name,
+          relatedPlanId: existingRound.planId || '',
+          startDate: existingRound.startDate,
+          endDate: existingRound.endDate,
+          leadUnit: existingRound.leadUnit,
+          scopeArea: existingRound.leadUnit, // Using leadUnit as scopeArea for now
+          priority: 'medium', // Default since we don't have this in InspectionRound type
+          selectedForms: [], // Would need to be stored in InspectionRound type
+          selectedStores: [], // Would need to map from targets
+        });
+      } else {
+        toast.error('Không tìm thấy đợt kiểm tra');
+        navigate('/plans/inspection-rounds');
+      }
+    }
+  }, [editMode, editId, navigate, getRoundById]);
 
-  // Document checklist state  
-  const [hasM01Imported, setHasM01Imported] = useState(false);
-  const [showSelectInsModal, setShowSelectInsModal] = useState(false);
-  const [showSyncLogDrawer, setShowSyncLogDrawer] = useState(false);
-  const [selectedDocumentCode, setSelectedDocumentCode] = useState<DocumentCode>('M01');
+  // Mock user role - Change this to test different scenarios
+  const userRole = 'district'; // 'district' | 'ward'
+  const userWard = 'Phường Bến Nghé'; // For ward users
 
-  // Get document checklist for round creation
-  const { documents, validation } = useDocumentChecklist('round_create', {
-    hasM01: hasM01Imported,
+  // Filter stores based on selection
+  const [storeFilters, setStoreFilters] = useState({
+    highRisk: false,
+    manyComplaints: false,
   });
 
-  const handleChange = (field: string, value: string) => {
+  const [storeSearchQuery, setStoreSearchQuery] = useState('');
+  const [showFormDetailModal, setShowFormDetailModal] = useState<string | null>(null);
+
+  // INS Decision modals state
+  const [inspectionDecisionModalOpen, setInspectionDecisionModalOpen] = useState(false);
+  const [assignmentDecisionModalOpen, setAssignmentDecisionModalOpen] = useState(false);
+  const [amendmentDecisionModalOpen, setAmendmentDecisionModalOpen] = useState(false);
+  const [extensionDecisionModalOpen, setExtensionDecisionModalOpen] = useState(false);
+
+  // Selected decisions
+  const [inspectionDecision, setInspectionDecision] = useState<InsDecision | null>(null);
+  const [assignmentDecision, setAssignmentDecision] = useState<InsDecision | null>(null);
+  const [amendmentDecision, setAmendmentDecision] = useState<InsDecision | null>(null);
+  const [extensionDecision, setExtensionDecision] = useState<InsDecision | null>(null);
+
+  // Check if round is approved (for edit mode)
+  const isApproved = editMode && editId ? getRoundById(editId)?.status === 'approved' : false;
+
+  // Filter stores
+  const filteredStores = mockStores.filter(store => {
+    // Apply filter conditions
+    if (storeFilters.highRisk && store.riskLevel !== 'high') return false;
+    if (storeFilters.manyComplaints && !store.hasComplaints) return false;
+    
+    // Apply search query
+    if (storeSearchQuery.trim()) {
+      const query = storeSearchQuery.toLowerCase();
+      return store.name.toLowerCase().includes(query) || 
+             store.address.toLowerCase().includes(query) ||
+             store.type.toLowerCase().includes(query);
+    }
+    
+    return true;
+  });
+
+  const handleChange = (field: keyof FormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error when user types
     if (errors[field]) {
@@ -62,8 +260,11 @@ export default function InspectionRoundCreate() {
   };
 
   const handleDateRangeChange = (range: DateRange) => {
-    setDateRange(range);
-    // Clear date errors
+    setFormData(prev => ({
+      ...prev,
+      startDate: range.startDate,
+      endDate: range.endDate,
+    }));
     if (errors.dateRange) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -73,108 +274,105 @@ export default function InspectionRoundCreate() {
     }
   };
 
-  const handleAddTeamMember = () => {
-    if (!newMember.name.trim()) {
-      toast.error('Vui lòng nhập tên thành viên');
-      return;
-    }
-
-    // Check if leader already exists
-    if (newMember.role === 'leader' && teamMembers.some(m => m.role === 'leader')) {
-      toast.error('Đã có trưởng đoàn. Vui lòng chọn vai trò khác.');
-      return;
-    }
-
-    const member: TeamMember = {
-      id: Date.now().toString(),
-      name: newMember.name,
-      role: newMember.role,
-    };
-
-    setTeamMembers(prev => [...prev, member]);
-    setNewMember({ name: '', role: 'member' });
-    toast.success(`Đã thêm ${getRoleLabel(member.role)}: ${member.name}`);
-  };
-
-  const handleRemoveTeamMember = (id: string) => {
-    setTeamMembers(prev => prev.filter(m => m.id !== id));
-    toast.info('Đã xóa thành viên khỏi đội kiểm tra');
-  };
-
-  const getRoleLabel = (role: 'leader' | 'member' | 'expert'): string => {
-    switch (role) {
-      case 'leader': return 'Trưởng đoàn';
-      case 'member': return 'Thành viên';
-      case 'expert': return 'Chuyên gia';
-    }
-  };
-
-  const getTypeLabel = (type: string): string => {
-    switch (type) {
-      case 'scheduled': return 'Theo kế hoạch';
-      case 'unannounced': return 'Đột xuất';
-      case 'followup': return 'Tái kiểm tra';
-      case 'complaint': return 'Theo khiếu nại';
-      default: return type;
-    }
-  };
-
-  const validate = (): boolean => {
+  const validateStep1 = (): boolean => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
       newErrors.name = 'Vui lòng nhập tên đợt kiểm tra';
+    } else if (formData.name.length > 255) {
+      newErrors.name = 'Tên đợt kiểm tra không được vượt quá 255 ký tự';
     }
 
-    if (!formData.code.trim()) {
-      newErrors.code = 'Vui lòng nhập mã đợt kiểm tra';
+    if (!formData.startDate || !formData.endDate) {
+      newErrors.dateRange = 'Vui lòng chọn thời gian bắt đầu và kết thúc';
+    } else if (new Date(formData.endDate) < new Date(formData.startDate)) {
+      newErrors.dateRange = 'Thời gian kết thúc phải sau thời gian bắt đầu';
     }
 
-    if (formData.type === 'scheduled' && !formData.planId) {
-      newErrors.planId = 'Vui lòng chọn kế hoạch liên quan';
+    if (userRole !== 'ward' && !formData.leadUnit.trim()) {
+      newErrors.leadUnit = 'Vui lòng chọn đơn vị chủ trì';
     }
 
-    if (!formData.leadUnit.trim()) {
-      newErrors.leadUnit = 'Vui lòng nhập đơn vị chủ trì';
-    }
-
-    if (!formData.scopeArea.trim()) {
-      newErrors.scopeArea = 'Vui lòng nhập phạm vi kiểm tra';
-    }
-
-    if (!dateRange.startDate || !dateRange.endDate) {
-      newErrors.dateRange = 'Vui lòng chọn thời gian thực hiện';
-    }
-
-    if (!formData.totalTargets || parseInt(formData.totalTargets) <= 0) {
-      newErrors.totalTargets = 'Vui lòng nhập số lượng cơ sở cần kiểm tra';
-    }
-
-    if (teamMembers.length === 0) {
-      newErrors.team = 'Vui lòng thêm ít nhất 1 thành viên vào đội kiểm tra';
-    }
-
-    if (!teamMembers.some(m => m.role === 'leader')) {
-      newErrors.team = 'Đội kiểm tra phải có trưởng đoàn';
+    if (userRole !== 'ward' && !formData.scopeArea.trim()) {
+      newErrors.scopeArea = 'Vui lòng chọn phạm vi kiểm tra';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
-    // Validate form
-    if (!formData.code.trim()) {
-      alert('Vui lòng nhập mã đợt kiểm tra');
-      return;
-    }
-    if (!formData.name.trim()) {
-      alert('Vui lòng nhập tên đợt kiểm tra');
-      return;
-    }
-    // ... other validations
+  const validateStep3 = (): boolean => {
+    const newErrors: Record<string, string> = {};
 
-    toast.success('Đã tạo đợt kiểm tra thành công');
+    if (formData.selectedStores.length === 0) {
+      newErrors.selectedStores = 'Vui lòng chọn ít nhất một cửa hàng';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleNext = () => {
+    if (currentStep === 1) {
+      if (validateStep1()) {
+        setCurrentStep(2);
+      }
+    } else if (currentStep === 2) {
+      setCurrentStep(3);
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleSubmit = () => {
+    if (!validateStep3()) {
+      return;
+    }
+
+    if (editMode && editId) {
+      // Update existing round
+      updateRound(editId, {
+        name: formData.name,
+        planId: formData.relatedPlanId || undefined,
+        planName: formData.relatedPlanId ? approvedPlans.find(p => p.id === formData.relatedPlanId)?.name : undefined,
+        startDate: formData.startDate!,
+        endDate: formData.endDate!,
+        leadUnit: formData.leadUnit || userWard,
+        totalTargets: formData.selectedStores.length,
+      });
+      toast.success('Đã cập nhật đợt kiểm tra thành công');
+    } else {
+      // Create new round
+      const currentDate = new Date();
+      const newRound: InspectionRound = {
+        id: formData.code,
+        code: formData.code,
+        name: formData.name,
+        planId: formData.relatedPlanId || undefined,
+        planName: formData.relatedPlanId ? approvedPlans.find(p => p.id === formData.relatedPlanId)?.name : undefined,
+        type: 'routine',
+        status: 'draft', // Trạng thái mặc định là Nháp
+        startDate: formData.startDate!,
+        endDate: formData.endDate!,
+        leadUnit: formData.leadUnit || userWard,
+        team: [],
+        teamSize: 0,
+        totalTargets: formData.selectedStores.length,
+        inspectedTargets: 0,
+        createdBy: 'Người dùng hiện tại',
+        createdAt: currentDate.toISOString().split('T')[0],
+        notes: formData.selectedForms.length > 0 
+          ? `Sử dụng biểu mẫu: ${formData.selectedForms.join(', ')}` 
+          : undefined,
+      };
+      addRound(newRound);
+      toast.success('Đã tạo đợt kiểm tra thành công');
+    }
+    
     navigate('/plans/inspection-rounds');
   };
 
@@ -183,7 +381,36 @@ export default function InspectionRoundCreate() {
     navigate('/plans/inspection-rounds');
   };
 
+  const toggleStore = (storeId: number) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedStores: prev.selectedStores.includes(storeId)
+        ? prev.selectedStores.filter(id => id !== storeId)
+        : [...prev.selectedStores, storeId],
+    }));
+    
+    // Clear error when user selects
+    if (errors.selectedStores) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.selectedStores;
+        return newErrors;
+      });
+    }
+  };
+
+  const toggleForm = (formId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedForms: prev.selectedForms.includes(formId)
+        ? prev.selectedForms.filter(id => id !== formId)
+        : [...prev.selectedForms, formId],
+    }));
+  };
+
   const approvedPlans = mockPlans.filter(p => p.status === 'approved' || p.status === 'active');
+  
+  const selectedForm = mockForms.find(f => f.id === showFormDetailModal);
 
   return (
     <div className={styles.page}>
@@ -193,20 +420,75 @@ export default function InspectionRoundCreate() {
           <ArrowLeft size={20} />
         </button>
         <div className={styles.headerContent}>
-          <h1 className={styles.title}>Tạo đợt kiểm tra mới</h1>
+          <h1 className={styles.title}>{editMode ? 'Chỉnh sửa đợt kiểm tra' : 'Tạo đợt kiểm tra mới'}</h1>
           <p className={styles.subtitle}>
-            Lập đợt kiểm tra theo kế hoạch hoặc đột xuất với đội kiểm tra chuyên nghiệp
+            Hoàn tất {currentStep}/3 bước để {editMode ? 'cập nhật' : 'tạo'} đợt kiểm tra
           </p>
+        </div>
+      </div>
+
+      {/* Progress Steps */}
+      <div className={styles.stepsContainer}>
+        <div className={styles.steps}>
+          <div className={`${styles.step} ${currentStep >= 1 ? styles.stepActive : ''}`}>
+            <div className={styles.stepNumber}>
+              {currentStep > 1 ? <CheckCircle2 size={20} /> : '1'}
+            </div>
+            <div className={styles.stepLabel}>Thông tin chung</div>
+          </div>
+          <div className={styles.stepDivider}></div>
+          <div className={`${styles.step} ${currentStep >= 2 ? styles.stepActive : ''}`}>
+            <div className={styles.stepNumber}>
+              {currentStep > 2 ? <CheckCircle2 size={20} /> : '2'}
+            </div>
+            <div className={styles.stepLabel}>Tiêu chí kiểm tra</div>
+          </div>
+          <div className={styles.stepDivider}></div>
+          <div className={`${styles.step} ${currentStep >= 3 ? styles.stepActive : ''}`}>
+            <div className={styles.stepNumber}>3</div>
+            <div className={styles.stepLabel}>Cửa hàng</div>
+          </div>
         </div>
       </div>
 
       {/* Content */}
       <div className={styles.content}>
         <div className={styles.formContainer}>
-          <form className={styles.form}>
-            {/* Single Card Container - Gom tất cả vào 1 */}
+          {/* Step 1: Thông tin chung */}
+          {currentStep === 1 && (
             <div className={styles.section}>
               <div className={styles.formGrid}>
+                {/* Mã đợt kiểm tra - Auto generated */}
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>
+                    Mã đợt kiểm tra <span className={styles.required}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className={styles.input}
+                    value={formData.code}
+                    disabled
+                    style={{ background: 'var(--muted)', cursor: 'not-allowed' }}
+                  />
+                  <span className={styles.helpText}>Hệ thống tự động sinh</span>
+                </div>
+
+                {/* Độ ưu tiên */}
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>
+                    Độ ưu tiên <span className={styles.required}>*</span>
+                  </label>
+                  <select
+                    className={styles.select}
+                    value={formData.priority}
+                    onChange={(e) => handleChange('priority', e.target.value)}
+                  >
+                    <option value="low">Thấp</option>
+                    <option value="medium">Trung bình</option>
+                    <option value="high">Cao</option>
+                  </select>
+                </div>
+
                 {/* Tên đợt kiểm tra */}
                 <div className={styles.formGroupFull}>
                   <label className={styles.label}>
@@ -217,7 +499,8 @@ export default function InspectionRoundCreate() {
                     className={`${styles.input} ${errors.name ? styles.inputError : ''}`}
                     value={formData.name}
                     onChange={(e) => handleChange('name', e.target.value)}
-                    placeholder="Ví dụ: Kiểm tra cơ sở kinh doanh thực phẩm Quận 1"
+                    placeholder="Nhập tên đợt kiểm tra (tối đa 255 ký tự)"
+                    maxLength={255}
                   />
                   {errors.name && (
                     <div className={styles.errorMessage}>
@@ -227,77 +510,38 @@ export default function InspectionRoundCreate() {
                   )}
                 </div>
 
-                {/* Mã đợt kiểm tra */}
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>
-                    Mã đợt kiểm tra <span className={styles.required}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className={`${styles.input} ${errors.code ? styles.inputError : ''}`}
-                    value={formData.code}
-                    onChange={(e) => handleChange('code', e.target.value)}
-                    placeholder="Ví dụ: DKT-2026-01-001"
-                  />
-                  {errors.code && (
-                    <div className={styles.errorMessage}>
-                      <AlertCircle size={14} />
-                      <span>{errors.code}</span>
-                    </div>
+                {/* Kế hoạch liên quan - Optional */}
+                <div className={styles.formGroupFull}>
+                  <label className={styles.label}>Kế hoạch liên quan</label>
+                  <select
+                    className={styles.select}
+                    value={formData.relatedPlanId}
+                    onChange={(e) => handleChange('relatedPlanId', e.target.value)}
+                    disabled={!!planIdFromUrl}
+                    style={planIdFromUrl ? { background: 'var(--muted)', cursor: 'not-allowed' } : {}}
+                  >
+                    <option value="">Không liên kt với kế hoạch</option>
+                    {approvedPlans.map(plan => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.id} - {plan.name}
+                      </option>
+                    ))}
+                  </select>
+                  {planIdFromUrl && (
+                    <span className={styles.helpText}>Tự động liên kết từ kế hoạch</span>
                   )}
                 </div>
 
-                {/* Loại kiểm tra */}
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>
-                    Loại kiểm tra <span className={styles.required}>*</span>
-                  </label>
-                  <select
-                    className={styles.select}
-                    value={formData.type}
-                    onChange={(e) => handleChange('type', e.target.value)}
-                  >
-                    <option value="scheduled">Theo kế hoạch</option>
-                    <option value="unannounced">Đột xuất</option>
-                    <option value="followup">Tái kiểm tra</option>
-                    <option value="complaint">Theo khiếu nại</option>
-                  </select>
-                </div>
-
-                {/* Kế hoạch liên quan */}
-                {formData.type === 'scheduled' && (
-                  <div className={styles.formGroupFull}>
-                    <label className={styles.label}>
-                      Kế hoạch liên quan <span className={styles.required}>*</span>
-                    </label>
-                    <select
-                      className={`${styles.select} ${errors.planId ? styles.inputError : ''}`}
-                      value={formData.planId}
-                      onChange={(e) => handleChange('planId', e.target.value)}
-                    >
-                      <option value="">Chọn kế hoạch</option>
-                      {approvedPlans.map(plan => (
-                        <option key={plan.id} value={plan.id}>
-                          {plan.id} - {plan.name}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.planId && (
-                      <div className={styles.errorMessage}>
-                        <AlertCircle size={14} />
-                        <span>{errors.planId}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Thời gian thực hiện */}
+                {/* Thời gian */}
                 <div className={styles.formGroupFull}>
                   <label className={styles.label}>
                     Thời gian thực hiện <span className={styles.required}>*</span>
                   </label>
                   <DateRangePicker
-                    value={dateRange}
+                    value={{
+                      startDate: formData.startDate,
+                      endDate: formData.endDate,
+                    }}
                     onChange={handleDateRangeChange}
                   />
                   {errors.dateRange && (
@@ -308,220 +552,366 @@ export default function InspectionRoundCreate() {
                   )}
                 </div>
 
-                {/* Đơn vị chủ trì */}
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>
-                    Đơn vị chủ trì <span className={styles.required}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className={`${styles.input} ${errors.leadUnit ? styles.inputError : ''}`}
-                    value={formData.leadUnit}
-                    onChange={(e) => handleChange('leadUnit', e.target.value)}
-                    placeholder="Ví dụ: Chi cục ATVSTP TP.HCM"
-                  />
-                  {errors.leadUnit && (
-                    <div className={styles.errorMessage}>
-                      <AlertCircle size={14} />
-                      <span>{errors.leadUnit}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Phạm vi kiểm tra */}
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>
-                    Phạm vi kiểm tra <span className={styles.required}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className={`${styles.input} ${errors.scopeArea ? styles.inputError : ''}`}
-                    value={formData.scopeArea}
-                    onChange={(e) => handleChange('scopeArea', e.target.value)}
-                    placeholder="Ví dụ: Quận 1, TP. Hồ Chí Minh"
-                  />
-                  {errors.scopeArea && (
-                    <div className={styles.errorMessage}>
-                      <AlertCircle size={14} />
-                      <span>{errors.scopeArea}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Số lượng cơ sở */}
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>
-                    Số lượng cơ sở cần kiểm tra <span className={styles.required}>*</span>
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    className={`${styles.input} ${errors.totalTargets ? styles.inputError : ''}`}
-                    value={formData.totalTargets}
-                    onChange={(e) => handleChange('totalTargets', e.target.value)}
-                    placeholder="Nhập số lượng"
-                  />
-                  {errors.totalTargets && (
-                    <div className={styles.errorMessage}>
-                      <AlertCircle size={14} />
-                      <span>{errors.totalTargets}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Divider */}
-                <div className={styles.formGroupFull}>
-                  <div className={styles.sectionDivider}>
-                    <Users size={18} className={styles.dividerIcon} />
-                    <span className={styles.dividerText}>Đội kiểm tra</span>
-                    <span className={styles.required}>*</span>
-                  </div>
-                </div>
-
-                {/* Add Team Member Form */}
-                <div className={styles.formGroupFull}>
-                  <div className={styles.teamAddForm}>
-                    <input
-                      type="text"
-                      className={styles.teamInput}
-                      value={newMember.name}
-                      onChange={(e) => setNewMember(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Nhập tên thành viên"
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleAddTeamMember();
-                        }
-                      }}
-                    />
+                {/* Đơn vị chủ trì - Conditional based on user role */}
+                {userRole !== 'ward' && (
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>
+                      Đơn vị chủ trì <span className={styles.required}>*</span>
+                    </label>
                     <select
-                      className={styles.teamRoleSelect}
-                      value={newMember.role}
-                      onChange={(e) => setNewMember(prev => ({ ...prev, role: e.target.value as any }))}
+                      className={`${styles.select} ${errors.leadUnit ? styles.inputError : ''}`}
+                      value={formData.leadUnit}
+                      onChange={(e) => handleChange('leadUnit', e.target.value)}
                     >
-                      <option value="leader">Trưởng đoàn</option>
-                      <option value="member">Thành viên</option>
-                      <option value="expert">Chuyên gia</option>
+                      <option value="">Chọn xã/phường</option>
+                      <option value="Phường Bến Nghé">Phường Bến Nghé</option>
+                      <option value="Phường Bến Thành">Phường Bến Thành</option>
+                      <option value="Phường Cô Giang">Phường Cô Giang</option>
+                      <option value="Phường Nguyễn Cư Trinh">Phường Nguyễn Cư Trinh</option>
+                      <option value="Phường Cầu Kho">Phường Cầu Kho</option>
+                      <option value="Phường Đa Kao">Phường Đa Kao</option>
+                      <option value="Phường Nguyễn Thái Bình">Phường Nguyễn Thái Bình</option>
+                      <option value="Phường Phạm Ngũ Lão">Phường Phạm Ngũ Lão</option>
+                      <option value="Phường Cầu Ông Lãnh">Phường Cầu Ông Lãnh</option>
+                      <option value="Phường Tân Định">Phường Tân Định</option>
                     </select>
-                    <button
-                      type="button"
-                      className={styles.addButton}
-                      onClick={handleAddTeamMember}
-                    >
-                      <Plus size={18} />
-                      Thêm
-                    </button>
+                    {errors.leadUnit && (
+                      <div className={styles.errorMessage}>
+                        <AlertCircle size={14} />
+                        <span>{errors.leadUnit}</span>
+                      </div>
+                    )}
                   </div>
-                </div>
+                )}
 
-                {/* Team Members List */}
-                {teamMembers.length > 0 && (
-                  <div className={styles.formGroupFull}>
-                    <div className={styles.teamList}>
-                      {teamMembers.map(member => (
-                        <div key={member.id} className={styles.teamMemberCard}>
-                          <div className={styles.teamMemberInfo}>
-                            <div className={styles.teamMemberName}>{member.name}</div>
-                            <div className={styles.teamMemberRole}>
-                              <span className={`${styles.roleBadge} ${styles[`role${member.role}`]}`}>
-                                {getRoleLabel(member.role)}
-                              </span>
+                {/* Phạm vi kiểm tra - Conditional based on user role */}
+                {userRole !== 'ward' && (
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>
+                      Phạm vi kiểm tra <span className={styles.required}>*</span>
+                    </label>
+                    <select
+                      className={`${styles.select} ${errors.scopeArea ? styles.inputError : ''}`}
+                      value={formData.scopeArea}
+                      onChange={(e) => handleChange('scopeArea', e.target.value)}
+                    >
+                      <option value="">Chọn xã/phường</option>
+                      <option value="Phường Bến Nghé">Phường Bến Nghé</option>
+                      <option value="Phường Bến Thành">Phường Bến Thành</option>
+                      <option value="Phường Cô Giang">Phường Cô Giang</option>
+                      <option value="Phường Nguyễn Cư Trinh">Phường Nguyễn Cư Trinh</option>
+                      <option value="Phường Cầu Kho">Phường Cầu Kho</option>
+                      <option value="Phường Đa Kao">Phường Đa Kao</option>
+                      <option value="Phường Nguyễn Thái Bình">Phường Nguyễn Thái Bình</option>
+                      <option value="Phường Phạm Ngũ Lão">Phường Phạm Ngũ Lão</option>
+                      <option value="Phường Cầu Ông Lãnh">Phường Cầu Ông Lãnh</option>
+                      <option value="Phường Tân Định">Phường Tân Định</option>
+                    </select>
+                    {errors.scopeArea && (
+                      <div className={styles.errorMessage}>
+                        <AlertCircle size={14} />
+                        <span>{errors.scopeArea}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Display values for ward users */}
+                {userRole === 'ward' && (
+                  <>
+                    <div className={styles.formGroup}>
+                      <label className={styles.label}>Đơn vị chủ trì</label>
+                      <div className={styles.readOnlyField}>{userWard}</div>
+                    </div>
+                    <div className={styles.formGroup}>
+                      <label className={styles.label}>Phạm vi kiểm tra</label>
+                      <div className={styles.readOnlyField}>{userWard}</div>
+                    </div>
+                  </>
+                )}
+
+                {/* SECTION: Quyết định từ INS - Khi TẠO MỚI */}
+                {!isApproved && (
+                  <>
+                    {/* Quyết định kiểm tra việc chấp hành pháp luật */}
+                    <div className={styles.formGroupFull}>
+                      <label className={styles.label}>
+                        Quyết định kiểm tra việc chấp hành pháp luật trong sản xuất, kinh doanh hàng hóa, dịch vụ
+                      </label>
+                      <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center' }}>
+                        {inspectionDecision ? (
+                          <>
+                            <div className={styles.selectedDecisionBox}>
+                              <CheckCircle2 size={16} style={{ color: 'var(--primary)' }} />
+                              <div>
+                                <div className={styles.selectedDecisionCode}>{inspectionDecision.code}</div>
+                                <div className={styles.selectedDecisionTitle}>{inspectionDecision.title}</div>
+                              </div>
                             </div>
-                          </div>
+                            <button
+                              type="button"
+                              className={styles.changeButton}
+                              onClick={() => setInspectionDecisionModalOpen(true)}
+                            >
+                              Đổi
+                            </button>
+                          </>
+                        ) : (
                           <button
                             type="button"
-                            className={styles.removeButton}
-                            onClick={() => handleRemoveTeamMember(member.id)}
+                            className={styles.importButton}
+                            onClick={() => setInspectionDecisionModalOpen(true)}
                           >
-                            <X size={16} />
+                            <Upload size={16} />
+                            Import từ INS
                           </button>
-                        </div>
-                      ))}
+                        )}
+                      </div>
                     </div>
-                  </div>
+
+                    {/* Quyết định phân công công chức */}
+                    <div className={styles.formGroupFull}>
+                      <label className={styles.label}>
+                        Quyết định phân công công chức thực hiện biện pháp nghiệp vụ
+                      </label>
+                      <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center' }}>
+                        {assignmentDecision ? (
+                          <>
+                            <div className={styles.selectedDecisionBox}>
+                              <CheckCircle2 size={16} style={{ color: 'var(--primary)' }} />
+                              <div>
+                                <div className={styles.selectedDecisionCode}>{assignmentDecision.code}</div>
+                                <div className={styles.selectedDecisionTitle}>{assignmentDecision.title}</div>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              className={styles.changeButton}
+                              onClick={() => setAssignmentDecisionModalOpen(true)}
+                            >
+                              Đổi
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            className={styles.importButton}
+                            onClick={() => setAssignmentDecisionModalOpen(true)}
+                          >
+                            <Upload size={16} />
+                            Import từ INS
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </>
                 )}
 
-                {teamMembers.length === 0 && (
-                  <div className={styles.formGroupFull}>
-                    <div className={styles.emptyTeam}>
-                      <Users size={32} className={styles.emptyIcon} />
-                      <p className={styles.emptyText}>Chưa có thành viên nào trong đội kiểm tra</p>
+                {/* SECTION: Quyết định từ INS - Khi CHỈNH SỬA ĐÃ PHÊ DUYỆT */}
+                {isApproved && (
+                  <>
+                    {/* Quyết định sửa đổi, bổ sung */}
+                    <div className={styles.formGroupFull}>
+                      <label className={styles.label}>
+                        Quyết định sửa đổi, bổ sung Quyết định kiểm tra việc chấp hành pháp luật
+                      </label>
+                      <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center' }}>
+                        {amendmentDecision ? (
+                          <>
+                            <div className={styles.selectedDecisionBox}>
+                              <CheckCircle2 size={16} style={{ color: 'var(--primary)' }} />
+                              <div>
+                                <div className={styles.selectedDecisionCode}>{amendmentDecision.code}</div>
+                                <div className={styles.selectedDecisionTitle}>{amendmentDecision.title}</div>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              className={styles.changeButton}
+                              onClick={() => setAmendmentDecisionModalOpen(true)}
+                            >
+                              Đổi
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            className={styles.importButton}
+                            onClick={() => setAmendmentDecisionModalOpen(true)}
+                          >
+                            <Upload size={16} />
+                            Import từ INS
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
 
-                {errors.team && (
-                  <div className={styles.formGroupFull}>
-                    <div className={styles.errorMessage}>
-                      <AlertCircle size={14} />
-                      <span>{errors.team}</span>
+                    {/* Quyết định kéo dài/gia hạn */}
+                    <div className={styles.formGroupFull}>
+                      <label className={styles.label}>
+                        Quyết định kéo dài/Gia hạn thời hạn thẩm tra, xác minh
+                      </label>
+                      <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center' }}>
+                        {extensionDecision ? (
+                          <>
+                            <div className={styles.selectedDecisionBox}>
+                              <CheckCircle2 size={16} style={{ color: 'var(--primary)' }} />
+                              <div>
+                                <div className={styles.selectedDecisionCode}>{extensionDecision.code}</div>
+                                <div className={styles.selectedDecisionTitle}>{extensionDecision.title}</div>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              className={styles.changeButton}
+                              onClick={() => setExtensionDecisionModalOpen(true)}
+                            >
+                              Đổi
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            className={styles.importButton}
+                            onClick={() => setExtensionDecisionModalOpen(true)}
+                          >
+                            <Upload size={16} />
+                            Import từ INS
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  </>
                 )}
-
-                {/* Divider */}
-                <div className={styles.formGroupFull}>
-                  <div className={styles.sectionDivider}>
-                    <MapPin size={18} className={styles.dividerIcon} />
-                    <span className={styles.dividerText}>Mục tiêu và ghi chú</span>
-                  </div>
-                </div>
-
-                {/* Mục tiêu kiểm tra */}
-                <div className={styles.formGroupFull}>
-                  <label className={styles.label}>Mục tiêu kiểm tra</label>
-                  <textarea
-                    className={styles.textarea}
-                    value={formData.objectives}
-                    onChange={(e) => handleChange('objectives', e.target.value)}
-                    placeholder="Nhập các mục tiêu cụ thể của đợt kiểm tra"
-                    rows={4}
-                  />
-                </div>
-
-                {/* Ghi chú */}
-                <div className={styles.formGroupFull}>
-                  <label className={styles.label}>Ghi chú</label>
-                  <textarea
-                    className={styles.textarea}
-                    value={formData.notes}
-                    onChange={(e) => handleChange('notes', e.target.value)}
-                    placeholder="Nhập các ghi chú bổ sung"
-                    rows={3}
-                  />
-                </div>
               </div>
             </div>
+          )}
 
-            {/* Summary Info */}
-            <div className={styles.summaryBox}>
-              <h3 className={styles.summaryTitle}>Tóm tắt thông tin</h3>
-              <div className={styles.summaryGrid}>
-                <div className={styles.summaryItem}>
-                  <span className={styles.summaryLabel}>Loại kiểm tra:</span>
-                  <span className={styles.summaryValue}>{getTypeLabel(formData.type)}</span>
-                </div>
-                <div className={styles.summaryItem}>
-                  <span className={styles.summaryLabel}>Đội kiểm tra:</span>
-                  <span className={styles.summaryValue}>{teamMembers.length} thành viên</span>
-                </div>
-                <div className={styles.summaryItem}>
-                  <span className={styles.summaryLabel}>Thời gian:</span>
-                  <span className={styles.summaryValue}>
-                    {dateRange.startDate && dateRange.endDate
-                      ? `${new Date(dateRange.startDate).toLocaleDateString('vi-VN')} - ${new Date(dateRange.endDate).toLocaleDateString('vi-VN')}`
-                      : 'Chưa chọn'}
-                  </span>
-                </div>
-                <div className={styles.summaryItem}>
-                  <span className={styles.summaryLabel}>Số cơ sở:</span>
-                  <span className={styles.summaryValue}>
-                    {formData.totalTargets || '0'} cơ sở
-                  </span>
-                </div>
+          {/* Step 2: Tiêu chí kiểm tra */}
+          {currentStep === 2 && (
+            <div className={styles.section}>
+              <h3 className={styles.sectionTitle}>
+                <FileText size={20} />
+                Chọn biểu mẫu kiểm tra
+              </h3>
+              <p className={styles.sectionDesc}>
+                Chọn các biểu mẫu sẽ sử dụng trong đợt kiểm tra (không bắt buộc)
+              </p>
+
+              <div className={styles.formsGrid}>
+                {mockForms.map(form => (
+                  <div key={form.id} className={styles.formCard}>
+                    <div className={styles.formCardHeader}>
+                      <input
+                        type="checkbox"
+                        className={styles.checkbox}
+                        checked={formData.selectedForms.includes(form.id)}
+                        onChange={() => toggleForm(form.id)}
+                      />
+                      <div className={styles.formCardTitle}>
+                        <strong>{form.id}</strong> - {form.name}
+                      </div>
+                      <button
+                        type="button"
+                        className={styles.viewButton}
+                        onClick={() => setShowFormDetailModal(form.id)}
+                      >
+                        <Eye size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          </form>
+          )}
+
+          {/* Step 3: Cửa hàng */}
+          {currentStep === 3 && (
+            <div className={styles.section}>
+              <div className={styles.sectionTitleRow}>
+                <h3 className={styles.sectionTitle}>
+                  <Store size={20} />
+                  Chọn cửa hàng kiểm tra <span className={styles.required}>*</span>
+                </h3>
+                {formData.selectedStores.length > 0 && (
+                  <div className={styles.selectedCount}>
+                    {formData.selectedStores.length} được chọn
+                  </div>
+                )}
+              </div>
+
+              {/* Filters and Search */}
+              <div className={styles.storeFiltersRow}>
+                <div className={styles.searchBox}>
+                  <Search size={16} />
+                  <input
+                    type="text"
+                    className={styles.searchInput}
+                    placeholder="Tìm kiếm cửa hàng..."
+                    value={storeSearchQuery}
+                    onChange={(e) => setStoreSearchQuery(e.target.value)}
+                  />
+                </div>
+                <div className={styles.filterOptions}>
+                  <label className={styles.filterOption}>
+                    <input
+                      type="checkbox"
+                      className={styles.checkbox}
+                      checked={storeFilters.highRisk}
+                      onChange={(e) => setStoreFilters(prev => ({ ...prev, highRisk: e.target.checked }))}
+                    />
+                    <span>Rủi ro cao</span>
+                  </label>
+                  <label className={styles.filterOption}>
+                    <input
+                      type="checkbox"
+                      className={styles.checkbox}
+                      checked={storeFilters.manyComplaints}
+                      onChange={(e) => setStoreFilters(prev => ({ ...prev, manyComplaints: e.target.checked }))}
+                    />
+                    <span>Nhiều khiếu nại</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Store Multi-Select */}
+              <div className={styles.storeMultiSelect}>
+                {filteredStores.slice(0, 100).map(store => (
+                  <div
+                    key={store.id}
+                    className={`${styles.storeOption} ${formData.selectedStores.includes(store.id) ? styles.storeOptionSelected : ''}`}
+                    onClick={() => toggleStore(store.id)}
+                  >
+                    <input
+                      type="checkbox"
+                      className={styles.checkbox}
+                      checked={formData.selectedStores.includes(store.id)}
+                      onChange={() => {}}
+                    />
+                    <div className={styles.storeOptionInfo}>
+                      <div className={styles.storeOptionName}>{store.name}</div>
+                      <div className={styles.storeOptionMeta}>
+                        {store.address} • {store.type}
+                        {store.riskLevel === 'high' && (
+                          <span className={styles.riskBadge}>Rủi ro cao</span>
+                        )}
+                        {store.hasComplaints && (
+                          <span className={styles.complaintBadge}>Nhiều khiếu nại</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {errors.selectedStores && (
+                <div className={styles.errorMessage}>
+                  <AlertCircle size={14} />
+                  <span>{errors.selectedStores}</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -531,14 +921,81 @@ export default function InspectionRoundCreate() {
           Hủy
         </button>
         <div className={styles.footerActions}>
+          {currentStep > 1 && (
+            <button className={styles.backStepButton} onClick={handleBack}>
+              <ChevronLeft size={18} />
+              Quay lại
+            </button>
+          )}
           <button className={styles.draftButton} onClick={handleSaveDraft}>
             Lưu nháp
           </button>
-          <button className={styles.submitButton} onClick={handleSave}>
-            Tạo đợt kiểm tra
-          </button>
+          {currentStep < 3 ? (
+            <button className={styles.nextButton} onClick={handleNext}>
+              Tiếp theo
+              <ChevronRight size={18} />
+            </button>
+          ) : (
+            <button className={styles.submitButton} onClick={handleSubmit}>
+              <CheckCircle2 size={18} />
+              {editMode ? 'Cập nhật đợt kiểm tra' : 'Tạo đợt kiểm tra'}
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Modal for Form Detail */}
+      {showFormDetailModal && selectedForm && (
+        <div className={styles.modalOverlay} onClick={() => setShowFormDetailModal(null)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>
+                {selectedForm.id} - {selectedForm.name}
+              </h3>
+              <button className={styles.modalClose} onClick={() => setShowFormDetailModal(null)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+              <h4 className={styles.criteriaTitle}>Tiêu chí kiểm tra:</h4>
+              <ul className={styles.criteriaList}>
+                {selectedForm.criteria.map((criterion, idx) => (
+                  <li key={idx}>{criterion}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* INS Decision Modals */}
+      <InspectionDecisionModal
+        open={inspectionDecisionModalOpen}
+        onOpenChange={setInspectionDecisionModalOpen}
+        onSelect={(decision) => setInspectionDecision(decision)}
+        selectedDecisionCode={inspectionDecision?.code}
+      />
+      
+      <AssignmentDecisionModal
+        open={assignmentDecisionModalOpen}
+        onOpenChange={setAssignmentDecisionModalOpen}
+        onSelect={(decision) => setAssignmentDecision(decision)}
+        selectedDecisionCode={assignmentDecision?.code}
+      />
+      
+      <AmendmentDecisionModal
+        open={amendmentDecisionModalOpen}
+        onOpenChange={setAmendmentDecisionModalOpen}
+        onSelect={(decision) => setAmendmentDecision(decision)}
+        selectedDecisionCode={amendmentDecision?.code}
+      />
+      
+      <ExtensionDecisionModal
+        open={extensionDecisionModalOpen}
+        onOpenChange={setExtensionDecisionModalOpen}
+        onSelect={(decision) => setExtensionDecision(decision)}
+        selectedDecisionCode={extensionDecision?.code}
+      />
     </div>
   );
 }
