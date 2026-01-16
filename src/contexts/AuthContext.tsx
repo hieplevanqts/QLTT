@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type UserLevel = 'cuc' | 'chicuc' | 'doi';
 export type UserRole = 'lanhdao' | 'kehoach' | 'doitruong' | 'thanhtra' | 'canbohosocanbo' | 'phantich';
@@ -25,6 +25,7 @@ export interface UserInfo {
 interface AuthContextType {
   user: UserInfo | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (username: string, password: string) => Promise<{ success: boolean; requiresUnitSelection?: boolean }>;
   selectUnit: (unitCode: string) => void;
   logout: () => void;
@@ -142,25 +143,30 @@ function getUserRoleInfo(username: string): Pick<UserInfo, 'role' | 'roleDisplay
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // DISABLED: Auto-restore session on mount
-  // Người dùng luôn phải đăng nhập khi refresh/mở ứng dụng
-  // useEffect(() => {
-  //   const storedUser = localStorage.getItem('mappa-user');
-  //   const sessionExpiry = localStorage.getItem('mappa-session-expiry');
-  //   
-  //   if (storedUser && sessionExpiry) {
-  //     const expiryTime = parseInt(sessionExpiry);
-  //     if (Date.now() < expiryTime) {
-  //       setUser(JSON.parse(storedUser));
-  //       setIsAuthenticated(true);
-  //     } else {
-  //       // Session expired
-  //       localStorage.removeItem('mappa-user');
-  //       localStorage.removeItem('mappa-session-expiry');
-  //     }
-  //   }
-  // }, []);
+  // Auto-restore session on mount
+  useEffect(() => {
+    const storedUser = localStorage.getItem('mappa-user');
+    const sessionExpiry = localStorage.getItem('mappa-session-expiry');
+    
+    if (storedUser && sessionExpiry) {
+      const expiryTime = parseInt(sessionExpiry);
+      if (Date.now() < expiryTime) {
+        // Session is still valid
+        setUser(JSON.parse(storedUser));
+        setIsAuthenticated(true);
+      } else {
+        // Session expired
+        localStorage.removeItem('mappa-user');
+        localStorage.removeItem('mappa-session-expiry');
+        localStorage.removeItem('mappa-user-pending');
+      }
+    }
+    
+    // Mark loading as complete
+    setIsLoading(false);
+  }, []);
 
   const login = async (username: string, password: string): Promise<{ success: boolean; requiresUnitSelection?: boolean }> => {
     // Simulate API call
@@ -273,7 +279,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, selectUnit, logout, checkSession }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, selectUnit, logout, checkSession }}>
       {children}
     </AuthContext.Provider>
   );
