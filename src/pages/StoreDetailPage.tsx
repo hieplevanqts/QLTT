@@ -424,14 +424,14 @@ export default function StoreDetailPage() {
 
   // Helper function to get status badge class and text
   const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { class: string; text: string }> = {
+    const statusMapping = {
       'active': { class: styles.statusActive, text: 'Đang hoạt động' },
       'processing': { class: styles.statusProcessing, text: 'Đang xử lý' },
       'pending': { class: styles.statusPending, text: 'Chờ duyệt' },
-      'suspended': { class: styles.statusSuspended, text: 'Tạm ngưng hoạt động' },
+      'suspended': { class: styles.statusSuspended, text: 'Tạm ngừng hoạt động' },
       'inactive': { class: styles.statusInactive, text: 'Ngừng hoạt động' },
     };
-    return statusMap[status] || null;
+    return statusMapping[status] || null;
   };
 
   // Get status from store data

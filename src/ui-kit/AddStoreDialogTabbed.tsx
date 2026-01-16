@@ -157,17 +157,9 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
   const [selectedWard, setSelectedWard] = useState('');
   
   // Get wards directly from province (no district)
-  // Ensure each ward has a `code` so Select's value/key are stable (fallback to name)
   const wards = useMemo(() => {
-    const raw = selectedProvince ? getWardsByProvince(selectedProvince) : [];
-    return raw.map(w => ({ ...(w as any), code: (w as any).code || (w as any).name }));
+    return selectedProvince ? getWardsByProvince(selectedProvince) : [];
   }, [selectedProvince]);
-
-  // Ensure we have an array of provinces for UI mapping (some data exports an object)
-  const provinceList = useMemo(() => {
-    if (Array.isArray(provinces)) return provinces;
-    return Object.entries(provinces).map(([key, val]) => ({ code: key, name: (val as any).name || key }));
-  }, []);
   
   // Mock OCR extraction
   const mockExtractData = async (file: File): Promise<ExtractedData> => {
@@ -765,7 +757,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Đang hoạt động</SelectItem>
-                    <SelectItem value="suspended">Tạm ngưng</SelectItem>
+                    <SelectItem value="suspended">Tạm ngừng</SelectItem>
                     <SelectItem value="closed">Đã đóng cửa</SelectItem>
                   </SelectContent>
                 </Select>
@@ -931,7 +923,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                       <SelectValue placeholder="Chọn Tỉnh/Thành phố" />
                     </SelectTrigger>
                     <SelectContent>
-                      {provinceList.map((prov: any) => (
+                      {provinces.map((prov) => (
                         <SelectItem key={prov.code} value={prov.code}>
                           {prov.name}
                         </SelectItem>

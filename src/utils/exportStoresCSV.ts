@@ -7,12 +7,13 @@ import { FacilityStatus } from '../ui-kit/FacilityStatusBadge';
  */
 
 // Status mapping for CSV export
-const statusLabels: Record<FacilityStatus, string> = {
+const STATUS_MAP: Record<FacilityStatus, string> = {
   active: 'Hoạt động',
   pending: 'Chờ duyệt',
-  suspended: 'Tạm ngưng',
+  suspended: 'Tạm ngừng',
   closed: 'Ngừng hoạt động',
   underInspection: 'Đang xử lý kiểm tra',
+  rejected: 'Từ chối phê duyệt',
 };
 
 /**
@@ -123,7 +124,7 @@ export function exportStoresToCSV(stores: Store[], filename: string = 'danh-sach
     const industry = store.industryName || store.type || store.businessType || '';
     
     // Operation status
-    const status = statusLabels[store.status] || store.status;
+    const status = STATUS_MAP[store.status] || store.status;
     
     // Management unit
     const managementUnit = store.managementUnit || `Chi cục QLTT ${store.jurisdiction}`;
@@ -185,7 +186,7 @@ export function exportReferenceDataCSV(filename: string = 'danh-muc-tham-chieu.c
   // Define reference data
   const industryList = [
     'Thực phẩm',
-    'Đồ uống',
+    '��ồ uống',
     'Mỹ phẩm',
     'Dược phẩm',
     'Thời trang',

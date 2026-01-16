@@ -1,0 +1,223 @@
+/* Container */
+.container {
+  position: relative;
+  display: inline-block;
+}
+
+/* Toggle Button */
+.toggleButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: 0 var(--spacing-3);
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--input-background);
+  color: var(--text-secondary);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  position: relative;
+}
+
+.toggleButton:hover {
+  border-color: var(--primary);
+  background: var(--card);
+  color: var(--text-primary);
+}
+
+.toggleButton:focus {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px rgba(0, 92, 182, 0.1);
+}
+
+.toggleButton.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.toggleButton.active:hover {
+  background: rgba(0, 92, 182, 0.9);
+}
+
+/* Active indicator dot for icon-only mode */
+.toggleButton.active::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
+  background: var(--primary-foreground);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--primary);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--primary-foreground);
+  color: var(--primary);
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+}
+
+.chevron {
+  transition: transform 0.2s ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+/* Popup Card - Floating, không thay đổi layout */
+.popup {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 50;
+  min-width: 340px;
+  max-width: 400px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08), 
+              0 4px 10px rgba(0, 0, 0, 0.05);
+  animation: popupFadeIn 0.15s ease-out;
+}
+
+@keyframes popupFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Popup Header */
+.popupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.popupTitle {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.closeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+  background: var(--muted);
+  color: var(--text-primary);
+}
+
+/* Popup Content */
+.popupContent {
+  padding: var(--spacing-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.filterLabel {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.selectTrigger {
+  width: 100%;
+}
+
+/* Risk Level Options */
+.riskOption {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.riskDot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+}
+
+.riskLow {
+  background: var(--success);
+}
+
+.riskMedium {
+  background: var(--warning);
+}
+
+.riskHigh {
+  background: var(--destructive);
+}
+
+/* Popup Actions */
+.popupActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-2);
+  padding: var(--spacing-4);
+  border-top: 1px solid var(--border);
+  background: var(--muted);
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+}
+
+.clearButton,
+.applyButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .popup {
+    min-width: 300px;
+    max-width: calc(100vw - 32px);
+  }
+}

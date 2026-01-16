@@ -136,8 +136,6 @@
 /* Tạm ngưng hoạt động - Red */
 .statusSuspended {
   background: rgba(239, 68, 68, 0.1);
-  color: rgb(220, 38, 38);
-  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 /* Ngừng hoạt động - Gray */
@@ -625,6 +623,7 @@
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .summaryCard:hover {

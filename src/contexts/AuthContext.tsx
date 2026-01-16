@@ -169,10 +169,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setIsAuthenticated(false);
       
-      // Redirect to login page using hash (for hash router)
-      // Use hash directly to avoid path duplication
-      if (window.location.hash !== '#/auth/login') {
-        window.location.hash = '#/auth/login';
+      // Redirect to login page - use full page reload to clear all state
+      // Use window.location.href for complete reset
+      if (!window.location.href.includes('#/auth/login')) {
+        window.location.href = '#/auth/login';
       }
     } catch (error) {
       console.error('Error during auto-logout:', error);
@@ -182,10 +182,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem('mappa-user-pending');
       setUser(null);
       setIsAuthenticated(false);
-      // Redirect to login page using hash (for hash router)
-      // Use hash directly to avoid path duplication
-      if (window.location.hash !== '#/auth/login') {
-        window.location.hash = '#/auth/login';
+      // Redirect to login page - use full page reload to clear all state
+      // Use window.location.href for complete reset
+      if (!window.location.href.includes('#/auth/login')) {
+        window.location.href = '#/auth/login';
       }
     } finally {
       logoutInProgressRef.current = false;
@@ -268,7 +268,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
         // User signed out or token refresh failed
-        console.log('🔄 Auth event: SIGNED_OUT or token refresh failed');
+        console.log('🔄 Auth event: SIGNED_OUT or token refresh failed, auto-logout...');
         await performAutoLogout();
         return;
       }
@@ -309,20 +309,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setIsAuthenticated(true);
           }
         }
+      } else if (event === 'USER_UPDATED' && !session) {
+        // User updated but no session - likely expired
+        console.log('🔄 USER_UPDATED but no session, auto-logout...');
+        await performAutoLogout();
       } else if (!session) {
         // No session - user is signed out
-        console.log('🔄 No session, auto-logout...');
+        console.log('🔄 No session in auth state change, auto-logout...');
         await performAutoLogout();
       }
     });
 
-    // Periodically check session expiry (every 30 seconds)
+    // Periodically check session expiry (every 10 seconds for faster detection)
     const expiryCheckInterval = setInterval(async () => {
+      if (!isAuthenticated || logoutInProgressRef.current) return;
+      
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        if (!session) {
-          // No session, logout
+        if (error || !session) {
+          // No session or error, logout immediately
+          console.log('⚠️ No session or error (periodic check), auto-logout...');
           await performAutoLogout();
           return;
         }
@@ -332,23 +339,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const expiresAt = session.expires_at * 1000;
           const now = Date.now();
           
-          if (now >= expiresAt) {
-            // Session expired
-            console.log('⚠️ Session expired (periodic check), auto-logout...');
+          // Check if expired or will expire in next 5 seconds
+          if (now >= expiresAt || (expiresAt - now) < 5000) {
+            // Session expired or about to expire
+            console.log('⚠️ Session expired or expiring soon (periodic check), auto-logout...');
             await performAutoLogout();
+            return;
           }
         }
       } catch (error) {
         console.error('Error checking session expiry:', error);
         await performAutoLogout();
       }
-    }, 30000); // Check every 30 seconds
+    }, 10000); // Check every 10 seconds for faster detection
 
     return () => {
       subscription.unsubscribe();
       clearInterval(expiryCheckInterval);
     };
-  }, []);
+  }, [isAuthenticated]); // Include isAuthenticated in dependencies
 
   const login = async (email: string, password: string): Promise<{ success: boolean; requiresUnitSelection?: boolean; error?: string }> => {
     // Validate email và password không rỗng

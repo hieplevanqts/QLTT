@@ -51,7 +51,7 @@ import { ImportDialog } from '../ui-kit/ImportDialog';
 import { ExportDialog, ExportOptions } from '../ui-kit/ExportDialog';
 import { AddStoreDialog, NewStoreData } from '../ui-kit/AddStoreDialog';
 import { AddStoreDialogTabbed, NewStoreData as NewStoreDataTabbed } from '../ui-kit/AddStoreDialogTabbed';
-import { AdvancedFilterInline, AdvancedFilters } from '../ui-kit/AdvancedFilterInline';
+import { AdvancedFilterPopup, AdvancedFilters } from '../ui-kit/AdvancedFilterPopup';
 import { ApproveDialog, RejectDialog } from '../ui-kit/ApprovalDialogs';
 import { mockStores, Store, addStore } from '../data/mockStores';
 import { getProvinceByCode, getDistrictByName, getWardByCode } from '../data/vietnamLocations';
@@ -64,6 +64,8 @@ import { exportStoresToCSV, exportStoresPackage } from '../utils/exportStoresCSV
 import { downloadStoreImportTemplate, downloadExcelTemplate, parseImportFile, type ParsedStoreRow, type ValidationError } from '../utils/importTemplate';
 import { getViolationsByStoreId } from '../data/mockViolations';
 import { getComplaintsByStoreId } from '../data/mockComplaints';
+import { PendingUpdatesDialog } from '../ui-kit/PendingUpdatesDialog';
+import { getTotalPendingCount } from '../data/mockPendingUpdates';
 import styles from './StoresListPage.module.css';
 
 export default function StoresListPage() {
@@ -112,7 +114,6 @@ export default function StoresListPage() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [advancedFilterExpanded, setAdvancedFilterExpanded] = useState(false);
   const [advancedFilter, setAdvancedFilter] = useState<AdvancedFilters>({
     hasViolations: 'all',
     hasComplaints: 'all',
@@ -147,6 +148,9 @@ export default function StoresListPage() {
     storeId: number;
     storeName: string;
   }>({ open: false, storeId: 0, storeName: '' });
+  
+  // Pending Updates Dialog state
+  const [pendingUpdatesDialogOpen, setPendingUpdatesDialogOpen] = useState(false);
   
   // LocalStorage key
   const STORES_STORAGE_KEY = 'mappa_stores';
@@ -290,14 +294,14 @@ export default function StoresListPage() {
   const handleSuspend = (store: Store) => {
     setConfirmDialog({
       open: true,
-      title: 'Tạm ngưng hoạt động',
-      description: `Bạn có chắc chắn muốn tạm ngưng hoạt động của cơ sở "${store.name}"?`,
+      title: 'Tạm ngừng hoạt động',
+      description: `Bạn có chắc chắn muốn tạm ngừng hoạt động của cơ sở "${store.name}"?`,
       variant: 'warning',
       onConfirm: () => {
-        setStores(prev =>
+        setStores((prev) =>
           prev.map(s => (s.id === store.id ? { ...s, status: 'suspended' as FacilityStatus } : s))
         );
-        toast.success('Tạm ngưng cơ sở thành công');
+        toast.success('Tạm ngừng cơ sở thành công');
       },
     });
   };
@@ -453,9 +457,23 @@ export default function StoresListPage() {
     if (jurisdictionFilter !== 'all') {
       filtered = filtered.filter(s => s.jurisdiction === jurisdictionFilter);
     }
+    
+    // Handle status filter - including "other" category
     if (statusFilter !== 'all') {
-      filtered = filtered.filter(s => s.status === statusFilter);
+      if (statusFilter === 'other') {
+        // "Other" is a group of statuses that are not in the main categories
+        filtered = filtered.filter(s => 
+          s.status !== 'active' && 
+          s.status !== 'pending' && 
+          s.status !== 'suspended' && 
+          s.status !== 'closed'
+        );
+      } else {
+        // Normal status filter (active, pending, suspended, closed, etc.)
+        filtered = filtered.filter(s => s.status === statusFilter);
+      }
     }
+    
     if (searchValue) {
       filtered = filtered.filter(s => 
         s.name.toLowerCase().includes(searchValue.toLowerCase()) ||
@@ -583,7 +601,7 @@ export default function StoresListPage() {
     // Success feedback
     const actionLabels: Record<BulkActionType, string> = {
       approve: 'phê duyệt',
-      reject: 'từ chối',
+      reject: 'từ chi',
       suspend: 'tạm ngừng',
       activate: 'kích hoạt lại',
       close: 'ngừng hoạt động',
@@ -657,7 +675,7 @@ export default function StoresListPage() {
       case 'rejected':
         // Chờ duyệt & Từ chối phê duyệt: Xem chi tiết, Chỉnh sửa, Xóa (3 actions - show all)
         actions.push(
-          CommonActions.view(() => navigate(`/stores/${store.id}`)),
+          CommonActions.view(() => navigate(`/registry/stores/${store.id}`)),
           CommonActions.edit(() => handleEdit(store)),
           CommonActions.delete(() => handleDelete(store))
         );
@@ -666,12 +684,12 @@ export default function StoresListPage() {
       case 'active':
         // Đang hoạt động: Full actions (7 actions - show top 3 + menu)
         actions.push(
-          CommonActions.view(() => navigate(`/stores/${store.id}`)),
+          CommonActions.view(() => navigate(`/registry/stores/${store.id}`)),
           CommonActions.edit(() => handleEdit(store)),
           CommonActions.assignRisk(() => handleAssignRisk(store)),
-          CommonActions.viewHistory(() => navigate(`/stores/${store.id}?tab=inspections`)),
-          CommonActions.viewViolations(() => navigate(`/stores/${store.id}?tab=violations`)),
-          CommonActions.viewLegal(() => navigate(`/stores/${store.id}?tab=legal`)),
+          CommonActions.viewHistory(() => navigate(`/registry/stores/${store.id}?tab=inspections`)),
+          CommonActions.viewViolations(() => navigate(`/registry/stores/${store.id}?tab=violations`)),
+          CommonActions.viewLegal(() => navigate(`/registry/stores/${store.id}?tab=legal`)),
           { ...CommonActions.pause(() => handleSuspend(store)), separator: true }
         );
         break;
@@ -679,15 +697,15 @@ export default function StoresListPage() {
       case 'underInspection':
         // Đang xử lý kiểm tra: Xem chi tiết, Lịch sử (2 actions - show all)
         actions.push(
-          CommonActions.view(() => navigate(`/stores/${store.id}`)),
-          CommonActions.viewHistory(() => navigate(`/stores/${store.id}?tab=history`))
+          CommonActions.view(() => navigate(`/registry/stores/${store.id}`)),
+          CommonActions.viewHistory(() => navigate(`/registry/stores/${store.id}?tab=history`))
         );
         break;
       
       case 'suspended':
         // Tạm ngưng: Xem chi tiết, Kích hoạt lại, Ngừng hoạt động (3 actions - show all)
         actions.push(
-          CommonActions.view(() => navigate(`/stores/${store.id}`)),
+          CommonActions.view(() => navigate(`/registry/stores/${store.id}`)),
           CommonActions.resume(() => handleResume(store)),
           { ...CommonActions.delete(() => handleClose(store)), label: 'Ngừng hoạt động', separator: true }
         );
@@ -696,8 +714,8 @@ export default function StoresListPage() {
       case 'closed':
         // Ngừng hoạt động: Xem chi tiết, Lịch sử và Xóa (3 actions - show all)
         actions.push(
-          CommonActions.view(() => navigate(`/stores/${store.id}`)),
-          CommonActions.viewHistory(() => navigate(`/stores/${store.id}?tab=history`)),
+          CommonActions.view(() => navigate(`/registry/stores/${store.id}`)),
+          CommonActions.viewHistory(() => navigate(`/registry/stores/${store.id}?tab=history`)),
           { ...CommonActions.delete(() => handleDelete(store)), separator: true }
         );
         break;
@@ -708,6 +726,16 @@ export default function StoresListPage() {
 
   // Define table columns
   const columns: Column<Store>[] = [
+    {
+      key: 'stt',
+      label: 'STT',
+      width: '60px',
+      render: (store, index) => {
+        // Calculate STT based on pagination
+        const stt = (currentPage - 1) * pageSize + (index || 0) + 1;
+        return <div style={{ textAlign: 'center', fontWeight: 'var(--font-weight-medium)' }}>{stt}</div>;
+      },
+    },
     {
       key: 'name',
       label: 'Tên cơ sở',
@@ -893,9 +921,6 @@ export default function StoresListPage() {
               // If rows are selected, only export selected
               if (selectedRows.size > 0) {
                 storesToExport = stores.filter(store => selectedRows.has(store.id));
-              } else {
-                // Otherwise, export filtered data
-                storesToExport = filteredData;
               }
               
               // Generate filename with timestamp
@@ -921,27 +946,22 @@ export default function StoresListPage() {
               <Download size={16} />
               Xuất dữ liệu
             </Button>
-            {stats.pending > 0 && (
-              <Button 
-                variant="secondary" 
-                size="sm" 
-                onClick={() => {
-                  setActiveFilter('pending');
-                  setStatusFilter('pending');
-                  toast.info('Hiển thị cửa hàng chờ phê duyệt');
-                }}
-                className={styles.pendingButton}
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              onClick={() => setPendingUpdatesDialogOpen(true)}
+              className={styles.pendingButton}
+              title="Danh sách thông tin cơ sở & hồ sơ pháp lý đang chờ phê duyệt"
+            >
+              <Bell size={16} />
+              Chờ duyệt
+              <Badge 
+                variant="destructive" 
+                className={styles.pendingBadge}
               >
-                <Bell size={16} />
-                Chờ duyệt
-                <Badge 
-                  variant="destructive" 
-                  className={styles.pendingBadge}
-                >
-                  {stats.pending}
-                </Badge>
-              </Button>
-            )}
+                {getTotalPendingCount()}
+              </Badge>
+            </Button>
             <Button size="sm" onClick={() => setAddDialogOpen(true)}>
               <Plus size={16} />
               Thêm mới
@@ -977,7 +997,7 @@ export default function StoresListPage() {
             }}
           />
           <SummaryCard
-            label="Tạm ngưng"
+            label="Tạm ngừng"
             value={stats.suspended}
             icon={CirclePause}
             variant="danger"
@@ -1007,7 +1027,7 @@ export default function StoresListPage() {
               active={activeFilter === 'other'}
               onClick={() => {
                 setActiveFilter('other');
-                setStatusFilter('all'); // Sync với filter dropdown
+                setStatusFilter('other'); // Fixed: Use 'other' instead of 'all'
               }}
             />
           )}
@@ -1024,87 +1044,96 @@ export default function StoresListPage() {
           />
         </div>
 
-        {/* QLTT Standard: Filters and Actions on SAME ROW */}
-        <FilterActionBar
-          filters={
-            <>
-              <Select value={jurisdictionFilter} onValueChange={setJurisdictionFilter}>
-                <SelectTrigger style={{ width: '200px' }}>
-                  <SelectValue placeholder="-- Địa bàn --" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả địa bàn</SelectItem>
-                  <SelectItem value="Quận 1">Quận 1</SelectItem>
-                  <SelectItem value="Quận 3">Quận 3</SelectItem>
-                  <SelectItem value="Quận 5">Quận 5</SelectItem>
-                  <SelectItem value="Quận 10">Quận 10</SelectItem>
-                </SelectContent>
-              </Select>
+        {/* QLTT Standard: Filters Layout - Advanced | Địa bàn | Trạng thái | Tên cơ sở | Bản đồ */}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 'var(--spacing-3)', 
+          padding: 'var(--spacing-4) 0',
+          width: '100%'
+        }}>
+          {/* 1. Advanced Filter (icon only) */}
+          <AdvancedFilterPopup
+            appliedFilters={advancedFilter}
+            onApply={(filters) => {
+              setAdvancedFilter(filters);
+              toast.success('Đã áp dụng bộ lọc nâng cao');
+            }}
+            onClear={() => {
+              setAdvancedFilter({
+                hasViolations: 'all',
+                hasComplaints: 'all',
+                riskLevel: 'all',
+                businessType: 'all',
+              });
+              toast.success('Đã xoá bộ lọc nâng cao');
+            }}
+            hasActiveFilters={
+              advancedFilter.hasViolations !== 'all' ||
+              advancedFilter.hasComplaints !== 'all' ||
+              advancedFilter.riskLevel !== 'all' ||
+              advancedFilter.businessType !== 'all'
+            }
+            iconOnly={true}
+          />
 
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger style={{ width: '200px' }}>
-                  <SelectValue placeholder="-- Trạng thái --" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                  <SelectItem value="pending">Chờ duyệt</SelectItem>
-                  <SelectItem value="active">Đang hoạt động</SelectItem>
-                  <SelectItem value="underInspection">Đang xử lý kiểm tra</SelectItem>
-                  <SelectItem value="suspended">Tạm ngưng</SelectItem>
-                  <SelectItem value="rejected">Từ chối phê duyệt</SelectItem>
-                  <SelectItem value="closed">Ngừng hoạt động</SelectItem>
-                </SelectContent>
-              </Select>
+          {/* 2. Địa bàn */}
+          <Select value={jurisdictionFilter} onValueChange={setJurisdictionFilter}>
+            <SelectTrigger style={{ width: '200px' }}>
+              <SelectValue placeholder="-- Địa bàn --" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả địa bàn</SelectItem>
+              <SelectItem value="Quận 1">Quận 1</SelectItem>
+              <SelectItem value="Quận 3">Quận 3</SelectItem>
+              <SelectItem value="Quận 5">Quận 5</SelectItem>
+              <SelectItem value="Quận 10">Quận 10</SelectItem>
+            </SelectContent>
+          </Select>
 
-              {/* Advanced Filter Inline */}
-              <AdvancedFilterInline
-                isExpanded={advancedFilterExpanded}
-                onToggle={() => setAdvancedFilterExpanded(!advancedFilterExpanded)}
-                appliedFilters={advancedFilter}
-                onApply={(filters) => {
-                  setAdvancedFilter(filters);
-                  setAdvancedFilterExpanded(false);
-                  toast.success('Đã áp dụng bộ lọc nâng cao');
-                }}
-                onClear={() => {
-                  setAdvancedFilter({
-                    hasViolations: 'all',
-                    hasComplaints: 'all',
-                    riskLevel: 'all',
-                    businessType: 'all',
-                  });
-                  setAdvancedFilterExpanded(false);
-                  toast.success('Đã xoá bộ lọc nâng cao');
-                }}
-                hasActiveFilters={
-                  advancedFilter.hasViolations !== 'all' ||
-                  advancedFilter.hasComplaints !== 'all' ||
-                  advancedFilter.riskLevel !== 'all' ||
-                  advancedFilter.businessType !== 'all'
-                }
-              />
+          {/* 3. Trạng thái */}
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger style={{ width: '200px' }}>
+              <SelectValue placeholder="-- Trạng thái --" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả trạng thái</SelectItem>
+              <SelectItem value="pending">Chờ duyệt</SelectItem>
+              <SelectItem value="active">Đang hoạt động</SelectItem>
+              <SelectItem value="underInspection">Đang xử lý kiểm tra</SelectItem>
+              <SelectItem value="suspended">Tạm ngưng</SelectItem>
+              <SelectItem value="rejected">Từ chối phê duyệt</SelectItem>
+              <SelectItem value="closed">Ngừng hoạt động</SelectItem>
+            </SelectContent>
+          </Select>
 
-              {/* Map Button */}
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleNavigateToMap}
-                disabled={!hasFiltersApplied}
-                title={!hasFiltersApplied ? 'Vui lòng chọn ít nhất một bộ lọc để xem bản đồ' : 'Xem trên bản đồ điều hành'}
-              >
-                <Map size={16} />
-                Bản đồ
-              </Button>
-            </>
-          }
-          searchInput={
-            <SearchInput
-              placeholder="Tên cơ sở"
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-            />
-          }
-        />
+          {/* 4. Tên cơ sở (medium width) */}
+          <SearchInput
+            placeholder="Tên cơ sở"
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            style={{ width: '280px' }}
+          />
+
+          {/* 5. Bản đồ Button (secondary, gọn) */}
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleNavigateToMap}
+            disabled={!hasFiltersApplied}
+            title={!hasFiltersApplied ? 'Vui lòng chọn ít nhất một bộ lọc để xem bản đồ' : 'Xem trên bản đồ điều hành'}
+            style={{
+              height: '38px',
+              padding: '0 var(--spacing-4)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 'var(--spacing-2)',
+            }}
+          >
+            <Map size={16} />
+            Bản đồ
+          </Button>
+        </div>
       </div>
 
       {/* Data Table */}
@@ -1311,6 +1340,11 @@ export default function StoresListPage() {
         onOpenChange={(open) => setRejectDialog({ ...rejectDialog, open })}
         storeName={rejectDialog.storeName}
         onConfirm={handleRejectConfirm}
+      />
+
+      <PendingUpdatesDialog
+        open={pendingUpdatesDialogOpen}
+        onClose={() => setPendingUpdatesDialogOpen(false)}
       />
     </div>
   );
