@@ -169,9 +169,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setIsAuthenticated(false);
       
-      // Redirect to login page
-      if (window.location.pathname !== '/auth/login') {
-        window.location.href = '/auth/login';
+      // Redirect to login page using hash (for hash router)
+      // Use hash directly to avoid path duplication
+      if (window.location.hash !== '#/auth/login') {
+        window.location.hash = '#/auth/login';
       }
     } catch (error) {
       console.error('Error during auto-logout:', error);
@@ -181,8 +182,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem('mappa-user-pending');
       setUser(null);
       setIsAuthenticated(false);
-      if (window.location.pathname !== '/auth/login') {
-        window.location.href = '/auth/login';
+      // Redirect to login page using hash (for hash router)
+      // Use hash directly to avoid path duplication
+      if (window.location.hash !== '#/auth/login') {
+        window.location.hash = '#/auth/login';
       }
     } finally {
       logoutInProgressRef.current = false;
