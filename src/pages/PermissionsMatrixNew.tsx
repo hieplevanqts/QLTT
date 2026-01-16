@@ -71,12 +71,12 @@ export const PermissionsMatrixNew: React.FC<PermissionsMatrixNewProps> = ({
   const modules: Module[] = [
     { id: 'overview', name: 'Tổng quan', code: 'OVERVIEW', description: 'Trang hiển thị số liệu và thông tin chung', order: 1 },
     { id: 'map', name: 'Bản đồ điều hành', code: 'MAP', description: 'Quản lý dựa trên bản đồ và vị trí', order: 2 },
-    { id: 'facilities', name: 'Cơ sở & Địa bàn', code: 'FACILITIES', description: 'Quản lý đơn vị, cơ sở, khu vực', order: 3 },
-    { id: 'risk', name: 'Nguồn tin / Risk', code: 'RISK', description: 'Quản lý nguồn dữ liệu và theo dõi rủi ro', order: 4 },
+    { id: 'facilities', name: 'Cơ sở quản lý', code: 'FACILITIES', description: 'Quản lý đơn vị, cơ sở, khu vực', order: 3 },
+    { id: 'risk', name: 'Nguồn tin', code: 'RISK', description: 'Quản lý nguồn dữ liệu và theo dõi rủi ro', order: 4 },
     { id: 'planning', name: 'Kế hoạch tác nghiệp', code: 'PLANNING', description: 'Lập và triển khai kế hoạch', order: 5 },
     { id: 'field-tasks', name: 'Nhiệm vụ hiện trường', code: 'FIELD_TASKS', description: 'Giao việc và theo dõi nhiệm vụ hiện trường', order: 6 },
     { id: 'evidence', name: 'Kho chứng cứ', code: 'EVIDENCE', description: 'Lưu trữ hình ảnh, video, tài liệu', order: 7 },
-    { id: 'reports', name: 'Báo cáo & KPI', code: 'REPORTS', description: 'Thống kê, đánh giá hiệu quả', order: 8 },
+    { id: 'reports', name: 'Báo cáo, thống kê', code: 'REPORTS', description: 'Thống kê, đánh giá hiệu quả', order: 8 },
     { id: 'admin', name: 'Quản trị hệ thống', code: 'ADMIN', description: 'Thiết lập hệ thống, phân quyền, người dùng', order: 9 },
   ];
 

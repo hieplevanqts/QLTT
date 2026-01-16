@@ -37,10 +37,10 @@ interface HorizontalNavBarProps {
 const mappaModules = [
   { path: '/overview', label: 'Tổng quan', icon: LayoutDashboard },
   { path: '/map', label: 'Bản đồ điều hành', icon: Map },
-  { path: '/stores', label: 'Cơ sở & Địa bàn', icon: Building2 },
+  { path: '/stores', label: 'Cơ sở quản lý', icon: Building2 },
   {
     path: '/leads',
-    label: 'Nguồn tin / Risk',
+    label: 'Nguồn tin',
     icon: TriangleAlert,
     hasSubmenu: true,
     submenu: [
@@ -55,7 +55,7 @@ const mappaModules = [
   { path: '/plans', label: 'Kế hoạch tác nghiệp', icon: ClipboardList, hasSubmenu: true },
   { path: '/tasks', label: 'Nhiệm vụ hiện trường', icon: MapPin },
   { path: '/evidence', label: 'Kho chứng cứ', icon: FileBox },
-  { path: '/reports', label: 'Báo cáo & KPI', icon: BarChart3 },
+  { path: '/reports', label: 'Báo cáo, thống kê', icon: BarChart3 },
   { path: '/admin', label: 'Quản trị', icon: Settings },
 ];
 

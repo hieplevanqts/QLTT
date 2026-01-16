@@ -66,12 +66,12 @@ export const PermissionsManagement = () => {
   const modules: Module[] = [
     { id: 'overview', name: 'Tổng quan', icon: Eye, description: 'Trang hiển thị số liệu hoặc thông tin chung' },
     { id: 'map', name: 'Bản đồ điều hành', icon: MapPin, description: 'Quản lý dựa trên bản đồ / vị trí' },
-    { id: 'facilities', name: 'Cơ sở & Địa bàn', icon: FileText, description: 'Quản lý đơn vị, cơ sở hạ tầng, khu vực' },
-    { id: 'risk', name: 'Nguồn tin / Risk', icon: AlertTriangle, description: 'Quản lý nguồn dữ liệu, theo dõi rủi ro' },
+    { id: 'facilities', name: 'Cơ sở quản lý', icon: FileText, description: 'Quản lý đơn vị, cơ sở hạ tầng, khu vực' },
+    { id: 'risk', name: 'Nguồn tin', icon: AlertTriangle, description: 'Quản lý nguồn dữ liệu, theo dõi rủi ro' },
     { id: 'planning', name: 'Kế hoạch tác nghiệp', icon: Calendar, description: 'Lập và triển khai kế hoạch' },
     { id: 'field-tasks', name: 'Nhiệm vụ hiện trường', icon: Briefcase, description: 'Giao việc, theo dõi nhiệm vụ ngoài hiện trường' },
     { id: 'evidence', name: 'Kho chứng cứ', icon: Camera, description: 'Lưu trữ hình ảnh, video, tài liệu' },
-    { id: 'reports', name: 'Báo cáo & KPI', icon: TrendingUp, description: 'Thống kê, đánh giá hiệu quả' },
+    { id: 'reports', name: 'Báo cáo, thống kê', icon: TrendingUp, description: 'Thống kê, đánh giá hiệu quả' },
     { id: 'admin', name: 'Quản trị', icon: Settings, description: 'Thiết lập hệ thống, phân quyền, người dùng' },
   ];
 

@@ -235,7 +235,7 @@ export const UserDetailTab: React.FC<{
   const userPermissions = [
     { module: 'Tổng quan', view: true, create: false, edit: false, delete: false },
     { module: 'Bản đồ', view: true, create: false, edit: false, delete: false },
-    { module: 'Cơ sở & Địa bàn', view: true, create: true, edit: true, delete: false },
+    { module: 'Cơ sở quản lý', view: true, create: true, edit: true, delete: false },
     { module: 'Nhiệm vụ', view: true, create: true, edit: true, delete: true },
     { module: 'Kiểm tra', view: true, create: false, edit: false, delete: false },
     { module: 'Báo cáo', view: true, create: false, edit: false, delete: false },

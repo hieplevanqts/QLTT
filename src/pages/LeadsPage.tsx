@@ -19,8 +19,8 @@ export default function LeadsPage() {
   return (
     <div className="flex flex-col">
       <PageHeader
-        breadcrumbs={[{ label: 'Trang chủ', href: '/' }, { label: 'Nguồn tin / Risk' }]}
-        title="Nguồn tin / Risk"
+        breadcrumbs={[{ label: 'Trang chủ', href: '/' }, { label: 'Nguồn tin' }]}
+        title="Nguồn tin"
         actions={
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm">
@@ -82,7 +82,7 @@ export default function LeadsPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-20">
             <TrendingUp className="h-20 w-20 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Nguồn tin / Risk</h3>
+            <h3 className="text-xl font-semibold mb-2">Nguồn tin</h3>
             <p className="text-muted-foreground text-center max-w-md">
               Tiếp nhận và quản lý nguồn tin về vi phạm ATTP. Hệ thống đánh giá rủi ro và ưu tiên xử lý các nguồn tin theo mức độ nguy hiểm.
             </p>

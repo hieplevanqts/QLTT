@@ -87,12 +87,12 @@ interface ModalState {
 const MODULES: Module[] = [
   { id: 'overview', name: 'Tổng quan', code: 'OVERVIEW', description: 'Dashboard và thống kê', order: 1, icon: Shield },
   { id: 'map', name: 'Bản đồ', code: 'MAP', description: 'Quản lý bản đồ điều hành', order: 2, icon: MapPin },
-  { id: 'facilities', name: 'Cơ sở & Địa bàn', code: 'FACILITIES', description: 'Quản lý cơ sở kinh doanh', order: 3, icon: FileText },
-  { id: 'risk', name: 'Nguồn tin / Risk', code: 'RISK', description: 'Quản lý nguồn tin và rủi ro', order: 4, icon: AlertTriangle },
+  { id: 'facilities', name: 'Cơ sở quản lý', code: 'FACILITIES', description: 'Quản lý cơ sở kinh doanh', order: 3, icon: FileText },
+  { id: 'risk', name: 'Nguồn tin', code: 'RISK', description: 'Quản lý nguồn tin và rủi ro', order: 4, icon: AlertTriangle },
   { id: 'planning', name: 'Kế hoạch', code: 'PLANNING', description: 'Lập kế hoạch tác nghiệp', order: 5, icon: Calendar },
   { id: 'field-tasks', name: 'Nhiệm vụ hiện trường', code: 'FIELD_TASKS', description: 'Giao việc hiện trường', order: 6, icon: Briefcase },
   { id: 'evidence', name: 'Kho chứng cứ', code: 'EVIDENCE', description: 'Lưu trữ chứng cứ', order: 7, icon: Camera },
-  { id: 'reports', name: 'Báo cáo & KPI', code: 'REPORTS', description: 'Thống kê và báo cáo', order: 8, icon: TrendingUp },
+  { id: 'reports', name: 'Báo cáo, thống kê', code: 'REPORTS', description: 'Thống kê và báo cáo', order: 8, icon: TrendingUp },
   { id: 'admin', name: 'Quản trị', code: 'ADMIN', description: 'Quản trị hệ thống', order: 9, icon: Settings },
 ];
 

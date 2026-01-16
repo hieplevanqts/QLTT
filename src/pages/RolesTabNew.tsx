@@ -80,12 +80,12 @@ export const RolesTabNew: React.FC<RolesTabNewProps> = ({
   const modules: Module[] = [
     { id: 'overview', name: 'Tổng quan', icon: Eye, description: 'Dashboard và thống kê' },
     { id: 'map', name: 'Bản đồ', icon: MapPin, description: 'Quản lý bản đồ' },
-    { id: 'facilities', name: 'Cơ sở & Địa bàn', icon: FileText, description: 'Quản lý cơ sở' },
-    { id: 'risk', name: 'Nguồn tin / Risk', icon: AlertTriangle, description: 'Quản lý rủi ro' },
+    { id: 'facilities', name: 'Cơ sở quản lý', icon: FileText, description: 'Quản lý cơ sở' },
+    { id: 'risk', name: 'Nguồn tin', icon: AlertTriangle, description: 'Quản lý rủi ro' },
     { id: 'planning', name: 'Kế hoạch', icon: Calendar, description: 'Lập kế hoạch' },
     { id: 'field-tasks', name: 'Nhiệm vụ hiện trường', icon: Briefcase, description: 'Giao việc hiện trường' },
     { id: 'evidence', name: 'Kho chứng cứ', icon: Camera, description: 'Lưu trữ chứng cứ' },
-    { id: 'reports', name: 'Báo cáo & KPI', icon: TrendingUp, description: 'Thống kê báo cáo' },
+    { id: 'reports', name: 'Báo cáo, thống kê', icon: TrendingUp, description: 'Thống kê báo cáo' },
     { id: 'admin', name: 'Quản trị', icon: Settings, description: 'Quản trị hệ thống' },
   ];
 

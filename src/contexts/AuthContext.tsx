@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 export type UserLevel = 'cuc' | 'chicuc' | 'doi';
 export type UserRole = 'lanhdao' | 'kehoach' | 'doitruong' | 'thanhtra' | 'canbohosocanbo' | 'phantich';
@@ -26,9 +28,9 @@ interface AuthContextType {
   user: UserInfo | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (username: string, password: string) => Promise<{ success: boolean; requiresUnitSelection?: boolean }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; requiresUnitSelection?: boolean; error?: string }>;
   selectUnit: (unitCode: string) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   checkSession: () => boolean;
 }
 
@@ -145,98 +147,156 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Auto-restore session on mount
+  // Auto-restore session on mount using Supabase
   useEffect(() => {
-    const storedUser = localStorage.getItem('mappa-user');
-    const sessionExpiry = localStorage.getItem('mappa-session-expiry');
-    
-    if (storedUser && sessionExpiry) {
-      const expiryTime = parseInt(sessionExpiry);
-      if (Date.now() < expiryTime) {
-        // Session is still valid
-        setUser(JSON.parse(storedUser));
-        setIsAuthenticated(true);
+    const restoreSession = async () => {
+      try {
+        // Get current session from Supabase
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error restoring session:', error);
+          setIsLoading(false);
+          return;
+        }
+
+        if (session && session.user) {
+          // Session exists and is valid
+          // Get user info from Supabase user metadata or fetch from database
+          const supabaseUser = session.user;
+          
+          // Try to get user info from localStorage (for backward compatibility)
+          // or fetch from database using supabaseUser.id
+          const storedUser = localStorage.getItem('mappa-user');
+          if (storedUser) {
+            setUser(JSON.parse(storedUser));
+            setIsAuthenticated(true);
+          } else {
+            // If no stored user info, create basic user info from Supabase user
+            // You may want to fetch full user info from your users table here
+            const userInfo: UserInfo = {
+              username: supabaseUser.email || '',
+              fullName: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User',
+              level: 'cuc', // Default, should be fetched from database
+              role: 'thanhtra', // Default, should be fetched from database
+              roleDisplay: 'Người dùng',
+              position: 'Người dùng',
+              department: 'Hệ thống',
+            };
+            setUser(userInfo);
+            setIsAuthenticated(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error in restoreSession:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    restoreSession();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        // User is signed in
+        const storedUser = localStorage.getItem('mappa-user');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+          setIsAuthenticated(true);
+        }
       } else {
-        // Session expired
+        // User is signed out
+        setUser(null);
+        setIsAuthenticated(false);
         localStorage.removeItem('mappa-user');
         localStorage.removeItem('mappa-session-expiry');
         localStorage.removeItem('mappa-user-pending');
       }
-    }
-    
-    // Mark loading as complete
-    setIsLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const login = async (username: string, password: string): Promise<{ success: boolean; requiresUnitSelection?: boolean }> => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Validate username và password không rỗng
-    if (!username || !password) {
-      return { success: false };
+  const login = async (email: string, password: string): Promise<{ success: boolean; requiresUnitSelection?: boolean; error?: string }> => {
+    // Validate email và password không rỗng
+    if (!email || !password) {
+      return { success: false, error: 'Email và mật khẩu không được để trống' };
     }
-    
-    // VALIDATE CHẶT CHẼ FORMAT USERNAME
-    const upper = username.toUpperCase().trim();
-    let isValidFormat = false;
-    
-    // Regex patterns cho từng cấp
-    const cucPattern = /^QT_[A-Z]+$/; // QT_HOVATEN (chỉ chữ cái sau underscore)
-    const chiCucPattern = /^QT(0[1-9]|[12][0-9]|3[0-4])_[A-Z]+$/; // QT{01-34}_HOVATEN
-    const doiPattern = /^QT(0[1-9]|[12][0-9]|3[0-4])\d{2}_[A-Z]+$/; // QT{01-34}{00-99}_HOVATEN
-    
-    // Kiểm tra format
-    if (cucPattern.test(upper)) {
-      // Cấp Cục
-      isValidFormat = true;
-    } else if (chiCucPattern.test(upper)) {
-      // Cấp Chi cục (tỉnh/thành)
-      isValidFormat = true;
-    } else if (doiPattern.test(upper)) {
-      // Cấp Đội
-      isValidFormat = true;
+
+    try {
+      // Call Supabase auth API: /auth/v1/token?grant_type=password
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password,
+      });
+
+      if (error) {
+        console.error('Login error:', error);
+        return { 
+          success: false, 
+          error: error.message || 'Tên đăng nhập hoặc mật khẩu không đúng' 
+        };
+      }
+
+      if (!data.user || !data.session) {
+        return { success: false, error: 'Đăng nhập thất bại' };
+      }
+
+      // Login successful - get user info
+      const supabaseUser = data.user;
+      
+      // Try to parse username from email or use email as username
+      // You may want to fetch full user info from your users table using supabaseUser.id
+      const username = email.trim();
+      
+      // Parse username to get basic info (if username follows the format)
+      // Otherwise, use email as username
+      const parsedInfo = parseUsername(username);
+      const roleInfo = getUserRoleInfo(username);
+      
+      // Extract full name from email or use email prefix
+      const namePart = username.split('@')[0] || username.split('_').pop() || 'User';
+      const fullName = namePart.charAt(0).toUpperCase() + namePart.slice(1).toLowerCase();
+      
+      // Check if user has multiple units (this should come from database)
+      const hasMultipleUnits = false; // For now, single unit
+      
+      const userInfo: UserInfo = {
+        username,
+        fullName: supabaseUser.user_metadata?.full_name || fullName,
+        ...parsedInfo,
+        ...roleInfo,
+      } as UserInfo;
+      
+      if (hasMultipleUnits) {
+        // Store partial user info and require unit selection
+        localStorage.setItem('mappa-user-pending', JSON.stringify(userInfo));
+        return { success: true, requiresUnitSelection: true };
+      }
+      
+      // Store user info in localStorage for backward compatibility
+      localStorage.setItem('mappa-user', JSON.stringify(userInfo));
+      
+      // Supabase handles session automatically, but we can store expiry for reference
+      if (data.session.expires_at) {
+        const sessionExpiry = data.session.expires_at * 1000; // Convert to milliseconds
+        localStorage.setItem('mappa-session-expiry', sessionExpiry.toString());
+      }
+      
+      setUser(userInfo);
+      setIsAuthenticated(true);
+      
+      return { success: true, requiresUnitSelection: false };
+    } catch (err) {
+      console.error('Login exception:', err);
+      return { 
+        success: false, 
+        error: err instanceof Error ? err.message : 'Có lỗi xảy ra. Vui lòng thử lại sau.' 
+      };
     }
-    
-    // Nếu SAI FORMAT → trả về lỗi
-    if (!isValidFormat) {
-      return { success: false };
-    }
-    
-    // Parse username to get basic info
-    const parsedInfo = parseUsername(username);
-    const roleInfo = getUserRoleInfo(username);
-    
-    // Mock: Extract full name from username (after underscore)
-    const namePart = username.split('_').pop() || 'User';
-    const fullName = namePart.charAt(0).toUpperCase() + namePart.slice(1).toLowerCase();
-    
-    // Check if user has multiple units (mock logic)
-    // In real app, this would come from backend
-    const hasMultipleUnits = false; // For now, single unit
-    
-    const userInfo: UserInfo = {
-      username,
-      fullName,
-      ...parsedInfo,
-      ...roleInfo,
-    } as UserInfo;
-    
-    if (hasMultipleUnits) {
-      // Store partial user info and require unit selection
-      localStorage.setItem('mappa-user-pending', JSON.stringify(userInfo));
-      return { success: true, requiresUnitSelection: true };
-    }
-    
-    // Set session (8 hours)
-    const sessionExpiry = Date.now() + (8 * 60 * 60 * 1000);
-    localStorage.setItem('mappa-user', JSON.stringify(userInfo));
-    localStorage.setItem('mappa-session-expiry', sessionExpiry.toString());
-    
-    setUser(userInfo);
-    setIsAuthenticated(true);
-    
-    return { success: true, requiresUnitSelection: false };
   };
 
   const selectUnit = (unitCode: string) => {
@@ -257,23 +317,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsAuthenticated(true);
   };
 
-  const logout = () => {
-    localStorage.removeItem('mappa-user');
-    localStorage.removeItem('mappa-session-expiry');
-    localStorage.removeItem('mappa-user-pending');
-    setUser(null);
-    setIsAuthenticated(false);
+  const logout = async () => {
+    try {
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Clear local storage
+      localStorage.removeItem('mappa-user');
+      localStorage.removeItem('mappa-session-expiry');
+      localStorage.removeItem('mappa-user-pending');
+      setUser(null);
+      setIsAuthenticated(false);
+    }
   };
 
   const checkSession = (): boolean => {
-    const sessionExpiry = localStorage.getItem('mappa-session-expiry');
-    if (!sessionExpiry) return false;
-    
-    const expiryTime = parseInt(sessionExpiry);
-    if (Date.now() >= expiryTime) {
-      logout();
+    // Check Supabase session synchronously
+    // Note: This is a synchronous check, for async check use getSession()
+    // Supabase automatically refreshes tokens, so we just check if user is authenticated
+    if (!isAuthenticated) {
       return false;
     }
+
+    // Additional check: verify Supabase session is still valid
+    // This is done asynchronously in the auth state change listener
+    // For synchronous check, we rely on isAuthenticated state
     
     return true;
   };

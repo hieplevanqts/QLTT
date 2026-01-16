@@ -49,7 +49,7 @@ export const UniversalModal: React.FC<UniversalModalProps> = ({
   const [permissions, setPermissions] = useState<ModulePermission[]>([
     { module: 'Tổng quan', permissions: { view: false, create: false, edit: false, delete: false } },
     { module: 'Bản đồ', permissions: { view: false, create: false, edit: false, delete: false } },
-    { module: 'Cơ sở & Địa bàn', permissions: { view: false, create: false, edit: false, delete: false } },
+    { module: 'Cơ sở quản lý', permissions: { view: false, create: false, edit: false, delete: false } },
     { module: 'Nhiệm vụ', permissions: { view: false, create: false, edit: false, delete: false } },
     { module: 'Kiểm tra', permissions: { view: false, create: false, edit: false, delete: false } },
     { module: 'Báo cáo', permissions: { view: false, create: false, edit: false, delete: false } },
@@ -153,7 +153,7 @@ export const UniversalModal: React.FC<UniversalModalProps> = ({
         setPermissions([
           { module: 'Tổng quan', permissions: { view: false, create: false, edit: false, delete: false } },
           { module: 'Bản đồ', permissions: { view: false, create: false, edit: false, delete: false } },
-          { module: 'Cơ sở & Địa bàn', permissions: { view: false, create: false, edit: false, delete: false } },
+          { module: 'Cơ sở quản lý', permissions: { view: false, create: false, edit: false, delete: false } },
           { module: 'Nhiệm vụ', permissions: { view: false, create: false, edit: false, delete: false } },
           { module: 'Kiểm tra', permissions: { view: false, create: false, edit: false, delete: false } },
           { module: 'Báo cáo', permissions: { view: false, create: false, edit: false, delete: false } },

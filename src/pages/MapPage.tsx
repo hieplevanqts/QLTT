@@ -1047,11 +1047,11 @@ export default function MapPage() {
                 }}
               >
                 <option value="mappoint">📍 MapPoint</option>
-                <option value="merchant">🏪 Merchant</option>
+                {/* <option value="merchant">🏪 Merchant</option> */}
                 <option value="officers">👮 Cán bộ quản lý</option>
               </select>
             </div>
-            <Button variant="outline" onClick={handleResetAllFilters}>🔄 Reset</Button>
+            <Button variant="outline" onClick={handleResetAllFilters}>🔄 Tải Lại</Button>
             <Button onClick={() => setIsUploadModalOpen(true)}>Thêm điểm</Button>
           </div>
         }

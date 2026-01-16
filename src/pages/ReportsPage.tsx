@@ -19,8 +19,8 @@ export default function ReportsPage() {
   return (
     <div className="flex flex-col">
       <PageHeader
-        breadcrumbs={[{ label: 'Trang chủ', href: '/' }, { label: 'Báo cáo & KPI' }]}
-        title="Báo cáo & KPI"
+        breadcrumbs={[{ label: 'Trang chủ', href: '/' }, { label: 'Báo cáo, thống kê' }]}
+        title="Báo cáo, thống kê"
         actions={
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm">
@@ -114,7 +114,7 @@ export default function ReportsPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-20">
             <BarChart3 className="h-20 w-20 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Báo cáo & KPI</h3>
+            <h3 className="text-xl font-semibold mb-2">Báo cáo, thống kê</h3>
             <p className="text-muted-foreground text-center max-w-md">
               Tạo và quản lý các báo cáo thống kê, theo dõi KPI hiệu suất công tác quản lý thị trường.
             </p>
