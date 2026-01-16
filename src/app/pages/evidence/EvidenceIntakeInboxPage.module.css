@@ -163,6 +163,8 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .table tbody tr {
@@ -182,6 +184,9 @@
   padding: 16px;
   color: var(--text-primary);
   vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .invalidRow {

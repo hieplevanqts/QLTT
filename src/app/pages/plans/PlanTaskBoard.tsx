@@ -149,7 +149,7 @@ function TaskColumn({ column, tasks, onTaskClick, onDropTask }: TaskColumnProps)
   );
 }
 
-export function KeHoachTacNghiepTaskBoard() {
+export function PlanTaskBoard() {
   const navigate = useNavigate();
   const { planId } = useParams<{ planId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();

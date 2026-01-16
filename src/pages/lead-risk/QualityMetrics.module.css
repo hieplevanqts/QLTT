@@ -213,6 +213,7 @@
 .table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .table thead {
@@ -225,12 +226,18 @@
   text-align: left;
   color: var(--muted-foreground);
   font-weight: var(--font-weight-semibold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .table td {
   padding: var(--spacing-4);
   border-bottom: 1px solid var(--border);
   color: var(--foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .table tbody tr:last-child td {

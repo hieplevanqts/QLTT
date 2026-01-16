@@ -282,7 +282,7 @@ export function PlanDetail() {
 
               <div className={`${styles.infoField} ${styles.infoFieldFull}`}>
                 <div className={styles.infoLabel}>Mục tiêu</div>
-                <div className={styles.infoValue}>{plan.objective}</div>
+                <div className={styles.infoValue}>{plan.objectives}</div>
               </div>
 
               <div className={`${styles.infoField} ${styles.infoFieldFull}`}>

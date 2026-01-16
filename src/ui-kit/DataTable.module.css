@@ -11,3 +11,43 @@
   table-layout: fixed;
   width: 100%;
 }
+
+/* Truncate text with ellipsis */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* Ensure table cells don't overflow */
+.tableWrapper th,
+.tableWrapper td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-wrap: break-word;
+}
+
+/* Allow wrapping for specific cells if needed */
+.tableWrapper th.allow-wrap,
+.tableWrapper td.allow-wrap {
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Sticky columns */
+.stickyLeft {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background: var(--card);
+}
+
+.stickyRight {
+  position: sticky;
+  right: 0;
+  z-index: 10;
+  background: var(--card);
+}

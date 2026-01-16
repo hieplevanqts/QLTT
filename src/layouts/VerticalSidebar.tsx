@@ -15,6 +15,9 @@ import {
   ChevronLeft,
   ChevronRight,
   PanelTopClose,
+  ListChecks,
+  ClipboardCheck,
+  KanbanSquare,
 } from 'lucide-react';
 import { Button } from '../app/components/ui/button';
 import {
@@ -46,7 +49,7 @@ const mappaModules = [
       { path: '/lead-risk/sla-dashboard', label: 'Giám sát SLA' },
     ],
   },
-  { path: '/plans', label: 'Kế hoạch tác nghiệp', icon: ClipboardList },
+  { path: '/plans', label: 'Kế hoạch tác nghiệp', icon: ClipboardList, hasSubmenu: true },
   { path: '/tasks', label: 'Nhiệm vụ hiện trường', icon: MapPin },
   { path: '/evidence', label: 'Kho chứng cứ', icon: FileBox },
   { path: '/reports', label: 'Báo cáo & KPI', icon: BarChart3 },
@@ -65,6 +68,9 @@ export default function VerticalSidebar({
   const location = useLocation();
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
   const [submenuOpen, setSubmenuOpen] = useState<string | null>(null);
+  const [plansSubmenuOpen, setPlansSubmenuOpen] = useState(
+    location.pathname.startsWith('/plans') || location.pathname.startsWith('/inspections')
+  );
   const { setLayoutMode } = useLayout();
 
   // Mock permissions - In real app, this would come from user context/auth
@@ -103,7 +109,7 @@ export default function VerticalSidebar({
         <DropdownMenu open={quickActionsOpen} onOpenChange={setQuickActionsOpen}>
           <DropdownMenuTrigger asChild>
             <Button
-              className={cn('w-full gap-2', collapsed ? 'px-0' : '')}
+              className={cn('w-full gap-2 cursor-pointer', collapsed ? 'px-0' : '')}
               size={collapsed ? 'icon' : 'sm'}
             >
               <Plus className="h-4 w-4" />
@@ -150,7 +156,7 @@ export default function VerticalSidebar({
             
             {userPermissions.canCreateInspectionPlan && (
               <DropdownMenuItem asChild>
-                <a href="/plans/create" style={{ cursor: 'pointer' }}>
+                <a href="/plans/create-new" style={{ cursor: 'pointer' }}>
                   Tạo kế hoạch kiểm tra
                 </a>
               </DropdownMenuItem>
@@ -179,11 +185,144 @@ export default function VerticalSidebar({
       <nav className="flex-1 p-2 overflow-y-auto">
         {mappaModules.map((module) => {
           const Icon = module.icon;
-          const isModuleActive = (module as any).hasSubmenu 
-            ? location.pathname.startsWith('/lead-risk') || location.pathname === '/leads'
-            : location.pathname === module.path;
           
-          // If module has submenu
+          // Special logic for active state
+          let isActive = false;
+          
+          if (module.path === '/plans') {
+            // "Kế hoạch tác nghiệp" menu cha KHÔNG active khi ở submenu
+            isActive = false;
+          } else if (module.path === '/tasks') {
+            // "Phiên kiểm tra" KHÔNG active khi ở /plans/inspection-session
+            isActive = location.pathname === '/tasks' && location.pathname !== '/plans/inspection-session';
+          } else if ((module as any).hasSubmenu && (module as any).submenu) {
+            // Lead-risk submenu
+            isActive = location.pathname.startsWith('/lead-risk') || location.pathname === '/leads';
+          } else {
+            // Normal modules - active when path matches
+            isActive = location.pathname === module.path || location.pathname.startsWith(module.path + '/');
+          }
+          
+          // Special handling for "Kế hoạch tác nghiệp" with submenu
+          if (module.path === '/plans') {
+            // When collapsed, show as dropdown menu
+            if (collapsed) {
+              return (
+                <DropdownMenu key={module.path}>
+                  <DropdownMenuTrigger asChild>
+                    <div
+                      className={cn(
+                        'flex items-center justify-center px-3 py-2.5 rounded-lg transition-colors mb-1 cursor-pointer',
+                        isActive
+                          ? 'text-primary bg-primary/10 font-medium'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                      )}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <Icon className="h-5 w-5 shrink-0" />
+                    </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="right" align="start" className="w-64">
+                    <DropdownMenuItem asChild>
+                      <Link to="/plans/list" className="flex items-center gap-3 cursor-pointer">
+                        <ListChecks className="h-4 w-4" />
+                        <div className="font-medium">Danh sách kế hoạch</div>
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link to="/plans/inspection-rounds" className="flex items-center gap-3 cursor-pointer">
+                        <ClipboardCheck className="h-4 w-4" />
+                        <div className="font-medium">Đợt kiểm tra</div>
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link to="/plans/inspection-session" className="flex items-center gap-3 cursor-pointer">
+                        <KanbanSquare className="h-4 w-4" />
+                        <div className="font-medium">Phiên làm việc</div>
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            }
+            
+            // When expanded, show collapsible submenu
+            return (
+              <div key={module.path} className="mb-1">
+                {/* Parent menu item */}
+                <div
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors cursor-pointer',
+                    isActive
+                      ? 'text-primary bg-primary/10 font-medium'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                  )}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => setPlansSubmenuOpen(!plansSubmenuOpen)}
+                >
+                  <Icon className="h-5 w-5 shrink-0" />
+                  <span className="text-sm flex-1">{module.label}</span>
+                  <ChevronDown
+                    className={cn(
+                      'h-4 w-4 transition-transform',
+                      plansSubmenuOpen ? 'rotate-180' : ''
+                    )}
+                  />
+                </div>
+                
+                {/* Submenu items */}
+                {plansSubmenuOpen && (
+                  <div className="ml-4 mt-1 space-y-1">
+                    <Link to="/plans/list">
+                      <div
+                        className={cn(
+                          'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
+                          location.pathname === '/plans/list' || location.pathname.startsWith('/plans/KH-') || location.pathname.startsWith('/plans/create-new')
+                            ? 'text-primary bg-primary/5 font-medium'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                        )}
+                      >
+                        <ListChecks className="h-4 w-4 shrink-0" />
+                        <span>Danh sách kế hoạch</span>
+                      </div>
+                    </Link>
+                    
+                    <Link to="/plans/inspection-rounds">
+                      <div
+                        className={cn(
+                          'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
+                          location.pathname === '/plans/inspection-rounds' || location.pathname.startsWith('/plans/inspection-rounds/')
+                            ? 'text-primary bg-primary/5 font-medium'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                        )}
+                      >
+                        <ClipboardCheck className="h-4 w-4 shrink-0" />
+                        <span>Đợt kiểm tra</span>
+                      </div>
+                    </Link>
+                    
+                    <Link to="/plans/inspection-session">
+                      <div
+                        className={cn(
+                          'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
+                          location.pathname === '/plans/inspection-session'
+                            ? 'text-primary bg-primary/5 font-medium'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                        )}
+                      >
+                        <KanbanSquare className="h-4 w-4 shrink-0" />
+                        <span>Phiên làm việc</span>
+                      </div>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            );
+          }
+          
+          // If module has submenu (for lead-risk)
           if ((module as any).hasSubmenu && (module as any).submenu) {
             const isOpen = submenuOpen === module.path;
             
@@ -195,7 +334,7 @@ export default function VerticalSidebar({
                     <div
                       className={cn(
                         'flex items-center justify-center p-3 rounded-lg transition-colors mb-1 cursor-pointer',
-                        isModuleActive
+                        isActive
                           ? 'text-primary bg-primary/10'
                           : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                       )}
@@ -232,7 +371,7 @@ export default function VerticalSidebar({
                   onClick={() => setSubmenuOpen(isOpen ? null : module.path)}
                   className={cn(
                     'flex items-center justify-between w-full px-3 py-2.5 rounded-lg transition-colors mb-1',
-                    isModuleActive
+                    isActive
                       ? 'text-primary bg-primary/10 font-medium'
                       : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                   )}
@@ -277,7 +416,7 @@ export default function VerticalSidebar({
               <div
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors mb-1',
-                  isModuleActive
+                  isActive
                     ? 'text-primary bg-primary/10 font-medium'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 )}
@@ -297,7 +436,7 @@ export default function VerticalSidebar({
             <Button
               variant="outline"
               size="icon"
-              className="flex-1"
+              className="flex-1 cursor-pointer"
               title="Menu dọc (đang chọn)"
             >
               <PanelTopClose className="h-4 w-4 rotate-90" />
@@ -305,7 +444,7 @@ export default function VerticalSidebar({
             <Button
               variant="ghost"
               size="icon"
-              className="flex-1"
+              className="flex-1 cursor-pointer"
               onClick={() => setLayoutMode('horizontal')}
               title="Chuyển sang menu ngang"
             >
@@ -317,7 +456,7 @@ export default function VerticalSidebar({
           <Button
             variant="outline"
             size="icon"
-            className="w-full"
+            className="w-full cursor-pointer"
             onClick={() => setLayoutMode('horizontal')}
             title="Chuyển sang menu ngang"
           >

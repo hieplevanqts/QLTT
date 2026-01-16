@@ -829,6 +829,7 @@
   width: 100%;
   border-collapse: collapse;
   font-family: 'Inter', sans-serif;
+  table-layout: fixed;
 }
 
 .tableHeader {
@@ -843,6 +844,8 @@
   font-weight: var(--font-weight-semibold);
   color: var(--foreground);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tableBody {
@@ -868,6 +871,9 @@
   font-size: var(--text-sm);
   color: var(--foreground);
   vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .emptyCell {

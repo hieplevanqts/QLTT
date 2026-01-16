@@ -14,3 +14,32 @@
     transform: rotate(360deg);
   }
 }
+
+/* Global Table Styles - Ensure text overflow with ellipsis */
+/* Apply table-layout: fixed to all tables for consistent column widths */
+table {
+  table-layout: fixed;
+}
+
+/* Default: Ensure table headers have text overflow handling */
+th {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Default: Ensure table cells have text overflow handling */
+td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Allow wrapping for specific cells if needed */
+th.allow-wrap,
+td.allow-wrap {
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  text-overflow: clip;
+}

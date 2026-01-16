@@ -73,7 +73,7 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
         <Button
           variant="ghost"
           size="icon"
-          className="md:hidden"
+          className="md:hidden cursor-pointer"
           onClick={onMobileMenuToggle}
         >
           <Menu className="h-5 w-5" />
@@ -83,7 +83,7 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
         {layoutMode === 'horizontal' && (
           <button
             onClick={handleLogoClick}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity flex-shrink-0"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity flex-shrink-0 cursor-pointer"
             title="Về trang Tổng quan"
           >
             <img src={mappaLogo} alt="Mappa Logo" className="w-10 h-10 object-contain flex-shrink-0" />

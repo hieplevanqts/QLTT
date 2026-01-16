@@ -363,6 +363,7 @@
 .table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .table thead {
@@ -378,6 +379,9 @@
   color: var(--muted-foreground);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .table tbody tr {
@@ -398,6 +402,9 @@
   padding: var(--spacing-3);
   font-size: var(--text-sm);
   color: var(--foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .checkboxColumn {

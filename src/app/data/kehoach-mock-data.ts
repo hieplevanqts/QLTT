@@ -26,6 +26,15 @@ export interface Plan {
   createdBy: string;
   createdAt: string;
   hasAuthorization?: boolean; // Có sử dụng ủy quyền?
+  // M03 - Quyết định giao quyền từ INS
+  insDecisionM03?: {
+    id: string;
+    code: string;
+    title: string;
+    issueDate: string;
+    signer: string;
+  };
+  requirements?: string[]; // Yêu cầu thực hiện
   stats: {
     totalTargets: number;
     totalTasks: number;

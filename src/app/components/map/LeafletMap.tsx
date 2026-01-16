@@ -186,9 +186,11 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
     const iconSize = getIconSize(currentZoom);
 
     // Remove old markers
+    console.log('🗑️  [UPDATE] Removing', markersRef.current.length, 'old markers');
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
     selectedMarkerRef.current = null;
+    console.log('✅ [UPDATE] Old markers removed');
 
     // 🔥 NEW: If showWardBoundaries is true, render ward boundaries instead of markers
     if (showWardBoundaries) {
@@ -256,6 +258,7 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
     }
 
     // Add new markers
+    let markersAdded = 0;
     filteredRestaurants.forEach((restaurant, index) => {
       // Skip invalid coordinates
       if (restaurant.lat === 0 || restaurant.lng === 0 || isNaN(restaurant.lat) || isNaN(restaurant.lng)) {
@@ -544,7 +547,12 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       if (selectedRestaurant && restaurant.id === selectedRestaurant.id) {
         selectedMarkerRef.current = marker;
       }
+      
+      markersAdded++;
     });
+    
+    console.log('✅ [UPDATE] Successfully added', markersAdded, 'markers to map');
+    console.log('📊 [UPDATE] Total markers in markersRef:', markersRef.current.length);
   }, [filteredRestaurants, selectedRestaurant, onPointClick, showWardBoundaries]);
 
   // 🔥 Store updateMarkers in ref for map init to use
@@ -696,12 +704,19 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       // Listen to zoom events to rescale markers
       map.on('zoomend', () => {
         const newZoom = map.getZoom();
+        console.log('🔍 [ZOOM] zoomend event - newZoom:', newZoom, 'currentZoom:', currentZoomRef.current);
         if (newZoom !== currentZoomRef.current) {
           currentZoomRef.current = newZoom;
+          console.log('🔄 [ZOOM] Zoom level changed, updating markers...');
           // 🔥 Use ref to avoid dependency issues
           if (updateMarkersRef.current) {
+            console.log('✅ [ZOOM] Calling updateMarkersRef.current()');
             updateMarkersRef.current();
+          } else {
+            console.warn('⚠️ [ZOOM] updateMarkersRef.current is null!');
           }
+        } else {
+          console.log('⏸️  [ZOOM] Zoom level unchanged, skipping marker update');
         }
       });
       

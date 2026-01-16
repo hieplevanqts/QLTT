@@ -546,6 +546,9 @@
   color: var(--muted-foreground);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .table tbody tr {
@@ -578,6 +581,9 @@
   font-size: var(--text-sm);
   color: var(--foreground);
   box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Selected Row - First TD needs padding compensation */

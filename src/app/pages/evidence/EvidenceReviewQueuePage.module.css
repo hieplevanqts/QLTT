@@ -255,6 +255,7 @@
   width: 100%;
   border-collapse: collapse;
   font-family: 'Inter', sans-serif;
+  table-layout: fixed;
 }
 
 /* Table Header */
@@ -270,6 +271,8 @@
   text-align: left;
   border-bottom: 2px solid var(--border);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .thAction {
@@ -336,6 +339,9 @@
   vertical-align: middle;
   font-size: var(--text-sm);
   color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tdAction {

@@ -50,6 +50,7 @@
   width: 100%;
   border-collapse: collapse;
   font-family: 'Inter', sans-serif;
+  table-layout: fixed;
 }
 
 /* ===== TABLE HEADER ===== */
@@ -71,6 +72,8 @@
   letter-spacing: 0.5px;
   white-space: nowrap;
   font-family: 'Inter', sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .thAction {
@@ -110,6 +113,9 @@
   color: var(--text-primary);
   vertical-align: top;
   font-family: 'Inter', sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tdAction {

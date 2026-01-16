@@ -741,6 +741,10 @@ export default function MapPage() {
     const enabledBusinessTypes = Object.keys(businessTypeFilters).filter(key => businessTypeFilters[key] === true);
     const totalBusinessTypes = Object.keys(businessTypeFilters).length;
     console.log(`🐛 Enabled business types: ${enabledBusinessTypes.length} / ${totalBusinessTypes}`);
+    console.log(`🐛 businessTypeFilters object:`, businessTypeFilters);
+    if (totalBusinessTypes === 0) {
+      console.warn('⚠️ businessTypeFilters is empty! Categories may not have loaded yet.');
+    }
     
     const filtered = dataSource.filter((restaurant) => {
       // 🔥 Filter by status (category field)
@@ -759,10 +763,20 @@ export default function MapPage() {
       
       // Get enabled business type filter IDs
       const enabledFilterIds = Object.keys(businessTypeFilters).filter(id => businessTypeFilters[id] === true);
+      const totalFilterIds = Object.keys(businessTypeFilters).length;
       
-      // 🔥 FIX: If no business types are enabled, hide all restaurants (not show all)
-      if (enabledFilterIds.length === 0) {
-        return false;  // ← CHANGED: Hide all when no business types selected
+      // 🔥 FIX: Only hide all if user has explicitly disabled all business types
+      // If categories haven't loaded yet (totalFilterIds === 0), show all
+      // If some are enabled, filter normally
+      // If all are disabled (enabledFilterIds === 0 && totalFilterIds > 0), hide all
+      if (totalFilterIds > 0 && enabledFilterIds.length === 0) {
+        console.log('⚠️ All business types disabled by user, hiding all restaurants');
+        return false;  // Hide all when user explicitly disabled all business types
+      }
+      
+      // If no filters are set yet (initial state), show all
+      if (totalFilterIds === 0) {
+        return true; // Show all when filters haven't been initialized
       }
       
       // 🔥 NEW: Check if categoryId is a mock ID (not a UUID)
@@ -812,10 +826,22 @@ export default function MapPage() {
     console.log('🔍 MapPage: Applying location/search filters...');
     console.log('📊 filteredByFilters.length:', filteredByFilters.length);
     console.log('🔎 searchQuery:', searchQuery);
+    console.log('📍 Location filters:', { selectedProvince, selectedDistrict, selectedWard });
     
     if (!filteredByFilters || filteredByFilters.length === 0) {
       console.log('⚠️ No restaurants to filter!');
       return [];
+    }
+    
+    // 🐛 DEBUG: Log sample restaurant location data
+    if (filteredByFilters.length > 0) {
+      const sample = filteredByFilters[0];
+      console.log('📍 Sample restaurant location data:', {
+        province: sample.province,
+        district: sample.district,
+        ward: sample.ward,
+        name: sample.name
+      });
     }
     
     // 🐛 DEBUG: Log all restaurant names to check data
@@ -824,22 +850,48 @@ export default function MapPage() {
       console.log('🐛 Searching for:', searchQuery);
     }
     
-    return filteredByFilters.filter((restaurant) => {
-      // Filter by province
-      if (selectedProvince && restaurant.province !== selectedProvince) {
-        return false;
-      }
+    let filteredByLocation = filteredByFilters;
+    let locationFilterCount = 0;
+    
+    // Filter by location
+    if (selectedProvince || selectedDistrict || selectedWard) {
+      filteredByLocation = filteredByFilters.filter((restaurant) => {
+        // Filter by province
+        if (selectedProvince && restaurant.province !== selectedProvince) {
+          locationFilterCount++;
+          return false;
+        }
+        
+        // Filter by district
+        if (selectedDistrict && restaurant.district !== selectedDistrict) {
+          locationFilterCount++;
+          return false;
+        }
+        
+        // Filter by ward
+        if (selectedWard && restaurant.ward !== selectedWard) {
+          locationFilterCount++;
+          return false;
+        }
+        
+        return true;
+      });
       
-      // Filter by district
-      if (selectedDistrict && restaurant.district !== selectedDistrict) {
-        return false;
+      console.log(`📍 Location filter: ${filteredByLocation.length} / ${filteredByFilters.length} restaurants passed`);
+      if (filteredByLocation.length === 0 && filteredByFilters.length > 0) {
+        console.warn('⚠️ Location filter removed ALL restaurants!');
+        console.warn('📍 Selected location:', { selectedProvince, selectedDistrict, selectedWard });
+        if (filteredByFilters.length > 0) {
+          const uniqueProvinces = [...new Set(filteredByFilters.map(r => r.province))];
+          const uniqueDistricts = [...new Set(filteredByFilters.map(r => r.district))];
+          const uniqueWards = [...new Set(filteredByFilters.map(r => r.ward))];
+          console.warn('📍 Available in data:', { uniqueProvinces, uniqueDistricts, uniqueWards });
+        }
       }
-      
-      // Filter by ward
-      if (selectedWard && restaurant.ward !== selectedWard) {
-        return false;
-      }
-      
+    }
+    
+    // Apply search filter
+    const finalFiltered = filteredByLocation.filter((restaurant) => {
       // Filter by search query (name or address or type)
       if (searchQuery.trim() === '') return true;
       
@@ -867,6 +919,10 @@ export default function MapPage() {
       
       return searchMatch;
     });
+    
+    console.log(`✅ Final filtered restaurants: ${finalFiltered.length} / ${filteredByFilters.length}`);
+    
+    return finalFiltered;
   }, [filteredByFilters, searchQuery, selectedProvince, selectedDistrict, selectedWard]);
   
   // 🔥 NEW: Log final search results
@@ -1321,7 +1377,8 @@ export default function MapPage() {
         selectedProvince={selectedProvince}
         selectedDistrict={selectedDistrict}
         selectedWard={selectedWard}
-        restaurants={restaurants}
+        restaurants={filteredRestaurants}  // 🔥 FIX: Pass filtered restaurants for map display
+        allRestaurants={allRestaurants}  // 🔥 NEW: Pass all restaurants for filter panel counts
         pointStatuses={pointStatuses}  // 🔥 PASS: Dynamic statuses to fullscreen modal
         categories={categories}  // 🔥 NEW: Pass categories for mapping ID to name
         onPointClick={(point) => {

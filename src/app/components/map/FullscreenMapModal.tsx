@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { X, SlidersHorizontal, BarChart3, MapPin } from 'lucide-react';
 import styles from './FullscreenMapModal.module.css';
 import LeafletMap from './LeafletMap';
@@ -26,7 +26,8 @@ interface FullscreenMapModalProps {
   selectedProvince?: string;
   selectedDistrict?: string;
   selectedWard?: string;
-  restaurants: Restaurant[];
+  restaurants: Restaurant[];  // 🔥 PRE-FILTERED restaurants for map display
+  allRestaurants?: Restaurant[];  // 🔥 NEW: All restaurants (unfiltered) for filter panel counts
   pointStatuses: PointStatus[];  // 🔥 ADD: Dynamic statuses
   categories: Category[];  // 🔥 NEW: Categories for mapping ID to name
   onPointClick?: (point: Restaurant) => void;
@@ -48,7 +49,8 @@ export function FullscreenMapModal({
   selectedProvince,
   selectedDistrict,
   selectedWard,
-  restaurants,
+  restaurants,  // 🔥 PRE-FILTERED restaurants for map display
+  allRestaurants,  // 🔥 NEW: All restaurants (unfiltered) for filter panel counts
   pointStatuses,  // 🔥 RECEIVE: Dynamic statuses
   categories,  // 🔥 NEW: Categories for mapping ID to name
   onPointClick,
@@ -68,57 +70,33 @@ export function FullscreenMapModal({
   const statsCardRef = useRef<HTMLDivElement>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
-  // Calculate filtered count
-  const filteredCount = restaurants.filter(r => {
-    // Apply category filters
-    if (!filters[r.category]) return false;
-    
-    // Apply business type filters - check if any business type is selected
-    const hasBusinessTypeFilter = Object.values(businessTypeFilters).some(v => v);
-    if (hasBusinessTypeFilter && !businessTypeFilters[r.businessType]) {
-      return false;
-    }
-    
-    // Apply search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      return (
-        r.name.toLowerCase().includes(query) ||
-        r.address.toLowerCase().includes(query) ||
-        r.businessType.toLowerCase().includes(query)
-      );
-    }
-    return true;
-  }).length;
+  // 🔥 FIX: restaurants prop is now PRE-FILTERED from MapPage
+  // MapPage handles ALL filtering (status, business type, location, search)
+  // FullscreenMapModal just receives the filtered data and displays it
+  console.log('🔍 FullscreenMapModal: Received', restaurants?.length || 0, 'pre-filtered restaurants from MapPage');
+  console.log('🔍 FullscreenMapModal: Filters:', filters);
+  console.log('🔍 FullscreenMapModal: BusinessTypeFilters:', businessTypeFilters);
+  console.log('🔍 FullscreenMapModal: Location:', { selectedProvince, selectedDistrict, selectedWard });
+  
+  // Calculate filtered count (for display only - restaurants are already filtered)
+  const filteredCount = restaurants.length;
 
-  // Get filtered restaurants for location stats
-  const filteredRestaurants = restaurants.filter(r => {
-    // Apply category filters
-    if (!filters[r.category]) return false;
+  // 🔥 FIX: restaurants are already filtered by MapPage, no need to filter again
+  // Just use restaurants directly for both map and stats
+  const filteredRestaurants = useMemo(() => {
+    console.log('🔍 FullscreenMapModal: Using pre-filtered restaurants for stats');
+    console.log('📍 Location filters:', { selectedProvince, selectedDistrict, selectedWard });
     
-    // Apply business type filters
-    const hasBusinessTypeFilter = Object.values(businessTypeFilters).some(v => v);
-    if (hasBusinessTypeFilter && !businessTypeFilters[r.businessType]) {
-      return false;
+    if (!restaurants || restaurants.length === 0) {
+      console.warn('⚠️ FullscreenMapModal: No restaurants received from MapPage');
+      return [];
     }
     
-    // Apply location filters - default to Hà Nội if no province selected
-    const activeProvince = selectedProvince || 'Hà Nội';
-    if (activeProvince && r.province !== activeProvince) return false;
-    if (selectedDistrict && r.district !== selectedDistrict) return false;
-    if (selectedWard && r.ward !== selectedWard) return false;
-    
-    // Apply search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      return (
-        r.name.toLowerCase().includes(query) ||
-        r.address.toLowerCase().includes(query) ||
-        r.businessType.toLowerCase().includes(query)
-      );
-    }
-    return true;
-  });
+    // 🔥 REMOVED: All filtering logic - restaurants are already filtered by MapPage
+    // Just return what we received
+    console.log(`✅ FullscreenMapModal: Using ${restaurants.length} pre-filtered restaurants`);
+    return restaurants;
+  }, [restaurants]);
 
   // Handle ESC key
   useEffect(() => {
@@ -282,7 +260,7 @@ export function FullscreenMapModal({
             selectedProvince={selectedProvince}
             selectedDistrict={selectedDistrict}
             selectedWard={selectedWard}
-            restaurants={restaurants}
+            restaurants={filteredRestaurants}  // 🔥 FIX: Pass filtered restaurants to LeafletMap
             onPointClick={onPointClick}
           />
 
@@ -291,7 +269,7 @@ export function FullscreenMapModal({
             isOpen={isFilterPanelOpen}
             filters={filters}
             businessTypeFilters={businessTypeFilters}
-            restaurants={restaurants}
+            restaurants={allRestaurants || restaurants}  // 🔥 Use allRestaurants for filter panel (needs all data for counts)
             pointStatuses={pointStatuses}  // 🔥 PASS: Dynamic statuses
             categories={categories}  // 🔥 NEW: Categories for mapping ID to name
             selectedProvince={selectedProvince}

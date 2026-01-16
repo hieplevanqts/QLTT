@@ -49,6 +49,7 @@
   width: 100%;
   border-collapse: collapse;
   font-size: var(--text-sm);
+  table-layout: fixed;
 }
 
 /* ===== TABLE HEADER (Sticky) ===== */
@@ -68,6 +69,8 @@
   font-size: var(--text-sm);
   white-space: nowrap;
   border-bottom: 2px solid var(--border);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .th:first-child {
@@ -96,6 +99,9 @@
   padding: var(--spacing-4) var(--spacing-4); /* 16px vertical, 16px horizontal */
   vertical-align: top;
   color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .td:first-child {

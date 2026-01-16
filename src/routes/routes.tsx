@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate, createHashRouter } from 'react-router-dom';
 import RootLayout from '../layouts/RootLayout';
 import MainLayout from '../layouts/MainLayout';
 import OverviewPage from '../pages/OverviewPage';
@@ -22,6 +22,16 @@ import UserList from '../pages/system/UserList';
 import RoleList from '../pages/system/RoleList';
 import SystemSettings from '../pages/system/SystemSettings';
 import Error404 from '../pages/system/Error404';
+// Plans module - moved to /src/app/pages/plans/
+import { PlansList } from '../app/pages/plans/PlansList';
+import { PlanCreate } from '../app/pages/plans/PlanCreate';
+import { PlanDetail } from '../app/pages/plans/PlanDetail';
+import { PlanTaskBoard } from '../app/pages/plans/PlanTaskBoard';
+import { InspectionRoundsList } from '../app/pages/inspections/InspectionRoundsList';
+import InspectionRoundDetail from '../app/pages/inspections/InspectionRoundDetail';
+import InspectionRoundCreate from '../app/pages/inspections/InspectionRoundCreate';
+import { InspectionTasksList } from '../app/pages/tasks/InspectionTasksList';
+import { TaskBoard } from '../app/pages/tasks/TaskBoard';
 
 // Lead & Risk pages
 import LeadInbox from '../pages/lead-risk/LeadInbox';
@@ -59,7 +69,7 @@ function ProtectedLayout() {
   );
 }
 
-export const router = createBrowserRouter([
+export const router = createHashRouter([
   {
     element: <RootLayout />,
     children: [
@@ -104,11 +114,61 @@ export const router = createBrowserRouter([
           },
           {
             path: 'plans',
-            element: <PlansPage />,
+            element: <Navigate to="/plans/list" replace />,
+          },
+          // Kế hoạch tác nghiệp routes
+          {
+            path: 'plans/list',
+            element: <PlansList />,
+          },
+          {
+            path: 'plans/create-new',
+            element: <PlanCreate />,
+          },
+          {
+            path: 'plans/:planId',
+            element: <PlanDetail />,
+          },
+          {
+            path: 'plans/:planId/edit',
+            element: <PlanCreate />, // Reuse create component for edit
+          },
+          {
+            path: 'plans/:planId/inspection-session-board',
+            element: <PlanTaskBoard />,
+          },
+          {
+            path: 'plans/inspection-session',
+            element: <TaskBoard />,
+          },
+          {
+            path: 'plans/task-board',
+            element: <PlanTaskBoard />,
+          },
+          // Inspection rounds routes - now under /plans
+          {
+            path: 'plans/inspection-rounds',
+            element: <InspectionRoundsList />,
+          },
+          {
+            path: 'plans/inspection-rounds/create-new',
+            element: <InspectionRoundCreate />,
+          },
+          {
+            path: 'plans/inspection-rounds/:roundId',
+            element: <InspectionRoundDetail />,
+          },
+          {
+            path: 'plans/inspection-rounds/:roundId/tasks',
+            element: <InspectionTasksList />,
           },
           {
             path: 'tasks',
-            element: <TasksPage />,
+            element: <InspectionTasksList />,
+          },
+          {
+            path: 'tasks/board',
+            element: <TaskBoard />,
           },
           {
             path: 'evidence/*',

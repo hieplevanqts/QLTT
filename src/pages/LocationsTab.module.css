@@ -377,6 +377,7 @@
   border-collapse: collapse;
   font-size: var(--text-sm, 14px);
   font-family: var(--font-sans, 'Inter', sans-serif);
+  table-layout: fixed;
 }
 
 .table thead {
@@ -393,12 +394,17 @@
   color: var(--muted-foreground, #6b7280);
   border-bottom: 2px solid var(--border, #e5e7eb);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .table td {
   padding: var(--spacing-3, 12px);
   border-bottom: 1px solid var(--border, #e5e7eb);
   color: var(--foreground, #111827);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .table tbody tr:hover {

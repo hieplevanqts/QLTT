@@ -414,6 +414,7 @@
 .table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .table thead {
@@ -431,6 +432,8 @@
   letter-spacing: 0.05em;
   border-bottom: 2px solid var(--border);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .table tbody tr {
@@ -448,6 +451,9 @@
   font-weight: var(--font-weight-normal);
   color: var(--foreground);
   border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .code {
