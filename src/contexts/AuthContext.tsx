@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
@@ -146,6 +146,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const logoutInProgressRef = useRef(false);
+
+  // Auto-logout function (no confirmation)
+  const performAutoLogout = async () => {
+    // Prevent multiple logout calls
+    if (logoutInProgressRef.current) return;
+    logoutInProgressRef.current = true;
+
+    try {
+      console.log('🔄 Auto-logout: Token expired, logging out...');
+      
+      // Clear Supabase session
+      await supabase.auth.signOut();
+      
+      // Clear local storage
+      localStorage.removeItem('mappa-user');
+      localStorage.removeItem('mappa-session-expiry');
+      localStorage.removeItem('mappa-user-pending');
+      
+      // Update state
+      setUser(null);
+      setIsAuthenticated(false);
+      
+      // Redirect to login page
+      if (window.location.pathname !== '/auth/login') {
+        window.location.href = '/auth/login';
+      }
+    } catch (error) {
+      console.error('Error during auto-logout:', error);
+      // Even if there's an error, clear local state and redirect
+      localStorage.removeItem('mappa-user');
+      localStorage.removeItem('mappa-session-expiry');
+      localStorage.removeItem('mappa-user-pending');
+      setUser(null);
+      setIsAuthenticated(false);
+      if (window.location.pathname !== '/auth/login') {
+        window.location.href = '/auth/login';
+      }
+    } finally {
+      logoutInProgressRef.current = false;
+    }
+  };
 
   // Auto-restore session on mount using Supabase
   useEffect(() => {
@@ -156,11 +198,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (error) {
           console.error('Error restoring session:', error);
+          // If error getting session, user is not authenticated
+          await performAutoLogout();
           setIsLoading(false);
           return;
         }
 
         if (session && session.user) {
+          // Check if session is expired
+          if (session.expires_at) {
+            const expiresAt = session.expires_at * 1000; // Convert to milliseconds
+            const now = Date.now();
+            
+            if (now >= expiresAt) {
+              // Session expired, auto-logout
+              console.log('⚠️ Session expired, auto-logout...');
+              await performAutoLogout();
+              setIsLoading(false);
+              return;
+            }
+          }
+
           // Session exists and is valid
           // Get user info from Supabase user metadata or fetch from database
           const supabaseUser = session.user;
@@ -186,9 +244,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(userInfo);
             setIsAuthenticated(true);
           }
+        } else {
+          // No session, user is not authenticated
+          setUser(null);
+          setIsAuthenticated(false);
         }
       } catch (error) {
         console.error('Error in restoreSession:', error);
+        await performAutoLogout();
       } finally {
         setIsLoading(false);
       }
@@ -196,27 +259,91 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     restoreSession();
 
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        // User is signed in
-        const storedUser = localStorage.getItem('mappa-user');
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
-          setIsAuthenticated(true);
+    // Listen for auth state changes (including token expiry)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔐 Auth state changed:', event, session ? 'Session exists' : 'No session');
+      
+      if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
+        // User signed out or token refresh failed
+        console.log('🔄 Auth event: SIGNED_OUT or token refresh failed');
+        await performAutoLogout();
+        return;
+      }
+
+      if (event === 'SIGNED_IN' || (event === 'TOKEN_REFRESHED' && session)) {
+        // User signed in or token refreshed successfully
+        if (session && session.user) {
+          // Check if session is expired
+          if (session.expires_at) {
+            const expiresAt = session.expires_at * 1000;
+            const now = Date.now();
+            
+            if (now >= expiresAt) {
+              // Session expired even after refresh
+              console.log('⚠️ Session expired after refresh, auto-logout...');
+              await performAutoLogout();
+              return;
+            }
+          }
+
+          const storedUser = localStorage.getItem('mappa-user');
+          if (storedUser) {
+            setUser(JSON.parse(storedUser));
+            setIsAuthenticated(true);
+          } else {
+            // Create basic user info
+            const supabaseUser = session.user;
+            const userInfo: UserInfo = {
+              username: supabaseUser.email || '',
+              fullName: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User',
+              level: 'cuc',
+              role: 'thanhtra',
+              roleDisplay: 'Người dùng',
+              position: 'Người dùng',
+              department: 'Hệ thống',
+            };
+            setUser(userInfo);
+            setIsAuthenticated(true);
+          }
         }
-      } else {
-        // User is signed out
-        setUser(null);
-        setIsAuthenticated(false);
-        localStorage.removeItem('mappa-user');
-        localStorage.removeItem('mappa-session-expiry');
-        localStorage.removeItem('mappa-user-pending');
+      } else if (!session) {
+        // No session - user is signed out
+        console.log('🔄 No session, auto-logout...');
+        await performAutoLogout();
       }
     });
 
+    // Periodically check session expiry (every 30 seconds)
+    const expiryCheckInterval = setInterval(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          // No session, logout
+          await performAutoLogout();
+          return;
+        }
+
+        // Check if session is expired
+        if (session.expires_at) {
+          const expiresAt = session.expires_at * 1000;
+          const now = Date.now();
+          
+          if (now >= expiresAt) {
+            // Session expired
+            console.log('⚠️ Session expired (periodic check), auto-logout...');
+            await performAutoLogout();
+          }
+        }
+      } catch (error) {
+        console.error('Error checking session expiry:', error);
+        await performAutoLogout();
+      }
+    }, 30000); // Check every 30 seconds
+
     return () => {
       subscription.unsubscribe();
+      clearInterval(expiryCheckInterval);
     };
   }, []);
 

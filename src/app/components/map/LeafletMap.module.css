@@ -245,6 +245,24 @@
   border-top-color: var(--primary) !important;
 }
 
+/* Team Tooltip (Officers layer - team markers) */
+:global(.team-tooltip) {
+  background: white !important;
+  border: 2px solid #005cb6 !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--elevation-md), 0 4px 12px rgba(0, 92, 182, 0.3) !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 12px !important;
+  color: #333 !important;
+  padding: 0 !important;
+  opacity: 1 !important;
+  max-width: 320px !important;
+}
+
+:global(.team-tooltip::before) {
+  border-top-color: #005cb6 !important;
+}
+
 /* Fullscreen Button */
 .fullscreenButton {
   position: absolute;

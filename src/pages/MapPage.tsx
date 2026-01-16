@@ -7,6 +7,8 @@ import { PointDetailModal } from '../app/components/map/PointDetailModal';
 import { ReviewModal } from '../app/components/map/ReviewModal';
 import { FullscreenMapModal } from '../app/components/map/FullscreenMapModal';
 import { MapFilterPanel } from '../app/components/map/MapFilterPanel';
+import { OfficerFilterPanel } from '../app/components/map/OfficerFilterPanel';
+import { OfficerStatsOverlay } from '../app/components/map/OfficerStatsOverlay';
 import { LocationStatsCard } from '../app/components/map/LocationStatsCard';
 import { MapLegend } from '../app/components/map/MapLegend';
 import { OfficerInfoModal } from '../app/components/map/OfficerInfoModal';
@@ -20,7 +22,7 @@ import { fetchMapPoints } from '../utils/api/mapPointsApi';
 import { fetchPointStatuses, PointStatus, buildFilterObjectFromStatuses } from '../utils/api/pointStatusApi';
 import { fetchCategories, Category } from '../utils/api/categoriesApi';
 import { fetchMerchants } from '../utils/api/merchantsApi';
-import { officersData, Officer } from '../data/officerData';
+import { officersData, Officer, teamsData, departmentData } from '../data/officerTeamData';
 
 type CategoryFilter = {
   [key: string]: boolean;  // Dynamic keys from point_status table
@@ -85,11 +87,15 @@ export default function MapPage() {
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [isLegendVisible, setIsLegendVisible] = useState(true);
   const [isStatsCardVisible, setIsStatsCardVisible] = useState(true);
+  const [isOfficerStatsVisible, setIsOfficerStatsVisible] = useState(true); // 🔥 NEW: Officer stats overlay visibility
   
   // 🔥 NEW: Map layer toggles
   const [showMapPoints, setShowMapPoints] = useState(true);  // MapPoint layer
   const [showMerchants, setShowMerchants] = useState(false);  // Merchant layer
   const [showOfficers, setShowOfficers] = useState(false);  // Officers layer (Cán bộ quản lý)
+  
+  // 🔥 NEW: Selected team for officers layer filter
+  const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   
   // Refs for click outside logic
   const filterPanelRef = useRef<HTMLDivElement>(null);
@@ -532,16 +538,20 @@ export default function MapPage() {
   const handleWardClick = (wardName: string, district: string) => {
     console.log('👮 Ward clicked:', wardName, district);
     
-    // Find officer for this ward
-    const officer = officersData.find(o => o.ward === wardName && o.district === district);
+    // Find team that manages this ward
+    const team = teamsData.find(t => 
+      t.managedWards.some(w => w.name === wardName && w.district === district)
+    );
     
-    if (officer) {
-      console.log('✅ Found officer:', officer.fullName);
+    if (team) {
+      // Get team leader (first officer) or first officer
+      const officer = team.officers.find(o => o.isTeamLeader) || team.officers[0];
+      console.log('✅ Found team:', team.name, 'Officer:', officer.fullName);
       setSelectedOfficer(officer);
       setSelectedWardName(wardName);
       setIsOfficerModalOpen(true);
     } else {
-      console.warn('⚠️ No officer found for ward:', wardName, district);
+      console.warn('⚠️ No team found for ward:', wardName, district);
       // Show first officer as fallback
       if (officersData.length > 0) {
         setSelectedOfficer(officersData[0]);
@@ -1015,6 +1025,7 @@ export default function MapPage() {
                     setShowMapPoints(false);
                     setShowMerchants(false);
                     setShowOfficers(true);
+                    setSelectedTeamId(''); // Reset team selection when switching to officers layer
                   }
                 }}
                 style={{
@@ -1197,6 +1208,7 @@ export default function MapPage() {
               restaurants={filteredRestaurants}  // 🔥 CRITICAL: Pass filtered array, not restaurants
               showWardBoundaries={showOfficers}
               showMerchants={showMerchants}
+              selectedTeamId={selectedTeamId}  // 🔥 NEW: Pass selected team ID
               onPointClick={(point) => {
                 setDetailModalPoint(point);
                 setIsDetailModalOpen(true);
@@ -1204,6 +1216,15 @@ export default function MapPage() {
               onWardClick={handleWardClick}
               onFullscreenClick={() => setIsFullscreenMapOpen(true)}
             />
+
+            {/* Officer Stats Overlay - Only show when Officers layer is active */}
+            {showOfficers && (
+              <OfficerStatsOverlay
+                selectedTeamId={selectedTeamId}
+                isVisible={isOfficerStatsVisible}
+                onClose={() => setIsOfficerStatsVisible(false)}
+              />
+            )}
 
             {/* Filter Panel with Toggle Buttons */}
             <div style={{
@@ -1215,61 +1236,65 @@ export default function MapPage() {
               gap: '8px',
               zIndex: 500 // Above all map overlays
             }}>
-              {/* Legend Toggle Button */}
-              <button
-                style={{
-                  width: '34px',
-                  height: '34px',
-                  borderRadius: '4px',
-                  border: '2px solid rgba(0,0,0,0.2)',
-                  background: 'white',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  boxShadow: 'none',
-                  transition: 'background 0.2s'
-                }}
-                onClick={() => setIsLegendVisible(!isLegendVisible)}
-                aria-label="Mở/Đóng chú giải"
-                title="Chú giải bản đồ"
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#f4f4f4';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'white';
-                }}
-              >
-                <MapPin size={18} strokeWidth={2.5} />
-              </button>
+              {/* Legend Toggle Button - Only show when NOT on Officers layer */}
+              {!showOfficers && (
+                <button
+                  style={{
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '4px',
+                    border: '2px solid rgba(0,0,0,0.2)',
+                    background: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    boxShadow: 'none',
+                    transition: 'background 0.2s'
+                  }}
+                  onClick={() => setIsLegendVisible(!isLegendVisible)}
+                  aria-label="Mở/Đóng chú giải"
+                  title="Chú giải bản đồ"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#f4f4f4';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'white';
+                  }}
+                >
+                  <MapPin size={18} strokeWidth={2.5} />
+                </button>
+              )}
 
-              {/* Stats Toggle Button */}
-              <button
-                style={{
-                  width: '34px',
-                  height: '34px',
-                  borderRadius: '4px',
-                  border: '2px solid rgba(0,0,0,0.2)',
-                  background: 'white',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  boxShadow: 'none',
-                  transition: 'background 0.2s'
-                }}
-                onClick={() => setIsStatsCardVisible(!isStatsCardVisible)}
-                aria-label="Mở/Đóng thống kê"
-                title="Thống kê địa bàn"
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#f4f4f4';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'white';
-                }}
-              >
-                <BarChart3 size={18} strokeWidth={2.5} />
-              </button>
+              {/* Stats Toggle Button - Only show when NOT on Officers layer */}
+              {!showOfficers && (
+                <button
+                  style={{
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '4px',
+                    border: '2px solid rgba(0,0,0,0.2)',
+                    background: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    boxShadow: 'none',
+                    transition: 'background 0.2s'
+                  }}
+                  onClick={() => setIsStatsCardVisible(!isStatsCardVisible)}
+                  aria-label="Mở/Đóng thống kê"
+                  title="Thống kê địa bàn"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#f4f4f4';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'white';
+                  }}
+                >
+                  <BarChart3 size={18} strokeWidth={2.5} />
+                </button>
+              )}
 
               {/* Filter Toggle Button */}
               <button
@@ -1304,43 +1329,90 @@ export default function MapPage() {
               >
                 <SlidersHorizontal size={18} strokeWidth={2.5} />
               </button>
+
+              {/* Officer Stats Toggle Button - Only show when Officers layer is active */}
+              {showOfficers && (
+                <button
+                  style={{
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '4px',
+                    border: '2px solid rgba(0,0,0,0.2)',
+                    background: isOfficerStatsVisible ? 'var(--primary)' : 'white',
+                    color: isOfficerStatsVisible ? 'white' : 'inherit',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    boxShadow: 'none',
+                    transition: 'background 0.2s'
+                  }}
+                  onClick={() => setIsOfficerStatsVisible(!isOfficerStatsVisible)}
+                  aria-label="Mở/Đóng thống kê cán bộ"
+                  title="Thống kê cán bộ quản lý"
+                  onMouseEnter={(e) => {
+                    if (!isOfficerStatsVisible) {
+                      e.currentTarget.style.background = '#f4f4f4';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isOfficerStatsVisible) {
+                      e.currentTarget.style.background = 'white';
+                    }
+                  }}
+                >
+                  <BarChart3 size={18} strokeWidth={2.5} />
+                </button>
+              )}
             </div>
 
-            {/* Filter Panel */}
-            <MapFilterPanel
-              isOpen={isFilterPanelOpen}
-              filters={pendingFilters}  // 🔥 CHANGED: Use pending filters for UI
-              businessTypeFilters={pendingBusinessTypeFilters}  // 🔥 CHANGED: Use pending business type filters
-              restaurants={restaurants}
-              pointStatuses={pointStatuses}  // 🔥 PASS: Dynamic statuses
-              categories={categories}        // 🔥 PASS: Categories from database
-              selectedProvince={selectedProvince}
-              selectedDistrict={selectedDistrict}
-              selectedWard={selectedWard}
-              startDate={customStartDate}    //  NEW: Pass date range
-              endDate={customEndDate}        // 🔥 NEW: Pass date range
-              filteredCount={filteredRestaurants.length}
-              onFilterChange={handleFilterChange}  // 🔥 Updates pending filters
-              onBusinessTypeFilterChange={handleBusinessTypeFilterChange}  // 🔥 Updates pending filters
-              onBusinessTypeToggleAll={handleBusinessTypeToggleAll}
-              onProvinceChange={(province) => {
-                setSelectedProvince(province);
-                setSelectedDistrict(''); // Reset district when province changes
-                setSelectedWard(''); // Reset ward when province changes
-              }}
-              onDistrictChange={(district) => {
-                setSelectedDistrict(district);
-                setSelectedWard(''); // Reset ward when district changes
-              }}
-              onWardChange={(ward) => {
-                setSelectedWard(ward);
-              }}
-              onClose={() => setIsFilterPanelOpen(false)}
-              onApplyFilters={handleApplyFilters}  // 🔥 NEW: Apply button callback
-              onSaveFilters={handleSaveFilters}  // 🔥 NEW: Save button callback
-              hasUnappliedChanges={hasUnappliedChanges}  // 🔥 NEW: Show button when changes exist
-              ref={filterPanelRef}
-            />
+            {/* Filter Panel - Different panel for Officers layer */}
+            {showOfficers ? (
+              <OfficerFilterPanel
+                isOpen={isFilterPanelOpen}
+                selectedTeamId={selectedTeamId}
+                onClose={() => setIsFilterPanelOpen(false)}
+                onTeamChange={(teamId) => {
+                  setSelectedTeamId(teamId);
+                }}
+                ref={filterPanelRef}
+              />
+            ) : (
+              <MapFilterPanel
+                isOpen={isFilterPanelOpen}
+                filters={pendingFilters}  // 🔥 CHANGED: Use pending filters for UI
+                businessTypeFilters={pendingBusinessTypeFilters}  // 🔥 CHANGED: Use pending business type filters
+                restaurants={restaurants}
+                pointStatuses={pointStatuses}  // 🔥 PASS: Dynamic statuses
+                categories={categories}        // 🔥 PASS: Categories from database
+                selectedProvince={selectedProvince}
+                selectedDistrict={selectedDistrict}
+                selectedWard={selectedWard}
+                startDate={customStartDate}    //  NEW: Pass date range
+                endDate={customEndDate}        // 🔥 NEW: Pass date range
+                filteredCount={filteredRestaurants.length}
+                onFilterChange={handleFilterChange}  // 🔥 Updates pending filters
+                onBusinessTypeFilterChange={handleBusinessTypeFilterChange}  // 🔥 Updates pending filters
+                onBusinessTypeToggleAll={handleBusinessTypeToggleAll}
+                onProvinceChange={(province) => {
+                  setSelectedProvince(province);
+                  setSelectedDistrict(''); // Reset district when province changes
+                  setSelectedWard(''); // Reset ward when province changes
+                }}
+                onDistrictChange={(district) => {
+                  setSelectedDistrict(district);
+                  setSelectedWard(''); // Reset ward when district changes
+                }}
+                onWardChange={(ward) => {
+                  setSelectedWard(ward);
+                }}
+                onClose={() => setIsFilterPanelOpen(false)}
+                onApplyFilters={handleApplyFilters}  // 🔥 NEW: Apply button callback
+                onSaveFilters={handleSaveFilters}  // 🔥 NEW: Save button callback
+                hasUnappliedChanges={hasUnappliedChanges}  // 🔥 NEW: Show button when changes exist
+                ref={filterPanelRef}
+              />
+            )}
           </div>
         </div>
       )}

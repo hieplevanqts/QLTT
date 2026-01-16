@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Phone, Mail, User, AlertCircle, FileText, DollarSign, MessageSquare, GraduationCap, MapPin, Briefcase, Target, Shield, Calendar, BarChart3 } from 'lucide-react';
-import { Officer } from '../../../data/officerData';
+import { Officer } from '../../../data/officerTeamData';
 
 interface OfficerInfoModalProps {
   isOpen: boolean;

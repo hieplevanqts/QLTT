@@ -5,6 +5,7 @@ import { Restaurant } from '../../../data/restaurantData';
 import { districtBoundaries } from '../../../data/districtBoundaries';
 import { getWardByName, wardBoundariesData, WardBoundary } from '../../../data/wardBoundaries';
 import { generateWardColorMap } from '../../../utils/colorUtils';
+import { teamsData, Team } from '../../../data/officerTeamData';
 
 type CategoryFilter = {
   certified: boolean;
@@ -24,6 +25,7 @@ interface LeafletMapProps {
   restaurants?: Restaurant[]; // Add restaurants prop
   showWardBoundaries?: boolean; // 🔥 NEW: Show ward boundaries instead of points
   showMerchants?: boolean; // 🔥 NEW: Show merchants layer
+  selectedTeamId?: string; // 🔥 NEW: Selected team ID for officers layer
   onPointClick?: (point: Restaurant) => void;
   onWardClick?: (wardName: string, district: string) => void; // 🔥 NEW: Ward click handler
   onFullscreenClick?: () => void;
@@ -131,7 +133,7 @@ function getCategoryLabel(category: Restaurant['category']) {
   }
 }
 
-export function LeafletMap({ filters, businessTypeFilters, searchQuery, selectedRestaurant, selectedProvince, selectedDistrict, selectedWard, restaurants = [], showWardBoundaries = false, showMerchants = false, onPointClick, onWardClick, onFullscreenClick }: LeafletMapProps) {
+export function LeafletMap({ filters, businessTypeFilters, searchQuery, selectedRestaurant, selectedProvince, selectedDistrict, selectedWard, restaurants = [], showWardBoundaries = false, showMerchants = false, selectedTeamId, onPointClick, onWardClick, onFullscreenClick }: LeafletMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const leafletRef = useRef<any>(null);
@@ -194,43 +196,142 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
     selectedMarkerRef.current = null;
     console.log('✅ [UPDATE] Old markers removed');
 
-    // 🔥 NEW: If showWardBoundaries is true, render ward boundaries instead of markers
+    // 🔥 NEW: If showWardBoundaries is true, render team markers instead of polygons
     if (showWardBoundaries) {
-      console.log('🗺️ LeafletMap: Rendering ward boundaries...');
+      console.log('👮 LeafletMap: Rendering team markers for officers...');
       
-      // Remove old ward boundaries
+      // Remove old ward boundaries (polygons)
       wardBoundariesLayerRef.current.forEach(polygon => polygon.remove());
       wardBoundariesLayerRef.current = [];
       
-      // Generate colors for wards
-      const wardNames = wardBoundariesData.map(w => w.name);
-      const colorMap = generateWardColorMap(wardNames);
+      // Filter teams if selectedTeamId is provided
+      const teamsToRender = selectedTeamId 
+        ? teamsData.filter(t => t.id === selectedTeamId)
+        : teamsData;
       
-      console.log('🎨 Generated colors for', wardNames.length, 'wards');
-      
-      // Render all ward boundaries
-      wardBoundariesData.forEach((ward, index) => {
-        const color = colorMap.get(ward.name) || '#3b82f6';
+      // Calculate center position for each team based on their managed wards
+      teamsToRender.forEach((team) => {
+        // Find center coordinates for all wards managed by this team
+        const teamWardCenters: [number, number][] = [];
         
-        // Create polygon as filled region without border (vùng tô màu)
-        const polygon = L.polygon(ward.polygon, {
-          color: color, // Border color (will be transparent)
-          weight: 0, // 🎨 No border
-          opacity: 0, // 🎨 Border fully transparent
-          fillColor: color,
-          fillOpacity: 0.30, // 🎨 Moderate opacity for clean look
-          smoothFactor: 1.0,
-          interactive: false, // 🔥 Disable all mouse events - polygon won't capture pointer
-        }).addTo(mapInstanceRef.current);
+        team.managedWards.forEach((ward) => {
+          // Find ward boundary data to get center coordinates
+          const wardBoundary = wardBoundariesData.find(
+            w => w.name === ward.name && w.district === ward.district
+          );
+          
+          if (wardBoundary && wardBoundary.center) {
+            teamWardCenters.push(wardBoundary.center);
+          } else {
+            // Fallback: try to find district center from districtBoundaries
+            // This is a fallback if ward boundary data is not available
+            const districtData = districtBoundaries[ward.district];
+            if (districtData && districtData.center) {
+              teamWardCenters.push(districtData.center);
+            }
+          }
+        });
         
-        // 🔥 REMOVED: All hover/click/tooltip events - polygon is now non-interactive
-        // Markers below will still be clickable/hoverable
+        if (teamWardCenters.length === 0) return;
         
-        wardBoundariesLayerRef.current.push(polygon);
+        // Calculate average center position for the team
+        const avgLat = teamWardCenters.reduce((sum, [lat]) => sum + lat, 0) / teamWardCenters.length;
+        const avgLng = teamWardCenters.reduce((sum, [, lng]) => sum + lng, 0) / teamWardCenters.length;
+        const teamCenter: [number, number] = [avgLat, avgLng];
+        
+        // Create team icon (SVG - person/group icon)
+        const teamIconSvg = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#005cb6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        `;
+        
+        // Create custom icon for team
+        const teamIcon = L.divIcon({
+          html: `
+            <div style="
+              background: white;
+              border-radius: 50%;
+              width: 28px;
+              height: 28px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+              border: 2px solid #005cb6;
+            ">
+              ${teamIconSvg}
+            </div>
+          `,
+          className: 'team-marker',
+          iconSize: [28, 28],
+          iconAnchor: [14, 14],
+        });
+        
+        // Create marker for team
+        const teamMarker = L.marker(teamCenter, { icon: teamIcon });
+        
+        // Create tooltip content with team information
+        const teamLeader = team.officers.find(o => o.isTeamLeader) || team.officers[0];
+        const tooltipContent = `
+          <div style="
+            font-family: 'Inter', sans-serif;
+            max-width: 300px;
+            padding: 8px;
+          ">
+            <div style="
+              font-weight: 600;
+              font-size: 14px;
+              color: #005cb6;
+              margin-bottom: 8px;
+              border-bottom: 2px solid #005cb6;
+              padding-bottom: 4px;
+            ">
+              ${team.name}
+            </div>
+            <div style="font-size: 12px; margin-bottom: 6px;">
+              <strong>Đội trưởng:</strong> ${teamLeader.fullName}
+            </div>
+            <div style="font-size: 12px; margin-bottom: 6px;">
+              <strong>Số cán bộ:</strong> ${team.officers.length}
+            </div>
+            <div style="font-size: 12px; margin-bottom: 6px;">
+              <strong>Địa bàn phụ trách:</strong> ${team.managedWards.length} phường/xã
+            </div>
+            <div style="font-size: 11px; color: #666; margin-top: 8px; max-height: 120px; overflow-y: auto;">
+              <strong>Danh sách cán bộ:</strong><br/>
+              ${team.officers.map(o => 
+                `• ${o.fullName} ${o.isTeamLeader ? '(Đội trưởng)' : ''}`
+              ).join('<br/>')}
+            </div>
+          </div>
+        `;
+        
+        // Add tooltip on hover
+        teamMarker.bindTooltip(tooltipContent, {
+          permanent: false,
+          direction: 'top',
+          className: 'team-tooltip',
+          offset: [0, -10],
+        });
+        
+        // Add click handler
+        teamMarker.on('click', () => {
+          if (onWardClick && team.managedWards.length > 0) {
+            const firstWard = team.managedWards[0];
+            onWardClick(firstWard.name, firstWard.district);
+          }
+        });
+        
+        teamMarker.addTo(mapInstanceRef.current);
+        markersRef.current.push(teamMarker);
       });
       
-      console.log('✅ Rendered', wardBoundariesLayerRef.current.length, 'ward boundaries');
-      return; // Exit early - don't render markers
+      console.log('✅ Rendered', markersRef.current.length, 'team markers');
+      return; // Exit early - don't render restaurant markers
     }
 
     console.log('🗺️ LeafletMap: Updating markers...');
@@ -759,6 +860,49 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
     if (!mapInstanceRef.current || !leafletRef.current) return;
     handleAutoZoom();
   }, [handleAutoZoom]);
+
+  // 🔥 NEW: Zoom to selected team when selectedTeamId changes (for officers layer)
+  useEffect(() => {
+    if (!mapInstanceRef.current || !leafletRef.current || !showWardBoundaries) return;
+    if (!selectedTeamId) return;
+    
+    const L = leafletRef.current;
+    const selectedTeam = teamsData.find(t => t.id === selectedTeamId);
+    if (!selectedTeam) return;
+    
+    const teamWardCenters: [number, number][] = [];
+    
+    selectedTeam.managedWards.forEach((ward) => {
+      const wardBoundary = wardBoundariesData.find(
+        w => w.name === ward.name && w.district === ward.district
+      );
+      
+      if (wardBoundary && wardBoundary.center) {
+        teamWardCenters.push(wardBoundary.center);
+      } else {
+        const districtData = districtBoundaries[ward.district];
+        if (districtData && districtData.center) {
+          teamWardCenters.push(districtData.center);
+        }
+      }
+    });
+    
+    if (teamWardCenters.length > 0) {
+      const avgLat = teamWardCenters.reduce((sum, [lat]) => sum + lat, 0) / teamWardCenters.length;
+      const avgLng = teamWardCenters.reduce((sum, [, lng]) => sum + lng, 0) / teamWardCenters.length;
+      const teamCenter: [number, number] = [avgLat, avgLng];
+      
+      // Zoom to team center
+      setTimeout(() => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.setView(teamCenter, 14, {
+            animate: true,
+            duration: 0.8
+          });
+        }
+      }, 300); // Delay to ensure markers are rendered first
+    }
+  }, [selectedTeamId, showWardBoundaries]);
 
   // Handle district boundary highlighting and zoom
   useEffect(() => {

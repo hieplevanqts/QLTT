@@ -1,0 +1,24 @@
+/* Teams List Scrollbar - Mờ và nhỏ */
+.teamsListScroll::-webkit-scrollbar {
+  width: 4px !important;
+}
+
+.teamsListScroll::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.teamsListScroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15) !important;
+  border-radius: 2px;
+  transition: background 0.2s;
+}
+
+.teamsListScroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Firefox scrollbar */
+.teamsListScroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}

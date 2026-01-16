@@ -1,0 +1,196 @@
+.overlay {
+  position: absolute;
+  top: 80px;
+  right: 10px;
+  width: 280px;
+  max-height: calc(100vh - 100px);
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e9ecef;
+  background: linear-gradient(135deg, #005cb6 0%, #0070d1 100%);
+  color: white;
+}
+
+.title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+
+.closeButton {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.closeButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.content {
+  padding: 12px;
+  overflow-y: auto;
+  max-height: calc(100vh - 200px);
+}
+
+/* Quick Stats Grid */
+.quickStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.statCard {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.statIcon {
+  color: #005cb6;
+  flex-shrink: 0;
+}
+
+.statContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.statValue {
+  font-size: 16px;
+  font-weight: 700;
+  color: #005cb6;
+  line-height: 1.2;
+}
+
+.statLabel {
+  font-size: 10px;
+  color: #666;
+  margin-top: 2px;
+  line-height: 1.2;
+}
+
+/* Team Leader Card */
+.teamLeaderCard {
+  padding: 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 6px;
+  margin-bottom: 12px;
+  color: white;
+}
+
+.teamLeaderHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  opacity: 0.95;
+}
+
+.teamLeaderName {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.teamLeaderContact {
+  font-size: 10px;
+  opacity: 0.9;
+}
+
+/* Metrics Section */
+.metricsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.metricRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.metricIcon {
+  color: #005cb6;
+  flex-shrink: 0;
+}
+
+.metricLabel {
+  flex: 1;
+  color: #666;
+  font-weight: 500;
+}
+
+.metricValue {
+  font-weight: 700;
+  color: #005cb6;
+  font-size: 13px;
+}
+
+/* Scrollbar styling */
+.content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 2px;
+}
+
+.content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 2px;
+}
+
+.content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .overlay {
+    width: 240px;
+    top: 70px;
+    right: 8px;
+  }
+  
+  .quickStats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
