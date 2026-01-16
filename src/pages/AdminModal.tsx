@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Eye, Trash2, UserCheck, Save, Check, X } from 'lucide-react';
+import { Plus, Edit, Eye, Trash2, UserCheck, Save, Check, X, Search } from 'lucide-react';
 import styles from './AdminPage.module.css';
 import { supabase } from '../lib/supabase';
+import { ALL_FORM_TEMPLATES } from '@/app/data/formCriteriaTemplates';
 
 interface Province {
   id: string;
@@ -57,11 +58,16 @@ export const UniversalModal: React.FC<UniversalModalProps> = ({
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
   const [loadingData, setLoadingData] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
 
   // Fetch provinces và wards khi cần
   useEffect(() => {
     if (subTab === 'territory') {
       fetchProvincesAndWards();
+    }
+    if (subTab === 'teams') {
+      fetchUsers();
     }
   }, [subTab]);
 
@@ -94,6 +100,28 @@ export const UniversalModal: React.FC<UniversalModalProps> = ({
       }
     } catch (error) {
       console.error('Error in fetchProvincesAndWards:', error);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      setLoadingData(true);
+      
+      // Fetch users from users table
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('*')
+        .order('full_name');
+      
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+      } else {
+        setUsers(usersData || []);
+      }
+    } catch (error) {
+      console.error('Error in fetchUsers:', error);
     } finally {
       setLoadingData(false);
     }
@@ -457,14 +485,380 @@ export const UniversalModal: React.FC<UniversalModalProps> = ({
               </select>
             </div>
             <div className={styles.formGroup}>
-              <label>Trưởng đơn vị</label>
-              <input
-                type="text"
-                className={styles.input}
-                value={formData.leader || ''}
-                onChange={(e) => handleChange('leader', e.target.value)}
-                disabled={isReadOnly}
-              />
+              <label>Trưởng đơn vị <span className={styles.required}>*</span></label>
+              <select
+                className={styles.select}
+                value={formData.leader_id || ''}
+                onChange={(e) => handleChange('leader_id', e.target.value)}
+                disabled={isReadOnly || loadingData}
+              >
+                <option value="">-- Chọn trưởng đơn vị --</option>
+                {loadingData ? (
+                  <option disabled>Đang tải...</option>
+                ) : (
+                  users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.full_name} ({user.email})
+                    </option>
+                  ))
+                )}
+              </select>
+              {users.length === 0 && !loadingData && (
+                <small style={{ color: 'var(--muted-foreground)', fontSize: '12px' }}>
+                  Không có dữ liệu người dùng
+                </small>
+              )}
+            </div>
+            <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between',
+                marginBottom: 'var(--spacing-3)',
+              }}>
+                <span>
+                  Thành viên <span className={styles.required}>*</span>
+                </span>
+                {!isReadOnly && Array.isArray(formData.member_ids) && formData.member_ids.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => handleChange('member_ids', [])}
+                    style={{
+                      fontSize: 'var(--text-sm)',
+                      color: 'var(--primary)',
+                      textDecoration: 'none',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 0,
+                      fontWeight: '500',
+                    }}
+                  >
+                    Bỏ chọn tất cả
+                  </button>
+                )}
+              </label>
+              
+              {/* Selected Members - Blue Pills */}
+              {Array.isArray(formData.member_ids) && formData.member_ids.length > 0 && (
+                <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 'var(--spacing-2)',
+                  marginBottom: 'var(--spacing-3)',
+                }}>
+                  {formData.member_ids.map((memberId: string) => {
+                    const user = users.find(u => u.id === memberId);
+                    if (!user) return null;
+                    
+                    return (
+                      <div
+                        key={memberId}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 'var(--spacing-2)',
+                          padding: '6px 12px',
+                          backgroundColor: '#005cb6',
+                          color: 'white',
+                          borderRadius: '6px',
+                          fontSize: 'var(--text-sm)',
+                          fontWeight: '500',
+                        }}
+                      >
+                        <span>{user.full_name || user.email}</span>
+                        {!isReadOnly && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const currentIds = [...formData.member_ids];
+                              const index = currentIds.indexOf(memberId);
+                              if (index > -1) {
+                                currentIds.splice(index, 1);
+                                handleChange('member_ids', currentIds);
+                              }
+                            }}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: 'white',
+                              cursor: 'pointer',
+                              padding: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              fontSize: '18px',
+                              lineHeight: '1',
+                              opacity: 0.9,
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                            onMouseLeave={(e) => e.currentTarget.style.opacity = '0.9'}
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Available Members List */}
+              <div style={{ 
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)',
+                overflow: 'hidden',
+                backgroundColor: 'white',
+              }}>
+                {/* Search Box */}
+                {!isReadOnly && users.length > 0 && (
+                  <div style={{
+                    padding: '12px',
+                    borderBottom: '1px solid var(--border)',
+                    backgroundColor: '#fafafa',
+                  }}>
+                    <div style={{
+                      position: 'relative',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}>
+                      <Search 
+                        size={16} 
+                        style={{
+                          position: 'absolute',
+                          left: '12px',
+                          color: '#6b7280',
+                          pointerEvents: 'none',
+                        }}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Tìm kiếm theo tên hoặc email..."
+                        value={memberSearchQuery}
+                        onChange={(e) => setMemberSearchQuery(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px 8px 36px',
+                          border: '1px solid var(--border)',
+                          borderRadius: 'var(--radius)',
+                          fontSize: 'var(--text-sm)',
+                          outline: 'none',
+                          backgroundColor: 'white',
+                        }}
+                        onFocus={(e) => e.target.style.borderColor = '#005cb6'}
+                        onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {loadingData ? (
+                  <div style={{ 
+                    padding: 'var(--spacing-4)', 
+                    color: 'var(--muted-foreground)',
+                    textAlign: 'center',
+                    fontSize: 'var(--text-sm)',
+                  }}>
+                    Đang tải danh sách người dùng...
+                  </div>
+                ) : users.length === 0 ? (
+                  <div style={{ 
+                    padding: 'var(--spacing-4)', 
+                    color: 'var(--muted-foreground)',
+                    textAlign: 'center',
+                    fontSize: 'var(--text-sm)',
+                  }}>
+                    Không có dữ liệu người dùng
+                  </div>
+                ) : (
+                  <div style={{
+                    maxHeight: '300px',
+                    overflowY: 'auto',
+                  }}>
+                    {users
+                      .filter(user => {
+                        // Filter based on search query
+                        if (!memberSearchQuery.trim()) return true;
+                        const query = memberSearchQuery.toLowerCase();
+                        const fullName = (user.full_name || '').toLowerCase();
+                        const email = (user.email || '').toLowerCase();
+                        return fullName.includes(query) || email.includes(query);
+                      })
+                      .map((user, index, filteredArray) => {
+                      const memberIds = Array.isArray(formData.member_ids) ? formData.member_ids : [];
+                      const isChecked = memberIds.includes(user.id);
+                      
+                      // Get initials for avatar
+                      const getInitials = (name: string | null | undefined) => {
+                        if (!name || typeof name !== 'string') return '??';
+                        const trimmedName = name.trim();
+                        if (!trimmedName) return '??';
+                        const words = trimmedName.split(' ');
+                        if (words.length === 1) return words[0].substring(0, 2).toUpperCase();
+                        return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+                      };
+                      
+                      return (
+                        <div 
+                          key={user.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            padding: '10px 12px',
+                            borderBottom: index < filteredArray.length - 1 ? '1px solid var(--border)' : 'none',
+                            cursor: isReadOnly ? 'default' : 'pointer',
+                            backgroundColor: 'white',
+                            transition: 'background-color 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isReadOnly) {
+                              e.currentTarget.style.backgroundColor = '#f8f9fa';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isReadOnly) {
+                              e.currentTarget.style.backgroundColor = 'white';
+                            }
+                          }}
+                          onClick={() => {
+                            if (isReadOnly) return;
+                            
+                            const currentIds = Array.isArray(formData.member_ids) ? [...formData.member_ids] : [];
+                            const idx = currentIds.indexOf(user.id);
+                            
+                            if (idx > -1) {
+                              currentIds.splice(idx, 1);
+                            } else {
+                              currentIds.push(user.id);
+                            }
+                            
+                            handleChange('member_ids', currentIds);
+                          }}
+                        >
+                          {/* Checkbox */}
+                          <div style={{
+                            width: '18px',
+                            height: '18px',
+                            borderRadius: '4px',
+                            border: `2px solid ${isChecked ? '#005cb6' : '#d1d5db'}`,
+                            backgroundColor: isChecked ? '#005cb6' : 'white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                            transition: 'all 0.15s ease',
+                          }}>
+                            {isChecked && (
+                              <svg 
+                                width="12" 
+                                height="12" 
+                                viewBox="0 0 12 12" 
+                                fill="none"
+                              >
+                                <path 
+                                  d="M10 3L4.5 8.5L2 6" 
+                                  stroke="white" 
+                                  strokeWidth="2" 
+                                  strokeLinecap="round" 
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            )}
+                          </div>
+
+                          {/* Avatar */}
+                          <div style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '50%',
+                            backgroundColor: '#005cb6',
+                            color: 'white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            flexShrink: 0,
+                          }}>
+                            {getInitials(user.full_name)}
+                          </div>
+
+                          {/* User Info */}
+                          <div style={{ 
+                            flex: 1,
+                            minWidth: 0,
+                          }}>
+                            <div style={{ 
+                              fontSize: 'var(--text-base)',
+                              fontWeight: '500',
+                              color: '#1f2937',
+                              marginBottom: '2px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}>
+                              {user.full_name || 'Không có tên'}
+                            </div>
+                            <div style={{ 
+                              fontSize: 'var(--text-sm)', 
+                              color: '#6b7280',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}>
+                              {user.email || 'Không có email'}
+                            </div>
+                          </div>
+
+                          {/* Checkmark Icon when selected */}
+                          {isChecked && (
+                            <div style={{
+                              width: '24px',
+                              height: '24px',
+                              borderRadius: '50%',
+                              backgroundColor: '#005cb6',
+                              color: 'white',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                            }}>
+                              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                <path 
+                                  d="M11.5 3.5L5.25 10.5L2.5 7.75" 
+                                  stroke="currentColor" 
+                                  strokeWidth="2" 
+                                  strokeLinecap="round" 
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer Summary */}
+              {!isReadOnly && users.length > 0 && (
+                <div style={{
+                  marginTop: 'var(--spacing-3)',
+                  padding: '8px 12px',
+                  textAlign: 'center',
+                  fontSize: 'var(--text-sm)',
+                  color: '#6b7280',
+                }}>
+                  {Array.isArray(formData.member_ids) && formData.member_ids.length > 0 ? (
+                    <span>
+                      Đã chọn <strong style={{ color: '#005cb6', fontWeight: '600' }}>{formData.member_ids.length}</strong> thành viên
+                    </span>
+                  ) : (
+                    <span>Chưa chọn thành viên nào</span>
+                  )}
+                </div>
+              )}
             </div>
           </>
         )}
@@ -538,14 +932,45 @@ export const UniversalModal: React.FC<UniversalModalProps> = ({
               />
             </div>
             <div className={styles.formGroup}>
-              <label>Số mục</label>
-              <input
-                type="number"
-                className={styles.input}
-                value={formData.itemCount || ''}
-                onChange={(e) => handleChange('itemCount', e.target.value)}
+              <label>Biểu mẫu kiểm tra</label>
+              <select
+                className={styles.select}
+                value={formData.formTemplateId || ''}
+                onChange={(e) => handleChange('formTemplateId', e.target.value)}
                 disabled={isReadOnly}
+              >
+                <option value="">-- Chọn biểu mẫu --</option>
+                {ALL_FORM_TEMPLATES.filter(t => t.status === 'active').map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.code} - {template.name}
+                  </option>
+                ))}
+              </select>
+              <small style={{ color: 'var(--muted-foreground)', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                Chọn biểu mẫu để liên kết với checklist này
+              </small>
+            </div>
+            <div className={styles.formGroup}>
+              <label>Số tiêu chí</label>
+              <input
+                type="text"
+                className={styles.input}
+                value={
+                  formData.formTemplateId
+                    ? ALL_FORM_TEMPLATES.find(t => t.id === formData.formTemplateId)?.criteria?.length || 0
+                    : '—'
+                }
+                disabled
+                readOnly
+                style={{
+                  background: 'var(--muted, #f2f4f7)',
+                  cursor: 'not-allowed',
+                  color: 'var(--muted-foreground, #667085)',
+                }}
               />
+              <small style={{ color: 'var(--muted-foreground)', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                Tự động tính từ biểu mẫu đã chọn
+              </small>
             </div>
           </>
         )}
@@ -716,7 +1141,7 @@ export const UniversalModal: React.FC<UniversalModalProps> = ({
               <button type="submit" className={type === 'delete' ? styles.dangerBtn : styles.primaryBtn}>
                 {type === 'add' && <><Save size={16} /> Tạo mới</>}
                 {type === 'edit' && <><Save size={16} /> Lưu thay đổi</>}
-                {type === 'delete' && <><Trash2 size={16} /> Xác nhận xóa</>}
+                {type === 'delete' && <><Trash2 size={16} /> Xc nhận xóa</>}
                 {type === 'assign' && <><Check size={16} /> Xác nhận gán</>}
               </button>
             )}

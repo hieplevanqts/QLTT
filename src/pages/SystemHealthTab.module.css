@@ -1,0 +1,625 @@
+/* ============================================
+   SYSTEM HEALTH TAB - MAPPA PORTAL
+   Tuân thủ design system từ /src/styles/theme.css
+   Dashboard tổng quan với big metrics và sparklines
+   ============================================ */
+
+/* ============================================
+   CONTAINER & LAYOUT
+   ============================================ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 24px;
+  background: var(--background);
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ============================================
+   STATUS BANNER - TOP PRIORITY
+   ============================================ */
+
+.statusBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 32px 40px;
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  flex-wrap: wrap;
+}
+
+.statusBannerContent {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.statusBannerIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.statusBannerIcon svg {
+  width: 36px;
+  height: 36px;
+}
+
+.statusBannerText {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.statusBannerTitle {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-3xl);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.2;
+}
+
+.statusBannerSubtitle {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  opacity: 0.9;
+}
+
+.statusBannerActions {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: #ffffff;
+  background: #005cb6;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 92, 182, 0.2);
+}
+
+.btnPrimary:hover {
+  background: #004a94;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 92, 182, 0.3);
+}
+
+.btnSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnSecondary:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: #005cb6;
+}
+
+.btnAutoRefreshActive {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: #ffffff;
+  background: #15803d;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(21, 128, 61, 0.2);
+}
+
+.btnAutoRefreshActive:hover {
+  background: #14532d;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(21, 128, 61, 0.3);
+}
+
+.spinning {
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================
+   BIG METRICS GRID
+   ============================================ */
+
+.bigMetricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.bigMetricCard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 28px 32px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.bigMetricCard:hover {
+  border-color: #005cb6;
+  box-shadow: 0 8px 24px rgba(0, 92, 182, 0.12);
+  transform: translateY(-4px);
+}
+
+.bigMetricHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bigMetricIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: rgba(0, 92, 182, 0.08);
+  border-radius: 10px;
+}
+
+.bigMetricLabel {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bigMetricValue {
+  margin: 8px 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 48px;
+  font-weight: var(--font-weight-bold);
+  color: var(--foreground);
+  line-height: 1;
+}
+
+.bigMetricTrend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.sparklineContainer {
+  margin-top: 8px;
+  width: 100%;
+  height: 60px;
+}
+
+/* ============================================
+   SECONDARY METRICS GRID
+   ============================================ */
+
+.secondaryMetricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.secondaryMetricCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+}
+
+.secondaryMetricCard:hover {
+  border-color: #005cb6;
+  box-shadow: 0 4px 12px rgba(0, 92, 182, 0.08);
+  transform: translateY(-2px);
+}
+
+.secondaryMetricIcon {
+  width: 32px;
+  height: 32px;
+  color: #005cb6;
+  flex-shrink: 0;
+}
+
+.secondaryMetricLabel {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.secondaryMetricValue {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--foreground);
+  line-height: 1;
+  margin-top: 4px;
+}
+
+/* ============================================
+   SECTION
+   ============================================ */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--foreground);
+}
+
+.sectionTitle svg {
+  color: #005cb6;
+}
+
+.serviceSummary {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.serviceSummaryItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.serviceSummaryItem svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ============================================
+   SERVICES GRID
+   ============================================ */
+
+.servicesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.serviceCard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+}
+
+.serviceCard:hover {
+  border-color: #005cb6;
+  box-shadow: 0 4px 12px rgba(0, 92, 182, 0.08);
+  transform: translateY(-2px);
+}
+
+.serviceCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.serviceCardIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: rgba(0, 92, 182, 0.08);
+  border-radius: 10px;
+}
+
+.serviceStatusBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.serviceStatusBadge svg {
+  width: 20px;
+  height: 20px;
+}
+
+.serviceCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.serviceCardName {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--foreground);
+  line-height: 1.3;
+}
+
+.serviceCardMetric {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.serviceCardMetricLabel {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--muted-foreground);
+}
+
+.serviceCardMetricValue {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--foreground);
+}
+
+.serviceCardFooter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.serviceCardFooter svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ============================================
+   INCIDENTS
+   ============================================ */
+
+.noIncidents {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  background: #f0fdf4;
+  border: 2px dashed #bbf7d0;
+  border-radius: var(--radius);
+}
+
+.noIncidents p {
+  margin: 12px 0 0 0;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  color: #15803d;
+}
+
+.incidentsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.incidentCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 24px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 4px solid #f59e0b;
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+}
+
+.incidentCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.incidentCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.incidentSeverityBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: var(--font-weight-bold);
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.incidentTimestamp {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.incidentTimestamp svg {
+  width: 14px;
+  height: 14px;
+}
+
+.incidentCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.incidentType {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--foreground);
+}
+
+.incidentMessage {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--muted-foreground);
+  line-height: 1.6;
+}
+
+/* ============================================
+   LOADING STATE
+   ============================================ */
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 16px;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  color: #005cb6;
+  animation: spin 1s linear infinite;
+}
+
+.loadingText {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--muted-foreground);
+  margin: 0;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 768px) {
+  .statusBanner {
+    padding: 24px 20px;
+  }
+
+  .statusBannerIcon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .statusBannerIcon svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .statusBannerTitle {
+    font-size: var(--text-xl);
+  }
+
+  .statusBannerSubtitle {
+    font-size: var(--text-sm);
+  }
+
+  .bigMetricValue {
+    font-size: 36px;
+  }
+
+  .bigMetricsGrid,
+  .secondaryMetricsGrid,
+  .servicesGrid {
+    grid-template-columns: 1fr;
+  }
+}

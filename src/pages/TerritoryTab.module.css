@@ -302,7 +302,6 @@
   width: 100%;
   border-collapse: collapse;
   font-family: 'Inter', sans-serif;
-  table-layout: fixed;
 }
 
 .table thead {
@@ -323,8 +322,6 @@
   letter-spacing: 0.5px;
   border-bottom: 2px solid var(--border);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .table th.alignCenter {
@@ -355,9 +352,6 @@
   font-weight: var(--font-weight-normal, 400);
   color: var(--foreground);
   line-height: 1.5;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .table td.alignCenter {
@@ -599,4 +593,70 @@
 
 .spinning {
   animation: spin 1s linear infinite;
+}
+
+/* ==================== HIDDEN INPUT FOR FILE UPLOAD ==================== */
+.hiddenInput {
+  display: none !important;
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ==================== DROPDOWN MENU ==================== */
+.importDropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 200px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  overflow: hidden;
+  animation: dropdownSlide 0.15s ease-out;
+}
+
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm, 14px);
+  color: var(--foreground);
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.dropdownItem:hover {
+  background: var(--muted);
+}
+
+.dropdownItem svg {
+  color: var(--muted-foreground);
+  flex-shrink: 0;
 }

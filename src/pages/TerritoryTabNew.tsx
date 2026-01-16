@@ -1,26 +1,30 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   MapPin,
-  Map,
-  Building2,
   Search,
-  Filter,
   Plus,
+  Filter,
   Edit,
   Trash2,
   Eye,
-  Download,
+  FileDown,
   Upload,
   Check,
   XCircle,
-  ChevronDown,
-  User,
   RefreshCw,
+  Loader2,
+  AlertCircle,
+  Building2,
+  User,
+  Download,
+  ChevronDown,
 } from 'lucide-react';
 import styles from './TerritoryTab.module.css';
 import { Pagination } from '../components/Pagination';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
 import { toast } from 'sonner';
+import { supabase } from '../lib/supabase';
+import * as XLSX from 'xlsx';
 
 // ==================== INTERFACES ====================
 interface Area {
@@ -60,6 +64,19 @@ export const TerritoryTabNew: React.FC<TerritoryTabProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
 
+  // 🎯 NEW: Dynamic filters for province and ward
+  const [selectedProvince, setSelectedProvince] = useState<string>('');
+  const [selectedWard, setSelectedWard] = useState<string>('');
+
+  // 🎯 NEW: Province and Ward data from Supabase
+  const [provinces, setProvinces] = useState<any[]>([]);
+  const [wards, setWards] = useState<any[]>([]);
+
+  // Dropdown state for Import menu
+  const [isImportDropdownOpen, setIsImportDropdownOpen] = useState(false);
+
+  const filteredWards = wards.filter(ward => ward.provinceId === selectedProvince);
+
   // Fetch areas from API
   const fetchAreas = async () => {
     try {
@@ -89,10 +106,72 @@ export const TerritoryTabNew: React.FC<TerritoryTabProps> = ({
     }
   };
 
+  // 🎯 NEW: Fetch provinces from Supabase
+  const fetchProvinces = async () => {
+    try {
+      console.log('🔍 Fetching provinces from Supabase...');
+      const { data, error } = await supabase
+        .from('provinces')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error) {
+        console.error('❌ Error fetching provinces:', error);
+        throw error;
+      }
+      console.log('✅ Loaded provinces:', data?.length);
+      setProvinces(data || []);
+    } catch (error) {
+      console.error('❌ Error in fetchProvinces:', error);
+      toast.error('Lỗi tải danh sách Tỉnh/TP');
+    }
+  };
+
+  // 🎯 NEW: Fetch wards from Supabase
+  const fetchWards = async () => {
+    try {
+      console.log('🔍 Fetching wards from Supabase...');
+      const { data, error } = await supabase
+        .from('wards')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error) {
+        console.error('❌ Error fetching wards:', error);
+        throw error;
+      }
+      console.log('✅ Loaded wards:', data?.length);
+      setWards(data || []);
+    } catch (error) {
+      console.error('❌ Error in fetchWards:', error);
+      toast.error('Lỗi tải danh sách Phường/Xã');
+    }
+  };
+
   // Fetch on mount
   useEffect(() => {
     fetchAreas();
+    fetchProvinces();
+    fetchWards();
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest(`.${styles.importDropdown}`)) {
+        setIsImportDropdownOpen(false);
+      }
+    };
+
+    if (isImportDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isImportDropdownOpen]);
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -168,6 +247,185 @@ export const TerritoryTabNew: React.FC<TerritoryTabProps> = ({
     toast.success('Đã làm mới dữ liệu');
   };
 
+  const handleExport = () => {
+    const worksheet = XLSX.utils.json_to_sheet(filteredTerritories);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Territories');
+    XLSX.writeFile(workbook, 'territories.xlsx');
+    toast.success('Đã xuất dữ liệu thành công');
+  };
+
+  // Download Excel Template
+  const handleDownloadTemplate = () => {
+    setIsImportDropdownOpen(false); // Close dropdown
+    
+    try {
+      console.log('📥 Generating Excel template...');
+      
+      // Create template data with sample rows
+      const templateData = [
+        {
+          'Mã': 'DB001',
+          'Tên địa bàn': 'Địa bàn mẫu 1',
+          'Cấp': 'PROVINCE',
+          'Mô tả': 'Mô tả về địa bàn',
+          'Trạng thái': 'Hoạt động',
+        },
+        {
+          'Mã': 'DB002',
+          'Tên địa bàn': 'Địa bàn mẫu 2',
+          'Cấp': 'WARD',
+          'Mô tả': 'Mô tả về địa bàn',
+          'Trạng thái': 'Không hoạt động',
+        },
+      ];
+
+      // Create worksheet
+      const ws = XLSX.utils.json_to_sheet(templateData);
+
+      // Set column widths
+      const wscols = [
+        { wch: 15 },  // Mã
+        { wch: 30 },  // Tên địa bàn
+        { wch: 15 },  // Cấp
+        { wch: 40 },  // Mô tả
+        { wch: 20 },  // Trạng thái
+      ];
+      ws['!cols'] = wscols;
+
+      // Create workbook and add worksheet
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Mẫu Địa bàn');
+
+      // Add instructions sheet
+      const instructions = [
+        { 'CỘT': 'Mã', 'BẮT BUỘC': 'Có', 'ĐỊNH DẠNG': 'Text', 'GHI CHÚ': 'Mã địa bàn duy nhất, ví dụ: DB001' },
+        { 'CỘT': 'Tên địa bàn', 'BẮT BUỘC': 'Có', 'ĐỊNH DẠNG': 'Text', 'GHI CHÚ': 'Tên đầy đủ của địa bàn' },
+        { 'CỘT': 'Cấp', 'BẮT BUỘC': 'Có', 'ĐỊNH DẠNG': 'Text', 'GHI CHÚ': 'Ghi "PROVINCE" (Tỉnh/TP) hoặc "WARD" (Xã/Phường) hoặc "DISTRICT" (Quận/Huyện)' },
+        { 'CỘT': 'Mô tả', 'BẮT BUỘC': 'Không', 'ĐỊNH DẠNG': 'Text', 'GHI CHÚ': 'Mô tả chi tiết về địa bàn' },
+        { 'CỘT': 'Trạng thái', 'BẮT BUỘC': 'Không', 'ĐỊNH DẠNG': 'Text', 'GHI CHÚ': 'Ghi "Hoạt động" hoặc để trống/khác = Không hoạt động' },
+      ];
+
+      const wsInstructions = XLSX.utils.json_to_sheet(instructions);
+      const wsInstructionsCols = [
+        { wch: 20 },  // Cột
+        { wch: 15 },  // Bắt buộc
+        { wch: 15 },  // Định dạng
+        { wch: 70 },  // Ghi chú
+      ];
+      wsInstructions['!cols'] = wsInstructionsCols;
+      XLSX.utils.book_append_sheet(wb, wsInstructions, 'Hướng dẫn');
+
+      // Download file
+      const fileName = `Mau_Dia_ban_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      
+      toast.success('Đã tải file mẫu thành công');
+      console.log('✅ Template downloaded:', fileName);
+    } catch (error) {
+      console.error('❌ Error generating template:', error);
+      toast.error('Lỗi tải file mẫu');
+    }
+  };
+
+  // Import Excel
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsImportDropdownOpen(false); // Close dropdown
+    
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      console.log('📥 Importing Excel file:', file.name);
+      
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const data = new Uint8Array(event.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+          console.log('📊 Parsed Excel data:', jsonData);
+
+          if (jsonData.length === 0) {
+            toast.error('File Excel không có dữ liệu');
+            return;
+          }
+
+          // Validate and transform data
+          const baseUrl = `https://${projectId}.supabase.co/functions/v1/make-server-e994bb5d`;
+          let successCount = 0;
+          let errorCount = 0;
+
+          for (const row of jsonData as any[]) {
+            try {
+              // Transform Excel row to API format
+              const areaData = {
+                code: row['Mã'] || row['code'] || '',
+                name: row['Tên địa bàn'] || row['name'] || '',
+                level: row['Cấp'] || row['level'] || 'PROVINCE', // Default to PROVINCE if not provided
+                description: row['Mô tả'] || row['description'] || '',
+                status: row['Trạng thái'] === 'Hoạt động' ? 1 : 0,
+              };
+
+              // Validate required fields
+              if (!areaData.code || !areaData.name || !areaData.level) {
+                console.warn('⚠️ Skipping row - missing required fields:', row);
+                errorCount++;
+                continue;
+              }
+
+              // Send to API
+              const response = await fetch(`${baseUrl}/areas`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${publicAnonKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(areaData),
+              });
+
+              if (response.ok) {
+                successCount++;
+              } else {
+                errorCount++;
+                const errorData = await response.json();
+                console.error('❌ Error importing row:', errorData);
+              }
+            } catch (rowError) {
+              console.error('❌ Error processing row:', rowError);
+              errorCount++;
+            }
+          }
+
+          // Show results
+          if (successCount > 0) {
+            toast.success(`Đã import thành công ${successCount} địa bàn`);
+            await fetchAreas(); // Refresh the list
+          }
+          
+          if (errorCount > 0) {
+            toast.warning(`${errorCount} bản ghi không import được`);
+          }
+
+        } catch (parseError) {
+          console.error('❌ Error parsing Excel:', parseError);
+          toast.error('Lỗi đọc file Excel. Vui lòng kiểm tra định dạng file.');
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
+    } catch (error) {
+      console.error('❌ Error importing Excel:', error);
+      toast.error('Lỗi import file Excel');
+    }
+
+    // Reset input
+    e.target.value = '';
+  };
+
   return (
     <div className={styles.territoryContainer}>
       {/* Section Header */}
@@ -183,14 +441,42 @@ export const TerritoryTabNew: React.FC<TerritoryTabProps> = ({
             <RefreshCw size={16} className={loading ? styles.spinning : ''} />
             Làm mới
           </button>
-          <button className={styles.secondaryBtn}>
-            <Download size={16} />
+          <button className={styles.secondaryBtn} onClick={handleExport}>
+            <FileDown size={16} />
             Xuất dữ liệu
           </button>
           <button className={styles.primaryBtn} onClick={() => onOpenModal('add')}>
             <Plus size={16} />
             Thêm địa bàn
           </button>
+          <div className={styles.importDropdown}>
+            <button
+              className={styles.secondaryBtn}
+              onClick={() => setIsImportDropdownOpen(!isImportDropdownOpen)}
+            >
+              <Upload size={16} />
+              Nhập dữ liệu
+            </button>
+            {isImportDropdownOpen && (
+              <div className={styles.dropdownMenu}>
+                <label className={styles.dropdownItem} htmlFor="importExcel">
+                  <Upload size={16} />
+                  Từ file Excel
+                </label>
+                <input
+                  type="file"
+                  id="importExcel"
+                  className={styles.hiddenInput}
+                  accept=".xlsx, .xls"
+                  onChange={handleImportExcel}
+                />
+                <button className={styles.dropdownItem} onClick={handleDownloadTemplate}>
+                  <Download size={16} />
+                  Tải mẫu nhập liệu
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -208,7 +494,7 @@ export const TerritoryTabNew: React.FC<TerritoryTabProps> = ({
 
         <div className={styles.statCard}>
           <div className={styles.statIcon}>
-            <Map size={24} />
+            <Building2 size={24} />
           </div>
           <div className={styles.statContent}>
             <div className={styles.statValue}>{stats.withProvince}</div>
@@ -258,14 +544,56 @@ export const TerritoryTabNew: React.FC<TerritoryTabProps> = ({
             className={styles.select}
             value={levelFilter}
             onChange={(e) => {
-              setLevelFilter(e.target.value);
+              const newLevel = e.target.value;
+              setLevelFilter(newLevel);
               setCurrentPage(1);
+              // Reset province and ward when level changes
+              setSelectedProvince('');
+              setSelectedWard('');
+              console.log('🔄 Level changed to:', newLevel);
             }}
           >
             <option value="all">Tất cả cấp</option>
-            <option value="PROVINCE">Tỉnh/TP</option>
-            <option value="WARD">Xã/Phường</option>
+            <option value="PROVINCE">Cấp Tỉnh</option>
+            <option value="WARD">Cấp Xã</option>
           </select>
+
+          {/* 🎯 Show Province select when level is "PROVINCE" or "WARD" */}
+          {(levelFilter === 'PROVINCE' || levelFilter === 'WARD') && (
+            <select
+              className={styles.select}
+              value={selectedProvince}
+              onChange={(e) => {
+                setSelectedProvince(e.target.value);
+                setSelectedWard(''); // Reset ward when province changes
+                setCurrentPage(1);
+                console.log('🏙️ Province changed to:', e.target.value);
+              }}
+            >
+              <option value="">Chọn Tỉnh/TP</option>
+              {provinces.map(province => (
+                <option key={province.id} value={province.id}>{province.name}</option>
+              ))}
+            </select>
+          )}
+
+          {/* 🎯 Show Ward select ONLY when level is "WARD" AND province is selected */}
+          {levelFilter === 'WARD' && selectedProvince && (
+            <select
+              className={styles.select}
+              value={selectedWard}
+              onChange={(e) => {
+                setSelectedWard(e.target.value);
+                setCurrentPage(1);
+                console.log('🏘️ Ward changed to:', e.target.value);
+              }}
+            >
+              <option value="">Chọn Phường/Xã</option>
+              {filteredWards.map(ward => (
+                <option key={ward.id} value={ward.id}>{ward.name}</option>
+              ))}
+            </select>
+          )}
 
           <select
             className={styles.select}
@@ -307,7 +635,7 @@ export const TerritoryTabNew: React.FC<TerritoryTabProps> = ({
                   <th>Xã/Phường</th>
                   <th>Người phụ trách</th>
                   <th className={styles.alignCenter}>Số người dùng</th>
-                  <th className={styles.alignCenter}>Trạng thái</th>
+                  <th className={styles.alignCenter}>Trng thái</th>
                   <th className={styles.alignRight}>Thao tác</th>
                 </tr>
               </thead>

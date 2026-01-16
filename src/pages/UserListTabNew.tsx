@@ -32,6 +32,7 @@ import { supabase } from '../lib/supabase';
 import { Pagination, usePagination } from '../components/Pagination';
 import * as XLSX from 'xlsx';
 import { UserModal } from '../components/UserModal';
+import { DatabaseErrorAlert } from '../components/DatabaseErrorAlert';
 import bcrypt from 'bcryptjs';
 
 // Default password
@@ -77,6 +78,7 @@ export const UserListTabNew: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [userToReset, setUserToReset] = useState<User | null>(null);
+  const [databaseError, setDatabaseError] = useState<any>(null);
 
   const itemsPerPage = 20;
 
@@ -87,6 +89,7 @@ export const UserListTabNew: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setDatabaseError(null); // Clear previous errors
       console.log('🔍 Fetching users and roles from Supabase...');
 
       // Fetch roles first
@@ -120,7 +123,8 @@ export const UserListTabNew: React.FC = () => {
 
       if (usersError) {
         console.error('❌ Error fetching users:', usersError);
-        toast.error(`Lỗi tải người dùng: ${usersError.message}`);
+        setDatabaseError(usersError); // Set the error for display
+        // toast.error(`Lỗi tải người dùng: ${usersError.message}`);
       } else {
         console.log(`✅ Loaded ${usersData?.length || 0} users`);
         setUsers(usersData || []);
@@ -129,6 +133,7 @@ export const UserListTabNew: React.FC = () => {
       console.error('❌ Error in fetchData:', error);
       toast.error('Lỗi kết nối Supabase');
       setUsers([]);
+      setDatabaseError(error);
     } finally {
       setLoading(false);
     }
@@ -651,6 +656,15 @@ export const UserListTabNew: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Database Error Alert */}
+      {databaseError && (
+        <DatabaseErrorAlert
+          error={databaseError}
+          onRetry={fetchData}
+          onClose={() => setDatabaseError(null)}
+        />
       )}
     </div>
   );

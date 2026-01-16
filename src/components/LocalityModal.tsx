@@ -4,17 +4,14 @@
  * Tuân thủ design tokens từ /src/styles/theme.css với Inter font
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   Save, 
   MapPin, 
   Building2, 
-  User, 
-  Mail,
+  Users,
   ChevronDown,
-  Search,
-  Check,
 } from 'lucide-react';
 import styles from '../pages/AdminPage.module.css';
 import { toast } from 'sonner';
@@ -30,7 +27,14 @@ interface Ward {
   id: string;
   code: string;
   name: string;
-  provinceid: string;
+  provinceId: string; // Changed to match TerritoryTabNew
+}
+
+interface Category {
+  id: string;
+  code: string;
+  name: string;
+  type?: string;
 }
 
 interface UserOption {
@@ -57,92 +61,92 @@ export const LocalityModal: React.FC<LocalityModalProps> = ({
     level: '', // '', 'province', 'ward'
     province_id: '',
     ward_id: '',
-    manager_id: '',
+    category_id: '', // Changed from manager_id
     status: 1 as number, // 1 = hoạt động, 0 = tạm dừng
     description: '',
   });
 
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
-  const [users, setUsers] = useState<UserOption[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [filteredWards, setFilteredWards] = useState<Ward[]>([]);
   
-  // User dropdown states
-  const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [userSearchQuery, setUserSearchQuery] = useState('');
-  const [selectedUser, setSelectedUser] = useState<UserOption | null>(null);
-  const userDropdownRef = useRef<HTMLDivElement>(null);
-
+  const [loadingProvinces, setLoadingProvinces] = useState(true);
+  const [loadingWards, setLoadingWards] = useState(true);
+  
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchProvinces();
     fetchWards();
-    fetchUsers();
+    fetchCategories();
   }, []);
 
   useEffect(() => {
     // Filter wards based on selected province
     if (formData.province_id) {
-      const filtered = wards.filter(w => w.provinceid === formData.province_id);
+      console.log('🔍 Filtering wards for province_id:', formData.province_id);
+      const filtered = wards.filter(w => w.provinceId === formData.province_id);
+      console.log('✅ Filtered wards count:', filtered.length);
       setFilteredWards(filtered);
     } else {
       setFilteredWards([]);
     }
   }, [formData.province_id, wards]);
 
-  // Close user dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
-        setShowUserDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   const fetchProvinces = async () => {
     try {
+      console.log('🔍 Fetching provinces from Supabase...');
       const { data, error } = await supabase
         .from('provinces')
         .select('*')
         .order('name', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching provinces:', error);
+        throw error;
+      }
+      console.log('✅ Loaded provinces:', data?.length);
       setProvinces(data || []);
+      setLoadingProvinces(false);
     } catch (error) {
-      console.error('Error fetching provinces:', error);
+      console.error('❌ Error in fetchProvinces:', error);
+      toast.error('Lỗi tải danh sách Tỉnh/TP');
     }
   };
 
   const fetchWards = async () => {
     try {
+      console.log('🔍 Fetching wards from Supabase...');
       const { data, error } = await supabase
         .from('wards')
         .select('*')
         .order('name', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching wards:', error);
+        throw error;
+      }
+      console.log('✅ Loaded wards:', data?.length);
       setWards(data || []);
+      setLoadingWards(false);
     } catch (error) {
-      console.error('Error fetching wards:', error);
+      console.error('❌ Error in fetchWards:', error);
+      toast.error('Lỗi tải danh sách Phường/Xã');
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchCategories = async () => {
     try {
       const { data, error } = await supabase
-        .from('users')
-        .select('id, full_name, email, avatar_url')
-        .eq('status', 1) // Only active users
-        .order('full_name', { ascending: true });
+        .from('categories')
+        .select('*')
+        .order('name', { ascending: true });
 
       if (error) throw error;
-      setUsers(data || []);
+      setCategories(data || []);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('Error fetching categories:', error);
     }
   };
 
@@ -194,22 +198,6 @@ export const LocalityModal: React.FC<LocalityModalProps> = ({
   };
 
   const isViewMode = mode === 'view';
-
-  // Filter users based on search query
-  const filteredUsers = users.filter(user => {
-    const query = userSearchQuery.toLowerCase();
-    return (
-      user.full_name.toLowerCase().includes(query) ||
-      user.email.toLowerCase().includes(query)
-    );
-  });
-
-  const handleSelectUser = (user: UserOption) => {
-    setSelectedUser(user);
-    setFormData({ ...formData, manager_id: user.id });
-    setShowUserDropdown(false);
-    setUserSearchQuery('');
-  };
 
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
@@ -277,37 +265,26 @@ export const LocalityModal: React.FC<LocalityModalProps> = ({
                 <label>
                   Cấp <span className={styles.required}>*</span>
                 </label>
-                <div style={{ position: 'relative' }}>
-                  <select
-                    className={styles.select}
-                    value={formData.level}
-                    onChange={(e) => {
-                      setFormData({ 
-                        ...formData, 
-                        level: e.target.value,
-                        province_id: '',
-                        ward_id: '',
-                      });
-                    }}
-                    disabled={isViewMode}
-                    required
-                  >
-                    <option value="">Chọn cấp</option>
-                    <option value="province">Tỉnh/Thành phố</option>
-                    <option value="ward">Xã/Phường</option>
-                  </select>
-                  <ChevronDown 
-                    size={16} 
-                    style={{
-                      position: 'absolute',
-                      right: '12px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      color: 'var(--muted-foreground)',
-                      pointerEvents: 'none',
-                    }}
-                  />
-                </div>
+                <select
+                  className={styles.select}
+                  value={formData.level}
+                  onChange={(e) => {
+                    const newLevel = e.target.value;
+                    console.log('🔄 Form - Level changed to:', newLevel);
+                    setFormData({ 
+                      ...formData, 
+                      level: newLevel,
+                      province_id: '',
+                      ward_id: '',
+                    });
+                  }}
+                  disabled={isViewMode}
+                  required
+                >
+                  <option value="">-- Chọn cấp --</option>
+                  <option value="province">Cấp Tỉnh/Thành ph��</option>
+                  <option value="ward">Cấp Xã/Phường</option>
+                </select>
               </div>
 
               {/* Trạng thái */}
@@ -315,39 +292,26 @@ export const LocalityModal: React.FC<LocalityModalProps> = ({
                 <label>
                   Trạng thái <span className={styles.required}>*</span>
                 </label>
-                <div style={{ position: 'relative' }}>
-                  <select
-                    className={styles.select}
-                    value={formData.status}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        status: parseInt(e.target.value) as number,
-                      })
-                    }
-                    disabled={isViewMode}
-                    required
-                  >
-                    <option value="1">Hoạt động</option>
-                    <option value="0">Tạm dừng</option>
-                  </select>
-                  <ChevronDown 
-                    size={16} 
-                    style={{
-                      position: 'absolute',
-                      right: '12px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      color: 'var(--muted-foreground)',
-                      pointerEvents: 'none',
-                    }}
-                  />
-                </div>
+                <select
+                  className={styles.select}
+                  value={formData.status}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      status: parseInt(e.target.value) as number,
+                    })
+                  }
+                  disabled={isViewMode}
+                  required
+                >
+                  <option value="1">Hoạt động</option>
+                  <option value="0">Tạm dừng</option>
+                </select>
               </div>
 
               {/* Conditional: Chọn Tỉnh/Thành phố */}
               {(formData.level === 'province' || formData.level === 'ward') && (
-                <div className={styles.formGroup}>
+                <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
                   <label>
                     Chọn Tỉnh/Thành phố <span className={styles.required}>*</span>
                   </label>
@@ -366,13 +330,19 @@ export const LocalityModal: React.FC<LocalityModalProps> = ({
                     />
                     <select
                       className={styles.select}
-                      style={{ paddingLeft: '40px' }}
+                      style={{ paddingLeft: '40px', width: '100%' }}
                       value={formData.province_id}
-                      onChange={(e) => setFormData({ ...formData, province_id: e.target.value, ward_id: '' })}
-                      disabled={isViewMode}
+                      onChange={(e) => {
+                        const provinceId = e.target.value;
+                        console.log('🏙️ Province selected:', provinceId);
+                        setFormData({ ...formData, province_id: provinceId, ward_id: '' });
+                      }}
+                      disabled={isViewMode || loadingProvinces}
                       required
                     >
-                      <option value="">-- Chọn Tỉnh/Thành phố --</option>
+                      <option value="">
+                        {loadingProvinces ? 'Đang tải...' : '-- Chọn Tỉnh/Thành phố --'}
+                      </option>
                       {provinces.map((province) => (
                         <option key={province.id} value={province.id}>
                           {province.name}
@@ -396,7 +366,7 @@ export const LocalityModal: React.FC<LocalityModalProps> = ({
 
               {/* Conditional: Chọn Xã/Phường */}
               {formData.level === 'ward' && (
-                <div className={styles.formGroup}>
+                <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
                   <label>
                     Chọn Xã/Phường <span className={styles.required}>*</span>
                   </label>
@@ -415,7 +385,7 @@ export const LocalityModal: React.FC<LocalityModalProps> = ({
                     />
                     <select
                       className={styles.select}
-                      style={{ paddingLeft: '40px' }}
+                      style={{ paddingLeft: '40px', width: '100%' }}
                       value={formData.ward_id}
                       onChange={(e) => setFormData({ ...formData, ward_id: e.target.value })}
                       disabled={isViewMode || !formData.province_id}
@@ -445,201 +415,61 @@ export const LocalityModal: React.FC<LocalityModalProps> = ({
                       Vui lòng chọn Tỉnh/Thành phố trước
                     </small>
                   )}
+                  {formData.province_id && filteredWards.length === 0 && (
+                    <small style={{ color: 'var(--destructive)', fontSize: '12px' }}>
+                      ⚠️ Không có dữ liệu Phường/Xã cho tỉnh này
+                    </small>
+                  )}
+                  {formData.province_id && filteredWards.length > 0 && (
+                    <small style={{ color: 'var(--success, green)', fontSize: '12px' }}>
+                       {filteredWards.length} Phường/Xã có sẵn
+                    </small>
+                  )}
                 </div>
               )}
 
-              {/* Người phụ trách - Searchable Dropdown */}
+              {/* Đơn vị/Đội phụ trách */}
               <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
-                <label>Người phụ trách</label>
-                <div style={{ position: 'relative' }} ref={userDropdownRef}>
-                  {/* Selected User Display or Search Input */}
-                  {selectedUser && !showUserDropdown ? (
-                    <div
-                      className={styles.input}
-                      onClick={() => !isViewMode && setShowUserDropdown(true)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        cursor: isViewMode ? 'default' : 'pointer',
-                        padding: '10px 12px',
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: '32px',
-                          height: '32px',
-                          borderRadius: 'var(--radius-full, 50%)',
-                          background: 'linear-gradient(135deg, var(--primary, #005cb6) 0%, #0077d4 100%)',
-                          color: 'white',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '14px',
-                          fontWeight: 600,
-                          flexShrink: 0,
-                        }}
-                      >
-                        {selectedUser.full_name.charAt(0).toUpperCase()}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ 
-                          fontWeight: 500, 
-                          fontSize: '14px',
-                          color: 'var(--text-primary)',
-                          marginBottom: '2px',
-                        }}>
-                          {selectedUser.full_name}
-                        </div>
-                        <div style={{ 
-                          fontSize: '13px', 
-                          color: 'var(--text-secondary)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                        }}>
-                          <Mail size={12} />
-                          {selectedUser.email}
-                        </div>
-                      </div>
-                      {!isViewMode && (
-                        <X
-                          size={18}
-                          style={{ color: 'var(--muted-foreground)', cursor: 'pointer', flexShrink: 0 }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedUser(null);
-                            setFormData({ ...formData, manager_id: '' });
-                          }}
-                        />
-                      )}
-                    </div>
-                  ) : (
-                    <div style={{ position: 'relative' }}>
-                      <Search
-                        size={16}
-                        style={{
-                          position: 'absolute',
-                          left: '12px',
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          color: 'var(--muted-foreground)',
-                          pointerEvents: 'none',
-                          zIndex: 1,
-                        }}
-                      />
-                      <input
-                        type="text"
-                        className={styles.input}
-                        style={{ paddingLeft: '40px' }}
-                        value={userSearchQuery}
-                        onChange={(e) => setUserSearchQuery(e.target.value)}
-                        onFocus={() => !isViewMode && setShowUserDropdown(true)}
-                        placeholder="Tìm kiếm người dùng..."
-                        disabled={isViewMode}
-                      />
-                    </div>
-                  )}
-
-                  {/* Dropdown List */}
-                  {showUserDropdown && !isViewMode && (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: 0,
-                        right: 0,
-                        marginTop: '4px',
-                        background: 'var(--card)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 'var(--radius-md, 8px)',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                        maxHeight: '300px',
-                        overflowY: 'auto',
-                        zIndex: 1000,
-                      }}
-                    >
-                      {filteredUsers.length === 0 ? (
-                        <div
-                          style={{
-                            padding: '16px',
-                            textAlign: 'center',
-                            color: 'var(--muted-foreground)',
-                            fontSize: '14px',
-                          }}
-                        >
-                          Không tìm thấy người dùng
-                        </div>
-                      ) : (
-                        filteredUsers.map((user) => (
-                          <div
-                            key={user.id}
-                            onClick={() => handleSelectUser(user)}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '12px',
-                              padding: '12px 16px',
-                              cursor: 'pointer',
-                              borderBottom: '1px solid var(--border)',
-                              transition: 'background-color 0.2s',
-                            }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.backgroundColor = 'var(--muted)')
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.backgroundColor = 'transparent')
-                            }
-                          >
-                            <div
-                              style={{
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: 'var(--radius-full, 50%)',
-                                background: 'linear-gradient(135deg, var(--primary, #005cb6) 0%, #0077d4 100%)',
-                                color: 'white',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '16px',
-                                fontWeight: 600,
-                                flexShrink: 0,
-                              }}
-                            >
-                              {user.full_name.charAt(0).toUpperCase()}
-                            </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ 
-                                fontWeight: 500, 
-                                fontSize: '14px',
-                                color: 'var(--text-primary)',
-                                marginBottom: '4px',
-                              }}>
-                                {user.full_name}
-                              </div>
-                              <div style={{ 
-                                fontSize: '13px', 
-                                color: 'var(--text-secondary)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                              }}>
-                                <Mail size={12} />
-                                {user.email}
-                              </div>
-                            </div>
-                            {selectedUser?.id === user.id && (
-                              <Check size={18} style={{ color: 'var(--primary)', flexShrink: 0 }} />
-                            )}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
+                <label>Đơn vị/Đội phụ trách</label>
+                <div style={{ position: 'relative' }}>
+                  <Users
+                    size={16}
+                    style={{
+                      position: 'absolute',
+                      left: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: 'var(--muted-foreground)',
+                      pointerEvents: 'none',
+                      zIndex: 1,
+                    }}
+                  />
+                  <select
+                    className={styles.select}
+                    style={{ paddingLeft: '40px', width: '100%' }}
+                    value={formData.category_id}
+                    onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                    disabled={isViewMode}
+                  >
+                    <option value="">-- Chọn đơn vị/đội --</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name} {category.code && `(${category.code})`}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown 
+                    size={16} 
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: 'var(--muted-foreground)',
+                      pointerEvents: 'none',
+                    }}
+                  />
                 </div>
-                <small style={{ color: 'var(--muted-foreground)', fontSize: '12px' }}>
-                  Tìm kiếm theo tên hoặc email
-                </small>
               </div>
             </div>
 

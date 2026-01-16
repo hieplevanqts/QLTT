@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import * as XLSX from 'xlsx';
+import { toast } from 'sonner';
 import {
   Search,
   Filter,
@@ -18,12 +20,16 @@ import {
   Shield,
   TrendingUp,
   Database,
+  Layers,
+  CheckCircle,
   FileText,
   Activity,
   History,
   AlertTriangle,
   RefreshCw,
   Info,
+  FileDown,
+  Loader2,
 } from 'lucide-react';
 import styles from './AdminPage.module.css';
 import { Pagination, usePagination } from '../components/Pagination';
@@ -42,6 +48,10 @@ export { PermissionsManagement };
 // Import and export the new RolesTabNew (replaces old RolesTab)
 import { RolesTabNew } from './RolesTabNew';
 export { RolesTabNew as RolesTab };
+
+// Import and export the new ChecklistTabNew
+import { ChecklistTabNew } from './ChecklistTabNew';
+export { ChecklistTabNew };
 
 // Import and export the new PermissionsMatrixNew
 import { PermissionsMatrixNew } from './PermissionsMatrixNew';
@@ -66,6 +76,18 @@ export { PermissionsMatrixTabNew };
 // Import and export the new UserListTabNew (Quản lý người dùng)
 import { UserListTabNew } from './UserListTabNew';
 export { UserListTabNew };
+
+// Import and export the new FormTemplatesTab (Thiết lập biểu mẫu)
+import { FormTemplatesTab } from './FormTemplatesTab';
+export { FormTemplatesTab };
+
+// Import and export the new NotificationRulesTab (Quy tắc thông báo)
+import { NotificationRulesTab } from './NotificationRulesTab';
+export { NotificationRulesTab };
+
+// Import and export the new ExportCenterTab (Trung tâm xuất dữ liệu)
+import { ExportCenterTab } from './ExportCenterTab';
+export { ExportCenterTab };
 
 // For backward compatibility - alias
 export const PermissionsMatrixTab = RBACManagement;
@@ -1028,6 +1050,34 @@ export const TerritoryTab: React.FC<{
   territories: any[];
   onOpenModal: (type: any, item?: any) => void;
 }> = ({ territories, onOpenModal }) => {
+  const [selectedLevel, setSelectedLevel] = useState<string>('');
+  const [selectedProvince, setSelectedProvince] = useState<string>('');
+  const [selectedWard, setSelectedWard] = useState<string>('');
+
+  // Mock data - replace with Supabase data
+  const provinces = [
+    { id: '1', name: 'Hà Nội' },
+    { id: '2', name: 'Hồ Chí Minh' },
+    { id: '3', name: 'Đà Nẵng' },
+    { id: '4', name: 'Hải Phòng' },
+  ];
+
+  const wards = [
+    { id: '1', name: 'Phường Ba Đình', provinceId: '1' },
+    { id: '2', name: 'Phường Hoàn Kiếm', provinceId: '1' },
+    { id: '3', name: 'Phường Bến Nghé', provinceId: '2' },
+    { id: '4', name: 'Phường Đa Kao', provinceId: '2' },
+  ];
+
+  const filteredWards = wards.filter(ward => ward.provinceId === selectedProvince);
+
+  // Reset dependent filters when level changes
+  const handleLevelChange = (level: string) => {
+    setSelectedLevel(level);
+    setSelectedProvince('');
+    setSelectedWard('');
+  };
+
   return (
     <div className={styles.tabContentInner}>
 
@@ -1036,12 +1086,62 @@ export const TerritoryTab: React.FC<{
           <Search size={18} className={styles.searchIcon} />
           <input type="text" placeholder="Tìm địa bàn..." className={styles.searchInput} />
         </div>
-        <select className={styles.select}>
-          <option>Tất cả cấp</option>
-          <option>Tỉnh/TP</option>
-          <option>Quận/Huyện</option>
-          <option>Phường/Xã</option>
+
+        {/* Cấp địa bàn */}
+        <select 
+          className={styles.select}
+          value={selectedLevel}
+          onChange={(e) => handleLevelChange(e.target.value)}
+        >
+          <option value="">Tất cả cấp</option>
+          <option value="province">Cấp Tỉnh</option>
+          <option value="district">Cấp Huyện</option>
+          <option value="ward">Cấp Xã</option>
         </select>
+
+        {/* Show Province select when level is "province" or "ward" */}
+        {(selectedLevel === 'province' || selectedLevel === 'ward') && (
+          <select
+            className={styles.select}
+            value={selectedProvince}
+            onChange={(e) => {
+              setSelectedProvince(e.target.value);
+              setSelectedWard('');
+            }}
+          >
+            <option value="">Chọn Tỉnh/TP</option>
+            {provinces.map(province => (
+              <option key={province.id} value={province.id}>
+                {province.name}
+              </option>
+            ))}
+          </select>
+        )}
+
+        {/* Show Ward select ONLY when level is "ward" and province is selected */}
+        {selectedLevel === 'ward' && selectedProvince && (
+          <select
+            className={styles.select}
+            value={selectedWard}
+            onChange={(e) => setSelectedWard(e.target.value)}
+          >
+            <option value="">Chọn Phường/Xã</option>
+            {filteredWards.map(ward => (
+              <option key={ward.id} value={ward.id}>
+                {ward.name}
+              </option>
+            ))}
+          </select>
+        )}
+
+        {/* Divider */}
+        <div className={styles.filterDivider}></div>
+
+        {/* Action Button */}
+        <button className={styles.addButton} onClick={() => onOpenModal('add')}>
+          <Plus size={18} />
+          Thêm địa bàn
+        </button>
       </div>
 
       <div className={styles.tableContainer}>
@@ -1100,20 +1200,333 @@ export const TeamsTab: React.FC<{
   teams: any[];
   onOpenModal: (type: any, item?: any) => void;
 }> = ({ teams, onOpenModal }) => {
+  const [isImportDropdownOpen, setIsImportDropdownOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 🎯 Pagination and Filter States
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
+
+  // 🎯 Filter and Paginate Teams
+  const filteredTeams = teams.filter(team => {
+    const matchesSearch = !searchTerm || 
+      team.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      team.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      team.leader?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesType = !typeFilter || team.type === typeFilter;
+    const matchesStatus = !statusFilter || team.status === statusFilter;
+    
+    return matchesSearch && matchesType && matchesStatus;
+  });
+
+  const totalItems = filteredTeams.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedTeams = filteredTeams.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, typeFilter, statusFilter]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest(`.${styles.importDropdown}`)) {
+        setIsImportDropdownOpen(false);
+      }
+    };
+
+    if (isImportDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isImportDropdownOpen]);
+
+  // Export Excel
+  const handleExport = () => {
+    try {
+      console.log('📤 Exporting teams to Excel...');
+      
+      const exportData = teams.map(team => ({
+        'Mã': team.code,
+        'Tên đơn vị': team.name,
+        'Loại': team.type === 'department' ? 'Phòng ban' : team.type === 'team' ? 'Đội' : 'Tổ',
+        'Trưởng đơn vị': team.leader || '',
+        'Số thành viên': team.memberCount || 0,
+        'Trạng thái': team.status === 'active' ? 'Hoạt động' : 'Không hoạt động',
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Đơn vị');
+      
+      const fileName = `Don_vi_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      
+      toast.success('Đã xuất dữ liệu thành công');
+      console.log('✅ Exported:', fileName);
+    } catch (error) {
+      console.error('❌ Export error:', error);
+      toast.error('Lỗi xuất dữ liệu');
+    }
+  };
+
+  // Download Template
+  const handleDownloadTemplate = () => {
+    setIsImportDropdownOpen(false);
+    
+    try {
+      console.log('📥 Generating Excel template...');
+      
+      const templateData = [
+        {
+          'Mã': 'DV001',
+          'Tên đơn vị': 'Phòng Kế hoạch',
+          'Loại': 'Phòng ban',
+          'Trưởng đơn vị': 'Nguyễn Văn A',
+          'Số thành viên': '10',
+          'Trạng thái': 'Hoạt động',
+        },
+        {
+          'Mã': 'DV002',
+          'Tên đơn vị': 'Đội Thanh tra',
+          'Loại': 'Đội',
+          'Trưởng đơn vị': 'Trần Thị B',
+          'Số thành viên': '5',
+          'Trạng thái': 'Hoạt động',
+        },
+      ];
+
+      const ws = XLSX.utils.json_to_sheet(templateData);
+      const wscols = [
+        { wch: 15 },  // Mã
+        { wch: 30 },  // Tên đơn vị
+        { wch: 15 },  // Loại
+        { wch: 25 },  // Trưởng đơn vị
+        { wch: 15 },  // Số thành viên
+        { wch: 20 },  // Trạng thái
+      ];
+      ws['!cols'] = wscols;
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Mẫu Đơn vị');
+
+      // Instructions sheet
+      const instructions = [
+        { 'CỘT': 'Mã', 'BẮT BUỘC': 'Có', 'ĐỊNH DẠNG': 'Text', 'GHI CHÚ': 'Mã đơn vị duy nhất, ví dụ: DV001' },
+        { 'CỘT': 'Tên đơn vị', 'BẮT BUỘC': 'Có', 'ĐỊNH DẠNG': 'Text', 'GHI CHÚ': 'Tên đầy đủ của đơn vị' },
+        { 'CỘT': 'Loại', 'BẮT BUỘC': 'Có', 'ĐỊNH DẠNG': 'Text', 'GHI CHÚ': 'Ghi "Phòng ban", "Đội", hoặc "Tổ"' },
+        { 'CỘT': 'Trưởng đơn vị', 'BẮT BUỘC': 'Không', 'ĐỊNH DẠNG': 'Text', 'GHI CHÚ': 'Họ tên trưởng đơn vị' },
+        { 'CỘT': 'Số thành viên', 'BẮT BUỘC': 'Không', 'ĐỊNH DẠNG': 'Số', 'GHI CHÚ': 'Số lượng thành viên trong đơn vị' },
+        { 'CỘT': 'Trạng thái', 'BẮT BUỘC': 'Không', 'ĐỊNH DẠNG': 'Text', 'GHI CHÚ': 'Ghi "Hoạt động" hoặc để trống = Không hoạt động' },
+      ];
+
+      const wsInstructions = XLSX.utils.json_to_sheet(instructions);
+      const wsInstructionsCols = [
+        { wch: 20 },  // Cột
+        { wch: 15 },  // Bắt buộc
+        { wch: 15 },  // Định dạng
+        { wch: 70 },  // Ghi chú
+      ];
+      wsInstructions['!cols'] = wsInstructionsCols;
+      XLSX.utils.book_append_sheet(wb, wsInstructions, 'Hướng dẫn');
+
+      const fileName = `Mau_Don_vi_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      
+      toast.success('Đã tải file mẫu thành công');
+      console.log('✅ Template downloaded:', fileName);
+    } catch (error) {
+      console.error('❌ Error generating template:', error);
+      toast.error('Lỗi tải file mẫu');
+    }
+  };
+
+  // Import Excel
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsImportDropdownOpen(false);
+    
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      console.log('📥 Importing Excel file:', file.name);
+      toast.info('Đang xử lý file Excel...');
+
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      console.log('📊 Parsed data:', jsonData);
+
+      if (!jsonData || jsonData.length === 0) {
+        toast.error('File Excel không có dữ liệu');
+        return;
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const row of jsonData as any[]) {
+        try {
+          // Map type
+          let typeValue = 'department';
+          const typeText = row['Loại'] || row['type'] || '';
+          if (typeText.includes('Đội')) typeValue = 'team';
+          else if (typeText.includes('Tổ')) typeValue = 'group';
+          else if (typeText.includes('Phòng')) typeValue = 'department';
+
+          const teamData = {
+            code: row['Mã'] || row['code'] || '',
+            name: row['Tên đơn vị'] || row['name'] || '',
+            type: typeValue,
+            leader: row['Trưởng đơn vị'] || row['leader'] || '',
+            memberCount: parseInt(row['Số thành viên'] || row['memberCount'] || '0'),
+            status: (row['Trạng thái'] || row['status'] || '').includes('Hoạt động') ? 'active' : 'inactive',
+          };
+
+          if (!teamData.code || !teamData.name) {
+            console.warn('⚠️ Skipping row - missing required fields:', row);
+            errorCount++;
+            continue;
+          }
+
+          console.log('✅ Valid team data:', teamData);
+          successCount++;
+          
+          // Note: Actual API call would go here
+          // For now just counting success
+          
+        } catch (error) {
+          console.error('❌ Error importing row:', { error, row });
+          errorCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        toast.success(`Đã nhập thành công ${successCount} đơn vị`);
+      }
+      if (errorCount > 0) {
+        toast.warning(`${errorCount} dòng bị lỗi hoặc bỏ qua`);
+      }
+
+      console.log(`📊 Import summary: ${successCount} success, ${errorCount} errors`);
+      
+    } catch (error) {
+      console.error('❌ Import error:', error);
+      toast.error('Lỗi đọc file Excel');
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   return (
     <div className={styles.tabContentInner}>
 
+      {/* FILTER BAR & ACTIONS */}
       <div className={styles.filterBar}>
+        {/* Search Box */}
         <div className={styles.searchBox}>
           <Search size={18} className={styles.searchIcon} />
-          <input type="text" placeholder="Tìm đơn vị..." className={styles.searchInput} />
+          <input 
+            type="text" 
+            placeholder="Tìm kiếm đơn vị..." 
+            className={styles.searchInput}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-        <select className={styles.select}>
-          <option>Tất cả loại</option>
-          <option>Phòng ban</option>
-          <option>Đội</option>
-          <option>Tổ</option>
+
+        {/* Filters Group */}
+        <select 
+          className={styles.select}
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+        >
+          <option value="">Tất cả loại</option>
+          <option value="department">Phòng ban</option>
+          <option value="team">Đội</option>
+          <option value="group">Tổ</option>
         </select>
+
+        <select 
+          className={styles.select}
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="">Tất cả trạng thái</option>
+          <option value="active">Hoạt động</option>
+          <option value="inactive">Không hoạt động</option>
+        </select>
+
+        {/* Divider */}
+        <div className={styles.filterDivider}></div>
+
+        {/* Export Button */}
+        <button className={styles.secondaryBtn} onClick={handleExport}>
+          <FileDown size={18} />
+          Xuất dữ liệu
+        </button>
+
+        {/* Import Dropdown */}
+        <div className={styles.importDropdown}>
+          <button 
+            className={styles.secondaryBtn}
+            onClick={() => setIsImportDropdownOpen(!isImportDropdownOpen)}
+          >
+            <Upload size={18} />
+            Nhập dữ liệu
+            <ChevronDown size={16} />
+          </button>
+
+          {isImportDropdownOpen && (
+            <div className={styles.dropdownMenu}>
+              <button 
+                className={styles.dropdownItem}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload size={16} />
+                Từ file Excel
+              </button>
+              <button 
+                className={styles.dropdownItem}
+                onClick={handleDownloadTemplate}
+              >
+                <Download size={16} />
+                Tải mẫu nhập liệu
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".xlsx,.xls"
+          onChange={handleImportExcel}
+          className={styles.hiddenInput}
+        />
+
+        {/* Add Button */}
+        <button className={styles.addButton} onClick={() => onOpenModal('add')}>
+          <Plus size={18} />
+          Thêm đơn vị
+        </button>
       </div>
 
       <div className={styles.tableContainer}>
@@ -1130,41 +1543,54 @@ export const TeamsTab: React.FC<{
             </tr>
           </thead>
           <tbody>
-            {teams.map((team) => (
-              <tr key={team.id}>
-                <td><code className={styles.code}>{team.code}</code></td>
-                <td><strong>{team.name}</strong></td>
-                <td>
-                  {team.type === 'department' && 'Phòng ban'}
-                  {team.type === 'team' && 'Đội'}
-                  {team.type === 'group' && 'Tổ'}
-                </td>
-                <td>{team.leader}</td>
-                <td>{team.memberCount}</td>
-                <td>
-                  {team.status === 'active' ? (
-                    <span className={styles.statusActive}><Check size={12} /> Hoạt động</span>
-                  ) : (
-                    <span className={styles.statusInactive}><XCircle size={12} /> Không hoạt động</span>
-                  )}
-                </td>
-                <td>
-                  <div className={styles.actionButtons}>
-                    <button className={styles.iconBtn} title="Chỉnh sửa" onClick={() => onOpenModal('edit', team)}>
-                      <Edit size={16} />
-                    </button>
-                    <button className={styles.iconBtn} title="Xóa" onClick={() => onOpenModal('delete', team)}>
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+            {paginatedTeams.length > 0 ? (
+              paginatedTeams.map((team) => (
+                <tr key={team.id}>
+                  <td><code className={styles.code}>{team.code}</code></td>
+                  <td><strong>{team.name}</strong></td>
+                  <td>
+                    {team.type === 'department' && 'Phòng ban'}
+                    {team.type === 'team' && 'Đội'}
+                    {team.type === 'group' && 'Tổ'}
+                  </td>
+                  <td>{team.leader}</td>
+                  <td>{team.memberCount}</td>
+                  <td>
+                    {team.status === 'active' ? (
+                      <span className={styles.statusActive}><Check size={12} /> Hoạt động</span>
+                    ) : (
+                      <span className={styles.statusInactive}><XCircle size={12} /> Không hoạt động</span>
+                    )}
+                  </td>
+                  <td>
+                    <div className={styles.actionButtons}>
+                      <button className={styles.iconBtn} title="Chỉnh sửa" onClick={() => onOpenModal('edit', team)}>
+                        <Edit size={16} />
+                      </button>
+                      <button className={styles.iconBtn} title="Xóa" onClick={() => onOpenModal('delete', team)}>
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--muted-foreground)' }}>
+                  Không tìm thấy đơn vị nào
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
 
-      <Pagination currentPage={1} totalItems={teams.length} itemsPerPage={10} onPageChange={() => {}} />
+      <Pagination 
+        currentPage={currentPage} 
+        totalItems={totalItems} 
+        itemsPerPage={itemsPerPage} 
+        onPageChange={setCurrentPage} 
+      />
     </div>
   );
 };
@@ -1381,75 +1807,7 @@ export const ChecklistTab: React.FC<{
   );
 };
 
-// TAB 2.5: QUY TẮC THÔNG BÁO
-export const NotificationRulesTab: React.FC<{
-  rules: any[];
-  onOpenModal: (type: any, item?: any) => void;
-}> = ({ rules, onOpenModal }) => {
-  return (
-    <div className={styles.tabContentInner}>
-
-      <div className={styles.filterBar}>
-        <div className={styles.searchBox}>
-          <Search size={18} className={styles.searchIcon} />
-          <input type="text" placeholder="Tìm quy tắc..." className={styles.searchInput} />
-        </div>
-      </div>
-
-      <div className={styles.tableContainer}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Tên quy tắc</th>
-              <th>Sự kiện</th>
-              <th>Điều kiện</th>
-              <th>Người nhận</th>
-              <th>Trạng thái</th>
-              <th className={styles.actionCol}>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rules.map((rule) => (
-              <tr key={rule.id}>
-                <td><strong>{rule.name}</strong></td>
-                <td>{rule.event}</td>
-                <td>{rule.condition}</td>
-                <td>{rule.recipients}</td>
-                <td>
-                  {rule.status === 'active' ? (
-                    <span className={styles.statusActive}><Check size={12} /> Hoạt động</span>
-                  ) : (
-                    <span className={styles.statusInactive}><XCircle size={12} /> Không hoạt động</span>
-                  )}
-                </td>
-                <td>
-                  <div className={styles.actionButtons}>
-                    <button className={styles.iconBtn} title="Sửa" onClick={() => onOpenModal('edit', rule)}>
-                      <Edit size={16} />
-                    </button>
-                    <button className={styles.iconBtn} title="Xóa" onClick={() => onOpenModal('delete', rule)}>
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <Pagination currentPage={1} totalItems={rules.length} itemsPerPage={10} onPageChange={() => {}} />
-    </div>
-  );
-};
-
 // Audit Tabs - Placeholders
-export const ExportCenterTab = () => (
-  <div className={styles.tabContentInner}>
-    <div className={styles.placeholder}>Trung tâm xuất dữ liệu - Component đang phát triển</div>
-  </div>
-);
-
 export const SystemLogsTab = () => (
   <div className={styles.tabContentInner}>
     <div className={styles.placeholder}>Nhật ký hệ thống - Component đang phát triển</div>

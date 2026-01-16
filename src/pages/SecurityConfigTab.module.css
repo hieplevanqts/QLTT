@@ -1,0 +1,518 @@
+/* ============================================
+   SECURITY CONFIG TAB - MAPPA PORTAL
+   Tuân thủ design system từ /src/styles/theme.css
+   Read-only card layout với tooltips
+   ============================================ */
+
+/* ============================================
+   CONTAINER & LAYOUT
+   ============================================ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px;
+  background: var(--background);
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.headerIcon {
+  width: 32px;
+  height: 32px;
+  color: #005cb6;
+  flex-shrink: 0;
+}
+
+.title {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--foreground);
+  line-height: 1.2;
+}
+
+.subtitle {
+  margin: 4px 0 0 0;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+.headerRight {
+  display: flex;
+  gap: 12px;
+}
+
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: #ffffff;
+  background: #005cb6;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnPrimary:hover {
+  background: #004a94;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 92, 182, 0.2);
+  color: #ffffff;
+}
+
+/* ============================================
+   INFO BANNER
+   ============================================ */
+
+.infoBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 20px;
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+  border-left: 4px solid #1e40af;
+  border-radius: var(--radius);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: #1e3a8a;
+  line-height: 1.6;
+}
+
+.infoBanner svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #1e40af;
+}
+
+.infoBanner strong {
+  font-weight: var(--font-weight-bold);
+}
+
+/* ============================================
+   CARD GRID
+   ============================================ */
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+  gap: 24px;
+}
+
+.policyCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.policyCard:hover {
+  border-color: #005cb6;
+  box-shadow: 0 6px 16px rgba(0, 92, 182, 0.12);
+  transform: translateY(-2px);
+}
+
+/* ============================================
+   CARD HEADER
+   ============================================ */
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 28px;
+  background: #f9fafb;
+  border-bottom: 1px solid var(--border);
+}
+
+.cardIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+}
+
+.cardTitle {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--foreground);
+  line-height: 1.3;
+}
+
+.cardSubtitle {
+  margin: 4px 0 0 0;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+/* ============================================
+   CARD CONTENT
+   ============================================ */
+
+.cardContent {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.configItem {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.configItem:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.configLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: #666666;
+}
+
+.configValue {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.highlightValue {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
+  color: #005cb6;
+  line-height: 1;
+}
+
+.valueUnit {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--muted-foreground);
+}
+
+/* ============================================
+   STATUS BADGES
+   ============================================ */
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statusBadge svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ============================================
+   COMPLEXITY CHECKS
+   ============================================ */
+
+.configChecks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-left: 8px;
+}
+
+.checkItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+}
+
+.checkYes {
+  color: #15803d;
+  flex-shrink: 0;
+}
+
+.checkNo {
+  color: #dc2626;
+  flex-shrink: 0;
+  opacity: 0.4;
+}
+
+/* ============================================
+   DELIVERY METHOD
+   ============================================ */
+
+.deliveryMethod {
+  display: inline-block;
+  padding: 6px 12px;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  color: #005cb6;
+  background: rgba(0, 92, 182, 0.1);
+  border-radius: 6px;
+}
+
+/* ============================================
+   IP LISTS
+   ============================================ */
+
+.ipList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.ipAddress {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  color: #15803d;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+}
+
+.ipAddress svg {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+}
+
+.ipAddressBlocked {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+}
+
+.ipAddressBlocked svg {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+}
+
+.ipMore {
+  display: inline-block;
+  padding: 6px 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: var(--font-weight-semibold);
+  color: #666;
+  background: #f3f4f6;
+  border-radius: 6px;
+}
+
+/* ============================================
+   TOOLTIP
+   ============================================ */
+
+.tooltipContainer {
+  position: relative;
+  display: inline-flex;
+  cursor: help;
+}
+
+.tooltipIcon {
+  color: #005cb6;
+  transition: color 0.2s ease;
+}
+
+.tooltipIcon:hover {
+  color: #004a94;
+}
+
+.tooltipContent {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 280px;
+  padding: 10px 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: var(--font-weight-normal);
+  line-height: 1.5;
+  color: #ffffff;
+  background: #1f2937;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  pointer-events: none;
+  animation: tooltipFadeIn 0.2s ease;
+}
+
+.tooltipContent::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #1f2937;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ============================================
+   FOOTER INFO
+   ============================================ */
+
+.footerInfo {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 16px 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  flex-wrap: wrap;
+}
+
+.footerItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+}
+
+.footerItem svg {
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+}
+
+/* ============================================
+   LOADING & EMPTY STATES
+   ============================================ */
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  color: #005cb6;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loadingText {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--muted-foreground);
+  margin: 0;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--muted-foreground);
+}
+
+.emptyState svg {
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.emptyState p {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-normal);
+}

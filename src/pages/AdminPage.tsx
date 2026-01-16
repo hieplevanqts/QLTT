@@ -48,31 +48,32 @@ import {
 import styles from './AdminPage.module.css';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { UniversalModal } from './AdminModal';
+import { UserListTabNew } from './UserListTabNew';
+import { RolesManagementTab } from './RolesManagementTab';
+import { PermissionsMatrixTabNew } from './PermissionsMatrixTabNew';
+import { TerritoryTabNew } from './TerritoryTabNew';
+import { ChecklistTabNew } from './ChecklistTabNew';
+import { FormTemplatesTab } from './FormTemplatesTab';
+import { NotificationRulesTab } from './NotificationRulesTab';
+import { ExportCenterTab } from './ExportCenterTab';
+import { AuditLogTab } from './AuditLogTab';
+import { DataChangesTab } from './DataChangesTab';
+import { ExportLogTab } from './ExportLogTab';
+import { SecurityConfigTab } from './SecurityConfigTab';
+import { IntegrationStatusTab } from './IntegrationStatusTab';
+import { SystemMonitorTab } from './SystemMonitorTab';
+import { SystemHealthTab } from './SystemHealthTab';
 import { toast } from 'sonner';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
 import {
   UserListTab,
-  UserListTabNew,
-  TerritoryTab,
-  TerritoryTabNew,
   TeamsTab,
-  PermissionsMatrixTabNew,
   CommonCategoriesTab,
   CategoryManagementTab,
   RiskConfigTab,
-  ChecklistTab,
-  NotificationRulesTab,
-  ExportCenterTab,
-  SystemLogsTab,
-  DataChangesTab,
-  ExportLogsTab,
-  SecurityConfigTab,
-  IntegrationStatusTab,
-  SystemMonitoringTab,
-  SystemStatusTab
 } from './AdminTabComponents';
 import { RolesTabWrapper } from './RolesTabWrapper';
-import { RolesManagementTab } from './RolesManagementTab';
+import { LocalityModal } from '../components/LocalityModal';
 import {
   generateUsers,
   generateRoles,
@@ -82,25 +83,27 @@ import {
   generateRiskIndicators,
   generateChecklists,
   generateNotificationRules
-} from '../data/generateFakeData';
+} from '../app/data/generateFakeData';
 
 type MainTab = 'users' | 'categories' | 'audit';
 type SubTab = string;
 
 interface User {
   id: string;
-  username?: string;
-  full_name: string;
-  email?: string;
-  phone?: string;
-  avatar_url?: string;
-  status: number; // 1 = active, 0 = inactive (matches database schema)
-  created_at: string;
-  updated_at: string;
-  lastLoginAt?: string; // camelCase as per schema
-  role?: string; // varchar(20), default 'VIEWER'
-  departmentId?: string; // uuid, nullable
-  avatarUrl?: string; // text, nullable (also exists in schema)
+  username: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  role: string;
+  roleId: string;
+  unit: string;
+  unitId: string;
+  territory: string;
+  territoryId: string;
+  status: 'active' | 'locked' | 'pending';
+  lastLogin?: string;
+  createdAt: string;
+  createdBy: string;
 }
 
 interface Role {
@@ -180,6 +183,7 @@ interface Checklist {
   status: 'active' | 'inactive';
   createdAt: string;
   description?: string;
+  formTemplateId?: string; // ID của biểu mẫu liên kết
 }
 
 interface NotificationRule {
@@ -255,6 +259,7 @@ const SUB_TABS = {
     { id: 'common-categories', label: 'Danh mục dùng chung', icon: Database },
     { id: 'risk-config', label: 'Cấu hình chỉ báo rủi ro', icon: TrendingUp },
     { id: 'checklist', label: 'Checklist theo chuyên đề', icon: CheckSquare },
+    { id: 'form-templates', label: 'Thiết lập biểu mẫu', icon: FileText },
     { id: 'notification-rules', label: 'Quy tắc thông báo', icon: Bell },
   ],
   audit: [
@@ -304,7 +309,7 @@ export default function AdminPage() {
   const [teams, setTeams] = useLocalStorage<Team[]>('mappa_admin_teams', INITIAL_TEAMS);
   const [categories, setCategories] = useLocalStorage<CategoryItem[]>('mappa_admin_categories', INITIAL_CATEGORIES);
   const [riskIndicators, setRiskIndicators] = useLocalStorage<RiskIndicator[]>('mappa_admin_risks', INITIAL_RISK_INDICATORS);
-  const [checklists, setChecklists] = useLocalStorage<Checklist[]>('mappa_admin_checklists', INITIAL_CHECKLISTS);
+  const [checklists, setChecklists] = useLocalStorage<Checklist[]>('mappa_admin_checklists_v2', INITIAL_CHECKLISTS);
   const [notificationRules, setNotificationRules] = useLocalStorage<NotificationRule[]>('mappa_admin_notifications', INITIAL_NOTIFICATION_RULES);
 
   const handleMainTabChange = (tabId: MainTab) => {
@@ -343,7 +348,7 @@ export default function AdminPage() {
         createdBy: 'admin',
       };
       setUsers([...users, newUser]);
-      toast.success('Người d��ng đã được thêm thành công');
+      toast.success('Người dng đã được thêm thành công');
     } else if (modalType === 'edit' && selectedItem) {
       setUsers(users.map(u => u.id === selectedItem.id ? { ...u, ...formData } : u));
       toast.success('Người dùng đã được cập nhật thành công');
@@ -554,6 +559,7 @@ export default function AdminPage() {
         status: formData.status || 'active',
         createdAt: formatDate(),
         description: formData.description || '',
+        formTemplateId: formData.formTemplateId || null, // Liên kết với biểu mẫu
       };
       setChecklists([...checklists, newChecklist]);
       toast.success('Checklist đã được thêm thành công');
@@ -601,6 +607,26 @@ export default function AdminPage() {
     handleCloseModal();
   };
 
+  // CRUD handlers for Form Templates
+  const handleSaveFormTemplate = (formData: any) => {
+    if (modalType === 'add') {
+      toast.info('Chức năng thêm biểu mẫu đang được phát triển');
+      // TODO: Implement add form template logic
+    } else if (modalType === 'edit' && selectedItem) {
+      toast.info('Chức năng sửa biểu mẫu đang được phát triển');
+      // TODO: Implement edit form template logic
+    }
+    handleCloseModal();
+  };
+
+  const handleDeleteFormTemplate = () => {
+    if (selectedItem) {
+      toast.info('Chức năng xóa biểu mẫu đang được phát triển');
+      // TODO: Implement delete form template logic
+    }
+    handleCloseModal();
+  };
+
   const handleSave = (formData: any) => {
     switch (activeSubTab) {
       case 'user-list':
@@ -620,6 +646,9 @@ export default function AdminPage() {
         break;
       case 'notification-rules':
         handleSaveNotificationRule(formData);
+        break;
+      case 'form-templates':
+        handleSaveFormTemplate(formData);
         break;
       default:
         handleCloseModal();
@@ -646,6 +675,9 @@ export default function AdminPage() {
       case 'notification-rules':
         handleDeleteNotificationRule();
         break;
+      case 'form-templates':
+        handleDeleteFormTemplate();
+        break;
       default:
         handleCloseModal();
     }
@@ -662,18 +694,19 @@ export default function AdminPage() {
     // TAB 2: DANH MỤC & CẤU HÌNH
     if (activeSubTab === 'common-categories') return <CommonCategoriesTab />;
     if (activeSubTab === 'risk-config') return <RiskConfigTab indicators={riskIndicators} onOpenModal={handleOpenModal} />;
-    if (activeSubTab === 'checklist') return <ChecklistTab checklists={checklists} onOpenModal={handleOpenModal} />;
+    if (activeSubTab === 'checklist') return <ChecklistTabNew checklists={checklists} onOpenModal={handleOpenModal} />;
+    if (activeSubTab === 'form-templates') return <FormTemplatesTab onOpenModal={handleOpenModal} />;
     if (activeSubTab === 'notification-rules') return <NotificationRulesTab rules={notificationRules} onOpenModal={handleOpenModal} />;
 
     // TAB 3: AUDIT – GIÁM SÁT
     if (activeSubTab === 'export-center') return <ExportCenterTab />;
-    if (activeSubTab === 'system-logs') return <SystemLogsTab />;
+    if (activeSubTab === 'system-logs') return <AuditLogTab />;
     if (activeSubTab === 'data-changes') return <DataChangesTab />;
-    if (activeSubTab === 'export-logs') return <ExportLogsTab />;
+    if (activeSubTab === 'export-logs') return <ExportLogTab />;
     if (activeSubTab === 'security-config') return <SecurityConfigTab />;
     if (activeSubTab === 'integration-status') return <IntegrationStatusTab />;
-    if (activeSubTab === 'system-monitoring') return <SystemMonitoringTab />;
-    if (activeSubTab === 'system-status') return <SystemStatusTab />;
+    if (activeSubTab === 'system-monitoring') return <SystemMonitorTab />;
+    if (activeSubTab === 'system-status') return <SystemHealthTab />;
 
     return <div className={styles.placeholder}>Nội dung đang phát triển</div>;
   };
@@ -739,15 +772,29 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Universal Modal */}
+      {/* Modal Rendering */}
       {showModal && (() => {
-        // Get the latest item from state to ensure data is up-to-date
+        // 🎯 SPECIAL: Use LocalityModal for territory tab
+        if (activeSubTab === 'territory') {
+          console.log('🔧 Opening LocalityModal - modalType:', modalType);
+          return (
+            <LocalityModal
+              mode={modalType === 'add' ? 'add' : modalType === 'edit' ? 'edit' : 'view'}
+              onClose={handleCloseModal}
+              onSave={() => {
+                handleSave({});
+                // Trigger refresh in TerritoryTabNew by closing and reopening
+                window.location.reload(); // Temporary - better to use state management
+              }}
+            />
+          );
+        }
+
+        // Universal Modal for other tabs
         let currentItem = selectedItem;
         if (selectedItem && modalType !== 'add') {
           if (activeSubTab === 'user-list' && selectedItem.id) {
             currentItem = users.find(u => u.id === selectedItem.id) || selectedItem;
-          } else if (activeSubTab === 'territory' && selectedItem.id) {
-            currentItem = territories.find(t => t.id === selectedItem.id) || selectedItem;
           } else if (activeSubTab === 'teams' && selectedItem.id) {
             currentItem = teams.find(t => t.id === selectedItem.id) || selectedItem;
           } else if (activeSubTab === 'category-management' && selectedItem.id) {

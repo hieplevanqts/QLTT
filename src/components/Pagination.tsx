@@ -8,6 +8,7 @@ interface PaginationProps {
   totalItems: number;
   itemsPerPage: number;
   onPageChange: (page: number) => void;
+  onItemsPerPageChange?: (itemsPerPage: number) => void;
 }
 
 export const Pagination: React.FC<PaginationProps> = ({
@@ -16,6 +17,7 @@ export const Pagination: React.FC<PaginationProps> = ({
   totalItems,
   itemsPerPage,
   onPageChange,
+  onItemsPerPageChange,
 }) => {
   const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
@@ -118,25 +120,39 @@ export const Pagination: React.FC<PaginationProps> = ({
 };
 
 // Hook to manage pagination state
-export const usePagination = (items: any[], itemsPerPage: number = 10) => {
+export const usePagination = (items: any[] = [], itemsPerPage: number = 10) => {
   const [currentPage, setCurrentPage] = React.useState(1);
   
-  const totalPages = Math.ceil(items.length / itemsPerPage);
+  // Defensive check for items
+  const safeItems = items || [];
+  
+  const totalPages = Math.ceil(safeItems.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentItems = items.slice(startIndex, endIndex);
+  const currentItems = safeItems.slice(startIndex, endIndex);
   
   // Reset to page 1 if items change
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [items.length]);
+  }, [safeItems.length]);
+  
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+  
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setCurrentPage(1);
+  };
   
   return {
     currentPage,
     setCurrentPage,
     totalPages,
     currentItems,
-    totalItems: items.length,
+    paginatedData: currentItems, // Alias for backwards compatibility
+    totalItems: safeItems.length,
     itemsPerPage,
+    handlePageChange,
+    handleItemsPerPageChange,
   };
 };
