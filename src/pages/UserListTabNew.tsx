@@ -34,9 +34,31 @@ import * as XLSX from 'xlsx';
 import { UserModal } from '../components/UserModal';
 import { DatabaseErrorAlert } from '../components/DatabaseErrorAlert';
 import bcrypt from 'bcryptjs';
+import { DepartmentTreeSelect } from '../components/DepartmentTreeSelect';
 
 // Default password
 const DEFAULT_PASSWORD = 'Couppa@123';
+
+/**
+ * ⚠️ IMPORTANT - RBAC Implementation Notes:
+ * 
+ * Database has a legacy 'role' field (varchar) in users table that is DEPRECATED.
+ * DO NOT USE users.role field.
+ * 
+ * ✅ CORRECT: Use user_roles junction table (many-to-many)
+ *   - users (1) ←→ (N) user_roles (N) ←→ (1) roles
+ *   - Query: .select('*, user_roles(roles(id, code, name))')
+ *   - Access: user.user_roles?.map(ur => ur.roles.name)
+ * 
+ * ⚠️ IMPORTANT - Department Relationship:
+ *   - Uses department_users junction table (many-to-many, but 1 user = 1 department)
+ *   - users (1) ←→ (N) department_users (N) ←→ (1) departments
+ *   - 1 user has only 1 department (enforce in logic)
+ *   - Query: .select('*, department_users(departments(id, name, code, level))')
+ *   - Access: user.department_users?.[0]?.departments
+ * 
+ * ❌ INCORRECT: user.role (legacy field)
+ */
 
 interface User {
   id: string;
@@ -56,6 +78,21 @@ interface User {
       code: string;
     };
   }[];
+  department_users?: {
+    departments: {
+      id: string;
+      name: string;
+      code: string;
+      level: number;
+    };
+  }[];
+  // Helper property for easy access (1 user = 1 department)
+  department?: {
+    id: string;
+    name: string;
+    code: string;
+    level: number;
+  };
 }
 
 interface Role {
@@ -65,12 +102,23 @@ interface Role {
   description?: string;
 }
 
+interface Department {
+  id: string;
+  parent_id: string | null;
+  name: string;
+  code: string;
+  level: number;
+  path: string | null;
+}
+
 export const UserListTabNew: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRoleId, setSelectedRoleId] = useState<string>('all');
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -90,7 +138,7 @@ export const UserListTabNew: React.FC = () => {
     try {
       setLoading(true);
       setDatabaseError(null); // Clear previous errors
-      console.log('🔍 Fetching users and roles from Supabase...');
+      console.log('🔍 Fetching users, roles, and departments from Supabase...');
 
       // Fetch roles first
       const { data: rolesData, error: rolesError } = await supabase
@@ -106,6 +154,21 @@ export const UserListTabNew: React.FC = () => {
         setRoles(rolesData || []);
       }
 
+      // Fetch departments
+      const { data: departmentsData, error: deptError } = await supabase
+        .from('departments')
+        .select('*')
+        .is('deleted_at', null) // ✅ Filter out deleted records
+        .order('path', { ascending: true });
+
+      if (deptError) {
+        console.error('❌ Error fetching departments:', deptError);
+        toast.error(`Lỗi tải phòng ban: ${deptError.message}`);
+      } else {
+        console.log(`✅ Loaded ${departmentsData?.length || 0} departments`);
+        setDepartments(departmentsData || []);
+      }
+
       // Fetch users with their roles
       const { data: usersData, error: usersError } = await supabase
         .from('users')
@@ -117,6 +180,14 @@ export const UserListTabNew: React.FC = () => {
               code,
               name
             )
+          ),
+          department_users (
+            departments (
+              id,
+              name,
+              code,
+              level
+            )
           )
         `)
         .order('created_at', { ascending: false });
@@ -127,7 +198,25 @@ export const UserListTabNew: React.FC = () => {
         // toast.error(`Lỗi tải người dùng: ${usersError.message}`);
       } else {
         console.log(`✅ Loaded ${usersData?.length || 0} users`);
-        setUsers(usersData || []);
+        
+        // ✅ Manually map departments to users (no foreign key constraint)
+        const usersWithDepartments = usersData?.map((user) => {
+          if (user.department_users && user.department_users.length > 0) {
+            const department = user.department_users[0].departments;
+            return {
+              ...user,
+              department: {
+                id: department.id,
+                name: department.name,
+                code: department.code,
+                level: department.level,
+              },
+            };
+          }
+          return user;
+        });
+        
+        setUsers(usersWithDepartments || []);
       }
     } catch (error) {
       console.error('❌ Error in fetchData:', error);
@@ -151,6 +240,13 @@ export const UserListTabNew: React.FC = () => {
         (ur) => ur.roles.id === selectedRoleId
       );
       if (!hasRole) return false;
+    }
+
+    // Department filter
+    if (selectedDepartmentId !== 'all') {
+      if (user.department?.id !== selectedDepartmentId) {
+        return false;
+      }
     }
 
     // Search query
@@ -301,6 +397,7 @@ export const UserListTabNew: React.FC = () => {
         'Đăng nhập cuối': user.last_login
           ? new Date(user.last_login).toLocaleString('vi-VN')
           : '',
+        'Bộ phận': user.department?.name || '',
       }));
 
       const wb = XLSX.utils.book_new();
@@ -315,6 +412,7 @@ export const UserListTabNew: React.FC = () => {
         { wch: 12 }, // Trạng thái
         { wch: 20 }, // Ngày tạo
         { wch: 20 }, // Đăng nhập cuối
+        { wch: 20 }, // Bộ phận
       ];
       ws['!cols'] = colWidths;
 
@@ -429,6 +527,25 @@ export const UserListTabNew: React.FC = () => {
               </select>
             </div>
 
+            {/* Department Filter */}
+            <div className={styles.filterItem}>
+              <label>Bộ phận</label>
+              <DepartmentTreeSelect
+                departments={departments}
+                value={selectedDepartmentId}
+                onChange={(value) => setSelectedDepartmentId(value)}
+                userCounts={(() => {
+                  const counts = new Map<string, number>();
+                  departments.forEach((dept) => {
+                    const count = users.filter((u) => u.department?.id === dept.id).length;
+                    counts.set(dept.id, count);
+                  });
+                  return counts;
+                })()}
+                totalUsers={users.length}
+              />
+            </div>
+
             {/* Status Filter */}
             <div className={styles.filterItem}>
               <label>Trạng thái</label>
@@ -448,13 +565,14 @@ export const UserListTabNew: React.FC = () => {
             </div>
 
             {/* Clear Filters */}
-            {(selectedRoleId !== 'all' || selectedStatus !== 'all' || searchQuery) && (
+            {(selectedRoleId !== 'all' || selectedDepartmentId !== 'all' || selectedStatus !== 'all' || searchQuery) && (
               <div className={styles.filterItem}>
                 <label>&nbsp;</label>
                 <button
                   className={styles.btnSecondary}
                   onClick={() => {
                     setSelectedRoleId('all');
+                    setSelectedDepartmentId('all');
                     setSelectedStatus('all');
                     setSearchQuery('');
                     console.log('🧹 Filters cleared');
@@ -468,7 +586,7 @@ export const UserListTabNew: React.FC = () => {
 
           {/* Filter Status */}
           <div style={{ marginTop: '8px', fontSize: '14px', color: 'var(--text-secondary, #6c757d)' }}>
-            {selectedRoleId !== 'all' || selectedStatus !== 'all' ? (
+            {selectedRoleId !== 'all' || selectedDepartmentId !== 'all' || selectedStatus !== 'all' ? (
               <div>
                 🔍 Kết quả lọc: <strong>{filteredUsers.length}</strong> người dùng
               </div>
@@ -489,6 +607,7 @@ export const UserListTabNew: React.FC = () => {
               <th style={{ width: '50px' }}>STT</th>
               <th style={{ width: 'auto', minWidth: '250px' }}>Thông tin người dùng</th>
               <th style={{ width: '200px' }}>Vai trò</th>
+              <th style={{ width: '180px' }}>Bộ phận</th>
               <th style={{ width: '150px' }}>Trạng thái</th>
               <th style={{ width: '180px' }}>Đăng nhập cuối</th>
               <th style={{ width: '180px', textAlign: 'center' }}>Thao tác</th>
@@ -497,7 +616,7 @@ export const UserListTabNew: React.FC = () => {
           <tbody>
             {paginatedData.length === 0 ? (
               <tr>
-                <td colSpan={6} className={styles.emptyState}>
+                <td colSpan={7} className={styles.emptyState}>
                   <AlertCircle size={48} />
                   <p>Không tìm thấy người dùng nào</p>
                 </td>
@@ -542,6 +661,22 @@ export const UserListTabNew: React.FC = () => {
                       </div>
                     ) : (
                       <span style={{ color: 'var(--text-secondary)' }}>-</span>
+                    )}
+                  </td>
+                  <td>
+                    {user.department ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <div>
+                          <span style={{ fontWeight: 500, fontSize: '13px' }}>
+                            {user.department.name}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                          {user.department.code} • Cấp {user.department.level}
+                        </div>
+                      </div>
+                    ) : (
+                      <span style={{ color: 'var(--text-secondary)' }}>Chưa phân bộ</span>
                     )}
                   </td>
                   <td>{getStatusBadge(user.status)}</td>
@@ -627,6 +762,7 @@ export const UserListTabNew: React.FC = () => {
           mode={modalMode}
           user={selectedUser}
           roles={roles}
+          departments={departments}
           onClose={() => setShowModal(false)}
           onSave={fetchData}
         />

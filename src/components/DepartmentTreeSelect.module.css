@@ -1,0 +1,228 @@
+/**
+ * Department Tree Select Styles - MAPPA Portal
+ * Tuân thủ design tokens từ /src/styles/theme.css với Inter font
+ */
+
+.container {
+  position: relative;
+  width: 100%;
+}
+
+/* ============================================
+   Trigger Button
+   ============================================ */
+.trigger {
+  width: 100%;
+  padding: var(--spacing-2, 8px) var(--spacing-3, 12px);
+  background: var(--background, #ffffff);
+  border: 1px solid var(--border, #d1d5db);
+  border-radius: var(--radius-md, 6px);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 8px);
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 14px;
+  color: var(--foreground, #1f2937);
+  text-align: left;
+}
+
+.trigger:hover {
+  border-color: var(--primary, #005cb6);
+  background: var(--muted, #f9fafb);
+}
+
+.trigger:focus {
+  outline: none;
+  border-color: var(--primary, #005cb6);
+  box-shadow: 0 0 0 3px rgba(0, 92, 182, 0.1);
+}
+
+.trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--muted, #f9fafb);
+}
+
+.trigger.open {
+  border-color: var(--primary, #005cb6);
+  box-shadow: 0 0 0 3px rgba(0, 92, 182, 0.1);
+}
+
+.triggerIcon {
+  flex-shrink: 0;
+  color: var(--primary, #005cb6);
+}
+
+.triggerText {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.triggerArrow {
+  flex-shrink: 0;
+  color: var(--muted-foreground, #6b7280);
+  transition: transform 0.2s ease;
+}
+
+.trigger.open .triggerArrow {
+  transform: rotate(180deg);
+}
+
+/* ============================================
+   Dropdown
+   ============================================ */
+.dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 400px;
+  overflow-y: auto;
+  background: var(--background, #ffffff);
+  border: 1px solid var(--border, #d1d5db);
+  border-radius: var(--radius-md, 6px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dropdown::-webkit-scrollbar-track {
+  background: var(--muted, #f9fafb);
+}
+
+.dropdown::-webkit-scrollbar-thumb {
+  background: var(--border, #d1d5db);
+  border-radius: var(--radius-sm, 4px);
+}
+
+.dropdown::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground, #6b7280);
+}
+
+/* ============================================
+   Tree Node
+   ============================================ */
+.treeNode {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-2, 8px) 0;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  border-bottom: 1px solid var(--muted, #f9fafb);
+}
+
+.treeNode:hover {
+  background: var(--muted, #f9fafb);
+}
+
+.treeNode.selected {
+  background: rgba(0, 92, 182, 0.08);
+  border-left: 3px solid var(--primary, #005cb6);
+}
+
+.treeNode.selected .nodeName {
+  font-weight: 600;
+  color: var(--primary, #005cb6);
+}
+
+/* Expand/Collapse button */
+.expandButton {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted-foreground, #6b7280);
+  transition: all 0.15s ease;
+  border-radius: var(--radius-sm, 4px);
+  flex-shrink: 0;
+}
+
+.expandButton:hover {
+  background: var(--muted, #f9fafb);
+  color: var(--foreground, #1f2937);
+}
+
+.expandPlaceholder {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* Node content */
+.nodeContent {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 8px);
+  padding: 0 var(--spacing-2, 8px);
+  overflow: hidden;
+}
+
+.nodeDot {
+  color: var(--success, #10b981);
+  font-size: 10px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+.nodeName {
+  flex: 1;
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 14px;
+  color: var(--foreground, #1f2937);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nodeCount {
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  font-size: 13px;
+  color: var(--muted-foreground, #6b7280);
+  flex-shrink: 0;
+}
+
+.nodeChildren {
+  /* Container for child nodes - no additional styling needed */
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+@media (max-width: 768px) {
+  .dropdown {
+    max-height: 300px;
+  }
+
+  .nodeName {
+    font-size: 13px;
+  }
+
+  .nodeCount {
+    font-size: 12px;
+  }
+}

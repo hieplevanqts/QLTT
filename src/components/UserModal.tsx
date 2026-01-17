@@ -1,24 +1,38 @@
-/**
- * User Modal - MAPPA Portal
- * Modal for CREATE/EDIT/VIEW user with role assignment
- * Tuân thủ design tokens từ /src/styles/theme.css với Inter font
- */
-
 import React, { useState, useEffect } from 'react';
-import { X, Save, User, Mail, Phone, Shield, Lock, AtSign, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { X, Save, User, Mail, Phone, Shield, Lock, Building2 } from 'lucide-react';
 import styles from '../pages/AdminPage.module.css';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import bcrypt from 'bcryptjs';
-import { validateUsername, quickValidateUsernameFormat } from '../utils/usernameValidator';
 
 // Default password for all new users
 const DEFAULT_PASSWORD = 'Couppa@123';
 
+/**
+ * ⚠️ IMPORTANT - RBAC Implementation Notes:
+ * 
+ * Database has a legacy 'role' field (varchar) in users table that is DEPRECATED.
+ * DO NOT USE users.role field.
+ * 
+ * ✅ CORRECT: Use user_roles junction table (many-to-many)
+ *   - Insert/Update: Delete old roles → Insert new roles into user_roles
+ *   - Display: user.user_roles?.map(ur => ur.roles)
+ *   - Multi-select: selectedRoleIds array → user_roles records
+ * 
+ * ⚠️ IMPORTANT - Department Relationship:
+ *   - Uses department_users junction table (many-to-many, but 1 user = 1 department)
+ *   - users (1) ←→ (N) department_users (N) ←→ (1) departments
+ *   - 1 user has ONLY 1 department (enforce in logic)
+ *   - Insert/Update: Delete old → Insert new into department_users
+ *   - Display: user.department_users?.[0]?.departments
+ *   - Single-select: selectedDepartmentId string → department_users record
+ * 
+ * ❌ INCORRECT: formData.role (legacy field)
+ */
+
 interface User {
   id: string;
   email: string;
-  username?: string;
   full_name: string;
   phone?: string;
   avatar_url?: string;
@@ -33,6 +47,21 @@ interface User {
       name: string;
     };
   }[];
+  department_users?: {
+    departments: {
+      id: string;
+      name: string;
+      code: string;
+      level: number;
+    };
+  }[];
+  // Helper property for easy access (1 user = 1 department)
+  department?: {
+    id: string;
+    name: string;
+    code: string;
+    level: number;
+  };
 }
 
 interface Role {
@@ -42,46 +71,264 @@ interface Role {
   description?: string;
 }
 
+interface Department {
+  id: string;
+  parent_id: string | null;
+  name: string;
+  code: string;
+  level: number;
+  path: string | null;
+}
+
 interface UserModalProps {
   mode: 'add' | 'edit' | 'view';
   user: User | null;
   roles: Role[];
+  departments: Department[];
   onClose: () => void;
   onSave: () => void;
 }
+
+// Helper function to build hierarchical department options
+const buildDepartmentOptions = (departments: Department[]) => {
+  const departmentMap = new Map<string, Department>();
+  departments.forEach((dept) => departmentMap.set(dept.id, dept));
+
+  const buildTree = (parentId: string | null, depth: number = 0): { id: string; label: string; depth: number }[] => {
+    const children = departments.filter((dept) => dept.parent_id === parentId);
+    const result: { id: string; label: string; depth: number }[] = [];
+
+    children.forEach((child) => {
+      // Add indent based on depth
+      const indent = '  '.repeat(depth); // 2 spaces per level
+      const prefix = depth > 0 ? '├─ ' : '';
+      result.push({
+        id: child.id,
+        label: `${indent}${prefix}${child.name} (${child.code})`,
+        depth,
+      });
+
+      // Recursively add children
+      result.push(...buildTree(child.id, depth + 1));
+    });
+
+    return result;
+  };
+
+  return buildTree(null);
+};
+
+// Helper function to get department path from root to selected
+const getDepartmentPath = (departmentId: string, departments: Department[]): string => {
+  const departmentMap = new Map<string, Department>();
+  departments.forEach((dept) => departmentMap.set(dept.id, dept));
+
+  const path: string[] = [];
+  let currentId: string | null = departmentId;
+
+  // Build path from selected to root
+  while (currentId) {
+    const dept = departmentMap.get(currentId);
+    if (dept) {
+      path.unshift(dept.code); // Add to beginning of array
+      currentId = dept.parent_id;
+    } else {
+      break;
+    }
+  }
+
+  return path.join(''); // ✅ Ghép liền không có separator
+};
+
+// Helper function to get department path with separator (for display)
+const getDepartmentPathWithSeparator = (departmentId: string, departments: Department[]): string => {
+  const departmentMap = new Map<string, Department>();
+  departments.forEach((dept) => departmentMap.set(dept.id, dept));
+
+  const path: string[] = [];
+  let currentId: string | null = departmentId;
+
+  // Build path from selected to root
+  while (currentId) {
+    const dept = departmentMap.get(currentId);
+    if (dept) {
+      path.unshift(dept.code); // Add to beginning of array
+      currentId = dept.parent_id;
+    } else {
+      break;
+    }
+  }
+
+  return path.join(' > '); // With separator for display
+};
+
+// Helper function to generate username from full name
+// Example: "Đặng Dinh Phương" → "PHUONGDD"
+const generateInitials = (fullName: string): string => {
+  if (!fullName || !fullName.trim()) return '';
+  
+  // Remove extra spaces and normalize
+  const normalized = fullName.trim().replace(/\s+/g, ' ');
+  const parts = normalized.split(' ');
+  
+  if (parts.length === 0) return '';
+  
+  // Get first name (last word) - uppercase without diacritics
+  const firstName = parts[parts.length - 1].toUpperCase();
+  
+  // Get initials from last name and middle names (all words except last)
+  const initials = parts
+    .slice(0, -1) // All except last word
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('');
+  
+  return firstName + initials;
+};
+
+// Helper function to remove Vietnamese diacritics
+const removeDiacritics = (str: string): string => {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D');
+};
+
+// Helper function to generate username: {dept_code}_{initials}
+const generateUsername = (fullName: string, departmentId: string | null, departments: Department[]): string => {
+  if (!fullName.trim()) return '';
+  
+  const initials = removeDiacritics(generateInitials(fullName));
+  
+  if (!departmentId) {
+    return initials; // No department, just return initials
+  }
+  
+  const deptCode = getDepartmentPath(departmentId, departments);
+  return `${deptCode}_${initials}`;
+};
+
+// ✅ Helper function to check if username exists in database
+const checkUsernameExists = async (username: string, excludeUserId?: string): Promise<boolean> => {
+  try {
+    const query = supabase
+      .from('users')
+      .select('id, username')
+      .eq('username', username);
+    
+    // Exclude current user when editing
+    if (excludeUserId) {
+      query.neq('id', excludeUserId);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error('❌ Error checking username:', error);
+      return false;
+    }
+    
+    return (data && data.length > 0);
+  } catch (error) {
+    console.error('❌ Error in checkUsernameExists:', error);
+    return false;
+  }
+};
+
+// ✅ Helper function to generate unique username with suffix if needed
+const generateUniqueUsername = async (
+  baseUsername: string,
+  excludeUserId?: string
+): Promise<string> => {
+  try {
+    console.log('🔍 Checking username availability:', baseUsername);
+    
+    // Check if base username exists
+    const baseExists = await checkUsernameExists(baseUsername, excludeUserId);
+    
+    if (!baseExists) {
+      console.log('✅ Username available:', baseUsername);
+      return baseUsername;
+    }
+    
+    console.log('⚠️  Username exists, finding next available suffix...');
+    
+    // Find all usernames with same base pattern
+    const pattern = `${baseUsername}%`;
+    const query = supabase
+      .from('users')
+      .select('username')
+      .like('username', pattern);
+    
+    if (excludeUserId) {
+      query.neq('id', excludeUserId);
+    }
+    
+    const { data: existingUsers, error } = await query;
+    
+    if (error) {
+      console.error('❌ Error querying usernames:', error);
+      return `${baseUsername}02`; // Fallback to 02
+    }
+    
+    // Extract all suffixes
+    const existingUsernames = existingUsers?.map((u) => u.username) || [];
+    const suffixes: number[] = [];
+    
+    existingUsernames.forEach((username) => {
+      if (username === baseUsername) {
+        suffixes.push(1); // Base username counts as "01"
+      } else if (username.startsWith(baseUsername)) {
+        // Extract numeric suffix (e.g., "QT01_PHUONGDD02" → "02" → 2)
+        const suffix = username.slice(baseUsername.length);
+        const num = parseInt(suffix, 10);
+        if (!isNaN(num)) {
+          suffixes.push(num);
+        }
+      }
+    });
+    
+    // Find next available number
+    let nextSuffix = 2; // Start from 02
+    while (suffixes.includes(nextSuffix)) {
+      nextSuffix++;
+    }
+    
+    const uniqueUsername = `${baseUsername}${nextSuffix.toString().padStart(2, '0')}`;
+    console.log(`✅ Unique username generated: ${uniqueUsername} (suffix: ${nextSuffix})`);
+    
+    return uniqueUsername;
+  } catch (error) {
+    console.error('❌ Error in generateUniqueUsername:', error);
+    return `${baseUsername}02`; // Fallback
+  }
+};
 
 export const UserModal: React.FC<UserModalProps> = ({
   mode,
   user,
   roles,
+  departments,
   onClose,
   onSave,
 }) => {
   const [formData, setFormData] = useState({
     email: '',
-    username: '',
     full_name: '',
     phone: '',
     status: 1 as number, // 1 = kích hoạt, 0 = hủy kích hoạt
     password: DEFAULT_PASSWORD, // Mặc định là Couppa@123
   });
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [usernameValidation, setUsernameValidation] = useState<{
-    isValidating: boolean;
-    isValid: boolean;
-    error?: string;
-  }>({
-    isValidating: false,
-    isValid: true,
-  });
-  const [usernameDebounceTimer, setUsernameDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+  const [generatedUsername, setGeneratedUsername] = useState<string>(''); // ✅ State for username
+  const [checkingUsername, setCheckingUsername] = useState(false); // ✅ State for checking username availability
 
   useEffect(() => {
     if (user) {
       setFormData({
         email: user.email || '',
-        username: user.username || '',
         full_name: user.full_name || '',
         phone: user.phone || '',
         status: user.status || 1,
@@ -91,6 +338,10 @@ export const UserModal: React.FC<UserModalProps> = ({
       // Set selected roles
       const roleIds = user.user_roles?.map((ur) => ur.roles.id) || [];
       setSelectedRoleIds(roleIds);
+
+      // Set selected department
+      const departmentId = user.department_users?.[0]?.departments.id || null;
+      setSelectedDepartmentId(departmentId);
     }
   }, [user]);
 
@@ -102,86 +353,77 @@ export const UserModal: React.FC<UserModalProps> = ({
     }
   };
 
-  // Handle username change with debounced validation
-  const handleUsernameChange = (newUsername: string) => {
-    setFormData({ ...formData, username: newUsername });
-
-    // Clear previous timer
-    if (usernameDebounceTimer) {
-      clearTimeout(usernameDebounceTimer);
-    }
-
-    // Quick format check (client-side only)
-    const quickCheck = quickValidateUsernameFormat(newUsername);
-    if (!quickCheck.isValid) {
-      setUsernameValidation({
-        isValidating: false,
-        isValid: false,
-        error: quickCheck.error,
-      });
-      return;
-    }
-
-    // Set validating state
-    setUsernameValidation({
-      isValidating: true,
-      isValid: false,
-    });
-
-    // Debounce database validation (800ms delay)
-    const timer = setTimeout(async () => {
-      console.log('🔍 Validating username:', newUsername);
-      const result = await validateUsername(newUsername);
+  const handleDepartmentChange = (departmentId: string | null) => {
+    setSelectedDepartmentId(departmentId);
+    
+    // Console log department path
+    if (departmentId) {
+      const concatenatedPath = getDepartmentPath(departmentId, departments);
+      const pathWithSeparator = getDepartmentPathWithSeparator(departmentId, departments);
+      const selectedDept = departments.find((d) => d.id === departmentId);
       
-      setUsernameValidation({
-        isValidating: false,
-        isValid: result.isValid,
-        error: result.error,
-      });
-
-      if (result.isValid) {
-        console.log('✅ Username valid:', result.details);
-      } else {
-        console.log('❌ Username invalid:', result.error);
-      }
-    }, 800);
-
-    setUsernameDebounceTimer(timer);
+      console.log('🏢 ========== DEPARTMENT PATH ==========');
+      console.log('📍 Selected Department:', selectedDept?.name, `(${selectedDept?.code})`);
+      console.log('📂 Path (Separated):', pathWithSeparator);
+      console.log('🔗 Path (Concatenated):', concatenatedPath);
+      console.log('🎯 Level:', selectedDept?.level);
+      console.log('=========================================');
+    } else {
+      console.log('🏢 Department cleared');
+      setGeneratedUsername(''); // ✅ Clear generated username
+    }
   };
-
-  // Cleanup timer on unmount
+  
+  // ✅ Watch for full_name and department changes, then check database for unique username
   useEffect(() => {
-    return () => {
-      if (usernameDebounceTimer) {
-        clearTimeout(usernameDebounceTimer);
+    const checkAndGenerateUsername = async () => {
+      if (formData.full_name.trim() && selectedDepartmentId) {
+        setCheckingUsername(true);
+        
+        const baseUsername = generateUsername(formData.full_name, selectedDepartmentId, departments);
+        console.log('👤 ========== AUTO-GENERATED USERNAME ==========');
+        console.log('📝 Full Name:', formData.full_name);
+        console.log('🏢 Department:', departments.find(d => d.id === selectedDepartmentId)?.name);
+        console.log('🔗 Base Username:', baseUsername);
+        
+        // ✅ Check database and generate unique username
+        const uniqueUsername = await generateUniqueUsername(baseUsername, user?.id);
+        setGeneratedUsername(uniqueUsername);
+        
+        console.log('✅ Final Username:', uniqueUsername);
+        console.log('================================================');
+        
+        setCheckingUsername(false);
+      } else {
+        setGeneratedUsername('');
       }
     };
-  }, [usernameDebounceTimer]);
+    
+    checkAndGenerateUsername();
+  }, [formData.full_name, selectedDepartmentId, departments, user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.email.trim() || !formData.username.trim() || !formData.full_name.trim()) {
+    // ✅ Validate: Email, Full Name, Phone, Department are required
+    if (!formData.email.trim() || !formData.full_name.trim()) {
       toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
       return;
     }
 
-    // Validate username before submission
-    if (!isViewMode) {
-      console.log('🔍 Final username validation before submit...');
-      const finalValidation = await validateUsername(formData.username.trim());
-      
-      if (!finalValidation.isValid) {
-        toast.error(finalValidation.error || 'Tên đăng nhập không hợp lệ');
-        setUsernameValidation({
-          isValidating: false,
-          isValid: false,
-          error: finalValidation.error,
-        });
-        return;
-      }
-      
-      console.log('✅ Username validation passed');
+    if (!formData.full_name.trim()) {
+      toast.error('Vui lòng nhập họ tên');
+      return;
+    }
+
+    if (!selectedDepartmentId) {
+      toast.error('Vui lòng chọn phòng ban');
+      return;
+    }
+
+    if (!generatedUsername) {
+      toast.error('Không thể tạo tên đăng nhập. Vui lòng kiểm tra Họ tên và Phòng ban');
+      return;
     }
 
     if (mode === 'add' && !formData.password) {
@@ -205,42 +447,102 @@ export const UserModal: React.FC<UserModalProps> = ({
 
       const userData = {
         email: formData.email.trim(),
-        username: formData.username.trim(),
         full_name: formData.full_name.trim(),
         phone: formData.phone.trim() || null,
         status: formData.status,
+        username: generatedUsername, // ✅ Save generated username
         updated_at: new Date().toISOString(),
       };
 
       let userId: string;
 
       if (mode === 'add') {
-        // Insert new user
-        const { data: newUser, error: insertError } = await supabase
-          .from('users')
-          .insert([userData])
-          .select()
-          .single();
+        // Create user using database function that syncs with auth.users
+        console.log('🔄 Creating user in both public.users and auth.users...');
+        
+        const { data: createResult, error: createError } = await supabase
+          .rpc('create_user_with_auth', {
+            p_email: formData.email.trim(),
+            p_password: formData.password || 'Couppa@123',
+            p_full_name: formData.full_name.trim(),
+            p_phone: formData.phone.trim() || null,
+            p_avatar_url: null,
+            p_status: formData.status,
+          });
 
-        if (insertError) {
-          console.error('❌ Error creating user:', insertError);
-          toast.error(`Lỗi tạo người dùng: ${insertError.message}`);
-          return;
+        if (createError) {
+          console.error('❌ Error creating user:', createError);
+          
+          // Fallback to direct insert if function doesn't exist
+          if (createError.message.includes('function') || createError.message.includes('does not exist')) {
+            console.warn('⚠️  RPC function not found, using direct insert...');
+            
+            const passwordHash = await bcrypt.hash(formData.password || 'Couppa@123', 10);
+            const { data: newUser, error: insertError } = await supabase
+              .from('users')
+              .insert([{
+                ...userData,
+                password_hash: passwordHash
+              }])
+              .select()
+              .single();
+
+            if (insertError) {
+              console.error('❌ Error inserting user:', insertError);
+              toast.error(`Lỗi tạo người dùng: ${insertError.message}`);
+              return;
+            }
+
+            userId = newUser.id;
+            console.log('✅ User created with direct insert (trigger will sync to auth.users)');
+          } else {
+            toast.error(`Lỗi tạo người dùng: ${createError.message}`);
+            return;
+          }
+        } else {
+          userId = createResult;
+          console.log('✅ User created in both tables via RPC function');
         }
-
-        userId = newUser.id;
-        console.log('✅ User created:', userId);
       } else if (mode === 'edit' && user) {
-        // Update existing user
-        const { error: updateError } = await supabase
-          .from('users')
-          .update(userData)
-          .eq('id', user.id);
+        // ✅ Update existing user using RPC function for safe auth.users + public.users update
+        console.log('🔄 Updating user via RPC function...');
+        
+        const { data: rpcResult, error: rpcError } = await supabase
+          .rpc('update_user_profile', {
+            p_user_id: user.id,
+            p_email: formData.email.trim(),
+            p_phone: formData.phone.trim() || null,
+            p_full_name: formData.full_name.trim(),
+            p_username: generatedUsername,
+            p_status: formData.status,
+          });
 
-        if (updateError) {
-          console.error('❌ Error updating user:', updateError);
-          toast.error(`Lỗi cập nhật người dùng: ${updateError.message}`);
-          return;
+        if (rpcError) {
+          console.error('❌ Error calling update_user_profile RPC:', rpcError);
+          
+          // Fallback: Try direct update to public.users only
+          console.warn('⚠️  RPC function failed, using fallback direct update...');
+          const { error: updateError } = await supabase
+            .from('users')
+            .update(userData)
+            .eq('id', user.id);
+
+          if (updateError) {
+            console.error('❌ Error updating user:', updateError);
+            toast.error(`Lỗi cập nhật người dùng: ${updateError.message}`);
+            return;
+          }
+          
+          console.log('✅ User updated via fallback (public.users only)');
+        } else {
+          // Check if RPC returned success
+          if (rpcResult && !rpcResult.success) {
+            console.error('❌ RPC returned error:', rpcResult.error);
+            toast.error(`Lỗi cập nhật: ${rpcResult.error}`);
+            return;
+          }
+          
+          console.log('✅ User updated via RPC function (both auth.users and public.users)');
         }
 
         userId = user.id;
@@ -281,6 +583,42 @@ export const UserModal: React.FC<UserModalProps> = ({
       }
 
       console.log(`✅ Assigned ${selectedRoleIds.length} roles to user`);
+
+      // Update department_users
+      console.log('🔄 Updating user department...');
+
+      // Delete existing department_users
+      const { error: deleteDepartmentError } = await supabase
+        .from('department_users')
+        .delete()
+        .eq('user_id', userId);
+
+      if (deleteDepartmentError) {
+        console.error('❌ Error deleting old department_users:', deleteDepartmentError);
+        toast.error(`Lỗi xóa phòng ban cũ: ${deleteDepartmentError.message}`);
+        return;
+      }
+
+      // Insert new department_users
+      if (selectedDepartmentId) {
+        const { error: insertDepartmentError } = await supabase
+          .from('department_users')
+          .insert({
+            user_id: userId,
+            department_id: selectedDepartmentId,
+          });
+
+        if (insertDepartmentError) {
+          console.error('❌ Error inserting new department_users:', insertDepartmentError);
+          toast.error(`Lỗi gán phòng ban: ${insertDepartmentError.message}`);
+          return;
+        }
+
+        console.log(`✅ Assigned department to user: ${selectedDepartmentId}`);
+      } else {
+        console.log('✅ No department assigned to user');
+      }
+
       toast.success(
         mode === 'add'
           ? 'Đã tạo người dùng thành công'
@@ -350,68 +688,6 @@ export const UserModal: React.FC<UserModalProps> = ({
                 <small style={{ color: 'var(--muted-foreground)', fontSize: '12px' }}>
                   Email không thể thay đổi
                 </small>
-              )}
-            </div>
-
-            {/* Username */}
-            <div className={styles.formGroup}>
-              <label>
-                Tên đăng nhập <span className={styles.required}>*</span>
-              </label>
-              <input
-                type="text"
-                className={styles.input}
-                value={formData.username}
-                onChange={(e) => handleUsernameChange(e.target.value)}
-                placeholder="VD: QT01_admin hoặc QT01001_user"
-                disabled={isViewMode}
-                required
-              />
-              {/* Real-time validation feedback */}
-              {!isViewMode && (
-                <>
-                  {usernameValidation.isValidating && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
-                      <Loader2 size={14} style={{ color: 'var(--primary)', animation: 'spin 1s linear infinite' }} />
-                      <small style={{ color: 'var(--muted-foreground)', fontSize: '12px' }}>
-                        Đang kiểm tra...
-                      </small>
-                    </div>
-                  )}
-                  {!usernameValidation.isValidating && !usernameValidation.isValid && usernameValidation.error && (
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginTop: '6px' }}>
-                      <AlertCircle size={14} style={{ color: 'var(--destructive, #dc2626)', marginTop: '2px', flexShrink: 0 }} />
-                      <small style={{ color: 'var(--destructive, #dc2626)', fontSize: '12px', lineHeight: '1.4' }}>
-                        {usernameValidation.error}
-                      </small>
-                    </div>
-                  )}
-                  {!usernameValidation.isValidating && usernameValidation.isValid && formData.username.trim() && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
-                      <CheckCircle size={14} style={{ color: 'var(--success, #16a34a)' }} />
-                      <small style={{ color: 'var(--success, #16a34a)', fontSize: '12px' }}>
-                        Tên đăng nhập hợp lệ
-                      </small>
-                    </div>
-                  )}
-                  <small style={{ 
-                    display: 'block',
-                    color: 'var(--muted-foreground)', 
-                    fontSize: '12px',
-                    marginTop: '6px',
-                    lineHeight: '1.5'
-                  }}>
-                    Định dạng: <strong>QT[mã]_tên</strong>
-                    <br />
-                    • Cấp Tỉnh: <strong>QT01_admin</strong> (2 chữ số)
-                    <br />
-                    • Cấp Phường: <strong>QT01002_user</strong> (2 số tỉnh + 3 số phường)
-                    <br />
-                    <span style={{ fontSize: '11px', opacity: 0.8 }}>
-                      VD: Tỉnh 01, Phường 002 → QT01002_tên
-                    </span>
-                  </small>
-                </>
               )}
             </div>
 
@@ -633,6 +909,90 @@ export const UserModal: React.FC<UserModalProps> = ({
               )}
               <small style={{ color: 'var(--muted-foreground)', fontSize: '12px' }}>
                 Chọn 1 hoặc nhiều vai trò cho người dùng
+              </small>
+            </div>
+
+            {/* Department */}
+            <div className={styles.formGroup}>
+              <label>
+                Phòng ban <span className={styles.required}>*</span>
+              </label>
+              {isViewMode ? (
+                <input
+                  type="text"
+                  className={styles.input}
+                  value={user?.department?.name || 'Chưa gán phòng ban'}
+                  disabled
+                />
+              ) : (
+                <select
+                  className={styles.select}
+                  value={selectedDepartmentId || ''}
+                  onChange={(e) => handleDepartmentChange(e.target.value || null)}
+                  required
+                >
+                  <option value="">-- Chọn phòng ban --</option>
+                  {buildDepartmentOptions(departments).map((dept) => (
+                    <option key={dept.id} value={dept.id}>
+                      {dept.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <small style={{ color: 'var(--muted-foreground)', fontSize: '12px' }}>
+                Chọn 1 phòng ban cho người dùng (bắt buộc để tạo tên đăng nhập)
+              </small>
+            </div>
+
+            {/* Auto-generated Username */}
+            <div className={styles.formGroup}>
+              <label>
+                Tên đăng nhập {mode !== 'view' && <span className={styles.required}>*</span>}
+              </label>
+              <div style={{ position: 'relative' }}>
+                <User
+                  size={16}
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--muted-foreground)',
+                    pointerEvents: 'none',
+                  }}
+                />
+                <input
+                  type="text"
+                  className={styles.input}
+                  style={{
+                    paddingLeft: '40px',
+                    backgroundColor: isViewMode ? 'var(--muted)' : 'var(--card)',
+                    color: generatedUsername ? 'var(--foreground)' : 'var(--muted-foreground)',
+                    fontFamily: 'Inter, monospace',
+                    fontWeight: generatedUsername ? 600 : 400,
+                  }}
+                  value={generatedUsername}
+                  placeholder={
+                    !formData.full_name.trim()
+                      ? 'Nhập họ tên trước...'
+                      : !selectedDepartmentId
+                      ? 'Chọn phòng ban trước...'
+                      : 'QT01_PHUONGDD'
+                  }
+                  disabled
+                  readOnly
+                />
+              </div>
+              <small
+                style={{
+                  color: generatedUsername ? 'var(--primary)' : 'var(--muted-foreground)',
+                  fontSize: '12px',
+                  fontFamily: 'Inter, sans-serif',
+                }}
+              >
+                {generatedUsername
+                  ? '✅ Tên đăng nhập được tạo tự động từ Phòng ban + Họ tên'
+                  : '⚠️ Vui lòng nhập Họ tên và chọn Phòng ban để tạo tên đăng nhập'}
               </small>
             </div>
 
