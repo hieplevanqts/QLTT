@@ -3,11 +3,16 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Chỉ copy những file liên quan đến NPM
-COPY package.json package-lock.json ./
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
 
-# Cài đặt dependencies (npm ci nhanh và chuẩn hơn npm install cho CI/CD)
-RUN npm ci
+# 2. Gán ARG vào ENV để Vite có thể đọc được lúc build
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
+
+# Chỉ copy những file liên quan đến NPM
+COPY package.json ./
+RUN npm install
 
 # Copy source code
 COPY . .
