@@ -39,7 +39,7 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
-    minify: 'terser',
+    minify: true, // Use esbuild minify (default, faster and no extra dependency needed)
     commonjsOptions: {
       include: [/jspdf/, /docx/, /node_modules/],
       transformMixedEsModules: true,
