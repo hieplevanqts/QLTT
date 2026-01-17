@@ -18,18 +18,15 @@ export interface Category {
  * GET /categories?limit=1000
  */
 export async function fetchCategories(): Promise<Category[]> {
-  console.log('📦 fetchCategories: Starting fetch...');
   
   try {
     const url = `${SUPABASE_REST_URL}/categories?limit=1000`;
-    console.log('🔗 fetchCategories: URL:', url);
     
     const response = await fetch(url, {
       method: 'GET',
       headers: getHeaders(),
     });
     
-    console.log('📡 fetchCategories: Response status:', response.status);
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -38,8 +35,6 @@ export async function fetchCategories(): Promise<Category[]> {
     }
     
     const data: Category[] = await response.json();
-    console.log('✅ fetchCategories: Received', data.length, 'categories');
-    console.log('📍 fetchCategories: First 3 categories:', data.slice(0, 3));
     
     return data;
   } catch (error) {

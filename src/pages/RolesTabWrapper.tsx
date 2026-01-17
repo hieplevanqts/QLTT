@@ -26,20 +26,12 @@ export const RolesTabWrapper: React.FC<RolesTabWrapperProps> = ({ onOpenModal })
       setLoading(true);
       setError(null);
 
-      console.log('🔍 Fetching roles from Supabase...');
-      console.log('📌 Table name:', Tables.ROLES);
-      console.log('📌 Supabase client:', {
-        url: (supabase as any).supabaseUrl,
-        hasKey: !!(supabase as any).supabaseKey,
-      });
-
       // Fetch roles from Supabase
       const { data: rolesData, error: rolesError } = await supabase
         .from(Tables.ROLES)
         .select('*')
         .order('created_at', { ascending: false });
 
-      console.log('📊 Roles query result:', { rolesData, rolesError });
 
       if (rolesError) {
         console.error('❌ Roles error:', rolesError);
@@ -51,12 +43,7 @@ export const RolesTabWrapper: React.FC<RolesTabWrapperProps> = ({ onOpenModal })
       }
 
       if (!rolesData || rolesData.length === 0) {
-        console.warn('⚠️ No roles data returned from Supabase');
-        console.warn('⚠️ This could mean:');
-        console.warn('   1. Table "roles" is empty');
-        console.warn('   2. RLS policies are blocking the query');
-        console.warn('   3. Run /database/insert_sample_data.sql');
-        console.warn('   4. Run /database/FIX_RLS_POLICIES.sql');
+        // No roles found
       }
 
       // Fetch user_roles to count users per role
@@ -65,7 +52,7 @@ export const RolesTabWrapper: React.FC<RolesTabWrapperProps> = ({ onOpenModal })
         .select('role_id');
 
       if (userRolesError) {
-        console.warn('⚠️ Lỗi khi tải user_roles:', userRolesError);
+        // Error fetching user roles - continue anyway
       }
 
       // Count users per role
@@ -76,7 +63,6 @@ export const RolesTabWrapper: React.FC<RolesTabWrapperProps> = ({ onOpenModal })
         });
       }
 
-      console.log('👥 User count map:', userCountMap);
 
       // Transform roles to match RolesTabNew expected format
       const transformedRoles = (rolesData || []).map((role: DBRole) => ({
@@ -91,8 +77,6 @@ export const RolesTabWrapper: React.FC<RolesTabWrapperProps> = ({ onOpenModal })
         permissions: [], // TODO: Fetch role permissions from role_permissions table
       }));
 
-      console.log('✅ Transformed roles:', transformedRoles);
-      console.log(`✅ Loaded ${transformedRoles.length} roles from Supabase`);
 
       setRoles(transformedRoles);
     } catch (err: any) {

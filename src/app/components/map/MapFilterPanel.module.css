@@ -142,7 +142,7 @@
   font-family: var(--font-family-base);
   font-size: 12px;
   font-weight: 600;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #667085); /* 🔥 FIX: Fallback to dark gray if CSS variable not defined */
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 0;
@@ -170,12 +170,15 @@
 .filterListExpanded {
   max-height: 2000px;
   opacity: 1;
+  pointer-events: auto; /* 🔥 FIX: Enable pointer events when expanded */
 }
 
 .filterListCollapsed {
   max-height: 0;
   opacity: 0;
   gap: 0;
+  overflow: hidden; /* 🔥 FIX: Hide overflow when collapsed */
+  pointer-events: none; /* 🔥 FIX: Disable pointer events on collapsed content */
 }
 
 /* Filter Item */
@@ -240,10 +243,13 @@
 
 .filterLabel {
   flex: 1;
-  font-size: 13px;
-  color: var(--color-text);
+  font-size: 12px; /* 🔥 FIX: Reduced from 13px to 12px */
+  color: var(--color-text, #1a1a1a); /* 🔥 FIX: Fallback to dark color if CSS variable not defined */
   font-weight: 500;
   line-height: 1.3;
+  white-space: nowrap; /* 🔥 FIX: Prevent text wrapping */
+  overflow: hidden; /* 🔥 FIX: Hide overflow text */
+  text-overflow: ellipsis; /* 🔥 FIX: Show ellipsis if text is too long */
 }
 
 .filterCount {
@@ -546,14 +552,14 @@
 .noResults {
   padding: 16px 12px;
   text-align: center;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #667085); /* 🔥 FIX: Fallback to dark gray */
   font-family: var(--font-family-base);
   font-size: 13px;
   font-style: italic;
 }
 
 .noResults span {
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #667085); /* 🔥 FIX: Fallback to dark gray */
   font-family: var(--font-family-base);
   font-size: var(--font-size-sm);
 }

@@ -9,16 +9,11 @@ import { createClient } from '@supabase/supabase-js';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
 
 // Debug logging
-console.log('🔧 Supabase Client Initialization:');
-console.log('  projectId:', projectId);
-console.log('  publicAnonKey exists:', !!publicAnonKey);
-console.log('  publicAnonKey length:', publicAnonKey?.length);
 
 // Construct Supabase URL from projectId
 const supabaseUrl = `https://${projectId}.supabase.co`;
 const supabaseAnonKey = publicAnonKey;
 
-console.log('  supabaseUrl:', supabaseUrl);
 
 // Validate credentials
 if (!projectId || projectId === 'undefined' || projectId === 'null') {
@@ -51,7 +46,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
-console.log('✅ Supabase client initialized successfully');
 
 // ============================================
 // DATABASE TYPES

@@ -24,8 +24,6 @@ export default function TestSupabaseConnection() {
         // Create Supabase client
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-        console.log('🔗 Connecting to Supabase...');
-        console.log('URL:', SUPABASE_URL);
         
         // Try to fetch data from leads table
         const { data: leadsData, error: leadsError } = await supabase
@@ -37,8 +35,6 @@ export default function TestSupabaseConnection() {
           throw new Error(`Supabase Error: ${leadsError.message} (Code: ${leadsError.code})`);
         }
         
-        console.log('✅ Connected successfully!');
-        console.log('📊 Data received:', leadsData);
         
         setData(leadsData || []);
         setTableInfo(`Found ${leadsData?.length || 0} records`);

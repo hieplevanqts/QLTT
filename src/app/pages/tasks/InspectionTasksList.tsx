@@ -111,7 +111,6 @@ export function InspectionTasksList() {
             icon: <Edit size={16} />,
             onClick: () => {
               toast.info('Mở form chỉnh sửa nhiệm vụ');
-              console.log('Edit task', task.id);
             },
             priority: 10,
           },
@@ -120,7 +119,6 @@ export function InspectionTasksList() {
             icon: <PlayCircle size={16} />,
             onClick: () => {
               toast.success('Đã chuyển sang trạng thái Đang thực hiện');
-              console.log('Start task', task.id);
             },
             priority: 9,
           },
@@ -130,7 +128,6 @@ export function InspectionTasksList() {
             onClick: () => {
               if (confirm('Bạn có chắc chắn muốn xóa nhiệm vụ này?')) {
                 toast.success('Đã xóa nhiệm vụ');
-                console.log('Delete task', task.id);
               }
             },
             variant: 'destructive' as const,
@@ -154,7 +151,6 @@ export function InspectionTasksList() {
             icon: <FileText size={16} />,
             onClick: () => {
               toast.info('Mở form cập nhật tiến độ');
-              console.log('Update progress', task.id);
             },
             priority: 9,
           },
@@ -163,7 +159,6 @@ export function InspectionTasksList() {
             icon: <PauseCircle size={16} />,
             onClick: () => {
               toast.warning('Đã tạm dừng nhiệm vụ');
-              console.log('Pause task', task.id);
             },
             priority: 8,
           },
@@ -172,7 +167,6 @@ export function InspectionTasksList() {
             icon: <CheckCircle2 size={16} />,
             onClick: () => {
               toast.success('Đã chuyển sang trạng thái Chờ duyệt');
-              console.log('Complete task', task.id);
             },
             priority: 7,
           }
@@ -193,7 +187,6 @@ export function InspectionTasksList() {
             icon: <CheckCircle2 size={16} />,
             onClick: () => {
               toast.success('Đã phê duyệt nhiệm vụ');
-              console.log('Approve task', task.id);
             },
             priority: 9,
           },
@@ -202,7 +195,6 @@ export function InspectionTasksList() {
             icon: <AlertCircle size={16} />,
             onClick: () => {
               toast.warning('Đã gửi yêu cầu chỉnh sửa');
-              console.log('Request changes', task.id);
             },
             priority: 8,
           }
@@ -223,7 +215,6 @@ export function InspectionTasksList() {
             icon: <Download size={16} />,
             onClick: () => {
               toast.success('Đang tải báo cáo...');
-              console.log('Download report', task.id);
             },
             priority: 9,
           }
@@ -419,7 +410,6 @@ export function InspectionTasksList() {
               Tải lại
             </Button>
             <Button variant="outline" size="sm" onClick={() => {
-              console.log('Exporting to Excel...');
               toast.success('Xuất dữ liệu Excel thành công');
             }}>
               <Download size={16} />
@@ -486,7 +476,6 @@ export function InspectionTasksList() {
               size="sm"
               onClick={() => {
                 toast.info('Mở bộ lọc nâng cao');
-                console.log('Open advanced filters');
               }}
             >
               <Filter size={16} />

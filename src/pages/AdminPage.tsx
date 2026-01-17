@@ -789,7 +789,6 @@ export default function AdminPage() {
       {showModal && (() => {
         // 🎯 SPECIAL: Use LocalityModal for territory tab
         if (activeSubTab === 'territory') {
-          console.log('🔧 Opening LocalityModal - modalType:', modalType, 'selectedItem:', selectedItem);
           return (
             <LocalityModal
               mode={modalType === 'add' ? 'add' : modalType === 'edit' ? 'edit' : 'view'}

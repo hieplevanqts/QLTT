@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import PageHeader from '../layouts/PageHeader';
 import { Button } from '../app/components/ui/button';
 import { MapPin, SlidersHorizontal, BarChart3 } from 'lucide-react';
@@ -21,7 +21,8 @@ import { getProvinceNames, getDistrictsByProvince, getWardsByDistrict } from '..
 import { fetchMapPoints } from '../utils/api/mapPointsApi';
 import { fetchPointStatuses, PointStatus, buildFilterObjectFromStatuses } from '../utils/api/pointStatusApi';
 import { fetchCategories, Category } from '../utils/api/categoriesApi';
-import { fetchMerchants } from '../utils/api/merchantsApi';
+import { fetchMerchants, fetchMerchantStats, MerchantStats } from '../utils/api/merchantsApi';
+import { fetchMarketManagementTeams, Department } from '../utils/api/departmentsApi';
 import { officersData, Officer, teamsData, departmentData } from '../data/officerTeamData';
 
 type CategoryFilter = {
@@ -37,10 +38,15 @@ export default function MapPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   
+  // 🔥 NEW: Departments from departments table
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [isLoadingDepartments, setIsLoadingDepartments] = useState(true);
+  
   // Data state - fetch from Postgres table map_points
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
+  const [hasInitialDataLoaded, setHasInitialDataLoaded] = useState(false);  // 🔥 Track if initial data has loaded
   
   // 🔥 NEW: Store ALL restaurants (unfiltered) - fetch once, never refetch
   const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
@@ -48,18 +54,54 @@ export default function MapPage() {
   // 🔥 NEW: Flag to prevent auto-save during initial load
   const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
   
+  // 🔥 FIX: Use refs to track if filters are being initialized (prevent API calls during init)
+  const isInitializingFiltersRef = useRef(false);
+  
   const [filters, setFilters] = useState<CategoryFilter>({});
   
   const [businessTypeFilters, setBusinessTypeFilters] = useState<{ [key: string]: boolean }>({});
   
+  // 🔥 NEW: Department filters
+  const [departmentFilters, setDepartmentFilters] = useState<{ [key: string]: boolean }>({});
+  
   // 🔥 NEW: Pending filters - chỉ apply khi user bấm nút "Áp dụng"
   const [pendingFilters, setPendingFilters] = useState<CategoryFilter>({});
   const [pendingBusinessTypeFilters, setPendingBusinessTypeFilters] = useState<{ [key: string]: boolean }>({});
+  const [pendingDepartmentFilters, setPendingDepartmentFilters] = useState<{ [key: string]: boolean }>({});
   
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<keyof CategoryFilter | 'all'>('all');
+  
+  // 🔥 NEW: Realtime clock for header
+  const [currentTime, setCurrentTime] = useState(new Date());
+  
+  // Update time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, []);
+  
+  // Format time display
+  const formatTime = (date: Date) => {
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
+  };
+  
+  const formatDate = (date: Date) => {
+    const days = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
+    const dayName = days[date.getDay()];
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${dayName}, ${day}/${month}/${year}`;
+  };
   
   // 🔥 DISABLED: Auto-save search query (causes localStorage stale closure issues)
   // Users must click "Reset" or change filters to trigger save
@@ -85,7 +127,7 @@ export default function MapPage() {
   
   // Map UI state (similar to FullscreenMapModal)
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
-  const [isLegendVisible, setIsLegendVisible] = useState(true);
+  const [isLegendVisible, setIsLegendVisible] = useState(false);  // 🔥 Hidden by default, show on icon click
   const [isStatsCardVisible, setIsStatsCardVisible] = useState(true);
   const [isOfficerStatsVisible, setIsOfficerStatsVisible] = useState(true); // 🔥 NEW: Officer stats overlay visibility
   
@@ -97,6 +139,10 @@ export default function MapPage() {
   // 🔥 NEW: Selected team for officers layer filter
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   
+  // 🔥 NEW: Statistics from API (background fetch)
+  const [merchantStats, setMerchantStats] = useState<MerchantStats | null>(null);
+  const [hasFetchedStats, setHasFetchedStats] = useState(false);
+  
   // Refs for click outside logic
   const filterPanelRef = useRef<HTMLDivElement>(null);
   const filterToggleBtnRef = useRef<HTMLButtonElement>(null);
@@ -107,22 +153,17 @@ export default function MapPage() {
   // 🔥 Fetch point statuses from point_status table on mount
   useEffect(() => {
     async function loadPointStatuses() {
-      console.log('📍 MapPage: Fetching point statuses from Postgres...');
       try {
         const statuses = await fetchPointStatuses();
-        console.log('📦 MapPage: Raw data from fetchPointStatuses:', statuses.length, 'statuses');
-        console.log('📍 MapPage: First status after fetch:', statuses[0]);
         
         setPointStatuses(statuses);
         
         // Build initial filters from statuses (all enabled by default)
         const initialFilters = buildFilterObjectFromStatuses(statuses);
-        console.log('✅ MapPage: Initial filters built:', initialFilters);
         setFilters(initialFilters);
         setPendingFilters(initialFilters);  // 🔥 Sync pending filters
         
         setIsLoadingStatuses(false);
-        console.log('✅ MapPage: Successfully loaded', statuses.length, 'point statuses');
       } catch (error: any) {
         console.error('❌ MapPage: Failed to load point statuses:', error);
         setIsLoadingStatuses(false);
@@ -135,27 +176,27 @@ export default function MapPage() {
   // 🔥 Fetch categories from categories table on mount
   useEffect(() => {
     async function loadCategories() {
-      console.log('📍 MapPage: Fetching categories from Postgres...');
       try {
         const cats = await fetchCategories();
-        console.log('📦 MapPage: Raw data from fetchCategories:', cats.length, 'categories');
-        console.log('📍 MapPage: First category after fetch:', cats[0]);
         
         setCategories(cats);
         
         // 🔥 FIX: Initialize businessTypeFilters with ALL categories enabled (= "Tất cả")
         if (cats.length > 0) {
+          isInitializingFiltersRef.current = true; // 🔥 FIX: Mark as initializing
           const initialBusinessTypeFilters: { [key: string]: boolean } = {};
           cats.forEach((cat) => {
             initialBusinessTypeFilters[cat.id] = true;  // 🔥 ALL categories enabled by default
           });
           setBusinessTypeFilters(initialBusinessTypeFilters);
           setPendingBusinessTypeFilters(initialBusinessTypeFilters);  // 🔥 Sync pending
-          console.log('✅ MapPage: Initial business type filters (ALL enabled):', initialBusinessTypeFilters);
+          // Reset flag after state update
+          setTimeout(() => {
+            isInitializingFiltersRef.current = false;
+          }, 0);
         }
         
         setIsLoadingCategories(false);
-        console.log('✅ MapPage: Successfully loaded', cats.length, 'categories');
       } catch (error: any) {
         console.error('❌ MapPage: Failed to load categories:', error);
         setIsLoadingCategories(false);
@@ -165,11 +206,43 @@ export default function MapPage() {
     loadCategories();
   }, []); // Run once on mount
   
+  // 🔥 NEW: Fetch departments from departments table on mount
+  useEffect(() => {
+    async function loadDepartments() {
+      try {
+        const depts = await fetchMarketManagementTeams();
+        
+        setDepartments(depts);
+        
+        // 🔥 Initialize departmentFilters with ALL departments enabled (= "Tất cả")
+        if (depts.length > 0) {
+          isInitializingFiltersRef.current = true; // 🔥 FIX: Mark as initializing
+          const initialDepartmentFilters: { [key: string]: boolean } = {};
+          depts.forEach((dept) => {
+            initialDepartmentFilters[dept.id] = true;  // 🔥 ALL departments enabled by default
+          });
+          setDepartmentFilters(initialDepartmentFilters);
+          setPendingDepartmentFilters(initialDepartmentFilters);  // 🔥 Sync pending
+          // Reset flag after state update
+          setTimeout(() => {
+            isInitializingFiltersRef.current = false;
+          }, 0);
+        }
+        
+        setIsLoadingDepartments(false);
+      } catch (error: any) {
+        console.error('❌ MapPage: Failed to load departments:', error);
+        setIsLoadingDepartments(false);
+      }
+    }
+    
+    loadDepartments();
+  }, []); // Run once on mount
+  
   // 🔥 NEW: Load saved filters from localStorage on mount
   useEffect(() => {
     // Only load saved filters after statuses and categories are loaded
     if (pointStatuses.length === 0 || categories.length === 0) {
-      console.log('⏳ Waiting for statuses and categories to load before applying saved filters...');
       return;
     }
     
@@ -177,7 +250,6 @@ export default function MapPage() {
       const savedFiltersStr = localStorage.getItem('mappa_map_filters');
       if (savedFiltersStr) {
         const savedFilters = JSON.parse(savedFiltersStr);
-        console.log('💾 Loaded saved filters from localStorage:', savedFilters);
         
         // 🔥 VALIDATE: Check if saved filters match current point statuses
         if (savedFilters.filters) {
@@ -185,18 +257,14 @@ export default function MapPage() {
           const validStatusCodes = pointStatuses.map(s => s.code);
           const isValidFilter = savedFilterKeys.every(key => validStatusCodes.includes(key));
           
-          console.log('🔍 Validating saved filters:', {
-            savedFilterKeys,
-            validStatusCodes,
-            isValidFilter
-          });
-          
           if (isValidFilter) {
+            isInitializingFiltersRef.current = true; // 🔥 FIX: Mark as initializing
             setFilters(savedFilters.filters);
             setPendingFilters(savedFilters.filters);
-            console.log('✅ Applied saved status filters');
+            setTimeout(() => {
+              isInitializingFiltersRef.current = false;
+            }, 0);
           } else {
-            console.warn('⚠️ Saved status filters are invalid, skipping');
           }
         }
         
@@ -206,23 +274,22 @@ export default function MapPage() {
           const validCategoryIds = categories.map(c => c.id);
           const isValidBusinessTypeFilter = savedBusinessTypeKeys.every(key => validCategoryIds.includes(key));
           
-          console.log('🔍 Validating saved business type filters:', {
-            savedBusinessTypeKeys,
-            validCategoryIds,
-            isValidBusinessTypeFilter
-          });
-          
           if (isValidBusinessTypeFilter) {
+            isInitializingFiltersRef.current = true; // 🔥 FIX: Mark as initializing
             setBusinessTypeFilters(savedFilters.businessTypeFilters);
             setPendingBusinessTypeFilters(savedFilters.businessTypeFilters);
-            console.log('✅ Applied saved business type filters');
+            setTimeout(() => {
+              isInitializingFiltersRef.current = false;
+            }, 0);
           } else {
-            console.warn('⚠️ Saved business type filters are invalid, skipping');
           }
         }
         
         if (savedFilters.selectedProvince) {
           setSelectedProvince(savedFilters.selectedProvince);
+        } else {
+          // Default to Hà Nội if no saved province
+          setSelectedProvince('Hà Nội');
         }
         
         if (savedFilters.selectedDistrict) {
@@ -247,9 +314,9 @@ export default function MapPage() {
           setSearchQuery(savedFilters.searchQuery);
         }
         
-        console.log('✅ Applied saved filters successfully!');
       } else {
-        console.log('ℹ️ No saved filters found in localStorage');
+        // Default to Hà Nội when no saved filters
+        setSelectedProvince('Hà Nội');
       }
     } catch (error) {
       console.error('❌ Failed to load saved filters:', error);
@@ -259,14 +326,12 @@ export default function MapPage() {
     // This prevents auto-save from overwriting the saved filters during load
     setTimeout(() => {
       setIsInitialLoadComplete(true);
-      console.log('✅ Initial load complete - auto-save enabled');
     }, 100);
   }, [pointStatuses, categories]); // Run after statuses and categories are loaded
   
   // 🔥 Fetch map points from map_points table on mount AND when filters change
   useEffect(() => {
     async function loadMapPoints() {
-      console.log('🗺️ MapPage: Fetching ALL map points from Postgres (ONE TIME)...');
       setIsLoadingData(true);
       setDataError(null);
       
@@ -274,12 +339,10 @@ export default function MapPage() {
         // 🔥 NEW: Fetch ALL points without filters (one-time fetch)
         const points = await fetchMapPoints();  // No statusIds, no categoryIds = get ALL
         
-        console.log('📦 MapPage: Received', points.length, 'map points from API');
-        console.log('📍 MapPage: First 3 points:', points.slice(0, 3));
         
         setAllRestaurants(points);  // 🔥 Store ALL points
         setIsLoadingData(false);
-        console.log('✅ MapPage: Successfully loaded', points.length, 'map points (ALL data)');
+        setHasInitialDataLoaded(true);  // 🔥 Mark initial data as loaded
       } catch (error: any) {
         console.error('❌ MapPage: Failed to load map points:', error);
         setDataError(error.message || 'Khng thể tải dữ liệu điểm kinh doanh');
@@ -293,11 +356,53 @@ export default function MapPage() {
     }
   }, [pointStatuses, showMapPoints, showMerchants, showOfficers, allRestaurants.length]); // 🔥 REMOVED: filters, businessTypeFilters, categories
   
+  // 🔥 FIX: Use ref to track if initial fetch has been done (prevent infinite loop)
+  const hasFetchedMerchantsRef = useRef(false);
+  
+  // 🔥 FIX: Serialize filters to string for comparison (prevent unnecessary API calls)
+  const filtersKey = useMemo(() => {
+    // Serialize filters with their values to detect actual changes
+    const filtersStr = JSON.stringify(filters);
+    const businessTypeFiltersStr = JSON.stringify(businessTypeFilters);
+    const departmentFiltersStr = JSON.stringify(departmentFilters);
+    return JSON.stringify({
+      filters: filtersStr,
+      businessTypeFilters: businessTypeFiltersStr,
+      departmentFilters: departmentFiltersStr,
+      categoriesLength: categories.length,
+      showMerchants,
+      showMapPoints,
+      showOfficers
+    });
+  }, [filters, businessTypeFilters, departmentFilters, categories.length, showMerchants, showMapPoints, showOfficers]);
+  
+  // 🔥 FIX: Use ref to track last filters key (prevent duplicate API calls)
+  const lastFiltersKeyRef = useRef<string>('');
+  
   // 🔥 NEW: Fetch merchants from merchants table when Merchants layer is selected
   useEffect(() => {
+    // 🔥 FIX: Skip API call if filters are being initialized (prevent unnecessary calls)
+    if (isInitializingFiltersRef.current) {
+      return;
+    }
+    
+    // 🔥 FIX: Skip API call if filters haven't actually changed
+    if (filtersKey === lastFiltersKeyRef.current) {
+      return;
+    }
+    
+    // 🔥 FIX: Only fetch if Merchants layer is selected
+    if (!showMerchants || showMapPoints || showOfficers || pointStatuses.length === 0) {
+      return;
+    }
+    
     async function loadMerchants() {
-      console.log('🏪 MapPage: Fetching merchants from Postgres...');
-      setIsLoadingData(true);
+      
+      // 🔥 Only show loading if initial data hasn't loaded yet (first time)
+      // When filters change, don't show loading - just update data silently
+      if (!hasFetchedMerchantsRef.current) {
+        setIsLoadingData(true);
+      }
       setDataError(null);
       
       try {
@@ -305,7 +410,6 @@ export default function MapPage() {
         // point_status: certified, hotspot, scheduled, inspected
         // merchant status: active, pending, suspended, rejected
         const activeFilterCodes = Object.keys(filters).filter(key => filters[key] === true);
-        console.log('🎯 MapPage: Active filter codes (point_status):', activeFilterCodes);
         
         // Map to merchant status codes
         const merchantStatusCodes = activeFilterCodes.map(code => {
@@ -318,7 +422,6 @@ export default function MapPage() {
           }
         });
         
-        console.log('🆔 MapPage: Merchant status codes for query:', merchantStatusCodes);
         
         // 🔥 Get business types from categories
         // For merchants, we filter by business_type field (text) instead of category IDs
@@ -346,35 +449,41 @@ export default function MapPage() {
             ? businessTypeNames  // 🔥 SOME selected = filter by names
             : undefined;  // 🔥 NONE selected = no filter
         
-        console.log('🆔 MapPage: Business types for merchants query:', businessTypes);
         
-        const merchants = merchantStatusCodes.length > 0 
-          ? await fetchMerchants(merchantStatusCodes, businessTypes)
+        // 🔥 NEW: Get enabled department IDs from departmentFilters
+        const enabledDepartmentIds = Object.keys(departmentFilters).filter(id => departmentFilters[id] === true);
+        const totalDepartmentFilters = Object.keys(departmentFilters).length;
+        
+        // Only filter by department if there are filters set AND not all are enabled
+        const departmentIdsToFilter = (totalDepartmentFilters > 0 && enabledDepartmentIds.length < totalDepartmentFilters)
+          ? enabledDepartmentIds
+          : undefined;  // If all enabled or no filters, don't filter by department
+        
+        const merchants = merchantStatusCodes.length > 0 || businessTypes || departmentIdsToFilter
+          ? await fetchMerchants(merchantStatusCodes, businessTypes, departmentIdsToFilter)
           : [];
         
-        console.log('📦 MapPage: Received', merchants.length, 'merchants from API');
-        console.log('📍 MapPage: First 3 merchants:', merchants.slice(0, 3));
         
         setRestaurants(merchants);
         setIsLoadingData(false);
-        console.log('✅ MapPage: Successfully loaded', merchants.length, 'merchants');
+        hasFetchedMerchantsRef.current = true;  // 🔥 FIX: Use ref instead of state to prevent infinite loop
+        setHasInitialDataLoaded(true);  // 🔥 Keep for other UI checks
+        lastFiltersKeyRef.current = filtersKey; // 🔥 FIX: Update last filters key after successful fetch
       } catch (error: any) {
         console.error('❌ MapPage: Failed to load merchants:', error);
         setDataError(error.message || 'Không thể tải dữ liệu merchants');
         setIsLoadingData(false);
+        // Don't set hasFetchedMerchantsRef on error - will retry
       }
     }
     
-    // Only fetch merchants if Merchants layer is selected
-    if (pointStatuses.length > 0 && showMerchants && !showMapPoints && !showOfficers) {
-      loadMerchants();
-    }
-  }, [filters, pointStatuses, businessTypeFilters, showMerchants, showMapPoints, showOfficers, categories]); // Re-fetch when layer changes
+    // Don't update lastFiltersKeyRef here - only update after successful API call
+    loadMerchants();
+  }, [filtersKey, pointStatuses.length, showMerchants, showMapPoints, showOfficers]); // 🔥 FIX: Use serialized filters key instead of raw objects
   
   // 🔥 NEW: Clear restaurants when Officers layer is selected (ward boundaries don't need points)
   useEffect(() => {
     if (showOfficers) {
-      console.log('👮 MapPage: Officers layer selected - clearing restaurants');
       setRestaurants([]);
       setIsLoadingData(false);
     }
@@ -382,40 +491,38 @@ export default function MapPage() {
   
   // Setup global function for popup button click
   useEffect(() => {
-    (window as any).openPointDetail = (pointId: string) => {
-      console.log('🔍 openPointDetail called with ID:', pointId);
-      console.log('📊 Current restaurants count:', restaurants.length);
-      console.log('📊 All restaurants count:', allRestaurants.length);
+    (window as any).openPointDetail = (pointId: string, event?: Event) => {
+      // 🔥 FIX: Stop event propagation to prevent bubble-up click from closing modal
+      if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+      }
+      
       
       // 🔥 FIX: Search in allRestaurants (unfiltered) instead of restaurants (filtered)
       // This ensures popup buttons work even when point is filtered out from map
       const point = allRestaurants.find(r => r.id === pointId) || restaurants.find(r => r.id === pointId);
       
       if (point) {
-        console.log('✅ Found point:', point.name);
-        setDetailModalPoint(point);
-        setIsDetailModalOpen(true);
+        // 🔥 FIX: Use setTimeout with delay to ensure modal opens after all click events complete
+        // This prevents the click event from bubble-up popup close from closing the modal
+        setTimeout(() => {
+          setDetailModalPoint(point);
+          setIsDetailModalOpen(true);
+        }, 50); // 🔥 FIX: Small delay to let Leaflet popup close event complete
       } else {
-        console.warn('❌ Point not found for ID:', pointId);
-        console.warn('❌ Searched in', allRestaurants.length, 'allRestaurants and', restaurants.length, 'restaurants');
       }
     };
     
     (window as any).openPointReview = (pointId: string) => {
-      console.log('🔍 openPointReview called with ID:', pointId);
-      console.log('📊 Current restaurants count:', restaurants.length);
-      console.log('📊 All restaurants count:', allRestaurants.length);
       
       // 🔥 FIX: Search in allRestaurants (unfiltered) instead of restaurants (filtered)
       const point = allRestaurants.find(r => r.id === pointId) || restaurants.find(r => r.id === pointId);
       
       if (point) {
-        console.log('✅ Found point for review:', point.name);
         setReviewModalPoint(point);
         setIsReviewModalOpen(true);
       } else {
-        console.warn('❌ Point not found for review ID:', pointId);
-        console.warn('❌ Searched in', allRestaurants.length, 'allRestaurants and', restaurants.length, 'restaurants');
       }
     };
     
@@ -426,12 +533,31 @@ export default function MapPage() {
   }, [restaurants, allRestaurants]); // ✅ Add both dependencies
   
   // Location filters
-  const [selectedProvince, setSelectedProvince] = useState<string>('');
+  const [selectedProvince, setSelectedProvince] = useState<string>('Hà Nội');
   const [selectedDistrict, setSelectedDistrict] = useState<string>('');
   const [selectedWard, setSelectedWard] = useState<string>('');
   const [showProvinceDropdown, setShowProvinceDropdown] = useState(false);
   const [showDistrictDropdown, setShowDistrictDropdown] = useState(false);
   const [showWardDropdown, setShowWardDropdown] = useState(false);
+  
+  // 🔥 NEW: Fetch merchant statistics in background on first load and when location changes
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        // Fetch stats with all statuses (no filter) for total count
+        const stats = await fetchMerchantStats(selectedProvince || undefined, selectedDistrict || undefined, selectedWard || undefined);
+        setMerchantStats(stats);
+        if (!hasFetchedStats) {
+          setHasFetchedStats(true);
+        }
+      } catch (error: any) {
+        console.error('❌ MapPage: Failed to load stats (background, non-blocking):', error);
+      }
+    }
+    
+    // Run in background (don't await) - fetch on mount and when location changes
+    loadStats();
+  }, [selectedProvince, selectedDistrict, selectedWard]); // Re-fetch when location changes
   
   // 🔥 NEW: Date range filter
   const [dateRange, setDateRange] = useState<string>('all');
@@ -455,6 +581,15 @@ export default function MapPage() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
+      
+      // 🔥 FIX: Don't close if clicking on ScopeSelector (in header)
+      if (
+        target.closest('[data-scope-selector="true"]') ||
+        target.closest('[data-scope-dropdown="true"]')
+      ) {
+        return;
+      }
+      
       if (!target.closest('[data-dropdown-trigger]')) {
         setShowProvinceDropdown(false);
         setShowDistrictDropdown(false);
@@ -473,6 +608,7 @@ export default function MapPage() {
       if (!isFilterPanelOpen) return;
 
       const target = event.target as Node;
+      const targetElement = event.target as HTMLElement;
       
       // Don't close if clicking inside filter panel or its toggle button
       if (
@@ -482,16 +618,18 @@ export default function MapPage() {
         return;
       }
 
-      // Don't close if clicking on other UI boxes
+      // Don't close if clicking on other UI boxes (including ScopeSelector in header)
       if (
         legendRef.current?.contains(target) ||
-        statsCardRef.current?.contains(target)
+        statsCardRef.current?.contains(target) ||
+        targetElement.closest('[data-scope-selector="true"]') ||  // 🔥 FIX: Exclude ScopeSelector by data attribute
+        targetElement.closest('[data-scope-dropdown="true"]') ||  // 🔥 FIX: Exclude ScopeSelector dropdown
+        targetElement.closest('button[aria-label="Chọn phạm vi giám sát"]')  // 🔥 FIX: Exclude ScopeSelector trigger
       ) {
         return;
       }
 
       // Don't close if clicking on markers/points (they have data-marker attribute)
-      const targetElement = event.target as HTMLElement;
       if (
         targetElement.closest('[class*="marker"]') ||
         targetElement.closest('[class*="point"]') ||
@@ -501,13 +639,16 @@ export default function MapPage() {
         return;
       }
 
-      // Only close if clicking on map container or overlay
-      if (
-        mapContainerRef.current?.contains(target) ||
-        (event.target as HTMLElement).classList.contains(styles.mapContainer)
-      ) {
-        setIsFilterPanelOpen(false);
+      // Only close if clicking directly on map container (the Leaflet map itself)
+      // Do NOT close if clicking outside the map area (header, sidebar, background, etc.)
+      if (mapContainerRef.current?.contains(target)) {
+        // Check if it's a direct click on the map canvas (not on other elements inside map container)
+        const isMapClick = targetElement.closest('.leaflet-container') !== null;
+        if (isMapClick) {
+          setIsFilterPanelOpen(false);
+        }
       }
+      // If click is outside map container entirely, do nothing (don't close)
     };
 
     if (isFilterPanelOpen) {
@@ -518,6 +659,12 @@ export default function MapPage() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isFilterPanelOpen]);
+
+  // 🔥 FIX: Memoize onPointClick handler to prevent unnecessary re-renders
+  const handlePointClick = useCallback((point: Restaurant) => {
+    setDetailModalPoint(point);
+    setIsDetailModalOpen(true);
+  }, []); // Empty deps - function doesn't depend on any state
 
   // Reset stats card visibility when location filters change
   useEffect(() => {
@@ -536,7 +683,6 @@ export default function MapPage() {
 
   // 🔥 NEW: Handle ward polygon click to show officer info
   const handleWardClick = (wardName: string, district: string) => {
-    console.log('👮 Ward clicked:', wardName, district);
     
     // Find team that manages this ward
     const team = teamsData.find(t => 
@@ -546,12 +692,10 @@ export default function MapPage() {
     if (team) {
       // Get team leader (first officer) or first officer
       const officer = team.officers.find(o => o.isTeamLeader) || team.officers[0];
-      console.log('✅ Found team:', team.name, 'Officer:', officer.fullName);
       setSelectedOfficer(officer);
       setSelectedWardName(wardName);
       setIsOfficerModalOpen(true);
     } else {
-      console.warn('⚠️ No team found for ward:', wardName, district);
       // Show first officer as fallback
       if (officersData.length > 0) {
         setSelectedOfficer(officersData[0]);
@@ -592,18 +736,35 @@ export default function MapPage() {
     setPendingBusinessTypeFilters(newFilters);  // Keep pending in sync
   };
   
+  // 🔥 NEW: Handle department filter change
+  const handleDepartmentFilterChange = (departmentId: string) => {
+    const newFilters = {
+      ...departmentFilters,
+      [departmentId]: !departmentFilters[departmentId]
+    };
+    
+    setDepartmentFilters(newFilters);
+    setPendingDepartmentFilters(newFilters);  // Keep pending in sync
+  };
+  
+  // 🔥 NEW: Handle "Tất cả" checkbox for departments
+  const handleDepartmentToggleAll = (checked: boolean) => {
+    const newFilters: { [key: string]: boolean } = {};
+    Object.keys(departmentFilters).forEach(key => {
+      newFilters[key] = checked;
+    });
+    
+    setDepartmentFilters(newFilters);
+    setPendingDepartmentFilters(newFilters);  // Keep pending in sync
+  };
+  
   // 🔥 NEW: Apply pending filters to actual filters
   const handleApplyFilters = () => {
-    console.log('🔥 Applying filters...');
-    console.log('📍 Before apply - filters:', filters);
-    console.log('📍 Before apply - pendingFilters:', pendingFilters);
-    console.log('📍 Before apply - businessTypeFilters:', businessTypeFilters);
-    console.log('📍 Before apply - pendingBusinessTypeFilters:', pendingBusinessTypeFilters);
     
     setFilters(pendingFilters);
     setBusinessTypeFilters(pendingBusinessTypeFilters);
+    setDepartmentFilters(pendingDepartmentFilters);  // 🔥 NEW: Apply department filters
     
-    console.log('✅ Filters applied!');
   };
   
   // 🔥 NEW: Save filters to localStorage
@@ -622,7 +783,6 @@ export default function MapPage() {
       };
       
       localStorage.setItem('mappa_map_filters', JSON.stringify(filterState));
-      console.log('💾 Filters saved to localStorage:', filterState);
     } catch (error) {
       console.error('❌ Failed to save filters:', error);
     }
@@ -632,7 +792,6 @@ export default function MapPage() {
   useEffect(() => {
     // 🔥 CRITICAL: Skip auto-save during initial load to prevent race condition
     if (!isInitialLoadComplete) {
-      console.log('⏸️ Skipping auto-save: initial load not complete');
       return;
     }
     
@@ -641,7 +800,6 @@ export default function MapPage() {
         Object.keys(filters).length > 0 && Object.keys(businessTypeFilters).length > 0) {
       const timer = setTimeout(() => {
         handleSaveFilters();
-        console.log('💾 Auto-saved filters after change');
       }, 500); // Debounce 500ms
       
       return () => clearTimeout(timer);
@@ -650,7 +808,6 @@ export default function MapPage() {
   
   // 🔥 NEW: Reset all filters to default
   const handleResetAllFilters = () => {
-    console.log('🔄 Resetting all filters to default...');
     
     // Reset status filters - enable all
     const defaultFilters = buildFilterObjectFromStatuses(pointStatuses);
@@ -680,9 +837,6 @@ export default function MapPage() {
     // Clear localStorage
     localStorage.removeItem('mappa_map_filters');
     
-    console.log('✅ All filters reset to default!');
-    console.log('📊 Default status filters:', defaultFilters);
-    console.log('📊 Default business type filters:', defaultBusinessTypeFilters);
   };
   
   // Handle stat card click to filter by category
@@ -720,40 +874,29 @@ export default function MapPage() {
   // 🔥 NEW LOGIC: Frontend filtering from allRestaurants (no API calls)
   // Filter by: status filters + business type filters
   const filteredByFilters = useMemo(() => {
-    console.log('🔍 MapPage: Applying frontend filters...');
     
     // 🔥 NEW: Determine data source based on active layer
     let dataSource: Restaurant[] = [];
     
     if (showMapPoints) {
       dataSource = allRestaurants;  // MapPoint layer uses allRestaurants
-      console.log('📊 Data source: MapPoints (allRestaurants) - ', dataSource.length, 'points');
     } else if (showMerchants) {
       dataSource = restaurants;     // Merchant layer uses restaurants (from fetchMerchants)
-      console.log('📊 Data source: Merchants (restaurants) - ', dataSource.length, 'merchants');
     } else if (showOfficers) {
       dataSource = [];               // Officers layer has no points
-      console.log('📊 Data source: Officers (no points)');
     }
     
-    console.log('📊 filters:', filters);
-    console.log('📊 businessTypeFilters:', businessTypeFilters);
     
     if (!dataSource || dataSource.length === 0) {
-      console.log('⚠️ No data to filter!');
       return [];
     }
     
     // 🔥 DEBUG: Check first item's structure
-    console.log('🐛 First data item:', dataSource[0]);
     
     // 🔥 Count how many business type filters are enabled
     const enabledBusinessTypes = Object.keys(businessTypeFilters).filter(key => businessTypeFilters[key] === true);
     const totalBusinessTypes = Object.keys(businessTypeFilters).length;
-    console.log(`🐛 Enabled business types: ${enabledBusinessTypes.length} / ${totalBusinessTypes}`);
-    console.log(`🐛 businessTypeFilters object:`, businessTypeFilters);
     if (totalBusinessTypes === 0) {
-      console.warn('⚠️ businessTypeFilters is empty! Categories may not have loaded yet.');
     }
     
     const filtered = dataSource.filter((restaurant) => {
@@ -780,7 +923,6 @@ export default function MapPage() {
       // If some are enabled, filter normally
       // If all are disabled (enabledFilterIds === 0 && totalFilterIds > 0), hide all
       if (totalFilterIds > 0 && enabledFilterIds.length === 0) {
-        console.log('⚠️ All business types disabled by user, hiding all restaurants');
         return false;  // Hide all when user explicitly disabled all business types
       }
       
@@ -824,29 +966,92 @@ export default function MapPage() {
         restaurantCategoryIds.includes(filterId)
       );
       
-      return hasActiveBusinessType;
+      if (!hasActiveBusinessType) {
+        return false;
+      }
+      
+      // 🔥 NEW: Filter by department
+      if (!departmentFilters || Object.keys(departmentFilters).length === 0) {
+        return true; // Show all when no department filters loaded yet
+      }
+      
+      // Get enabled department filter IDs
+      const enabledDepartmentIds = Object.keys(departmentFilters).filter(id => departmentFilters[id] === true);
+      const totalDepartmentFilters = Object.keys(departmentFilters).length;
+      
+      // If all departments are disabled (explicitly), hide all
+      if (totalDepartmentFilters > 0 && enabledDepartmentIds.length === 0) {
+        return false;
+      }
+      
+      // If no filters are set yet (initial state), show all
+      if (totalDepartmentFilters === 0) {
+        return true;
+      }
+      
+      // 🔥 Check if restaurant has department_id field
+      const restaurantDepartmentId = (restaurant as any).department_id || (restaurant as any).departmentId;
+      if (!restaurantDepartmentId) {
+        return true; // Don't filter out data without department_id
+      }
+      
+      // Check if restaurant matches any enabled department
+      const hasActiveDepartment = enabledDepartmentIds.some(deptId => 
+        restaurantDepartmentId === deptId
+      );
+      
+      return hasActiveDepartment;
     });
     
-    console.log(`✅ Filtered by filters: ${filtered.length} / ${dataSource.length}`);
     return filtered;
-  }, [allRestaurants, restaurants, showMapPoints, showMerchants, showOfficers, filters, businessTypeFilters, categories]);
+  }, [allRestaurants, restaurants, showMapPoints, showMerchants, showOfficers, filters, businessTypeFilters, departmentFilters, categories]);
+  
+  // 🔥 NEW: Calculate statistics data - filter by location ONLY (not by status or businessType)
+  // This ensures stats show total businesses on the selected area, regardless of filters
+  const restaurantsForStats = useMemo(() => {
+    
+    // Determine data source based on active layer
+    let dataSource: Restaurant[] = [];
+    if (showMapPoints) {
+      dataSource = allRestaurants;
+    } else if (showMerchants) {
+      dataSource = restaurants;
+    } else {
+      return [];
+    }
+    
+    if (!dataSource || dataSource.length === 0) {
+      return [];
+    }
+    
+    // Filter by location ONLY (province, district, ward)
+    // Do NOT filter by status or businessType - stats should show ALL businesses in the area
+    if (selectedProvince || selectedDistrict || selectedWard) {
+      const filteredByLocation = dataSource.filter((restaurant) => {
+        if (selectedProvince && restaurant.province !== selectedProvince) return false;
+        if (selectedDistrict && restaurant.district !== selectedDistrict) return false;
+        if (selectedWard && restaurant.ward !== selectedWard) return false;
+        return true;
+      });
+      
+      return filteredByLocation;
+    }
+    
+    // No location filter - return all data
+    return dataSource;
+  }, [allRestaurants, restaurants, showMapPoints, showMerchants, selectedProvince, selectedDistrict, selectedWard]);
   
   // Apply location and search filters on top of filter results
   const filteredRestaurants = useMemo(() => {
-    console.log('🔍 MapPage: Applying location/search filters...');
-    console.log('📊 filteredByFilters.length:', filteredByFilters.length);
-    console.log('🔎 searchQuery:', searchQuery);
-    console.log('📍 Location filters:', { selectedProvince, selectedDistrict, selectedWard });
     
     if (!filteredByFilters || filteredByFilters.length === 0) {
-      console.log('⚠️ No restaurants to filter!');
       return [];
     }
     
     // 🐛 DEBUG: Log sample restaurant location data
     if (filteredByFilters.length > 0) {
       const sample = filteredByFilters[0];
-      console.log('📍 Sample restaurant location data:', {
+      console.log({
         province: sample.province,
         district: sample.district,
         ward: sample.ward,
@@ -856,8 +1061,6 @@ export default function MapPage() {
     
     // 🐛 DEBUG: Log all restaurant names to check data
     if (searchQuery.trim() !== '') {
-      console.log('🐛 All available restaurant names:', filteredByFilters.map(r => r.name));
-      console.log('🐛 Searching for:', searchQuery);
     }
     
     let filteredByLocation = filteredByFilters;
@@ -887,15 +1090,11 @@ export default function MapPage() {
         return true;
       });
       
-      console.log(`📍 Location filter: ${filteredByLocation.length} / ${filteredByFilters.length} restaurants passed`);
       if (filteredByLocation.length === 0 && filteredByFilters.length > 0) {
-        console.warn('⚠️ Location filter removed ALL restaurants!');
-        console.warn('📍 Selected location:', { selectedProvince, selectedDistrict, selectedWard });
         if (filteredByFilters.length > 0) {
           const uniqueProvinces = [...new Set(filteredByFilters.map(r => r.province))];
           const uniqueDistricts = [...new Set(filteredByFilters.map(r => r.district))];
           const uniqueWards = [...new Set(filteredByFilters.map(r => r.ward))];
-          console.warn('📍 Available in data:', { uniqueProvinces, uniqueDistricts, uniqueWards });
         }
       }
     }
@@ -917,7 +1116,7 @@ export default function MapPage() {
       
       // 🐛 DEBUG: Log each match attempt
       if (searchQuery.trim() !== '') {
-        console.log(`🔍 Checking "${restaurant.name}":`, {
+        console.log({
           name: nameLower,
           searchQuery: searchLower,
           nameMatch: nameLower.includes(searchLower),
@@ -930,7 +1129,6 @@ export default function MapPage() {
       return searchMatch;
     });
     
-    console.log(`✅ Final filtered restaurants: ${finalFiltered.length} / ${filteredByFilters.length}`);
     
     return finalFiltered;
   }, [filteredByFilters, searchQuery, selectedProvince, selectedDistrict, selectedWard]);
@@ -938,9 +1136,6 @@ export default function MapPage() {
   // 🔥 NEW: Log final search results
   useEffect(() => {
     if (searchQuery.trim() !== '') {
-      console.log(`🔎 Search results for "${searchQuery}": ${filteredRestaurants.length} matches`);
-      console.log('📍 Active layer:', showMapPoints ? 'MapPoints' : showMerchants ? 'Merchants' : 'Officers');
-      console.log(' Matched items:', filteredRestaurants.slice(0, 5).map(r => ({ name: r.name, type: r.type, category: r.category })));
     }
   }, [searchQuery, filteredRestaurants, showMapPoints, showMerchants]);
   
@@ -974,7 +1169,6 @@ export default function MapPage() {
   };
 
   const handleSearchChange = (value: string) => {
-    console.log('🔎 Search query changed:', value);
     setSearchQuery(value);
     if (!value.trim()) {
       setSelectedRestaurant(null);
@@ -985,7 +1179,61 @@ export default function MapPage() {
     <div className="flex flex-col" style={{ height: 'calc(100vh - 7.5rem)' }}>
       <PageHeader
         breadcrumbs={[{ label: 'Trang chủ', href: '/' }, { label: 'Bản đồ điều hành' }]}
-        title="Bản đồ điều hành"
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)' }}>
+            <span>Bản đồ điều hành</span>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--spacing-3)',
+              paddingLeft: 'var(--spacing-4)',
+              borderLeft: '1px solid var(--color-border)',
+              fontSize: 'var(--font-size-sm)',
+              color: 'var(--color-text-secondary)',
+              fontFamily: 'var(--font-family-mono)',
+              fontWeight: '500'
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                <div style={{
+                  fontSize: 'var(--font-size-base)',
+                  color: 'var(--color-text)',
+                  fontWeight: '600',
+                  lineHeight: 1.2
+                }}>
+                  {formatTime(currentTime)}
+                </div>
+                <div style={{
+                  fontSize: 'var(--font-size-xs)',
+                  color: 'var(--color-text-secondary)',
+                  lineHeight: 1.2
+                }}>
+                  {formatDate(currentTime)}
+                </div>
+              </div>
+              <div style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: '#22c55e',
+                animation: 'pulse-dot 2s ease-in-out infinite',
+                boxShadow: '0 0 0 0 rgba(34, 197, 94, 0.7)'
+              }}></div>
+            </div>
+            <style>{`
+              @keyframes pulse-dot {
+                0% {
+                  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+                }
+                70% {
+                  box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+                }
+                100% {
+                  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+                }
+              }
+            `}</style>
+          </div>
+        }
         actions={
           <div className="flex items-center gap-2">
             {/* Date Range Picker */}
@@ -1140,8 +1388,8 @@ export default function MapPage() {
         </div>
       )}
 
-      {/* Map Content - Only show when data is loaded */}
-      {!isLoadingData && !dataError && (
+      {/* Map Content - Show after initial load (don't hide when filters change) */}
+      {(hasInitialDataLoaded || !isLoadingData) && !dataError && (
         <div style={{ flex: 1, display: 'flex', padding: 'var(--spacing-6) var(--spacing-6) var(--spacing-6) var(--spacing-6)' }}>
           {/* Map Canvas - Now takes full width */}
           <div className={styles.mapContainer} style={{ position: 'relative', width: '100%', height: '100%' }} ref={mapContainerRef}>
@@ -1156,12 +1404,9 @@ export default function MapPage() {
               };
               
               // 🐛 DEBUG: Log status codes để check matching
-              console.log('🎨 MapLegend - Point statuses:', pointStatuses.map(s => ({ code: s.code, name: s.name })));
-              console.log('🎨 MapLegend - ColorMap keys:', Object.keys(colorMap));
               
               const categoryData = pointStatuses.map(status => {
                 const color = colorMap[status.code] || '#005cb6';
-                console.log(`🎨 MapLegend - status.code="${status.code}" → color="${color}"`);
                 return {
                   key: status.code,
                   label: status.name,                                 // 📦 FROM DB
@@ -1185,9 +1430,10 @@ export default function MapPage() {
                 selectedProvince={selectedProvince}
                 selectedDistrict={selectedDistrict}
                 selectedWard={selectedWard}
-                filteredRestaurants={filteredRestaurants}
+                filteredRestaurants={restaurantsForStats}
                 businessTypeFilters={businessTypeFilters}
                 categories={categories}
+                merchantStats={merchantStats}
                 onClose={() => {
                   setSelectedProvince('');
                   setSelectedDistrict('');
@@ -1211,10 +1457,7 @@ export default function MapPage() {
               showWardBoundaries={showOfficers}
               showMerchants={showMerchants}
               selectedTeamId={selectedTeamId}  // 🔥 NEW: Pass selected team ID
-              onPointClick={(point) => {
-                setDetailModalPoint(point);
-                setIsDetailModalOpen(true);
-              }}
+              onPointClick={handlePointClick}
               onWardClick={handleWardClick}
               onFullscreenClick={() => setIsFullscreenMapOpen(true)}
             />
@@ -1384,9 +1627,11 @@ export default function MapPage() {
                 isOpen={isFilterPanelOpen}
                 filters={pendingFilters}  // 🔥 CHANGED: Use pending filters for UI
                 businessTypeFilters={pendingBusinessTypeFilters}  // 🔥 CHANGED: Use pending business type filters
+                departmentFilters={pendingDepartmentFilters}  // 🔥 NEW: Department filters
                 restaurants={restaurants}
                 pointStatuses={pointStatuses}  // 🔥 PASS: Dynamic statuses
                 categories={categories}        // 🔥 PASS: Categories from database
+                departments={departments}      // 🔥 NEW: Departments from database
                 selectedProvince={selectedProvince}
                 selectedDistrict={selectedDistrict}
                 selectedWard={selectedWard}
@@ -1396,6 +1641,8 @@ export default function MapPage() {
                 onFilterChange={handleFilterChange}  // 🔥 Updates pending filters
                 onBusinessTypeFilterChange={handleBusinessTypeFilterChange}  // 🔥 Updates pending filters
                 onBusinessTypeToggleAll={handleBusinessTypeToggleAll}
+                onDepartmentFilterChange={handleDepartmentFilterChange}  // 🔥 NEW: Department filter change
+                onDepartmentToggleAll={handleDepartmentToggleAll}  // 🔥 NEW: Toggle all departments
                 onProvinceChange={(province) => {
                   setSelectedProvince(province);
                   setSelectedDistrict(''); // Reset district when province changes
@@ -1456,10 +1703,7 @@ export default function MapPage() {
         allRestaurants={allRestaurants}  // 🔥 NEW: Pass all restaurants for filter panel counts
         pointStatuses={pointStatuses}  // 🔥 PASS: Dynamic statuses to fullscreen modal
         categories={categories}  // 🔥 NEW: Pass categories for mapping ID to name
-        onPointClick={(point) => {
-          setDetailModalPoint(point);
-          setIsDetailModalOpen(true);
-        }}
+        onPointClick={handlePointClick}
         onFilterChange={handleFilterChange}
         onBusinessTypeFilterChange={handleBusinessTypeFilterChange}
         onBusinessTypeToggleAll={handleBusinessTypeToggleAll}

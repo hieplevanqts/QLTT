@@ -68,7 +68,6 @@ class AuditLoggingService {
     );
 
     await this.logEvent(event);
-    console.log('[AUDIT] EVIDENCE_UPLOADED:', JSON.stringify(event, null, 2));
   }
 
   /**
@@ -88,7 +87,6 @@ class AuditLoggingService {
     );
 
     await this.logEvent(event);
-    console.log('[AUDIT] EVIDENCE_HASH_COMPUTED:', JSON.stringify(event, null, 2));
   }
 
   /**
@@ -108,7 +106,6 @@ class AuditLoggingService {
     );
 
     await this.logEvent(event);
-    console.log('[AUDIT] EVIDENCE_SUBMITTED:', JSON.stringify(event, null, 2));
   }
 
   /**
@@ -128,7 +125,6 @@ class AuditLoggingService {
     );
 
     await this.logEvent(event);
-    console.log('[AUDIT] REVIEW_ASSIGNED:', JSON.stringify(event, null, 2));
   }
 
   /**
@@ -151,7 +147,6 @@ class AuditLoggingService {
     );
 
     await this.logEvent(event);
-    console.log('[AUDIT] REVIEW_DECISION_MADE:', JSON.stringify(event, null, 2));
   }
 
   /**
@@ -171,7 +166,6 @@ class AuditLoggingService {
     );
 
     await this.logEvent(event);
-    console.log('[AUDIT] EVIDENCE_SEALED:', JSON.stringify(event, null, 2));
   }
 
   /**
@@ -191,7 +185,6 @@ class AuditLoggingService {
     );
 
     await this.logEvent(event);
-    console.log('[AUDIT] EVIDENCE_UNSEALED:', JSON.stringify(event, null, 2));
   }
 
   /**
@@ -211,7 +204,6 @@ class AuditLoggingService {
     );
 
     await this.logEvent(event);
-    console.log('[AUDIT] EVIDENCE_LINKED_TO_ENTITY:', JSON.stringify(event, null, 2));
   }
 
   /**
@@ -231,7 +223,6 @@ class AuditLoggingService {
     );
 
     await this.logEvent(event);
-    console.log('[AUDIT] PACKAGE_CREATED:', JSON.stringify(event, null, 2));
   }
 
   /**
@@ -251,7 +242,6 @@ class AuditLoggingService {
     );
 
     await this.logEvent(event);
-    console.log('[AUDIT] PACKAGE_GENERATED:', JSON.stringify(event, null, 2));
   }
 
   /**
@@ -271,7 +261,6 @@ class AuditLoggingService {
     );
 
     await this.logEvent(event);
-    console.log('[AUDIT] EXPORT_REQUESTED:', JSON.stringify(event, null, 2));
   }
 
   /**
@@ -291,7 +280,6 @@ class AuditLoggingService {
     );
 
     await this.logEvent(event);
-    console.log('[AUDIT] EXPORT_COMPLETED:', JSON.stringify(event, null, 2));
   }
 
   /**
@@ -311,7 +299,6 @@ class AuditLoggingService {
     );
 
     await this.logEvent(event);
-    console.log('[AUDIT] EXPORT_DOWNLOADED:', JSON.stringify(event, null, 2));
   }
 
   /**
@@ -331,7 +318,6 @@ class AuditLoggingService {
     );
 
     await this.logEvent(event);
-    console.log('[AUDIT] CUSTODY_LOG_EXPORTED:', JSON.stringify(event, null, 2));
   }
 
   /**
@@ -351,7 +337,6 @@ class AuditLoggingService {
     );
 
     await this.logEvent(event);
-    console.log('[AUDIT] EVIDENCE_DERIVED:', JSON.stringify(event, null, 2));
   }
 
   /**
@@ -372,7 +357,6 @@ class AuditLoggingService {
     );
 
     await this.logEvent(event);
-    console.log('[AUDIT] EVIDENCE_VIEWED:', JSON.stringify(event, null, 2));
   }
 
   /**
@@ -394,7 +378,6 @@ class AuditLoggingService {
     );
 
     await this.logEvent(event);
-    console.log('[AUDIT] EVIDENCE_DOWNLOADED:', JSON.stringify(event, null, 2));
   }
 
   /**
@@ -416,7 +399,6 @@ class AuditLoggingService {
     );
 
     await this.logEvent(event);
-    console.log('[AUDIT] UNAUTHORIZED_ACCESS_ATTEMPTED:', JSON.stringify(event, null, 2));
   }
 
   /**
@@ -439,7 +421,6 @@ class AuditLoggingService {
     );
 
     await this.logEvent(event);
-    console.log('[AUDIT] PERMISSION_DENIED:', JSON.stringify(event, null, 2));
   }
 
   /**
@@ -449,7 +430,6 @@ class AuditLoggingService {
     // Validate metadata
     const validation = validateAuditMetadata(event.eventType, event.metadata);
     if (!validation.isValid) {
-      console.warn(`[AUDIT] Missing metadata fields for ${event.eventType}:`, validation.missingFields);
     }
 
     // Add to buffer
@@ -483,7 +463,6 @@ class AuditLoggingService {
    */
   private async sendToBackend(events: AuditEvent[]): Promise<void> {
     try {
-      console.log(`[AUDIT] Sending ${events.length} events to backend...`);
       
       // In production: POST to /api/audit/events
       // await fetch('/api/audit/events', {
@@ -493,7 +472,6 @@ class AuditLoggingService {
       // });
 
       // For demo: just log
-      console.log('[AUDIT] Events sent successfully');
     } catch (error) {
       console.error('[AUDIT] Failed to send events:', error);
       // Re-add to buffer for retry

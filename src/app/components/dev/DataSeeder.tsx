@@ -23,12 +23,9 @@ export function DataSeeder({ isVisible }: DataSeederProps) {
       setIsSeeding(true);
       setMessage({ type: 'info', text: `Đang seed ${restaurants.length} hộ kinh doanh...` });
 
-      console.log('🌱 Starting seed process...');
-      console.log(`📊 Total restaurants to seed: ${restaurants.length}`);
       
       const result = await seedRestaurants(restaurants);
       
-      console.log('✅ Seed successful:', result);
       
       setMessage({ 
         type: 'success', 
@@ -40,7 +37,6 @@ export function DataSeeder({ isVisible }: DataSeederProps) {
       
       // Auto-reload page after 1.5 seconds to show the data
       setTimeout(() => {
-        console.log('🔄 Reloading page to show seeded data...');
         window.location.reload();
       }, 1500);
       
@@ -74,7 +70,6 @@ export function DataSeeder({ isVisible }: DataSeederProps) {
         text: `✅ ${result.message}` 
       });
       
-      console.log('Delete result:', result);
     } catch (error) {
       console.error('Delete error:', error);
       setMessage({ 

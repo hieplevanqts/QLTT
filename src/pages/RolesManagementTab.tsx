@@ -72,7 +72,6 @@ export const RolesManagementTab: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Fetching roles from Supabase...');
 
       // Fetch roles
       const { data: rolesData, error: rolesError } = await supabase
@@ -85,7 +84,6 @@ export const RolesManagementTab: React.FC = () => {
         toast.error(`Lỗi tải vai trò: ${rolesError.message}`);
         setRoles([]);
       } else {
-        console.log(`✅ Loaded ${rolesData?.length || 0} roles from Supabase`);
         
         // Get user counts for each role
         const rolesWithCounts = await Promise.all(
@@ -220,7 +218,6 @@ export const RolesManagementTab: React.FC = () => {
         console.error('❌ Error deleting role:', error);
         toast.error(`Lỗi xóa vai trò: ${error.message}`);
       } else {
-        console.log('✅ Role deleted successfully');
         toast.success('Đã xóa vai trò thành công');
         fetchData();
       }
@@ -242,7 +239,6 @@ export const RolesManagementTab: React.FC = () => {
         console.error('❌ Error updating role status:', error);
         toast.error(`Lỗi cập nhật trạng thái: ${error.message}`);
       } else {
-        console.log('✅ Role status updated');
         toast.success(newStatus === 1 ? 'Đã kích hoạt vai trò' : 'Đã vô hiệu hóa vai trò');
         fetchData();
       }
@@ -269,7 +265,6 @@ export const RolesManagementTab: React.FC = () => {
   // Export to Excel
   const handleExportExcel = () => {
     try {
-      console.log('📊 Exporting roles to Excel...');
 
       // Prepare data for Excel
       const excelData = filteredRoles.map((role, index) => ({
@@ -312,7 +307,6 @@ export const RolesManagementTab: React.FC = () => {
       // Write file
       XLSX.writeFile(wb, filename);
 
-      console.log(`✅ Exported ${filteredRoles.length} roles to ${filename}`);
       toast.success(`Đã xuất ${filteredRoles.length} vai trò ra Excel`);
     } catch (error) {
       console.error('❌ Error exporting to Excel:', error);

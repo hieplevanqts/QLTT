@@ -77,7 +77,6 @@ export const DepartmentsTab: React.FC = () => {
     try {
       setLoading(true);
       setDatabaseError(null);
-      console.log('🔍 Fetching departments from Supabase...');
 
       const { data, error } = await supabase
         .from('departments')
@@ -92,7 +91,6 @@ export const DepartmentsTab: React.FC = () => {
         return;
       }
 
-      console.log(`✅ Loaded ${data?.length || 0} departments`);
       setDepartments(data || []);
 
       // Build tree structure
@@ -298,7 +296,6 @@ export const DepartmentsTab: React.FC = () => {
   // Export to Excel
   const handleExport = () => {
     try {
-      console.log('📤 Exporting departments to Excel...');
 
       const exportData = departments.map((dept) => ({
         'ID': dept.id,
@@ -319,7 +316,6 @@ export const DepartmentsTab: React.FC = () => {
       XLSX.writeFile(wb, fileName);
 
       toast.success('Đã xuất dữ liệu thành công');
-      console.log('✅ Exported:', fileName);
     } catch (error) {
       console.error('❌ Export error:', error);
       toast.error('Lỗi xuất dữ liệu');
@@ -341,7 +337,6 @@ export const DepartmentsTab: React.FC = () => {
     if (!confirmed) return;
 
     try {
-      console.log('🗑️ Deleting department:', dept.id);
 
       // Soft delete by setting deleted_at
       const { error } = await supabase
@@ -352,7 +347,6 @@ export const DepartmentsTab: React.FC = () => {
       if (error) throw error;
 
       toast.success('Đã xóa đơn vị thành công');
-      console.log('✅ Deleted department:', dept.id);
 
       // Refresh data
       fetchDepartments();
@@ -376,7 +370,6 @@ export const DepartmentsTab: React.FC = () => {
     if (!confirmed) return;
 
     try {
-      console.log('📋 Cloning department:', dept.id);
       toast('Đang sao chép...', { icon: '⏳' });
 
       // Helper: Generate new unique code
@@ -429,7 +422,6 @@ export const DepartmentsTab: React.FC = () => {
 
         if (error) throw error;
 
-        console.log(`✅ Cloned: ${source.name} → ${clonedDept.name} (${clonedDept.code})`);
 
         // Recursively clone children
         if (source.children && source.children.length > 0) {

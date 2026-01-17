@@ -125,38 +125,21 @@ export default function LeadDetail() {
   }
   
   const handleTriage = () => {
-    console.log('Triage decision:', {
-      leadId: lead.id,
-      decision: triageDecision,
-      urgency: triageUrgency,
-      confidence: triageConfidence,
-      category: triageCategory,
-      reason: triageReason,
-    });
     setShowTriagePanel(false);
     alert('Đã phân loại lead!');
   };
   
   const handleAssign = () => {
-    console.log('Assignment:', {
-      leadId: lead.id,
-      assignTo,
-      assignTeam,
-      instructions: assignInstructions,
-      priority: assignPriority,
-    });
     setShowAssignPanel(false);
     alert('Đã phân công lead!');
   };
 
   const handleOutcomeSubmit = (data: any) => {
-    console.log('Outcome submitted:', data);
     alert(`Lead đã đóng!\nKết quả: ${data.outcome}\nRisk impact: ${data.riskImpact}`);
     navigate('/lead-risk/inbox');
   };
 
   const handleEscalate = (data: any) => {
-    console.log('Escalated:', data);
     alert(`Lead đã được escalate đến ${data.escalateTo}!`);
   };
 

@@ -217,10 +217,3 @@ function generateMockMapPoints(): Restaurant[] {
 export const mockMapPoints = generateMockMapPoints();
 
 // Log statistics
-console.log('📦 Mock Map Points Generated:');
-console.log(`   - Total: ${mockMapPoints.length}`);
-console.log(`   - Certified: ${mockMapPoints.filter(p => p.category === 'certified').length}`);
-console.log(`   - Hotspot: ${mockMapPoints.filter(p => p.category === 'hotspot').length}`);
-console.log(`   - Scheduled: ${mockMapPoints.filter(p => p.category === 'scheduled').length}`);
-console.log(`   - Inspected: ${mockMapPoints.filter(p => p.category === 'inspected').length}`);
-console.log(`   - Business types: ${new Set(mockMapPoints.map(p => p.type)).size} unique types`);

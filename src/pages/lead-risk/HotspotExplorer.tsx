@@ -48,7 +48,6 @@ export default function HotspotExplorer() {
   const avgRiskScore = filteredHotspots.reduce((sum, h) => sum + h.riskScore, 0) / (totalHotspots || 1);
 
   const handleActionSubmit = (data: any) => {
-    console.log('Action created:', data);
     // TODO: Implement actual API call
     alert(`${data.type === 'task' ? 'Công việc' : data.type === 'plan' ? 'Kế hoạch' : 'Theo dõi'} đã được tạo thành công!`);
   };

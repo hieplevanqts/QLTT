@@ -413,11 +413,9 @@ export default function InspectionRoundDetail() {
   };
 
   const handleEdit = () => {
-    console.log('Edit round');
   };
 
   const handleComplete = () => {
-    console.log('Complete round');
   };
 
   const handleInsFormClick = (insForm: { code: string; type: string; name: string }) => {

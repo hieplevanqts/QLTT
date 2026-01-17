@@ -125,21 +125,17 @@ function KanbanColumn({ column, tasks, onTaskClick, onDropTask, getTaskActions }
       }
       // Check if transition is valid according to workflow rules
       const isValid = canTransitionTo(item.status, column.key);
-      console.log(`[canDrop] Transition ${item.status} → ${column.key}: ${isValid ? 'ALLOWED' : 'BLOCKED'}`);
       return isValid;
     },
     drop: (item: { id: string; status: TaskStatus }) => {
       // Silent return if same column (no-op)
       if (item.status === column.key) {
-        console.log(`[drop] No-op: Same column - ${item.status}`);
         return; // Just return silently, no action needed
       }
       // Check workflow validation for different columns
       if (!canTransitionTo(item.status, column.key)) {
-        console.log(`[drop] Prevented: Invalid transition - ${item.status} → ${column.key}`);
         return;
       }
-      console.log(`[drop] Executing: ${item.status} → ${column.key}`);
       onDropTask(item.id, column.key);
     },
     collect: (monitor) => ({
@@ -198,7 +194,6 @@ export function TaskBoard() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Debug: verify component is loading
-  console.log('TaskBoard loaded at:', new Date().toISOString());
 
   // View mode
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
@@ -572,7 +567,6 @@ export function TaskBoard() {
     
     // Allow drop into same column but don't change status (no-op)
     if (task.status === newStatus) {
-      console.log(`[handleDropTask] No-op: Same column - ${task.status}`);
       return; // Silent return, no toast, no state change
     }
     
@@ -712,11 +706,9 @@ export function TaskBoard() {
 
   // Handle edit task button click
   const handleEditTaskClick = (task: InspectionTask) => {
-    console.log('[TaskBoard] handleEditTaskClick called with task:', task.id, task.title);
     setSelectedTask(task);
     setIsDetailModalOpen(false); // Close detail modal if open
     setIsEditModalOpen(true);
-    console.log('[TaskBoard] State should be updated - isEditModalOpen: true, selectedTask:', task.id);
   };
 
   // Generate actions for task based on status (like InspectionRoundsList)

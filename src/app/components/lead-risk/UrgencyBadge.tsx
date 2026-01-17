@@ -22,7 +22,6 @@ export function UrgencyBadge({ urgency, size = 'md', showIcon = true }: UrgencyB
   
   // Safety check
   if (!config) {
-    console.warn(`⚠️ Unknown urgency received: "${urgency}"`);
     return null;
   }
   

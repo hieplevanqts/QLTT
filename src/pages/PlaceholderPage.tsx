@@ -30,8 +30,6 @@ export default function PlaceholderPage({ title, description, breadcrumbs }: Pla
           showDefaultFilters={true}
           showSearch={true}
           searchPlaceholder={`Tìm kiếm ${title.toLowerCase()}...`}
-          onFilterChange={(filters) => console.log('Filters:', filters)}
-          onSearchChange={(value) => console.log('Search:', value)}
         />
       </div>
 

@@ -76,7 +76,6 @@ function mapStatusCode(dbCode: string | number): string {
   if (code === 'CHECKED' || code === 'INSPECTED' || code === 'INSPECT' || code === '4') return 'inspected';
   
   // Default fallback
-  console.warn(`⚠️ Unknown status code "${dbCode}", defaulting to "inspected"`);
   return 'inspected';
 }
 
@@ -86,12 +85,10 @@ function mapStatusCode(dbCode: string | number): string {
 export async function fetchPointStatuses(): Promise<PointStatus[]> {
   // If Supabase is disabled, return default statuses
   if (!FEATURES.USE_SUPABASE_BACKEND) {
-    console.log('📊 Point Statuses: Using default data (Supabase disabled)');
     return DEFAULT_STATUSES;
   }
 
   try {
-    console.log('🔍 Fetching point statuses from Supabase...');
 
     const baseUrl = SUPABASE_REST_URL;
     const endpoint = `${baseUrl}/point_status`;
@@ -118,7 +115,6 @@ export async function fetchPointStatuses(): Promise<PointStatus[]> {
     }
 
     const data = await response.json();
-    console.log(`✅ Successfully fetched ${data.length} point statuses from Supabase`);
 
     // 🔥 Transform Supabase data to PointStatus format
     // ⚠️ NOTE: color KHÔNG lấy từ DB - sẽ dùng hardcoded colorMap trong components
@@ -127,7 +123,6 @@ export async function fetchPointStatuses(): Promise<PointStatus[]> {
       const mappedCode = mapStatusCode(originalCode);
       
       if (index < 3) {
-        console.log(`🔄 Status ${index}: DB code="${originalCode}" → mapped="${mappedCode}", name="${item.name}"`);
       }
       
       return {
@@ -146,7 +141,6 @@ export async function fetchPointStatuses(): Promise<PointStatus[]> {
     const activeStatuses = statuses.filter(s => s.isActive !== false);
 
     if (activeStatuses.length === 0) {
-      console.warn('⚠️ No active statuses found, using default');
       return DEFAULT_STATUSES;
     }
 
@@ -154,7 +148,6 @@ export async function fetchPointStatuses(): Promise<PointStatus[]> {
 
   } catch (error: any) {
     console.error('❌ Failed to fetch point statuses:', error.message);
-    console.log('📊 Using default point statuses as fallback');
     return DEFAULT_STATUSES;
   }
 }
@@ -176,13 +169,16 @@ export function getColorByCode(statuses: PointStatus[], code: string): string {
 
 /**
  * Build filter object from statuses
- * Returns object like { certified: true, hotspot: false, ... }
- * 🔥 DEFAULT: Only first status enabled on initial load
+ * Returns object like { certified: false, hotspot: true, ... }
+ * 🔥 DEFAULT: Only hotspot status enabled on initial load
  */
 export function buildFilterObjectFromStatuses(statuses: PointStatus[]): { [key: string]: boolean } {
   const filters: { [key: string]: boolean } = {};
+  // Find hotspot status index
+  const hotspotIndex = statuses.findIndex(s => s.code === 'hotspot');
+  const defaultIndex = hotspotIndex >= 0 ? hotspotIndex : 0;  // Use hotspot if found, else first status
   statuses.forEach((status, index) => {
-    filters[status.code] = index === 0;  // 🔥 Only first status enabled by default
+    filters[status.code] = index === defaultIndex;  // 🔥 Only hotspot (or first) enabled by default
   });
   return filters;
 }

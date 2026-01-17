@@ -89,7 +89,6 @@ export function EditTaskModal({ isOpen, onClose, onSubmit, task }: EditTaskModal
   // Populate form when task changes OR when modal opens
   useEffect(() => {
     if (task && isOpen) {
-      console.log('[EditTaskModal] Populating form with task:', task);
       setFormData({
         title: task.title || '',
         description: task.description || '',
@@ -125,11 +124,9 @@ export function EditTaskModal({ isOpen, onClose, onSubmit, task }: EditTaskModal
     }
   }, [isOpen]);
 
-  console.log('[EditTaskModal] Render:', { isOpen, hasTask: !!task, taskId: task?.id });
 
   if (!isOpen) return null;
   if (!task) {
-    console.warn('[EditTaskModal] Modal is open but no task provided!');
     return null;
   }
 

@@ -101,7 +101,6 @@ export default function CaseDetail() {
         }
 
         setCaseData(matchedCase);
-        console.log('✅ Successfully loaded case detail:', matchedCase);
       } catch (err) {
         console.error('❌ Error fetching case detail:', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
@@ -142,7 +141,6 @@ export default function CaseDetail() {
   };
 
   const handleStatusChange = async (newStatus: CaseStatus) => {
-    console.log('Changing status to:', newStatus);
     // In real app, this would call API to update status
     if (caseData) {
       setCaseData({ ...caseData, status: newStatus });

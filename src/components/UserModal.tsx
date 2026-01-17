@@ -241,17 +241,14 @@ const generateUniqueUsername = async (
   excludeUserId?: string
 ): Promise<string> => {
   try {
-    console.log('🔍 Checking username availability:', baseUsername);
     
     // Check if base username exists
     const baseExists = await checkUsernameExists(baseUsername, excludeUserId);
     
     if (!baseExists) {
-      console.log('✅ Username available:', baseUsername);
       return baseUsername;
     }
     
-    console.log('⚠️  Username exists, finding next available suffix...');
     
     // Find all usernames with same base pattern
     const pattern = `${baseUsername}%`;
@@ -295,7 +292,6 @@ const generateUniqueUsername = async (
     }
     
     const uniqueUsername = `${baseUsername}${nextSuffix.toString().padStart(2, '0')}`;
-    console.log(`✅ Unique username generated: ${uniqueUsername} (suffix: ${nextSuffix})`);
     
     return uniqueUsername;
   } catch (error) {
@@ -362,14 +358,7 @@ export const UserModal: React.FC<UserModalProps> = ({
       const pathWithSeparator = getDepartmentPathWithSeparator(departmentId, departments);
       const selectedDept = departments.find((d) => d.id === departmentId);
       
-      console.log('🏢 ========== DEPARTMENT PATH ==========');
-      console.log('📍 Selected Department:', selectedDept?.name, `(${selectedDept?.code})`);
-      console.log('📂 Path (Separated):', pathWithSeparator);
-      console.log('🔗 Path (Concatenated):', concatenatedPath);
-      console.log('🎯 Level:', selectedDept?.level);
-      console.log('=========================================');
     } else {
-      console.log('🏢 Department cleared');
       setGeneratedUsername(''); // ✅ Clear generated username
     }
   };
@@ -381,17 +370,11 @@ export const UserModal: React.FC<UserModalProps> = ({
         setCheckingUsername(true);
         
         const baseUsername = generateUsername(formData.full_name, selectedDepartmentId, departments);
-        console.log('👤 ========== AUTO-GENERATED USERNAME ==========');
-        console.log('📝 Full Name:', formData.full_name);
-        console.log('🏢 Department:', departments.find(d => d.id === selectedDepartmentId)?.name);
-        console.log('🔗 Base Username:', baseUsername);
         
         // ✅ Check database and generate unique username
         const uniqueUsername = await generateUniqueUsername(baseUsername, user?.id);
         setGeneratedUsername(uniqueUsername);
         
-        console.log('✅ Final Username:', uniqueUsername);
-        console.log('================================================');
         
         setCheckingUsername(false);
       } else {
@@ -443,7 +426,6 @@ export const UserModal: React.FC<UserModalProps> = ({
 
     try {
       setSaving(true);
-      console.log(`💾 ${mode === 'add' ? 'Creating' : 'Updating'} user...`);
 
       const userData = {
         email: formData.email.trim(),
@@ -458,7 +440,6 @@ export const UserModal: React.FC<UserModalProps> = ({
 
       if (mode === 'add') {
         // Create user using database function that syncs with auth.users
-        console.log('🔄 Creating user in both public.users and auth.users...');
         
         const { data: createResult, error: createError } = await supabase
           .rpc('create_user_with_auth', {
@@ -475,7 +456,6 @@ export const UserModal: React.FC<UserModalProps> = ({
           
           // Fallback to direct insert if function doesn't exist
           if (createError.message.includes('function') || createError.message.includes('does not exist')) {
-            console.warn('⚠️  RPC function not found, using direct insert...');
             
             const passwordHash = await bcrypt.hash(formData.password || 'Couppa@123', 10);
             const { data: newUser, error: insertError } = await supabase
@@ -494,18 +474,15 @@ export const UserModal: React.FC<UserModalProps> = ({
             }
 
             userId = newUser.id;
-            console.log('✅ User created with direct insert (trigger will sync to auth.users)');
           } else {
             toast.error(`Lỗi tạo người dùng: ${createError.message}`);
             return;
           }
         } else {
           userId = createResult;
-          console.log('✅ User created in both tables via RPC function');
         }
       } else if (mode === 'edit' && user) {
         // ✅ Update existing user using RPC function for safe auth.users + public.users update
-        console.log('🔄 Updating user via RPC function...');
         
         const { data: rpcResult, error: rpcError } = await supabase
           .rpc('update_user_profile', {
@@ -521,7 +498,6 @@ export const UserModal: React.FC<UserModalProps> = ({
           console.error('❌ Error calling update_user_profile RPC:', rpcError);
           
           // Fallback: Try direct update to public.users only
-          console.warn('⚠️  RPC function failed, using fallback direct update...');
           const { error: updateError } = await supabase
             .from('users')
             .update(userData)
@@ -533,7 +509,6 @@ export const UserModal: React.FC<UserModalProps> = ({
             return;
           }
           
-          console.log('✅ User updated via fallback (public.users only)');
         } else {
           // Check if RPC returned success
           if (rpcResult && !rpcResult.success) {
@@ -542,17 +517,14 @@ export const UserModal: React.FC<UserModalProps> = ({
             return;
           }
           
-          console.log('✅ User updated via RPC function (both auth.users and public.users)');
         }
 
         userId = user.id;
-        console.log('✅ User updated:', userId);
       } else {
         return;
       }
 
       // Update user_roles
-      console.log('🔄 Updating user roles...');
 
       // Delete existing roles
       const { error: deleteError } = await supabase
@@ -582,10 +554,8 @@ export const UserModal: React.FC<UserModalProps> = ({
         return;
       }
 
-      console.log(`✅ Assigned ${selectedRoleIds.length} roles to user`);
 
       // Update department_users
-      console.log('🔄 Updating user department...');
 
       // Delete existing department_users
       const { error: deleteDepartmentError } = await supabase
@@ -614,9 +584,7 @@ export const UserModal: React.FC<UserModalProps> = ({
           return;
         }
 
-        console.log(`✅ Assigned department to user: ${selectedDepartmentId}`);
       } else {
-        console.log('✅ No department assigned to user');
       }
 
       toast.success(

@@ -77,7 +77,6 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     // In production, send to backend API
-    console.log('Feedback submitted:', formData);
 
     setIsSubmitting(false);
     setStep('success');

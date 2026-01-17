@@ -164,17 +164,6 @@ export default function EvidenceExportCenterPage() {
 
     // FR-31: Log download event (OWASP logging guidance)
     toast.success(`Đang tải xuống ${job.name}. Sự kiện tải xuống đã được ghi log.`);
-    
-    // Simulate download tracking
-    console.log('Download Event Logged:', {
-      jobId: job.id,
-      user: 'Current User',
-      timestamp: new Date().toISOString(),
-      ipAddress: 'xxx.xxx.xxx.xxx',
-      userAgent: navigator.userAgent,
-      fileName: job.name,
-      fileSize: job.fileSize
-    });
   };
 
   const handleRetry = (jobId: string) => {

@@ -138,7 +138,6 @@ export const UserListTabNew: React.FC = () => {
     try {
       setLoading(true);
       setDatabaseError(null); // Clear previous errors
-      console.log('🔍 Fetching users, roles, and departments from Supabase...');
 
       // Fetch roles first
       const { data: rolesData, error: rolesError } = await supabase
@@ -150,7 +149,6 @@ export const UserListTabNew: React.FC = () => {
         console.error('❌ Error fetching roles:', rolesError);
         toast.error(`Lỗi tải vai trò: ${rolesError.message}`);
       } else {
-        console.log(`✅ Loaded ${rolesData?.length || 0} roles`);
         setRoles(rolesData || []);
       }
 
@@ -165,7 +163,6 @@ export const UserListTabNew: React.FC = () => {
         console.error('❌ Error fetching departments:', deptError);
         toast.error(`Lỗi tải phòng ban: ${deptError.message}`);
       } else {
-        console.log(`✅ Loaded ${departmentsData?.length || 0} departments`);
         setDepartments(departmentsData || []);
       }
 
@@ -197,7 +194,6 @@ export const UserListTabNew: React.FC = () => {
         setDatabaseError(usersError); // Set the error for display
         // toast.error(`Lỗi tải người dùng: ${usersError.message}`);
       } else {
-        console.log(`✅ Loaded ${usersData?.length || 0} users`);
         
         // ✅ Manually map departments to users (no foreign key constraint)
         const usersWithDepartments = usersData?.map((user) => {
@@ -282,7 +278,6 @@ export const UserListTabNew: React.FC = () => {
         console.error('❌ Error updating status:', error);
         toast.error(`Lỗi cập nhật trạng thái: ${error.message}`);
       } else {
-        console.log('✅ Status updated successfully');
         toast.success(
           newStatus === 1
             ? 'Đã mở khóa tài khoản'
@@ -310,13 +305,6 @@ export const UserListTabNew: React.FC = () => {
       const salt = bcrypt.genSaltSync(10);
       const hashedPassword = bcrypt.hashSync(DEFAULT_PASSWORD, salt);
 
-      console.log('🔐 Resetting password for user:', {
-        userId: userToReset.id,
-        userName: userToReset.full_name,
-        hashedPasswordLength: hashedPassword.length,
-        hashedPasswordPreview: hashedPassword.substring(0, 20) + '...'
-      });
-
       // Debug: First, try to fetch the current user data to see schema
       const { data: currentUser, error: fetchError } = await supabase
         .from('users')
@@ -327,8 +315,6 @@ export const UserListTabNew: React.FC = () => {
       if (fetchError) {
         console.error('❌ Error fetching user for debug:', fetchError);
       } else {
-        console.log('📋 Current user data schema:', Object.keys(currentUser || {}));
-        console.log('📋 Current user data:', currentUser);
       }
 
       // Update password trong database
@@ -347,7 +333,6 @@ export const UserListTabNew: React.FC = () => {
         console.error('❌ Error details:', JSON.stringify(error, null, 2));
         toast.error(`Lỗi reset mật khẩu: ${error.message}`);
       } else {
-        console.log('✅ Password reset successfully. Updated data:', data);
         toast.success(
           `Đã reset mật khẩu về "${DEFAULT_PASSWORD}" cho ${userToReset.full_name}`
         );
@@ -381,7 +366,6 @@ export const UserListTabNew: React.FC = () => {
 
   const handleExportExcel = () => {
     try {
-      console.log('📊 Exporting users to Excel...');
 
       const excelData = filteredUsers.map((user, index) => ({
         'STT': index + 1,
@@ -423,7 +407,6 @@ export const UserListTabNew: React.FC = () => {
 
       XLSX.writeFile(wb, filename);
 
-      console.log(`✅ Exported ${filteredUsers.length} users to ${filename}`);
       toast.success(`Đã xuất ${filteredUsers.length} người dùng ra Excel`);
     } catch (error) {
       console.error('❌ Error exporting to Excel:', error);
@@ -575,7 +558,6 @@ export const UserListTabNew: React.FC = () => {
                     setSelectedDepartmentId('all');
                     setSelectedStatus('all');
                     setSearchQuery('');
-                    console.log('🧹 Filters cleared');
                   }}
                 >
                   Xóa bộ lọc

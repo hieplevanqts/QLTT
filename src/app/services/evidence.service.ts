@@ -848,7 +848,6 @@ class EvidenceService {
       note
     );
 
-    console.log('[CUSTODY_EVENT]', JSON.stringify(event));
 
     // In production: Store in database
     // await this.storeCustodyEvent(event);

@@ -394,7 +394,7 @@ const MOCK_DATA = {
 };
 
 // Log data generation statistics
-console.log('[TvMockData] Generated TV Wallboard Data:', {
+console.log({
   totalProvinces: PROVINCES.length,
   totalWards: PROVINCES.reduce((sum, p) => sum + p.wards.length, 0),
   hotspots: MOCK_DATA.hotspots.length,

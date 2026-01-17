@@ -56,7 +56,6 @@ class EvidencePerformanceService {
 
         this.performanceObserver.observe({ entryTypes: ['measure', 'navigation'] });
       } catch (error) {
-        console.warn('PerformanceObserver not supported', error);
       }
     }
   }
@@ -110,13 +109,11 @@ class EvidencePerformanceService {
             `${measureId}-end`
           );
         } catch (error) {
-          console.warn('Performance measure failed', error);
         }
       }
 
       // Log if exceeds threshold
       if (metric.operation === 'evidence-list-load' && metric.duration > 800) {
-        console.warn(`[PERFORMANCE] Evidence list load exceeded threshold: ${metric.duration}ms > 800ms`);
       }
 
       // NFR-L01: Log performance metric
@@ -138,7 +135,6 @@ class EvidencePerformanceService {
       sanitized: true
     };
 
-    console.log('[PERFORMANCE_LOG]', JSON.stringify(logEntry));
 
     // Store in localStorage for analytics
     try {
@@ -167,7 +163,6 @@ class EvidencePerformanceService {
    * Log performance entry from PerformanceObserver
    */
   private logPerformanceEntry(entry: PerformanceEntry) {
-    console.log('[PERFORMANCE_ENTRY]', {
       name: entry.name,
       type: entry.entryType,
       duration: entry.duration,

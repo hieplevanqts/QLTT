@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Globe, Moon, Sun, Grid3x3, Bell, User, Menu, MessageSquare, LayoutGrid, LayoutList, Monitor } from 'lucide-react';
+import { Globe, Moon, Sun, Grid3x3, Bell, User, Menu, MessageSquare, LayoutGrid, LayoutList, Monitor, ChevronDown } from 'lucide-react';
 import { Button } from '../app/components/ui/button';
 import { GlobalSearch } from '../app/components/header/GlobalSearch';
 import { NotificationPanel } from '../app/components/header/NotificationPanel';
@@ -25,6 +25,9 @@ interface TopUtilityBarProps {
 export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps) {
   const navigate = useNavigate();
   const { user, logout: authLogout } = useAuth();
+  
+  // Check if user has TV_VIEW permission
+  const hasTvViewPermission = user?.permissions?.includes('TV_VIEW') || false;
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('light');
   const [language, setLanguage] = useState<'vi' | 'en'>('vi');
   const [showNotifications, setShowNotifications] = useState(false);
@@ -132,22 +135,31 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
             title="Về trang Tổng quan"
           >
             <img src={mappaLogo} alt="Mappa Logo" className="w-10 h-10 object-contain flex-shrink-0" />
-            <div className="hidden lg:flex flex-col items-start min-w-0">
-              <span className="font-semibold text-foreground whitespace-nowrap">
-                Xin chào, {user?.fullName || 'Người dùng'}
-              </span>
-              <span className="text-xs text-muted-foreground whitespace-nowrap">
-                {user?.roleDisplay || 'Phần mềm Quản lý thị trường'}
-              </span>
+            <div className="hidden lg:flex items-center gap-3 min-w-0">
+              <div className="flex flex-col items-start min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-foreground whitespace-nowrap">
+                    Xin chào, {user?.fullName || 'Người dùng'}
+                  </span>
+                  {/* Online Status Indicator */}
+                  <span 
+                    className="relative flex h-3 w-3 flex-shrink-0"
+                    title="Đang hoạt động"
+                  >
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                  </span>
+                </div>
+                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                  {user?.roleDisplay || 'Phần mềm Quản lý thị trường'}
+                </span>
+              </div>
+              {/* Scope Selector - Active at Hà Nội by default */}
+              <ScopeSelector />
             </div>
             <span className="hidden md:block lg:hidden font-semibold text-foreground whitespace-nowrap">MAPPA</span>
           </button>
         )}
-
-        {/* Scope Selector - Show on desktop */}
-        <div className="hidden lg:block flex-shrink-0">
-          <ScopeSelector />
-        </div>
 
         {/* Global Search - Centered */}
         <div className="hidden md:flex flex-1 max-w-xl mx-auto">
@@ -159,7 +171,11 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
           {/* Language Switch */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-1 h-9">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="gap-1 h-9 cursor-pointer hover:!bg-transparent hover:!text-foreground"
+              >
                 <Globe className="h-4 w-4" />
                 <span className="hidden sm:inline text-sm font-medium">
                   {language === 'vi' ? 'VI' : 'EN'}
@@ -184,6 +200,7 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
           <Button
             variant="ghost"
             size="icon"
+            className="cursor-pointer hover:bg-transparent"
             onClick={() => {
               setShowFeedback(!showFeedback);
               setShowNotifications(false);
@@ -197,7 +214,7 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
           <Button
             variant="ghost"
             size="icon"
-            className="relative"
+            className="relative cursor-pointer hover:bg-transparent"
             onClick={() => {
               setShowNotifications(!showNotifications);
               setShowFeedback(false);
@@ -210,20 +227,23 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
             )}
           </Button>
 
-          {/* TV Mode */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/tv')}
-            title="Chế độ TV"
-          >
-            <Monitor className="h-5 w-5" style={{ color: '#005cb6' }} />
-          </Button>
+          {/* TV Mode - Only show if user has TV_VIEW permission */}
+          {hasTvViewPermission && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="cursor-pointer hover:bg-transparent"
+              onClick={() => navigate('/tv')}
+              title="Chế độ TV"
+            >
+              <Monitor className="h-5 w-5" style={{ color: '#005cb6' }} />
+            </Button>
+          )}
 
           {/* User Profile */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="gap-2 px-2" size="sm">
+              <Button variant="ghost" className="gap-2 px-2 cursor-pointer hover:bg-transparent" size="sm">
                 <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-primary to-chart-2">
                   <User className="h-4 w-4 text-primary-foreground" />
                 </div>
@@ -236,8 +256,18 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
                     <User className="h-6 w-6 text-primary-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold truncate">
-                      {user?.fullName || 'Người dùng'}
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold truncate">
+                        {user?.fullName || 'Người dùng'}
+                      </span>
+                      {/* Online Status Indicator */}
+                      <span 
+                        className="relative flex h-2.5 w-2.5 flex-shrink-0"
+                        title="Đang hoạt động"
+                      >
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                      </span>
                     </div>
                     <div className="text-xs font-normal text-muted-foreground mt-0.5 truncate">
                       {user?.roleDisplay || 'Chức vụ'}

@@ -72,7 +72,6 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
 
     try {
       if (mode === 'add') {
-        console.log('➕ Creating new category...');
 
         const { error } = await supabase.from('categories').insert([
           {
@@ -87,10 +86,8 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
           return;
         }
 
-        console.log('✅ Category created');
         toast.success('Đã tạo danh mục thành công');
       } else if (mode === 'edit' && category) {
-        console.log('✏️ Updating category:', category.id);
 
         const { error } = await supabase
           .from('categories')
@@ -106,7 +103,6 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
           return;
         }
 
-        console.log('✅ Category updated');
         toast.success('Đã cập nhật danh mục thành công');
       }
 

@@ -37,7 +37,6 @@ export function useSupabasePlans(): UseSupabasePlansReturn {
       const mappedPlans: Plan[] = (Array.isArray(data) ? data : []).map((row: any) => {
         if (!row || typeof row !== 'object') {
           // Skip invalid rows
-          console.warn('Invalid row data:', row);
           return null;
         }
         

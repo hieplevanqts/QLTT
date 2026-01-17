@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { X, MapPin, Building2, Calendar, Shield, Clock, Users, Phone, Mail, User, ChevronRight, Info, FileText, CheckCircle2, AlertCircle, Star, Utensils, Hash, FileCheck, BookOpen, Scale, Award, ChevronDown, MessageSquare, Image as ImageIcon } from 'lucide-react';
 import styles from './PointDetailModal.module.css';
 import { Restaurant } from '../../../data/restaurantData';
@@ -47,6 +47,25 @@ function getStatusBadge(category: Restaurant['category']) {
 }
 
 export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalProps) {
+  // 🔥 FIX: Prevent immediate close after opening (click event from popup button may bubble up)
+  const justOpenedRef = useRef(false);
+  const openTimeRef = useRef(0);
+  
+  useEffect(() => {
+    if (isOpen) {
+      justOpenedRef.current = true;
+      openTimeRef.current = Date.now();
+      // Reset after a delay to allow click event to complete and prevent bubble-up click
+      const timer = setTimeout(() => {
+        justOpenedRef.current = false;
+      }, 500); // 🔥 FIX: Increased delay to 500ms to prevent immediate close
+      return () => clearTimeout(timer);
+    } else {
+      justOpenedRef.current = false;
+      openTimeRef.current = 0;
+    }
+  }, [isOpen]);
+  
   // Collapsible sections state
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
     business: false,
@@ -65,7 +84,6 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   const openLightbox = (images: string[], index: number) => {
-    console.log('Opening lightbox with images:', images, 'at index:', index);
     setLightboxImages(images);
     setLightboxIndex(index);
     setIsLightboxOpen(true);
@@ -114,29 +132,80 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
     };
   }, [isOpen]);
 
+  // 🔥 FIX: Memoize mock data to prevent re-generation on every render (causes content jumping)
+  // Generate mock data based on point.id for consistency
+  // Must be called BEFORE early return (React Hooks rule)
+  const mockData = useMemo(() => {
+    if (!point) return null;
+    // Use point.id as seed for pseudo-random values (consistent per point)
+    const seed = point.id.charCodeAt(0) + point.id.charCodeAt(point.id.length - 1);
+    const random1 = (seed * 9301 + 49297) % 233280 / 233280;
+    const random2 = ((seed * 9301 + 49297) * 9301 + 49297) % 233280 / 233280;
+    const random3 = (((seed * 9301 + 49297) * 9301 + 49297) * 9301 + 49297) % 233280 / 233280;
+    const random4 = ((((seed * 9301 + 49297) * 9301 + 49297) * 9301 + 49297) * 9301 + 49297) % 233280 / 233280;
+    
+    return {
+      businessLicense: `GP${Math.floor(random1 * 9000 + 1000)}-${new Date().getFullYear()}`,
+      attpCertificateNumber: `CN-ATTP ${Math.floor(random1 * 9000 + 1000)}/${new Date().getFullYear()}`, // 🔥 FIX: Add certificate number to mockData
+      establishedDate: new Date(Date.now() - random1 * 5 * 365 * 24 * 60 * 60 * 1000),
+      lastInspection: new Date(Date.now() - random2 * 60 * 24 * 60 * 60 * 1000),
+      nextInspection: point.category === 'scheduled' 
+        ? new Date(Date.now() + random3 * 30 * 24 * 60 * 60 * 1000)
+        : null,
+      ownerName: `Nguyễn Văn ${String.fromCharCode(65 + Math.floor(random1 * 26))}`,
+      phone: `0${Math.floor(random2 * 9 + 1)}${Math.floor(random3 * 100000000 + 100000000)}`,
+      email: `contact@${point.name.toLowerCase().replace(/\s+/g, '').slice(0, 15)}.vn`,
+      employees: Math.floor(random2 * 30 + 5),
+      capacity: Math.floor(random3 * 150 + 50),
+      inspectionCount: Math.floor(random4 * 10 + 1),
+      rating: point.category === 'certified' ? 'A' : point.category === 'hotspot' ? 'C' : 'B',
+      violationCount: point.category === 'hotspot' ? Math.floor(random4 * 3 + 2) : Math.floor(random4 * 2)
+    };
+  }, [point?.id, point?.category, point?.name]); // 🔥 Only regenerate when point changes
+
   if (!isOpen || !point) return null;
 
   const categoryColor = getCategoryColor(point.category);
   const statusBadge = getStatusBadge(point.category);
+  
+  const { businessLicense, attpCertificateNumber, establishedDate, lastInspection, nextInspection, ownerName, phone, email, employees, capacity, inspectionCount, rating, violationCount } = mockData || {};
 
-  // Generate mock data for detailed info
-  const businessLicense = `GP${Math.floor(Math.random() * 9000 + 1000)}-${new Date().getFullYear()}`;
-  const establishedDate = new Date(Date.now() - Math.random() * 5 * 365 * 24 * 60 * 60 * 1000);
-  const lastInspection = new Date(Date.now() - Math.random() * 60 * 24 * 60 * 60 * 1000);
-  const nextInspection = point.category === 'scheduled' 
-    ? new Date(Date.now() + Math.random() * 30 * 24 * 60 * 60 * 1000)
-    : null;
-  const ownerName = `Nguyễn Văn ${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`;
-  const phone = `0${Math.floor(Math.random() * 9 + 1)}${Math.floor(Math.random() * 100000000 + 100000000)}`;
-  const email = `contact@${point.name.toLowerCase().replace(/\s+/g, '').slice(0, 15)}.vn`;
-  const employees = Math.floor(Math.random() * 30 + 5);
-  const capacity = Math.floor(Math.random() * 150 + 50);
-  const inspectionCount = Math.floor(Math.random() * 10 + 1);
-  const rating = point.category === 'certified' ? 'A' : point.category === 'hotspot' ? 'C' : 'B';
-  const violationCount = point.category === 'hotspot' ? Math.floor(Math.random() * 3 + 2) : Math.floor(Math.random() * 2);
+  // 🔥 FIX: Handle overlay click - only close if clicking directly on overlay, not from event bubbling
+  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // 🔥 FIX: Prevent closing if modal just opened (click event from popup button may bubble up)
+    const timeSinceOpen = Date.now() - openTimeRef.current;
+    if (justOpenedRef.current || timeSinceOpen < 500) { // 🔥 FIX: Increased to 500ms
+      return;
+    }
+    
+    // Only close if clicking directly on the overlay (not on a child element)
+    // Also check if click came from a button or interactive element
+    const target = e.target as HTMLElement;
+    if (
+      target.tagName === 'BUTTON' || 
+      target.closest('button') || 
+      target.closest('a') ||
+      target.closest('[role="button"]')
+    ) {
+      return; // Don't close if clicking on buttons
+    }
+    
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  // 🔥 FIX: Temporarily disable overlay click during initial opening period
+  const overlayClassName = justOpenedRef.current 
+    ? `${styles.overlay} ${styles.overlayDisabled}` 
+    : styles.overlay;
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <div 
+      className={overlayClassName} 
+      onClick={handleOverlayClick}
+      style={justOpenedRef.current ? { pointerEvents: 'auto' } : undefined} // Allow modal content to be clickable
+    >
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         {/* Close Button */}
         <button className={styles.closeBtn} onClick={onClose} aria-label="Đóng">
@@ -524,7 +593,7 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                           </div>
                           <div>
                             <div className={styles.certTitleSmall}>Chứng nhận ATTP</div>
-                            <div className={styles.certNumber}>CN-ATTP {Math.floor(Math.random() * 9000 + 1000)}/{new Date().getFullYear()}</div>
+                            <div className={styles.certNumber}>{attpCertificateNumber || `CN-ATTP ${Math.floor(1000 + (point?.id?.charCodeAt(0) || 0) % 9000)}/${new Date().getFullYear()}`}</div>
                           </div>
                           <span className={styles.certStatusBadge} style={{ background: '#dcfce7', color: '#166534' }}>
                             Còn hiệu lực
@@ -695,7 +764,6 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                                         key={idx} 
                                         className={styles.reportImageWrapper}
                                         onClick={() => {
-                                          console.log('Wrapper clicked!');
                                           openLightbox(report.images, idx);
                                         }}
                                       >

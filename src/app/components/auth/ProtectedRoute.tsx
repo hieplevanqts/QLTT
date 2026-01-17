@@ -108,7 +108,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     // If React state says not authenticated but localStorage still has data, something is wrong
     // Clear it and redirect
     if (!isAuthenticated && hasUserData) {
-      console.log('⚠️ Inconsistent state: not authenticated but localStorage has data. Clearing...');
       localStorage.clear();
       if (typeof sessionStorage !== 'undefined') {
         sessionStorage.clear();

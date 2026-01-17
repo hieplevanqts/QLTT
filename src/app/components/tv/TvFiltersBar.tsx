@@ -61,12 +61,13 @@ export default function TvFiltersBar({
   return (
     <>
       {/* Location Rotation Control Bar - Full Width */}
-      <div 
+      {/* 🔥 HIDDEN: LocationRotationControl is now hidden on /tv page */}
+      {/* <div 
         className="bg-card border-b border-border flex items-center justify-center flex-shrink-0" 
         style={{ height: '60px', padding: '0 20px', position: 'relative', zIndex: 100 }}
       >
         <LocationRotationControl />
-      </div>
+      </div> */}
 
       {/* Filters Bar - Original */}
       <div 
