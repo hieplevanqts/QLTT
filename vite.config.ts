@@ -48,5 +48,5 @@ export default defineConfig({
     host: '0.0.0.0', // Allow external connections (required for Docker)
     port: 5173,
   },
-  base: './', // Thêm dòng này
+  base: '/', // Use absolute paths for browser router to work correctly on server
 })

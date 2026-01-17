@@ -90,8 +90,8 @@ export default function MapPage() {
   const [isOfficerStatsVisible, setIsOfficerStatsVisible] = useState(true); // 🔥 NEW: Officer stats overlay visibility
   
   // 🔥 NEW: Map layer toggles
-  const [showMapPoints, setShowMapPoints] = useState(true);  // MapPoint layer
-  const [showMerchants, setShowMerchants] = useState(false);  // Merchant layer
+  const [showMapPoints, setShowMapPoints] = useState(false);  // MapPoint layer (tạm ẩn)
+  const [showMerchants, setShowMerchants] = useState(true);  // Merchant layer (hiển thị với tên "Chủ Hộ Kinh Doanh")
   const [showOfficers, setShowOfficers] = useState(false);  // Officers layer (Cán bộ quản lý)
   
   // 🔥 NEW: Selected team for officers layer filter
@@ -1057,8 +1057,9 @@ export default function MapPage() {
                   e.currentTarget.style.boxShadow = 'none';
                 }}
               >
-                <option value="mappoint">📍 Chủ hộ kinh doanh</option>
-                {/* <option value="merchant">🏪 Merchant</option> */}
+                {/* Tạm ẩn map_points layer */}
+                {/* <option value="mappoint">📍 Chủ hộ kinh doanh</option> */}
+                <option value="merchant">📍 Chủ hộ kinh doanh</option>
                 <option value="officers">👮 Cán bộ quản lý</option>
               </select>
             </div>
