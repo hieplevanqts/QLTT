@@ -64,6 +64,8 @@ jobs:
       - name: Update Kubernetes Manifest
         working-directory: mappa-manifest
         run: |
+          git config user.name "CI Builder"
+          git config user.email "ci-bot@mappa.com"
 
           if [ ! -f "${{ env.MANIFEST_FILE_PATH }}" ]; then
             echo "❌ Error: File ${{ env.MANIFEST_FILE_PATH }} not found!"
