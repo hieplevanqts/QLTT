@@ -1,0 +1,89 @@
+name: Build and Deploy Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  workflow_call:
+    secrets:
+      REGISTRY_URL:
+        required: true
+      REGISTRY_USERNAME:
+        required: true
+      REGISTRY_PASSWORD:
+        required: true
+      MY_GITHUB_PAT:
+        required: true
+      VITE_SUPABASE_URL:
+        required: true
+      VITE_SUPABASE_ANON_KEY:
+        required: true
+
+jobs:
+  build-and-deploy:
+    runs-on: [self-hosted, Linux, X64, build-image-mappa-runner]
+    env:
+      IMAGE_NAME: saas-go/mappa-portal
+      MANIFEST_REPO: MappaWeb/mappa-manifest
+      MANIFEST_FILE_PATH: frontend/mappa-portal-deployment.yaml
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate Short SHA & Env Vars
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          echo "COMMIT_TAG=$SHORT_SHA" >> $GITHUB_ENV
+          FULL_IMAGE="${{ secrets.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:$SHORT_SHA"
+          echo "FULL_IMAGE=$FULL_IMAGE" >> $GITHUB_ENV
+        
+          echo "🔹 Version to build: $SHORT_SHA"
+
+      - name: Login to Docker Registry
+        run: |
+          echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login ${{ secrets.REGISTRY_URL }} -u ${{ secrets.REGISTRY_USERNAME }} --password-stdin
+
+      - name: Build and Push Docker Image
+        run: |
+          echo "🚀 Building image: ${{ env.FULL_IMAGE }}"
+          # Build
+          docker build --build-arg VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} --build-arg VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} -t ${{ env.FULL_IMAGE }} -f Dockerfile .
+        
+          # Push
+          docker push ${{ env.FULL_IMAGE }}
+          echo "Push success: ${{ env.FULL_IMAGE }}"
+
+      - name: Checkout Manifest Repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.MANIFEST_REPO }}
+          token: ${{ secrets.MY_GITHUB_PAT }}
+          path: mappa-manifest
+          ref: main
+
+      - name: Update Kubernetes Manifest
+        working-directory: mappa-manifest
+        run: |
+          git config user.name "CI Builder"
+          git config user.email "ci-bot@mappa.com"
+
+          if [ ! -f "${{ env.MANIFEST_FILE_PATH }}" ]; then
+            echo "❌ Error: File ${{ env.MANIFEST_FILE_PATH }} not found!"
+            ls -R # Liệt kê file để debug nếu lỗi
+            exit 1
+          fi
+          
+          BASE_IMAGE_STR="${{ secrets.REGISTRY_URL }}/${{ env.IMAGE_NAME }}"
+          echo "📝 Updating manifest file: ${{ env.MANIFEST_FILE_PATH }}"
+          
+          sed -i "s|image: ${BASE_IMAGE_STR}:.*|image: ${{ env.FULL_IMAGE }}|g" ${{ env.MANIFEST_FILE_PATH }}
+
+          # 4. Commit và Push
+          if git diff --quiet; then
+            echo "No changes detected. Image tag might be already up to date."
+          else
+            git add ${{ env.MANIFEST_FILE_PATH }}
+            git commit -m "chore(deploy): update mappa-portal image to ${{ env.COMMIT_TAG }} [skip ci]"
+            git push origin main
+            echo " Manifest updated successfully!"
+          fi
