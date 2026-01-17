@@ -1,0 +1,210 @@
+/* ============================================
+   ADMIN AUDIT & MONITORING MODULE - MAPPA PORTAL
+   Tuân thủ design system từ /src/styles/theme.css
+   Module tổng hợp cho Audit và Giám sát
+   ============================================ */
+
+/* ============================================
+   CONTAINER
+   ============================================ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--background);
+  font-family: 'Inter', sans-serif;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.header {
+  padding: 32px 32px 24px 32px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+}
+
+.headerContent {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.title {
+  margin: 0 0 8px 0;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--foreground);
+  line-height: 1.2;
+}
+
+.subtitle {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-normal);
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+/* ============================================
+   TAB NAVIGATION
+   ============================================ */
+
+.tabNavigation {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.tabList {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 8px 32px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.tabList::-webkit-scrollbar {
+  height: 4px;
+}
+
+.tabList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tabList::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.tabButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--muted-foreground);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  position: relative;
+}
+
+.tabButton:hover {
+  color: var(--foreground);
+  background: var(--accent);
+}
+
+.tabButtonActive {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: #005cb6;
+  background: rgba(0, 92, 182, 0.08);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  position: relative;
+}
+
+.tabButtonActive::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #005cb6;
+}
+
+.tabIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tabLabel {
+  flex-shrink: 0;
+}
+
+/* ============================================
+   TAB DESCRIPTION
+   ============================================ */
+
+.tabDescription {
+  padding: 16px 32px;
+  background: #f9fafb;
+  border-bottom: 1px solid var(--border);
+}
+
+.tabDescription p {
+  max-width: 1600px;
+  margin: 0 auto;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+/* ============================================
+   TAB CONTENT
+   ============================================ */
+
+.tabContent {
+  flex: 1;
+  background: var(--background);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .header {
+    padding: 24px 16px 16px 16px;
+  }
+
+  .title {
+    font-size: var(--text-2xl);
+  }
+
+  .subtitle {
+    font-size: var(--text-sm);
+  }
+
+  .tabList {
+    padding: 8px 16px;
+  }
+
+  .tabButton,
+  .tabButtonActive {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .tabDescription {
+    padding: 12px 16px;
+  }
+}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Eye, Trash2, UserCheck, Save, Check, X, Search } from 'lucide-react';
 import styles from './AdminPage.module.css';
 import { supabase } from '../lib/supabase';
-import { ALL_FORM_TEMPLATES } from '@/app/data/formCriteriaTemplates';
+import { ALL_FORM_TEMPLATES } from '../data/formCriteriaTemplates';
 
 interface Province {
   id: string;
@@ -49,7 +49,7 @@ export const UniversalModal: React.FC<UniversalModalProps> = ({
   const [permissions, setPermissions] = useState<ModulePermission[]>([
     { module: 'Tổng quan', permissions: { view: false, create: false, edit: false, delete: false } },
     { module: 'Bản đồ', permissions: { view: false, create: false, edit: false, delete: false } },
-    { module: 'Cơ sở quản lý', permissions: { view: false, create: false, edit: false, delete: false } },
+    { module: 'Cơ sở & Địa bàn', permissions: { view: false, create: false, edit: false, delete: false } },
     { module: 'Nhiệm vụ', permissions: { view: false, create: false, edit: false, delete: false } },
     { module: 'Kiểm tra', permissions: { view: false, create: false, edit: false, delete: false } },
     { module: 'Báo cáo', permissions: { view: false, create: false, edit: false, delete: false } },
@@ -153,7 +153,7 @@ export const UniversalModal: React.FC<UniversalModalProps> = ({
         setPermissions([
           { module: 'Tổng quan', permissions: { view: false, create: false, edit: false, delete: false } },
           { module: 'Bản đồ', permissions: { view: false, create: false, edit: false, delete: false } },
-          { module: 'Cơ sở quản lý', permissions: { view: false, create: false, edit: false, delete: false } },
+          { module: 'Cơ sở & Địa bàn', permissions: { view: false, create: false, edit: false, delete: false } },
           { module: 'Nhiệm vụ', permissions: { view: false, create: false, edit: false, delete: false } },
           { module: 'Kiểm tra', permissions: { view: false, create: false, edit: false, delete: false } },
           { module: 'Báo cáo', permissions: { view: false, create: false, edit: false, delete: false } },

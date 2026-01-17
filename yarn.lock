@@ -1750,6 +1750,13 @@
   dependencies:
     "@babel/types" "^7.28.2"
 
+"@types/bcryptjs@^3.0.0":
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/@types/bcryptjs/-/bcryptjs-3.0.0.tgz#d7be11653aa82cf17ffee4f3925f1f80cfc1add2"
+  integrity sha512-WRZOuCuaz8UcZZE4R5HXTco2goQSI2XxjGY3hbM/xDvwmqFWd4ivooImsMx65OKM6CtNKbnZ5YL+YwAwK7c1dg==
+  dependencies:
+    bcryptjs "*"
+
 "@types/d3-array@^3.0.3":
   version "3.2.2"
   resolved "https://registry.npmjs.org/@types/d3-array/-/d3-array-3.2.2.tgz"
@@ -1922,9 +1929,9 @@ baseline-browser-mapping@^2.9.0:
   resolved "https://registry.npmjs.org/baseline-browser-mapping/-/baseline-browser-mapping-2.9.14.tgz"
   integrity sha512-B0xUquLkiGLgHhpPBqvl7GWegWBUNuujQ6kXd/r1U38ElPT6Ok8KZ8e+FpUGEc2ZoRQUzq/aUnaKFc/svWUGSg==
 
-bcryptjs@^3.0.3:
+bcryptjs@*, bcryptjs@^3.0.3:
   version "3.0.3"
-  resolved "https://registry.npmjs.org/bcryptjs/-/bcryptjs-3.0.3.tgz"
+  resolved "https://registry.yarnpkg.com/bcryptjs/-/bcryptjs-3.0.3.tgz#4b93d6a398c48bfc9f32ee65d301174a8a8ea56f"
   integrity sha512-GlF5wPWnSa/X5LKM1o0wz0suXIINz1iHRLvTS+sLyi7XPbe5ycmYI3DlZqVGZZtDgl4DmasFg7gOB3JYbphV5g==
 
 browserslist@^4.24.0:
@@ -2169,7 +2176,7 @@ dnd-core@^16.0.1:
 
 docx@^9.5.1:
   version "9.5.1"
-  resolved "https://registry.npmjs.org/docx/-/docx-9.5.1.tgz"
+  resolved "https://registry.yarnpkg.com/docx/-/docx-9.5.1.tgz#325c9c45dccf052e5780515d6068e80fdee81960"
   integrity sha512-ABDI7JEirFD2+bHhOBlsGZxaG1UgZb2M/QMKhLSDGgVNhxDesTCDcP+qoDnDGjZ4EOXTRfUjUgwHVuZ6VSTfWQ==
   dependencies:
     "@types/node" "^24.0.1"
@@ -2488,7 +2495,7 @@ jspdf-autotable@^5.0.7:
 
 jspdf@^4.0.0:
   version "4.0.0"
-  resolved "https://registry.npmjs.org/jspdf/-/jspdf-4.0.0.tgz"
+  resolved "https://registry.yarnpkg.com/jspdf/-/jspdf-4.0.0.tgz#3731c0a1a7d8afe28c681891236f8ad4a662d893"
   integrity sha512-w12U97Z6edKd2tXDn3LzTLg7C7QLJlx0BPfM3ecjK2BckUl9/81vZ+r5gK4/3KQdhAcEZhENUxRhtgYBj75MqQ==
   dependencies:
     "@babel/runtime" "^7.28.4"

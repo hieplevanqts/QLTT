@@ -1,7 +1,10 @@
 import { defineConfig } from 'vite'
 import path from 'path'
+import { fileURLToPath } from 'url'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   plugins: [
@@ -14,19 +17,31 @@ export default defineConfig({
     alias: {
       // Alias @ to the src directory
       '@': path.resolve(__dirname, './src'),
-      // Explicitly resolve jspdf
-      'jspdf': path.resolve(__dirname, './node_modules/jspdf/dist/jspdf.es.min.js'),
     },
-    dedupe: ['jspdf'],
-    conditions: ['import', 'module', 'browser', 'default'],
+    dedupe: ['jspdf', 'docx'],
+    conditions: ['browser', 'import', 'module', 'default'],
+    // Explicitly resolve modules for better compatibility
+    mainFields: ['browser', 'module', 'jsnext:main', 'jsnext', 'main'],
+    // Preserve symlinks to help with module resolution in Docker
+    preserveSymlinks: false,
   },
   optimizeDeps: {
-    include: ['jspdf', 'jspdf-autotable'],
+    include: ['jspdf', 'jspdf-autotable', 'docx', 'file-saver'],
     exclude: [],
+    esbuildOptions: {
+      target: 'esnext',
+      mainFields: ['browser', 'module', 'main'],
+      platform: 'browser',
+    },
+    force: true, // Force re-optimization
   },
   build: {
     commonjsOptions: {
-      include: [/jspdf/, /node_modules/],
+      include: [/jspdf/, /docx/, /node_modules/],
+      transformMixedEsModules: true,
+    },
+    rollupOptions: {
+      external: [],
     },
   },
   server: {

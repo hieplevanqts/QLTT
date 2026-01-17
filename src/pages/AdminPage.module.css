@@ -1475,6 +1475,116 @@
   color: #ef4444;
 }
 
+/* ==================== AREA MULTI-SELECT ==================== */
+.areaSelectContainer {
+  position: relative;
+}
+
+.areaSearchInput {
+  width: 100%;
+  padding: var(--spacing-3, 12px);
+  font-family: var(--font-family-sans, Inter, sans-serif);
+  font-size: var(--font-size-sm, 14px);
+  color: var(--foreground, #101828);
+  background: white;
+  border: 1px solid var(--border, #d0d5dd);
+  border-radius: var(--radius-md, 6px);
+  outline: none;
+  transition: all 0.2s;
+}
+
+.areaSearchInput:focus {
+  border-color: var(--primary, #005cb6);
+  box-shadow: 0 0 0 3px rgba(0, 92, 182, 0.1);
+}
+
+.areaSearchInput::placeholder {
+  color: var(--muted-foreground, #667085);
+}
+
+.areaDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid var(--border, #d0d5dd);
+  border-radius: var(--radius-md, 6px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  z-index: 10;
+}
+
+.areaOption {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 8px);
+  padding: var(--spacing-3, 12px);
+  font-family: var(--font-family-sans, Inter, sans-serif);
+  font-size: var(--font-size-sm, 14px);
+  color: var(--foreground, #101828);
+  cursor: pointer;
+  transition: background-color 0.15s;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+}
+
+.areaOption:last-child {
+  border-bottom: none;
+}
+
+.areaOption:hover {
+  background: var(--muted, #f9fafb);
+}
+
+.areaOption input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--primary, #005cb6);
+}
+
+.selectedAreaTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2, 8px);
+  margin-top: var(--spacing-2, 8px);
+}
+
+.areaTag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2, 8px);
+  padding: 4px 10px;
+  font-family: var(--font-family-sans, Inter, sans-serif);
+  font-size: var(--font-size-xs, 12px);
+  font-weight: var(--font-weight-medium, 500);
+  background: var(--primary, #005cb6);
+  color: white;
+  border-radius: var(--radius-full, 9999px);
+  line-height: 16px;
+}
+
+.areaTag button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.areaTag button:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
 .modalFooter {
   display: flex;
   gap: var(--spacing-3, 12px);
@@ -1925,6 +2035,48 @@
   color: var(--primary, #005cb6);
 }
 
+/* Icon buttons for tree actions */
+.iconButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border, #d0d5dd);
+  background: var(--card, #ffffff);
+  color: var(--foreground, #101828);
+  border-radius: var(--radius-md, 6px);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.iconButton:hover {
+  background: var(--muted, #f9fafb);
+  border-color: var(--primary, #005cb6);
+  color: var(--primary, #005cb6);
+}
+
+.iconButtonDanger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border, #d0d5dd);
+  background: var(--card, #ffffff);
+  color: var(--destructive, #dc2626);
+  border-radius: var(--radius-md, 6px);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.iconButtonDanger:hover {
+  background: rgba(220, 38, 38, 0.1);
+  border-color: var(--destructive, #dc2626);
+}
+
 .filterBadge {
   display: inline-flex;
   align-items: center;
@@ -2269,6 +2421,29 @@
   font-family: Inter, sans-serif;
   font-size: 13px;
   margin: 0;
+}
+
+.alertInfo {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3, 12px);
+  padding: var(--spacing-4, 16px);
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: var(--radius-md, 8px);
+  color: #1e40af;
+}
+
+.alertInfo svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #2563eb;
+}
+
+.alertInfo strong {
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .infoBox {

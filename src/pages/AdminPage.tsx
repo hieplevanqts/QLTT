@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Users,
   Shield,
@@ -71,7 +71,9 @@ import {
   CommonCategoriesTab,
   CategoryManagementTab,
   RiskConfigTab,
+  ProtectionMeasuresTab,
 } from './AdminTabComponents';
+// TeamsTab is imported from AdminTabComponents below
 import { RolesTabWrapper } from './RolesTabWrapper';
 import { LocalityModal } from '../components/LocalityModal';
 import {
@@ -83,7 +85,7 @@ import {
   generateRiskIndicators,
   generateChecklists,
   generateNotificationRules
-} from '../app/data/generateFakeData';
+} from '../data/generateFakeData';
 
 type MainTab = 'users' | 'categories' | 'audit';
 type SubTab = string;
@@ -301,6 +303,9 @@ export default function AdminPage() {
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState<'add' | 'edit' | 'view' | 'delete' | 'assign'>('add');
   const [selectedItem, setSelectedItem] = useState<any>(null);
+
+  // 🎯 NEW: Ref to store refresh callback from TerritoryTabNew
+  const territoryRefreshRef = React.useRef<(() => void) | null>(null);
 
   // Local storage for all data
   const [users, setUsers] = useLocalStorage<User[]>('mappa_admin_users', INITIAL_USERS);
@@ -688,7 +693,15 @@ export default function AdminPage() {
     if (activeSubTab === 'user-list') return <UserListTabNew />;
     if (activeSubTab === 'roles') return <RolesManagementTab />;
     if (activeSubTab === 'permissions-matrix') return <PermissionsMatrixTabNew />;
-    if (activeSubTab === 'territory') return <TerritoryTabNew territories={territories} onOpenModal={handleOpenModal} />;
+    if (activeSubTab === 'territory') return (
+      <TerritoryTabNew 
+        territories={territories} 
+        onOpenModal={handleOpenModal}
+        onRefreshReady={(refreshFn) => {
+          territoryRefreshRef.current = refreshFn;
+        }}
+      />
+    );
     if (activeSubTab === 'teams') return <TeamsTab teams={teams} onOpenModal={handleOpenModal} />;
 
     // TAB 2: DANH MỤC & CẤU HÌNH
@@ -776,15 +789,18 @@ export default function AdminPage() {
       {showModal && (() => {
         // 🎯 SPECIAL: Use LocalityModal for territory tab
         if (activeSubTab === 'territory') {
-          console.log('🔧 Opening LocalityModal - modalType:', modalType);
+          console.log('🔧 Opening LocalityModal - modalType:', modalType, 'selectedItem:', selectedItem);
           return (
             <LocalityModal
               mode={modalType === 'add' ? 'add' : modalType === 'edit' ? 'edit' : 'view'}
+              data={selectedItem}
               onClose={handleCloseModal}
               onSave={() => {
-                handleSave({});
-                // Trigger refresh in TerritoryTabNew by closing and reopening
-                window.location.reload(); // Temporary - better to use state management
+                // 🎯 Trigger refresh using callback ref instead of window.location.reload()
+                if (territoryRefreshRef.current) {
+                  territoryRefreshRef.current();
+                }
+                handleCloseModal();
               }}
             />
           );

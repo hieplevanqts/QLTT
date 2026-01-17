@@ -28,7 +28,7 @@ import { toast } from 'sonner';
 import { Pagination, usePagination } from '../components/Pagination';
 import { FormCriteriaModal } from '../components/FormCriteriaModal';
 import { FormTemplateModal } from '../components/FormTemplateModal';
-import { ALL_FORM_TEMPLATES, FormTemplate } from '../app/data/formCriteriaTemplates';
+import { ALL_FORM_TEMPLATES, FormTemplate } from '../data/formCriteriaTemplates';
 import * as XLSX from 'xlsx';
 
 interface FormTemplatesTabProps {
