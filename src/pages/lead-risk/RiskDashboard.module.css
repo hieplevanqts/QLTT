@@ -847,10 +847,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-12);
+  padding: var(--spacing-16) var(--spacing-8);
   color: var(--muted-foreground);
-  text-align: center;
-  gap: var(--spacing-2);
+  gap: var(--spacing-3);
 }
 
 .emptyState svg {
@@ -860,11 +859,133 @@
 .emptyState p {
   margin: 0;
   font-size: var(--text-base);
+  color: var(--foreground);
 }
 
 .emptyHint {
   font-size: var(--text-sm);
   color: var(--muted-foreground);
+}
+
+/* Loading States */
+.loadingOverlay {
+  padding: 24px;
+}
+
+.loadingGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-5);
+  margin-bottom: var(--spacing-6);
+}
+
+.loadingCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--spacing-5);
+  height: 120px;
+}
+
+.loadingFilters {
+  display: flex;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-6);
+}
+
+.loadingFilter {
+  flex: 1;
+  max-width: 200px;
+  height: 40px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.loadingTable {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.loadingTableHeader {
+  background: var(--muted);
+  padding: var(--spacing-4);
+  border-bottom: 1px solid var(--border);
+  height: 48px;
+}
+
+.loadingTableBody {
+  padding: 0;
+}
+
+.loadingRow {
+  padding: var(--spacing-4);
+  border-bottom: 1px solid var(--border);
+  height: 72px;
+  display: flex;
+  gap: var(--spacing-4);
+  align-items: center;
+}
+
+.loadingRow:last-child {
+  border-bottom: none;
+}
+
+.loadingCell {
+  background: var(--muted);
+  border-radius: var(--radius-sm);
+  height: 24px;
+}
+
+.loadingCellSmall {
+  flex: 0 0 80px;
+}
+
+.loadingCellMedium {
+  flex: 0 0 120px;
+}
+
+.loadingCellLarge {
+  flex: 1;
+}
+
+/* Shimmer Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(
+    to right,
+    var(--muted) 0%,
+    var(--muted-foreground) 20%,
+    var(--muted) 40%,
+    var(--muted) 100%
+  );
+  background-size: 2000px 100%;
+  opacity: 0.1;
+}
+
+.loadingCard.skeleton,
+.loadingFilter.skeleton,
+.loadingTableHeader.skeleton,
+.loadingCell.skeleton {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(
+    to right,
+    var(--muted) 0%,
+    rgba(0, 0, 0, 0.05) 50%,
+    var(--muted) 100%
+  );
+  background-size: 2000px 100%;
 }
 
 /* Action Buttons */

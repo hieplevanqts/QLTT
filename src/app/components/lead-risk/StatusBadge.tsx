@@ -18,6 +18,20 @@ const STATUS_CONFIG: Record<LeadStatus, { label: string; variant: string }> = {
 export function StatusBadge({ status, size = 'md' }: StatusBadgeProps) {
   const config = STATUS_CONFIG[status];
   
+  // Safety check - if status not found in config, show fallback
+  if (!config) {
+    console.warn(`⚠️ Unknown status received: "${status}"`);
+    return (
+      <span 
+        className={`${styles.badge} ${styles.cancelled} ${styles[size]}`}
+        data-status={status}
+        title={`Unknown status: ${status}`}
+      >
+        {String(status)}
+      </span>
+    );
+  }
+  
   return (
     <span 
       className={`${styles.badge} ${styles[config.variant]} ${styles[size]}`}

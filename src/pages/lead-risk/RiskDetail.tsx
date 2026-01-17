@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft,
@@ -14,31 +14,209 @@ import {
   Activity,
   Shield,
   BarChart3,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  User,
+  UserPlus,
+  AlertOctagon,
+  Play,
+  Pause,
+  FileCheck,
+  Flag,
+  Search,
+  Upload,
+  Send,
+  CheckSquare,
 } from 'lucide-react';
 import { mockRiskProfiles, mockLeads } from '../../data/lead-risk/mockLeads';
 import { StatusBadge } from '../../app/components/lead-risk/StatusBadge';
 import { UrgencyBadge } from '../../app/components/lead-risk/UrgencyBadge';
+import { Breadcrumb } from '../../app/components/Breadcrumb';
+import { projectId, publicAnonKey } from '../../utils/supabase/info';
+import type { RiskProfile } from '../../data/lead-risk/types';
 import styles from './RiskDetail.module.css';
+
+const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-bb2eb709`;
 
 export default function RiskDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'leads' | 'history' | 'analysis'>('leads');
+  const [profile, setProfile] = useState<RiskProfile | null>(null);
+  const [relatedCases, setRelatedCases] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const profile = mockRiskProfiles.find(p => p.entityId === id);
-  const relatedLeads = mockLeads.filter(l => 
-    l.storeId === id || l.location.address.includes(profile?.entityName || '')
-  );
+  // Fetch risk profile and related cases
+  useEffect(() => {
+    const fetchRiskDetail = async () => {
+      if (!id) return;
+      
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        // Fetch all profiles to find the one matching this ID
+        const profilesResponse = await fetch(`${API_BASE_URL}/risk-profiles`, {
+          headers: {
+            'Authorization': `Bearer ${publicAnonKey}`,
+            'Content-Type': 'application/json',
+          },
+        });
 
+        if (!profilesResponse.ok) {
+          throw new Error(`HTTP error! status: ${profilesResponse.status}`);
+        }
+
+        const profilesData = await profilesResponse.json();
+
+        if (!profilesData.success) {
+          throw new Error(profilesData.error || 'Failed to fetch risk profiles');
+        }
+
+        // Find matching profile
+        const matchedProfile = profilesData.data.find((p: any) => p.entityId === id);
+
+        if (!matchedProfile) {
+          throw new Error('Risk profile not found');
+        }
+
+        // Transform to RiskProfile format
+        const transformedProfile: RiskProfile = {
+          entityId: matchedProfile.entityId,
+          entityType: matchedProfile.entityType,
+          entityName: matchedProfile.entityName,
+          riskScore: matchedProfile.riskScore,
+          riskLevel: matchedProfile.riskLevel,
+          totalLeads: matchedProfile.totalLeads || 0,
+          activeLeads: matchedProfile.activeLeads || 0,
+          resolvedLeads: matchedProfile.resolvedLeads || 0,
+          rejectedLeads: matchedProfile.rejectedLeads || 0,
+          lastLeadDate: matchedProfile.lastLeadDate ? new Date(matchedProfile.lastLeadDate) : new Date(),
+          recentCategories: matchedProfile.recentCategories || [],
+          trendDirection: matchedProfile.trendDirection || 'stable',
+          monthOverMonthChange: matchedProfile.monthOverMonthChange || 0,
+          isWatchlisted: matchedProfile.isWatchlisted || false,
+          hasActiveAlert: matchedProfile.hasActiveAlert || false,
+        };
+
+        setProfile(transformedProfile);
+
+        // Fetch related cases for this store
+        const casesResponse = await fetch(`${API_BASE_URL}/risk-cases`, {
+          headers: {
+            'Authorization': `Bearer ${publicAnonKey}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (casesResponse.ok) {
+          const casesData = await casesResponse.json();
+          if (casesData.success) {
+            // Filter cases for this store and transform to display format
+            const filtered = casesData.data
+              .filter((c: any) => c.store_name === matchedProfile.entityName)
+              .map((c: any) => ({
+                id: c.id,
+                code: `CASE-${String(c.id).padStart(4, '0')}`,
+                title: `${getCategoryLabel(c.category)} - ${c.severity}`,
+                description: c.description || `Trường hợp ${c.category} với mức độ ${c.severity}`,
+                status: c.status || 'new',
+                urgency: c.severity === 'critical' ? 'high' : 
+                        c.severity === 'major' ? 'medium' : 'low',
+                reportedAt: c.created_at ? new Date(c.created_at) : new Date(),
+                source: c.source || 'Hệ thống',
+                category: c.category,
+                severity: c.severity,
+              }));
+            setRelatedCases(filtered);
+          }
+        }
+
+        console.log('✅ Successfully loaded risk detail for:', matchedProfile.entityName);
+      } catch (err) {
+        console.error('❌ Error fetching risk detail:', err);
+        setError(err instanceof Error ? err.message : 'Unknown error');
+        
+        // Fallback to mock data
+        console.log('⚠️ Using mock data as fallback...');
+        const mockProfile = mockRiskProfiles.find(p => p.entityId === id);
+        if (mockProfile) {
+          setProfile(mockProfile);
+          const mockRelated = mockLeads.filter(l => 
+            l.storeId === id || l.location.address.includes(mockProfile.entityName)
+          );
+          setRelatedCases(mockRelated.map(l => ({
+            ...l,
+            reportedAt: l.reportedAt || new Date(),
+          })));
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRiskDetail();
+  }, [id]);
+
+  // Helper function for category labels (moved outside useEffect)
+  const getCategoryLabel = (category: string): string => {
+    const labels: Record<string, string> = {
+      counterfeit: 'Hàng giả',
+      smuggling: 'Buôn lậu',
+      illegal_trading: 'Kinh doanh bất hợp pháp',
+      food_safety: 'An toàn thực phẩm',
+      price_fraud: 'Gian lận giá cả',
+      unlicensed: 'Không giấy phép',
+      product_quality: 'Chất lượng sản phẩm',
+      labeling: 'Nhãn mác',
+      advertising: 'Quảng cáo',
+      other: 'Khác',
+    };
+    return labels[category] || category;
+  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className={styles.container}>
+        <Breadcrumb
+          items={[
+            { label: 'Nguồn tin, Rủi ro', path: '/lead-risk/inbox' },
+            { label: 'Tổng quan rủi ro', path: '/lead-risk/dashboard' },
+            { label: 'Chi tiết rủi ro' },
+          ]}
+        />
+        <div className={styles.loadingState}>
+          <Loader2 size={48} className={styles.spinner} />
+          <p>Đang tải thông tin rủi ro...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Not found state
   if (!profile) {
     return (
-      <div className={styles.notFound}>
-        <AlertTriangle size={48} />
-        <h2>Không tìm thấy thông tin rủi ro</h2>
-        <button onClick={() => navigate('/lead-risk/dashboard')} className={styles.backButton}>
-          <ArrowLeft size={16} />
-          Quay lại Dashboard
-        </button>
+      <div className={styles.container}>
+        <Breadcrumb
+          items={[
+            { label: 'Nguồn tin, Rủi ro', path: '/lead-risk/inbox' },
+            { label: 'Tổng quan rủi ro', path: '/lead-risk/dashboard' },
+            { label: 'Chi tiết rủi ro' },
+          ]}
+        />
+        <div className={styles.notFound}>
+          <AlertTriangle size={48} />
+          <h2>Không tìm thấy thông tin rủi ro</h2>
+          <p>Cơ sở với ID "{id}" không tồn tại trong hệ thống</p>
+          <button onClick={() => navigate('/lead-risk/dashboard')} className={styles.backButton}>
+            <ArrowLeft size={16} />
+            Quay lại Dashboard
+          </button>
+        </div>
       </div>
     );
   }
@@ -55,21 +233,17 @@ export default function RiskDetail() {
     return 'var(--muted-foreground)';
   };
 
-  const getCategoryLabel = (category: string): string => {
-    const labels: Record<string, string> = {
-      counterfeit: 'Hàng giả',
-      smuggling: 'Buôn lậu',
-      illegal_trading: 'Kinh doanh bất hợp pháp',
-      food_safety: 'An toàn thực phẩm',
-      price_fraud: 'Gian lận giá cả',
-      unlicensed: 'Không giấy phép',
-      other: 'Khác',
-    };
-    return labels[category] || category;
-  };
-
   return (
     <div className={styles.container}>
+      {/* Breadcrumb */}
+      <Breadcrumb
+        items={[
+          { label: 'Nguồn tin, Rủi ro', path: '/lead-risk/inbox' },
+          { label: 'Tổng quan rủi ro', path: '/lead-risk/dashboard' },
+          { label: profile.entityName },
+        ]}
+      />
+
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerTop}>
@@ -287,7 +461,7 @@ export default function RiskDetail() {
               onClick={() => setActiveTab('leads')}
             >
               <FileText size={16} />
-              Leads liên quan ({relatedLeads.length})
+              Leads liên quan ({relatedCases.length})
             </button>
             <button 
               className={activeTab === 'history' ? styles.tabActive : styles.tab}
@@ -309,13 +483,13 @@ export default function RiskDetail() {
           <div className={styles.tabContent}>
             {activeTab === 'leads' && (
               <div className={styles.leadsTab}>
-                {relatedLeads.length > 0 ? (
+                {relatedCases.length > 0 ? (
                   <div className={styles.leadsList}>
-                    {relatedLeads.map((lead) => (
+                    {relatedCases.map((lead) => (
                       <div 
                         key={lead.id} 
                         className={styles.leadCard}
-                        onClick={() => navigate(`/lead-risk/lead/${lead.id}`)}
+                        onClick={() => navigate(`/lead-risk/case/${lead.id}`)}
                       >
                         <div className={styles.leadHeader}>
                           <div className={styles.leadCode}>{lead.code}</div>

@@ -42,7 +42,9 @@ import CreateLeadFull from '../pages/lead-risk/CreateLeadFull';
 import RiskDashboard from '../pages/lead-risk/RiskDashboard';
 import LeadDetail from '../pages/lead-risk/LeadDetail';
 import RiskDetail from '../pages/lead-risk/RiskDetail';
+import CaseDetail from '../pages/lead-risk/CaseDetail';
 import HotspotExplorer from '../pages/lead-risk/HotspotExplorer';
+import SLAOperationMap from '../pages/lead-risk/SLAOperationMap';
 import Watchlist from '../pages/lead-risk/Watchlist';
 import QualityMetrics from '../pages/lead-risk/QualityMetrics';
 import WorkloadDashboard from '../pages/lead-risk/WorkloadDashboard';
@@ -259,8 +261,16 @@ export const router = createBrowserRouter([
             element: <RiskDetail />,
           },
           {
+            path: 'lead-risk/case/:id',
+            element: <CaseDetail />,
+          },
+          {
             path: 'lead-risk/hotspots',
             element: <HotspotExplorer />,
+          },
+          {
+            path: 'lead-risk/sla-operation-map',
+            element: <SLAOperationMap />,
           },
           {
             path: 'lead-risk/watchlist',

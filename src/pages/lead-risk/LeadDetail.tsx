@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -21,6 +21,7 @@ import {
   Phone,
   Mail,
   ChevronLeft,
+  Loader2,
 } from 'lucide-react';
 import { mockLeads } from '../../data/lead-risk/mockLeads';
 import { StatusBadge } from '../../app/components/lead-risk/StatusBadge';
@@ -31,8 +32,11 @@ import { StoreRiskProfile } from '../../app/components/StoreRiskProfile';
 import { EscalationPanel } from '../../app/components/EscalationPanel';
 import { AuditTrail } from '../../app/components/AuditTrail';
 import { Breadcrumb } from '../../app/components/Breadcrumb';
+import { projectId, publicAnonKey } from '../../utils/supabase/info';
 import type { LeadUrgency, LeadConfidence, LeadCategory } from '../../data/lead-risk/types';
 import styles from './LeadDetail.module.css';
+
+const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-bb2eb709`;
 
 // Mock evidence data
 const mockEvidenceImages = [
@@ -737,7 +741,7 @@ export default function LeadDetail() {
                     timestamp: '2025-01-07T14:00:00Z',
                     details: {
                       escalateTo: 'Chi Cục Trưởng',
-                      reason: 'SLA < 2h, cần hỗ trợ khẩn cấp'
+                      reason: 'SLA < 2h, c��n hỗ trợ khẩn cấp'
                     },
                     location: 'TP.HCM',
                   }] : []),

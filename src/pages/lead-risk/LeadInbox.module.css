@@ -438,6 +438,97 @@
   flex-shrink: 0;
 }
 
+/* Loading State */
+.loadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-16);
+  text-align: center;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+  color: var(--primary);
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loadingState p {
+  margin-top: var(--spacing-4);
+  color: var(--muted-foreground);
+  font-size: var(--text-sm);
+}
+
+/* Error State */
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-16);
+  text-align: center;
+}
+
+.errorState svg {
+  color: var(--destructive);
+  margin-bottom: var(--spacing-4);
+}
+
+.errorTitle {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+  margin-bottom: var(--spacing-2);
+}
+
+.errorMessage {
+  color: var(--destructive);
+  font-size: var(--text-sm);
+  margin-bottom: var(--spacing-4);
+  max-width: 600px;
+}
+
+.retryButton {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-4);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: var(--radius);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: var(--spacing-4);
+}
+
+.retryButton:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.errorHint {
+  color: var(--muted-foreground);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  margin-top: var(--spacing-4);
+  padding: var(--spacing-4);
+  background: var(--muted);
+  border-radius: var(--radius);
+  text-align: left;
+}
+
 /* Active Filter Bar */
 .activeFilterBar {
   display: flex;
@@ -546,9 +637,6 @@
   color: var(--muted-foreground);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .table tbody tr {
@@ -581,9 +669,6 @@
   font-size: var(--text-sm);
   color: var(--foreground);
   box-sizing: border-box;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* Selected Row - First TD needs padding compensation */

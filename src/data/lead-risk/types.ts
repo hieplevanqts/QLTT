@@ -48,7 +48,7 @@ export interface Lead {
   title: string;
   description: string;
   status: LeadStatus;
-  urgency: LeadUrgency;
+  urgency?: LeadUrgency;           // Optional - không bắt buộc
   confidence: LeadConfidence;
   source: LeadSource | string;     // Allow custom string sources
   category: LeadCategory | string; // Allow custom categories

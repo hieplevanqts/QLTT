@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Search, 
@@ -11,10 +11,12 @@ import {
   Trash2,
   CheckCircle2,
   Map,
+  AlertCircle,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
-import { mockLeads } from '../../data/lead-risk/mockLeads';
+import { useSupabaseLeads, useLeadStats } from '../../hooks/useSupabaseLeads';
 import { StatusBadge } from '../../app/components/lead-risk/StatusBadge';
-import { UrgencyBadge } from '../../app/components/lead-risk/UrgencyBadge';
 import { SLATimer } from '../../app/components/lead-risk/SLATimer';
 import { LeadFormModal } from '../../app/components/lead-risk/LeadFormModal';
 import { DeleteConfirmModal } from '../../app/components/lead-risk/DeleteConfirmModal';
@@ -125,14 +127,30 @@ const getAllowedActions = (status: LeadStatus): LeadAction[] => {
 
 export default function LeadInbox() {
   const navigate = useNavigate();
+  const renderCountRef = useRef(0);
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   
   // Multi-select filters
-  const [selectedUrgencies, setSelectedUrgencies] = useState<string[]>([]);
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['new']); // Default to "Mới"
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['new']); // Default: Filter by "Mới" status
   const [selectedAssignments, setSelectedAssignments] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(4); // Default: 4 items per page
+
+  // Track renders
+  useEffect(() => {
+    renderCountRef.current += 1;
+    console.log(`🎨 [LeadInbox] Render #${renderCountRef.current}`);
+    console.log('📊 [LeadInbox] State:', {
+      selectedStatuses,
+      selectedCategories,
+      searchQuery,
+      selectedAssignments,
+    });
+  });
 
   // Modal states
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -164,79 +182,8 @@ export default function LeadInbox() {
     onConfirm: () => {},
   });
 
-  // Mock watchlist data
-  const [watchlistItems] = useState<WatchlistItem[]>([
-    {
-      id: 'w1',
-      type: 'store',
-      name: 'Cửa hàng Bách Hóa Xanh Q1',
-      code: 'CH-2024-001',
-      reason: 'Phát hiện 3 trường hợp bán hàng hết hạn trong tháng qua',
-      addedAt: '2025-01-01T08:00:00Z',
-      addedBy: 'Nguyễn Văn A',
-      priority: 'high',
-      status: 'alert',
-      riskScore: 75,
-      location: 'Q1, TP.HCM',
-      lastActivity: '2025-01-08T14:30:00Z',
-      alertCount: 2,
-    },
-    {
-      id: 'w2',
-      type: 'lead',
-      name: 'Lead báo cáo thuốc giả',
-      code: 'LD24-0125',
-      reason: 'Nguồn tin đáng tin cậy từ thanh tra viên, cần theo dõi tiến độ',
-      addedAt: '2025-01-05T10:00:00Z',
-      addedBy: 'Trần Thị B',
-      priority: 'high',
-      status: 'active',
-      location: 'Q3, TP.HCM',
-      lastActivity: '2025-01-09T09:15:00Z',
-    },
-    {
-      id: 'w3',
-      type: 'location',
-      name: 'Khu vực chợ Bến Thành',
-      reason: 'Điểm nóng về hàng giả, hàng nhái - yêu cầu tuần tra thường xuyên',
-      addedAt: '2024-12-20T08:00:00Z',
-      addedBy: 'Lê Văn C',
-      priority: 'medium',
-      status: 'active',
-      riskScore: 62,
-      location: 'Q1, TP.HCM',
-      lastActivity: '2025-01-08T16:45:00Z',
-      alertCount: 1,
-    },
-    {
-      id: 'w4',
-      type: 'store',
-      name: 'Nhà thuốc An Khang',
-      code: 'CH-2023-456',
-      reason: 'Đã xử lý vi phạm, theo dõi cải thiện',
-      addedAt: '2024-11-15T08:00:00Z',
-      addedBy: 'Phạm Thị D',
-      priority: 'low',
-      status: 'resolved',
-      riskScore: 35,
-      location: 'Q10, TP.HCM',
-      lastActivity: '2025-01-05T11:20:00Z',
-    },
-    {
-      id: 'w5',
-      type: 'lead',
-      name: 'Phản ánh mỹ phẩm không rõ nguồn gốc',
-      code: 'LD24-0089',
-      reason: 'Nhiều người tiêu dùng phản ánh, nghi ngờ hàng nhập lậu',
-      addedAt: '2024-12-28T14:00:00Z',
-      addedBy: 'Nguyễn Văn A',
-      priority: 'medium',
-      status: 'alert',
-      location: 'Q7, TP.HCM',
-      lastActivity: '2025-01-07T10:30:00Z',
-      alertCount: 3,
-    },
-  ]);
+  // Watchlist data - Empty for now (TODO: Fetch from Supabase)
+  const [watchlistItems] = useState<WatchlistItem[]>([]);
 
   const handleRemoveFromWatchlist = (id: string) => {
     if (confirm('Bạn có chắc muốn bỏ theo dõi mục này?')) {
@@ -247,7 +194,7 @@ export default function LeadInbox() {
   const handleViewWatchlistItemDetails = (item: WatchlistItem) => {
     if (item.type === 'lead') {
       // Navigate to lead detail if we have the lead ID
-      const lead = mockLeads.find(l => l.code === item.code);
+      const lead = allLeads.find(l => l.code === item.code);
       if (lead) {
         navigate(`/lead-risk/lead/${lead.id}`);
       }
@@ -259,20 +206,50 @@ export default function LeadInbox() {
     setIsWatchlistOpen(false);
   };
 
-  // Calculate lead counts for filters
-  const newLeads = mockLeads.filter(l => l.status === 'new').length;
-  const inVerificationLeads = mockLeads.filter(l => l.status === 'in_verification').length;
-  const inProgressLeads = mockLeads.filter(l => l.status === 'in_progress').length;
-  const resolvedLeads = mockLeads.filter(l => l.status === 'resolved').length;
-  const rejectedLeads = mockLeads.filter(l => l.status === 'rejected').length;
-  const cancelledLeads = mockLeads.filter(l => l.status === 'cancelled').length;
-  const assignedToMe = mockLeads.filter(l => l.assignedTo?.userId === 'QT24_NGUYENVANA').length;
-  const unassignedLeads = mockLeads.filter(l => !l.assignedTo).length;
+  // SUPABASE DATA FETCHING
+  // Memoize options to prevent unnecessary re-fetches
+  const supabaseOptions = useMemo(() => ({
+    statuses: selectedStatuses.length > 0 ? selectedStatuses : undefined,
+    categories: selectedCategories.length > 0 ? selectedCategories : undefined,
+    search: searchQuery || undefined,
+    unassigned: selectedAssignments.includes('unassigned') ? true : undefined,
+    limit: 200,
+  }), [selectedStatuses, selectedCategories, searchQuery, selectedAssignments]);
+
+  const { leads: allLeads, loading, error, refetch } = useSupabaseLeads(supabaseOptions);
+
+  const { stats } = useLeadStats();
+
+  console.log('🎨 [LeadInbox] Component rendered');
+  console.log('📊 [LeadInbox] allLeads.length:', allLeads.length);
+  console.log('📋 [LeadInbox] First 5 lead codes:', allLeads.slice(0, 5).map(l => l.code));
+  console.log('🔢 [LeadInbox] Lead IDs (first 5):', allLeads.slice(0, 5).map(l => l.id));
+  
+  // Check for duplicates in allLeads
+  const allLeadIds = allLeads.map(l => l.id);
+  const uniqueLeadIds = new Set(allLeadIds);
+  if (allLeadIds.length !== uniqueLeadIds.size) {
+    console.error('🚨 [LeadInbox] DUPLICATE DETECTED in allLeads!');
+    console.error('🚨 [LeadInbox] Total leads:', allLeadIds.length, 'Unique IDs:', uniqueLeadIds.size);
+    // Find which IDs are duplicated
+    const duplicates = allLeadIds.filter((id, index) => allLeadIds.indexOf(id) !== index);
+    console.error('🚨 [LeadInbox] Duplicate IDs:', [...new Set(duplicates)]);
+  }
+
+  // Calculate lead counts for filters using real data
+  const newLeads = allLeads.filter(l => l.status === 'new').length;
+  const inVerificationLeads = allLeads.filter(l => l.status === 'in_verification').length;
+  const inProgressLeads = allLeads.filter(l => l.status === 'in_progress').length;
+  const resolvedLeads = allLeads.filter(l => l.status === 'resolved').length;
+  const rejectedLeads = allLeads.filter(l => l.status === 'rejected').length;
+  const cancelledLeads = allLeads.filter(l => l.status === 'cancelled').length;
+  const assignedToMe = allLeads.filter(l => l.assignedTo?.userId === 'QT24_NGUYENVANA').length;
+  const unassignedLeads = allLeads.filter(l => !l.assignedTo).length;
 
   // Get count for each status
   const getStatusCount = (key: string) => {
     switch (key) {
-      case 'all': return mockLeads.length;
+      case 'all': return allLeads.length;
       case 'new': return newLeads;
       case 'in_verification': return inVerificationLeads;
       case 'in_progress': return inProgressLeads;
@@ -283,14 +260,8 @@ export default function LeadInbox() {
     }
   };
 
-  // Apply filters
-  const filteredLeads = mockLeads.filter(lead => {
-    // Urgency filter
-    if (selectedUrgencies.length > 0 && !selectedUrgencies.includes(lead.urgency)) return false;
-
-    // Status filter
-    if (selectedStatuses.length > 0 && !selectedStatuses.includes(lead.status)) return false;
-
+  // Client-side filtering (Supabase already filters most, this is for assignment filter)
+  const filteredLeads = allLeads.filter(lead => {
     // Assignment filter - OR logic
     if (selectedAssignments.length > 0) {
       const matchesAssignment = selectedAssignments.some(filter => {
@@ -302,23 +273,72 @@ export default function LeadInbox() {
       if (!matchesAssignment) return false;
     }
 
-    // Category filter
-    if (selectedCategories.length > 0 && !selectedCategories.includes(lead.category)) return false;
-
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      const matchesSearch = 
-        lead.title.toLowerCase().includes(query) ||
-        lead.code.toLowerCase().includes(query) ||
-        lead.description.toLowerCase().includes(query) ||
-        lead.reporterName?.toLowerCase().includes(query) ||
-        lead.storeName?.toLowerCase().includes(query);
-      if (!matchesSearch) return false;
-    }
-
     return true;
   });
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredLeads.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedLeads = filteredLeads.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedStatuses, selectedAssignments, selectedCategories, searchQuery]);
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  // Generate page numbers to display
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxPagesToShow = 5;
+
+    if (totalPages <= maxPagesToShow) {
+      // Show all pages
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Show first page
+      pages.push(1);
+
+      if (currentPage > 3) {
+        pages.push('...');
+      }
+
+      // Show pages around current page
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+
+      if (currentPage < totalPages - 2) {
+        pages.push('...');
+      }
+
+      // Show last page
+      pages.push(totalPages);
+    }
+
+    return pages;
+  };
 
   const toggleSelectLead = (leadId: string) => {
     const newSelected = new Set(selectedLeads);
@@ -353,14 +373,13 @@ export default function LeadInbox() {
   };
 
   const clearAllFilters = () => {
-    setSelectedUrgencies([]);
     setSelectedStatuses([]);
     setSelectedAssignments([]);
     setSelectedCategories([]);
     setSearchQuery('');
   };
 
-  const hasActiveFilters = selectedUrgencies.length > 0 || selectedStatuses.length > 0 || selectedAssignments.length > 0 || selectedCategories.length > 0 || searchQuery !== '';
+  const hasActiveFilters = selectedStatuses.length > 0 || selectedAssignments.length > 0 || selectedCategories.length > 0 || searchQuery !== '';
 
   // CRUD Handlers
   const handleCreateLead = () => {
@@ -556,26 +575,13 @@ export default function LeadInbox() {
         <div className={styles.headerRight}>
           <button className={styles.createButton} onClick={handleCreateLead}>
             <Plus size={18} />
-            <span>Tạo Lead</span>
+            <span>Thêm mới</span>
           </button>
         </div>
       </div>
 
       {/* Filters & Search Row - Single Row with All Elements */}
       <div className={styles.filterRow}>
-
-        <MultiSelectDropdown
-          label="Mức độ"
-          options={[
-            { value: 'critical', label: 'Nghiêm trọng', count: mockLeads.filter(l => l.urgency === 'critical').length },
-            { value: 'high', label: 'Cao', count: mockLeads.filter(l => l.urgency === 'high').length },
-            { value: 'medium', label: 'Trung bình', count: mockLeads.filter(l => l.urgency === 'medium').length },
-            { value: 'low', label: 'Thấp', count: mockLeads.filter(l => l.urgency === 'low').length },
-          ]}
-          selectedValues={selectedUrgencies}
-          onChange={setSelectedUrgencies}
-          placeholder="Tất cả"
-        />
 
         <MultiSelectDropdown
           label="Trạng thái"
@@ -595,7 +601,7 @@ export default function LeadInbox() {
         <MultiSelectDropdown
           label="Phân công"
           options={[
-            { value: 'assigned', label: 'Đã giao', count: mockLeads.filter(l => l.assignedTo).length },
+            { value: 'assigned', label: 'Đã giao', count: allLeads.filter(l => l.assignedTo).length },
             { value: 'unassigned', label: 'Chưa giao', count: unassignedLeads },
             { value: 'assigned_to_me', label: 'Của tôi', count: assignedToMe },
           ]}
@@ -607,13 +613,13 @@ export default function LeadInbox() {
         <MultiSelectDropdown
           label="Danh mục vi phạm"
           options={[
-            { value: 'counterfeit', label: 'Hàng giả', count: mockLeads.filter(l => l.category === 'counterfeit').length },
-            { value: 'smuggling', label: 'Buôn lậu', count: mockLeads.filter(l => l.category === 'smuggling').length },
-            { value: 'illegal_trading', label: 'Kinh doanh bất hợp pháp', count: mockLeads.filter(l => l.category === 'illegal_trading').length },
-            { value: 'food_safety', label: 'An toàn thực phẩm', count: mockLeads.filter(l => l.category === 'food_safety').length },
-            { value: 'price_fraud', label: 'Gian lận giá cả', count: mockLeads.filter(l => l.category === 'price_fraud').length },
-            { value: 'unlicensed', label: 'Không giấy phép', count: mockLeads.filter(l => l.category === 'unlicensed').length },
-            { value: 'other', label: 'Khác', count: mockLeads.filter(l => l.category === 'other').length },
+            { value: 'counterfeit', label: 'Hàng giả', count: allLeads.filter(l => l.category === 'counterfeit').length },
+            { value: 'smuggling', label: 'Buôn lậu', count: allLeads.filter(l => l.category === 'smuggling').length },
+            { value: 'illegal_trading', label: 'Kinh doanh bất hợp pháp', count: allLeads.filter(l => l.category === 'illegal_trading').length },
+            { value: 'food_safety', label: 'An toàn thực phẩm', count: allLeads.filter(l => l.category === 'food_safety').length },
+            { value: 'price_fraud', label: 'Gian lận giá cả', count: allLeads.filter(l => l.category === 'price_fraud').length },
+            { value: 'unlicensed', label: 'Không giấy phép', count: allLeads.filter(l => l.category === 'unlicensed').length },
+            { value: 'other', label: 'Khác', count: allLeads.filter(l => l.category === 'other').length },
           ]}
           selectedValues={selectedCategories}
           onChange={setSelectedCategories}
@@ -679,122 +685,154 @@ export default function LeadInbox() {
         </div>
       )}
 
+      {/* Loading State */}
+      {loading && (
+        <div className={styles.loadingState}>
+          <Loader2 size={48} className={styles.spinner} />
+          <p>Đang tải dữ liệu từ Supabase...</p>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className={styles.errorState}>
+          <AlertCircle size={48} />
+          <p className={styles.errorTitle}>Lỗi kết nối Supabase</p>
+          <p className={styles.errorMessage}>{error}</p>
+          <button className={styles.retryButton} onClick={refetch}>
+            <RefreshCw size={16} />
+            Thử lại
+          </button>
+          <p className={styles.errorHint}>
+            Hãy kiểm tra:<br/>
+            • Bảng 'leads' đã được tạo chưa?<br/>
+            • RLS policies đã được config chưa?<br/>
+            • Mở Console (F12) để xem logs chi tiết
+          </p>
+        </div>
+      )}
+
       {/* Leads Table */}
-      <div className={styles.tableContainer}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th style={{ width: '40px', minWidth: '40px', maxWidth: '40px' }}>
-                <div className={styles.checkboxWrapper}>
-                  <input
-                    type="checkbox"
-                    checked={selectedLeads.size === filteredLeads.length && filteredLeads.length > 0}
-                    onChange={toggleSelectAll}
-                    className={styles.checkbox}
-                  />
-                </div>
-              </th>
-              <th style={{ width: '120px' }}>Mã Lead</th>
-              <th style={{ width: '280px' }}>Tiêu đề</th>
-              <th style={{ width: '180px' }}>Người báo</th>
-              <th style={{ width: '160px' }}>Cửa hàng</th>
-              <th style={{ width: '180px' }}>Nội dung</th>
-              <th style={{ width: '110px' }}>Trạng thái</th>
-              <th style={{ width: '100px' }}>Mức độ</th>
-              <th style={{ width: '110px' }}>SLA</th>
-              <th style={{ width: '140px' }}>Người xử lý</th>
-              <th style={{ width: '140px', textAlign: 'center' }}>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredLeads.map((lead) => (
-              <tr 
-                key={lead.id}
-                className={selectedLeads.has(lead.id) ? styles.rowSelected : ''}
-              >
-                <td onClick={(e) => e.stopPropagation()} style={{ width: '40px', minWidth: '40px', maxWidth: '40px' }}>
+      {!loading && !error && (
+        <div className={styles.tableContainer}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th style={{ width: '40px', minWidth: '40px', maxWidth: '40px' }}>
                   <div className={styles.checkboxWrapper}>
                     <input
                       type="checkbox"
-                      checked={selectedLeads.has(lead.id)}
-                      onChange={() => toggleSelectLead(lead.id)}
+                      checked={selectedLeads.size === filteredLeads.length && filteredLeads.length > 0}
+                      onChange={toggleSelectAll}
                       className={styles.checkbox}
                     />
                   </div>
-                </td>
-                <td onClick={() => navigate(`/lead-risk/lead/${lead.id}`)} style={{ cursor: 'pointer' }}>
-                  <span className={styles.leadCode}>{lead.code}</span>
-                </td>
-                <td onClick={() => navigate(`/lead-risk/lead/${lead.id}`)} style={{ cursor: 'pointer' }}>
-                  <div className={styles.leadTitle}>{lead.title}</div>
-                </td>
-                <td onClick={() => navigate(`/lead-risk/lead/${lead.id}`)} style={{ cursor: 'pointer' }}>
-                  <div className={styles.reporterInfo}>
-                    <span className={styles.reporterName}>{lead.reporterName || '-'}</span>
-                    <span className={styles.reporterPhone}>{lead.reporterPhone || '-'}</span>
-                  </div>
-                </td>
-                <td onClick={() => navigate(`/lead-risk/lead/${lead.id}`)} style={{ cursor: 'pointer' }}>
-                  <span className={styles.storeName}>{lead.storeName || '-'}</span>
-                </td>
-                <td onClick={() => navigate(`/lead-risk/lead/${lead.id}`)} style={{ cursor: 'pointer' }}>
-                  <div className={styles.contentPreview}>
-                    {lead.description.substring(0, 50)}...
-                  </div>
-                </td>
-                <td onClick={() => navigate(`/lead-risk/lead/${lead.id}`)} style={{ cursor: 'pointer' }}>
-                  <StatusBadge status={lead.status} size="sm" />
-                </td>
-                <td onClick={() => navigate(`/lead-risk/lead/${lead.id}`)} style={{ cursor: 'pointer' }}>
-                  <UrgencyBadge urgency={lead.urgency} size="sm" />
-                </td>
-                <td onClick={() => navigate(`/lead-risk/lead/${lead.id}`)} style={{ cursor: 'pointer' }}>
-                  <SLATimer
-                    deadline={lead.sla.deadline}
-                    remainingHours={lead.sla.remainingHours}
-                    isOverdue={lead.sla.isOverdue}
-                    size="sm"
-                  />
-                </td>
-                <td onClick={() => navigate(`/lead-risk/lead/${lead.id}`)} style={{ cursor: 'pointer' }}>
-                  <span className={styles.assignee}>
-                    {lead.assignedTo ? lead.assignedTo.userName : 'Chưa giao'}
-                  </span>
-                </td>
-                <td onClick={(e) => e.stopPropagation()}>
-                  <div className={styles.actionButtons}>
-                    <LeadActionMenu
-                      status={lead.status}
-                      onAction={(action) => handleLeadAction(lead, action)}
-                    />
-                  </div>
-                </td>
+                </th>
+                <th style={{ width: '120px' }}>Mã Lead</th>
+                <th style={{ width: '280px' }}>Tiêu đề</th>
+                <th style={{ width: '180px' }}>Người báo</th>
+                <th style={{ width: '160px' }}>Cửa hàng</th>
+                <th style={{ width: '180px' }}>Nội dung</th>
+                <th style={{ width: '110px' }}>Trạng thái</th>
+                <th style={{ width: '110px' }}>SLA</th>
+                <th style={{ width: '140px' }}>Người xử lý</th>
+                <th style={{ width: '140px', textAlign: 'center' }}>Thao tác</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {paginatedLeads.map((lead) => (
+                <tr 
+                  key={lead.id}
+                  className={selectedLeads.has(lead.id) ? styles.rowSelected : ''}
+                >
+                  <td onClick={(e) => e.stopPropagation()} style={{ width: '40px', minWidth: '40px', maxWidth: '40px' }}>
+                    <div className={styles.checkboxWrapper}>
+                      <input
+                        type="checkbox"
+                        checked={selectedLeads.has(lead.id)}
+                        onChange={() => toggleSelectLead(lead.id)}
+                        className={styles.checkbox}
+                      />
+                    </div>
+                  </td>
+                  <td onClick={() => navigate(`/lead-risk/lead/${lead.id}`)} style={{ cursor: 'pointer' }}>
+                    <span className={styles.leadCode}>{lead.code}</span>
+                  </td>
+                  <td onClick={() => navigate(`/lead-risk/lead/${lead.id}`)} style={{ cursor: 'pointer' }}>
+                    <div className={styles.leadTitle}>{lead.title}</div>
+                  </td>
+                  <td onClick={() => navigate(`/lead-risk/lead/${lead.id}`)} style={{ cursor: 'pointer' }}>
+                    <div className={styles.reporterInfo}>
+                      <span className={styles.reporterName}>{lead.reporterName || '-'}</span>
+                      <span className={styles.reporterPhone}>{lead.reporterPhone || '-'}</span>
+                    </div>
+                  </td>
+                  <td onClick={() => navigate(`/lead-risk/lead/${lead.id}`)} style={{ cursor: 'pointer' }}>
+                    <span className={styles.storeName}>{lead.storeName || '-'}</span>
+                  </td>
+                  <td onClick={() => navigate(`/lead-risk/lead/${lead.id}`)} style={{ cursor: 'pointer' }}>
+                    <div className={styles.contentPreview}>
+                      {lead.description.substring(0, 50)}...
+                    </div>
+                  </td>
+                  <td onClick={() => navigate(`/lead-risk/lead/${lead.id}`)} style={{ cursor: 'pointer' }}>
+                    <StatusBadge status={lead.status} size="sm" />
+                  </td>
+                  <td onClick={() => navigate(`/lead-risk/lead/${lead.id}`)} style={{ cursor: 'pointer' }}>
+                    <SLATimer
+                      deadline={lead.sla.deadline}
+                      remainingHours={lead.sla.remainingHours}
+                      isOverdue={lead.sla.isOverdue}
+                      size="sm"
+                    />
+                  </td>
+                  <td onClick={() => navigate(`/lead-risk/lead/${lead.id}`)} style={{ cursor: 'pointer' }}>
+                    <span className={styles.assignee}>
+                      {lead.assignedTo ? lead.assignedTo.userName : 'Chưa giao'}
+                    </span>
+                  </td>
+                  <td onClick={(e) => e.stopPropagation()}>
+                    <div className={styles.actionButtons}>
+                      <LeadActionMenu
+                        status={lead.status}
+                        onAction={(action) => handleLeadAction(lead, action)}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
 
-        {filteredLeads.length === 0 && (
-          <div className={styles.emptyState}>
-            <Inbox size={48} />
-            <p>Không tìm thấy lead nào</p>
-            <p className={styles.emptyHint}>Thử điều chỉnh bộ lọc hoặc tìm kiếm</p>
-          </div>
-        )}
-      </div>
+          {filteredLeads.length === 0 && (
+            <div className={styles.emptyState}>
+              <Inbox size={48} />
+              <p>Không tìm thấy lead nào</p>
+              <p className={styles.emptyHint}>Thử điều chỉnh bộ lọc hoặc tìm kiếm</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Pagination */}
       {filteredLeads.length > 0 && (
         <div className={styles.pagination}>
           <div className={styles.paginationInfo}>
-            Hiển thị {filteredLeads.length} / {mockLeads.length} leads
+            Hiển thị {startIndex + 1}-{Math.min(endIndex, filteredLeads.length)} / {filteredLeads.length} leads
           </div>
           <div className={styles.paginationButtons}>
-            <button className={styles.pageButton} disabled>Trước</button>
-            <button className={styles.pageButtonActive}>1</button>
-            <button className={styles.pageButton}>2</button>
-            <button className={styles.pageButton}>3</button>
-            <button className={styles.pageButton}>Sau</button>
+            <button className={styles.pageButton} disabled={currentPage === 1} onClick={goToPrevPage}>Trước</button>
+            {getPageNumbers().map((page, index) => (
+              <button
+                key={typeof page === 'number' ? page : `ellipsis-${index}`}
+                className={currentPage === page ? styles.pageButtonActive : styles.pageButton}
+                onClick={() => typeof page === 'number' && goToPage(page)}
+                disabled={typeof page !== 'number'}
+              >
+                {page}
+              </button>
+            ))}
+            <button className={styles.pageButton} disabled={currentPage === totalPages} onClick={goToNextPage}>Sau</button>
           </div>
         </div>
       )}
