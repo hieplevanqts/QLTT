@@ -17,6 +17,7 @@ export default defineConfig({
     alias: {
       // Alias @ to the src directory
       '@': path.resolve(__dirname, './src'),
+      'figma:asset': path.resolve(__dirname, './src/assets')
     },
     dedupe: ['jspdf', 'docx'],
     conditions: ['browser', 'import', 'module', 'default'],

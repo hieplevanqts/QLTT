@@ -73,7 +73,7 @@ import {
   RiskConfigTab,
   ProtectionMeasuresTab,
 } from './AdminTabComponents';
-// TeamsTab is imported from AdminTabComponents below
+import { DepartmentsTab } from './DepartmentsTab';
 import { RolesTabWrapper } from './RolesTabWrapper';
 import { LocalityModal } from '../components/LocalityModal';
 import {
@@ -702,7 +702,7 @@ export default function AdminPage() {
         }}
       />
     );
-    if (activeSubTab === 'teams') return <TeamsTab teams={teams} onOpenModal={handleOpenModal} />;
+    if (activeSubTab === 'teams') return <DepartmentsTab />;
 
     // TAB 2: DANH MỤC & CẤU HÌNH
     if (activeSubTab === 'common-categories') return <CommonCategoriesTab />;

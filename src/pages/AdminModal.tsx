@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Eye, Trash2, UserCheck, Save, Check, X, Search } from 'lucide-react';
 import styles from './AdminPage.module.css';
 import { supabase } from '../lib/supabase';
-import { ALL_FORM_TEMPLATES } from '../data/formCriteriaTemplates';
+import { ALL_FORM_TEMPLATES } from '@/data/formCriteriaTemplates';
 
 interface Province {
   id: string;

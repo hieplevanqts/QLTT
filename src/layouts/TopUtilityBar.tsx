@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Globe, Moon, Sun, Grid3x3, Bell, User, Menu, MessageSquare, LayoutGrid, LayoutList } from 'lucide-react';
+import { Globe, Moon, Sun, Grid3x3, Bell, User, Menu, MessageSquare, LayoutGrid, LayoutList, Monitor } from 'lucide-react';
 import { Button } from '../app/components/ui/button';
 import { GlobalSearch } from '../app/components/header/GlobalSearch';
 import { NotificationPanel } from '../app/components/header/NotificationPanel';
@@ -208,6 +208,16 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
             {unreadNotificationCount > 0 && (
               <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
             )}
+          </Button>
+
+          {/* TV Mode */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/tv')}
+            title="Chế độ TV"
+          >
+            <Monitor className="h-5 w-5" style={{ color: '#005cb6' }} />
           </Button>
 
           {/* User Profile */}

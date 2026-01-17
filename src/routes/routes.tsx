@@ -30,6 +30,7 @@ import InspectionRoundCreate from '../app/pages/inspections/InspectionRoundCreat
 import InspectionRoundStatistics from '../app/pages/inspections/InspectionRoundStatistics';
 import { InspectionTasksList } from '../app/pages/tasks/InspectionTasksList';
 import { TaskBoard } from '../app/pages/tasks/TaskBoard';
+import TvWallboardPage from '../app/pages/TvWallboardPage';
 
 // Lead & Risk pages
 import LeadInbox from '../pages/lead-risk/LeadInbox';
@@ -75,6 +76,12 @@ export const router = createBrowserRouter([
       {
         path: '/auth/login',
         element: <Login />,
+      },
+
+      // TV Wallboard Mode (requires auth but no layout)
+      {
+        path: '/tv',
+        element: <TvWallboardPage />,
       },
 
       // Main app routes (with layout + protected)
