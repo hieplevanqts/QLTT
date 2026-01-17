@@ -125,5 +125,6 @@ export default function TvFiltersBar() {
           <LocationRotationControl compact />
         </div>
       </div>
+    </>
   );
 }
