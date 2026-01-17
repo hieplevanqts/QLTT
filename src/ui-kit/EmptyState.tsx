@@ -1,6 +1,7 @@
 import React, { ReactNode } from 'react';
-import { FileQuestion, TriangleAlert, Ban, Info } from 'lucide-react';
+import { FileQuestion, TriangleAlert, Ban, Info, LucideIcon } from 'lucide-react';
 import { Button } from '../app/components/ui/button';
+import { renderIcon } from '../utils/renderIcon';
 
 interface EmptyStateProps {
   type?: 'empty' | 'error' | 'no-permission' | 'info';
@@ -10,7 +11,7 @@ interface EmptyStateProps {
     label: string;
     onClick: () => void;
   };
-  icon?: ReactNode;
+  icon?: ReactNode | LucideIcon;
 }
 
 const typeIcons = {
@@ -34,11 +35,16 @@ function EmptyState({
   action,
   icon,
 }: EmptyStateProps) {
-  const Icon = icon ? null : typeIcons[type];
+  const DefaultIcon = typeIcons[type];
+  
+  // Safely render the icon using renderIcon utility
+  const renderedIcon = icon 
+    ? renderIcon(icon, { className: `h-16 w-16 ${typeColors[type]} mb-4` })
+    : <DefaultIcon className={`h-16 w-16 ${typeColors[type]} mb-4`} />;
 
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4">
-      {icon || (Icon && <Icon className={`h-16 w-16 ${typeColors[type]} mb-4`} />)}
+      {renderedIcon}
       <h3 className="text-xl font-semibold mb-2">{title}</h3>
       {description && (
         <p className="text-muted-foreground text-center max-w-md mb-6">

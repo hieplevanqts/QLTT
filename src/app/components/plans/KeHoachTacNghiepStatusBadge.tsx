@@ -12,10 +12,10 @@ const planStatusLabels: Record<PlanStatus, string> = {
   draft: 'Nháp',
   pending_approval: 'Chờ duyệt',
   approved: 'Đã duyệt',
-  rejected: 'Đã từ chối',
   active: 'Đang thực hiện',
-  paused: 'Tạm dừng',
   completed: 'Hoàn thành',
+  paused: 'Tạm dừng',
+  rejected: 'Đã từ chối',
   cancelled: 'Đã hủy'
 };
 

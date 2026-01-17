@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, isValidElement } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import {
   Table,
@@ -85,16 +85,36 @@ export function DataTableComponent<T>({
   };
 
   // Helper to render cell content with tooltip for truncated text
-  const renderCellContent = (column: Column<T>, item: T) => {
-    const content = column.render
-      ? column.render(item)
-      : String((item as any)[column.key] ?? '');
+  const renderCellContent = (column: Column<T>, item: T): ReactNode => {
+    try {
+      const content = column.render
+        ? column.render(item)
+        : String((item as any)[column.key] ?? '');
 
-    if (column.truncate && typeof content === 'string') {
-      return <span title={content}>{content}</span>;
+      // Safety check: ensure content is a valid ReactNode
+      if (content === null || content === undefined) {
+        return '';
+      }
+
+      // Check if content is a React element or valid ReactNode
+      if (isValidElement(content) || typeof content === 'string' || typeof content === 'number') {
+        if (column.truncate && typeof content === 'string') {
+          return <span title={content}>{content}</span>;
+        }
+        return content;
+      }
+
+      // If content is an object, try to stringify it safely
+      if (typeof content === 'object') {
+        console.warn('Invalid content type in DataTable column:', column.key, content);
+        return String(content);
+      }
+
+      return String(content);
+    } catch (error) {
+      console.error('Error rendering cell content:', error);
+      return '';
     }
-
-    return content;
   };
 
   return (

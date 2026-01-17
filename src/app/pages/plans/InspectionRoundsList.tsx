@@ -41,7 +41,7 @@ import BulkActionBar, { BulkAction } from '@/patterns/BulkActionBar';
 import FilterActionBar from '@/patterns/FilterActionBar';
 import ActionColumn, { Action } from '@/patterns/ActionColumn';
 import TableFooter from '@/ui-kit/TableFooter';
-import { InspectionRoundStatusBadge } from '@/app/components/inspections/InspectionRoundStatusBadge';
+import { InspectionRoundStatusBadge } from '@/app/components/plans/InspectionRoundStatusBadge';
 import { useSupabaseInspectionRounds, type InspectionRound } from '@/hooks/useSupabaseInspectionRounds';
 import styles from './InspectionRoundsList.module.css';
 import AdvancedFilterModal, { FilterConfig } from '@/ui-kit/AdvancedFilterModal';

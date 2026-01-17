@@ -63,11 +63,14 @@ import { M09ProposalModal } from '../../components/plans/M09ProposalModal';
 import { M08ReportModal } from '../../components/plans/M08ReportModal';
 import AdvancedFilterModal, { FilterConfig } from '../../../ui-kit/AdvancedFilterModal';
 import { DateRange } from '../../../ui-kit/DateRangePicker';
-import { usePlans } from '../../contexts/PlansContext';
+import { useSupabasePlans } from '../../../hooks/useSupabasePlans';
 
 export function PlansList() {
   const navigate = useNavigate();
-  const { plans } = usePlans();
+  const { plans, loading, error, refetch } = useSupabasePlans();
+  
+  // Ensure plans is always an array
+  const safePlans = Array.isArray(plans) ? plans : [];
   
   // State management
   const [searchValue, setSearchValue] = useState('');
@@ -102,21 +105,21 @@ export function PlansList() {
   // Calculate stats
   const stats = useMemo(() => {
     return {
-      total: plans.length,
-      draft: plans.filter(p => p.status === 'draft').length,
-      pending: plans.filter(p => p.status === 'pending_approval').length,
-      active: plans.filter(p => p.status === 'active').length,
-      completed: plans.filter(p => p.status === 'completed').length,
+      total: safePlans.length,
+      draft: safePlans.filter(p => p.status === 'draft').length,
+      pending: safePlans.filter(p => p.status === 'pending_approval').length,
+      active: safePlans.filter(p => p.status === 'active').length,
+      completed: safePlans.filter(p => p.status === 'completed').length,
       // Count by plan type
-      periodic: plans.filter(p => p.planType === 'periodic').length,
-      thematic: plans.filter(p => p.planType === 'thematic').length,
-      urgent: plans.filter(p => p.planType === 'urgent').length,
+      periodic: safePlans.filter(p => p.planType === 'periodic').length,
+      thematic: safePlans.filter(p => p.planType === 'thematic').length,
+      urgent: safePlans.filter(p => p.planType === 'urgent').length,
     };
-  }, [plans]);
+  }, [safePlans]);
 
   // Apply filters
   const filteredData = useMemo(() => {
-    return plans.filter(plan => {
+    return safePlans.filter(plan => {
       const matchesSearch = plan.name.toLowerCase().includes(searchValue.toLowerCase()) ||
                            plan.id.toLowerCase().includes(searchValue.toLowerCase());
       const matchesType = planTypeFilter === 'all' || plan.planType === planTypeFilter;
@@ -148,13 +151,15 @@ export function PlansList() {
       
       return matchesSearch && matchesType && matchesStatus && matchesPriority && matchesActiveFilter && matchesDateRange;
     });
-  }, [searchValue, planTypeFilter, statusFilter, priorityFilter, activeFilter, dateRangeFilter]);
+  }, [safePlans, searchValue, planTypeFilter, statusFilter, priorityFilter, activeFilter, dateRangeFilter]);
 
   // Pagination
   const totalPages = Math.ceil(filteredData.length / pageSize);
   const paginatedData = useMemo(() => {
+    // Ensure filteredData is an array and filter out any invalid items
+    const validData = Array.isArray(filteredData) ? filteredData.filter(item => item && typeof item === 'object') : [];
     const startIndex = (currentPage - 1) * pageSize;
-    return filteredData.slice(startIndex, startIndex + pageSize);
+    return validData.slice(startIndex, startIndex + pageSize);
   }, [filteredData, currentPage, pageSize]);
 
   // Get actions for each plan
@@ -576,6 +581,49 @@ export function PlansList() {
     },
   ];
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div className={styles.pageContainer}>
+        <PageHeader
+          breadcrumbs={[
+            { label: 'Trang chủ', href: '/' },
+            { label: 'Kế hoạch tác nghiệp' }
+          ]}
+          title="Kế hoạch tác nghiệp"
+        />
+        <div style={{ padding: '48px', textAlign: 'center' }}>
+          <RefreshCw className="animate-spin" style={{ margin: '0 auto 16px' }} size={32} />
+          <p>Đang tải dữ liệu...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className={styles.pageContainer}>
+        <PageHeader
+          breadcrumbs={[
+            { label: 'Trang chủ', href: '/' },
+            { label: 'Kế hoạch tác nghiệp' }
+          ]}
+          title="Kế hoạch tác nghiệp"
+        />
+        <EmptyState
+          type="error"
+          title="Lỗi tải dữ liệu"
+          description={error}
+          action={{
+            label: 'Thử lại',
+            onClick: refetch,
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={styles.pageContainer}>
       <PageHeader
@@ -723,7 +771,7 @@ export function PlansList() {
         <BulkActionBar
           selectedCount={selectedRows.size}
           actions={bulkActions}
-          onClearSelection={() => setSelectedRows(new Set())}
+          onClear={() => setSelectedRows(new Set())}
         />
       )}
 

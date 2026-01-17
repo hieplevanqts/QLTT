@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Send, CheckCircle2, XCircle, PlayCircle, AlertTriangle, Trash2 } from 'lucide-react';
+import { X, Send, CheckCircle2, XCircle, PlayCircle, AlertTriangle, Trash2, PauseCircle } from 'lucide-react';
 import styles from './InspectionRoundActionModals.module.css';
 import type { InspectionRound } from '../../data/inspection-rounds-mock-data';
 
@@ -498,6 +498,180 @@ export function DeleteRoundModal({ isOpen, onClose, round, onConfirm }: DeleteRo
         >
           <Trash2 size={18} />
           Xóa vĩnh viễn
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+// 7. Tạm dừng đợt kiểm tra Modal
+interface PauseRoundModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  round: InspectionRound | null;
+  onConfirm: () => void;
+}
+
+export function PauseRoundModal({ isOpen, onClose, round, onConfirm }: PauseRoundModalProps) {
+  if (!round) return null;
+
+  const handleSubmit = () => {
+    onConfirm();
+    onClose();
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <div className={styles.modalHeader}>
+        <div className={styles.modalIconWrapper} style={{ background: '#F59E0B' }}>
+          <PauseCircle size={24} color="white" />
+        </div>
+        <div className={styles.modalHeaderContent}>
+          <h3 className={styles.modalTitle}>Tạm dừng đợt kiểm tra</h3>
+          <p className={styles.modalSubtitle}>Đợt kiểm tra: {round.name}</p>
+        </div>
+        <button className={styles.closeButton} onClick={onClose}>
+          <X size={20} />
+        </button>
+      </div>
+
+      <div className={styles.modalBody}>
+        <div className={styles.warningBox} style={{ background: '#F59E0B15', borderColor: '#F59E0B' }}>
+          <AlertTriangle size={20} color="#F59E0B" />
+          <p><strong>Cảnh báo:</strong> Đợt kiểm tra sẽ chuyển sang trạng thái "Tạm dừng"</p>
+        </div>
+
+        <p className={styles.modalDescription}>
+          Bạn có chắc chắn muốn tạm dừng đợt kiểm tra này không? Đợt kiểm tra có thể được tiếp tục sau này.
+        </p>
+      </div>
+
+      <div className={styles.modalFooter}>
+        <button className={styles.cancelButton} onClick={onClose}>
+          Hủy
+        </button>
+        <button 
+          className={styles.warningButton} 
+          onClick={handleSubmit}
+        >
+          <PauseCircle size={18} />
+          Tạm dừng
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+// 8. Tiếp tục đợt kiểm tra Modal
+interface ResumeRoundModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  round: InspectionRound | null;
+  onConfirm: () => void;
+}
+
+export function ResumeRoundModal({ isOpen, onClose, round, onConfirm }: ResumeRoundModalProps) {
+  if (!round) return null;
+
+  const handleSubmit = () => {
+    onConfirm();
+    onClose();
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <div className={styles.modalHeader}>
+        <div className={styles.modalIconWrapper} style={{ background: '#10B981' }}>
+          <PlayCircle size={24} color="white" />
+        </div>
+        <div className={styles.modalHeaderContent}>
+          <h3 className={styles.modalTitle}>Tiếp tục đợt kiểm tra</h3>
+          <p className={styles.modalSubtitle}>Đợt kiểm tra: {round.name}</p>
+        </div>
+        <button className={styles.closeButton} onClick={onClose}>
+          <X size={20} />
+        </button>
+      </div>
+
+      <div className={styles.modalBody}>
+        <div className={styles.infoBox} style={{ background: '#10B98115', borderColor: '#10B981' }}>
+          <PlayCircle size={20} color="#10B981" />
+          <p>Đợt kiểm tra sẽ chuyển sang trạng thái <strong>Đang kiểm tra</strong></p>
+        </div>
+
+        <p className={styles.modalDescription}>
+          Bạn có chắc chắn muốn tiếp tục đợt kiểm tra này không? Các hoạt động kiểm tra sẽ được triển khai trở lại.
+        </p>
+      </div>
+
+      <div className={styles.modalFooter}>
+        <button className={styles.cancelButton} onClick={onClose}>
+          Hủy
+        </button>
+        <button 
+          className={styles.successButton} 
+          onClick={handleSubmit}
+        >
+          <PlayCircle size={18} />
+          Tiếp tục
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+// 9. Triển khai đợt kiểm tra Modal (Approved -> Active)
+interface DeployRoundModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  round: InspectionRound | null;
+  onConfirm: () => void;
+}
+
+export function DeployRoundModal({ isOpen, onClose, round, onConfirm }: DeployRoundModalProps) {
+  if (!round) return null;
+
+  const handleSubmit = () => {
+    onConfirm();
+    onClose();
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <div className={styles.modalHeader}>
+        <div className={styles.modalIconWrapper} style={{ background: '#0EA5E9' }}>
+          <PlayCircle size={24} color="white" />
+        </div>
+        <div className={styles.modalHeaderContent}>
+          <h3 className={styles.modalTitle}>Triển khai đợt kiểm tra</h3>
+          <p className={styles.modalSubtitle}>Đợt kiểm tra: {round.name}</p>
+        </div>
+        <button className={styles.closeButton} onClick={onClose}>
+          <X size={20} />
+        </button>
+      </div>
+
+      <div className={styles.modalBody}>
+        <div className={styles.infoBox} style={{ background: '#0EA5E915', borderColor: '#0EA5E9' }}>
+          <PlayCircle size={20} color="#0EA5E9" />
+          <p>Đợt kiểm tra sẽ chuyển sang trạng thái <strong>Đang triển khai</strong></p>
+        </div>
+
+        <p className={styles.modalDescription}>
+          Bạn có chắc chắn muốn triển khai đợt kiểm tra này không? Đợt kiểm tra sẽ bắt đầu được thực hiện theo kế hoạch.
+        </p>
+      </div>
+
+      <div className={styles.modalFooter}>
+        <button className={styles.cancelButton} onClick={onClose}>
+          Hủy
+        </button>
+        <button 
+          className={styles.primaryButton} 
+          onClick={handleSubmit}
+        >
+          <PlayCircle size={18} />
+          Triển khai
         </button>
       </div>
     </Modal>

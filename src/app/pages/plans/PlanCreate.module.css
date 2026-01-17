@@ -224,22 +224,76 @@
   line-height: 1.5;
 }
 
-/* M03 Selected Decision */
-.helpText {
+/* Form Actions */
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-3);
+  padding-top: var(--spacing-4);
+  margin-top: var(--spacing-2);
+}
+
+/* M03 Decision Selection Styles */
+.selectButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-4);
+  background: linear-gradient(135deg, #f6f8fb 0%, #ffffff 100%);
+  border: 2px dashed var(--primary);
+  border-radius: var(--radius-lg);
+  color: var(--primary);
   font-family: 'Inter', sans-serif;
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-normal);
-  color: var(--muted-foreground);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.selectButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 92, 182, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.selectButton:hover::before {
+  left: 100%;
+}
+
+.selectButton:hover {
+  background: linear-gradient(135deg, #e8f2ff 0%, #f0f7ff 100%);
+  border-color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 92, 182, 0.15);
+}
+
+.selectButton:active {
+  transform: translateY(0);
 }
 
 .selectedDecision {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-3);
-  border: var(--border-width) solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--muted);
+  padding: var(--spacing-4);
+  background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-lg);
+  transition: all 0.2s ease;
+}
+
+.selectedDecision:hover {
+  box-shadow: 0 4px 16px rgba(0, 92, 182, 0.12);
+  transform: translateY(-1px);
 }
 
 .selectedDecisionContent {
@@ -250,12 +304,17 @@
 }
 
 .selectedDecisionIcon {
-  color: var(--primary);
   flex-shrink: 0;
+  color: var(--primary);
+  background: white;
+  padding: var(--spacing-2);
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 8px rgba(0, 92, 182, 0.1);
 }
 
 .selectedDecisionInfo {
   flex: 1;
+  min-width: 0;
 }
 
 .selectedDecisionCode {
@@ -263,66 +322,62 @@
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   color: var(--primary);
+  margin-bottom: var(--spacing-1);
 }
 
 .selectedDecisionTitle {
   font-family: 'Inter', sans-serif;
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   color: var(--muted-foreground);
-  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .removeButton {
+  flex-shrink: 0;
+  background: white;
+  border: 2px solid var(--border);
+  color: var(--muted-foreground);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  font-size: 20px;
+  font-weight: 300;
+  cursor: pointer;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-sm);
-  color: var(--muted-foreground);
-  cursor: pointer;
-  font-size: 20px;
   line-height: 1;
-  transition: all 0.15s ease;
-  flex-shrink: 0;
 }
 
 .removeButton:hover {
   background: var(--destructive);
+  border-color: var(--destructive);
   color: white;
+  transform: rotate(90deg);
 }
 
-.selectButton {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-2-5) var(--spacing-4);
-  background: var(--background);
-  border: var(--border-width) solid var(--border);
-  border-radius: var(--radius-md);
+.helpText {
   font-family: 'Inter', sans-serif;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--foreground);
-  cursor: pointer;
-  transition: all 0.15s ease;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-normal);
+  color: var(--muted-foreground);
 }
 
-.selectButton:hover {
-  background: var(--accent);
-  border-color: var(--primary);
-  color: var(--primary);
+.helpTextSmall {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--font-size-xs);
+  color: var(--muted-foreground);
+  margin-top: var(--spacing-1);
+  line-height: 1.4;
 }
 
-/* Form Actions */
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--spacing-3);
-  padding-top: var(--spacing-4);
-  margin-top: var(--spacing-2);
+.inputReadonly {
+  background: var(--muted);
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .cancelButton,
@@ -353,15 +408,33 @@
   background: var(--primary);
   color: white;
   border-color: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
 }
 
 .submitButton:hover {
-  background: var(--primary-dark, #004a94);
+  background: color-mix(in srgb, var(--primary) 90%, black);
+  border-color: color-mix(in srgb, var(--primary) 90%, black);
 }
 
 .submitButton:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive */

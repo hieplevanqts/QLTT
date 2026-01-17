@@ -1,0 +1,195 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs, 6px);
+  padding: var(--spacing-xs, 6px) var(--spacing-sm, 12px);
+  border-radius: var(--radius-full, 9999px);
+  font-family: var(--font-family, 'Inter', system-ui, -apple-system, sans-serif);
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.badge.sm {
+  padding: var(--spacing-xxs, 4px) var(--spacing-xs, 8px);
+  font-size: var(--font-size-xs, 12px);
+  line-height: var(--line-height-xs, 16px);
+}
+
+.badge.md {
+  padding: var(--spacing-xs, 6px) var(--spacing-sm, 12px);
+  font-size: var(--font-size-sm, 14px);
+  line-height: var(--line-height-sm, 20px);
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full, 9999px);
+  flex-shrink: 0;
+}
+
+.label {
+  white-space: nowrap;
+}
+
+/* Draft - Nháp */
+.badge.draft {
+  background-color: var(--color-gray-100, #f3f4f6);
+  color: var(--color-gray-700, #374151);
+}
+
+.badge.draft .dot {
+  background-color: var(--color-gray-500, #6b7280);
+}
+
+/* Preparing - Chuẩn bị */
+.badge.preparing {
+  background-color: var(--color-blue-50, #eff6ff);
+  color: var(--color-blue-700, #1d4ed8);
+}
+
+.badge.preparing .dot {
+  background-color: var(--color-blue-500, #3b82f6);
+}
+
+/* In Progress - Đang kiểm tra */
+.badge.in-progress {
+  background-color: var(--color-primary-50, #e6f2ff);
+  color: var(--color-primary-700, #004494);
+}
+
+.badge.in-progress .dot {
+  background-color: var(--color-primary-500, #005cb6);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Reporting - Hoàn thành báo cáo */
+.badge.reporting {
+  background-color: var(--color-yellow-50, #fefce8);
+  color: var(--color-yellow-700, #a16207);
+}
+
+.badge.reporting .dot {
+  background-color: var(--color-yellow-500, #eab308);
+}
+
+/* Completed - Hoàn thành */
+.badge.completed {
+  background-color: var(--color-green-50, #f0fdf4);
+  color: var(--color-green-700, #15803d);
+}
+
+.badge.completed .dot {
+  background-color: var(--color-green-500, #22c55e);
+}
+
+/* Cancelled - Đã hủy */
+.badge.cancelled {
+  background-color: var(--color-red-50, #fef2f2);
+  color: var(--color-red-700, #b91c1c);
+}
+
+.badge.cancelled .dot {
+  background-color: var(--color-red-500, #ef4444);
+}
+
+/* Pending Approval - Chờ duyệt */
+.badge.pending-approval {
+  background-color: var(--color-yellow-50, #fefce8);
+  color: var(--color-yellow-700, #a16207);
+}
+
+.badge.pending-approval .dot {
+  background-color: var(--color-yellow-500, #eab308);
+}
+
+/* Approved - Đã duyệt */
+.badge.approved {
+  background-color: var(--color-green-50, #f0fdf4);
+  color: var(--color-green-700, #15803d);
+}
+
+.badge.approved .dot {
+  background-color: var(--color-green-500, #22c55e);
+}
+
+/* Rejected - Từ chối */
+.badge.rejected {
+  background-color: var(--color-red-50, #fef2f2);
+  color: var(--color-red-700, #b91c1c);
+}
+
+.badge.rejected .dot {
+  background-color: var(--color-red-500, #ef4444);
+}
+
+/* Paused - Tạm dừng */
+.badge.paused {
+  background-color: var(--color-orange-50, #fff7ed);
+  color: var(--color-orange-700, #c2410c);
+}
+
+.badge.paused .dot {
+  background-color: var(--color-orange-500, #f97316);
+}
+
+/* Active - Đang triển khai */
+.badge.active {
+  background-color: var(--color-primary-50, #e6f2ff);
+  color: var(--color-primary-700, #004494);
+}
+
+.badge.active .dot {
+  background-color: var(--color-primary-500, #005cb6);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Inspection Types */
+/* Routine - Định kỳ */
+.badge.routine {
+  background-color: var(--color-blue-50, #eff6ff);
+  color: var(--color-blue-700, #1d4ed8);
+}
+
+.badge.routine .dot {
+  background-color: var(--color-blue-500, #3b82f6);
+}
+
+/* Targeted - Chuyên đề */
+.badge.targeted {
+  background-color: var(--color-purple-50, #faf5ff);
+  color: var(--color-purple-700, #7e22ce);
+}
+
+.badge.targeted .dot {
+  background-color: var(--color-purple-500, #a855f7);
+}
+
+/* Sudden - Đột xuất */
+.badge.sudden {
+  background-color: var(--color-red-50, #fef2f2);
+  color: var(--color-red-700, #b91c1c);
+}
+
+.badge.sudden .dot {
+  background-color: var(--color-red-500, #ef4444);
+}
+
+/* Followup - Tái kiểm tra */
+.badge.followup {
+  background-color: var(--color-teal-50, #f0fdfa);
+  color: var(--color-teal-700, #0f766e);
+}
+
+.badge.followup .dot {
+  background-color: var(--color-teal-500, #14b8a6);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}

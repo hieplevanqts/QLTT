@@ -40,16 +40,16 @@
 }
 
 .approved {
-  background: rgba(0, 102, 204, 0.1);
-  color: rgba(0, 102, 204, 1);
-}
-
-.rejected {
-  background: rgba(217, 45, 32, 0.1);
-  color: rgba(217, 45, 32, 1);
+  background: rgba(0, 92, 182, 0.1);
+  color: rgba(0, 92, 182, 1);
 }
 
 .active {
+  background: rgba(15, 202, 122, 0.1);
+  color: rgba(3, 152, 85, 1);
+}
+
+.completed {
   background: rgba(15, 202, 122, 0.1);
   color: rgba(3, 152, 85, 1);
 }
@@ -59,14 +59,14 @@
   color: rgba(194, 120, 3, 1);
 }
 
-.completed {
-  background: rgba(15, 202, 122, 0.1);
-  color: rgba(3, 152, 85, 1);
+.rejected {
+  background: rgba(217, 45, 32, 0.1);
+  color: rgba(217, 45, 32, 1);
 }
 
 .cancelled {
-  background: rgba(217, 45, 32, 0.1);
-  color: rgba(217, 45, 32, 1);
+  background: rgba(102, 112, 133, 0.15);
+  color: rgba(71, 85, 105, 1);
 }
 
 /* Task Status Variants */
