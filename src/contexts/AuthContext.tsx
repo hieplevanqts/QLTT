@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
+import { projectId, publicAnonKey } from '../../utils/supabase/info';
 
 export type UserLevel = 'cuc' | 'chicuc' | 'doi';
 export type UserRole = 'lanhdao' | 'kehoach' | 'doitruong' | 'thanhtra' | 'canbohosocanbo' | 'phantich';
@@ -160,10 +161,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Clear Supabase session
       await supabase.auth.signOut();
       
-      // Clear local storage
-      localStorage.removeItem('mappa-user');
-      localStorage.removeItem('mappa-session-expiry');
-      localStorage.removeItem('mappa-user-pending');
+      // Clear ALL localStorage items
+      localStorage.clear();
+      
+      // Clear ALL sessionStorage items
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.clear();
+      }
+      
+      // Clear all cookies
+      if (typeof document !== 'undefined' && document.cookie) {
+        const cookies = document.cookie.split(';');
+        cookies.forEach(cookie => {
+          const eqPos = cookie.indexOf('=');
+          const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.${window.location.hostname}`;
+        });
+      }
       
       // Update state
       setUser(null);
@@ -171,21 +187,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Redirect to login page - use full page reload to clear all state
       // Use window.location.href for complete reset
-      if (!window.location.href.includes('#/auth/login')) {
-        window.location.href = '#/auth/login';
+      if (!window.location.pathname.includes('/auth/login')) {
+        window.location.href = '/auth/login';
       }
     } catch (error) {
       console.error('Error during auto-logout:', error);
-      // Even if there's an error, clear local state and redirect
-      localStorage.removeItem('mappa-user');
-      localStorage.removeItem('mappa-session-expiry');
-      localStorage.removeItem('mappa-user-pending');
+      // Even if there's an error, clear everything
+      try {
+        localStorage.clear();
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.clear();
+        }
+        if (typeof document !== 'undefined' && document.cookie) {
+          const cookies = document.cookie.split(';');
+          cookies.forEach(cookie => {
+            const eqPos = cookie.indexOf('=');
+            const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.${window.location.hostname}`;
+          });
+        }
+      } catch (clearError) {
+        console.error('Error clearing storage:', clearError);
+      }
       setUser(null);
       setIsAuthenticated(false);
       // Redirect to login page - use full page reload to clear all state
       // Use window.location.href for complete reset
-      if (!window.location.href.includes('#/auth/login')) {
-        window.location.href = '#/auth/login';
+      if (!window.location.pathname.includes('/auth/login')) {
+        window.location.href = '/auth/login';
       }
     } finally {
       logoutInProgressRef.current = false;
@@ -196,13 +227,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const restoreSession = async () => {
       try {
+        // Check if we're on login page - don't trigger logout redirect if already there
+        const isOnLoginPage = window.location.pathname === '/auth/login';
+        
         // Get current session from Supabase
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('Error restoring session:', error);
           // If error getting session, user is not authenticated
-          await performAutoLogout();
+          // Only call performAutoLogout if not already on login page to avoid double reload
+          if (!isOnLoginPage) {
+            await performAutoLogout();
+          } else {
+            setUser(null);
+            setIsAuthenticated(false);
+          }
           setIsLoading(false);
           return;
         }
@@ -216,7 +256,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (now >= expiresAt) {
               // Session expired, auto-logout
               console.log('⚠️ Session expired, auto-logout...');
-              await performAutoLogout();
+              // Only call performAutoLogout if not already on login page to avoid double reload
+              if (!isOnLoginPage) {
+                await performAutoLogout();
+              } else {
+                setUser(null);
+                setIsAuthenticated(false);
+              }
               setIsLoading(false);
               return;
             }
@@ -249,12 +295,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         } else {
           // No session, user is not authenticated
+          // Don't trigger logout redirect if already on login page
           setUser(null);
           setIsAuthenticated(false);
         }
       } catch (error) {
         console.error('Error in restoreSession:', error);
-        await performAutoLogout();
+        // Only call performAutoLogout if not already on login page
+        const isOnLoginPage = window.location.pathname === '/auth/login';
+        if (!isOnLoginPage) {
+          await performAutoLogout();
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -457,18 +511,99 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
+    // Prevent multiple logout calls
+    if (logoutInProgressRef.current) {
+      console.log('⚠️ Logout already in progress, skipping...');
+      return;
+    }
+    logoutInProgressRef.current = true;
+
     try {
-      // Sign out from Supabase
+      console.log('🔄 Logging out...');
+      
+      // Get current session to get access token
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // Call Supabase logout API endpoint explicitly: /auth/v1/logout
+      if (session?.access_token) {
+        try {
+          const supabaseUrl = `https://${projectId}.supabase.co`;
+          const logoutUrl = `${supabaseUrl}/auth/v1/logout`;
+          
+          await fetch(logoutUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+              'apikey': publicAnonKey,
+            },
+            body: JSON.stringify({}),
+          });
+          
+          console.log('✅ Supabase logout API (/auth/v1/logout) called successfully');
+        } catch (apiError) {
+          console.warn('⚠️ Supabase logout API call failed (continuing with signOut):', apiError);
+          // Continue with signOut even if API call fails
+        }
+      }
+      
+      // Sign out from Supabase (this clears Supabase session and tokens)
       await supabase.auth.signOut();
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      // Clear local storage
-      localStorage.removeItem('mappa-user');
-      localStorage.removeItem('mappa-session-expiry');
-      localStorage.removeItem('mappa-user-pending');
+      
+      // Clear ALL localStorage items
+      localStorage.clear();
+      
+      // Clear ALL sessionStorage items
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.clear();
+      }
+      
+      // Clear all cookies
+      if (typeof document !== 'undefined' && document.cookie) {
+        // Get all cookies
+        const cookies = document.cookie.split(';');
+        // Clear each cookie by setting it to expire in the past
+        cookies.forEach(cookie => {
+          const eqPos = cookie.indexOf('=');
+          const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+          // Clear cookie for current domain
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.${window.location.hostname}`;
+        });
+      }
+      
+      // Reset state
       setUser(null);
       setIsAuthenticated(false);
+      
+      console.log('✅ Logout completed - all storage cleared');
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+      // Even if there's an error, clear everything
+      try {
+        localStorage.clear();
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.clear();
+        }
+        // Clear cookies on error too
+        if (typeof document !== 'undefined' && document.cookie) {
+          const cookies = document.cookie.split(';');
+          cookies.forEach(cookie => {
+            const eqPos = cookie.indexOf('=');
+            const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.${window.location.hostname}`;
+          });
+        }
+      } catch (clearError) {
+        console.error('Error clearing storage:', clearError);
+      }
+      setUser(null);
+      setIsAuthenticated(false);
+    } finally {
+      logoutInProgressRef.current = false;
     }
   };
 

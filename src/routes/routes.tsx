@@ -1,4 +1,4 @@
-import { Navigate, createHashRouter } from 'react-router-dom';
+import { Navigate, createBrowserRouter } from 'react-router-dom';
 import RootLayout from '../layouts/RootLayout';
 import MainLayout from '../layouts/MainLayout';
 import OverviewPage from '../pages/OverviewPage';
@@ -67,7 +67,7 @@ function ProtectedLayout() {
   );
 }
 
-export const router = createHashRouter([
+export const router = createBrowserRouter([
   {
     element: <RootLayout />,
     children: [

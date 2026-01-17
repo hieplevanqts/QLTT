@@ -15,7 +15,7 @@ import {
 } from '../app/components/ui/dropdown-menu';
 import { useLayout } from '../contexts/LayoutContext';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import mappaLogo from '../assets/79505e63e97894ec2d06837c57cf53a19680f611.png';
 
 interface TopUtilityBarProps {
@@ -59,11 +59,56 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
     // TODO: Implement theme switching
   };
 
-  const handleLogout = () => {
-    if (authLogout) {
-      authLogout();
+  const handleLogout = async () => {
+    try {
+      // Call logout from AuthContext to clear Supabase session and all storage
+      if (authLogout) {
+        await authLogout();
+      }
+      
+      // Double-check: clear all storage again to be absolutely sure
+      localStorage.clear();
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.clear();
+      }
+      
+      // Clear all cookies
+      if (typeof document !== 'undefined' && document.cookie) {
+        const cookies = document.cookie.split(';');
+        cookies.forEach(cookie => {
+          const eqPos = cookie.indexOf('=');
+          const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.${window.location.hostname}`;
+        });
+      }
+      
+      // Redirect to login page - window.location.href already causes a reload, so no need for extra reload
+      window.location.href = '/auth/login';
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even on error, clear everything and redirect
+      try {
+        localStorage.clear();
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.clear();
+        }
+        if (typeof document !== 'undefined' && document.cookie) {
+          const cookies = document.cookie.split(';');
+          cookies.forEach(cookie => {
+            const eqPos = cookie.indexOf('=');
+            const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.${window.location.hostname}`;
+          });
+        }
+      } catch (clearError) {
+        console.error('Error clearing storage:', clearError);
+      }
+      window.location.href = '/auth/login';
     }
-    navigate('/auth/login');
   };
 
   return (
@@ -192,14 +237,14 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <a href="/account/profile" style={{ cursor: 'pointer' }}>
+                <Link to="/account/profile" style={{ cursor: 'pointer' }}>
                   Hồ sơ cá nhân
-                </a>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <a href="/account/change-password" style={{ cursor: 'pointer' }}>
+                <Link to="/account/change-password" style={{ cursor: 'pointer' }}>
                   Đổi mật khẩu
-                </a>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="text-destructive">

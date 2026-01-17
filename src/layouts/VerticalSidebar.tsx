@@ -124,41 +124,41 @@ export default function VerticalSidebar({
           <DropdownMenuContent side="right" align="start" className="w-56">
             {userPermissions.canCreateFacility && (
               <DropdownMenuItem asChild>
-                <a href="/stores/create" style={{ cursor: 'pointer' }}>
+                <Link to="/stores/create" style={{ cursor: 'pointer' }}>
                   Thêm cơ sở
-                </a>
+                </Link>
               </DropdownMenuItem>
             )}
             
             {userPermissions.canImportFacilityData && (
               <DropdownMenuItem asChild>
-                <a href="/stores/import" style={{ cursor: 'pointer' }}>
+                <Link to="/stores/import" style={{ cursor: 'pointer' }}>
                   Nhập dữ liệu cơ sở
-                </a>
+                </Link>
               </DropdownMenuItem>
             )}
             
             {userPermissions.canCreateRisk && (
               <DropdownMenuItem asChild>
-                <a href="/leads/create-risk" style={{ cursor: 'pointer' }}>
+                <Link to="/leads/create-risk" style={{ cursor: 'pointer' }}>
                   Tạo rủi ro
-                </a>
+                </Link>
               </DropdownMenuItem>
             )}
             
             {userPermissions.canCreateFeedback && (
               <DropdownMenuItem asChild>
-                <a href="/leads/create-feedback" style={{ cursor: 'pointer' }}>
+                <Link to="/leads/create-feedback" style={{ cursor: 'pointer' }}>
                   Tạo phản ánh
-                </a>
+                </Link>
               </DropdownMenuItem>
             )}
             
             {userPermissions.canCreateInspectionPlan && (
               <DropdownMenuItem asChild>
-                <a href="/plans/create-new" style={{ cursor: 'pointer' }}>
+                <Link to="/plans/create-new" style={{ cursor: 'pointer' }}>
                   Tạo kế hoạch kiểm tra
-                </a>
+                </Link>
               </DropdownMenuItem>
             )}
             
