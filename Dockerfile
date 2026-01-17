@@ -30,7 +30,10 @@ FROM nginx:alpine
 # Sửa đường dẫn dưới đây cho đúng:
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy nginx config (nếu có)
+# Remove default nginx config if exists to avoid conflicts
+RUN rm -f /etc/nginx/conf.d/default.conf
+
+# Copy nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80

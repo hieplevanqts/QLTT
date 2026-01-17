@@ -36,12 +36,19 @@ export default defineConfig({
     force: true, // Force re-optimization
   },
   build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+    minify: 'terser',
     commonjsOptions: {
       include: [/jspdf/, /docx/, /node_modules/],
       transformMixedEsModules: true,
     },
     rollupOptions: {
       external: [],
+      output: {
+        manualChunks: undefined,
+      },
     },
   },
   server: {
