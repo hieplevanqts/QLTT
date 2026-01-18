@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Bell, CheckCheck, AlertCircle, FileCheck, UserPlus, TrendingUp, Clock, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import styles from './NotificationPanel.module.css';
 
 interface Notification {
@@ -88,7 +87,6 @@ interface NotificationPanelProps {
 }
 
 export function NotificationPanel({ onClose }: NotificationPanelProps) {
-  const navigate = useNavigate();
   const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
 
@@ -172,15 +170,7 @@ export function NotificationPanel({ onClose }: NotificationPanelProps) {
       </div>
 
       <div className={styles.panelFooter}>
-        <button 
-          className={styles.viewAllButton} 
-          onClick={() => {
-            onClose();
-            navigate('/notifications');
-          }}
-        >
-          Xem tất cả thông báo
-        </button>
+        <button className={styles.viewAllButton}>Xem tất cả thông báo</button>
       </div>
     </div>
   );

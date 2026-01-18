@@ -88,12 +88,41 @@
   left: 0;
   right: 0;
   background: var(--card);
-  border: 1.5px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
   max-height: 500px;
   overflow-y: auto;
   z-index: 1000;
+}
+
+/* Scrollbar styling for results panel */
+.searchDropdown::-webkit-scrollbar {
+  width: var(--scrollbar-width);
+}
+
+.searchDropdown::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: var(--scrollbar-border-radius);
+}
+
+.searchDropdown::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: var(--scrollbar-border-radius);
+  transition: background 0.3s ease;
+}
+
+.searchDropdown:hover::-webkit-scrollbar-thumb,
+.searchDropdown:focus-within::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-color);
+}
+
+.searchDropdown::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-color-hover);
+}
+
+.searchDropdown::-webkit-scrollbar-thumb:active {
+  background: var(--scrollbar-color-active);
 }
 
 .dropdownHeader {
@@ -284,24 +313,6 @@
 
 .viewAllButton:hover {
   background: var(--muted);
-}
-
-/* Scrollbar */
-.searchDropdown::-webkit-scrollbar {
-  width: 8px;
-}
-
-.searchDropdown::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.searchDropdown::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
-}
-
-.searchDropdown::-webkit-scrollbar-thumb:hover {
-  background: var(--muted-foreground);
 }
 
 /* Empty State */
