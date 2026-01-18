@@ -58,7 +58,8 @@ export function SearchInput({
         value={value}
         onChange={handleChange}
         onKeyPress={handleKeyPress}
-        className="pl-10 pr-10 w-[666px]"
+        className="pl-10 pr-10"
+        style={{ width: '100%' }}
       />
       {value && (
         <Button

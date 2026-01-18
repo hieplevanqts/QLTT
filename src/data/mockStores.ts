@@ -143,7 +143,7 @@ const storeNames = [
   'Quán ăn Bình Dân',
 ];
 
-const statuses: FacilityStatus[] = ['active', 'pending', 'underInspection', 'suspended', 'rejected', 'closed'];
+const statuses: FacilityStatus[] = ['active', 'pending', 'suspended', 'rejected', 'closed'];
 const riskLevels: ('low' | 'medium' | 'high' | 'none')[] = ['low', 'medium', 'high', 'none'];
 
 function generateStoreName(index: number): string {

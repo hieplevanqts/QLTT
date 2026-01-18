@@ -169,8 +169,10 @@ export default function StoreDetailPage() {
     
     // Check if this is ID Card (CCCD/CMND) - open special dialog
     if (docType === 'cccd') {
+      console.log('Opening ID Card Upload Dialog for CCCD');
       setIdCardDialogOpen(true);
     } else {
+      console.log('Opening regular Document Upload Dialog for:', docType);
       setUploadDialogOpen(true);
     }
   };
@@ -181,8 +183,10 @@ export default function StoreDetailPage() {
     
     // Check if this is ID Card (CCCD/CMND) - open special dialog
     if (doc.type === 'cccd') {
+      console.log('Opening ID Card Upload Dialog for editing CCCD', doc);
       setIdCardDialogOpen(true);
     } else {
+      console.log('Opening regular Document Upload Dialog for editing:', doc.type);
       setUploadDialogOpen(true);
     }
   };
@@ -465,10 +469,12 @@ export default function StoreDetailPage() {
 
   const handleOpenMap = () => {
     // Deep link to map view
+    console.log('Opening store on map:', store.id);
   };
 
   const handleRelatedTasks = () => {
     // Link to related leads/tasks
+    console.log('Opening related tasks for store:', store.id);
     // In production: navigate to tasks/leads view
   };
 

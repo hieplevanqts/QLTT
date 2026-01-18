@@ -107,7 +107,7 @@ export function AdvancedFilterPopup({
 
   // Prepare business type options for SearchableSelect
   const businessTypeOptions: SearchableSelectOption[] = [
-    { value: 'all', label: 'Tất cả loại kinh doanh' },
+    { value: 'all', label: 'Chọn loại kinh doanh' },
     ...BUSINESS_TYPES.map((type) => ({
       value: type.value,
       label: type.label,

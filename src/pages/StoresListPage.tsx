@@ -160,7 +160,18 @@ export default function StoresListPage() {
     try {
       const savedStores = localStorage.getItem(STORES_STORAGE_KEY);
       if (savedStores) {
-        return JSON.parse(savedStores);
+        const parsedStores = JSON.parse(savedStores);
+        
+        // ✅ Auto-migrate legacy 'underInspection' status to 'pending'
+        const migratedStores = parsedStores.map((store: any) => {
+          if (store.status === 'underInspection') {
+            console.warn(`⚠️ Migrating store ${store.id} from 'underInspection' to 'pending'`);
+            return { ...store, status: 'pending' as FacilityStatus };
+          }
+          return store;
+        });
+        
+        return migratedStores;
       }
     } catch (error) {
       console.error('Error loading stores from localStorage:', error);
@@ -242,6 +253,7 @@ export default function StoresListPage() {
       submittedBy: 'Current User', // In production, get from auth context
     };
 
+    console.log('📝 Approval Request Created:', approvalRequest);
 
     // In production:
     // - Save to approval queue
@@ -381,18 +393,18 @@ export default function StoresListPage() {
       prev.map(s => (s.id === approveDialog.storeId ? { ...s, status: 'active' as FacilityStatus } : s))
     );
 
-    // Audit log (in production, send to backend)
-    // {
-    //   storeId: approveDialog.storeId,
-    //   storeName: approveDialog.storeName,
-    //   action: 'approve',
-    //   oldStatus: store.status,
-    //   newStatus: 'active',
-    //   reason,
-    //   verifyText,
-    //   timestamp: new Date().toISOString(),
-    //   performedBy: 'Current User',
-    // }
+    // Audit log
+    console.log('✅ Approval Audit Log:', {
+      storeId: approveDialog.storeId,
+      storeName: approveDialog.storeName,
+      action: 'approve',
+      oldStatus: store.status,
+      newStatus: 'active',
+      reason,
+      verifyText,
+      timestamp: new Date().toISOString(),
+      performedBy: 'Current User',
+    });
 
     toast.success(`Đã phê duyệt cửa hàng "${approveDialog.storeName}"`, {
       description: 'Cửa hàng đã chuyển sang trạng thái "Đang hoạt động"',
@@ -411,18 +423,18 @@ export default function StoresListPage() {
       prev.map(s => (s.id === rejectDialog.storeId ? { ...s, status: 'rejected' as FacilityStatus } : s))
     );
 
-    // Audit log (in production, send to backend)
-    // {
-    //   storeId: rejectDialog.storeId,
-    //   storeName: rejectDialog.storeName,
-    //   action: 'reject',
-    //   oldStatus: store.status,
-    //   newStatus: 'rejected',
-    //   reason,
-    //   verifyText,
-    //   timestamp: new Date().toISOString(),
-    //   performedBy: 'Current User',
-    // }
+    // Audit log
+    console.log('❌ Rejection Audit Log:', {
+      storeId: rejectDialog.storeId,
+      storeName: rejectDialog.storeName,
+      action: 'reject',
+      oldStatus: store.status,
+      newStatus: 'rejected',
+      reason,
+      verifyText,
+      timestamp: new Date().toISOString(),
+      performedBy: 'Current User',
+    });
 
     toast.error(`Đã từ chối phê duyệt cửa hàng "${rejectDialog.storeName}"`, {
       description: 'Cửa hàng đã chuyển sang trạng thái "Từ chối phê duyệt"',
@@ -581,16 +593,16 @@ export default function StoresListPage() {
           }
 
           // Audit log (in production, send to backend)
-          // {
-          //   storeId: store.id,
-          //   storeName: store.name,
-          //   action: actionType,
-          //   oldStatus: store.status,
-          //   newStatus,
-          //   reason,
-          //   timestamp: new Date().toISOString(),
-          //   performedBy: 'Current User', // In production, get from auth context
-          // }
+          console.log('📋 Audit Log:', {
+            storeId: store.id,
+            storeName: store.name,
+            action: actionType,
+            oldStatus: store.status,
+            newStatus,
+            reason,
+            timestamp: new Date().toISOString(),
+            performedBy: 'Current User', // In production, get from auth context
+          });
 
           return { ...store, status: newStatus };
         })
@@ -608,6 +620,7 @@ export default function StoresListPage() {
     };
 
     if (actionType === 'export') {
+      console.log('📥 Exporting stores:', selectedStores);
       toast.success(`Xuất ${processedCount} cơ sở thành công`);
     } else {
       toast.success(
@@ -692,14 +705,6 @@ export default function StoresListPage() {
         );
         break;
       
-      case 'underInspection':
-        // Đang xử lý kiểm tra: Xem chi tiết, Lịch sử (2 actions - show all)
-        actions.push(
-          CommonActions.view(() => navigate(`/registry/stores/${store.id}`)),
-          CommonActions.viewHistory(() => navigate(`/registry/stores/${store.id}?tab=history`))
-        );
-        break;
-      
       case 'suspended':
         // Tạm ngưng: Xem chi tiết, Kích hoạt lại, Ngừng hoạt động (3 actions - show all)
         actions.push(
@@ -728,10 +733,11 @@ export default function StoresListPage() {
       key: 'stt',
       label: 'STT',
       width: '60px',
+      align: 'center',
       render: (store, index) => {
         // Calculate STT based on pagination
         const stt = (currentPage - 1) * pageSize + (index || 0) + 1;
-        return <div style={{ textAlign: 'center', fontWeight: 'var(--font-weight-medium)' }}>{stt}</div>;
+        return <div style={{ fontWeight: 'var(--font-weight-medium)' }}>{stt}</div>;
       },
     },
     {
@@ -754,6 +760,7 @@ export default function StoresListPage() {
       render: (store) => {
         // Debug log to verify ownerPhone exists
         if (store.id === 1) {
+          console.log('Store 1 data:', { ownerName: store.ownerName, ownerPhone: store.ownerPhone });
         }
         return (
           <div>
@@ -1077,7 +1084,7 @@ export default function StoresListPage() {
           {/* 2. Địa bàn */}
           <Select value={jurisdictionFilter} onValueChange={setJurisdictionFilter}>
             <SelectTrigger style={{ width: '200px' }}>
-              <SelectValue placeholder="-- Địa bàn --" />
+              <SelectValue placeholder="Chọn địa bàn" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tất cả địa bàn</SelectItem>
@@ -1091,13 +1098,12 @@ export default function StoresListPage() {
           {/* 3. Trạng thái */}
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger style={{ width: '200px' }}>
-              <SelectValue placeholder="-- Trạng thái --" />
+              <SelectValue placeholder="Chọn trạng thái" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tất cả trạng thái</SelectItem>
               <SelectItem value="pending">Chờ duyệt</SelectItem>
               <SelectItem value="active">Đang hoạt động</SelectItem>
-              <SelectItem value="underInspection">Đang xử lý kiểm tra</SelectItem>
               <SelectItem value="suspended">Tạm ngưng</SelectItem>
               <SelectItem value="rejected">Từ chối phê duyệt</SelectItem>
               <SelectItem value="closed">Ngừng hoạt động</SelectItem>
@@ -1105,12 +1111,13 @@ export default function StoresListPage() {
           </Select>
 
           {/* 4. Tên cơ sở (medium width) */}
-          <SearchInput
-            placeholder="Tên cơ sở"
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-            style={{ width: '280px' }}
-          />
+          <div style={{ width: '280px', flexShrink: 0 }}>
+            <SearchInput
+              placeholder="Tên cơ sở"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+            />
+          </div>
 
           {/* 5. Bản đồ Button (secondary, gọn) */}
           <Button 
@@ -1231,6 +1238,7 @@ export default function StoresListPage() {
         totalRecords={stores.length}
         selectedCount={selectedRows.size}
         onExport={(options: ExportOptions) => {
+          console.log('Export with options:', options);
           toast.success('Xuất dữ liệu thành công');
         }}
       />
@@ -1239,6 +1247,7 @@ export default function StoresListPage() {
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
         onSubmit={(data: NewStoreDataTabbed) => {
+          console.log('📝 AddStoreDialogTabbed submitted data:', data);
           
           // Get district name from code
           const districtName = getDistrictByName(data.jurisdiction)?.name || data.jurisdiction;
@@ -1293,6 +1302,7 @@ export default function StoresListPage() {
             isVerified: false,
           };
           
+          console.log('✅ New store object:', newStore);
           
           // Add to global store registry
           addStore(newStore);

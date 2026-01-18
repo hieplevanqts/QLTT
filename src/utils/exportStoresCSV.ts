@@ -12,7 +12,6 @@ const STATUS_MAP: Record<FacilityStatus, string> = {
   pending: 'Chờ duyệt',
   suspended: 'Tạm ngừng',
   closed: 'Ngừng hoạt động',
-  underInspection: 'Đang xử lý kiểm tra',
   rejected: 'Từ chối phê duyệt',
 };
 
@@ -186,7 +185,7 @@ export function exportReferenceDataCSV(filename: string = 'danh-muc-tham-chieu.c
   // Define reference data
   const industryList = [
     'Thực phẩm',
-    '��ồ uống',
+    'ồ uống',
     'Mỹ phẩm',
     'Dược phẩm',
     'Thời trang',
