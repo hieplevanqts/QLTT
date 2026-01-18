@@ -18,13 +18,13 @@ const supabaseAnonKey = publicAnonKey;
 // Validate credentials
 if (!projectId || projectId === 'undefined' || projectId === 'null') {
   throw new Error(
-    'Missing or invalid Supabase projectId. Check /utils/supabase/info.tsx'
+    'Missing or invalid Supabase projectId. Check src/utils/supabase/info.ts or .env'
   );
 }
 
 if (!supabaseAnonKey || supabaseAnonKey === 'undefined' || supabaseAnonKey === 'null') {
   throw new Error(
-    'Missing or invalid Supabase publicAnonKey. Check /utils/supabase/info.tsx'
+    'Missing or invalid Supabase publicAnonKey. Check src/utils/supabase/info.ts or .env'
   );
 }
 

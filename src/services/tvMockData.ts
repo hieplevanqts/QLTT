@@ -32,6 +32,7 @@ export interface Lead {
   lng: number;
   status: 'Mới' | 'Đã xác minh' | 'Đang xử lý';
   risk_score: number;
+  images?: string[];
 }
 
 export interface Task {
@@ -83,7 +84,7 @@ const WARDS: Record<string, string[]> = {
   'Phú Nhuận': ['Phường 1', 'Phường 2', 'Phường 3', 'Phường 4', 'Phường 5', 'Phường 7', 'Phường 8', 'Phường 9', 'Phường 10', 'Phường 11', 'Phường 12', 'Phường 13', 'Phường 15', 'Phường 17'],
 };
 
-const TOPICS = [
+export const DEFAULT_TOPICS = [
   'Hàng giả – Hàng nhái',
   'Gian lận thương mại',
   'An toàn thực phẩm',
@@ -193,7 +194,7 @@ export function generateHotspots(): Hotspot[] {
           title: `Điểm nóng ${location.ward}`,
           created_at: randomDate(90),
           dia_ban: location,
-          chuyen_de: TOPICS[Math.floor(Math.random() * TOPICS.length)],
+          chuyen_de: DEFAULT_TOPICS[Math.floor(Math.random() * DEFAULT_TOPICS.length)],
           lat: location.lat,
           lng: location.lng,
           severity,
@@ -214,7 +215,7 @@ export function generateHotspots(): Hotspot[] {
       title: `Điểm nóng ${location.ward}`,
       created_at: randomDate(90),
       dia_ban: location,
-      chuyen_de: TOPICS[Math.floor(Math.random() * TOPICS.length)],
+      chuyen_de: DEFAULT_TOPICS[Math.floor(Math.random() * DEFAULT_TOPICS.length)],
       lat: location.lat,
       lng: location.lng,
       severity,
@@ -242,7 +243,7 @@ export function generateLeads(): Lead[] {
           title: `Nguồn tin ${location.ward}`,
           created_at: randomDate(90),
           dia_ban: location,
-          chuyen_de: TOPICS[Math.floor(Math.random() * TOPICS.length)],
+          chuyen_de: DEFAULT_TOPICS[Math.floor(Math.random() * DEFAULT_TOPICS.length)],
           lat: location.lat,
           lng: location.lng,
           status: statuses[Math.floor(Math.random() * statuses.length)],
@@ -262,7 +263,7 @@ export function generateLeads(): Lead[] {
       title: `Nguồn tin ${location.ward}`,
       created_at: randomDate(90),
       dia_ban: location,
-      chuyen_de: TOPICS[Math.floor(Math.random() * TOPICS.length)],
+      chuyen_de: DEFAULT_TOPICS[Math.floor(Math.random() * DEFAULT_TOPICS.length)],
       lat: location.lat,
       lng: location.lng,
       status: statuses[Math.floor(Math.random() * statuses.length)],
@@ -298,7 +299,7 @@ export function generateTasks(): Task[] {
           created_at: created.toISOString(),
           due_date: dueDate.toISOString(),
           dia_ban: location,
-          chuyen_de: TOPICS[Math.floor(Math.random() * TOPICS.length)],
+          chuyen_de: DEFAULT_TOPICS[Math.floor(Math.random() * DEFAULT_TOPICS.length)],
           lat: location.lat,
           lng: location.lng,
           priority: priorities[Math.floor(Math.random() * priorities.length)],
@@ -326,7 +327,7 @@ export function generateTasks(): Task[] {
       created_at: created.toISOString(),
       due_date: dueDate.toISOString(),
       dia_ban: location,
-      chuyen_de: TOPICS[Math.floor(Math.random() * TOPICS.length)],
+      chuyen_de: DEFAULT_TOPICS[Math.floor(Math.random() * DEFAULT_TOPICS.length)],
       lat: location.lat,
       lng: location.lng,
       priority: priorities[Math.floor(Math.random() * priorities.length)],
@@ -354,7 +355,7 @@ export function generateEvidences(): Evidence[] {
         title: `Minh chứng ${location.ward}`,
         created_at: randomDate(90),
         dia_ban: location,
-        chuyen_de: TOPICS[Math.floor(Math.random() * TOPICS.length)],
+          chuyen_de: DEFAULT_TOPICS[Math.floor(Math.random() * DEFAULT_TOPICS.length)],
         lat: location.lat,
         lng: location.lng,
         status: statuses[Math.floor(Math.random() * statuses.length)],
@@ -374,7 +375,7 @@ export function generateEvidences(): Evidence[] {
       title: `Minh chứng ${location.ward}`,
       created_at: randomDate(90),
       dia_ban: location,
-      chuyen_de: TOPICS[Math.floor(Math.random() * TOPICS.length)],
+      chuyen_de: DEFAULT_TOPICS[Math.floor(Math.random() * DEFAULT_TOPICS.length)],
       lat: location.lat,
       lng: location.lng,
       status: statuses[Math.floor(Math.random() * statuses.length)],

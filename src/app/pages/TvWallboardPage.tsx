@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TvDataProvider } from '@/contexts/TvDataContext';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import type { TvSettings } from '@/types/tv.types';
 import TvHeaderBar from '@/app/components/tv/TvHeaderBar';
 import TvFiltersBar from '@/app/components/tv/TvFiltersBar';
 import LiveMapPanel from '@/app/components/tv/LiveMapPanel';
@@ -10,23 +12,31 @@ import CitizenReportsGallery from '@/app/components/tv/CitizenReportsGallery';
 import AlertTicker from '@/app/components/tv/AlertTicker';
 import EmergencyAlertBanner from '@/app/components/tv/EmergencyAlertBanner';
 
+const DEFAULT_TV_SETTINGS: TvSettings = {
+  autoPlayScenes: true,
+  sceneIntervalSeconds: 25,
+  showAlertTicker: true,
+  showEmergencyBanner: true,
+  showCitizenGallery: true,
+};
+
 function TvWallboardContent() {
   const navigate = useNavigate();
-  const [autoPlay, setAutoPlay] = useState(true);
+  const [settings, setSettings] = useLocalStorage<TvSettings>('tv-settings', DEFAULT_TV_SETTINGS);
   const [currentScene, setCurrentScene] = useState(1);
 
   const totalScenes = 5;
-  const sceneInterval = 25000;
+  const sceneInterval = Math.max(5, settings.sceneIntervalSeconds) * 1000;
 
   useEffect(() => {
-    if (!autoPlay) return;
+    if (!settings.autoPlayScenes) return;
 
     const timer = setInterval(() => {
       setCurrentScene(prev => prev >= totalScenes ? 1 : prev + 1);
     }, sceneInterval);
 
     return () => clearInterval(timer);
-  }, [autoPlay, totalScenes]);
+  }, [settings.autoPlayScenes, settings.sceneIntervalSeconds, totalScenes]);
 
   const handleSceneChange = (direction: 'prev' | 'next') => {
     if (direction === 'prev') {
@@ -34,6 +44,10 @@ function TvWallboardContent() {
     } else {
       setCurrentScene(prev => prev >= totalScenes ? 1 : prev + 1);
     }
+  };
+
+  const handleSettingsChange = (updates: Partial<TvSettings>) => {
+    setSettings(prev => ({ ...prev, ...updates }));
   };
 
   const handleExitTV = () => {
@@ -59,15 +73,14 @@ function TvWallboardContent() {
         <TvHeaderBar 
           onExitTV={handleExitTV}
           onFullscreen={handleFullscreen}
-        />
-
-        <TvFiltersBar
-          autoPlay={autoPlay}
-          onAutoPlayChange={setAutoPlay}
+          settings={settings}
+          onSettingsChange={handleSettingsChange}
           currentScene={currentScene}
           totalScenes={totalScenes}
           onSceneChange={handleSceneChange}
         />
+
+        <TvFiltersBar />
 
         <div className="flex-1 flex gap-3 p-4 overflow-hidden relative">
           <div className="w-[65%] flex flex-col gap-3">
@@ -77,12 +90,14 @@ function TvWallboardContent() {
           <div className="w-[35%] flex flex-col overflow-y-auto" style={{ gap: '10px' }}>
             <KpiGrid6 scene={currentScene} />
             <TopTabsTable scene={currentScene} />
-            <CitizenReportsGallery scene={currentScene} />
+            {settings.showCitizenGallery && (
+              <CitizenReportsGallery scene={currentScene} />
+            )}
           </div>
         </div>
 
-        <AlertTicker scene={currentScene} />
-        <EmergencyAlertBanner />
+        {settings.showAlertTicker && <AlertTicker scene={currentScene} />}
+        {settings.showEmergencyBanner && <EmergencyAlertBanner />}
       </div>
     </div>
   );

@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { supabase, SUPABASE_URL, logSupabaseInfo } from '../../../utils/supabaseHelpers';
-import { projectId } from '/utils/supabase/info';
+import { projectId } from '@/utils/supabase/info';
 import styles from './SupabaseConnectionTest.module.css';
 
 export function SupabaseConnectionTest() {

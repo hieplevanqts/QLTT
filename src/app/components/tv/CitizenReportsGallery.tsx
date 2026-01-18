@@ -34,8 +34,11 @@ export default function CitizenReportsGallery({ scene }: CitizenReportsGalleryPr
     return `${day}/${month}`;
   };
 
-  // Generate mock image for each report based on topic
+  // Generate image for each report (use real images when available)
   const getReportImage = (report: any) => {
+    if (Array.isArray(report.images) && report.images.length > 0) {
+      return report.images[0];
+    }
     const imageMap: Record<string, string> = {
       'Hàng giả – Hàng nhái': 'https://images.unsplash.com/photo-1678693361607-2b7b66dce8f3?w=800',
       'Gian lận thương mại': 'https://images.unsplash.com/photo-1580320478238-9be2382b2a47?w=800',
@@ -53,8 +56,11 @@ export default function CitizenReportsGallery({ scene }: CitizenReportsGalleryPr
     return imageMap[report.chuyen_de] || 'https://images.unsplash.com/photo-1754638335233-e29065d73bb4?w=800';
   };
 
-  // Generate multiple images for each report (2-4 images based on report ID)
+  // Generate multiple images for each report (fallback to mock images)
   const getReportImages = (report: any): string[] => {
+    if (Array.isArray(report.images) && report.images.length > 0) {
+      return report.images;
+    }
     const allImages: Record<string, string[]> = {
       'Hàng giả – Hàng nhái': [
         'https://images.unsplash.com/photo-1678693361607-2b7b66dce8f3?w=800',

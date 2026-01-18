@@ -1,17 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Monitor, Maximize, X, Wifi, WifiOff } from 'lucide-react';
+import { Maximize, X, Wifi, WifiOff } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
 import { useQLTTScope } from '@/contexts/QLTTScopeContext';
+import type { TvSettings } from '@/types/tv.types';
+import TvSettingsDialog from './TvSettingsDialog';
 import mappaLogo from 'figma:asset/79505e63e97894ec2d06837c57cf53a19680f611.png';
 
 interface TvHeaderBarProps {
   onExitTV: () => void;
   onFullscreen: () => void;
+  settings: TvSettings;
+  onSettingsChange: (updates: Partial<TvSettings>) => void;
+  currentScene: number;
+  totalScenes: number;
+  onSceneChange: (direction: 'prev' | 'next') => void;
 }
 
-export default function TvHeaderBar({ onExitTV, onFullscreen }: TvHeaderBarProps) {
-  const { user } = useAuth();
+export default function TvHeaderBar({
+  onExitTV,
+  onFullscreen,
+  settings,
+  onSettingsChange,
+  currentScene,
+  totalScenes,
+  onSceneChange,
+}: TvHeaderBarProps) {
   const { scope } = useQLTTScope();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isConnected, setIsConnected] = useState(true);
@@ -104,6 +117,14 @@ export default function TvHeaderBar({ onExitTV, onFullscreen }: TvHeaderBarProps
         </div>
 
         <div className="flex items-center gap-1">
+          <TvSettingsDialog
+            settings={settings}
+            onSettingsChange={onSettingsChange}
+            currentScene={currentScene}
+            totalScenes={totalScenes}
+            onSceneChange={onSceneChange}
+          />
+
           <Button
             variant="outline"
             size="sm"

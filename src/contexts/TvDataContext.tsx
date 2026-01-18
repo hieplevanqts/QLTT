@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useState, useMemo, ReactNode, useEffect, useCallback } from 'react';
+import { FEATURES } from '@/config/features';
+import type { LayerToggles, TvFilters } from '@/types/tv.types';
 import {
+  DEFAULT_TOPICS,
   getMockData,
   filterByLocation,
   filterByTopic,
@@ -9,6 +12,7 @@ import {
   Task,
   Evidence,
 } from '@/services/tvMockData';
+import { fetchTvData, fetchTvTopics } from '@/services/tvSupabase.service';
 
 // TV Data Context - v1.2 - Fixed infinite loops and Leaflet issues
 // 5 địa bàn trọng điểm để auto-rotation
@@ -20,26 +24,12 @@ export const PRIORITY_LOCATIONS = [
   { code: 'HCM', name: 'TP. Hồ Chí Minh' },
 ] as const;
 
-export interface TvFilters {
-  province?: string;
-  district?: string;
-  ward?: string;
-  topic?: string;
-  timeRangeDays: number;
-}
-
-export interface LayerToggles {
-  hotspots: boolean;
-  leads: boolean;
-  tasks: boolean;
-  evidences: boolean;
-}
-
 interface TvDataContextType {
   filters: TvFilters;
   setFilters: (filters: TvFilters) => void;
   layers: LayerToggles;
   setLayers: (layers: LayerToggles) => void;
+  topics: string[];
   filteredHotspots: Hotspot[];
   filteredLeads: Lead[];
   filteredTasks: Task[];
@@ -74,7 +64,51 @@ export function TvDataProvider({ children }: { children: ReactNode }) {
     evidences: false,
   });
 
-  const allData = useMemo(() => getMockData(), []);
+  const [topics, setTopics] = useState<string[]>(DEFAULT_TOPICS);
+  const [allData, setAllData] = useState(() => getMockData());
+
+  useEffect(() => {
+    if (!FEATURES.USE_TV_SUPABASE) {
+      setAllData(getMockData());
+      setTopics(DEFAULT_TOPICS);
+      return;
+    }
+
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const [tvData, tvTopics] = await Promise.all([
+          fetchTvData(filters),
+          fetchTvTopics(),
+        ]);
+
+        if (cancelled) return;
+
+        if (tvData) {
+          setAllData(tvData);
+        }
+
+        if (tvTopics.length > 0) {
+          setTopics(tvTopics);
+        } else {
+          setTopics(DEFAULT_TOPICS);
+        }
+      } catch (error) {
+        console.warn('[TvDataContext] Supabase fetch failed, using mock data.', error);
+        if (!cancelled) {
+          setAllData(getMockData());
+          setTopics(DEFAULT_TOPICS);
+        }
+      }
+    };
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [filters, FEATURES.USE_TV_SUPABASE]);
 
   const filteredHotspots = useMemo(() => {
     let data = allData.hotspots;
@@ -167,6 +201,7 @@ export function TvDataProvider({ children }: { children: ReactNode }) {
       setFilters,
       layers,
       setLayers,
+      topics,
       filteredHotspots,
       filteredLeads,
       filteredTasks,
@@ -181,7 +216,7 @@ export function TvDataProvider({ children }: { children: ReactNode }) {
       goToPreviousLocation,
       selectLocation,
     }),
-    [filters, layers, filteredHotspots, filteredLeads, filteredTasks, filteredEvidences, allData, autoRotationEnabled, currentLocationIndex, timeUntilNextRotation, goToNextLocation, goToPreviousLocation, selectLocation]
+    [filters, layers, topics, filteredHotspots, filteredLeads, filteredTasks, filteredEvidences, allData, autoRotationEnabled, currentLocationIndex, timeUntilNextRotation, goToNextLocation, goToPreviousLocation, selectLocation]
   );
 
   return (
@@ -206,6 +241,7 @@ export function useTvData() {
         evidences: false,
       },
       setLayers: () => {},
+      topics: DEFAULT_TOPICS,
       filteredHotspots: [],
       filteredLeads: [],
       filteredTasks: [],

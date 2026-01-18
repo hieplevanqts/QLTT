@@ -23,6 +23,14 @@ export const FEATURES = {
   USE_SUPABASE_BACKEND: false, // ❌ DISABLED - Using mock data (database location field is null)
 
   /**
+   * USE_TV_SUPABASE
+   *
+   * Enable Supabase-backed data for /tv wallboard.
+   * Falls back to mock data if views are missing or queries fail.
+   */
+  USE_TV_SUPABASE: true,
+
+  /**
    * ENABLE_ANALYTICS
    * Track user interactions (future feature)
    */

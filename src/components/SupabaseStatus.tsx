@@ -37,7 +37,7 @@ export default function SupabaseStatus() {
 
   async function checkSupabaseConnection() {
     try {
-      // Import từ utils/supabase/info.tsx (credentials thực tế)
+      // Import from src/utils/supabase/info.ts (env-backed credentials)
       const { projectId, publicAnonKey } = await import('../../utils/supabase/info');
       const url = `https://${projectId}.supabase.co`;
       const key = publicAnonKey;
@@ -46,7 +46,7 @@ export default function SupabaseStatus() {
         setStatus({
           connected: false,
           message: '❌ Thiếu Supabase credentials',
-          error: 'Kiểm tra file /utils/supabase/info.tsx',
+          error: 'Kiem tra src/utils/supabase/info.ts hoac .env',
         });
         return;
       }

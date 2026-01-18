@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { projectId, publicAnonKey } from '/utils/supabase/info';
+import { projectId, publicAnonKey } from '@/utils/supabase/info';
 
 export default function QuickSupabaseTest() {
   const [result, setResult] = useState<string>('Chưa test');

@@ -1,0 +1,22 @@
+.barBase {
+  position: relative;
+  z-index: 1200;
+  padding: 0 20px;
+}
+
+.filtersBar {
+  height: 56px;
+}
+
+.selectTriggerBase {
+  height: 36px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+}
+
+.controlButton {
+  height: 36px;
+  font-size: 12px;
+  padding: 0 12px;
+  gap: 6px;
+}
