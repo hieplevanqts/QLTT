@@ -439,47 +439,69 @@ export const UserModal: React.FC<UserModalProps> = ({
       let userId: string;
 
       if (mode === 'add') {
-        // Create user using database function that syncs with auth.users
+        // Step 1: Create user in auth.users using signUp
+        const password = formData.password || 'Couppa@123';
         
-        const { data: createResult, error: createError } = await supabase
-          .rpc('create_user_with_auth', {
-            p_email: formData.email.trim(),
-            p_password: formData.password || 'Couppa@123',
-            p_full_name: formData.full_name.trim(),
-            p_phone: formData.phone.trim() || null,
-            p_avatar_url: null,
-            p_status: formData.status,
-          });
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: formData.email.trim(),
+          password: password,
+          options: {
+            data: {
+              full_name: formData.full_name.trim(),
+              phone: formData.phone.trim() || null,
+            },
+            emailRedirectTo: undefined, // Disable email confirmation for admin-created users
+          },
+        });
 
-        if (createError) {
-          console.error('❌ Error creating user:', createError);
+        if (authError) {
+          console.error('❌ Error creating user in auth.users:', authError);
+          toast.error(`Lỗi tạo tài khoản: ${authError.message}`);
+          return;
+        }
+
+        if (!authData.user) {
+          toast.error('Không thể tạo tài khoản. Vui lòng thử lại.');
+          return;
+        }
+
+        userId = authData.user.id;
+
+        // Step 2: Insert/Update user in public.users table (using auth user id)
+        const { data: newUser, error: insertError } = await supabase
+          .from('users')
+          .insert([{
+            id: userId, // Use auth.users id
+            email: formData.email.trim(),
+            full_name: formData.full_name.trim(),
+            phone: formData.phone.trim() || null,
+            username: generatedUsername,
+            status: formData.status,
+            avatar_url: null,
+            updated_at: new Date().toISOString(),
+          }])
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('❌ Error inserting user into public.users:', insertError);
           
-          // Fallback to direct insert if function doesn't exist
-          if (createError.message.includes('function') || createError.message.includes('does not exist')) {
-            
-            const passwordHash = await bcrypt.hash(formData.password || 'Couppa@123', 10);
-            const { data: newUser, error: insertError } = await supabase
+          // If user already exists in public.users, try to update
+          if (insertError.code === '23505') { // Unique violation
+            const { error: updateError } = await supabase
               .from('users')
-              .insert([{
-                ...userData,
-                password_hash: passwordHash
-              }])
-              .select()
-              .single();
+              .update(userData)
+              .eq('id', userId);
 
-            if (insertError) {
-              console.error('❌ Error inserting user:', insertError);
-              toast.error(`Lỗi tạo người dùng: ${insertError.message}`);
+            if (updateError) {
+              console.error('❌ Error updating user:', updateError);
+              toast.error(`Lỗi cập nhật thông tin người dùng: ${updateError.message}`);
               return;
             }
-
-            userId = newUser.id;
           } else {
-            toast.error(`Lỗi tạo người dùng: ${createError.message}`);
+            toast.error(`Lỗi tạo người dùng: ${insertError.message}`);
             return;
           }
-        } else {
-          userId = createResult;
         }
       } else if (mode === 'edit' && user) {
         // ✅ Update existing user using RPC function for safe auth.users + public.users update
