@@ -25,7 +25,7 @@ export default function TvHeaderBar({
   totalScenes,
   onSceneChange,
 }: TvHeaderBarProps) {
-  const { scope } = useQLTTScope();
+  const { getScopeDisplayText } = useQLTTScope();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isConnected, setIsConnected] = useState(true);
 
@@ -53,13 +53,8 @@ export default function TvHeaderBar({
   };
 
   const getScopeDisplay = () => {
-    if (scope && scope.id !== 'all') {
-      const parts = [];
-      if (scope.name) parts.push(scope.name);
-      if (scope.parentName) parts.push(scope.parentName);
-      return parts.length > 0 ? parts.join(' • ') : 'Đơn vị: Toàn quốc';
-    }
-    return 'Đơn vị: Toàn quốc';
+    const scopeText = getScopeDisplayText();
+    return scopeText ? `Đơn vị: ${scopeText}` : 'Đơn vị: Toàn quốc';
   };
 
   return (
