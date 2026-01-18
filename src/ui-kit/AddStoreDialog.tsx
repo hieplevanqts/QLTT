@@ -632,10 +632,6 @@ export function AddStoreDialog({ open, onOpenChange, onSubmit }: AddStoreDialogP
     };
 
     // Debug: Log tags to verify they're being included
-    console.log('🏷️ Tags in formData:', formData.tags);
-    console.log('🏷️ Tags in finalFormData:', finalFormData.tags);
-    console.log('📋 attachmentLinks:', finalFormData.attachmentLinks);
-    console.log('📝 sourceNotes:', finalFormData.sourceNotes);
 
     // Validate all required fields
     const requiredFields = {

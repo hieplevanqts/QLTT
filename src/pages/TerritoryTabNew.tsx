@@ -109,7 +109,6 @@ export const TerritoryTabNew: React.FC<TerritoryTabProps> = ({
   // 🎯 NEW: Fetch provinces from Supabase
   const fetchProvinces = async () => {
     try {
-      console.log('🔍 Fetching provinces from Supabase...');
       const { data, error } = await supabase
         .from('provinces')
         .select('*')
@@ -119,7 +118,6 @@ export const TerritoryTabNew: React.FC<TerritoryTabProps> = ({
         console.error('❌ Error fetching provinces:', error);
         throw error;
       }
-      console.log('✅ Loaded provinces:', data?.length);
       setProvinces(data || []);
     } catch (error) {
       console.error('❌ Error in fetchProvinces:', error);
@@ -130,7 +128,6 @@ export const TerritoryTabNew: React.FC<TerritoryTabProps> = ({
   // 🎯 NEW: Fetch wards from Supabase
   const fetchWards = async () => {
     try {
-      console.log('🔍 Fetching wards from Supabase...');
       const { data, error } = await supabase
         .from('wards')
         .select('*')
@@ -140,7 +137,6 @@ export const TerritoryTabNew: React.FC<TerritoryTabProps> = ({
         console.error('❌ Error fetching wards:', error);
         throw error;
       }
-      console.log('✅ Loaded wards:', data?.length);
       setWards(data || []);
     } catch (error) {
       console.error('❌ Error in fetchWards:', error);
@@ -260,7 +256,6 @@ export const TerritoryTabNew: React.FC<TerritoryTabProps> = ({
     setIsImportDropdownOpen(false); // Close dropdown
     
     try {
-      console.log('📥 Generating Excel template...');
       
       // Create template data with sample rows
       const templateData = [
@@ -321,7 +316,6 @@ export const TerritoryTabNew: React.FC<TerritoryTabProps> = ({
       XLSX.writeFile(wb, fileName);
       
       toast.success('Đã tải file mẫu thành công');
-      console.log('✅ Template downloaded:', fileName);
     } catch (error) {
       console.error('❌ Error generating template:', error);
       toast.error('Lỗi tải file mẫu');
@@ -336,7 +330,6 @@ export const TerritoryTabNew: React.FC<TerritoryTabProps> = ({
     if (!file) return;
 
     try {
-      console.log('📥 Importing Excel file:', file.name);
       
       const reader = new FileReader();
       reader.onload = async (event) => {
@@ -347,7 +340,6 @@ export const TerritoryTabNew: React.FC<TerritoryTabProps> = ({
           const worksheet = workbook.Sheets[sheetName];
           const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-          console.log('📊 Parsed Excel data:', jsonData);
 
           if (jsonData.length === 0) {
             toast.error('File Excel không có dữ liệu');
@@ -372,7 +364,6 @@ export const TerritoryTabNew: React.FC<TerritoryTabProps> = ({
 
               // Validate required fields
               if (!areaData.code || !areaData.name || !areaData.level) {
-                console.warn('⚠️ Skipping row - missing required fields:', row);
                 errorCount++;
                 continue;
               }
@@ -550,7 +541,6 @@ export const TerritoryTabNew: React.FC<TerritoryTabProps> = ({
               // Reset province and ward when level changes
               setSelectedProvince('');
               setSelectedWard('');
-              console.log('🔄 Level changed to:', newLevel);
             }}
           >
             <option value="all">Tất cả cấp</option>
@@ -567,7 +557,6 @@ export const TerritoryTabNew: React.FC<TerritoryTabProps> = ({
                 setSelectedProvince(e.target.value);
                 setSelectedWard(''); // Reset ward when province changes
                 setCurrentPage(1);
-                console.log('🏙️ Province changed to:', e.target.value);
               }}
             >
               <option value="">Chọn Tỉnh/TP</option>
@@ -585,7 +574,6 @@ export const TerritoryTabNew: React.FC<TerritoryTabProps> = ({
               onChange={(e) => {
                 setSelectedWard(e.target.value);
                 setCurrentPage(1);
-                console.log('🏘️ Ward changed to:', e.target.value);
               }}
             >
               <option value="">Chọn Phường/Xã</option>

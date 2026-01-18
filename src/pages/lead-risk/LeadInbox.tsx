@@ -143,13 +143,6 @@ export default function LeadInbox() {
   // Track renders
   useEffect(() => {
     renderCountRef.current += 1;
-    console.log(`🎨 [LeadInbox] Render #${renderCountRef.current}`);
-    console.log('📊 [LeadInbox] State:', {
-      selectedStatuses,
-      selectedCategories,
-      searchQuery,
-      selectedAssignments,
-    });
   });
 
   // Modal states
@@ -220,10 +213,6 @@ export default function LeadInbox() {
 
   const { stats } = useLeadStats();
 
-  console.log('🎨 [LeadInbox] Component rendered');
-  console.log('📊 [LeadInbox] allLeads.length:', allLeads.length);
-  console.log('📋 [LeadInbox] First 5 lead codes:', allLeads.slice(0, 5).map(l => l.code));
-  console.log('🔢 [LeadInbox] Lead IDs (first 5):', allLeads.slice(0, 5).map(l => l.id));
   
   // Check for duplicates in allLeads
   const allLeadIds = allLeads.map(l => l.id);
@@ -406,10 +395,8 @@ export default function LeadInbox() {
 
   const handleSaveLead = (leadData: Partial<Lead>) => {
     if (formMode === 'create') {
-      console.log('Creating lead:', leadData);
       alert('Lead đã được tạo thành công!');
     } else {
-      console.log('Updating lead:', editingLead?.id, leadData);
       alert('Lead đã được cập nhật thành công!');
     }
     setSelectedLeads(new Set());
@@ -417,10 +404,8 @@ export default function LeadInbox() {
 
   const handleConfirmDelete = () => {
     if (deletingLead) {
-      console.log('Deleting single lead:', deletingLead.id);
       alert(`Đã xóa lead: ${deletingLead.code}`);
     } else {
-      console.log('Deleting leads:', Array.from(selectedLeads));
       alert(`Đã xóa ${selectedLeads.size} leads`);
       setSelectedLeads(new Set());
     }
@@ -428,7 +413,6 @@ export default function LeadInbox() {
 
   // Handle actions from menu
   const handleLeadAction = (lead: Lead, action: LeadAction) => {
-    console.log(`Action ${action} on lead ${lead.code}`);
     
     switch (action) {
       case 'view':
@@ -550,7 +534,6 @@ export default function LeadInbox() {
         alert(`Xuất báo cáo: ${lead.code}`);
         break;
       default:
-        console.log('Unknown action:', action);
     }
   };
 
@@ -878,7 +861,6 @@ export default function LeadInbox() {
         onClose={() => setIsAddNoteModalOpen(false)}
         lead={currentLead}
         onSave={(note) => {
-          console.log('Adding note:', note, 'to lead:', currentLead?.code);
           alert(`Đã thêm ghi chú cho lead ${currentLead?.code}`);
         }}
       />
@@ -887,7 +869,6 @@ export default function LeadInbox() {
         onClose={() => setIsUpdateSLAModalOpen(false)}
         lead={currentLead}
         onSave={(deadline, reason) => {
-          console.log('Updating SLA:', { deadline, reason }, 'for lead:', currentLead?.code);
           alert(`Đã cập nhật thời hạn cho lead ${currentLead?.code}`);
         }}
       />
@@ -896,7 +877,6 @@ export default function LeadInbox() {
         onClose={() => setIsRejectModalOpen(false)}
         lead={currentLead}
         onSave={(reason) => {
-          console.log('Rejecting lead:', { reason }, 'for lead:', currentLead?.code);
           alert(`Đã từ chối lead ${currentLead?.code}`);
         }}
       />

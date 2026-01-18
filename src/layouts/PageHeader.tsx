@@ -1,7 +1,6 @@
 import React, { ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Button } from '../app/components/ui/button';
 import styles from './PageHeader.module.css';
 
 interface PageHeaderProps {

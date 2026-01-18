@@ -824,7 +824,6 @@ export function PlansList() {
             plan={modalState.plan}
             onConfirm={(note) => {
               toast.success(`Đã gửi kế hoạch "${modalState.plan?.name}" đi phê duyệt`);
-              console.log('Send approval with note:', note);
             }}
           />
           <ApproveModal 
@@ -833,7 +832,6 @@ export function PlansList() {
             plan={modalState.plan}
             onConfirm={(note) => {
               toast.success(`Kế hoạch "${modalState.plan?.name}" đã được phê duyệt`);
-              console.log('Approve with note:', note);
             }}
           />
           <RejectModal 
@@ -842,7 +840,6 @@ export function PlansList() {
             plan={modalState.plan}
             onConfirm={(reason) => {
               toast.error(`Kế hoạch "${modalState.plan?.name}" đã bị từ chối`);
-              console.log('Reject reason:', reason);
             }}
           />
           <RecallModal 
@@ -851,7 +848,6 @@ export function PlansList() {
             plan={modalState.plan}
             onConfirm={() => {
               toast.info(`Đã thu hồi kế hoạch "${modalState.plan?.name}"`);
-              console.log('Recall plan');
             }}
           />
           <DeployModal 
@@ -860,7 +856,6 @@ export function PlansList() {
             plan={modalState.plan}
             onConfirm={(startDate) => {
               toast.success(`Đã triển khai kế hoạch "${modalState.plan?.name}" từ ${startDate}`);
-              console.log('Deploy from:', startDate);
             }}
           />
           <PauseModal 
@@ -869,7 +864,6 @@ export function PlansList() {
             plan={modalState.plan}
             onConfirm={(reason) => {
               toast.warning(`Đã tạm dừng kế hoạch "${modalState.plan?.name}"`);
-              console.log('Pause reason:', reason);
             }}
           />
           <DeletePlanModal 
@@ -878,7 +872,6 @@ export function PlansList() {
             plan={modalState.plan}
             onConfirm={() => {
               toast.success(`Đã xóa kế hoạch "${modalState.plan?.name}"`);
-              console.log('Delete plan');
             }}
           />
         </>

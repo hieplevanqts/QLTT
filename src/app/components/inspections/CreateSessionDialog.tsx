@@ -113,15 +113,6 @@ export function CreateSessionDialog({
     const selectedStore = mockStores.find((s) => s.id === formData.storeId);
     const selectedInspector = mockInspectors.find((i) => i.id === formData.inspectorId);
 
-    console.log('Creating session:', {
-      roundId,
-      store: selectedStore,
-      inspector: selectedInspector,
-      startDate: formData.startDate,
-      endDate: formData.endDate,
-      notes: formData.notes,
-    });
-
     // Call onCreateSession callback if provided
     if (onCreateSession && selectedStore && selectedInspector) {
       onCreateSession({

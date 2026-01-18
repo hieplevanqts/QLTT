@@ -102,17 +102,10 @@ export function InspectionRoundsList() {
   const handleSendForApproval = async (note: string) => {
     if (!modalState.round) return;
     
-    console.log('=== SEND FOR APPROVAL START ===');
-    console.log('Round ID:', modalState.round.id);
-    console.log('Round Name:', modalState.round.name);
-    console.log('Current Status:', modalState.round.status);
-    console.log('Note:', note);
     
     try {
       // Update status from 'draft' to 'pending_approval'
-      console.log('Calling updateRoundStatus...');
       await updateRoundStatus(modalState.round.id, 'pending_approval', note);
-      console.log('updateRoundStatus completed successfully');
       
       // Close modal first
       closeModal();
@@ -121,10 +114,7 @@ export function InspectionRoundsList() {
       toast.success(`Đã gửi duyệt đợt kiểm tra "${modalState.round.name}"`);
       
       // Refresh data to show updated status
-      console.log('Refetching data...');
       await refetch();
-      console.log('Refetch completed');
-      console.log('=== SEND FOR APPROVAL END ===');
     } catch (error) {
       console.error('=== SEND FOR APPROVAL ERROR ===');
       console.error('Error details:', error);

@@ -115,7 +115,6 @@ export const SecurityConfigTab: React.FC = () => {
   const fetchSecurityConfig = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Fetching security config...');
 
       const { data, error } = await supabase
         .from('security_config')
@@ -128,7 +127,6 @@ export const SecurityConfigTab: React.FC = () => {
         return;
       }
 
-      console.log('✅ Loaded security config');
       setConfig(data);
     } catch (error) {
       console.error('❌ Error:', error);

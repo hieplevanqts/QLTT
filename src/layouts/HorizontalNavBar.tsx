@@ -27,21 +27,36 @@ import {
 } from '../app/components/ui/dropdown-menu';
 import { cn } from '../app/components/ui/utils';
 import { useLayout } from '../contexts/LayoutContext';
+import { useAuth } from '../contexts/AuthContext'; // 🔥 NEW: Import useAuth for permissions
 
 interface HorizontalNavBarProps {
   mobileMenuOpen: boolean;
   onClose: () => void;
 }
 
+// 🔥 NEW: Permission code mapping (from Insert.sql lines 39-46)
+const PERMISSION_MAP: { [path: string]: string } = {
+  '/overview': '', // No permission required (always visible)
+  '/map': 'MAP_VIEW',
+  '/stores': 'STORES_VIEW',
+  '/leads': 'LEAD_RISK',
+  '/plans': 'PLAN_VIEW',
+  '/tasks': 'TASKS_VIEW', // or FIELD_TASKS_VIEW
+  '/evidence': 'EVIDENCE_VIEW',
+  '/reports': '', // No permission required
+  '/admin': 'ADMIN_VIEW',
+};
+
 // MAPPA Main Modules
 const mappaModules = [
-  { path: '/overview', label: 'Tổng quan', icon: LayoutDashboard },
-  { path: '/map', label: 'Bản đồ điều hành', icon: Map },
-  { path: '/stores', label: 'Cơ sở quản lý', icon: Building2 },
+  { path: '/overview', label: 'Tổng quan', icon: LayoutDashboard, permissionCode: '' },
+  { path: '/map', label: 'Bản đồ điều hành', icon: Map, permissionCode: 'MAP_VIEW' },
+  { path: '/stores', label: 'Cơ sở quản lý', icon: Building2, permissionCode: 'STORES_VIEW' },
   {
     path: '/leads',
     label: 'Nguồn tin',
     icon: TriangleAlert,
+    permissionCode: 'LEAD_RISK',
     hasSubmenu: true,
     submenu: [
       { path: '/lead-risk/inbox', label: 'Xử lý nguồn tin hằng ngày' },
@@ -52,17 +67,30 @@ const mappaModules = [
       { path: '/lead-risk/sla-dashboard', label: 'Giám sát SLA' },
     ],
   },
-  { path: '/plans', label: 'Kế hoạch tác nghiệp', icon: ClipboardList, hasSubmenu: true },
-  { path: '/tasks', label: 'Nhiệm vụ hiện trường', icon: MapPin },
-  { path: '/evidence', label: 'Kho chứng cứ', icon: FileBox },
-  { path: '/reports', label: 'Báo cáo, thống kê', icon: BarChart3 },
-  { path: '/admin', label: 'Quản trị', icon: Settings },
+  { path: '/plans', label: 'Kế hoạch tác nghiệp', icon: ClipboardList, permissionCode: 'PLAN_VIEW', hasSubmenu: true },
+  { path: '/tasks', label: 'Nhiệm vụ hiện trường', icon: MapPin, permissionCode: 'TASKS_VIEW' },
+  { path: '/evidence', label: 'Kho chứng cứ', icon: FileBox, permissionCode: 'EVIDENCE_VIEW' },
+  { path: '/reports', label: 'Báo cáo, thống kê', icon: BarChart3, permissionCode: '' },
+  { path: '/admin', label: 'Quản trị', icon: Settings, permissionCode: 'ADMIN_VIEW' },
 ];
 
 export default function HorizontalNavBar({ mobileMenuOpen, onClose }: HorizontalNavBarProps) {
   const location = useLocation();
   const { setLayoutMode } = useLayout();
+  const { user } = useAuth(); // 🔥 NEW: Get user with permissions
   const [mobileSubmenuOpen, setMobileSubmenuOpen] = React.useState<string | null>(null);
+
+  // 🔥 NEW: Get user permission codes
+  const userPermissionCodes = user?.permissions || [];
+  
+  // 🔥 NEW: Helper function to check if user has permission for a menu item
+  const hasPermission = (permissionCode: string | undefined): boolean => {
+    if (!permissionCode || permissionCode === '') return true; // No permission required = always visible
+    return userPermissionCodes.includes(permissionCode);
+  };
+
+  // 🔥 NEW: Filter menu modules based on user permissions
+  const visibleModules = mappaModules.filter(module => hasPermission(module.permissionCode));
 
   // Mock permissions - In real app, this would come from user context/auth
   const userPermissions = {
@@ -80,7 +108,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
       {/* Desktop Navigation */}
       <nav className="hidden md:flex h-14 bg-card border-b border-border items-center px-6 gap-1">
         {/* Main MAPPA Modules */}
-        {mappaModules.map((module) => {
+        {visibleModules.map((module) => { // 🔥 FIX: Use filtered modules instead of all modules
           const Icon = module.icon;
           
           // Special logic for active state
@@ -300,7 +328,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
             </div>
             
             <nav className="p-2 overflow-y-auto">
-              {mappaModules.map((module) => {
+              {visibleModules.map((module) => { // 🔥 FIX: Use filtered modules instead of all modules
                 const Icon = module.icon;
                 
                 // Special logic for active state

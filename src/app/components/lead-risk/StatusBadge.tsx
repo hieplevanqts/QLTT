@@ -20,7 +20,6 @@ export function StatusBadge({ status, size = 'md' }: StatusBadgeProps) {
   
   // Safety check - if status not found in config, show fallback
   if (!config) {
-    console.warn(`⚠️ Unknown status received: "${status}"`);
     return (
       <span 
         className={`${styles.badge} ${styles.cancelled} ${styles[size]}`}

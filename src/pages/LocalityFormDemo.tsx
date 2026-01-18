@@ -19,7 +19,6 @@ export const LocalityFormDemo: React.FC = () => {
   };
 
   const handleSave = () => {
-    console.log('✅ Saved successfully');
   };
 
   return (

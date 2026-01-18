@@ -32,7 +32,6 @@ async function fetchCategoryName(categoryId: string): Promise<string> {
     });
     
     if (!response.ok) {
-      console.warn(`⚠️ Failed to fetch category name for ID: ${categoryId}`);
       return categoryId; // Return ID as fallback
     }
     
@@ -67,7 +66,6 @@ async function isServerAvailable(): Promise<boolean> {
     });
     return response.ok;
   } catch (error) {
-    console.warn('⚠️ Supabase REST API health check failed - will use mock data');
     return false;
   }
 }
@@ -80,25 +78,20 @@ async function isServerAvailable(): Promise<boolean> {
 export async function fetchMapPoints(statusIds?: string[], categoryIds?: string[]): Promise<Restaurant[]> {
   // Use mock data if Supabase is disabled
   if (!USE_SUPABASE) {
-    console.log('📦 Using mock data (Supabase disabled)');
-    console.log('📊 Mock data loaded:', mockMapPoints.length, 'points');
-    console.log('📍 First mock point:', mockMapPoints[0]);
     return mockMapPoints;  // 🔥 Use new mock data with 500 points
   }
 
   try {
     // If statusIds OR categoryIds provided, use filtered endpoints
     if ((statusIds && statusIds.length > 0) || (categoryIds && categoryIds.length > 0)) {
-      console.log('🔍 Fetching map points with filters:', { statusIds, categoryIds });
       return await fetchMapPointsWithFilters(statusIds, categoryIds);
     }
     
     // Otherwise fetch all points (original behavior)
-    console.log('🔍 Fetching ALL map points from Supabase REST API...');
     
     // Log headers for debugging
     const headers = getHeaders();
-    console.log('📋 Request headers:', {
+    console.log({
       hasContentType: !!headers['Content-Type'],
       hasAuthorization: !!headers['Authorization'],
       hasApiKey: !!headers['apikey'],
@@ -109,7 +102,6 @@ export async function fetchMapPoints(statusIds?: string[], categoryIds?: string[
     // Check if server is available first
     const serverAvailable = await isServerAvailable();
     if (!serverAvailable) {
-      console.warn('⚠️ Supabase unavailable, using mock data');
       return mockRestaurants;
     }
     
@@ -119,9 +111,6 @@ export async function fetchMapPoints(statusIds?: string[], categoryIds?: string[
     // 🔥 Include category_map_points (LEFT JOIN) to get category names
     // 🔥 Include map_point_status to get status code and name
     const url = `${baseUrl}${endpoint}?location=not.is.null&limit=1000&order=createdtime.desc&select=*,category_map_points(categories:category_id(name)),map_point_status(point_status(code,name))`;
-    console.log('📡 Fetching from:', url);
-    console.log('🔍 Filter: Only points with location NOT NULL');
-    console.log('🔑 Using project:', SUPABASE_REST_URL);
     
     const response = await fetch(url, {
       method: 'GET',
@@ -132,29 +121,16 @@ export async function fetchMapPoints(statusIds?: string[], categoryIds?: string[
       const errorText = await response.text().catch(() => 'Unknown error');
       console.error('❌ Failed to fetch map points:', response.status, response.statusText);
       console.error('❌ Error details:', errorText);
-      console.warn('⚠️ Falling back to mock data');
       return mockRestaurants;
     }
 
     const data = await response.json();
-    console.log('✅ Successfully fetched', data.length, 'map points from Supabase');
-    console.log('📊 FULL FIRST POINT DATA:', JSON.stringify(data[0], null, 2));
-    console.log('🗺️ Location field structure:', data[0]?.location);
-    console.log('🗺️ Is location an object?', data[0]?.location && typeof data[0]?.location === 'object');
-    console.log('🗺️ Location keys:', data[0]?.location ? Object.keys(data[0]?.location) : 'N/A');
-    console.log('📍 Raw latitude value:', data[0]?.location?.latitude);
-    console.log('📍 Raw longitude value:', data[0]?.location?.longitude);
-    console.log('📍 Latitude type:', typeof data[0]?.location?.latitude);
-    console.log('📍 Longitude type:', typeof data[0]?.location?.longitude);
     
     const transformed = await transformSupabaseDataAsync(data);
-    console.log('🔄 After transformation, first point:', transformed[0]);
-    console.log('🗺️ Transformed lat/lng:', { lat: transformed[0]?.lat, lng: transformed[0]?.lng });
     
     return transformed;
   } catch (error) {
     console.error('❌ Error fetching map points:', error);
-    console.warn('⚠️ Using mock data as fallback');
     return mockRestaurants;
   }
 }
@@ -165,17 +141,14 @@ export async function fetchMapPoints(statusIds?: string[], categoryIds?: string[
 export async function fetchMapPointById(id: string): Promise<Restaurant | null> {
   // Use mock data if Supabase is disabled
   if (!USE_SUPABASE) {
-    console.log(`📦 Finding in mock data: ${id} (Supabase disabled)`);
     return mockRestaurants.find(store => store.id === id) || null;
   }
 
   try {
-    console.log(`🔍 Fetching map point ID: ${id} from Supabase...`);
     
     // Check if server is available first
     const serverAvailable = await isServerAvailable();
     if (!serverAvailable) {
-      console.warn('⚠️ Supabase unavailable, searching in mock data');
       return mockRestaurants.find(store => store.id === id) || null;
     }
     
@@ -187,7 +160,6 @@ export async function fetchMapPointById(id: string): Promise<Restaurant | null> 
 
     if (!response.ok) {
       if (response.status === 404 || response.status === 406) {
-        console.warn(`⚠️ Map point not found in DB: ${id}, searching in mock data`);
         return mockRestaurants.find(store => store.id === id) || null;
       }
       const errorText = await response.text().catch(() => 'Unknown error');
@@ -198,18 +170,15 @@ export async function fetchMapPointById(id: string): Promise<Restaurant | null> 
     const data = await response.json();
     
     if (!data || data.length === 0) {
-      console.warn(`⚠️ No data found for ID: ${id}, searching in mock data`);
       return mockRestaurants.find(store => store.id === id) || null;
     }
     
-    console.log(`✅ Successfully fetched map point: ${data[0].title}`);
     
     // Transform and return first result
     const transformed = transformSupabaseDataAsync(data);
     return transformed[0] || null;
   } catch (error) {
     console.error('❌ Error fetching map point:', error);
-    console.warn('⚠️ Searching in mock data as fallback');
     return mockRestaurants.find(store => store.id === id) || null;
   }
 }
@@ -219,8 +188,7 @@ export async function fetchMapPointById(id: string): Promise<Restaurant | null> 
  */
 export async function fetchMapPointsFromSupabase(): Promise<Restaurant[]> {
   try {
-    console.log('🔍 Fetching map points from Supabase REST API...');
-    console.log('📋 Request headers:', {
+    console.log({
       hasContentType: !!getHeaders()['Content-Type'],
       hasAuthorization: !!getHeaders()['Authorization'],
       hasApiKey: !!getHeaders()['apikey'],
@@ -229,8 +197,6 @@ export async function fetchMapPointsFromSupabase(): Promise<Restaurant[]> {
     });
     
     const url = `${baseUrl}${endpoint}?limit=1000&order=createdtime.desc`;
-    console.log('📡 Fetching from:', url);
-    console.log('🔑 Using project:', SUPABASE_REST_URL);
 
     const response = await fetch(url, {
       method: 'GET',
@@ -249,24 +215,12 @@ export async function fetchMapPointsFromSupabase(): Promise<Restaurant[]> {
     }
 
     const data = await response.json();
-    console.log('✅ Successfully fetched', data.length, 'map points from Supabase');
-    console.log('📊 FULL FIRST POINT DATA:', JSON.stringify(data[0], null, 2));
-    console.log('🗺️ Location field structure:', data[0]?.location);
-    console.log('🗺️ Is location an object?', data[0]?.location && typeof data[0]?.location === 'object');
-    console.log('🗺️ Location keys:', data[0]?.location ? Object.keys(data[0]?.location) : 'N/A');
-    console.log('📍 Raw latitude value:', data[0]?.location?.latitude);
-    console.log('📍 Raw longitude value:', data[0]?.location?.longitude);
-    console.log('📍 Latitude type:', typeof data[0]?.location?.latitude);
-    console.log('📍 Longitude type:', typeof data[0]?.location?.longitude);
     
     const transformed = await transformSupabaseDataAsync(data);
-    console.log('🔄 After transformation, first point:', transformed[0]);
-    console.log('🗺️ Transformed lat/lng:', { lat: transformed[0]?.lat, lng: transformed[0]?.lng });
     
     return transformed;
   } catch (error) {
     console.error('❌ Error fetching map points:', error);
-    console.log('⚠️ Falling back to mock data');
     return getMockMapPoints();
   }
 }
@@ -278,11 +232,10 @@ export async function fetchMapPointsFromSupabase(): Promise<Restaurant[]> {
  */
 async function fetchMapPointsByStatusIds(statusIds: string[]): Promise<Restaurant[]> {
   try {
-    console.log('🔍 Fetching map points filtered by status IDs:', statusIds);
     
     // Log headers for debugging
     const headers = getHeaders();
-    console.log('📋 Request headers:', {
+    console.log({
       hasContentType: !!headers['Content-Type'],
       hasAuthorization: !!headers['Authorization'],
       hasApiKey: !!headers['apikey'],
@@ -298,7 +251,6 @@ async function fetchMapPointsByStatusIds(statusIds: string[]): Promise<Restauran
     
     // 🔥 Include category_map_points in nested map_points select to get category names
     url = `${baseUrl}/map_point_status?${statusFilter}&select=map_points(*,category_map_points(categories:category_id(name))),point_status(code,name)`;
-    console.log('📡 Status-only filter:', { statusFilter });
     
     const response = await fetch(url, {
       method: 'GET',
@@ -309,14 +261,11 @@ async function fetchMapPointsByStatusIds(statusIds: string[]): Promise<Restauran
       const errorText = await response.text().catch(() => 'Unknown error');
       console.error('❌ Failed to fetch map points via junction table:', response.status, response.statusText);
       console.error('❌ Error details:', errorText);
-      console.warn('⚠️ Falling back to all points (unfiltered)');
       // Fallback: fetch all points without filter
       return await fetchAllMapPointsDirect();
     }
 
     const data = await response.json();
-    console.log(`✅ Successfully fetched ${data.length} map_point_status records from Supabase`);
-    console.log('📦 First junction record:', JSON.stringify(data[0], null, 2));
     
     // Transform nested response: data is [{map_points: {...}, point_status: {code: 'PASS', name: '...'}}, ...]
     // Need to extract the nested map_points objects AND attach status code
@@ -332,8 +281,7 @@ async function fetchMapPointsByStatusIds(statusIds: string[]): Promise<Restauran
       })
       .filter((point: any) => point !== null && point !== undefined);
     
-    console.log(`📦 Extracted ${mapPoints.length} map_points from junction table`);
-    console.log('📦 First extracted point with status:', { 
+    console.log({
       id: mapPoints[0]?._id, 
       name: mapPoints[0]?.title,
       _statusCode: mapPoints[0]?._statusCode,
@@ -341,7 +289,6 @@ async function fetchMapPointsByStatusIds(statusIds: string[]): Promise<Restauran
     });
     
     if (mapPoints.length === 0) {
-      console.warn('⚠️ No map points found for selected statuses');
       return [];
     }
     
@@ -349,7 +296,6 @@ async function fetchMapPointsByStatusIds(statusIds: string[]): Promise<Restauran
     return transformSupabaseDataAsync(mapPoints);
   } catch (error) {
     console.error('❌ Error fetching map points by status:', error);
-    console.warn('⚠️ Falling back to all points (unfiltered)');
     // Fallback: fetch all points without filter
     return await fetchAllMapPointsDirect();
   }
@@ -363,11 +309,10 @@ async function fetchMapPointsByStatusIds(statusIds: string[]): Promise<Restauran
  */
 async function fetchMapPointsWithFilters(statusIds?: string[], categoryIds?: string[]): Promise<Restaurant[]> {
   try {
-    console.log('🔍 Fetching map points with filters:', { statusIds, categoryIds });
     
     // Log headers for debugging
     const headers = getHeaders();
-    console.log('📋 Request headers:', {
+    console.log({
       hasContentType: !!headers['Content-Type'],
       hasAuthorization: !!headers['Authorization'],
       hasApiKey: !!headers['apikey'],
@@ -391,7 +336,6 @@ async function fetchMapPointsWithFilters(statusIds?: string[], categoryIds?: str
       select = '*,category_map_points!inner(categories:category_id(name)),map_point_status!inner(point_status(*))';
       url = `${baseUrl}/map_points?${categoryFilter}&select=${select}&limit=1000`;
       
-      console.log('📡 Category-only filter:', { categoryFilter, select });
     }
     // If ONLY status filter (no category filter)
     else if (statusIds && statusIds.length > 0 && (!categoryIds || categoryIds.length === 0)) {
@@ -403,7 +347,6 @@ async function fetchMapPointsWithFilters(statusIds?: string[], categoryIds?: str
       // 🔥 Include category_map_points in nested map_points select to get category names
       url = `${baseUrl}/map_point_status?${statusFilter}&select=map_points(*,category_map_points(categories:category_id(name))),point_status(code,name)`;
       
-      console.log('📡 Status-only filter:', { statusFilter });
     }
     // If BOTH status AND category filters
     else if (statusIds && statusIds.length > 0 && categoryIds && categoryIds.length > 0) {
@@ -420,11 +363,8 @@ async function fetchMapPointsWithFilters(statusIds?: string[], categoryIds?: str
       select = '*,category_map_points!inner(*),map_point_status!inner(point_status(*))';
       url = `${baseUrl}/map_points?${categoryFilter}&${statusFilter}&select=${select}&limit=1000`;
       
-      console.log('📡 Combined filter:', { categoryFilter, statusFilter, select });
     }
     
-    console.log('📡 Fetching from:', url);
-    console.log('🔑 Using project:', SUPABASE_REST_URL);
     
     const response = await fetch(url, {
       method: 'GET',
@@ -435,14 +375,11 @@ async function fetchMapPointsWithFilters(statusIds?: string[], categoryIds?: str
       const errorText = await response.text().catch(() => 'Unknown error');
       console.error('❌ Failed to fetch map points with filters:', response.status, response.statusText);
       console.error('❌ Error details:', errorText);
-      console.warn('⚠️ Falling back to all points (unfiltered)');
       // Fallback: fetch all points without filter
       return await fetchAllMapPointsDirect();
     }
 
     const data = await response.json();
-    console.log(`✅ Successfully fetched ${data.length} filtered map points from Supabase`);
-    console.log('📦 First filtered record:', JSON.stringify(data[0], null, 2));
     
     // Check if data is from map_point_status junction (has nested map_points)
     if (data.length > 0 && data[0].map_points) {
@@ -459,10 +396,8 @@ async function fetchMapPointsWithFilters(statusIds?: string[], categoryIds?: str
         })
         .filter((point: any) => point !== null && point !== undefined);
       
-      console.log(`📦 Extracted ${mapPoints.length} map_points from junction table`);
       
       if (mapPoints.length === 0) {
-        console.warn('⚠️ No map points found for selected filters');
         return [];
       }
       
@@ -473,12 +408,10 @@ async function fetchMapPointsWithFilters(statusIds?: string[], categoryIds?: str
     // 🔥 NEW: Check if data has nested map_point_status array (when filtering by category)
     // Response structure: map_points with map_point_status[0].point_status.code
     if (data.length > 0 && Array.isArray(data[0].map_point_status) && data[0].map_point_status.length > 0) {
-      console.log('📦 Detected category filter response with nested map_point_status');
       
       // Extract status code from nested structure and attach to point
       const mapPoints = data.map((point: any) => {
         const statusCode = point.map_point_status?.[0]?.point_status?.code;
-        console.log(`📍 Point "${point.title}" → status code: "${statusCode}"`);
         
         return {
           ...point,
@@ -492,7 +425,6 @@ async function fetchMapPointsWithFilters(statusIds?: string[], categoryIds?: str
     
     // Otherwise, data is direct map_points array (no nested structures)
     if (data.length === 0) {
-      console.warn('⚠️ No map points found for selected filters');
       return [];
     }
     
@@ -500,7 +432,6 @@ async function fetchMapPointsWithFilters(statusIds?: string[], categoryIds?: str
     return transformSupabaseDataAsync(data);
   } catch (error) {
     console.error('❌ Error fetching map points with filters:', error);
-    console.warn('⚠️ Falling back to all points (unfiltered)');
     // Fallback: fetch all points without filter
     return await fetchAllMapPointsDirect();
   }
@@ -518,12 +449,10 @@ async function fetchAllMapPointsDirect(): Promise<Restaurant[]> {
     });
 
     if (!response.ok) {
-      console.warn('⚠️ Failed to fetch all points, using mock data');
       return mockRestaurants;
     }
 
     const data = await response.json();
-    console.log(`✅ Fetched ${data.length} unfiltered map points as fallback`);
     return transformSupabaseDataAsync(data);
   } catch (error) {
     console.error('❌ Error in fallback fetch:', error);
@@ -535,9 +464,6 @@ async function fetchAllMapPointsDirect(): Promise<Restaurant[]> {
  * Transform Supabase map_points data to Restaurant format
  */
 async function transformSupabaseDataAsync(supabaseData: any[]): Promise<Restaurant[]> {
-  console.log('🔄 Transforming Supabase data (async with category lookups)...');
-  console.log('📊 Total points to transform:', supabaseData.length);
-  console.log('📊 FULL FIRST POINT DATA:', JSON.stringify(supabaseData[0], null, 2));
   
   // 🔥 Check if ALL points have null coordinates
   const pointsWithNullCoords = supabaseData.filter(p => 
@@ -552,9 +478,7 @@ async function transformSupabaseDataAsync(supabaseData: any[]): Promise<Restaura
     console.error('📋 Database fields checked: location, geo_location, latitude, longitude');
     console.error('💡 SOLUTION: Update database records with valid coordinates');
     console.error('💡 SQL Example: UPDATE map_points SET geo_location = ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)');
-    console.warn('⚠️ Generating MOCK coordinates for development/testing...');
   } else if (pointsWithNullCoords > 0) {
-    console.warn(`⚠️ ${pointsWithNullCoords} out of ${supabaseData.length} points have null coordinates`);
   }
   
   const transformed = await Promise.all(supabaseData.map(async (point: any, index: number) => {
@@ -572,18 +496,6 @@ async function transformSupabaseDataAsync(supabaseData: any[]): Promise<Restaura
       
       // Log first point's location structure
       if (index === 0) {
-        console.log('🗺️ First point location field:', point.location);
-        console.log('🗺️ First point geo_location field:', point.geo_location);
-        console.log('🗺️ Location type:', typeof point.location);
-        console.log('🗺️ geo_location type:', typeof point.geo_location);
-        console.log('🗺️ Is location an object?', point.location && typeof point.location === 'object');
-        console.log('🗺️ Is geo_location an object?', point.geo_location && typeof point.geo_location === 'object');
-        console.log('🗺️ Location keys:', point.location ? Object.keys(point.location) : 'N/A');
-        console.log('🗺️ geo_location keys:', point.geo_location ? Object.keys(point.geo_location) : 'N/A');
-        console.log('📍 Raw latitude value:', point.location?.latitude);
-        console.log('📍 Raw longitude value:', point.location?.longitude);
-        console.log('📍 Latitude type:', typeof point.location?.latitude);
-        console.log('📍 Longitude type:', typeof point.location?.longitude);
       }
       
       // Try multiple ways to extract lat/lng
@@ -606,13 +518,11 @@ async function transformSupabaseDataAsync(supabaseData: any[]): Promise<Restaura
         if (point.geo_location.type === 'Point' && Array.isArray(point.geo_location.coordinates)) {
           lng = typeof point.geo_location.coordinates[0] === 'number' ? point.geo_location.coordinates[0] : parseFloat(point.geo_location.coordinates[0]);
           lat = typeof point.geo_location.coordinates[1] === 'number' ? point.geo_location.coordinates[1] : parseFloat(point.geo_location.coordinates[1]);
-          if (index === 0) console.log('✅ Extracted from geo_location (GeoJSON):', { lat, lng });
         }
         // Alternative: Direct lat/lng properties
         else if (point.geo_location.latitude && point.geo_location.longitude) {
           lat = typeof point.geo_location.latitude === 'number' ? point.geo_location.latitude : parseFloat(point.geo_location.latitude);
           lng = typeof point.geo_location.longitude === 'number' ? point.geo_location.longitude : parseFloat(point.geo_location.longitude);
-          if (index === 0) console.log('✅ Extracted from geo_location (lat/lng):', { lat, lng });
         }
       }
       
@@ -655,8 +565,6 @@ async function transformSupabaseDataAsync(supabaseData: any[]): Promise<Restaura
       
       // Log first point's extracted coordinates
       if (index === 0) {
-        console.log('✅ Extracted lat:', lat);
-        console.log('✅ Extracted lng:', lng);
       }
       
       // Extract business type from multiple possible sources
@@ -689,15 +597,13 @@ async function transformSupabaseDataAsync(supabaseData: any[]): Promise<Restaura
         undefined;
       
       if (index === 0) {
-        console.log('🏪 Business type extraction:', {
+        console.log({
           categoryMapPointsName: point.category_map_points?.[0]?.categories?.name,
           categoriesName: point.categories?.name,
           mappointtypename: point.mappointtypename,
           mappointtypeid: point.mappointtypeid,
           categoryMapPoints: point.category_map_points,
-          finalBusinessType: businessType
-        });
-        console.log('🔖 Status name extraction:', {
+          finalBusinessType: businessType,
           mapPointStatusName: point.map_point_status?.[0]?.point_status?.name,
           pointStatusName: point.point_status?.name,
           legacyStatus: point.status,
@@ -748,7 +654,6 @@ async function transformSupabaseDataAsync(supabaseData: any[]): Promise<Restaura
           }
           
           if (index < 3) {
-            console.log(`📍 Point ${index}: DB status_id=${statusId} → category="${category}"`);
           }
           
           return category;
@@ -808,9 +713,6 @@ async function transformSupabaseDataAsync(supabaseData: any[]): Promise<Restaura
   const validPoints = transformed.filter(p => p !== null) as Restaurant[];
   
   // Count valid points
-  console.log(`✅ Transformed ${transformed.length} total points`);
-  console.log(`✅ Valid points with coordinates: ${validPoints.length}`);
-  console.log(`⚠️ Invalid points (lat/lng = 0 or NaN): ${transformed.length - validPoints.length}`);
   
   // 🔥 DEBUG: Check status/category distribution
   const categoryDistribution: { [key: string]: number } = {};
@@ -819,11 +721,8 @@ async function transformSupabaseDataAsync(supabaseData: any[]): Promise<Restaura
     categoryDistribution[p.category] = (categoryDistribution[p.category] || 0) + 1;
   });
   
-  console.log('📊 SUPABASE DATA - Category distribution:', categoryDistribution);
   
   if (validPoints.length > 0) {
-    console.log('📍 First valid point:', validPoints[0]);
-    console.log('🗺️ First valid point lat/lng:', { lat: validPoints[0].lat, lng: validPoints[0].lng });
   }
   
   // 🔥 RETURN ONLY VALID POINTS (filter out invalid coordinates)
@@ -842,7 +741,6 @@ function mapSupabaseStatus(status?: string | number | object): 'certified' | 'ho
   
   // Handle null, undefined, or non-string values
   if (!status) {
-    if (shouldLog) console.log('⚠️ mapSupabaseStatus: No status provided, defaulting to "inspected"');
     return 'inspected';  // ← Changed from 'pending' to 'inspected'
   }
   
@@ -850,60 +748,47 @@ function mapSupabaseStatus(status?: string | number | object): 'certified' | 'ho
   const statusStr = typeof status === 'string' ? status : String(status);
   const statusLower = statusStr.toLowerCase();
   
-  if (shouldLog) console.log(`🔄 mapSupabaseStatus: Input="${status}" (${typeof status}) → Lowercase="${statusLower}"`);
   
   // 🔥 NEW: Map numeric status codes (1, 2, 3, 4)
   if (statusStr === '1') {
-    if (shouldLog) console.log('✅ Mapped to: certified (numeric 1)');
     return 'certified';
   }
   if (statusStr === '2') {
-    if (shouldLog) console.log('✅ Mapped to: hotspot (numeric 2)');
     return 'hotspot';
   }
   if (statusStr === '3') {
-    if (shouldLog) console.log('✅ Mapped to: scheduled (numeric 3)');
     return 'scheduled';
   }
   if (statusStr === '4') {
-    if (shouldLog) console.log('✅ Mapped to: inspected (numeric 4)');
     return 'inspected';
   }
   
   // Map text-based status codes
   if (statusLower.includes('certif') || statusLower === 'pass') {
-    if (shouldLog) console.log('✅ Mapped to: certified');
     return 'certified';
   }
   if (statusLower.includes('hotspot') || statusLower.includes('alert') || statusLower === 'danger') {
-    if (shouldLog) console.log('✅ Mapped to: hotspot');
     return 'hotspot';
   }
   if (statusLower.includes('schedul') || statusLower.includes('plan')) {
-    if (shouldLog) console.log('✅ Mapped to: scheduled');
     return 'scheduled';
   }
   if (statusLower.includes('inspect') || statusLower === 'checked') {
-    if (shouldLog) console.log('✅ Mapped to: inspected');
     return 'inspected';
   }
   
   // Map other statuses to appropriate categories
   if (statusLower.includes('violat') || statusLower.includes('warning') || statusLower.includes('danger')) {
-    if (shouldLog) console.log('✅ Mapped to: hotspot (via violation)');
     return 'hotspot';  // Violations → hotspot
   }
   if (statusLower.includes('pend') || statusLower.includes('wait') || statusLower.includes('queue')) {
-    if (shouldLog) console.log('✅ Mapped to: scheduled (via pending)');
     return 'scheduled';  // Pending → scheduled
   }
   if (statusLower.includes('active') || statusLower.includes('open')) {
-    if (shouldLog) console.log('✅ Mapped to: inspected (via active)');
     return 'inspected';  // Active → inspected
   }
   
   // Safe default that exists in filters
-  if (shouldLog) console.log(`⚠️ mapSupabaseStatus: No match for "${statusLower}", defaulting to "inspected"`);
   return 'inspected';
 }
 

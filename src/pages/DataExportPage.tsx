@@ -82,7 +82,6 @@ export default function DataExportPage() {
 {`import { restaurants } from './src/data/restaurantData';
 
 // Sử dụng data
-console.log(restaurants.length); // 800
 
 // Lọc theo category
 const hotspots = restaurants.filter(r => r.category === 'hotspot');

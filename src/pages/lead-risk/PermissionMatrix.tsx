@@ -170,7 +170,6 @@ export default function PermissionMatrix() {
 
   const handleSave = () => {
     // TODO: Save to backend
-    console.log('Saving permissions:', permissions);
     setHasChanges(false);
     alert('Đã lưu ma trận phân quyền thành công!');
   };
@@ -184,7 +183,6 @@ export default function PermissionMatrix() {
 
   const handleExport = () => {
     // TODO: Export to CSV/Excel
-    console.log('Exporting permission matrix');
     alert('Đang xuất file ma trận phân quyền...');
   };
 

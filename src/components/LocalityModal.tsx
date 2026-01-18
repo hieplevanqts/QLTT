@@ -85,9 +85,7 @@ export const LocalityModal: React.FC<LocalityModalProps> = ({
   useEffect(() => {
     // Filter wards based on selected province
     if (formData.province_id) {
-      console.log('🔍 Filtering wards for province_id:', formData.province_id);
       const filtered = wards.filter(w => w.provinceId === formData.province_id);
-      console.log('✅ Filtered wards count:', filtered.length);
       setFilteredWards(filtered);
     } else {
       setFilteredWards([]);
@@ -96,7 +94,6 @@ export const LocalityModal: React.FC<LocalityModalProps> = ({
 
   const fetchProvinces = async () => {
     try {
-      console.log('🔍 Fetching provinces from Supabase...');
       const { data, error } = await supabase
         .from('provinces')
         .select('*')
@@ -106,7 +103,6 @@ export const LocalityModal: React.FC<LocalityModalProps> = ({
         console.error('❌ Error fetching provinces:', error);
         throw error;
       }
-      console.log('✅ Loaded provinces:', data?.length);
       setProvinces(data || []);
       setLoadingProvinces(false);
     } catch (error) {
@@ -117,7 +113,6 @@ export const LocalityModal: React.FC<LocalityModalProps> = ({
 
   const fetchWards = async () => {
     try {
-      console.log('🔍 Fetching wards from Supabase...');
       const { data, error } = await supabase
         .from('wards')
         .select('*')
@@ -127,7 +122,6 @@ export const LocalityModal: React.FC<LocalityModalProps> = ({
         console.error('❌ Error fetching wards:', error);
         throw error;
       }
-      console.log('✅ Loaded wards:', data?.length);
       setWards(data || []);
       setLoadingWards(false);
     } catch (error) {
@@ -175,7 +169,6 @@ export const LocalityModal: React.FC<LocalityModalProps> = ({
 
     try {
       setSaving(true);
-      console.log('💾 Saving locality...', formData);
       
       // Here you would save to your database
       // For now, just simulate success
@@ -270,7 +263,6 @@ export const LocalityModal: React.FC<LocalityModalProps> = ({
                   value={formData.level}
                   onChange={(e) => {
                     const newLevel = e.target.value;
-                    console.log('🔄 Form - Level changed to:', newLevel);
                     setFormData({ 
                       ...formData, 
                       level: newLevel,
@@ -334,7 +326,6 @@ export const LocalityModal: React.FC<LocalityModalProps> = ({
                       value={formData.province_id}
                       onChange={(e) => {
                         const provinceId = e.target.value;
-                        console.log('🏙️ Province selected:', provinceId);
                         setFormData({ ...formData, province_id: provinceId, ward_id: '' });
                       }}
                       disabled={isViewMode || loadingProvinces}

@@ -144,7 +144,8 @@ export function LeadActionMenu({ status, onAction }: LeadActionMenuProps) {
         setShowAbove(shouldShowAbove);
         setMenuPosition({ top, left });
         
-        console.log('🎯 Fixed Dropdown Position:', {
+        // Debug log for menu positioning
+        console.log({
           buttonRect: { top: buttonRect.top, bottom: buttonRect.bottom, left: buttonRect.left, right: buttonRect.right },
           viewportHeight,
           spaceBelow: Math.round(spaceBelow),

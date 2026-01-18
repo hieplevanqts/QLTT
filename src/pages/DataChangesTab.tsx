@@ -68,7 +68,6 @@ export const DataChangesTab: React.FC = () => {
   const fetchDataChanges = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Fetching data changes...');
 
       const { data, error } = await supabase
         .from('data_changes')
@@ -82,7 +81,6 @@ export const DataChangesTab: React.FC = () => {
         return;
       }
 
-      console.log(`✅ Loaded ${data?.length || 0} data changes`);
       setChanges(data || []);
     } catch (error) {
       console.error('❌ Error:', error);

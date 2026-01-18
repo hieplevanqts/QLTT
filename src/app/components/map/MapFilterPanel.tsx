@@ -1,10 +1,11 @@
 import React, { useState, forwardRef, useEffect } from 'react';
-import { ShieldCheck, Flame, Calendar, Check, X, Store, Coffee, Utensils, Soup, Croissant, UtensilsCrossed, Plus, Minus, MapPin, ChevronDown, Search, Save } from 'lucide-react';
+import { ShieldCheck, Flame, Calendar, Check, X, Store, Coffee, Utensils, Soup, Croissant, UtensilsCrossed, Plus, Minus, MapPin, ChevronDown, Search, Save, Building2 } from 'lucide-react';
 import styles from './MapFilterPanel.module.css';
 import { Restaurant } from '../../../data/restaurantData';
 import { getProvinceNames, getDistrictsByProvince, getWardsByDistrict } from '../../../data/vietnamLocations';
 import { PointStatus } from '../../../utils/api/pointStatusApi';
 import { Category } from '../../../utils/api/categoriesApi';
+import { Department, fetchMarketManagementTeams } from '../../../utils/api/departmentsApi';
 
 type CategoryFilter = {
   certified: boolean;
@@ -17,6 +18,10 @@ type BusinessTypeFilter = {
   [key: string]: boolean;
 };
 
+type DepartmentFilter = {
+  [key: string]: boolean;  // department.id -> boolean
+};
+
 interface MapFilterPanelProps {
   isOpen: boolean;
   filters: CategoryFilter;
@@ -24,6 +29,8 @@ interface MapFilterPanelProps {
   restaurants: Restaurant[];
   pointStatuses: PointStatus[];  // 🔥 ADD: Dynamic statuses từ database
   categories: Category[];        // 🔥 ADD: Categories từ database
+  departments: Department[];     // 🔥 NEW: Departments từ database
+  departmentFilters: DepartmentFilter;  // 🔥 NEW: Department filters state
   selectedProvince?: string;
   selectedDistrict?: string;
   selectedWard?: string;
@@ -32,6 +39,8 @@ interface MapFilterPanelProps {
   onFilterChange: (key: keyof CategoryFilter) => void;
   onBusinessTypeFilterChange: (type: string) => void;
   onBusinessTypeToggleAll: (checked: boolean) => void;  // 🔥 NEW: Toggle all business types
+  onDepartmentFilterChange: (departmentId: string) => void;  // 🔥 NEW: Department filter change
+  onDepartmentToggleAll: (checked: boolean) => void;  // 🔥 NEW: Toggle all departments
   onProvinceChange?: (province: string) => void;
   onDistrictChange?: (district: string) => void;
   onWardChange?: (ward: string) => void;
@@ -50,6 +59,8 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
     restaurants,
     pointStatuses,  // 🔥 RECEIVE: Dynamic point statuses
     categories,     // 🔥 RECEIVE: Categories from database
+    departments,    // 🔥 NEW: Departments from database
+    departmentFilters,  // 🔥 NEW: Department filters state
     selectedProvince,
     selectedDistrict,
     selectedWard,
@@ -58,6 +69,8 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
     onFilterChange, 
     onBusinessTypeFilterChange,
     onBusinessTypeToggleAll,  // 🔥 NEW: Toggle all business types
+    onDepartmentFilterChange,  // 🔥 NEW: Department filter change
+    onDepartmentToggleAll,  // 🔥 NEW: Toggle all departments
     onProvinceChange,
     onDistrictChange,
     onWardChange,
@@ -70,7 +83,8 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
     const [expandedSections, setExpandedSections] = useState({
       category: true,
       location: true,
-      businessType: true,
+      businessType: false,
+      department: false,  // 🔥 FIX: Add department section state
       legend: true
     });
     
@@ -136,7 +150,6 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
 
     // 🔥 Build business type data from categories table
     // Categories từ DB thay vì hardcoded uniqueBusinessTypes
-    console.log('📦 MapFilterPanel: categories:', categories);
     
     // Icon mapping for business types (vẫn hardcoded cho icons)
     const businessTypeIconMap: { [key: string]: { icon: typeof Store, color: string } } = {
@@ -233,7 +246,6 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
                   </div>
                   <Icon size={15} style={{ color }} />
                   <span className={styles.filterLabel}>{label}</span>
-                  <span className={styles.filterCount}>({count})</span>
                 </label>
               ))}
             </div>
@@ -339,7 +351,7 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
                     className={styles.locationSelect}
                   >
                     <span className={selectedDistrict ? styles.locationSelectValue : styles.locationSelectPlaceholder}>
-                      {selectedDistrict || 'Chọn quận/huyện'}
+                      {selectedDistrict || 'Chọn xã phường'}
                     </span>
                     <ChevronDown className={styles.locationSelectIcon} size={16} />
                   </button>
@@ -353,7 +365,7 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
                           type="text"
                           value={districtSearch}
                           onChange={(e) => setDistrictSearch(e.target.value)}
-                          placeholder="Tìm quận/huyện..."
+                          placeholder="Tìm xã phường..."
                           className={styles.locationSearchInput}
                           autoFocus
                           onClick={(e) => e.stopPropagation()}
@@ -388,73 +400,6 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
                             }}
                           >
                             <span>{district}</span>
-                          </button>
-                        ))}
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              {/* Ward Dropdown (only show when district is selected) */}
-              {selectedDistrict && (
-                <div className={styles.locationDropdownWrapper}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowWardDropdown(!showWardDropdown);
-                      setShowProvinceDropdown(false);
-                      setShowDistrictDropdown(false);
-                    }}
-                    className={styles.locationSelect}
-                  >
-                    <span className={selectedWard ? styles.locationSelectValue : styles.locationSelectPlaceholder}>
-                      {selectedWard || 'Chọn phường/xã'}
-                    </span>
-                    <ChevronDown className={styles.locationSelectIcon} size={16} />
-                  </button>
-                  
-                  {showWardDropdown && (
-                    <div className={styles.locationDropdown}>
-                      {/* 🔥 NEW: Search input */}
-                      <div className={styles.locationSearchWrapper}>
-                        <Search size={14} className={styles.searchIcon} />
-                        <input
-                          type="text"
-                          value={wardSearch}
-                          onChange={(e) => setWardSearch(e.target.value)}
-                          placeholder="Tìm phường/xã..."
-                          className={styles.locationSearchInput}
-                          autoFocus
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </div>
-                      
-                      <button
-                        className={styles.locationOption}
-                        onClick={() => {
-                          onWardChange?.('');
-                          setShowWardDropdown(false);
-                          setWardSearch('');
-                        }}
-                      >
-                        <span>Tất cả</span>
-                      </button>
-                      {availableWards
-                        .filter(ward => 
-                          !wardSearch.trim() || 
-                          ward.toLowerCase().includes(wardSearch.toLowerCase())
-                        )
-                        .map((ward) => (
-                          <button
-                            key={ward}
-                            className={styles.locationOption}
-                            onClick={() => {
-                              onWardChange?.(ward);
-                              setShowWardDropdown(false);
-                              setWardSearch('');
-                            }}
-                          >
-                            <span>{ward}</span>
                           </button>
                         ))}
                     </div>
@@ -531,7 +476,6 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
                   </div>
                   <allCategoryItem.icon size={16} style={{ color: allCategoryItem.color }} />
                   <span className={styles.filterLabel} style={{ fontWeight: 600 }}>{allCategoryItem.label}</span>
-                  <span className={styles.filterCount}>({allCategoryItem.count})</span>
                 </label>
               )}
               
@@ -567,12 +511,112 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
                     </div>
                     <Icon size={16} style={{ color }} />
                     <span className={styles.filterLabel}>{label}</span>
-                    <span className={styles.filterCount}>({count})</span>
                   </label>
                 ))
               ) : (
                 <div className={styles.noResults}>
                   <span>Không tìm thấy loại hình phù hợp</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 🔥 NEW: Department Filter Checkboxes */}
+          <div className={styles.filterSection}>
+            <button 
+              className={styles.sectionHeader}
+              onClick={() => toggleSection('department')}
+              aria-expanded={expandedSections.department}
+            >
+              <div className={styles.sectionTitle}>
+                <Building2 size={14} style={{ display: 'inline-block', marginRight: '6px' }} />
+                Đội quản lý thị trường
+              </div>
+              {expandedSections.department ? (
+                <Minus size={16} className={styles.toggleIcon} />
+              ) : (
+                <Plus size={16} className={styles.toggleIcon} />
+              )}
+            </button>
+            <div className={`${styles.filterList} ${expandedSections.department ? styles.filterListExpanded : styles.filterListCollapsed}`}>
+              {departments.length > 0 ? (
+                <>
+                  {/* Toggle all departments */}
+                  <label 
+                    className={styles.filterItem}
+                    style={{ 
+                      borderBottom: '1px solid var(--color-border)', 
+                      paddingBottom: '8px', 
+                      marginBottom: '4px' 
+                    }}
+                  >
+                    <div className={styles.checkboxWrapper}>
+                      <input
+                        type="checkbox"
+                        checked={departments.every(dept => departmentFilters[dept.id] !== false)}
+                        onChange={(e) => onDepartmentToggleAll(e.target.checked)}
+                        className={styles.checkbox}
+                      />
+                      <div 
+                        className={styles.customCheckbox}
+                        style={{ borderColor: departments.every(dept => departmentFilters[dept.id] !== false) ? '#005cb6' : undefined }}
+                      >
+                        {departments.every(dept => departmentFilters[dept.id] !== false) && (
+                          <div className={styles.checkmark} style={{ background: '#005cb6' }}>
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                              <path 
+                                d="M2 6L5 9L10 3" 
+                                stroke="white" 
+                                strokeWidth="2" 
+                                strokeLinecap="round" 
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <Building2 size={16} style={{ color: '#005cb6' }} />
+                    <span className={styles.filterLabel} style={{ fontWeight: 600 }}>Tất cả</span>
+                  </label>
+                  
+                  {/* Individual department checkboxes */}
+                  {departments.map((dept) => (
+                    <label key={dept.id} className={styles.filterItem}>
+                      <div className={styles.checkboxWrapper}>
+                        <input
+                          type="checkbox"
+                          checked={departmentFilters[dept.id] !== false}
+                          onChange={() => onDepartmentFilterChange(dept.id)}
+                          className={styles.checkbox}
+                        />
+                        <div 
+                          className={styles.customCheckbox}
+                          style={{ borderColor: departmentFilters[dept.id] !== false ? '#005cb6' : undefined }}
+                        >
+                          {departmentFilters[dept.id] !== false && (
+                            <div className={styles.checkmark} style={{ background: '#005cb6' }}>
+                              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                <path 
+                                  d="M2 6L5 9L10 3" 
+                                  stroke="white" 
+                                  strokeWidth="2" 
+                                  strokeLinecap="round" 
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <Building2 size={16} style={{ color: '#005cb6' }} />
+                      <span className={styles.filterLabel}>{dept.name}</span>
+                    </label>
+                  ))}
+                </>
+              ) : (
+                <div className={styles.noResults}>
+                  <span>Đang tải dữ liệu...</span>
                 </div>
               )}
             </div>

@@ -51,12 +51,10 @@ export default function Watchlist() {
   const increasingTrend = watchlistedProfiles.filter(p => p.trendDirection === 'increasing').length;
 
   const handleRemoveFromWatchlist = (profileId: string) => {
-    console.log('Remove from watchlist:', profileId);
     // TODO: Call API to remove from watchlist
   };
 
   const handleAddToWatchlist = () => {
-    console.log('Add to watchlist');
     // TODO: Show modal to search and add entities to watchlist
   };
 
@@ -67,7 +65,6 @@ export default function Watchlist() {
   };
 
   const handleActionSubmit = (data: any) => {
-    console.log('Action created:', data);
     alert(`${data.type === 'task' ? 'Task' : data.type === 'plan' ? 'Plan' : 'Follow-up'} đã được tạo thành công!`);
   };
 

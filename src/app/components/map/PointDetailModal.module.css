@@ -15,6 +15,11 @@
   animation: overlayFadeIn 0.2s ease-out;
 }
 
+/* 🔥 FIX: Disable overlay click during initial opening period */
+.overlayDisabled {
+  /* Overlay click is disabled via handleOverlayClick logic */
+}
+
 @keyframes overlayFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -26,6 +31,7 @@
   background: white;
   border-radius: 0;
   width: 100%;
+  min-width: 600px; /* 🔥 FIX: Add min-width to prevent modal from being too small */
   max-width: 1400px;
   max-height: 90vh;
   display: flex;
@@ -937,7 +943,9 @@
 @media (max-width: 768px) {
   .modal {
     max-width: 100%;
+    min-width: unset; /* 🔥 FIX: Remove min-width on mobile */
     max-height: 95vh;
+    width: calc(100% - 40px); /* 🔥 FIX: Account for padding */
   }
 
   .header {

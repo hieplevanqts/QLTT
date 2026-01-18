@@ -91,12 +91,10 @@ export const NotificationRulesTab: React.FC<NotificationRulesTabProps> = ({ onOp
   const fetchRules = async () => {
     try {
       setLoading(true);
-      console.log('📄 Loading notification rules...');
 
       // Simulate API delay
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      console.log(`✅ Loaded ${SAMPLE_NOTIFICATION_RULES.length} notification rules`);
       setRules(SAMPLE_NOTIFICATION_RULES);
       setFilteredRules(SAMPLE_NOTIFICATION_RULES);
     } catch (error) {
@@ -239,16 +237,13 @@ export const NotificationRulesTab: React.FC<NotificationRulesTabProps> = ({ onOp
     if (!file) return;
 
     try {
-      console.log('📥 Importing Excel file:', file.name);
       toast.info('Đang xử lý file Excel...');
 
       const result = await parseExcelFile(file);
 
       if (result.success && result.data) {
-        console.log('✅ Parsed rules:', result.data);
 
         if (result.errors && result.errors.length > 0) {
-          console.warn('⚠️ Import warnings:', result.errors);
           toast.warning(`${result.errors.length} lỗi/cảnh báo khi import`);
         }
 

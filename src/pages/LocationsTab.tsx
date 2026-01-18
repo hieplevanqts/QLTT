@@ -83,7 +83,6 @@ export const LocationsTab: React.FC = () => {
   const fetchProvinces = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Fetching provinces from Supabase...');
 
       const { data, error } = await supabase
         .from('provinces')
@@ -95,7 +94,6 @@ export const LocationsTab: React.FC = () => {
         toast.error(`Lỗi tải tỉnh/thành phố: ${error.message}`);
         setProvinces([]);
       } else {
-        console.log(`✅ Loaded ${data?.length || 0} provinces`);
         setProvinces(data || []);
         
         // Auto-select first province if none selected
@@ -114,7 +112,6 @@ export const LocationsTab: React.FC = () => {
 
   const fetchWardsByProvince = async (provinceId: string) => {
     try {
-      console.log(`🔍 Fetching wards for province: ${provinceId}...`);
 
       // Fetch wards with pagination for large datasets
       let allWards: any[] = [];
@@ -159,7 +156,6 @@ export const LocationsTab: React.FC = () => {
         }
       }
 
-      console.log(`✅ Loaded ${allWards.length} wards for province`);
 
       // Map data
       const mappedWards = allWards.map((ward: any) => ({
@@ -227,7 +223,6 @@ export const LocationsTab: React.FC = () => {
         console.error('❌ Error deleting province:', error);
         toast.error(`Lỗi xóa tỉnh/thành phố: ${error.message}`);
       } else {
-        console.log('✅ Province deleted successfully');
         toast.success('Đã xóa tỉnh/thành phố thành công');
         
         // Clear selection if deleted province was selected
@@ -282,7 +277,6 @@ export const LocationsTab: React.FC = () => {
         console.error('❌ Error deleting ward:', error);
         toast.error(`Lỗi xóa phường/xã: ${error.message}`);
       } else {
-        console.log('✅ Ward deleted successfully');
         toast.success('Đã xóa phường/xã thành công');
         if (selectedProvince) {
           fetchWardsByProvince(selectedProvince.id);

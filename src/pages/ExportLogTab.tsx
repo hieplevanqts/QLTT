@@ -88,7 +88,6 @@ export const ExportLogTab: React.FC = () => {
   const fetchExportJobs = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Fetching export jobs...');
 
       const { data, error } = await supabase
         .from('export_jobs')
@@ -102,7 +101,6 @@ export const ExportLogTab: React.FC = () => {
         return;
       }
 
-      console.log(`✅ Loaded ${data?.length || 0} export jobs`);
       setJobs(data || []);
     } catch (error) {
       console.error('❌ Error:', error);
@@ -114,7 +112,6 @@ export const ExportLogTab: React.FC = () => {
 
   const fetchDownloadHistory = async (jobId: string) => {
     try {
-      console.log('🔍 Fetching download history for job:', jobId);
 
       const { data, error } = await supabase
         .from('download_history')
@@ -127,7 +124,6 @@ export const ExportLogTab: React.FC = () => {
         return;
       }
 
-      console.log(`✅ Loaded ${data?.length || 0} download records`);
       setDownloadHistory(data || []);
     } catch (error) {
       console.error('❌ Error:', error);

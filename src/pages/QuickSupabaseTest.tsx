@@ -19,18 +19,12 @@ export default function QuickSupabaseTest() {
       const url = `https://${projectId}.supabase.co`;
       const key = publicAnonKey;
       
-      console.log('=== SUPABASE CONNECTION TEST ===');
-      console.log('Project ID:', projectId);
-      console.log('URL:', url);
-      console.log('Key (first 50 chars):', key.substring(0, 50));
       
       // Create client
       const supabase = createClient(url, key);
-      console.log('✅ Client created');
       
       // Test 1: Try to get auth status
       const { data: authData, error: authError } = await supabase.auth.getSession();
-      console.log('Auth test:', authError ? 'Error' : 'OK', authError?.message);
       
       // Test 2: Try to list tables (will fail but shows connection works)
       const { data: testData, error: testError } = await supabase
@@ -38,9 +32,7 @@ export default function QuickSupabaseTest() {
         .select('count')
         .limit(1);
       
-      console.log('Table test:', testError ? 'Error' : 'OK');
       if (testError) {
-        console.log('Error details:', {
           message: testError.message,
           details: testError.details,
           hint: testError.hint,
@@ -58,7 +50,6 @@ export default function QuickSupabaseTest() {
         console.error('❌ Leads fetch error:', leadsError);
         setResult(`LỖI: ${leadsError.message}\nCode: ${leadsError.code}\nDetails: ${leadsError.details || 'N/A'}\nHint: ${leadsError.hint || 'N/A'}`);
       } else {
-        console.log('✅ Success! Data:', leadsData);
         setResult(`THÀNH CÔNG!\nLấy được ${leadsData?.length || 0} records\n\nDữ liệu:\n${JSON.stringify(leadsData, null, 2)}`);
       }
       

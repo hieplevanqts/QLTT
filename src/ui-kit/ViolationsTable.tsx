@@ -84,7 +84,6 @@ export function ViolationsTable({ violations, loading = false, onCaseClick }: Vi
     if (onCaseClick) {
       onCaseClick(caseNumber);
     } else {
-      console.log('Opening case details:', caseNumber);
       // Default behavior: log to console or show placeholder
     }
   };

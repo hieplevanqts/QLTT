@@ -226,7 +226,6 @@ class EvidenceSecurityService {
     };
 
     // OWASP: Log to structured format (JSON)
-    console.log('[SECURITY_AUDIT]', JSON.stringify(auditLog));
     
     // In production: Send to backend security logging service
     this.sendToSecurityLog(auditLog);

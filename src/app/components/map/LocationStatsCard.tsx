@@ -12,6 +12,7 @@ interface LocationStatsCardProps {
   filteredRestaurants: Restaurant[];
   businessTypeFilters: { [key: string]: boolean };
   categories: Category[];  // 🔥 NEW: Categories for mapping ID to name
+  merchantStats?: { total: number; certified: number; hotspot: number } | null;  // 🔥 NEW: Stats from API
   onClose: () => void;
   isVisible: boolean;
   onVisibilityChange: (visible: boolean) => void;
@@ -26,6 +27,7 @@ export const LocationStatsCard = React.forwardRef<HTMLDivElement, LocationStatsC
     filteredRestaurants,
     businessTypeFilters,
     categories,  // 🔥 NEW: Categories for mapping ID to name
+    merchantStats,  // 🔥 NEW: Stats from API
     onClose,
     isVisible,
     onVisibilityChange,
@@ -57,10 +59,11 @@ export const LocationStatsCard = React.forwardRef<HTMLDivElement, LocationStatsC
     const officer = currentLocation?.officer || 'Chưa phân công';
     const area = currentLocation?.area;
 
-    // Calculate stats
-    const totalBusinesses = filteredRestaurants.length;
-    const certifiedCount = filteredRestaurants.filter(r => r.category === 'certified').length;
-    const hotspotCount = filteredRestaurants.filter(r => r.category === 'hotspot').length;
+    // Calculate stats - use API stats if available, otherwise fallback to filteredRestaurants
+    const totalBusinesses = merchantStats?.total ?? filteredRestaurants.length;
+    const certifiedCount = merchantStats?.certified ?? filteredRestaurants.filter(r => r.category === 'certified').length;
+    const hotspotCount = merchantStats?.hotspot ?? filteredRestaurants.filter(r => r.category === 'hotspot').length;
+    // These are still calculated from filteredRestaurants as they're not in API stats
     const scheduledCount = filteredRestaurants.filter(r => r.category === 'scheduled').length;
     const inspectedCount = filteredRestaurants.filter(r => r.category === 'inspected').length;
 
@@ -89,18 +92,11 @@ export const LocationStatsCard = React.forwardRef<HTMLDivElement, LocationStatsC
       });
     
     // 🐛 DEBUG: Log data for debugging count issues
-    console.log('📊 LocationStatsCard Stats:');
-    console.log('  - filteredRestaurants.length:', filteredRestaurants.length);
-    console.log('  - Certified count:', certifiedCount);
-    console.log('  - Hotspot count:', hotspotCount);
-    console.log('  - Scheduled count:', scheduledCount);
-    console.log('  - Inspected count:', inspectedCount);
-    console.log('  - Active business types:', activeBusinessTypeNames);
-    console.log('  - Sample restaurants:', filteredRestaurants.slice(0, 3).map(r => ({ 
-      name: r.name, 
-      category: r.category, 
-      businessType: r.businessType 
-    })));
+    // console.log(filteredRestaurants.map(r => ({
+    //   name: r.name, 
+    //   category: r.category, 
+    //   businessType: r.businessType 
+    // })));
 
     const handleClose = () => {
       onVisibilityChange(false);

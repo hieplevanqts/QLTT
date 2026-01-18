@@ -15,6 +15,7 @@ import ActivityLog from '../pages/account/ActivityLog';
 import ChangePassword from '../pages/account/ChangePassword';
 import { Login } from '../app/pages/auth/Login';
 import { ProtectedRoute } from '../app/components/auth/ProtectedRoute';
+import { PermissionProtectedRoute } from '../app/components/auth/PermissionProtectedRoute';
 import UserList from '../pages/system/UserList';
 import RoleList from '../pages/system/RoleList';
 import SystemSettings from '../pages/system/SystemSettings';
@@ -80,10 +81,14 @@ export const router = createBrowserRouter([
         element: <Login />,
       },
 
-      // TV Wallboard Mode (requires auth but no layout)
+      // TV Wallboard Mode (requires auth, permission, but no layout)
       {
         path: '/tv',
-        element: <TvWallboardPage />,
+        element: (
+          <PermissionProtectedRoute>
+            <TvWallboardPage />
+          </PermissionProtectedRoute>
+        ),
       },
 
       // Main app routes (with layout + protected)
@@ -101,15 +106,27 @@ export const router = createBrowserRouter([
           },
           {
             path: 'map',
-            element: <MapPage />,
+            element: (
+              <PermissionProtectedRoute>
+                <MapPage />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'stores',
-            element: <StoresListPage />,
+            element: (
+              <PermissionProtectedRoute>
+                <StoresListPage />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'stores/:id',
-            element: <StoreDetailPage />,
+            element: (
+              <PermissionProtectedRoute>
+                <StoreDetailPage />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'data-export',
@@ -117,7 +134,11 @@ export const router = createBrowserRouter([
           },
           {
             path: 'leads',
-            element: <LeadRiskHome />,
+            element: (
+              <PermissionProtectedRoute>
+                <LeadRiskHome />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'plans',
@@ -126,64 +147,124 @@ export const router = createBrowserRouter([
           // Kế hoạch tác nghiệp routes
           {
             path: 'plans/list',
-            element: <PlansList />,
+            element: (
+              <PermissionProtectedRoute>
+                <PlansList />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'plans/create-new',
-            element: <PlanCreate />,
+            element: (
+              <PermissionProtectedRoute>
+                <PlanCreate />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'plans/:planId',
-            element: <PlanDetail />,
+            element: (
+              <PermissionProtectedRoute>
+                <PlanDetail />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'plans/:planId/edit',
-            element: <PlanCreate />, // Reuse create component for edit
+            element: (
+              <PermissionProtectedRoute>
+                <PlanCreate /> {/* Reuse create component for edit */}
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'plans/:planId/inspection-session-board',
-            element: <PlanTaskBoard />,
+            element: (
+              <PermissionProtectedRoute>
+                <PlanTaskBoard />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'plans/inspection-session',
-            element: <TaskBoard />,
+            element: (
+              <PermissionProtectedRoute>
+                <TaskBoard />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'plans/task-board',
-            element: <PlanTaskBoard />,
+            element: (
+              <PermissionProtectedRoute>
+                <PlanTaskBoard />
+              </PermissionProtectedRoute>
+            ),
           },
           // Inspection rounds routes - now under /plans
           {
             path: 'plans/inspection-rounds',
-            element: <InspectionRoundsList />,
+            element: (
+              <PermissionProtectedRoute>
+                <InspectionRoundsList />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'plans/inspection-rounds/create-new',
-            element: <InspectionRoundCreate />,
+            element: (
+              <PermissionProtectedRoute>
+                <InspectionRoundCreate />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'plans/inspection-rounds/:roundId',
-            element: <InspectionRoundDetail />,
+            element: (
+              <PermissionProtectedRoute>
+                <InspectionRoundDetail />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'plans/inspection-rounds/:roundId/statistics',
-            element: <InspectionRoundStatistics />,
+            element: (
+              <PermissionProtectedRoute>
+                <InspectionRoundStatistics />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'plans/inspection-rounds/:roundId/tasks',
-            element: <InspectionTasksList />,
+            element: (
+              <PermissionProtectedRoute>
+                <InspectionTasksList />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'tasks',
-            element: <InspectionTasksList />,
+            element: (
+              <PermissionProtectedRoute>
+                <InspectionTasksList />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'tasks/board',
-            element: <TaskBoard />,
+            element: (
+              <PermissionProtectedRoute>
+                <TaskBoard />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'evidence/*',
-            element: <EvidenceRoutes />,
+            element: (
+              <PermissionProtectedRoute>
+                <EvidenceRoutes />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'reports',
@@ -191,7 +272,11 @@ export const router = createBrowserRouter([
           },
           {
             path: 'admin',
-            element: <AdminPage />,
+            element: (
+              <PermissionProtectedRoute>
+                <AdminPage />
+              </PermissionProtectedRoute>
+            ),
           },
           // Account pages
           {
@@ -213,124 +298,244 @@ export const router = createBrowserRouter([
           // System pages
           {
             path: 'system/users',
-            element: <UserList />,
+            element: (
+              <PermissionProtectedRoute>
+                <UserList />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'system/roles',
-            element: <RoleList />,
+            element: (
+              <PermissionProtectedRoute>
+                <RoleList />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'system/settings',
-            element: <SystemSettings />,
+            element: (
+              <PermissionProtectedRoute>
+                <SystemSettings />
+              </PermissionProtectedRoute>
+            ),
           },
           // Lead & Risk pages
           {
             path: 'lead-risk/inbox',
-            element: <LeadInbox />,
+            element: (
+              <PermissionProtectedRoute>
+                <LeadInbox />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/home',
-            element: <LeadRiskHome />,
+            element: (
+              <PermissionProtectedRoute>
+                <LeadRiskHome />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/list',
-            element: <LeadList />,
+            element: (
+              <PermissionProtectedRoute>
+                <LeadList />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/map',
-            element: <LeadMapView />,
+            element: (
+              <PermissionProtectedRoute>
+                <LeadMapView />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/create-lead-quick',
-            element: <CreateLeadQuick />,
+            element: (
+              <PermissionProtectedRoute>
+                <CreateLeadQuick />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/create-lead-full',
-            element: <CreateLeadFull />,
+            element: (
+              <PermissionProtectedRoute>
+                <CreateLeadFull />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/dashboard',
-            element: <RiskDashboard />,
+            element: (
+              <PermissionProtectedRoute>
+                <RiskDashboard />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/lead/:id',
-            element: <LeadDetail />,
+            element: (
+              <PermissionProtectedRoute>
+                <LeadDetail />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/risk/:id',
-            element: <RiskDetail />,
+            element: (
+              <PermissionProtectedRoute>
+                <RiskDetail />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/case/:id',
-            element: <CaseDetail />,
+            element: (
+              <PermissionProtectedRoute>
+                <CaseDetail />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/hotspots',
-            element: <HotspotExplorer />,
+            element: (
+              <PermissionProtectedRoute>
+                <HotspotExplorer />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/sla-operation-map',
-            element: <SLAOperationMap />,
+            element: (
+              <PermissionProtectedRoute>
+                <SLAOperationMap />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/watchlist',
-            element: <Watchlist />,
+            element: (
+              <PermissionProtectedRoute>
+                <Watchlist />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/quality-metrics',
-            element: <QualityMetrics />,
+            element: (
+              <PermissionProtectedRoute>
+                <QualityMetrics />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/workload-dashboard',
-            element: <WorkloadDashboard />,
+            element: (
+              <PermissionProtectedRoute>
+                <WorkloadDashboard />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/sla-dashboard',
-            element: <SLADashboard />,
+            element: (
+              <PermissionProtectedRoute>
+                <SLADashboard />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/permission-matrix',
-            element: <PermissionMatrix />,
+            element: (
+              <PermissionProtectedRoute>
+                <PermissionMatrix />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/duplicate-detector',
-            element: <DuplicateDetector />,
+            element: (
+              <PermissionProtectedRoute>
+                <DuplicateDetector />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/escalation-form',
-            element: <EscalationForm />,
+            element: (
+              <PermissionProtectedRoute>
+                <EscalationForm />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/verification-outcome',
-            element: <VerificationOutcome />,
+            element: (
+              <PermissionProtectedRoute>
+                <VerificationOutcome />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/entity-risk-profile',
-            element: <EntityRiskProfile />,
+            element: (
+              <PermissionProtectedRoute>
+                <EntityRiskProfile />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/alert-feed',
-            element: <AlertFeed />,
+            element: (
+              <PermissionProtectedRoute>
+                <AlertFeed />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/alert-acknowledgement/:id',
-            element: <AlertAcknowledgement />,
+            element: (
+              <PermissionProtectedRoute>
+                <AlertAcknowledgement />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/risk-indicators',
-            element: <RiskIndicators />,
+            element: (
+              <PermissionProtectedRoute>
+                <RiskIndicators />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/import-leads',
-            element: <ImportLeads />,
+            element: (
+              <PermissionProtectedRoute>
+                <ImportLeads />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/import-review',
-            element: <ImportReview />,
+            element: (
+              <PermissionProtectedRoute>
+                <ImportReview />
+              </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'lead-risk/assignment-dispatch',
-            element: <AssignmentDispatch />,
+            element: (
+              <PermissionProtectedRoute>
+                <AssignmentDispatch />
+              </PermissionProtectedRoute>
+            ),
           },
         ],
       },

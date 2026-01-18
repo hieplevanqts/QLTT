@@ -55,7 +55,6 @@ export const CategoriesTab: React.FC = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      console.log('📁 Fetching categories from database...');
 
       const { data, error } = await supabase
         .from('categories')
@@ -68,7 +67,6 @@ export const CategoriesTab: React.FC = () => {
         return;
       }
 
-      console.log(`✅ Loaded ${data?.length || 0} categories`);
       setCategories(data || []);
       setFilteredCategories(data || []);
     } catch (error) {
@@ -124,7 +122,6 @@ export const CategoriesTab: React.FC = () => {
     }
 
     try {
-      console.log('🗑️ Deleting category:', category.id);
 
       const { error } = await supabase
         .from('categories')
@@ -137,7 +134,6 @@ export const CategoriesTab: React.FC = () => {
         return;
       }
 
-      console.log('✅ Category deleted');
       toast.success('Đã xóa danh mục thành công');
       await fetchCategories();
     } catch (error) {

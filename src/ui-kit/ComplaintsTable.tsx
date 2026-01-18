@@ -104,7 +104,6 @@ export function ComplaintsTable({
     if (onViewDetail) {
       onViewDetail(complaintId);
     } else {
-      console.log('View complaint detail:', complaintId);
       // Placeholder: Navigate to detail page
     }
   };

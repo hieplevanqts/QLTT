@@ -43,8 +43,6 @@ export function Step5Confirmation({ formData, setFormData, wards, districts, pro
     const currentTags = formData.tags || [];
     if (tagInput.trim() && !currentTags.includes(tagInput.trim())) {
       const newTags = [...currentTags, tagInput.trim()];
-      console.log('➕ Adding tag:', tagInput.trim());
-      console.log('🏷️ Updated tags array:', newTags);
       setFormData((prev: any) => ({
         ...prev,
         tags: newTags,
@@ -55,8 +53,6 @@ export function Step5Confirmation({ formData, setFormData, wards, districts, pro
 
   const handleRemoveTag = (tagToRemove: string) => {
     const updatedTags = (formData.tags || []).filter((tag: string) => tag !== tagToRemove);
-    console.log('➖ Removing tag:', tagToRemove);
-    console.log('🏷️ Updated tags array:', updatedTags);
     setFormData((prev: any) => ({
       ...prev,
       tags: updatedTags,

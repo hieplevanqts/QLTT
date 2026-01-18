@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { X, Star, ThumbsUp, MessageCircle, User, Calendar } from 'lucide-react';
 import styles from './ReviewModal.module.css';
 import { Restaurant } from '../../../data/restaurantData';
@@ -145,9 +145,12 @@ export function ReviewModal({ point, isOpen, onClose }: ReviewModalProps) {
     };
   }, [isOpen]);
 
+  // 🔥 FIX: Memoize reviews to prevent re-generation on every render (causes content jumping)
+  // Must be called BEFORE early return (React Hooks rule)
+  const reviews = useMemo(() => generateMockReviews(point), [point?.id, point?.category]); // Only regenerate when point changes
+
   if (!isOpen || !point) return null;
 
-  const reviews = generateMockReviews(point);
   const safeReviews = Array.isArray(reviews) ? reviews : [];
   
   const averageRating = safeReviews.length > 0 

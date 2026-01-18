@@ -79,7 +79,6 @@ export const IntegrationStatusTab: React.FC = () => {
   const fetchServices = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Fetching integration services...');
 
       const { data, error } = await supabase
         .from('integration_services')
@@ -92,7 +91,6 @@ export const IntegrationStatusTab: React.FC = () => {
         return;
       }
 
-      console.log(`✅ Loaded ${data?.length || 0} services`);
       setServices(data || []);
     } catch (error) {
       console.error('❌ Error:', error);
@@ -104,7 +102,6 @@ export const IntegrationStatusTab: React.FC = () => {
 
   const fetchErrorLogs = async (serviceId: string) => {
     try {
-      console.log('🔍 Fetching error logs for service:', serviceId);
 
       const { data, error } = await supabase
         .from('integration_error_logs')
@@ -118,7 +115,6 @@ export const IntegrationStatusTab: React.FC = () => {
         return;
       }
 
-      console.log(`✅ Loaded ${data?.length || 0} error logs`);
       setErrorLogs(data || []);
     } catch (error) {
       console.error('❌ Error:', error);
@@ -134,7 +130,6 @@ export const IntegrationStatusTab: React.FC = () => {
     if (!autoRefresh) return;
 
     const interval = setInterval(() => {
-      console.log('🔄 Auto-refreshing services...');
       fetchServices();
     }, 10000);
 

@@ -65,7 +65,6 @@ export function useSupabaseInspectionRounds(): UseSupabaseInspectionRoundsReturn
       // Map Supabase data to InspectionRound interface based on actual table schema
       const mappedRounds: InspectionRound[] = (Array.isArray(data) ? data : []).map((row: any) => {
         if (!row || typeof row !== 'object') {
-          console.warn('Invalid row data:', row);
           return null;
         }
 
@@ -104,10 +103,6 @@ export function useSupabaseInspectionRounds(): UseSupabaseInspectionRoundsReturn
 
   const updateRoundStatus = async (roundId: string, newStatus: InspectionRound['status'], note?: string) => {
     try {
-      console.log('=== updateRoundStatus START ===');
-      console.log('Round ID:', roundId);
-      console.log('New Status:', newStatus);
-      console.log('Note:', note);
       
       const timestamp = Date.now();
       
@@ -143,9 +138,7 @@ export function useSupabaseInspectionRounds(): UseSupabaseInspectionRoundsReturn
         }
 
         const result = await response.json();
-        console.log('Server response:', result);
       } else {
-        console.log('Direct Supabase update successful:', data);
       }
 
       // Update the local state with the new status
@@ -153,8 +146,6 @@ export function useSupabaseInspectionRounds(): UseSupabaseInspectionRoundsReturn
         round.id === roundId ? { ...round, status: newStatus } : round
       ));
       
-      console.log('Successfully updated inspection round status');
-      console.log('=== updateRoundStatus END ===');
     } catch (err: any) {
       console.error('=== updateRoundStatus ERROR ===');
       console.error('Error updating inspection round status:', err);
@@ -212,7 +203,6 @@ export function useSupabaseInspectionRounds(): UseSupabaseInspectionRoundsReturn
 
       setRounds(prevRounds => [newRound, ...prevRounds]);
 
-      console.log('Successfully created inspection round:', insertData);
     } catch (err: any) {
       console.error('Error creating inspection round:', err);
       throw err; // Re-throw to allow caller to handle the error

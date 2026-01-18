@@ -90,7 +90,6 @@ export const SystemHealthTab: React.FC = () => {
       if (!metrics) {
         setLoading(true);
       }
-      console.log('🔍 Fetching system health metrics...');
 
       // Fetch main metrics
       const { data: metricsData, error: metricsError } = await supabase
@@ -151,7 +150,6 @@ export const SystemHealthTab: React.FC = () => {
         setErrorRateHistory(generateMockHistory(0.5, 0.3));
       }
 
-      console.log('✅ System health data loaded');
     } catch (error) {
       console.error('❌ Error:', error);
       if (!metrics) {
@@ -171,7 +169,6 @@ export const SystemHealthTab: React.FC = () => {
     if (!autoRefresh) return;
 
     const interval = setInterval(() => {
-      console.log('🔄 Auto-refreshing system health...');
       fetchSystemHealth();
     }, 10000);
 

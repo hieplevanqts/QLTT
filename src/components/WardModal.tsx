@@ -105,7 +105,6 @@ export const WardModal: React.FC<WardModalProps> = ({
 
     try {
       setSaving(true);
-      console.log(`💾 ${mode === 'add' ? 'Creating' : 'Updating'} ward...`);
 
       const wardData = {
         code: formData.code.trim(),
@@ -122,7 +121,6 @@ export const WardModal: React.FC<WardModalProps> = ({
           return;
         }
 
-        console.log('✅ Ward created successfully');
         toast.success('Đã tạo phường/xã thành công');
       } else if (mode === 'edit' && ward) {
         const { error } = await supabase
@@ -136,7 +134,6 @@ export const WardModal: React.FC<WardModalProps> = ({
           return;
         }
 
-        console.log('✅ Ward updated successfully');
         toast.success('Đã cập nhật phường/xã thành công');
       }
 

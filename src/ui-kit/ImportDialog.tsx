@@ -74,7 +74,6 @@ export function ImportDialog({ open, onOpenChange, onImport }: ImportDialogProps
 
   const handleDownloadSample = () => {
     // In production, this would download actual sample file
-    console.log('Download sample file');
   };
 
   return (

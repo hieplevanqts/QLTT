@@ -118,6 +118,21 @@ docker-compose --profile prod up -d
 
 Ứng dụng sẽ chạy tại `http://localhost:80`
 
+#### Test Accounts
+
+Để đăng nhập và test hệ thống, bạn có thể sử dụng các tài khoản test sau:
+
+| Email | Mật khẩu | Mô tả |
+|-------|----------|-------|
+| `cuc.truong@gmail.com` | `vhv123` | Cục trưởng |
+| `doi.truong@gmail.com` | `vhv123` | Đội trưởng |
+| `can.bo.qltt@gmail.com` | `vhv123` | Cán bộ QLTT |
+
+**Lưu ý:** 
+- Các tài khoản test này được tạo trong database thông qua file `Insert.sql`
+- Mỗi tài khoản có quyền và vai trò khác nhau, dẫn đến menu và chức năng hiển thị khác nhau
+- Nếu không đăng nhập được, hãy kiểm tra xem các tài khoản đã được tạo trong database chưa
+
 #### Environment Variables
 
 1. Tạo file `.env` trong thư mục gốc của project:
