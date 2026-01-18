@@ -70,7 +70,17 @@ const mappaModules = [
   { path: '/plans', label: 'Kế hoạch tác nghiệp', icon: ClipboardList, permissionCode: 'PLAN_VIEW', hasSubmenu: true },
   { path: '/tasks', label: 'Nhiệm vụ hiện trường', icon: MapPin, permissionCode: 'TASKS_VIEW' },
   { path: '/evidence', label: 'Kho chứng cứ', icon: FileBox, permissionCode: 'EVIDENCE_VIEW' },
-  { path: '/reports', label: 'Báo cáo, thống kê', icon: BarChart3, permissionCode: '' },
+  {
+    path: '/reports',
+    label: 'Báo cáo & Thống kê',
+    icon: BarChart3,
+    permissionCode: '',
+    hasSubmenu: true,
+    submenu: [
+      { path: '/dashboard', label: 'Dashboard' },
+      { path: '/reports', label: 'Báo cáo' },
+    ],
+  },
   { path: '/admin', label: 'Quản trị', icon: Settings, permissionCode: 'ADMIN_VIEW' },
 ];
 

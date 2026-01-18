@@ -8,6 +8,7 @@ import StoreDetailPage from '../pages/StoreDetailPage';
 import DataExportPage from '../pages/DataExportPage';
 import EvidenceRoutes from '../app/routes/EvidenceRoutes';
 import ReportsPage from '../pages/ReportsPage';
+import DashboardPage from '../pages/DashboardPage';
 import AdminPage from '../pages/AdminPage';
 import Profile from '../pages/account/Profile';
 import Preferences from '../pages/account/Preferences';
@@ -265,6 +266,10 @@ export const router = createBrowserRouter([
                 <EvidenceRoutes />
               </PermissionProtectedRoute>
             ),
+          },
+          {
+            path: 'dashboard',
+            element: <DashboardPage />,
           },
           {
             path: 'reports',

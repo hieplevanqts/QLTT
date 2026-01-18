@@ -324,42 +324,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logoutInProgressRef.current = true;
 
     try {
-      
-      // Clear Supabase session
-      await supabase.auth.signOut();
-      
-      // Clear ALL localStorage items
-      localStorage.clear();
-      
-      // Clear ALL sessionStorage items
-      if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.clear();
+      // FIRST: Clear all storage immediately to prevent any reads
+      try {
+        localStorage.clear();
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.clear();
+        }
+        // Clear all cookies
+        if (typeof document !== 'undefined' && document.cookie) {
+          const cookies = document.cookie.split(';');
+          cookies.forEach(cookie => {
+            const eqPos = cookie.indexOf('=');
+            const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+            // Clear cookie for all possible paths and domains
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.${window.location.hostname}`;
+            // Also try to clear without domain (for localhost)
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+              document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+            }
+          });
+        }
+      } catch (clearError) {
+        console.error('Error clearing storage:', clearError);
       }
       
-      // Clear all cookies
-      if (typeof document !== 'undefined' && document.cookie) {
-        const cookies = document.cookie.split(';');
-        cookies.forEach(cookie => {
-          const eqPos = cookie.indexOf('=');
-          const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
-          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
-          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.${window.location.hostname}`;
-        });
-      }
-      
-      // Update state
+      // Update state BEFORE attempting signOut to prevent any re-renders from reading storage
       setUser(null);
       setIsAuthenticated(false);
       
+      // THEN: Try to clear Supabase session (wrap in try-catch to handle AbortError)
+      // Use a timeout to prevent hanging on abort
+      try {
+        const signOutPromise = supabase.auth.signOut();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('SignOut timeout')), 2000)
+        );
+        await Promise.race([signOutPromise, timeoutPromise]);
+      } catch (signOutError: any) {
+        // Ignore AbortError and timeout during signOut - storage already cleared
+        if (signOutError?.name !== 'AbortError' && 
+            !signOutError?.message?.includes('aborted') &&
+            !signOutError?.message?.includes('timeout')) {
+          console.error('Error during signOut:', signOutError);
+        }
+      }
+      
       // Redirect to login page - use full page reload to clear all state
       // Use window.location.href for complete reset
+      // Add a small delay to ensure storage is cleared
       if (!window.location.pathname.includes('/auth/login')) {
-        window.location.href = '/auth/login';
+        // Use replace instead of href to prevent back button issues
+        setTimeout(() => {
+          window.location.replace('/auth/login');
+        }, 100);
+      } else {
+        // If already on login page, just clear state (already done above)
+        logoutInProgressRef.current = false;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error during auto-logout:', error);
-      // Even if there's an error, clear everything
+      // Even if there's an error (including AbortError), clear everything
       try {
         localStorage.clear();
         if (typeof sessionStorage !== 'undefined') {
@@ -380,13 +406,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setUser(null);
       setIsAuthenticated(false);
-      // Redirect to login page - use full page reload to clear all state
-      // Use window.location.href for complete reset
+      // Redirect to login page - use replace to prevent back button
       if (!window.location.pathname.includes('/auth/login')) {
-        window.location.href = '/auth/login';
+        setTimeout(() => {
+          window.location.replace('/auth/login');
+        }, 100);
+      } else {
+        logoutInProgressRef.current = false;
       }
-    } finally {
-      logoutInProgressRef.current = false;
     }
   };
 
@@ -398,7 +425,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const isOnLoginPage = window.location.pathname === '/auth/login';
         
         // Get current session from Supabase
-        const { data: { session }, error } = await supabase.auth.getSession();
+        let session, error;
+        try {
+          const sessionResult = await supabase.auth.getSession();
+          session = sessionResult.data.session;
+          error = sessionResult.error;
+        } catch (err: any) {
+          // Handle AbortError or other errors during session check
+          if (err?.name === 'AbortError' || err?.message?.includes('aborted')) {
+            console.warn('Session check aborted - likely session expired');
+            // Clear everything and logout
+            if (!isOnLoginPage) {
+              await performAutoLogout();
+            } else {
+              setUser(null);
+              setIsAuthenticated(false);
+            }
+            setIsLoading(false);
+            return;
+          }
+          error = err;
+        }
         
         if (error) {
           console.error('Error restoring session:', error);
@@ -573,7 +620,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!isAuthenticated || logoutInProgressRef.current) return;
       
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        let session, error;
+        try {
+          const sessionResult = await supabase.auth.getSession();
+          session = sessionResult.data.session;
+          error = sessionResult.error;
+        } catch (err: any) {
+          // Handle AbortError or other errors during session check
+          if (err?.name === 'AbortError' || err?.message?.includes('aborted')) {
+            console.warn('Session expiry check aborted - likely session expired');
+            await performAutoLogout();
+            return;
+          }
+          error = err;
+        }
         
         if (error || !session) {
           // No session or error, logout immediately

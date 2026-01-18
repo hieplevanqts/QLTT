@@ -22,9 +22,52 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
     const verifySession = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        let session, error;
+        try {
+          const sessionResult = await supabase.auth.getSession();
+          session = sessionResult.data.session;
+          error = sessionResult.error;
+        } catch (err: any) {
+          // Handle AbortError - this means session was aborted (likely expired)
+          if (err?.name === 'AbortError' || err?.message?.includes('aborted')) {
+            console.warn('Session verification aborted - likely session expired');
+            // Clear all storage immediately
+            try {
+              localStorage.clear();
+              if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.clear();
+              }
+              // Clear cookies
+              if (typeof document !== 'undefined' && document.cookie) {
+                const cookies = document.cookie.split(';');
+                cookies.forEach(cookie => {
+                  const eqPos = cookie.indexOf('=');
+                  const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+                  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+                  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
+                  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.${window.location.hostname}`;
+                });
+              }
+            } catch (clearError) {
+              console.error('Error clearing storage:', clearError);
+            }
+            setHasValidSession(false);
+            setIsCheckingSession(false);
+            return;
+          }
+          error = err;
+        }
         
         if (error || !session) {
+          // Clear storage on error
+          try {
+            localStorage.clear();
+            if (typeof sessionStorage !== 'undefined') {
+              sessionStorage.clear();
+            }
+          } catch (clearError) {
+            console.error('Error clearing storage:', clearError);
+          }
           setHasValidSession(false);
           setIsCheckingSession(false);
           return;
@@ -36,6 +79,15 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
           const now = Date.now();
           
           if (now >= expiresAt) {
+            // Clear storage when session expired
+            try {
+              localStorage.clear();
+              if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.clear();
+              }
+            } catch (clearError) {
+              console.error('Error clearing storage:', clearError);
+            }
             setHasValidSession(false);
             setIsCheckingSession(false);
             return;
@@ -44,7 +96,19 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
         // Session is valid
         setHasValidSession(true);
-      } catch (error) {
+      } catch (error: any) {
+        // Handle any other errors
+        if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
+          // Session aborted - clear everything
+          try {
+            localStorage.clear();
+            if (typeof sessionStorage !== 'undefined') {
+              sessionStorage.clear();
+            }
+          } catch (clearError) {
+            console.error('Error clearing storage:', clearError);
+          }
+        }
         console.error('Error verifying session:', error);
         setHasValidSession(false);
       } finally {

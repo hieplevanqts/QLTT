@@ -67,7 +67,17 @@ const mappaModules = [
   { path: '/plans', label: 'Kế hoạch tác nghiệp', icon: ClipboardList, permissionCode: 'PLAN_VIEW', hasSubmenu: true },
   { path: '/tasks', label: 'Nhiệm vụ hiện trường', icon: MapPin, permissionCode: 'TASKS_VIEW' },
   { path: '/evidence', label: 'Kho chứng cứ', icon: FileBox, permissionCode: 'EVIDENCE_VIEW' },
-  { path: '/reports', label: 'Báo cáo, thống kê', icon: BarChart3, permissionCode: '' },
+  {
+    path: '/reports',
+    label: 'Báo cáo & Thống kê',
+    icon: BarChart3,
+    permissionCode: '',
+    hasSubmenu: true,
+    submenu: [
+      { path: '/dashboard', label: 'Dashboard' },
+      { path: '/reports', label: 'Báo cáo' },
+    ],
+  },
   { path: '/admin', label: 'Quản trị', icon: Settings, permissionCode: 'ADMIN_VIEW' },
 ];
 
@@ -224,8 +234,14 @@ export default function VerticalSidebar({
             // "Phiên kiểm tra" KHÔNG active khi ở /plans/inspection-session
             isActive = location.pathname === '/tasks' && location.pathname !== '/plans/inspection-session';
           } else if ((module as any).hasSubmenu && (module as any).submenu) {
-            // Lead-risk submenu
-            isActive = location.pathname.startsWith('/lead-risk') || location.pathname === '/leads';
+            // Submenu modules (lead-risk, reports)
+            if (module.path === '/reports') {
+              // Báo cáo & Thống kê submenu
+              isActive = location.pathname === '/dashboard' || location.pathname === '/reports';
+            } else {
+              // Lead-risk submenu
+              isActive = location.pathname.startsWith('/lead-risk') || location.pathname === '/leads';
+            }
           } else {
             // Normal modules - active when path matches
             isActive = location.pathname === module.path || location.pathname.startsWith(module.path + '/');
