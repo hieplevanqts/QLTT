@@ -31,6 +31,7 @@ export function FeedbackDialog({ isOpen, onClose }: FeedbackDialogProps) {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500));
     
+    console.log('Feedback submitted:', {
       type,
       priority,
       title,

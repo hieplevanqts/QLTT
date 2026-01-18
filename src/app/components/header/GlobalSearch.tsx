@@ -116,6 +116,7 @@ export function GlobalSearch() {
   };
 
   const handleResultClick = (result: SearchResult) => {
+    console.log('Navigate to:', result.url);
     // Save to recent searches
     saveRecentSearch(result);
     setRecentSearches(getRecentSearches());
@@ -129,6 +130,7 @@ export function GlobalSearch() {
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
+      console.log('Search for all results:', searchQuery);
       // TODO: Navigate to search results page with query
       // window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
       setIsOpen(false);

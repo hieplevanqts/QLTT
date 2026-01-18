@@ -3,9 +3,22 @@ import RootLayout from '../layouts/RootLayout';
 import MainLayout from '../layouts/MainLayout';
 import OverviewPage from '../pages/OverviewPage';
 import MapPage from '../pages/MapPage';
-import StoresListPage from '../pages/StoresListPage';
 import StoreDetailPage from '../pages/StoreDetailPage';
 import DataExportPage from '../pages/DataExportPage';
+
+// Registry pages
+import RegistryHomePage from '../pages/registry/RegistryHomePage';
+import RegistryStoreListPage from '../pages/registry/RegistryStoreListPage';
+import RegistryDedupWorkbenchPage from '../pages/registry/RegistryDedupWorkbenchPage';
+import RegistryVerificationQueuePage from '../pages/registry/RegistryVerificationQueuePage';
+import RegistryVerificationDetailPage from '../pages/registry/RegistryVerificationDetailPage';
+import RegistryApprovalQueuePage from '../pages/registry/RegistryApprovalQueuePage';
+import RegistryApprovalDetailPage from '../pages/registry/RegistryApprovalDetailPage';
+import RegistryImportPage from '../pages/registry/RegistryImportPage';
+import RegistryImportReviewPage from '../pages/registry/RegistryImportReviewPage';
+import RegistryAuditLogPage from '../pages/registry/RegistryAuditLogPage';
+import EditRegistryPage from '../pages/EditRegistryPage';
+import FullEditRegistryPage from '../pages/FullEditRegistryPage';
 import EvidenceRoutes from '../app/routes/EvidenceRoutes';
 import ReportsPage from '../pages/ReportsPage';
 import DashboardPage from '../pages/DashboardPage';
@@ -113,21 +126,10 @@ export const router = createBrowserRouter([
               </PermissionProtectedRoute>
             ),
           },
+          // Old routes - Redirect to Registry (Backward compatibility)
           {
             path: 'stores',
-            element: (
-              <PermissionProtectedRoute>
-                <StoresListPage />
-              </PermissionProtectedRoute>
-            ),
-          },
-          {
-            path: 'stores/:id',
-            element: (
-              <PermissionProtectedRoute>
-                <StoreDetailPage />
-              </PermissionProtectedRoute>
-            ),
+            element: <Navigate to="/registry/stores" replace />,
           },
           {
             path: 'data-export',
@@ -324,6 +326,85 @@ export const router = createBrowserRouter([
                 <SystemSettings />
               </PermissionProtectedRoute>
             ),
+          },
+          // Registry routes
+          {
+            path: 'registry',
+            children: [
+              {
+                index: true,
+                element: <RegistryHomePage />,
+              },
+              {
+                path: 'stores',
+                element: <RegistryStoreListPage />,
+              },
+              {
+                path: 'stores/:id',
+                element: <StoreDetailPage />,
+              },
+              {
+                path: 'full-edit/:id',
+                element: <FullEditRegistryPage />,
+              },
+              {
+                path: 'edit/:id',
+                element: <EditRegistryPage />,
+              },
+              // TODO: Add nested store routes
+              // {
+              //   path: 'stores/map',
+              //   element: <RegistryStoreMapSplitPage />,
+              // },
+              // {
+              //   path: 'stores/new',
+              //   element: <RegistryStoreCreateWizardPage />,
+              // },
+              // {
+              //   path: 'stores/:storeId',
+              //   element: <RegistryStoreDetailPage />,
+              // },
+              // {
+              //   path: 'stores/:storeId/edit',
+              //   element: <RegistryStoreEditPage />,
+              // },
+              {
+                path: 'dedup',
+                element: <RegistryDedupWorkbenchPage />,
+              },
+              {
+                path: 'verification',
+                element: <RegistryVerificationQueuePage />,
+              },
+              {
+                path: 'verification/:caseId',
+                element: <RegistryVerificationDetailPage />,
+              },
+              {
+                path: 'approvals',
+                element: <RegistryApprovalQueuePage />,
+              },
+              {
+                path: 'approvals/:approvalId',
+                element: <RegistryApprovalDetailPage />,
+              },
+              {
+                path: 'import',
+                element: <RegistryImportPage />,
+              },
+              {
+                path: 'import-review',
+                element: <RegistryImportReviewPage />,
+              },
+              {
+                path: 'import/review/:jobId',
+                element: <RegistryImportReviewPage />,
+              },
+              {
+                path: 'audit',
+                element: <RegistryAuditLogPage />,
+              },
+            ],
           },
           // Lead & Risk pages
           {

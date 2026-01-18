@@ -61,162 +61,33 @@
   padding: 20px;
 }
 
-.section {
-  margin-bottom: 24px;
+/* Scrollbar styling for panel content */
+.panelContent::-webkit-scrollbar {
+  width: var(--scrollbar-width);
 }
 
-.section:last-child {
-  margin-bottom: 0;
+.panelContent::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: var(--scrollbar-border-radius);
 }
 
-.sectionHeader {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  color: var(--foreground);
+.panelContent::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: var(--scrollbar-border-radius);
+  transition: background 0.3s ease;
 }
 
-.sectionTitle {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--primary);
+.panelContent:hover::-webkit-scrollbar-thumb,
+.panelContent:focus-within::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-color);
 }
 
-/* Help List */
-.helpList {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.panelContent::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-color-hover);
 }
 
-.helpItem {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px;
-  background: var(--muted);
-  border-radius: var(--radius-md);
-  text-decoration: none;
-  transition: all 0.2s;
-}
-
-.helpItem:hover {
-  background: var(--border);
-}
-
-.helpItemContent {
-  flex: 1;
-  min-width: 0;
-}
-
-.helpItemTitle {
-  font-family: 'Inter', sans-serif;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--foreground);
-  margin-bottom: 2px;
-}
-
-.helpItemCategory {
-  font-family: 'Inter', sans-serif;
-  font-size: 12px;
-  color: var(--muted-foreground);
-}
-
-.helpItemIcon {
-  flex-shrink: 0;
-  color: var(--muted-foreground);
-}
-
-/* FAQ */
-.faqList {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.faqItem {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-.faqQuestion {
-  font-family: 'Inter', sans-serif;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--foreground);
-  padding: 12px;
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.2s;
-  list-style: none;
-}
-
-.faqQuestion::-webkit-details-marker {
-  display: none;
-}
-
-.faqQuestion::before {
-  content: '+';
-  display: inline-block;
-  width: 20px;
-  font-weight: 600;
-  color: var(--primary);
-}
-
-.faqItem[open] .faqQuestion::before {
-  content: '−';
-}
-
-.faqQuestion:hover {
-  background: var(--muted);
-}
-
-.faqAnswer {
-  font-family: 'Inter', sans-serif;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--muted-foreground);
-  padding: 0 12px 12px 12px;
-  border-top: 1px solid var(--border);
-}
-
-/* Contact Info */
-.contactInfo {
-  background: var(--muted);
-  border-radius: var(--radius-md);
-  padding: 16px;
-}
-
-.contactText {
-  font-family: 'Inter', sans-serif;
-  font-size: 13px;
-  color: var(--foreground);
-  margin: 0 0 8px 0;
-}
-
-.contactText:last-of-type {
-  margin-bottom: 12px;
-}
-
-.contactLink {
-  color: var(--primary);
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.contactLink:hover {
-  text-decoration: underline;
-}
-
-.contactSubtext {
-  font-family: 'Inter', sans-serif;
-  font-size: 12px;
-  color: var(--muted-foreground);
-  margin: 0;
+.panelContent::-webkit-scrollbar-thumb:active {
+  background: var(--scrollbar-color-active);
 }
 
 /* Footer */
@@ -226,12 +97,17 @@
 }
 
 .feedbackButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   width: 100%;
-  padding: 14px;
+  padding: 10px 16px;
+  font-family: 'Inter', sans-serif;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   color: white;
-  background: var(--primary);
+  background: #005cb6;
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -239,25 +115,7 @@
 }
 
 .feedbackButton:hover {
-  background: color-mix(in srgb, var(--primary) 85%, black);
-}
-
-/* Scrollbar */
-.panelContent::-webkit-scrollbar {
-  width: 8px;
-}
-
-.panelContent::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.panelContent::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
-}
-
-.panelContent::-webkit-scrollbar-thumb:hover {
-  background: var(--muted-foreground);
+  background: #004a94;
 }
 
 /* Responsive */

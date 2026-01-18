@@ -118,6 +118,35 @@
   overflow-y: auto;
 }
 
+/* Scrollbar styling for notification list */
+.notificationList::-webkit-scrollbar {
+  width: var(--scrollbar-width);
+}
+
+.notificationList::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: var(--scrollbar-border-radius);
+}
+
+.notificationList::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: var(--scrollbar-border-radius);
+  transition: background 0.3s ease;
+}
+
+.notificationList:hover::-webkit-scrollbar-thumb,
+.notificationList:focus-within::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-color);
+}
+
+.notificationList::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-color-hover);
+}
+
+.notificationList::-webkit-scrollbar-thumb:active {
+  background: var(--scrollbar-color-active);
+}
+
 .notificationItem {
   position: relative;
   display: flex;
@@ -249,24 +278,6 @@
 
 .viewAllButton:hover {
   background: rgba(0, 92, 182, 0.1);
-}
-
-/* Scrollbar */
-.notificationList::-webkit-scrollbar {
-  width: 8px;
-}
-
-.notificationList::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.notificationList::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
-}
-
-.notificationList::-webkit-scrollbar-thumb:hover {
-  background: var(--muted-foreground);
 }
 
 /* Responsive */
