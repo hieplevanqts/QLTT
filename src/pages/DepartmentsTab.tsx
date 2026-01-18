@@ -38,6 +38,9 @@ interface Department {
   code: string | null;
   level: number;
   path: string | null;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;

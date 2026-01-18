@@ -29,6 +29,9 @@ interface Department {
   code: string;
   level: number;
   path: string | null;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 interface DepartmentModalProps {
@@ -64,6 +67,9 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
     code: department?.code || '',
     level: department?.level || (parentDepartment ? parentDepartment.level + 1 : 1),
     path: department?.path || null,
+    address: department?.address ?? null,
+    latitude: department?.latitude ?? null,
+    longitude: department?.longitude ?? null,
   });
 
   // Area multi-select states
@@ -289,7 +295,17 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
     if (isViewMode) return;
 
     setFormData((prev) => {
-      const updated = { ...prev, [field]: value };
+    const updated = { ...prev, [field]: value };
+
+    if (field === 'address') {
+      const trimmed = typeof value === 'string' ? value.trim() : '';
+      updated.address = trimmed === '' ? null : value;
+    }
+
+    if (field === 'latitude' || field === 'longitude') {
+      const parsed = value === '' ? null : Number(value);
+      updated[field] = Number.isFinite(parsed) ? parsed : null;
+    }
 
       // If parent changes, update level
       if (field === 'parent_id') {
@@ -563,6 +579,49 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                   ⚠️ Không thể thay đổi mã đơn vị sau khi tạo (để đảm bảo tính toàn vẹn dữ liệu)
                 </small>
               )}
+            </div>
+
+            {/* Department Address */}
+            <div className={styles.formGroup}>
+              <label className={styles.label}>
+                Địa chỉ đơn vị
+              </label>
+              <input
+                type="text"
+                className={styles.input}
+                placeholder="Nhập địa chỉ đơn vị"
+                value={formData.address || ''}
+                onChange={(e) => handleChange('address', e.target.value)}
+                disabled={isViewMode}
+              />
+            </div>
+
+            {/* Department Location */}
+            <div className={styles.formRow}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Latitude</label>
+                <input
+                  type="number"
+                  className={styles.input}
+                  placeholder="Ví dụ: 21.0285"
+                  value={formData.latitude ?? ''}
+                  onChange={(e) => handleChange('latitude', e.target.value)}
+                  step="0.000001"
+                  disabled={isViewMode}
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Longitude</label>
+                <input
+                  type="number"
+                  className={styles.input}
+                  placeholder="Ví dụ: 105.8542"
+                  value={formData.longitude ?? ''}
+                  onChange={(e) => handleChange('longitude', e.target.value)}
+                  step="0.000001"
+                  disabled={isViewMode}
+                />
+              </div>
             </div>
 
             {/* Level (editable select) */}

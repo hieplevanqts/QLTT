@@ -11,17 +11,19 @@ import styles from './ScopeBanner.module.css';
  * Cho phép xóa bộ lọc để quay về "Toàn quốc"
  */
 export function ScopeBanner() {
-  const { scope, setScope, getScopeDisplayText, canChangeScope } = useQLTTScope();
+  const { scope, resetScope, getScopeDisplayText, canChangeScope } = useQLTTScope();
 
   // Only show banner if a specific scope is selected
-  if (!scope.province) {
+  const shouldShow = canChangeScope
+    ? Boolean(scope.divisionId || scope.teamId || scope.areaId)
+    : Boolean(scope.areaId);
+
+  if (!shouldShow) {
     return null;
   }
 
   const handleClearScope = () => {
-    if (canChangeScope) {
-      setScope({ province: null, ward: null });
-    }
+    resetScope();
   };
 
   return (
@@ -33,17 +35,15 @@ export function ScopeBanner() {
           <strong className={styles.scopeValue}>{getScopeDisplayText()}</strong>
         </div>
       </div>
-      {canChangeScope && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleClearScope}
-          className={styles.clearButton}
-        >
-          <X className="h-4 w-4 mr-1" />
-          Xóa bộ lọc
-        </Button>
-      )}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleClearScope}
+        className={styles.clearButton}
+      >
+        <X className="h-4 w-4 mr-1" />
+        Xóa bộ lọc
+      </Button>
     </div>
   );
 }
