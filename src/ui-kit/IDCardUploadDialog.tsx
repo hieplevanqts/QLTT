@@ -33,14 +33,16 @@ export function IDCardUploadDialog({
 }: IDCardUploadDialogProps) {
   const isEditing = !!editingDocument;
 
+  const DEFAULT_CCCD_IMAGE = '/assets/images/cccd-placeholder.png';
+
   // File states
   const [frontFile, setFrontFile] = useState<File | null>(null);
   const [backFile, setBackFile] = useState<File | null>(null);
   const [frontFilePreview, setFrontFilePreview] = useState<string | null>(
-    existingData?.frontFileUrl || null
+    existingData?.frontFileUrl || DEFAULT_CCCD_IMAGE
   );
   const [backFilePreview, setBackFilePreview] = useState<string | null>(
-    existingData?.backFileUrl || null
+    existingData?.backFileUrl || DEFAULT_CCCD_IMAGE
   );
 
   // Form state
@@ -111,8 +113,8 @@ export function IDCardUploadDialog({
       setFormData({});
       setFrontFile(null);
       setBackFile(null);
-      setFrontFilePreview(null);
-      setBackFilePreview(null);
+      setFrontFilePreview(DEFAULT_CCCD_IMAGE);
+      setBackFilePreview(DEFAULT_CCCD_IMAGE);
       setErrors({});
       setIsExtracting(false);
       setExtractionComplete(false);
@@ -283,7 +285,7 @@ export function IDCardUploadDialog({
     // Check required fields
     const requiredFields = documentType?.fields.filter((f) => f.required) || [];
     const missingFields = requiredFields.filter((f) => !formData[f.key]);
-    
+
     if (missingFields.length > 0) {
       newErrors.form = `Vui lòng điền đầy đủ thông tin bắt buộc`;
     }
@@ -343,9 +345,8 @@ export function IDCardUploadDialog({
                 Mặt trước <span className={styles.required}>*</span>
               </label>
               <div
-                className={`${styles.uploadArea} ${frontDragging ? styles.dragging : ''} ${
-                  errors.front ? styles.error : ''
-                }`}
+                className={`${styles.uploadArea} ${frontDragging ? styles.dragging : ''} ${errors.front ? styles.error : ''
+                  }`}
                 onDragOver={handleFrontDragOver}
                 onDragLeave={handleFrontDragLeave}
                 onDrop={handleFrontDrop}
@@ -410,9 +411,8 @@ export function IDCardUploadDialog({
                 Mặt sau <span className={styles.required}>*</span>
               </label>
               <div
-                className={`${styles.uploadArea} ${backDragging ? styles.dragging : ''} ${
-                  errors.back ? styles.error : ''
-                }`}
+                className={`${styles.uploadArea} ${backDragging ? styles.dragging : ''} ${errors.back ? styles.error : ''
+                  }`}
                 onDragOver={handleBackDragOver}
                 onDragLeave={handleBackDragLeave}
                 onDrop={handleBackDrop}
@@ -537,7 +537,7 @@ export function IDCardUploadDialog({
           <Button
             onClick={handleSave}
             disabled={
-              (!frontFile && !frontFilePreview) || 
+              (!frontFile && !frontFilePreview) ||
               (!backFile && !backFilePreview) ||
               isExtracting
             }
