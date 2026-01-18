@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { projectId, publicAnonKey } from '/utils/supabase/info';
+import { projectId, publicAnonKey } from '@/utils/supabase/info';
 
 const SUPABASE_URL = `https://${projectId}.supabase.co`;
 const SUPABASE_ANON_KEY = publicAnonKey;

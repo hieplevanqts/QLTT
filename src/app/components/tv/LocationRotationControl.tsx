@@ -2,7 +2,11 @@ import React from 'react';
 import { Play, Pause, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTvData, PRIORITY_LOCATIONS } from '@/contexts/TvDataContext';
 
-export default function LocationRotationControl() {
+interface LocationRotationControlProps {
+  compact?: boolean;
+}
+
+export default function LocationRotationControl({ compact = false }: LocationRotationControlProps) {
   const {
     autoRotationEnabled,
     setAutoRotationEnabled,
@@ -18,16 +22,25 @@ export default function LocationRotationControl() {
     return null;
   }
 
-  const currentLocation = PRIORITY_LOCATIONS[currentLocationIndex];
   const progressPercent = ((20 - timeUntilNextRotation) / 20) * 100;
+
+  const containerPadding = compact ? '8px 12px' : '12px 16px';
+  const containerGap = compact ? '10px' : '12px';
+  const controlSize = compact ? 30 : 36;
+  const arrowSize = compact ? 28 : 32;
+  const pillHeight = compact ? 28 : 32;
+  const pillFontSize = compact ? '11px' : 'var(--text-xs)';
+  const timerHeight = compact ? 28 : 32;
+  const timerMinWidth = compact ? 44 : 48;
+  const iconSize = compact ? 14 : 16;
 
   return (
     <div
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '12px',
-        padding: '12px 16px',
+        gap: containerGap,
+        padding: containerPadding,
         backgroundColor: 'var(--card)',
         border: '1px solid var(--border)',
         borderRadius: 'var(--radius-lg)',
@@ -41,8 +54,8 @@ export default function LocationRotationControl() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          width: '36px',
-          height: '36px',
+          width: `${controlSize}px`,
+          height: `${controlSize}px`,
           padding: 0,
           backgroundColor: autoRotationEnabled ? 'var(--primary)' : 'var(--muted)',
           border: 'none',
@@ -59,9 +72,9 @@ export default function LocationRotationControl() {
         title={autoRotationEnabled ? 'Tạm dừng tự động' : 'Bật tự động chuyển'}
       >
         {autoRotationEnabled ? (
-          <Pause style={{ width: '16px', height: '16px', color: 'white' }} />
+          <Pause style={{ width: `${iconSize}px`, height: `${iconSize}px`, color: 'white' }} />
         ) : (
-          <Play style={{ width: '16px', height: '16px', color: 'var(--foreground)' }} />
+          <Play style={{ width: `${iconSize}px`, height: `${iconSize}px`, color: 'var(--foreground)' }} />
         )}
       </button>
 
@@ -72,8 +85,8 @@ export default function LocationRotationControl() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          width: '32px',
-          height: '32px',
+          width: `${arrowSize}px`,
+          height: `${arrowSize}px`,
           padding: 0,
           backgroundColor: 'transparent',
           border: '1px solid var(--border)',
@@ -91,7 +104,7 @@ export default function LocationRotationControl() {
         }}
         title="Địa bàn trước"
       >
-        <ChevronLeft style={{ width: '16px', height: '16px', color: 'var(--foreground)' }} />
+        <ChevronLeft style={{ width: `${iconSize}px`, height: `${iconSize}px`, color: 'var(--foreground)' }} />
       </button>
 
       {/* Location Pills */}
@@ -117,9 +130,9 @@ export default function LocationRotationControl() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                height: '32px',
+                height: `${pillHeight}px`,
                 padding: '0 12px',
-                fontSize: 'var(--text-xs)',
+                fontSize: pillFontSize,
                 fontWeight: isActive ? 'var(--font-weight-semibold)' : 'var(--font-weight-medium)',
                 color: isActive ? 'white' : 'var(--foreground)',
                 backgroundColor: isActive ? 'var(--primary)' : 'var(--muted)',
@@ -175,8 +188,8 @@ export default function LocationRotationControl() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          width: '32px',
-          height: '32px',
+          width: `${arrowSize}px`,
+          height: `${arrowSize}px`,
           padding: 0,
           backgroundColor: 'transparent',
           border: '1px solid var(--border)',
@@ -194,7 +207,7 @@ export default function LocationRotationControl() {
         }}
         title="Địa bàn tiếp theo"
       >
-        <ChevronRight style={{ width: '16px', height: '16px', color: 'var(--foreground)' }} />
+        <ChevronRight style={{ width: `${iconSize}px`, height: `${iconSize}px`, color: 'var(--foreground)' }} />
       </button>
 
       {/* Timer Display */}
@@ -204,10 +217,10 @@ export default function LocationRotationControl() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            minWidth: '48px',
-            height: '32px',
+            minWidth: `${timerMinWidth}px`,
+            height: `${timerHeight}px`,
             padding: '0 10px',
-            fontSize: 'var(--text-sm)',
+            fontSize: compact ? '12px' : 'var(--text-sm)',
             fontWeight: 'var(--font-weight-bold)',
             color: 'var(--primary)',
             backgroundColor: 'rgba(0, 92, 182, 0.1)',
