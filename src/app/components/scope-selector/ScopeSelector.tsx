@@ -1,49 +1,77 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Lock, MapPin } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { MapPin } from 'lucide-react';
 import { useQLTTScope } from '../../../contexts/QLTTScopeContext';
 import styles from './ScopeSelector.module.css';
 
 export function ScopeSelector() {
-  const { scope, setScope, canChangeScope, availableProvinces, getScopeDisplayText } = useQLTTScope();
-  const [selectedProvince, setSelectedProvince] = useState<string>('');
-  const [selectedWard, setSelectedWard] = useState<string>('');
+  const {
+    scope,
+    setScope,
+    availableDivisions,
+    availableTeams,
+    availableAreas,
+    isLoading,
+  } = useQLTTScope();
+  const [selectedDivision, setSelectedDivision] = useState<string>('');
+  const [selectedTeam, setSelectedTeam] = useState<string>('');
+  const [selectedArea, setSelectedArea] = useState<string>('');
 
   // Sync local state with scope context
   useEffect(() => {
-    setSelectedProvince(scope.province || '');
-    setSelectedWard(scope.ward || '');
-  }, [scope.province, scope.ward]);
+    setSelectedDivision(scope.divisionId || '');
+    setSelectedTeam(scope.teamId || '');
+    setSelectedArea(scope.areaId || '');
+  }, [scope.divisionId, scope.teamId, scope.areaId]);
 
-  // Get wards for selected province
-  const selectedProvinceData = useMemo(() => {
-    return availableProvinces.find(p => p.code === selectedProvince);
-  }, [availableProvinces, selectedProvince]);
+  const handleDivisionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    e.stopPropagation();
+    const divisionId = e.target.value || null;
+    setSelectedDivision(divisionId || '');
+    setSelectedTeam('');
+    setSelectedArea('');
 
-  const handleProvinceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    e.stopPropagation();  // Prevent event bubbling
-    const provinceCode = e.target.value || null;
-    setSelectedProvince(provinceCode || '');
-    setSelectedWard('');  // Reset ward when province changes
-    
     setScope({
-      province: provinceCode,
+      divisionId,
+      teamId: null,
+      areaId: null,
+      province: null,
       ward: null,
     });
   };
 
-  const handleWardChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    e.stopPropagation();  // Prevent event bubbling
-    const wardCode = e.target.value || null;
-    setSelectedWard(wardCode || '');
-    
+  const handleTeamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    e.stopPropagation();
+    const teamId = e.target.value || null;
+    setSelectedTeam(teamId || '');
+    setSelectedArea('');
+
     setScope({
-      province: selectedProvince || null,
-      ward: wardCode,
+      divisionId: selectedDivision || null,
+      teamId,
+      areaId: null,
+      province: null,
+      ward: null,
     });
   };
 
-  const displayText = getScopeDisplayText();
-  const isLocked = !canChangeScope;
+  const handleAreaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    e.stopPropagation();
+    const areaId = e.target.value || null;
+    setSelectedArea(areaId || '');
+
+    const area = availableAreas.find((item) => item.id === areaId);
+    setScope({
+      divisionId: selectedDivision || null,
+      teamId: selectedTeam || null,
+      areaId,
+      province: area?.provinceCode || null,
+      ward: area?.wardCode || null,
+    });
+  };
+
+  const isDivisionDisabled = isLoading;
+  const isTeamDisabled = isLoading || !selectedDivision;
+  const isAreaDisabled = isLoading || !selectedTeam;
 
   return (
     <div 
@@ -52,50 +80,56 @@ export function ScopeSelector() {
       onMouseDown={(e) => e.stopPropagation()}
       data-scope-selector="true"
     >
-      {isLocked ? (
-        <div className={`${styles.trigger} ${styles.locked}`}>
-          <MapPin className={styles.triggerIcon} size={16} />
-          <span className={styles.triggerText}>{displayText}</span>
-          <Lock className={styles.lockIcon} size={14} />
-        </div>
-      ) : (
-        <div className={styles.selectWrapper}>
-          <MapPin className={styles.selectIcon} size={16} />
-          <select
-            value={selectedProvince || ''}
-            onChange={handleProvinceChange}
-            className={styles.select}
-            disabled={!canChangeScope}
-            onClick={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            <option value="">Toàn quốc</option>
-            {availableProvinces.map(province => (
-              <option key={province.code} value={province.code}>
-                {province.name}
-              </option>
-            ))}
-          </select>
-          
-          {selectedProvince && selectedProvinceData && selectedProvinceData.wards.length > 0 && (
-            <select
-              value={selectedWard || ''}
-              onChange={handleWardChange}
-              className={styles.select}
-              disabled={!canChangeScope}
-              onClick={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
-            >
-              <option value="">Tất cả xã/phường</option>
-              {selectedProvinceData.wards.map(ward => (
-                <option key={ward.code} value={ward.code}>
-                  {ward.fullName || ward.name}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-      )}
+      <div className={styles.selectWrapper}>
+        <MapPin className={styles.selectIcon} size={16} />
+        <select
+          value={selectedDivision || ''}
+          onChange={handleDivisionChange}
+          className={styles.select}
+          disabled={isDivisionDisabled}
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <option value="">Tất cả chi cục</option>
+          {availableDivisions.map((division) => (
+            <option key={division.id} value={division.id}>
+              {division.name}
+            </option>
+          ))}
+        </select>
+        
+        <select
+          value={selectedTeam || ''}
+          onChange={handleTeamChange}
+          className={styles.select}
+          disabled={isTeamDisabled}
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <option value="">Tất cả đội</option>
+          {availableTeams.map((team) => (
+            <option key={team.id} value={team.id}>
+              {team.name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={selectedArea || ''}
+          onChange={handleAreaChange}
+          className={styles.select}
+          disabled={isAreaDisabled}
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <option value="">Tất cả địa bàn</option>
+          {availableAreas.map((area) => (
+            <option key={area.id} value={area.id}>
+              {area.name}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
   );
 }

@@ -162,7 +162,7 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
         )}
 
         {/* Global Search - Centered */}
-        <div className="hidden md:flex flex-1 max-w-xl mx-auto">
+        <div className="hidden md:flex flex-1 max-w-[420px] mx-auto">
           <GlobalSearch />
         </div>
 

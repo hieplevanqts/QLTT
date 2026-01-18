@@ -11,6 +11,9 @@ export interface Department {
   level?: number;
   path?: string;
   parent_id?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
   created_at?: string;
   updated_at?: string;
   deleted_at?: string;

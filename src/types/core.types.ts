@@ -162,6 +162,9 @@ export interface Department {
   
   // Materialized Path (VD: /root/dept_a/team_b/)
   path?: string | null;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   
   created_at: string;
   updated_at: string;

@@ -1,204 +1,387 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
-import { Province, Ward } from '../data/qltt-structure';
-import { fetchProvinces, fetchAllWards, ProvinceApiData, WardApiData } from '../utils/api/locationsApi';
+import { supabase } from '../lib/supabase';
 
 export interface QLTTScope {
-  province: string | null;    // null = "Toàn quốc"
-  ward: string | null;        // null = "Tất cả xã/phường"
+  divisionId: string | null; // Chi cục (departments level 2)
+  teamId: string | null;     // Đội (departments level 3)
+  areaId: string | null;     // areas.id
+  province: string | null;   // province code (for downstream filters)
+  ward: string | null;       // ward code (for downstream filters)
 }
 
-export type { Province, Ward };
+interface ScopeDepartment {
+  id: string;
+  parent_id: string | null;
+  name: string;
+  code?: string | null;
+  level?: number | null;
+}
+
+interface AreaRow {
+  id: string;
+  code: string;
+  name: string;
+  level: string;
+  provinceId?: string | null;
+  wardId?: string | null;
+}
+
+interface DepartmentAreaRow {
+  department_id: string;
+  area_id: string;
+}
+
+interface WardRow {
+  id: string;
+  code: string;
+  name: string;
+  province_id: string;
+}
+
+interface ProvinceRow {
+  id: string;
+  code: string;
+  name: string;
+}
+
+export interface ScopeArea {
+  id: string;
+  name: string;
+  code?: string;
+  wardCode?: string | null;
+  provinceCode?: string | null;
+}
+
+interface ScopeLocks {
+  division: boolean;
+  team: boolean;
+}
 
 interface QLTTScopeContextType {
   scope: QLTTScope;
   setScope: (scope: QLTTScope) => void;
+  resetScope: () => void;
   canChangeScope: boolean;
-  availableProvinces: Province[];
+  locks: ScopeLocks;
+  availableDivisions: ScopeDepartment[];
+  availableTeams: ScopeDepartment[];
+  availableAreas: ScopeArea[];
   getScopeDisplayText: () => string;
+  isLoading: boolean;
 }
 
 const QLTTScopeContext = createContext<QLTTScopeContextType | undefined>(undefined);
 
+const getDepartmentLevelFromCode = (code?: string | null): number | undefined => {
+  if (!code) return undefined;
+  const trimmed = code.trim();
+  if (trimmed.length < 2 || trimmed.length % 2 !== 0) return undefined;
+  return trimmed.length / 2;
+};
+
 export function QLTTScopeProvider({ children }: { children: ReactNode }) {
   const authContext = useAuth();
   const user = authContext?.user || null;
-  
-  // 🔥 Default to Hà Nội (code: '01') instead of "Toàn quốc"
+
   const [scope, setScope] = useState<QLTTScope>({
-    province: '01',  // Hà Nội code
+    divisionId: null,
+    teamId: null,
+    areaId: null,
+    province: null,
     ward: null,
   });
 
-  // 🔥 NEW: State for provinces and wards from API
-  const [provincesData, setProvincesData] = useState<ProvinceApiData[]>([]);
-  const [wardsData, setWardsData] = useState<WardApiData[]>([]);
-  const [isLoadingLocations, setIsLoadingLocations] = useState(true);
+  const [departments, setDepartments] = useState<ScopeDepartment[]>([]);
+  const [departmentAreas, setDepartmentAreas] = useState<DepartmentAreaRow[]>([]);
+  const [areas, setAreas] = useState<AreaRow[]>([]);
+  const [wards, setWards] = useState<WardRow[]>([]);
+  const [provinces, setProvinces] = useState<ProvinceRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
-  // Determine if user can change scope based on their role
-  const canChangeScope = user?.level === 'cuc' || user?.level === 'chicuc';
-
-  // 🔥 NEW: Fetch provinces and wards from API on mount
   useEffect(() => {
-    async function loadLocations() {
+    setHasInitialized(false);
+  }, [user?.username]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadScopeData() {
       try {
-        setIsLoadingLocations(true);
-        
-        // Fetch provinces and wards in parallel
-        const [provinces, wards] = await Promise.all([
-          fetchProvinces(),
-          fetchAllWards(),
+        setIsLoading(true);
+
+        const [
+          { data: departmentsData, error: departmentsError },
+          { data: departmentAreasData, error: departmentAreasError },
+          { data: areasData, error: areasError },
+          { data: wardsData, error: wardsError },
+          { data: provincesData, error: provincesError },
+        ] = await Promise.all([
+          supabase
+            .from('departments')
+            .select('id, parent_id, name, code, level')
+            .is('deleted_at', null)
+            .order('path', { ascending: true }),
+          supabase
+            .from('department_areas')
+            .select('department_id, area_id'),
+          supabase
+            .from('areas')
+            .select('id, code, name, level, "provinceId", "wardId"'),
+          supabase
+            .from('wards')
+            .select('id, code, name, province_id'),
+          supabase
+            .from('provinces')
+            .select('id, code, name'),
         ]);
 
+        if (departmentsError) {
+          console.error('❌ QLTTScopeContext: Failed to load departments:', departmentsError);
+        }
+        if (departmentAreasError) {
+          console.error('❌ QLTTScopeContext: Failed to load department_areas:', departmentAreasError);
+        }
+        if (areasError) {
+          console.error('❌ QLTTScopeContext: Failed to load areas:', areasError);
+        }
+        if (wardsError) {
+          console.error('❌ QLTTScopeContext: Failed to load wards:', wardsError);
+        }
+        if (provincesError) {
+          console.error('❌ QLTTScopeContext: Failed to load provinces:', provincesError);
+        }
 
-        setProvincesData(provinces);
-        setWardsData(wards);
+        if (!isMounted) return;
+
+        setDepartments(departmentsData || []);
+        setDepartmentAreas(departmentAreasData || []);
+        setAreas(areasData || []);
+        setWards(wardsData || []);
+        setProvinces(provincesData || []);
       } catch (error: any) {
-        console.error('❌ QLTTScopeContext: Failed to load locations:', error);
-        console.error('❌ QLTTScopeContext: Error details:', {
-          message: error.message,
-          stack: error.stack,
-        });
-        // Fallback to empty arrays on error
-        setProvincesData([]);
-        setWardsData([]);
+        console.error('❌ QLTTScopeContext: Failed to load scope data:', error);
       } finally {
-        setIsLoadingLocations(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     }
 
-    loadLocations();
+    loadScopeData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  // 🔥 NEW: Transform API data to component format
-  const availableProvinces = React.useMemo(() => {
+  const departmentsById = useMemo(() => {
+    return new Map(departments.map((dept) => [dept.id, dept]));
+  }, [departments]);
 
-    if (isLoadingLocations) {
-      return [];
+  const areasById = useMemo(() => {
+    return new Map(areas.map((area) => [area.id, area]));
+  }, [areas]);
+
+  const wardsById = useMemo(() => {
+    return new Map(wards.map((ward) => [ward.id, ward]));
+  }, [wards]);
+
+  const provincesById = useMemo(() => {
+    return new Map(provinces.map((province) => [province.id, province]));
+  }, [provinces]);
+
+  const getDepartmentLevel = (dept: ScopeDepartment) => {
+    return dept.level ?? getDepartmentLevelFromCode(dept.code);
+  };
+
+  const allDivisions = useMemo(
+    () => departments.filter((dept) => getDepartmentLevel(dept) === 2),
+    [departments],
+  );
+
+  const allTeams = useMemo(
+    () => departments.filter((dept) => getDepartmentLevel(dept) === 3),
+    [departments],
+  );
+
+  const findDivisionIdByTeamCode = (teamCode?: string | null) => {
+    if (!teamCode) return null;
+    const normalizedCode = teamCode.trim().toUpperCase();
+    const division = allDivisions.find((dept) => {
+      const divisionCode = dept.code?.trim().toUpperCase();
+      return divisionCode ? normalizedCode.startsWith(divisionCode) : false;
+    });
+    return division?.id || null;
+  };
+
+  const userDepartmentId = user?.departmentInfo?.id || null;
+  const userDepartment = userDepartmentId ? departmentsById.get(userDepartmentId) : undefined;
+  const userLevel = user?.departmentInfo?.level ?? getDepartmentLevelFromCode(user?.departmentInfo?.code);
+
+  const userDivisionId = useMemo(() => {
+    if (userLevel === 2) {
+      return userDepartment?.id || userDepartmentId;
     }
-
-    if (!user) {
-      return [];
+    if (userLevel && userLevel >= 3) {
+      return userDepartment?.parent_id
+        || user?.departmentInfo?.parent_id
+        || findDivisionIdByTeamCode(userDepartment?.code || user?.departmentInfo?.code)
+        || null;
     }
+    return null;
+  }, [userDepartment, userLevel, userDepartmentId, user?.departmentInfo?.parent_id, user?.departmentInfo?.code, allDivisions]);
 
-    // Transform provinces with their wards
-    const provincesWithWards: Province[] = provincesData.map((province) => {
-      // Find all wards for this province by matching province_id
-      const provinceWards = wardsData
-        .filter(ward => {
-          // 🔥 FIX: Use 'province_id' (snake_case) as that's the database field name
-          const wardProvinceId = ward.province_id || (ward as any).provinceId;
-          return wardProvinceId === province.id;
-        })
-        .map(ward => ({
-          code: ward.code,
-          name: ward.name,
-          fullName: ward.name, // Use name as fullName if not available
-        }));
+  const locks: ScopeLocks = useMemo(
+    () => ({
+      division: Boolean(userLevel && userLevel >= 2),
+      team: Boolean(userLevel && userLevel >= 3),
+    }),
+    [userLevel],
+  );
 
+  const availableDivisions = useMemo(() => {
+    if (!userLevel || userLevel <= 1) {
+      return allDivisions;
+    }
+    if (userLevel === 2) {
+      const divisionId = userDepartment?.id || userDepartmentId;
+      return divisionId ? allDivisions.filter((dept) => dept.id === divisionId) : [];
+    }
+    if (userLevel >= 3 && userDivisionId) {
+      return allDivisions.filter((dept) => dept.id === userDivisionId);
+    }
+    return [];
+  }, [allDivisions, userLevel, userDepartment, userDepartmentId, userDivisionId]);
 
-      return {
-        code: province.code,
-        name: province.name,
-        fullName: province.name, // Use name as fullName if not available
-        wards: provinceWards,
-      };
+  const availableTeams = useMemo(() => {
+    if (!scope.divisionId) return [];
+    const division = departmentsById.get(scope.divisionId);
+    const divisionCode = division?.code?.trim().toUpperCase() || null;
+    const teamsInDivision = allTeams.filter((team) => {
+      if (team.parent_id && team.parent_id === scope.divisionId) {
+        return true;
+      }
+      if (divisionCode && team.code) {
+        return team.code.trim().toUpperCase().startsWith(divisionCode);
+      }
+      return false;
     });
 
-    // Filter based on user's permission
-    let filteredProvinces: Province[];
-    if (user.level === 'cuc') {
-      // Central admin sees all provinces
-      filteredProvinces = provincesWithWards;
-    } else if (user.level === 'chicuc' && user.provinceCode) {
-      // Provincial director (chi cuc) sees only their province
-      filteredProvinces = provincesWithWards.filter(p => p.code === user.provinceCode);
-    } else {
-      // Ward/Team level sees nothing (locked to their ward)
-      filteredProvinces = [];
+    if (userLevel && userLevel >= 3 && userDepartment) {
+      return teamsInDivision.filter((team) => team.id === userDepartment.id);
     }
+    return teamsInDivision;
+  }, [allTeams, scope.divisionId, userLevel, userDepartment, departmentsById]);
 
-    return filteredProvinces;
-  }, [user, provincesData, wardsData, isLoadingLocations]);
+  const departmentAreasByDepartment = useMemo(() => {
+    const map = new Map<string, string[]>();
+    departmentAreas.forEach((item) => {
+      if (!map.has(item.department_id)) {
+        map.set(item.department_id, []);
+      }
+      map.get(item.department_id)!.push(item.area_id);
+    });
+    return map;
+  }, [departmentAreas]);
 
-  // Initialize scope based on user's level
-  useEffect(() => {
-    if (!user) return;
+  const availableAreas = useMemo(() => {
+    if (!scope.teamId) return [];
+    const areaIds = departmentAreasByDepartment.get(scope.teamId) || [];
+    return areaIds
+      .map((areaId) => areasById.get(areaId))
+      .filter((area): area is AreaRow => Boolean(area))
+      .map((area) => {
+        const ward = area.wardId ? wardsById.get(area.wardId) : undefined;
+        const provinceFromWard = ward ? provincesById.get(ward.province_id) : undefined;
+        const provinceFromArea = area.provinceId ? provincesById.get(area.provinceId) : undefined;
+        return {
+          id: area.id,
+          name: ward?.name || area.name,
+          code: area.code,
+          wardCode: ward?.code || null,
+          provinceCode: provinceFromWard?.code || provinceFromArea?.code || null,
+        };
+      });
+  }, [scope.teamId, departmentAreasByDepartment, areasById, wardsById, provincesById]);
 
-    // Set default scope based on user level (ALWAYS reset on user change)
-    if (user.level === 'cuc') {
-      // Central admin: default to Hà Nội (code: '01')
-      setScope({ province: '01', ward: null });
-    } else if (user.level === 'chicuc') {
-      // Provincial director: locked to their province, all wards
-      setScope({
-        province: user.provinceCode || null,
+  const buildDefaultScope = (): QLTTScope => {
+    if (userLevel === 2) {
+      return {
+        divisionId: userDepartment?.id || userDepartmentId,
+        teamId: null,
+        areaId: null,
+        province: null,
         ward: null,
-      });
-    } else if (user.level === 'doi') {
-      // Ward/Team level: locked to their specific ward
-      setScope({
-        province: user.provinceCode || null,
-        ward: user.wardCode || null,
-      });
+      };
     }
-  }, [user]);
 
-  // Save scope to localStorage when it changes
+    if (userLevel && userLevel >= 3) {
+      return {
+        divisionId: userDepartment?.parent_id
+          || user?.departmentInfo?.parent_id
+          || findDivisionIdByTeamCode(userDepartment?.code || user?.departmentInfo?.code)
+          || null,
+        teamId: userDepartment?.id || userDepartmentId,
+        areaId: null,
+        province: null,
+        ward: null,
+      };
+    }
+
+    return {
+      divisionId: null,
+      teamId: null,
+      areaId: null,
+      province: null,
+      ward: null,
+    };
+  };
+
+  useEffect(() => {
+    if (!user || isLoading || hasInitialized) return;
+    const defaultScope = buildDefaultScope();
+    setScope(defaultScope);
+    setHasInitialized(true);
+  }, [user, isLoading, hasInitialized, userDepartment, userLevel]);
+
   const handleSetScope = (newScope: QLTTScope) => {
     setScope(newScope);
-    if (canChangeScope) {
-      localStorage.setItem('mappa-scope', JSON.stringify(newScope));
-    }
+    localStorage.setItem('mappa-scope', JSON.stringify(newScope));
   };
 
-  // Generate display text for current scope
+  const resetScope = () => {
+    const defaultScope = buildDefaultScope();
+    setScope(defaultScope);
+  };
+
   const getScopeDisplayText = () => {
-    if (!scope.province) {
-      return 'Toàn quốc';
-    }
+    const divisionName = scope.divisionId ? departmentsById.get(scope.divisionId)?.name : null;
+    const teamName = scope.teamId ? departmentsById.get(scope.teamId)?.name : null;
+    const areaName = scope.areaId
+      ? availableAreas.find((area) => area.id === scope.areaId)?.name || areasById.get(scope.areaId)?.name
+      : null;
 
-    const province = availableProvinces.find(p => p.code === scope.province);
-    
-    // 🔥 DEBUG: Log when province not found
-    if (!province) {
-      
-      // 🔥 FALLBACK: If still loading, show default text
-      if (isLoadingLocations) {
-        return 'Đang tải...';
-      }
-      
-      // 🔥 FALLBACK: Try to get province name from raw data
-      const rawProvince = provincesData.find(p => p.code === scope.province);
-      if (rawProvince) {
-        return `Toàn quốc / ${rawProvince.name}`;
-      }
-      
-      return 'Toàn quốc';
-    }
-
-    // If ward is selected, show full ward info
-    if (scope.ward) {
-      const ward = province.wards.find(w => w.code === scope.ward);
-      if (ward) {
-        // Use fullName for complete address, fallback to name if fullName not available
-        const wardDisplay = ward.fullName || ward.name;
-        return `Toàn quốc / ${province.name} / ${wardDisplay}`;
-      }
-    }
-
-    // Only province selected
-    return `Toàn quốc / ${province.name}`;
+    const parts = [divisionName, teamName, areaName].filter(Boolean);
+    return parts.length > 0 ? parts.join(' / ') : 'Toàn quốc';
   };
+
+  const canChangeScope = Boolean(userLevel && userLevel <= 2);
 
   return (
     <QLTTScopeContext.Provider
       value={{
         scope,
         setScope: handleSetScope,
+        resetScope,
         canChangeScope,
-        availableProvinces,
+        locks,
+        availableDivisions,
+        availableTeams,
+        availableAreas,
         getScopeDisplayText,
+        isLoading,
       }}
     >
       {children}

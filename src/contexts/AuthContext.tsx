@@ -31,6 +31,9 @@ export interface UserInfo {
     code?: string;
     level?: number;
     address?: string;
+    latitude?: number;
+    longitude?: number;
+    parent_id?: string | null;
   };
 }
 
@@ -155,8 +158,15 @@ async function fetchUserRoleName(userId: string): Promise<string | null> {
   }
 }
 
+function getDepartmentLevelFromCode(code?: string | null): number | undefined {
+  if (!code) return undefined;
+  const trimmed = code.trim();
+  if (trimmed.length < 2 || trimmed.length % 2 !== 0) return undefined;
+  return trimmed.length / 2;
+}
+
 // 🔥 NEW: Fetch user department from database (users -> department_users -> departments)
-async function fetchUserDepartment(userId: string): Promise<{ id: string; name: string; code?: string; level?: number; address?: string } | null> {
+async function fetchUserDepartment(userId: string): Promise<{ id: string; name: string; code?: string; level?: number; address?: string; latitude?: number; longitude?: number; parent_id?: string | null } | null> {
   try {
     
     // Query department_users with nested select to get departments data (including address)
@@ -169,7 +179,10 @@ async function fetchUserDepartment(userId: string): Promise<{ id: string; name: 
           name,
           code,
           level,
-          address
+          address,
+          latitude,
+          longitude,
+          parent_id
         )
       `)
       .eq('user_id', userId)
@@ -190,12 +203,16 @@ async function fetchUserDepartment(userId: string): Promise<{ id: string; name: 
       return null;
     }
     
+    const inferredLevel = getDepartmentLevelFromCode(departmentData.code);
     const departmentInfo = {
       id: departmentData.id,
       name: departmentData.name || '',
       code: departmentData.code || undefined,
-      level: departmentData.level || undefined,
+      level: departmentData.level ?? inferredLevel,
       address: departmentData.address || undefined,
+      latitude: departmentData.latitude ?? undefined,
+      longitude: departmentData.longitude ?? undefined,
+      parent_id: departmentData.parent_id ?? null,
     };
     
     return departmentInfo;
