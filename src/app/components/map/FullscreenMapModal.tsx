@@ -73,10 +73,6 @@ export function FullscreenMapModal({
   // 🔥 FIX: restaurants prop is now PRE-FILTERED from MapPage
   // MapPage handles ALL filtering (status, business type, location, search)
   // FullscreenMapModal just receives the filtered data and displays it
-  console.log('🔍 FullscreenMapModal: Received', restaurants?.length || 0, 'pre-filtered restaurants from MapPage');
-  console.log('🔍 FullscreenMapModal: Filters:', filters);
-  console.log('🔍 FullscreenMapModal: BusinessTypeFilters:', businessTypeFilters);
-  console.log('🔍 FullscreenMapModal: Location:', { selectedProvince, selectedDistrict, selectedWard });
   
   // Calculate filtered count (for display only - restaurants are already filtered)
   const filteredCount = restaurants.length;
@@ -84,17 +80,13 @@ export function FullscreenMapModal({
   // 🔥 FIX: restaurants are already filtered by MapPage, no need to filter again
   // Just use restaurants directly for both map and stats
   const filteredRestaurants = useMemo(() => {
-    console.log('🔍 FullscreenMapModal: Using pre-filtered restaurants for stats');
-    console.log('📍 Location filters:', { selectedProvince, selectedDistrict, selectedWard });
     
     if (!restaurants || restaurants.length === 0) {
-      console.warn('⚠️ FullscreenMapModal: No restaurants received from MapPage');
       return [];
     }
     
     // 🔥 REMOVED: All filtering logic - restaurants are already filtered by MapPage
     // Just return what we received
-    console.log(`✅ FullscreenMapModal: Using ${restaurants.length} pre-filtered restaurants`);
     return restaurants;
   }, [restaurants]);
 

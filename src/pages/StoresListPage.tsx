@@ -242,7 +242,6 @@ export default function StoresListPage() {
       submittedBy: 'Current User', // In production, get from auth context
     };
 
-    console.log('📝 Approval Request Created:', approvalRequest);
 
     // In production:
     // - Save to approval queue
@@ -382,18 +381,18 @@ export default function StoresListPage() {
       prev.map(s => (s.id === approveDialog.storeId ? { ...s, status: 'active' as FacilityStatus } : s))
     );
 
-    // Audit log
-    console.log('✅ Approval Audit Log:', {
-      storeId: approveDialog.storeId,
-      storeName: approveDialog.storeName,
-      action: 'approve',
-      oldStatus: store.status,
-      newStatus: 'active',
-      reason,
-      verifyText,
-      timestamp: new Date().toISOString(),
-      performedBy: 'Current User',
-    });
+    // Audit log (in production, send to backend)
+    // {
+    //   storeId: approveDialog.storeId,
+    //   storeName: approveDialog.storeName,
+    //   action: 'approve',
+    //   oldStatus: store.status,
+    //   newStatus: 'active',
+    //   reason,
+    //   verifyText,
+    //   timestamp: new Date().toISOString(),
+    //   performedBy: 'Current User',
+    // }
 
     toast.success(`Đã phê duyệt cửa hàng "${approveDialog.storeName}"`, {
       description: 'Cửa hàng đã chuyển sang trạng thái "Đang hoạt động"',
@@ -412,18 +411,18 @@ export default function StoresListPage() {
       prev.map(s => (s.id === rejectDialog.storeId ? { ...s, status: 'rejected' as FacilityStatus } : s))
     );
 
-    // Audit log
-    console.log('❌ Rejection Audit Log:', {
-      storeId: rejectDialog.storeId,
-      storeName: rejectDialog.storeName,
-      action: 'reject',
-      oldStatus: store.status,
-      newStatus: 'rejected',
-      reason,
-      verifyText,
-      timestamp: new Date().toISOString(),
-      performedBy: 'Current User',
-    });
+    // Audit log (in production, send to backend)
+    // {
+    //   storeId: rejectDialog.storeId,
+    //   storeName: rejectDialog.storeName,
+    //   action: 'reject',
+    //   oldStatus: store.status,
+    //   newStatus: 'rejected',
+    //   reason,
+    //   verifyText,
+    //   timestamp: new Date().toISOString(),
+    //   performedBy: 'Current User',
+    // }
 
     toast.error(`Đã từ chối phê duyệt cửa hàng "${rejectDialog.storeName}"`, {
       description: 'Cửa hàng đã chuyển sang trạng thái "Từ chối phê duyệt"',
@@ -582,16 +581,16 @@ export default function StoresListPage() {
           }
 
           // Audit log (in production, send to backend)
-          console.log('📋 Audit Log:', {
-            storeId: store.id,
-            storeName: store.name,
-            action: actionType,
-            oldStatus: store.status,
-            newStatus,
-            reason,
-            timestamp: new Date().toISOString(),
-            performedBy: 'Current User', // In production, get from auth context
-          });
+          // {
+          //   storeId: store.id,
+          //   storeName: store.name,
+          //   action: actionType,
+          //   oldStatus: store.status,
+          //   newStatus,
+          //   reason,
+          //   timestamp: new Date().toISOString(),
+          //   performedBy: 'Current User', // In production, get from auth context
+          // }
 
           return { ...store, status: newStatus };
         })
@@ -609,7 +608,6 @@ export default function StoresListPage() {
     };
 
     if (actionType === 'export') {
-      console.log('📥 Exporting stores:', selectedStores);
       toast.success(`Xuất ${processedCount} cơ sở thành công`);
     } else {
       toast.success(
@@ -756,7 +754,6 @@ export default function StoresListPage() {
       render: (store) => {
         // Debug log to verify ownerPhone exists
         if (store.id === 1) {
-          console.log('Store 1 data:', { ownerName: store.ownerName, ownerPhone: store.ownerPhone });
         }
         return (
           <div>
@@ -1234,7 +1231,6 @@ export default function StoresListPage() {
         totalRecords={stores.length}
         selectedCount={selectedRows.size}
         onExport={(options: ExportOptions) => {
-          console.log('Export with options:', options);
           toast.success('Xuất dữ liệu thành công');
         }}
       />
@@ -1243,7 +1239,6 @@ export default function StoresListPage() {
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
         onSubmit={(data: NewStoreDataTabbed) => {
-          console.log('📝 AddStoreDialogTabbed submitted data:', data);
           
           // Get district name from code
           const districtName = getDistrictByName(data.jurisdiction)?.name || data.jurisdiction;
@@ -1298,7 +1293,6 @@ export default function StoresListPage() {
             isVerified: false,
           };
           
-          console.log('✅ New store object:', newStore);
           
           // Add to global store registry
           addStore(newStore);

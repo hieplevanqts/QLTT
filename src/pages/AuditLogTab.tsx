@@ -170,7 +170,6 @@ export const AuditLogTab: React.FC = () => {
   const fetchAuditEvents = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Fetching audit events...');
 
       const { data, error } = await supabase
         .from('audit_events')
@@ -183,7 +182,6 @@ export const AuditLogTab: React.FC = () => {
         return;
       }
 
-      console.log(`✅ Loaded ${data?.length || 0} audit events`);
       setEvents(data || []);
     } catch (error) {
       console.error('❌ Error:', error);

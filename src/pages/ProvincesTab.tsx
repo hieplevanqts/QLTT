@@ -48,7 +48,6 @@ export const ProvincesTab: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Fetching provinces from Supabase...');
 
       const { data, error } = await supabase
         .from('provinces')
@@ -60,7 +59,6 @@ export const ProvincesTab: React.FC = () => {
         toast.error(`Lỗi tải tỉnh/thành phố: ${error.message}`);
         setProvinces([]);
       } else {
-        console.log(`✅ Loaded ${data?.length || 0} provinces from Supabase`);
         setProvinces(data || []);
       }
     } catch (error) {
@@ -140,7 +138,6 @@ export const ProvincesTab: React.FC = () => {
         console.error('❌ Error deleting province:', error);
         toast.error(`Lỗi xóa tỉnh/thành phố: ${error.message}`);
       } else {
-        console.log('✅ Province deleted successfully');
         toast.success('Đã xóa tỉnh/thành phố thành công');
         fetchData();
       }
@@ -152,7 +149,6 @@ export const ProvincesTab: React.FC = () => {
 
   const handleExportExcel = () => {
     try {
-      console.log('📊 Exporting provinces to Excel...');
 
       const excelData = filteredProvinces.map((province, index) => ({
         'STT': index + 1,
@@ -179,7 +175,6 @@ export const ProvincesTab: React.FC = () => {
 
       XLSX.writeFile(wb, filename);
 
-      console.log(`✅ Exported ${filteredProvinces.length} provinces to ${filename}`);
       toast.success(`Đã xuất ${filteredProvinces.length} tỉnh/thành phố ra Excel`);
     } catch (error) {
       console.error('❌ Error exporting to Excel:', error);

@@ -46,7 +46,6 @@ export function LegalDocumentDialog({ open, onOpenChange, document }: LegalDocum
       // Clean up the blob URL
       window.URL.revokeObjectURL(blobUrl);
       
-      console.log('Downloaded:', document.fileName);
     } catch (error) {
       console.error('Download failed:', error);
     }

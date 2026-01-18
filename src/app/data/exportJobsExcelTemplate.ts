@@ -343,7 +343,6 @@ export const parseExcelFile = async (
           });
 
           if (errors.length > 0) {
-            console.warn('⚠️ Import warnings:', errors);
           }
 
           resolve({ success: true, data: parsedJobs });

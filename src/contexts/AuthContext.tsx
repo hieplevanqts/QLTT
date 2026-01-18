@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import { Tables } from '../lib/supabase'; // 🔥 NEW: Import Tables for permission queries
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
 
@@ -23,6 +24,14 @@ export interface UserInfo {
     name: string;
     type: 'province' | 'team';
   }>;
+  permissions?: string[]; // 🔥 NEW: Permission codes (MAP_VIEW, STORES_VIEW, etc.)
+  departmentInfo?: { // 🔥 NEW: Department info from department_users
+    id: string;
+    name: string;
+    code?: string;
+    level?: number;
+    address?: string;
+  };
 }
 
 interface AuthContextType {
@@ -36,6 +45,165 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// 🔥 NEW: Fetch user permissions from database (users -> user_roles -> roles -> role_permissions -> permissions)
+async function fetchUserPermissions(userId: string): Promise<string[]> {
+  try {
+    
+    // Step 1: Get user roles from user_roles table
+    const { data: userRoles, error: userRolesError } = await supabase
+      .from(Tables.USER_ROLES)
+      .select('role_id')
+      .eq('user_id', userId);
+    
+    if (userRolesError) {
+      console.error('❌ Error fetching user roles:', userRolesError);
+      return []; // Return empty array on error
+    }
+    
+    if (!userRoles || userRoles.length === 0) {
+      return []; // User has no roles
+    }
+    
+    const roleIds = userRoles.map(ur => ur.role_id);
+    
+    // Step 2: Get role permissions from role_permissions table
+    const { data: rolePermissions, error: rolePermissionsError } = await supabase
+      .from(Tables.ROLE_PERMISSIONS)
+      .select('permission_id')
+      .in('role_id', roleIds);
+    
+    if (rolePermissionsError) {
+      console.error('❌ Error fetching role permissions:', rolePermissionsError);
+      return [];
+    }
+    
+    if (!rolePermissions || rolePermissions.length === 0) {
+      return [];
+    }
+    
+    const permissionIds = [...new Set(rolePermissions.map(rp => rp.permission_id))]; // Remove duplicates
+    
+    // Step 3: Get permission codes from permissions table
+    const { data: permissions, error: permissionsError } = await supabase
+      .from(Tables.PERMISSIONS)
+      .select('code')
+      .in('id', permissionIds);
+    
+    if (permissionsError) {
+      console.error('❌ Error fetching permission codes:', permissionsError);
+      return [];
+    }
+    
+    if (!permissions || permissions.length === 0) {
+      return [];
+    }
+    
+    const permissionCodes = permissions.map(p => p.code).filter(Boolean) as string[];
+    
+    return permissionCodes;
+  } catch (error: any) {
+    console.error('❌ Error fetching user permissions:', error);
+    return []; // Return empty array on error
+  }
+}
+
+// 🔥 NEW: Fetch user role name from database (users -> user_roles -> roles)
+async function fetchUserRoleName(userId: string): Promise<string | null> {
+  try {
+    
+    // Step 1: Get user roles from user_roles table
+    const { data: userRoles, error: userRolesError } = await supabase
+      .from(Tables.USER_ROLES)
+      .select('role_id')
+      .eq('user_id', userId)
+      .limit(1); // Get first role (primary role)
+    
+    if (userRolesError) {
+      console.error('❌ Error fetching user roles:', userRolesError);
+      return null;
+    }
+    
+    if (!userRoles || userRoles.length === 0) {
+      return null;
+    }
+    
+    const roleId = userRoles[0].role_id;
+    
+    // Step 2: Get role name from roles table
+    const { data: role, error: roleError } = await supabase
+      .from(Tables.ROLES)
+      .select('name')
+      .eq('id', roleId)
+      .single();
+    
+    if (roleError) {
+      console.error('❌ Error fetching role name:', roleError);
+      return null;
+    }
+    
+    if (!role || !role.name) {
+      return null;
+    }
+    
+    const roleName = role.name;
+    
+    return roleName;
+  } catch (error: any) {
+    console.error('❌ Error fetching user role name:', error);
+    return null;
+  }
+}
+
+// 🔥 NEW: Fetch user department from database (users -> department_users -> departments)
+async function fetchUserDepartment(userId: string): Promise<{ id: string; name: string; code?: string; level?: number; address?: string } | null> {
+  try {
+    
+    // Query department_users with nested select to get departments data (including address)
+    const { data: departmentUsers, error: departmentUsersError } = await supabase
+      .from('department_users')
+      .select(`
+        department_id,
+        departments (
+          id,
+          name,
+          code,
+          level,
+          address
+        )
+      `)
+      .eq('user_id', userId)
+      .limit(1);
+    
+    if (departmentUsersError) {
+      console.error('❌ Error fetching user department:', departmentUsersError);
+      return null;
+    }
+    
+    if (!departmentUsers || departmentUsers.length === 0) {
+      return null;
+    }
+    
+    // Extract department data from nested structure
+    const departmentData = departmentUsers[0]?.departments;
+    if (!departmentData || !departmentData.id) {
+      return null;
+    }
+    
+    const departmentInfo = {
+      id: departmentData.id,
+      name: departmentData.name || '',
+      code: departmentData.code || undefined,
+      level: departmentData.level || undefined,
+      address: departmentData.address || undefined,
+    };
+    
+    return departmentInfo;
+  } catch (error: any) {
+    console.error('❌ Error fetching user department:', error);
+    return null;
+  }
+}
 
 // Mock function to parse username and determine user info
 function parseUsername(username: string): Partial<UserInfo> {
@@ -156,7 +324,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logoutInProgressRef.current = true;
 
     try {
-      console.log('🔄 Auto-logout: Token expired, logging out...');
       
       // Clear Supabase session
       await supabase.auth.signOut();
@@ -255,7 +422,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             
             if (now >= expiresAt) {
               // Session expired, auto-logout
-              console.log('⚠️ Session expired, auto-logout...');
               // Only call performAutoLogout if not already on login page to avoid double reload
               if (!isOnLoginPage) {
                 await performAutoLogout();
@@ -276,19 +442,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // or fetch from database using supabaseUser.id
           const storedUser = localStorage.getItem('mappa-user');
           if (storedUser) {
-            setUser(JSON.parse(storedUser));
+            const parsedUser = JSON.parse(storedUser) as UserInfo;
+            // 🔥 NEW: Refresh permissions, department, and role name if user doesn't have them yet
+            if (!parsedUser.permissions || parsedUser.permissions.length === 0 || !parsedUser.departmentInfo || !parsedUser.roleDisplay || parsedUser.roleDisplay === 'Người dùng' || parsedUser.roleDisplay.includes('Quản lý')) {
+              const [permissionCodes, departmentInfo, roleName] = await Promise.all([
+                fetchUserPermissions(supabaseUser.id),
+                fetchUserDepartment(supabaseUser.id),
+                fetchUserRoleName(supabaseUser.id),
+              ]);
+              parsedUser.permissions = permissionCodes;
+              parsedUser.departmentInfo = departmentInfo || undefined;
+              if (roleName) {
+                parsedUser.roleDisplay = roleName; // 🔥 FIX: Update roleDisplay with role name from database
+              }
+              localStorage.setItem('mappa-user', JSON.stringify(parsedUser));
+            }
+            setUser(parsedUser);
             setIsAuthenticated(true);
           } else {
             // If no stored user info, create basic user info from Supabase user
-            // You may want to fetch full user info from your users table here
+            // 🔥 NEW: Fetch user permissions, department, and role name from database
+            const [permissionCodes, departmentInfo, roleName] = await Promise.all([
+              fetchUserPermissions(supabaseUser.id),
+              fetchUserDepartment(supabaseUser.id),
+              fetchUserRoleName(supabaseUser.id),
+            ]);
             const userInfo: UserInfo = {
               username: supabaseUser.email || '',
               fullName: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User',
               level: 'cuc', // Default, should be fetched from database
               role: 'thanhtra', // Default, should be fetched from database
-              roleDisplay: 'Người dùng',
+              roleDisplay: roleName || 'Người dùng', // 🔥 FIX: Use role name from database
               position: 'Người dùng',
               department: 'Hệ thống',
+              permissions: permissionCodes, // 🔥 NEW: Add permissions to user info
+              departmentInfo: departmentInfo || undefined, // 🔥 NEW: Add department info
             };
             setUser(userInfo);
             setIsAuthenticated(true);
@@ -318,11 +506,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for auth state changes (including token expiry)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔐 Auth state changed:', event, session ? 'Session exists' : 'No session');
       
       if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
         // User signed out or token refresh failed
-        console.log('🔄 Auth event: SIGNED_OUT or token refresh failed, auto-logout...');
         await performAutoLogout();
         return;
       }
@@ -337,7 +523,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             
             if (now >= expiresAt) {
               // Session expired even after refresh
-              console.log('⚠️ Session expired after refresh, auto-logout...');
               await performAutoLogout();
               return;
             }
@@ -345,17 +530,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           const storedUser = localStorage.getItem('mappa-user');
           if (storedUser) {
-            setUser(JSON.parse(storedUser));
+            const parsedUser = JSON.parse(storedUser) as UserInfo;
+            // 🔥 FIX: Refresh role name if it's still the default/mock value
+            if (!parsedUser.roleDisplay || parsedUser.roleDisplay === 'Người dùng' || parsedUser.roleDisplay.includes('Quản lý')) {
+              const roleName = await fetchUserRoleName(session.user.id);
+              if (roleName) {
+                parsedUser.roleDisplay = roleName;
+                localStorage.setItem('mappa-user', JSON.stringify(parsedUser));
+              }
+            }
+            setUser(parsedUser);
             setIsAuthenticated(true);
           } else {
             // Create basic user info
             const supabaseUser = session.user;
+            // 🔥 FIX: Fetch role name from database
+            const roleName = await fetchUserRoleName(supabaseUser.id);
             const userInfo: UserInfo = {
               username: supabaseUser.email || '',
               fullName: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User',
               level: 'cuc',
               role: 'thanhtra',
-              roleDisplay: 'Người dùng',
+              roleDisplay: roleName || 'Người dùng',
               position: 'Người dùng',
               department: 'Hệ thống',
             };
@@ -365,11 +561,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } else if (event === 'USER_UPDATED' && !session) {
         // User updated but no session - likely expired
-        console.log('🔄 USER_UPDATED but no session, auto-logout...');
         await performAutoLogout();
       } else if (!session) {
         // No session - user is signed out
-        console.log('🔄 No session in auth state change, auto-logout...');
         await performAutoLogout();
       }
     });
@@ -383,7 +577,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (error || !session) {
           // No session or error, logout immediately
-          console.log('⚠️ No session or error (periodic check), auto-logout...');
           await performAutoLogout();
           return;
         }
@@ -396,7 +589,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Check if expired or will expire in next 5 seconds
           if (now >= expiresAt || (expiresAt - now) < 5000) {
             // Session expired or about to expire
-            console.log('⚠️ Session expired or expiring soon (periodic check), auto-logout...');
             await performAutoLogout();
             return;
           }
@@ -457,11 +649,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Check if user has multiple units (this should come from database)
       const hasMultipleUnits = false; // For now, single unit
       
+      // 🔥 NEW: Fetch user permissions, department, and role name from database
+      const [permissionCodes, departmentInfo, roleName] = await Promise.all([
+        fetchUserPermissions(supabaseUser.id),
+        fetchUserDepartment(supabaseUser.id),
+        fetchUserRoleName(supabaseUser.id),
+      ]);
+      
       const userInfo: UserInfo = {
         username,
         fullName: supabaseUser.user_metadata?.full_name || fullName,
         ...parsedInfo,
         ...roleInfo,
+        roleDisplay: roleName || roleInfo.roleDisplay, // 🔥 FIX: Use role name from database, fallback to mock roleInfo
+        permissions: permissionCodes, // 🔥 NEW: Add permissions to user info
+        departmentInfo: departmentInfo || undefined, // 🔥 NEW: Add department info
       } as UserInfo;
       
       if (hasMultipleUnits) {
@@ -513,13 +715,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     // Prevent multiple logout calls
     if (logoutInProgressRef.current) {
-      console.log('⚠️ Logout already in progress, skipping...');
       return;
     }
     logoutInProgressRef.current = true;
 
     try {
-      console.log('🔄 Logging out...');
       
       // Get current session to get access token
       const { data: { session } } = await supabase.auth.getSession();
@@ -540,9 +740,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             body: JSON.stringify({}),
           });
           
-          console.log('✅ Supabase logout API (/auth/v1/logout) called successfully');
         } catch (apiError) {
-          console.warn('⚠️ Supabase logout API call failed (continuing with signOut):', apiError);
           // Continue with signOut even if API call fails
         }
       }
@@ -577,7 +775,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setIsAuthenticated(false);
       
-      console.log('✅ Logout completed - all storage cleared');
     } catch (error) {
       console.error('❌ Logout error:', error);
       // Even if there's an error, clear everything

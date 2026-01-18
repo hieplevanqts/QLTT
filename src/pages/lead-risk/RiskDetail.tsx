@@ -135,13 +135,11 @@ export default function RiskDetail() {
           }
         }
 
-        console.log('✅ Successfully loaded risk detail for:', matchedProfile.entityName);
       } catch (err) {
         console.error('❌ Error fetching risk detail:', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
         
         // Fallback to mock data
-        console.log('⚠️ Using mock data as fallback...');
         const mockProfile = mockRiskProfiles.find(p => p.entityId === id);
         if (mockProfile) {
           setProfile(mockProfile);

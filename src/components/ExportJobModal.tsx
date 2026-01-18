@@ -183,7 +183,6 @@ export const ExportJobModal: React.FC<ExportJobModalProps> = ({ job, mode, onClo
                 </div>
                 {job.export_jobs_status === 'Completed' && job.export_jobs_file_url && (
                   <button
-                    onClick={() => console.log('Download:', job.export_jobs_file_url)}
                     style={{
                       padding: '8px 16px',
                       background: '#155724',

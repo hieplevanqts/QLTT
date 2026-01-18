@@ -169,7 +169,6 @@ export function TaskDetailModal({ task, isOpen, onClose, onEdit, onStatusChange 
   };
 
   const handleSaveChecklistItem = (itemId: string, data: ChecklistItemData) => {
-    console.log('Saved checklist item:', itemId, data);
     toast.success('Đã lưu kết quả kiểm tra');
   };
 
@@ -178,7 +177,6 @@ export function TaskDetailModal({ task, isOpen, onClose, onEdit, onStatusChange 
   };
 
   const handleSaveInspectionConclusion = (conclusion: ConclusionData) => {
-    console.log('Saved inspection conclusion:', conclusion);
     toast.success('Đã lưu kết luận kiểm tra');
   };
 

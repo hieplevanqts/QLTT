@@ -65,12 +65,10 @@ export const FormTemplatesTab: React.FC<FormTemplatesTabProps> = ({ onOpenModal 
   const fetchForms = async () => {
     try {
       setLoading(true);
-      console.log('📄 Loading form templates...');
 
       // Simulate API delay
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      console.log(`✅ Loaded ${ALL_FORM_TEMPLATES.length} form templates`);
       setForms(ALL_FORM_TEMPLATES);
       setFilteredForms(ALL_FORM_TEMPLATES);
     } catch (error) {
@@ -295,7 +293,6 @@ export const FormTemplatesTab: React.FC<FormTemplatesTabProps> = ({ onOpenModal 
     if (!file) return;
 
     try {
-      console.log('📥 Importing Excel file:', file.name);
       toast.info('Đang xử lý file Excel...');
 
       const reader = new FileReader();
@@ -307,7 +304,6 @@ export const FormTemplatesTab: React.FC<FormTemplatesTabProps> = ({ onOpenModal 
           const sheet = workbook.Sheets[sheetName];
           const jsonData = XLSX.utils.sheet_to_json(sheet) as any[];
 
-          console.log('📊 Parsed Excel data:', jsonData);
 
           let successCount = 0;
           let errorCount = 0;
@@ -316,13 +312,11 @@ export const FormTemplatesTab: React.FC<FormTemplatesTabProps> = ({ onOpenModal 
             try {
               // Validate required fields
               if (!row['Mã biểu mẫu'] || !row['Tên biểu mẫu']) {
-                console.warn('⚠️ Skipping row - missing required fields:', row);
                 errorCount++;
                 continue;
               }
 
               // TODO: Insert into database or local state
-              console.log('✅ Processing row:', row);
               successCount++;
             } catch (error) {
               console.error('❌ Error importing row:', { error, row });
@@ -338,7 +332,6 @@ export const FormTemplatesTab: React.FC<FormTemplatesTabProps> = ({ onOpenModal 
             toast.warning(`${errorCount} dòng bị lỗi hoặc bỏ qua`);
           }
 
-          console.log(`📊 Import summary: ${successCount} success, ${errorCount} errors`);
         } catch (error) {
           console.error('❌ Parse error:', error);
           toast.error('Lỗi đọc file Excel');

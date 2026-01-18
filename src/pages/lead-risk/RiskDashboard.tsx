@@ -118,9 +118,6 @@ export default function RiskDashboard() {
         throw new Error(statsData.error || 'Failed to fetch risk stats');
       }
 
-      console.log('✅ Successfully fetched data from database');
-      console.log(`📊 Loaded ${profilesData.data.length} risk profiles`);
-      console.log(`📈 Stats:`, statsData.data);
 
       // Transform database data to RiskProfile format
       const transformedProfiles: RiskProfile[] = profilesData.data.map((profile: any) => ({
@@ -148,7 +145,6 @@ export default function RiskDashboard() {
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
       
       // Fallback to mock data on error
-      console.log('⚠️ Using mock data as fallback...');
       setRiskProfiles(mockRiskProfiles);
       setMetrics({
         totalEntities: mockRiskProfiles.length,
@@ -171,11 +167,9 @@ export default function RiskDashboard() {
   // Handle save risk (create or edit)
   const handleSaveRisk = (riskData: Partial<RiskProfile>) => {
     if (formMode === 'create') {
-      console.log('Creating new risk:', riskData);
       // TODO: Add to mockRiskProfiles or call API
       alert('✅ Đã thêm cơ sở giám sát mới thành công!');
     } else {
-      console.log('Updating risk:', riskData);
       // TODO: Update in mockRiskProfiles or call API
       alert('✅ Đã cập nhật thông tin cơ sở thành công!');
     }
@@ -186,7 +180,6 @@ export default function RiskDashboard() {
   // Handle delete risk
   const handleDeleteRisk = () => {
     if (deletingRisk) {
-      console.log('Deleting risk:', deletingRisk);
       // TODO: Remove from mockRiskProfiles or call API
       alert(`✅ Đã xóa "${deletingRisk.entityName}" khỏi danh sách giám sát!`);
       setIsDeleteModalOpen(false);

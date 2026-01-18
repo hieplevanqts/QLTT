@@ -31,9 +31,21 @@ export default function TvFiltersBar() {
   ].filter(Boolean).length;
 
   return (
-    <div
-      className={`bg-card border-b border-border flex items-center gap-4 flex-shrink-0 ${styles.barBase} ${styles.filtersBar}`}
-    >
+    <>
+      {/* Location Rotation Control Bar - Full Width */}
+      {/* 🔥 HIDDEN: LocationRotationControl is now hidden on /tv page */}
+      {/* <div 
+        className="bg-card border-b border-border flex items-center justify-center flex-shrink-0" 
+        style={{ height: '60px', padding: '0 20px', position: 'relative', zIndex: 100 }}
+      >
+        <LocationRotationControl />
+      </div> */}
+
+      {/* Filters Bar - Original */}
+      <div 
+        className="bg-card border-b border-border flex items-center gap-4 flex-shrink-0" 
+        style={{ height: '56px', padding: '0 20px', position: 'relative', zIndex: 100 }}
+      >
         <div className="flex items-center gap-3">
           <TvLocationSelector />
 

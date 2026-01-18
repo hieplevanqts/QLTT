@@ -23,7 +23,6 @@ export async function downloadFilesAsZip(
       try {
         const url = file.imageUrl || file.url;
         if (!url) {
-          console.warn(`No URL found for file: ${file.filename}`);
           return;
         }
 

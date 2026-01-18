@@ -64,7 +64,6 @@ export const WardsTab: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Fetching wards and provinces from Supabase...');
 
       // Fetch provinces first
       const { data: provincesData, error: provincesError } = await supabase
@@ -76,7 +75,6 @@ export const WardsTab: React.FC = () => {
         console.error('❌ Error fetching provinces:', provincesError);
         toast.error(`Lỗi tải tỉnh/thành phố: ${provincesError.message}`);
       } else {
-        console.log(`✅ Loaded ${provincesData?.length || 0} provinces`);
         setProvinces(provincesData || []);
       }
 
@@ -90,7 +88,6 @@ export const WardsTab: React.FC = () => {
         const start = page * pageSize;
         const end = start + pageSize - 1;
         
-        console.log(`📦 Fetching page ${page + 1} (records ${start}-${end})...`);
         
         const { data: wardsData, error: wardsError } = await supabase
           .from('wards')
@@ -116,7 +113,6 @@ export const WardsTab: React.FC = () => {
           hasMore = false;
         } else {
           allWards = [...allWards, ...wardsData];
-          console.log(`  ✅ Loaded ${wardsData.length} records (total: ${allWards.length})`);
           
           // If we got less than pageSize, we've reached the end
           if (wardsData.length < pageSize) {
@@ -127,15 +123,9 @@ export const WardsTab: React.FC = () => {
         }
       }
 
-      console.log(`✅ Loaded ${allWards.length} wards from Supabase (across ${page + 1} pages)`);
       
       // Debug: Log raw data structure - CHECK ALL KEYS
       if (allWards.length > 0) {
-        console.log('🔍 RAW WARD DATA (first record):');
-        console.log('  - Keys:', Object.keys(allWards[0]));
-        console.log('  - Full object:', allWards[0]);
-        console.log('  - provinceid (lowercase)?', allWards[0].provinceid);
-        console.log('  - provinceId (camelCase)?', allWards[0].provinceId);
       }
       
       // Map data: Try both field names
@@ -152,10 +142,6 @@ export const WardsTab: React.FC = () => {
       
       // Debug: Log mapped data structure
       if (mappedWards.length > 0) {
-        console.log('🔍 MAPPED WARD DATA (first record):');
-        console.log('  - Keys:', Object.keys(mappedWards[0]));
-        console.log('  - provinceId:', mappedWards[0].provinceId);
-        console.log('  - province:', mappedWards[0].province);
       }
       
       setWards(mappedWards);
@@ -173,7 +159,6 @@ export const WardsTab: React.FC = () => {
     if (selectedProvinceId !== 'all') {
       // Debug log - MORE DETAILED
       if (wards.indexOf(ward) === 0) {
-        console.log('🔍 Filter debug:', {
           selectedProvinceId,
           wardProvinceId: ward.provinceId,
           wardProvinceIdLowercase: (ward as any).provinceid,
@@ -241,7 +226,6 @@ export const WardsTab: React.FC = () => {
         console.error('❌ Error deleting ward:', error);
         toast.error(`Lỗi xóa phường/xã: ${error.message}`);
       } else {
-        console.log('✅ Ward deleted successfully');
         toast.success('Đã xóa phường/xã thành công');
         fetchData();
       }
@@ -253,7 +237,6 @@ export const WardsTab: React.FC = () => {
 
   const handleExportExcel = () => {
     try {
-      console.log('📊 Exporting wards to Excel...');
 
       const excelData = filteredWards.map((ward, index) => ({
         'STT': index + 1,
@@ -282,7 +265,6 @@ export const WardsTab: React.FC = () => {
 
       XLSX.writeFile(wb, filename);
 
-      console.log(`✅ Exported ${filteredWards.length} wards to ${filename}`);
       toast.success(`Đã xuất ${filteredWards.length} phường/xã ra Excel`);
     } catch (error) {
       console.error('❌ Error exporting to Excel:', error);
@@ -352,7 +334,6 @@ export const WardsTab: React.FC = () => {
                 value={selectedProvinceId}
                 onChange={(e) => {
                   const newValue = e.target.value;
-                  console.log('🔄 Province filter changed:', {
                     from: selectedProvinceId,
                     to: newValue,
                     totalWards: wards.length,
@@ -383,7 +364,6 @@ export const WardsTab: React.FC = () => {
                   onClick={() => {
                     setSelectedProvinceId('all');
                     setSearchQuery('');
-                    console.log('🧹 Filters cleared');
                   }}
                 >
                   Xóa bộ lọc

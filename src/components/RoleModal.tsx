@@ -120,7 +120,6 @@ export const RoleModal: React.FC<RoleModalProps> = ({
         toast.error(`Lỗi tải modules: ${modulesError.message}`);
         setModules([]);
       } else {
-        console.log(`✅ Loaded ${modulesData?.length || 0} modules`);
         setModules(modulesData || []);
       }
 
@@ -137,7 +136,6 @@ export const RoleModal: React.FC<RoleModalProps> = ({
         toast.error(`Lỗi tải permissions: ${permissionsError.message}`);
         setPermissions([]);
       } else {
-        console.log(`✅ Loaded ${permissionsData?.length || 0} permissions`);
         setPermissions(permissionsData || []);
       }
     } catch (error) {
@@ -154,7 +152,6 @@ export const RoleModal: React.FC<RoleModalProps> = ({
     if (!role) return;
 
     try {
-      console.log(`🔍 Loading permissions for role: ${role.id} (${role.name})`);
       
       const { data, error } = await supabase
         .from('role_permissions')
@@ -167,7 +164,6 @@ export const RoleModal: React.FC<RoleModalProps> = ({
       } else {
         const permIds = new Set(data?.map(rp => rp.permission_id) || []);
         setSelectedPermissions(permIds);
-        console.log(`✅ Loaded ${permIds.size} permissions for role ${role.name}:`, Array.from(permIds));
       }
     } catch (error) {
       console.error('❌ Error in loadRolePermissions:', error);
@@ -186,7 +182,6 @@ export const RoleModal: React.FC<RoleModalProps> = ({
       setSaving(true);
 
       if (mode === 'add') {
-        console.log('🔄 Creating new role...');
         
         // Create new role
         const { data: newRole, error: roleError } = await supabase
@@ -210,11 +205,9 @@ export const RoleModal: React.FC<RoleModalProps> = ({
           return;
         }
 
-        console.log('✅ Role created:', newRole.id);
 
         // Insert role permissions
         if (selectedPermissions.size > 0) {
-          console.log(`🔄 Assigning ${selectedPermissions.size} permissions to role...`);
           
           const rolePermissions = Array.from(selectedPermissions).map(permId => ({
             role_id: newRole.id,
@@ -222,7 +215,6 @@ export const RoleModal: React.FC<RoleModalProps> = ({
             created_at: new Date().toISOString(),
           }));
 
-          console.log('📊 Role permissions to insert:', rolePermissions);
 
           const { error: permError } = await supabase
             .from('role_permissions')
@@ -235,18 +227,14 @@ export const RoleModal: React.FC<RoleModalProps> = ({
             return;
           }
 
-          console.log('✅ Permissions assigned successfully');
         } else {
-          console.log('⚠️ No permissions selected');
         }
 
-        console.log('✅ Role created successfully with permissions');
         toast.success(`Đã tạo vai trò "${formData.name}" với ${selectedPermissions.size} quyền`);
         onSave();
         onClose();
         
       } else if (mode === 'edit' && role) {
-        console.log(`🔄 Updating role ${role.id}...`);
         
         // Update role basic info
         const { error: roleError } = await supabase
@@ -267,10 +255,8 @@ export const RoleModal: React.FC<RoleModalProps> = ({
           return;
         }
 
-        console.log('✅ Role info updated');
 
         // Delete existing permissions
-        console.log('🔄 Deleting existing permissions...');
         const { error: deleteError } = await supabase
           .from('role_permissions')
           .delete()
@@ -283,11 +269,9 @@ export const RoleModal: React.FC<RoleModalProps> = ({
           return;
         }
 
-        console.log('✅ Old permissions deleted');
 
         // Insert new permissions
         if (selectedPermissions.size > 0) {
-          console.log(`🔄 Inserting ${selectedPermissions.size} new permissions...`);
           
           const rolePermissions = Array.from(selectedPermissions).map(permId => ({
             role_id: role.id,
@@ -295,7 +279,6 @@ export const RoleModal: React.FC<RoleModalProps> = ({
             created_at: new Date().toISOString(),
           }));
 
-          console.log('📊 New role permissions to insert:', rolePermissions);
 
           const { error: permError } = await supabase
             .from('role_permissions')
@@ -308,12 +291,9 @@ export const RoleModal: React.FC<RoleModalProps> = ({
             return;
           }
 
-          console.log('✅ New permissions inserted successfully');
         } else {
-          console.log('⚠️ No permissions selected - role will have no permissions');
         }
 
-        console.log('✅ Role updated successfully with new permissions');
         toast.success(`Đã cập nhật vai trò "${formData.name}" với ${selectedPermissions.size} quyền`);
         onSave();
         onClose();

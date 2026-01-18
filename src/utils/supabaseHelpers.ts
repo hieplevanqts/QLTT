@@ -17,10 +17,6 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
  * Log Supabase connection info (for debugging)
  */
 export function logSupabaseInfo() {
-  console.log('🔌 Supabase Connection Info:');
-  console.log('  URL:', SUPABASE_URL);
-  console.log('  Project ID:', projectId);
-  console.log('  Key (first 20 chars):', SUPABASE_ANON_KEY.substring(0, 20) + '...');
 }
 
 /**
@@ -38,7 +34,6 @@ export async function testSupabaseConnection() {
       return false;
     }
 
-    console.log('✅ Supabase connection successful!');
     return true;
   } catch (err) {
     console.error('❌ Supabase connection error:', err);
@@ -58,13 +53,11 @@ export async function checkTableExists(tableName: string) {
 
     if (error) {
       if (error.message.includes('does not exist')) {
-        console.warn(`⚠️ Table "${tableName}" does not exist`);
         return false;
       }
       throw error;
     }
 
-    console.log(`✅ Table "${tableName}" exists`);
     return true;
   } catch (err) {
     console.error(`❌ Error checking table "${tableName}":`, err);
@@ -83,7 +76,6 @@ export async function getTableRowCount(tableName: string): Promise<number> {
 
     if (error) throw error;
 
-    console.log(`📊 Table "${tableName}" has ${count ?? 0} rows`);
     return count ?? 0;
   } catch (err) {
     console.error(`❌ Error getting row count for "${tableName}":`, err);
@@ -103,13 +95,11 @@ export async function checkRLSStatus(tableName: string) {
       .rpc('check_rls_status', { table_name: tableName });
 
     if (error) {
-      console.warn('⚠️ Cannot check RLS status (requires elevated permissions)');
       return null;
     }
 
     return data;
   } catch (err) {
-    console.warn('⚠️ Cannot check RLS status:', err);
     return null;
   }
 }

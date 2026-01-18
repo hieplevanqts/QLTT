@@ -11,7 +11,6 @@ const USE_SUPABASE = FEATURES.USE_SUPABASE_BACKEND;
  */
 export async function seedRestaurants(restaurants: Restaurant[]): Promise<{ success: boolean; count: number; message: string }> {
   if (!USE_SUPABASE) {
-    console.log('📦 Supabase disabled - seed operation skipped');
     return { 
       success: true, 
       count: restaurants.length, 
@@ -20,9 +19,6 @@ export async function seedRestaurants(restaurants: Restaurant[]): Promise<{ succ
   }
 
   try {
-    console.log('📤 API: Sending seed request...');
-    console.log(`📍 API endpoint: ${API_BASE_URL}/seed-restaurants`);
-    console.log(`📊 Payload size: ${restaurants.length} restaurants`);
     
     const response = await fetch(`${API_BASE_URL}/seed-restaurants`, {
       method: 'POST',
@@ -30,7 +26,6 @@ export async function seedRestaurants(restaurants: Restaurant[]): Promise<{ succ
       body: JSON.stringify({ restaurants })
     });
 
-    console.log(`📥 API: Response status: ${response.status} ${response.statusText}`);
 
     if (!response.ok) {
       const error = await response.json();
@@ -39,7 +34,6 @@ export async function seedRestaurants(restaurants: Restaurant[]): Promise<{ succ
     }
 
     const result = await response.json();
-    console.log('✅ API: Seed successful:', result);
     return result;
   } catch (error) {
     console.error('❌ API: Error seeding restaurants:', error);
@@ -52,7 +46,6 @@ export async function seedRestaurants(restaurants: Restaurant[]): Promise<{ succ
  */
 export async function fetchRestaurants(): Promise<Restaurant[]> {
   if (!USE_SUPABASE) {
-    console.log('📦 Using mock restaurants (Supabase disabled)');
     return mockStores;
   }
 
@@ -64,7 +57,6 @@ export async function fetchRestaurants(): Promise<Restaurant[]> {
 
     if (!response.ok) {
       const error = await response.json();
-      console.warn('⚠️ Failed to fetch from Supabase, using mock data');
       return mockStores;
     }
 
@@ -72,7 +64,6 @@ export async function fetchRestaurants(): Promise<Restaurant[]> {
     return result.data || [];
   } catch (error) {
     console.error('Error fetching restaurants:', error);
-    console.warn('⚠️ Using mock data as fallback');
     return mockStores;
   }
 }
@@ -82,7 +73,6 @@ export async function fetchRestaurants(): Promise<Restaurant[]> {
  */
 export async function fetchRestaurantById(id: string): Promise<Restaurant | null> {
   if (!USE_SUPABASE) {
-    console.log(`📦 Finding in mock restaurants: ${id} (Supabase disabled)`);
     return mockStores.find(store => store.id === id) || null;
   }
 
@@ -97,7 +87,6 @@ export async function fetchRestaurantById(id: string): Promise<Restaurant | null
         return mockStores.find(store => store.id === id) || null;
       }
       const error = await response.json();
-      console.warn('⚠️ Failed to fetch from Supabase, searching mock data');
       return mockStores.find(store => store.id === id) || null;
     }
 
@@ -114,7 +103,6 @@ export async function fetchRestaurantById(id: string): Promise<Restaurant | null
  */
 export async function deleteAllRestaurants(): Promise<{ success: boolean; count: number; message: string }> {
   if (!USE_SUPABASE) {
-    console.log('📦 Supabase disabled - delete operation skipped');
     return { 
       success: true, 
       count: 0, 

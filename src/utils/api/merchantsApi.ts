@@ -14,10 +14,9 @@ import { SUPABASE_REST_URL, getHeaders } from './config';
  */
 export async function fetchMerchants(
   statusCodes?: string[],
-  businessTypes?: string[]
+  businessTypes?: string[],
+  departmentIds?: string[]  // 🔥 NEW: Filter by department_id
 ): Promise<Restaurant[]> {
-  console.log('🏪 fetchMerchants: Called with statusCodes:', statusCodes, 'businessTypes:', businessTypes);
-  console.log('🔑 fetchMerchants: SUPABASE_REST_URL:', SUPABASE_REST_URL);
 
   try {
     // Build query - simple select without nested joins
@@ -36,8 +35,12 @@ export async function fetchMerchants(
       url += `&or=(${typeFilter})`;
     }
     
-    console.log('📡 Fetching merchants from:', url);
-    console.log('🔑 Using project:', SUPABASE_REST_URL);
+    // 🔥 NEW: Filter by department_id if provided
+    if (departmentIds && departmentIds.length > 0) {
+      const deptFilter = departmentIds.map(id => `department_id.eq.${id}`).join(',');
+      url += `&or=(${deptFilter})`;
+    }
+    
 
     const response = await fetch(url, {
       method: 'GET',
@@ -52,8 +55,6 @@ export async function fetchMerchants(
     }
 
     const data = await response.json();
-    console.log('📦 Raw merchants data:', data.length, 'merchants');
-    console.log('📍 First merchant raw:', data[0]);
 
     // Transform Supabase data to Restaurant interface
     const merchants = data
@@ -61,7 +62,6 @@ export async function fetchMerchants(
         // Filter out merchants without coordinates
         const hasCoords = typeof merchant.latitude === 'number' && typeof merchant.longitude === 'number';
         if (!hasCoords) {
-          console.warn('⚠️ Merchant missing coordinates:', merchant.id, merchant.business_name);
         }
         return hasCoords;
       })
@@ -83,8 +83,9 @@ export async function fetchMerchants(
         // Get human-readable status name
         const statusName = getMerchantStatusName(merchant.status, merchant.license_status);
 
+        // Debug log for first merchant
         if (index === 0) {
-          console.log('🏪 Merchant field mapping:', {
+          console.log({
             business_name: merchant.business_name,
             owner_name: merchant.owner_name,
             business_type: merchant.business_type,
@@ -135,8 +136,6 @@ export async function fetchMerchants(
         };
       });
 
-    console.log('✅ Transformed', merchants.length, 'merchants to Restaurant format');
-    console.log('📍 First 3 merchants:', merchants.slice(0, 3));
 
     return merchants;
   } catch (error: any) {
@@ -195,5 +194,71 @@ function getMerchantStatusName(status: string, licenseStatus?: string): string {
       return 'Từ chối';
     default:
       return 'Đã kiểm tra'; // Default
+  }
+}
+
+/**
+ * 📊 Fetch statistics for merchants (total count and certified count)
+ * Runs in background - no UI blocking
+ * 
+ * @param province - Optional province filter
+ * @param district - Optional district filter
+ * @param ward - Optional ward filter
+ * @returns Statistics object with total and certified counts
+ */
+export interface MerchantStats {
+  total: number;
+  certified: number; // active status
+  hotspot: number;  // suspended status
+}
+
+export async function fetchMerchantStats(
+  province?: string,
+  district?: string,
+  ward?: string
+): Promise<MerchantStats> {
+  try {
+    
+    // Build location filters
+    let url = `${SUPABASE_REST_URL}/merchants?select=status`;
+    
+    // Add location filters if provided
+    if (province) {
+      url += `&province=eq.${encodeURIComponent(province)}`;
+    }
+    if (district) {
+      url += `&district=eq.${encodeURIComponent(district)}`;
+    }
+    if (ward) {
+      url += `&ward=eq.${encodeURIComponent(ward)}`;
+    }
+    
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: getHeaders()
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Fetch stats failed:', response.status, response.statusText);
+      console.error('Error details:', errorText);
+      // Return default stats on error (don't throw - background call)
+      return { total: 0, certified: 0, hotspot: 0 };
+    }
+    
+    const data = await response.json();
+    
+    // Count by status
+    const total = data.length;
+    const certified = data.filter((m: any) => m.status === 'active').length;
+    const hotspot = data.filter((m: any) => m.status === 'suspended').length;
+    
+    
+    return { total, certified, hotspot };
+  } catch (error: any) {
+    console.error('❌ Error fetching merchant stats (background):', error);
+    // Return default stats on error (don't throw - background call)
+    return { total: 0, certified: 0, hotspot: 0 };
   }
 }

@@ -91,7 +91,6 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
     
     // ✅ NEW: If level 1 (Cục), auto-select all areas
     if (formData.level === 1 && allAreas.length > 0 && !department?.id) {
-      console.log('🏛️ Level 1 (Cục) detected - auto-selecting all areas');
       const allAreaIds = allAreas.map(a => a.id);
       setSelectedAreas(allAreaIds);
     }
@@ -99,13 +98,12 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
 
   // ✅ NEW: Force refresh assigned areas when modal opens/mode changes
   useEffect(() => {
-    console.log('🔄 Modal mode changed, refreshing assigned areas...');
     fetchAllAssignedAreas();
   }, [mode, department?.id]);
 
   // ✅ Debug effect to track state changes
   useEffect(() => {
-    console.log('🔄 State changed:', {
+    console.log({
       allAreasCount: allAreas.length,
       selectedAreasCount: selectedAreas.length,
       selectedAreaIds: selectedAreas,
@@ -141,14 +139,13 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
 
   const fetchAllAreas = async () => {
     try {
-      console.log('🔍 Starting fetchAllAreas...');
       
       const { data, error, count } = await supabase
         .from('areas')
         .select('*', { count: 'exact' })
         .order('name');
 
-      console.log('📊 Supabase response:', { 
+      console.log({
         data, 
         error, 
         count,
@@ -168,12 +165,8 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
       }
 
       if (!data || data.length === 0) {
-        console.warn('⚠️ No areas data returned from database');
-        console.log('Current user session:', await supabase.auth.getSession());
       }
 
-      console.log('✅ Fetched areas successfully:', data);
-      console.log('📦 Total areas:', data?.length);
       setAllAreas(data || []);
     } catch (error) {
       console.error('💥 Exception in fetchAllAreas:', error);
@@ -183,13 +176,12 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
 
   const fetchAllAssignedAreas = async () => {
     try {
-      console.log('🔍 Starting fetchAllAssignedAreas...');
       
       const { data, error } = await supabase
         .from('department_areas')
         .select('*');
 
-      console.log('📊 Supabase response:', { 
+      console.log({
         data, 
         error,
         dataLength: data?.length,
@@ -208,12 +200,8 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
       }
 
       if (!data || data.length === 0) {
-        console.warn('⚠️ No assigned areas data returned from database');
-        console.log('Current user session:', await supabase.auth.getSession());
       }
 
-      console.log('✅ Fetched assigned areas successfully:', data);
-      console.log('📦 Total assigned areas:', data?.length);
       
       // Populate assignedAreas map
       const map = new Map<string, string>();
@@ -229,14 +217,13 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
 
   const fetchDepartmentAreas = async (departmentId: string) => {
     try {
-      console.log('🗺️ Fetching department areas for:', departmentId);
       
       const { data, error } = await supabase
         .from('department_areas')
         .select('area_id')
         .eq('department_id', departmentId);
 
-      console.log('📊 Department areas response:', { 
+      console.log({
         data, 
         error,
         dataLength: data?.length 
@@ -249,18 +236,14 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
       }
 
       const areaIds = data?.map((item) => item.area_id) || [];
-      console.log('✅ Setting selected areas:', areaIds);
-      console.log('📦 Checking if area IDs exist in allAreas:');
       areaIds.forEach((areaId) => {
         const found = allAreas.find((a) => a.id === areaId);
-        console.log(`  - ${areaId}: ${found ? '✅ FOUND - ' + found.name : '❌ NOT FOUND in allAreas'}`);
       });
       
       setSelectedAreas(areaIds);
       
       // Force re-render check
       setTimeout(() => {
-        console.log('🔄 After setState, selectedAreas should be:', areaIds);
       }, 100);
     } catch (error) {
       console.error('💥 Exception in fetchDepartmentAreas:', error);
@@ -269,14 +252,13 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
 
   const fetchParentDepartmentAreas = async (parentId: string) => {
     try {
-      console.log('🗺️ Fetching parent department areas for:', parentId);
       
       const { data, error } = await supabase
         .from('department_areas')
         .select('area_id')
         .eq('department_id', parentId);
 
-      console.log('📊 Parent department areas response:', { 
+      console.log({
         data, 
         error,
         dataLength: data?.length 
@@ -289,18 +271,14 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
       }
 
       const areaIds = data?.map((item) => item.area_id) || [];
-      console.log('✅ Setting parent department areas:', areaIds);
-      console.log('📦 Checking if area IDs exist in allAreas:');
       areaIds.forEach((areaId) => {
         const found = allAreas.find((a) => a.id === areaId);
-        console.log(`  - ${areaId}: ${found ? '✅ FOUND - ' + found.name : '❌ NOT FOUND in allAreas'}`);
       });
       
       setParentDepartmentAreas(areaIds);
       
       // Force re-render check
       setTimeout(() => {
-        console.log('🔄 After setState, parentDepartmentAreas should be:', areaIds);
       }, 100);
     } catch (error) {
       console.error('💥 Exception in fetchParentDepartmentAreas:', error);
@@ -336,7 +314,6 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
           
           // ✅ Auto-select all areas when changing to level 1
           if (allAreas.length > 0) {
-            console.log('🏛️ Changed to Cục (level 1) - auto-selecting all areas');
             const allAreaIds = allAreas.map(a => a.id);
             setSelectedAreas(allAreaIds);
           }
@@ -432,7 +409,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
 
   const saveDepartmentAreas = async (departmentId: string) => {
     try {
-      console.log('💾 Starting saveDepartmentAreas...', {
+      console.log({
         departmentId,
         selectedAreas,
         selectedAreasCount: selectedAreas.length,
@@ -449,7 +426,6 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
         throw deleteError;
       }
 
-      console.log('✅ Deleted old department areas successfully');
 
       // Insert new department areas
       if (selectedAreas.length > 0) {
@@ -458,7 +434,6 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
           area_id: areaId,
         }));
 
-        console.log('📦 Inserting area data:', areaData);
 
         const { data: insertedData, error: insertError } = await supabase
           .from('department_areas')
@@ -473,9 +448,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
           throw insertError;
         }
 
-        console.log('✅ Inserted department areas successfully:', insertedData);
       } else {
-        console.log('⚠️ No areas selected, skipping insert');
       }
     } catch (error: any) {
       console.error('💥 Exception in saveDepartmentAreas:', error);
@@ -653,7 +626,6 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                   <button
                     type="button"
                     onClick={() => {
-                      console.log('🐛 DEBUG - All Areas Data:');
                       console.table(allAreas.map(a => ({
                         name: a.name,
                         code: a.code,
@@ -661,15 +633,12 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                         provinceid: a.provinceid,
                         wardid: a.wardid,
                       })));
-                      console.log('🐛 DEBUG - Assigned Areas Map:');
                       console.table(Array.from(assignedAreas.entries()).map(([areaId, deptId]) => ({
                         areaId,
                         areaName: allAreas.find(a => a.id === areaId)?.name || 'Unknown',
                         departmentId: deptId,
                         departmentName: allDepartments.find(d => d.id === deptId)?.name || 'Unknown',
                       })));
-                      console.log('🐛 DEBUG - Parent Department Areas:', parentDepartmentAreas);
-                      console.log('🐛 DEBUG - Form Data:', formData);
                       
                       // Show alert with summary
                       alert(
@@ -769,11 +738,9 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                       placeholder={allAreas.length > 0 ? "Tìm kiếm địa bàn..." : "Chưa có dữ liệu địa bàn"}
                       value={areaSearchQuery}
                       onChange={(e) => {
-                        console.log('Area search query:', e.target.value);
                         setAreaSearchQuery(e.target.value);
                       }}
                       onFocus={() => {
-                        console.log('Focus - showing dropdown. Total areas:', allAreas.length);
                         setShowAreaDropdown(true);
                       }}
                       onBlur={() => setTimeout(() => setShowAreaDropdown(false), 200)}
@@ -796,7 +763,6 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                             return allAreas.filter((area) => {
                               // ✅ RULE 1: Chi cục chỉ được chọn địa bàn có level = "province"
                               if (area.level !== 'province') {
-                                console.log(`❌ Area "${area.name}" filtered out - not province level (level: ${area.level})`);
                                 return false;
                               }
                               
@@ -814,7 +780,6 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                               
                               // ⚠️ RULE 3: If assigned department is also level 2 (Chi cục) and is different → HIDE
                               if (assignedDept && assignedDept.level === 2 && assignedDept.id !== department?.id) {
-                                console.log(`❌ Area "${area.name}" filtered out - assigned to another Chi cục: ${assignedDept.name}`);
                                 return false;
                               }
                               
@@ -824,7 +789,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                           
                           // Level 3 (Đội): Only show ward-level areas, no duplicates between teams
                           if (formData.level === 3) {
-                            console.log('🏛️ Filtering wards for Đội (level 3):', {
+                            console.log({
                               totalAreas: allAreas.length,
                               totalWards: allAreas.filter(a => a.level === 'ward').length,
                               assignedAreasCount: assignedAreas.size,
@@ -836,12 +801,6 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                                 return false;
                               }
                               
-                              console.log('🔍 Checking ward:', {
-                                name: area.name,
-                                id: area.id,
-                                code: area.code,
-                              });
-                              
                               // ✅ RULE 2: Check if already assigned to another Đội
                               const assignedDeptId = assignedAreas.get(area.id);
                               
@@ -849,7 +808,6 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                               // 1. Not assigned to any department, OR
                               // 2. Already assigned to THIS department (can keep its own areas)
                               if (!assignedDeptId || assignedDeptId === department?.id) {
-                                console.log(`✅ Ward "${area.name}" is available`);
                                 return true;
                               }
                               
@@ -859,11 +817,9 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                               // ⚠️ RULE 3: If assigned to ANY Đội (level 3) → HIDE
                               // Exception: if it's THIS department (can keep its own areas)
                               if (assignedDept && assignedDept.level === 3 && assignedDept.id !== department?.id) {
-                                console.log(`❌ Ward "${area.name}" filtered out - assigned to another Đội: ${assignedDept.name}`);
                                 return false;
                               }
                               
-                              console.log(`✅ Ward "${area.name}" is available`);
                               return true;
                             });
                           }
@@ -878,7 +834,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                           area.code.toLowerCase().includes(areaSearchQuery.toLowerCase())
                         );
                         
-                        console.log('🔍 Area filtering:', {
+                        console.log({
                           level: formData.level,
                           totalAreas: allAreas.length,
                           availableAreas: availableAreas.length,
@@ -987,7 +943,6 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
                               key={area.id}
                               className={styles.areaOption}
                               onClick={() => {
-                                console.log('Toggle area:', area.name);
                                 if (selectedAreas.includes(area.id)) {
                                   setSelectedAreas(selectedAreas.filter((id) => id !== area.id));
                                 } else {

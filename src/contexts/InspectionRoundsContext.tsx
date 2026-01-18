@@ -21,7 +21,6 @@ export function InspectionRoundsProvider({ children }: { children: ReactNode }) 
     try {
       const storedVersion = localStorage.getItem(VERSION_KEY);
       if (storedVersion !== STORAGE_VERSION) {
-        console.log('InspectionRounds data structure updated, clearing old data...');
         localStorage.removeItem(STORAGE_KEY);
         localStorage.setItem(VERSION_KEY, STORAGE_VERSION);
         return mockInspectionRounds;
@@ -42,7 +41,6 @@ export function InspectionRoundsProvider({ children }: { children: ReactNode }) 
           round.type === 'complaint'
         );
         if (hasOldType) {
-          console.log('Found old InspectionType values, resetting to new mock data...');
           localStorage.removeItem(STORAGE_KEY);
           return mockInspectionRounds;
         }

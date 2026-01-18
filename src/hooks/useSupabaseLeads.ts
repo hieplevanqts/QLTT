@@ -154,7 +154,6 @@ export function useSupabaseLeads(options: UseSupabaseLeadsOptions = {}) {
   const fetchLeads = async () => {
     // Prevent concurrent fetches
     if (isFetchingRef.current) {
-      console.log('⏭️ [useSupabaseLeads] Skipping fetch - already in progress');
       return;
     }
 
@@ -163,9 +162,6 @@ export function useSupabaseLeads(options: UseSupabaseLeadsOptions = {}) {
       setLoading(true);
       setError(null);
 
-      console.log('🔍 [useSupabaseLeads] Fetching leads from Supabase...');
-      console.log('📋 [useSupabaseLeads] Options:', options);
-      console.log('🕐 [useSupabaseLeads] Timestamp:', new Date().toISOString());
 
       // Build query
       let query = supabase
@@ -175,22 +171,18 @@ export function useSupabaseLeads(options: UseSupabaseLeadsOptions = {}) {
 
       // Apply filters
       if (options.statuses && options.statuses.length > 0) {
-        console.log('🎯 [useSupabaseLeads] Filtering by statuses:', options.statuses);
         query = query.in('status', options.statuses);
       }
 
       if (options.categories && options.categories.length > 0) {
-        console.log('🎯 [useSupabaseLeads] Filtering by categories:', options.categories);
         query = query.in('category', options.categories);
       }
 
       if (options.search) {
-        console.log('🔎 [useSupabaseLeads] Searching for:', options.search);
         query = query.or(`title.ilike.%${options.search}%,description.ilike.%${options.search}%,code.ilike.%${options.search}%`);
       }
 
       if (options.unassigned) {
-        console.log('👤 [useSupabaseLeads] Filtering unassigned');
         query = query.is('assigned_to', null);
       }
 
@@ -210,18 +202,13 @@ export function useSupabaseLeads(options: UseSupabaseLeadsOptions = {}) {
       }
 
       if (!data) {
-        console.warn('⚠️ [useSupabaseLeads] No data returned');
         setLeads([]);
         return;
       }
 
-      console.log(`✅ [useSupabaseLeads] Fetched ${data.length} leads from Supabase`);
-      console.log(`📊 [useSupabaseLeads] First 3 lead IDs:`, data.slice(0, 3).map(l => l.id));
       
       // Transform data
       const transformedLeads = data.map(transformSupabaseLead);
-      console.log('🔄 [useSupabaseLeads] Transformed', transformedLeads.length, 'leads');
-      console.log('📊 [useSupabaseLeads] First 3 transformed lead IDs:', transformedLeads.slice(0, 3).map(l => l.id));
       
       // CRITICAL: Deduplicate by lead_code (not just ID)
       // Keep the most recent record if duplicate codes exist
@@ -233,17 +220,12 @@ export function useSupabaseLeads(options: UseSupabaseLeadsOptions = {}) {
           uniqueLeadsMap.set(lead.code, lead);
         } else {
           // Duplicate code found - keep the one with newer created_at
-          console.warn(`⚠️ [useSupabaseLeads] Duplicate lead_code detected: ${lead.code}`);
-          console.warn(`   - Existing: ID=${existingLead.id}, created=${existingLead.createdAt}`);
-          console.warn(`   - New: ID=${lead.id}, created=${lead.createdAt}`);
           
           // Keep the newer one (or update if current is newer)
           if (new Date(lead.createdAt) > new Date(existingLead.createdAt)) {
-            console.warn(`   - Keeping newer record: ${lead.id}`);
             uniqueLeadsMap.set(lead.code, lead);
-          } else {
-            console.warn(`   - Keeping existing record: ${existingLead.id}`);
           }
+          // If existing is newer, keep it (already in map)
         }
       });
 
@@ -256,7 +238,6 @@ export function useSupabaseLeads(options: UseSupabaseLeadsOptions = {}) {
         console.error(`   - Duplicates removed: ${transformedLeads.length - uniqueLeads.length}`);
       }
 
-      console.log('✅ [useSupabaseLeads] Final unique leads count:', uniqueLeads.length);
       
       setLeads(uniqueLeads);
 

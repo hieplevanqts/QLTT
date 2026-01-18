@@ -106,7 +106,6 @@ export function DataTableComponent<T>({
 
       // If content is an object, try to stringify it safely
       if (typeof content === 'object') {
-        console.warn('Invalid content type in DataTable column:', column.key, content);
         return String(content);
       }
 

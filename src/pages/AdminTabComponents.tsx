@@ -1255,7 +1255,6 @@ export const TeamsTab: React.FC<{
   // Export Excel
   const handleExport = () => {
     try {
-      console.log('📤 Exporting teams to Excel...');
       
       const exportData = teams.map(team => ({
         'Mã': team.code,
@@ -1274,7 +1273,6 @@ export const TeamsTab: React.FC<{
       XLSX.writeFile(wb, fileName);
       
       toast.success('Đã xuất dữ liệu thành công');
-      console.log('✅ Exported:', fileName);
     } catch (error) {
       console.error('❌ Export error:', error);
       toast.error('Lỗi xuất dữ liệu');
@@ -1286,7 +1284,6 @@ export const TeamsTab: React.FC<{
     setIsImportDropdownOpen(false);
     
     try {
-      console.log('📥 Generating Excel template...');
       
       const templateData = [
         {
@@ -1345,7 +1342,6 @@ export const TeamsTab: React.FC<{
       XLSX.writeFile(wb, fileName);
       
       toast.success('Đã tải file mẫu thành công');
-      console.log('✅ Template downloaded:', fileName);
     } catch (error) {
       console.error('❌ Error generating template:', error);
       toast.error('Lỗi tải file mẫu');
@@ -1360,7 +1356,6 @@ export const TeamsTab: React.FC<{
     if (!file) return;
 
     try {
-      console.log('📥 Importing Excel file:', file.name);
       toast.info('Đang xử lý file Excel...');
 
       const data = await file.arrayBuffer();
@@ -1369,7 +1364,6 @@ export const TeamsTab: React.FC<{
       const worksheet = workbook.Sheets[sheetName];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-      console.log('📊 Parsed data:', jsonData);
 
       if (!jsonData || jsonData.length === 0) {
         toast.error('File Excel không có dữ liệu');
@@ -1398,12 +1392,10 @@ export const TeamsTab: React.FC<{
           };
 
           if (!teamData.code || !teamData.name) {
-            console.warn('⚠️ Skipping row - missing required fields:', row);
             errorCount++;
             continue;
           }
 
-          console.log('✅ Valid team data:', teamData);
           successCount++;
           
           // Note: Actual API call would go here
@@ -1422,7 +1414,6 @@ export const TeamsTab: React.FC<{
         toast.warning(`${errorCount} dòng bị lỗi hoặc bỏ qua`);
       }
 
-      console.log(`📊 Import summary: ${successCount} success, ${errorCount} errors`);
       
     } catch (error) {
       console.error('❌ Import error:', error);

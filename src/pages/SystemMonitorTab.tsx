@@ -79,7 +79,6 @@ export const SystemMonitorTab: React.FC = () => {
       if (jobs.length === 0) {
         setLoading(true);
       }
-      console.log('🔍 Fetching job monitor items...');
 
       const { data, error } = await supabase
         .from('job_monitor_items')
@@ -94,7 +93,6 @@ export const SystemMonitorTab: React.FC = () => {
         return;
       }
 
-      console.log(`✅ Loaded ${data?.length || 0} jobs`);
       setJobs(data || []);
     } catch (error) {
       console.error('❌ Error:', error);
@@ -115,7 +113,6 @@ export const SystemMonitorTab: React.FC = () => {
     if (!autoRefresh) return;
 
     const interval = setInterval(() => {
-      console.log('🔄 Auto-refreshing jobs...');
       fetchJobs();
     }, 5000);
 

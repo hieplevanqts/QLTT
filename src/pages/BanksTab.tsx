@@ -63,7 +63,6 @@ export const BanksTab: React.FC = () => {
   const fetchBanks = async () => {
     try {
       setLoading(true);
-      console.log('🏦 Fetching banks from database...');
 
       const { data, error } = await supabase
         .from('banks')
@@ -76,7 +75,6 @@ export const BanksTab: React.FC = () => {
         return;
       }
 
-      console.log(`✅ Loaded ${data?.length || 0} banks`);
       setBanks(data || []);
       setFilteredBanks(data || []);
     } catch (error) {
@@ -141,7 +139,6 @@ export const BanksTab: React.FC = () => {
     }
 
     try {
-      console.log('🗑️ Deleting bank:', bank.id);
 
       const { error } = await supabase
         .from('banks')
@@ -154,7 +151,6 @@ export const BanksTab: React.FC = () => {
         return;
       }
 
-      console.log('✅ Bank deleted');
       toast.success('Đã xóa ngân hàng thành công');
       await fetchBanks();
     } catch (error) {

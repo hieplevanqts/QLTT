@@ -26,7 +26,6 @@ export function StoreRiskProfile({
   const [actionType, setActionType] = useState<ActionType>('task');
 
   const handleActionSubmit = (data: any) => {
-    console.log('Action created from Risk Profile:', data);
     alert(`${data.type === 'task' ? 'Task' : data.type === 'plan' ? 'Plan' : 'Follow-up'} đã được tạo cho cơ sở!`);
   };
 

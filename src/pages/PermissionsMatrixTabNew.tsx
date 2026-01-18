@@ -95,7 +95,6 @@ export const PermissionsMatrixTabNew: React.FC = () => {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       (window as any).testSupabaseConnection = async () => {
-        console.log('🧪 Testing Supabase connection...');
         
         // Test modules
         const { data: modulesData, error: modulesError } = await supabase
@@ -103,7 +102,6 @@ export const PermissionsMatrixTabNew: React.FC = () => {
           .select('*')
           .order('order_index', { ascending: true });
         
-        console.log('Modules query result:', { data: modulesData, error: modulesError });
         
         // Test permissions
         const { data: permissionsData, error: permissionsError } = await supabase
@@ -111,19 +109,16 @@ export const PermissionsMatrixTabNew: React.FC = () => {
           .select('*')
           .limit(5);
         
-        console.log('Permissions query result:', { data: permissionsData, error: permissionsError });
         
         return { modulesData, modulesError, permissionsData, permissionsError };
       };
       
-      console.log('💡 Debug helper loaded. Run window.testSupabaseConnection() in console to test.');
     }
   }, []);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Fetching modules and permissions from Supabase...');
 
       // Fetch modules from modules table
       const { data: modulesData, error: modulesError } = await supabase
@@ -152,16 +147,10 @@ export const PermissionsMatrixTabNew: React.FC = () => {
         // Set empty array to show error but not block UI
         setModules([]);
       } else {
-        console.log(`✅ Loaded ${modulesData?.length || 0} modules from Supabase`);
-        console.log('📦 Modules data:', modulesData);
         setModules(modulesData || []);
         
         // If no modules exist, show warning with instruction
         if (!modulesData || modulesData.length === 0) {
-          console.warn('⚠️ No modules found in database. Please check:');
-          console.warn('   1. RLS policies allow read access');
-          console.warn('   2. Data exists in modules table');
-          console.warn('   3. Run: SELECT * FROM modules; in Supabase SQL Editor');
           toast.warning(
             'Không tìm thấy modules. Vui lòng kiểm tra RLS policies hoặc chạy QUICK_FIX_RLS.sql',
             { duration: 6000 }
@@ -195,7 +184,6 @@ export const PermissionsMatrixTabNew: React.FC = () => {
         
         setPermissions([]);
       } else {
-        console.log(`✅ Loaded ${permissionsData?.length || 0} permissions from Supabase`);
         setPermissions(permissionsData || []);
       }
     } catch (error) {
@@ -314,7 +302,6 @@ export const PermissionsMatrixTabNew: React.FC = () => {
         console.error('❌ Error deleting permission:', error);
         toast.error(`Lỗi xóa quyền: ${error.message}`);
       } else {
-        console.log('✅ Permission deleted successfully');
         toast.success('Đã xóa quyền thành công');
         fetchData();
       }
@@ -336,7 +323,6 @@ export const PermissionsMatrixTabNew: React.FC = () => {
         console.error('❌ Error updating permission status:', error);
         toast.error(`Lỗi cập nhật trạng thái: ${error.message}`);
       } else {
-        console.log('✅ Permission status updated');
         toast.success(newStatus === 1 ? 'Đã kích hoạt quyền' : 'Đã vô hiệu hóa quyền');
         fetchData();
       }
@@ -442,12 +428,6 @@ export const PermissionsMatrixTabNew: React.FC = () => {
                 value={selectedModule}
                 onChange={(e) => {
                   const newValue = e.target.value === 'all' ? 'all' : e.target.value;
-                  console.log('🔍 Module filter changed:', { 
-                    rawValue: e.target.value, 
-                    parsedValue: newValue,
-                    currentValue: selectedModule,
-                    availableModules: modules.map(m => ({ id: m.id, name: m.name }))
-                  });
                   setSelectedModule(newValue);
                 }}
                 className={styles.select}
@@ -698,7 +678,6 @@ const PermissionModal: React.FC<PermissionModalProps> = ({
           console.error('❌ Error creating permission:', error);
           toast.error(`Lỗi tạo quyền: ${error.message}`);
         } else {
-          console.log('✅ Permission created successfully');
           toast.success('Đã tạo quyền thành công');
           onSave();
           onClose();
@@ -716,7 +695,6 @@ const PermissionModal: React.FC<PermissionModalProps> = ({
           console.error('❌ Error updating permission:', error);
           toast.error(`Lỗi cập nhật quyền: ${error.message}`);
         } else {
-          console.log('✅ Permission updated successfully');
           toast.success('Đã cập nhật quyền thành công');
           onSave();
           onClose();
@@ -768,11 +746,6 @@ const PermissionModal: React.FC<PermissionModalProps> = ({
                     value={formData.module_id}
                     onChange={(e) => {
                       const newValue = e.target.value;
-                      console.log('🔍 Modal module selection:', {
-                        rawValue: e.target.value,
-                        parsedValue: newValue,
-                        currentValue: formData.module_id
-                      });
                       setFormData({ ...formData, module_id: newValue });
                     }}
                     className={styles.input}

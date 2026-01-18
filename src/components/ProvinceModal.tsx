@@ -55,7 +55,6 @@ export const ProvinceModal: React.FC<ProvinceModalProps> = ({
 
     try {
       setSaving(true);
-      console.log(`💾 ${mode === 'add' ? 'Creating' : 'Updating'} province...`);
 
       if (mode === 'add') {
         const { error } = await supabase.from('provinces').insert([
@@ -71,7 +70,6 @@ export const ProvinceModal: React.FC<ProvinceModalProps> = ({
           return;
         }
 
-        console.log('✅ Province created successfully');
         toast.success('Đã tạo tỉnh/thành phố thành công');
       } else if (mode === 'edit' && province) {
         const { error } = await supabase
@@ -88,7 +86,6 @@ export const ProvinceModal: React.FC<ProvinceModalProps> = ({
           return;
         }
 
-        console.log('✅ Province updated successfully');
         toast.success('Đã cập nhật tỉnh/thành phố thành công');
       }
 

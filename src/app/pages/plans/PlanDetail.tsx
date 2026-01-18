@@ -650,7 +650,6 @@ export function PlanDetail() {
             onConfirm={(note) => {
               closeModal();
               toast.success(`Đã gửi kế hoạch "${modalState.plan?.name}" đi phê duyệt`);
-              console.log('Send approval with note:', note);
             }}
           />
           <ApproveModal 
@@ -660,7 +659,6 @@ export function PlanDetail() {
             onConfirm={(note) => {
               closeModal();
               toast.success(`Kế hoạch "${modalState.plan?.name}" đã được phê duyệt`);
-              console.log('Approve with note:', note);
             }}
           />
           <RejectModal 
@@ -670,7 +668,6 @@ export function PlanDetail() {
             onConfirm={(reason) => {
               closeModal();
               toast.error(`Kế hoạch "${modalState.plan?.name}" đã bị từ chối`);
-              console.log('Reject reason:', reason);
             }}
           />
           <RecallModal 
@@ -680,7 +677,6 @@ export function PlanDetail() {
             onConfirm={() => {
               closeModal();
               toast.info(`Đã thu hồi kế hoạch "${modalState.plan?.name}"`);
-              console.log('Recall plan');
             }}
           />
           <DeployModal 
@@ -690,7 +686,6 @@ export function PlanDetail() {
             onConfirm={(startDate) => {
               closeModal();
               toast.success(`Đã triển khai kế hoạch "${modalState.plan?.name}" từ ${startDate}`);
-              console.log('Deploy from:', startDate);
             }}
           />
           <PauseModal 
@@ -700,7 +695,6 @@ export function PlanDetail() {
             onConfirm={(reason) => {
               closeModal();
               toast.warning(`Đã tạm dừng kế hoạch "${modalState.plan?.name}"`);
-              console.log('Pause reason:', reason);
             }}
           />
           <DeletePlanModal 
@@ -710,7 +704,6 @@ export function PlanDetail() {
             onConfirm={() => {
               closeModal();
               toast.success(`Đã xóa kế hoạch "${modalState.plan?.name}"`);
-              console.log('Delete plan');
               navigate('/plans/list');
             }}
           />

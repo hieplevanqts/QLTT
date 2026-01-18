@@ -168,15 +168,12 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
   // MapPage handles ALL filtering (status, business type, location, search)
   // LeafletMap just renders the markers for whatever restaurants it receives
   const filteredRestaurants = useMemo(() => {
-    console.log('🗺️ LeafletMap: Received', restaurants?.length || 0, 'pre-filtered restaurants from MapPage');
     
     if (!restaurants || restaurants.length === 0) {
-      console.warn('⚠️ LeafletMap: No restaurants to display');
       return [];
     }
     
     // Just return what we received - filtering is done in MapPage
-    console.log('✅ LeafletMap: Rendering', restaurants.length, 'restaurants on map');
     return restaurants;
   }, [restaurants]);
 
@@ -190,15 +187,12 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
     const iconSize = getIconSize(currentZoom);
 
     // Remove old markers
-    console.log('🗑️  [UPDATE] Removing', markersRef.current.length, 'old markers');
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
     selectedMarkerRef.current = null;
-    console.log('✅ [UPDATE] Old markers removed');
 
     // 🔥 NEW: If showWardBoundaries is true, render team markers instead of polygons
     if (showWardBoundaries) {
-      console.log('👮 LeafletMap: Rendering team markers for officers...');
       
       // Remove old ward boundaries (polygons)
       wardBoundariesLayerRef.current.forEach(polygon => polygon.remove());
@@ -330,26 +324,21 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
         markersRef.current.push(teamMarker);
       });
       
-      console.log('✅ Rendered', markersRef.current.length, 'team markers');
       return; // Exit early - don't render restaurant markers
     }
 
-    console.log('🗺️ LeafletMap: Updating markers...');
-    console.log('📊 Total restaurants to render:', filteredRestaurants.length);
     
     // Check for valid coordinates
     const validRestaurants = filteredRestaurants.filter(r => {
       const isValid = r.lat !== 0 && r.lng !== 0 && !isNaN(r.lat) && !isNaN(r.lng);
       if (!isValid) {
-        console.warn('⚠️ Invalid restaurant coordinates:', { id: r.id, name: r.name, lat: r.lat, lng: r.lng });
       }
       return isValid;
     });
     
-    console.log('✅ Valid restaurants with coordinates:', validRestaurants.length);
     
     if (validRestaurants.length > 0) {
-      console.log('📍 First valid restaurant:', { 
+      console.log({
         id: validRestaurants[0].id, 
         name: validRestaurants[0].name,
         lat: validRestaurants[0].lat,
@@ -369,20 +358,19 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       }
       
       if (index === 0) {
-        console.log('🎯 Creating first marker at:', [restaurant.lat, restaurant.lng]);
-        console.log('🎨 First marker category:', restaurant.category);
-        console.log('🎨 First marker status (DB):', restaurant.status);
       }
       const iconSvg = getBusinessIcon(restaurant.type);
       const color = getCategoryColor(restaurant.category);
       
       if (index === 0) {
-        console.log('🎨 First marker color from getCategoryColor():', color);
       }
       
       // Check if restaurant has citizen reports
       const hasCitizenReports = restaurant.citizenReports && restaurant.citizenReports.length > 0;
       const reportCount = hasCitizenReports ? restaurant.citizenReports.length : 0;
+      
+      // Check if it's a hotspot (red marker)
+      const isHotspot = restaurant.category === 'hotspot';
       
       // Create darker shade for subtle border effect
       const darkerColor = color === '#22c55e' ? '#16a34a' : 
@@ -394,8 +382,8 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       const highlightHeight = Math.round(markerSize * 0.3);
       const highlightTop = Math.round(markerSize * 0.08);
       
-      // Add pulse ring and alert icon for markers with citizen reports
-      const alertElements = hasCitizenReports ? '<div class="alert-pulse-ring"></div>' : '';
+      // Add pulse ring for markers with citizen reports or hotspot markers
+      const alertElements = (hasCitizenReports || isHotspot) ? '<div class="alert-pulse-ring"></div>' : '';
       
       const iconHtml = `
        <div class="marker-wrapper" style="
@@ -437,7 +425,7 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       
       const customIcon = L.divIcon({
         html: iconHtml,
-        className: hasCitizenReports ? 'custom-marker-icon has-citizen-reports' : 'custom-marker-icon',
+        className: (hasCitizenReports || isHotspot) ? 'custom-marker-icon has-citizen-reports' : 'custom-marker-icon',
         iconSize: [markerSize, markerSize],
         iconAnchor: [markerSize / 2, markerSize],
         popupAnchor: [0, -markerSize]
@@ -609,7 +597,7 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
                 </button>
                 
                 <button 
-                  onclick="window.openPointDetail('${restaurant.id}')"
+                  onclick="event.stopPropagation(); event.preventDefault(); window.openPointDetail('${restaurant.id}', event);"
                   style="
                     padding: 10px 14px;
                     background: ${color};
@@ -654,9 +642,7 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       markersAdded++;
     });
     
-    console.log('✅ [UPDATE] Successfully added', markersAdded, 'markers to map');
-    console.log('📊 [UPDATE] Total markers in markersRef:', markersRef.current.length);
-  }, [filteredRestaurants, selectedRestaurant, onPointClick, showWardBoundaries]);
+  }, [filteredRestaurants, selectedRestaurant, showWardBoundaries]); // 🔥 FIX: Removed onPointClick - it's only used in HTML onclick handler, not in the function body
 
   // 🔥 Store updateMarkers in ref for map init to use
   useEffect(() => {
@@ -742,7 +728,6 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
 
     // Check if map container already has _leaflet_id (already initialized)
     if ((mapRef.current as any)._leaflet_id) {
-      console.warn('Map container already initialized, skipping...');
       return;
     }
 
@@ -760,7 +745,6 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       
       // 🔥 CRITICAL: Check if mapRef still exists after async import
       if (!mapRef.current) {
-        console.warn('⚠️ Map container not found after async import, aborting...');
         return;
       }
 
@@ -776,7 +760,7 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       });
 
       // Create map instance
-      const map = L.map(mapRef.current!).setView([21.0285, 105.8542], 12);
+      const map = L.map(mapRef.current!).setView([21.0285, 105.8542], 15);
       
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -807,19 +791,14 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       // Listen to zoom events to rescale markers
       map.on('zoomend', () => {
         const newZoom = map.getZoom();
-        console.log('🔍 [ZOOM] zoomend event - newZoom:', newZoom, 'currentZoom:', currentZoomRef.current);
         if (newZoom !== currentZoomRef.current) {
           currentZoomRef.current = newZoom;
-          console.log('🔄 [ZOOM] Zoom level changed, updating markers...');
           // 🔥 Use ref to avoid dependency issues
           if (updateMarkersRef.current) {
-            console.log('✅ [ZOOM] Calling updateMarkersRef.current()');
             updateMarkersRef.current();
           } else {
-            console.warn('⚠️ [ZOOM] updateMarkersRef.current is null!');
           }
         } else {
-          console.log('⏸️  [ZOOM] Zoom level unchanged, skipping marker update');
         }
       });
       
@@ -910,10 +889,6 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
     
     const L = leafletRef.current;
     
-    console.log('🗺️ Boundary Effect Triggered!');
-    console.log('🗺️ Selected Province:', selectedProvince);
-    console.log('🗺️ Selected District:', selectedDistrict);
-    console.log('🗺️ Selected Ward:', selectedWard);
     
     // 🔥 FIX: Reset user interaction flag when location selection changes
     // This ensures auto-zoom works even after user has manually interacted with map
@@ -930,8 +905,6 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
     if (selectedWard && selectedWard.trim()) {
       const wardBoundary = getWardByName(selectedWard);
       
-      console.log('🗺️ [WARD] Processing ward:', selectedWard);
-      console.log('🗺️ [WARD] Ward Boundary Found:', wardBoundary);
       
       if (wardBoundary) {
         // Create polygon as non-interactive filled region (vùng tô màu, không bắt chuột)
@@ -952,7 +925,6 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
         // Zoom to ward boundary only if ward changed
         const wardChanged = previousWardRef.current !== selectedWard;
         if (wardChanged && !userInteractedRef.current) {
-          console.log('🗺️ [WARD] Zooming to ward bounds:', wardBoundary.bounds);
           const bounds = L.latLngBounds(wardBoundary.bounds);
           mapInstanceRef.current.fitBounds(bounds, {
             padding: [50, 50],
@@ -964,14 +936,9 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
           previousWardRef.current = selectedWard;
           previousDistrictRef.current = selectedDistrict || '';
           
-          console.log('🗺️ [WARD] Zoom completed!');
         }
         return; // Don't process district if ward is selected
       } else {
-        console.warn('⚠️ [WARD] Ward boundary not found for:', selectedWard);
-        console.log('📍 [WARD] Falling back to district boundary...');
-        console.log('📍 [WARD] Selected district for fallback:', selectedDistrict);
-        console.log('📍 [WARD] District boundary exists:', !!districtBoundaries[selectedDistrict]);
         
         // 🔥 FALLBACK: If ward has no boundary data, show district boundary instead
         // (Only 31/168 wards have polygon data currently)
@@ -985,11 +952,8 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       const boundary = districtBoundaries[selectedDistrict];
       
       const logPrefix = selectedWard ? '[WARD FALLBACK]' : '[DISTRICT]';
-      console.log(`🗺️ ${logPrefix} Processing district:`, selectedDistrict);
       if (selectedWard) {
-        console.log(`🗺️ ${logPrefix} Ward without boundary:`, selectedWard);
       }
-      console.log(`🗺️ ${logPrefix} District Boundary Found:`, boundary);
       
       // Create polygon as filled region without border (vùng tô màu)
       const polygon = L.polygon(boundary.polygon, {
@@ -1005,49 +969,38 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       // 🔥 REMOVED: tooltip - polygon is now non-interactive
       
       boundaryHighlightRef.current = polygon;
-      console.log(`✅ ${logPrefix} Polygon created and added to map!`);
       
       // 🔥 UPDATED: Zoom logic for both district-only selection AND ward fallback
       const districtChanged = previousDistrictRef.current !== selectedDistrict;
       const wardChanged = previousWardRef.current !== selectedWard;
       
-      console.log('🔍 [ZOOM DEBUG] districtChanged:', districtChanged, `(prev: "${previousDistrictRef.current}" → curr: "${selectedDistrict}")`);
-      console.log('🔍 [ZOOM DEBUG] wardChanged:', wardChanged, `(prev: "${previousWardRef.current}" → curr: "${selectedWard}")`);
-      console.log('🔍 [ZOOM DEBUG] userInteractedRef.current:', userInteractedRef.current);
       
       // Check if we should zoom
       if (!userInteractedRef.current) {
         if (selectedWard) {
           // Ward fallback case - zoom if ward OR district changed
           const shouldZoom = wardChanged || districtChanged;
-          console.log('🔍 [ZOOM DEBUG] Ward fallback - shouldZoom:', shouldZoom);
           if (shouldZoom) {
-            console.log('🗺️ [WARD FALLBACK] Zooming to district bounds (for ward without boundary):', boundary.bounds);
             const bounds = L.latLngBounds(boundary.bounds);
             mapInstanceRef.current.fitBounds(bounds, {
               padding: [50, 50],
               animate: true,
               duration: 0.8
             });
-            console.log('✅ [WARD FALLBACK] Zoom completed!');
           }
         } else {
           // District-only case - zoom only if district changed
           const shouldZoom = districtChanged;
-          console.log('🔍 [ZOOM DEBUG] District only - shouldZoom:', shouldZoom);
           if (shouldZoom) {
-            console.log('🗺️ [DISTRICT] Zooming to district bounds:', boundary.bounds);
             const bounds = L.latLngBounds(boundary.bounds);
             mapInstanceRef.current.fitBounds(bounds, {
               padding: [50, 50],
               animate: true,
               duration: 0.8
             });
-            console.log('✅ [DISTRICT] Zoom completed!');
           }
         }
       } else {
-        console.log('⏸️  [ZOOM DEBUG] Skipping auto-zoom - user has manually interacted with map');
       }
       
       // Update previous refs AFTER zoom decision
@@ -1062,13 +1015,12 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
     
     // Check if showMerchants changed from false to true
     if (showMerchants && !previousShowMerchantsRef.current) {
-      console.log('📍 Merchants layer activated - zooming to Hà Nội');
       
       // Hà Nội coordinates: 21.0285, 105.8542
-      // Zoom level 13 for a good view of Hà Nội
+      // Zoom level 15 for a closer view of Hà Nội
       mapInstanceRef.current.setView(
         [21.0285, 105.8542], 
-        13,
+        15,
         { animate: true, duration: 0.8 }
       );
       

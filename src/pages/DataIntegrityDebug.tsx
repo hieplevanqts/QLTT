@@ -64,7 +64,6 @@ export default function DataIntegrityDebug() {
 
       setAllWards(formattedData);
       setWardsData(formattedData);
-      console.log('✅ Loaded all wards:', formattedData.length);
     } catch (error: any) {
       console.error('❌ Error loading wards:', error);
       toast.error(`Lỗi tải dữ liệu: ${error.message}`);
@@ -109,7 +108,6 @@ export default function DataIntegrityDebug() {
       }));
 
       setWardsData(formattedData);
-      console.log(`🔍 Found ${formattedData.length} wards with code containing "${searchCode}"`);
 
       if (formattedData.length === 0) {
         toast.info('Không tìm thấy phường/xã nào');

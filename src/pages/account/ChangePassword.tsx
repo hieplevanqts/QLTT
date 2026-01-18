@@ -33,7 +33,6 @@ export default function ChangePassword() {
     }
 
     // TODO: Call API to change password
-    console.log('Changing password...');
     toast.success('Đổi mật khẩu thành công');
     
     // Reset form

@@ -134,7 +134,6 @@ export const ExportCenterTab: React.FC = () => {
         )
       );
       toast.success(`Đang tải xuống: ${job.export_jobs_source_name}`);
-      console.log('Downloading:', job.export_jobs_file_url);
     } else {
       toast.error('File chưa sẵn sàng để tải xuống');
     }

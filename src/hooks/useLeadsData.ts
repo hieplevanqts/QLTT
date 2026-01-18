@@ -38,7 +38,6 @@ export function useLeadsData(tenantId?: string) {
         // Create Supabase client
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-        console.log('🔗 Fetching leads from Supabase...');
         
         // Build query
         let query = supabase
@@ -58,7 +57,6 @@ export function useLeadsData(tenantId?: string) {
           throw new Error(`${fetchError.message} (Code: ${fetchError.code})`);
         }
         
-        console.log('✅ Leads fetched:', data?.length || 0, 'records');
         
         setLeads(data || []);
         setError(null);

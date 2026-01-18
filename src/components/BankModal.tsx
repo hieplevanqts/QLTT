@@ -64,7 +64,6 @@ export const BankModal: React.FC<BankModalProps> = ({ mode, bank, onClose, onSav
 
     try {
       setSaving(true);
-      console.log(`💾 ${mode === 'add' ? 'Creating' : 'Updating'} bank...`);
 
       const bankData = {
         code: formData.code.trim(),
@@ -89,7 +88,6 @@ export const BankModal: React.FC<BankModalProps> = ({ mode, bank, onClose, onSav
           return;
         }
 
-        console.log('✅ Bank created:', data.id);
         toast.success('Đã tạo ngân hàng thành công');
       } else if (mode === 'edit' && bank) {
         // Update existing bank
@@ -104,7 +102,6 @@ export const BankModal: React.FC<BankModalProps> = ({ mode, bank, onClose, onSav
           return;
         }
 
-        console.log('✅ Bank updated');
         toast.success('Đã cập nhật ngân hàng thành công');
       }
 

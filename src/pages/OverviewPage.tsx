@@ -9,14 +9,22 @@ import {
   Clock,
   Users,
   RefreshCw,
+  Building2,
+  Pen,
 } from 'lucide-react';
 import PageHeader from '../layouts/PageHeader';
-import OperationalContext from '../patterns/OperationalContext';
 import { Button } from '../app/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../app/components/ui/card';
 import { Badge } from '../app/components/ui/badge';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function OverviewPage() {
+  const { user } = useAuth(); // Get user with department info
+  
+  // Get department name and address from user.departmentInfo
+  const departmentName = user?.departmentInfo?.name || '';
+  const departmentAddress = user?.departmentInfo?.address || '';
+
   const statsCards = [
     {
       title: 'Điểm nóng địa bàn',
@@ -118,12 +126,48 @@ export default function OverviewPage() {
       />
 
       <div className="px-6 py-4 space-y-4">
-        {/* Operational Context */}
-        <OperationalContext
-          unit="Chi cục QLTT Quận 1"
-          jurisdiction="Quận 1, TP. Hồ Chí Minh"
-          onEdit={() => window.location.href = '/auth/select-jurisdiction'}
-        />
+        {/* Department Info Display */}
+        {departmentName && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '8px 16px',
+            backgroundColor: 'var(--muted)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--border)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Building2 size={16} style={{ color: 'var(--primary)' }} />
+              <span style={{
+                fontSize: 'var(--text-sm)',
+                fontWeight: 'var(--font-weight-medium)',
+                color: 'var(--foreground)'
+              }}>
+                {departmentName}
+              </span>
+            </div>
+            <div style={{ width: '1px', height: '16px', backgroundColor: 'var(--border)' }}></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <MapPin size={16} style={{ color: 'var(--primary)' }} />
+              <span style={{
+                fontSize: 'var(--text-sm)',
+                color: 'var(--muted-foreground)'
+              }}>
+                {departmentAddress}
+              </span>
+            </div>
+            <div style={{ width: '1px', height: '16px', backgroundColor: 'var(--border)' }}></div>
+            <Button
+              variant="ghost"
+              size="sm"
+              style={{ height: '28px', padding: '0px 8px' }}
+              className="cursor-pointer hover:bg-accent hover:text-accent-foreground"
+            >
+              <Pen size={14} />
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="flex-1 p-6 space-y-6">
