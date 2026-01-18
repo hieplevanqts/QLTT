@@ -8,6 +8,7 @@ import { MapLegend } from './MapLegend';
 import { Restaurant } from '../../../data/restaurantData';
 import { PointStatus } from '../../../utils/api/pointStatusApi';
 import { Category } from '../../../utils/api/categoriesApi';
+import { MerchantStats } from '../../../utils/api/merchantsApi';
 
 interface FullscreenMapModalProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ interface FullscreenMapModalProps {
   allRestaurants?: Restaurant[];  // 🔥 NEW: All restaurants (unfiltered) for filter panel counts
   pointStatuses: PointStatus[];  // 🔥 ADD: Dynamic statuses
   categories: Category[];  // 🔥 NEW: Categories for mapping ID to name
+  merchantStats?: MerchantStats | null;  // 🔥 NEW: Merchant statistics from API
   onPointClick?: (point: Restaurant) => void;
   onFilterChange: (key: keyof FullscreenMapModalProps['filters']) => void;
   onBusinessTypeFilterChange: (type: string) => void;
@@ -53,6 +55,7 @@ export function FullscreenMapModal({
   allRestaurants,  // 🔥 NEW: All restaurants (unfiltered) for filter panel counts
   pointStatuses,  // 🔥 RECEIVE: Dynamic statuses
   categories,  // 🔥 NEW: Categories for mapping ID to name
+  merchantStats,  // 🔥 NEW: Merchant statistics from API
   onPointClick,
   onFilterChange,
   onBusinessTypeFilterChange,
@@ -89,6 +92,34 @@ export function FullscreenMapModal({
     // Just return what we received
     return restaurants;
   }, [restaurants]);
+
+  // 🔥 NEW: Calculate statistics data - filter by location ONLY (not by status or businessType)
+  // This ensures stats show total businesses on the selected area, regardless of filters
+  // Same logic as MapPage to ensure consistent stats display
+  const restaurantsForStats = useMemo(() => {
+    // Use allRestaurants if available, otherwise use restaurants
+    const dataSource = allRestaurants || restaurants;
+    
+    if (!dataSource || dataSource.length === 0) {
+      return [];
+    }
+    
+    // Filter by location ONLY (province, district, ward)
+    // Do NOT filter by status or businessType - stats should show ALL businesses in the area
+    if (selectedProvince || selectedDistrict || selectedWard) {
+      const filteredByLocation = dataSource.filter((restaurant) => {
+        if (selectedProvince && restaurant.province !== selectedProvince) return false;
+        if (selectedDistrict && restaurant.district !== selectedDistrict) return false;
+        if (selectedWard && restaurant.ward !== selectedWard) return false;
+        return true;
+      });
+      
+      return filteredByLocation;
+    }
+    
+    // No location filter - return all data
+    return dataSource;
+  }, [allRestaurants, restaurants, selectedProvince, selectedDistrict, selectedWard]);
 
   // Handle ESC key
   useEffect(() => {
@@ -229,9 +260,10 @@ export function FullscreenMapModal({
             selectedProvince={selectedProvince}
             selectedDistrict={selectedDistrict}
             selectedWard={selectedWard}
-            filteredRestaurants={filteredRestaurants}
+            filteredRestaurants={restaurantsForStats}
             businessTypeFilters={businessTypeFilters}
             categories={categories}  // 🔥 NEW: Categories for mapping ID to name
+            merchantStats={merchantStats}  // 🔥 NEW: Merchant statistics from API
             onClose={() => {
               // Clear all location filters when closing stats card
               onProvinceChange('');

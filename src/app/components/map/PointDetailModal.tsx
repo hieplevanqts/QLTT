@@ -243,7 +243,7 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
             </div>
           </div>
           <div className={styles.headerMeta}>
-            <span className={styles.metaId}>ID: {point.id}</span>
+            <span className={styles.metaId}>MST: {point.taxCode || 'N/A'}</span>
             <span className={styles.metaDivider}>•</span>
             <span className={styles.metaCategory}>{getCategoryLabel(point.category)}</span>
             <span className={styles.metaDivider}>•</span>

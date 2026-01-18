@@ -6,6 +6,7 @@ import LeafletMap from '../app/components/map/LeafletMap';
 import { PointDetailModal } from '../app/components/map/PointDetailModal';
 import { ReviewModal } from '../app/components/map/ReviewModal';
 import { FullscreenMapModal } from '../app/components/map/FullscreenMapModal';
+import { FullscreenOfficerMapModal } from '../app/components/map/FullscreenOfficerMapModal';
 import { MapFilterPanel } from '../app/components/map/MapFilterPanel';
 import { OfficerFilterPanel } from '../app/components/map/OfficerFilterPanel';
 import { OfficerStatsOverlay } from '../app/components/map/OfficerStatsOverlay';
@@ -116,6 +117,7 @@ export default function MapPage() {
   
   // Fullscreen map modal state
   const [isFullscreenMapOpen, setIsFullscreenMapOpen] = useState(false);
+  const [isFullscreenOfficerMapOpen, setIsFullscreenOfficerMapOpen] = useState(false);
   
   // 🔥 NEW: Officer modal state
   const [selectedOfficer, setSelectedOfficer] = useState<Officer | null>(null);
@@ -1459,7 +1461,13 @@ export default function MapPage() {
               selectedTeamId={selectedTeamId}  // 🔥 NEW: Pass selected team ID
               onPointClick={handlePointClick}
               onWardClick={handleWardClick}
-              onFullscreenClick={() => setIsFullscreenMapOpen(true)}
+              onFullscreenClick={() => {
+                if (showOfficers) {
+                  setIsFullscreenOfficerMapOpen(true);
+                } else {
+                  setIsFullscreenMapOpen(true);
+                }
+              }}
             />
 
             {/* Officer Stats Overlay - Only show when Officers layer is active */}
@@ -1703,6 +1711,7 @@ export default function MapPage() {
         allRestaurants={allRestaurants}  // 🔥 NEW: Pass all restaurants for filter panel counts
         pointStatuses={pointStatuses}  // 🔥 PASS: Dynamic statuses to fullscreen modal
         categories={categories}  // 🔥 NEW: Pass categories for mapping ID to name
+        merchantStats={merchantStats}  // 🔥 NEW: Pass merchant statistics to fullscreen modal
         onPointClick={handlePointClick}
         onFilterChange={handleFilterChange}
         onBusinessTypeFilterChange={handleBusinessTypeFilterChange}
@@ -1719,6 +1728,17 @@ export default function MapPage() {
         onWardChange={(ward) => {
           setSelectedWard(ward);
         }}
+      />
+      
+      {/* 🔥 NEW: Fullscreen Officer Map Modal */}
+      <FullscreenOfficerMapModal 
+        isOpen={isFullscreenOfficerMapOpen}
+        onClose={() => setIsFullscreenOfficerMapOpen(false)}
+        selectedTeamId={selectedTeamId}
+        onTeamChange={(teamId) => {
+          setSelectedTeamId(teamId);
+        }}
+        onWardClick={handleWardClick}
       />
       
       {/* 🔥 NEW: Upload Excel Modal */}

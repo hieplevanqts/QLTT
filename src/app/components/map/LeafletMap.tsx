@@ -483,7 +483,7 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
                   font-weight: 600;
                   color: #374151;
                   letter-spacing: 0.3px;
-                ">${restaurant.id}</span>
+                ">MST: ${restaurant.taxCode || 'N/A'}</span>
               </div>
               
               <!-- Info Items -->

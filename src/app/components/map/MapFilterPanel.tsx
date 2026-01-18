@@ -136,7 +136,7 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
 
     // 🔥 Build dynamic category data from pointStatuses
     // Lấy name từ DB, nhưng màu + icon vẫn hardcoded theo code
-    const categoryData = pointStatuses.map(status => {
+    const categoryData = (pointStatuses || []).map(status => {
       const count = (restaurants || []).filter(r => r.category === status.code).length;
       
       return {
@@ -165,7 +165,7 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
 
     // Build business type data from categories
     // 🔥 FIX: Use category.id as key (for API filtering), but display category.name
-    const businessTypeData = categories.map(category => ({
+    const businessTypeData = (categories || []).map(category => ({
       key: category.id,  // 🔥 Changed to category.id for API
       label: category.name,                                  // 📦 FROM DB
       icon: businessTypeIconMap[category.name]?.icon || Store,  // 🎨 HARDCODED (fallback to Store)
@@ -539,7 +539,7 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
               )}
             </button>
             <div className={`${styles.filterList} ${expandedSections.department ? styles.filterListExpanded : styles.filterListCollapsed}`}>
-              {departments.length > 0 ? (
+              {(departments || []).length > 0 ? (
                 <>
                   {/* Toggle all departments */}
                   <label 
@@ -553,15 +553,15 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
                     <div className={styles.checkboxWrapper}>
                       <input
                         type="checkbox"
-                        checked={departments.every(dept => departmentFilters[dept.id] !== false)}
+                        checked={(departments || []).every(dept => departmentFilters[dept.id] !== false)}
                         onChange={(e) => onDepartmentToggleAll(e.target.checked)}
                         className={styles.checkbox}
                       />
                       <div 
                         className={styles.customCheckbox}
-                        style={{ borderColor: departments.every(dept => departmentFilters[dept.id] !== false) ? '#005cb6' : undefined }}
+                        style={{ borderColor: (departments || []).every(dept => departmentFilters[dept.id] !== false) ? '#005cb6' : undefined }}
                       >
-                        {departments.every(dept => departmentFilters[dept.id] !== false) && (
+                        {(departments || []).every(dept => departmentFilters[dept.id] !== false) && (
                           <div className={styles.checkmark} style={{ background: '#005cb6' }}>
                             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                               <path 
@@ -581,7 +581,7 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
                   </label>
                   
                   {/* Individual department checkboxes */}
-                  {departments.map((dept) => (
+                  {(departments || []).map((dept) => (
                     <label key={dept.id} className={styles.filterItem}>
                       <div className={styles.checkboxWrapper}>
                         <input

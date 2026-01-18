@@ -3,7 +3,7 @@
 .scopeSelector {
   position: relative;
   font-family: 'Inter', sans-serif;
-  z-index: 9999;  /* 🔥 FIX: High z-index to ensure selector container is above map */
+  z-index: 100;  /* 🔥 FIX: Lower z-index - only needs to be above map layer, not modals/overlays */
 }
 
 .selectWrapper {
@@ -183,7 +183,7 @@
   border-radius: var(--radius);
   box-shadow: var(--elevation-sm);
   overflow: hidden;
-  z-index: 9999;  /* 🔥 FIX: High z-index to ensure dropdown is above map layer */
+  z-index: 100;  /* 🔥 FIX: Lower z-index - dropdown should not appear above modals/overlays */
   animation: slideDown 0.15s ease-out;
 }
 

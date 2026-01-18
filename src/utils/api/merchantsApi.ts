@@ -119,6 +119,9 @@ export async function fetchMerchants(
           // Phone as hotline
           hotline: merchant.owner_phone || undefined,
           
+          // Tax code from backend
+          taxCode: merchant.tax_code || undefined,
+          
           // No logo field in merchants table
           logo: undefined,
           images: undefined,

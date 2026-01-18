@@ -34,6 +34,7 @@ export interface Restaurant {
   openingHours?: any; // jsonb
   status?: number;
   statusName?: string; // 🔥 Tên trạng thái từ database (ví dụ: "Đạt chuẩn", "Điểm nóng")
+  taxCode?: string; // 🔥 Mã số thuế (từ backend field tax_code)
 }
 
 // Tất cả các loại hình kinh doanh trong xã hội
