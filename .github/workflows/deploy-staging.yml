@@ -25,7 +25,7 @@ jobs:
     env:
       IMAGE_NAME: saas-go/mappa-portal
       MANIFEST_REPO: MappaWeb/mappa-manifest
-      MANIFEST_FILE_PATH: frontend/mappa-portal-deployment.yaml
+      MANIFEST_FILE_PATH: production/frontend/mappa-portal-deployment.yaml
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
