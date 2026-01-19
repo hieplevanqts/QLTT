@@ -69,6 +69,7 @@ interface QLTTScopeContextType {
   availableAreas: ScopeArea[];
   getScopeDisplayText: () => string;
   isLoading: boolean;
+  hasInitialized: boolean;  // 🔥 NEW: Track if scope has been initialized
 }
 
 const QLTTScopeContext = createContext<QLTTScopeContextType | undefined>(undefined);
@@ -341,14 +342,40 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!user || isLoading || hasInitialized) return;
+    
+    // 🔥 FIX: Try to load scope from localStorage first
+    try {
+      const savedScopeStr = localStorage.getItem('mappa-scope');
+      if (savedScopeStr) {
+        const savedScope = JSON.parse(savedScopeStr) as QLTTScope;
+        console.log('🔄 QLTTScopeContext: Loading scope from localStorage:', savedScope);
+        // Validate saved scope structure
+        if (savedScope && typeof savedScope === 'object') {
+          setScope(savedScope);
+          setHasInitialized(true);
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('❌ QLTTScopeContext: Failed to load scope from localStorage:', error);
+    }
+    
+    // If no saved scope or error, use default scope
     const defaultScope = buildDefaultScope();
+    console.log('🔄 QLTTScopeContext: Using default scope:', defaultScope);
     setScope(defaultScope);
     setHasInitialized(true);
   }, [user, isLoading, hasInitialized, userDepartment, userLevel]);
 
   const handleSetScope = (newScope: QLTTScope) => {
+    console.log('🔄 QLTTScopeContext: handleSetScope called with:', newScope);
     setScope(newScope);
-    localStorage.setItem('mappa-scope', JSON.stringify(newScope));
+    try {
+      localStorage.setItem('mappa-scope', JSON.stringify(newScope));
+      console.log('✅ QLTTScopeContext: Scope saved to localStorage');
+    } catch (error) {
+      console.error('❌ QLTTScopeContext: Failed to save scope to localStorage:', error);
+    }
   };
 
   const resetScope = () => {
@@ -382,6 +409,7 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
         availableAreas,
         getScopeDisplayText,
         isLoading,
+        hasInitialized,  // 🔥 NEW: Export hasInitialized
       }}
     >
       {children}
