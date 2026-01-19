@@ -1,5 +1,5 @@
 import React, { useState, forwardRef, useEffect } from 'react';
-import { ShieldCheck, Flame, Calendar, Check, X, Store, Coffee, Utensils, Soup, Croissant, UtensilsCrossed, Plus, Minus, MapPin, ChevronDown, Search, Save, Building2 } from 'lucide-react';
+import { ShieldCheck, Flame, Calendar, Check, X, Store, Coffee, Utensils, Soup, Croissant, UtensilsCrossed, Plus, Minus, MapPin, ChevronDown, ChevronRight, Search, Save, Building2 } from 'lucide-react';
 import styles from './MapFilterPanel.module.css';
 import { Restaurant } from '../../../data/restaurantData';
 import { getProvinceNames, getDistrictsByProvince, getWardsByDistrict } from '../../../data/vietnamLocations';
@@ -87,6 +87,9 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
       department: false,  // 🔥 FIX: Add department section state
       legend: true
     });
+    
+    // 🔥 NEW: State for expanded department groups (by parent_id)
+    const [expandedDepartmentGroups, setExpandedDepartmentGroups] = useState<Set<string>>(new Set());
     
     const [showProvinceDropdown, setShowProvinceDropdown] = useState(false);
     const [showDistrictDropdown, setShowDistrictDropdown] = useState(false);
@@ -187,6 +190,103 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
           item.label.toLowerCase().includes(businessTypeSearch.toLowerCase())
         )
       : otherBusinessTypes;
+
+    // 🔥 NEW: Build department tree recursively by parent_id
+    interface DepartmentNode extends Department {
+      children: DepartmentNode[];
+    }
+    
+    const buildDepartmentTree = (): DepartmentNode[] => {
+      const deptMap = new Map<string, DepartmentNode>();
+      const rootNodes: DepartmentNode[] = [];
+      
+      // First pass: create all nodes
+      (departments || []).forEach((dept) => {
+        deptMap.set(dept.id, { ...dept, children: [] });
+      });
+      
+      // Second pass: build tree structure
+      (departments || []).forEach((dept) => {
+        const node = deptMap.get(dept.id)!;
+        if (dept.parent_id && deptMap.has(dept.parent_id)) {
+          // Has parent in the list - add to parent's children
+          const parent = deptMap.get(dept.parent_id)!;
+          parent.children.push(node);
+        } else {
+          // No parent or parent not in list - it's a root node
+          rootNodes.push(node);
+        }
+      });
+      
+      // Sort recursively
+      const sortNode = (node: DepartmentNode) => {
+        node.children.sort((a, b) => a.name.localeCompare(b.name));
+        node.children.forEach(sortNode);
+      };
+      rootNodes.forEach(sortNode);
+      rootNodes.sort((a, b) => a.name.localeCompare(b.name));
+      
+      return rootNodes;
+    };
+    
+    const departmentTree = buildDepartmentTree();
+    
+    // Convert tree to flat structure for rendering
+    const flattenTreeForRender = (nodes: DepartmentNode[]): {
+      rootDepartments: Department[];
+      groupedDepartments: Array<{ parent: Department; children: Department[] }>;
+    } => {
+      const rootDepartments: Department[] = [];
+      const groupedDepartments: Array<{ parent: Department; children: Department[] }> = [];
+      
+      nodes.forEach((node) => {
+        if (node.children.length > 0) {
+          // Has children - create group
+          groupedDepartments.push({
+            parent: node,
+            children: node.children.map(child => {
+              // Flatten children recursively
+              const childData: Department = { ...child };
+              return childData;
+            })
+          });
+        } else {
+          // No children - add to root
+          rootDepartments.push(node);
+        }
+      });
+      
+      return { rootDepartments, groupedDepartments };
+    };
+    
+    const { rootDepartments, groupedDepartments } = flattenTreeForRender(departmentTree);
+    
+    // 🔥 NEW: Toggle department group expand/collapse
+    const toggleDepartmentGroup = (parentId: string) => {
+      setExpandedDepartmentGroups((prev) => {
+        const newSet = new Set(prev);
+        if (newSet.has(parentId)) {
+          newSet.delete(parentId);
+        } else {
+          newSet.add(parentId);
+        }
+        return newSet;
+      });
+    };
+    
+    // 🔥 NEW: Check if all departments in a group are selected
+    const isGroupAllSelected = (deptIds: string[]) => {
+      return deptIds.every(id => departmentFilters[id] !== false);
+    };
+    
+    // 🔥 NEW: Toggle all departments in a group
+    const toggleGroupAll = (deptIds: string[], checked: boolean) => {
+      deptIds.forEach(id => {
+        if (departmentFilters[id] === !checked) {
+          onDepartmentFilterChange(id);
+        }
+      });
+    };
 
     return (
       <div className={styles.panel} ref={ref}>
@@ -521,7 +621,7 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
             </div>
           </div>
 
-          {/* 🔥 NEW: Department Filter Checkboxes */}
+          {/* 🔥 NEW: Department Filter Checkboxes - Grouped by parent_id */}
           <div className={styles.filterSection}>
             <button 
               className={styles.sectionHeader}
@@ -538,7 +638,9 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
                 <Plus size={16} className={styles.toggleIcon} />
               )}
             </button>
-            <div className={`${styles.filterList} ${expandedSections.department ? styles.filterListExpanded : styles.filterListCollapsed}`}>
+            <div 
+              className={`${styles.filterList} ${expandedSections.department ? styles.filterListExpanded : styles.filterListCollapsed} ${expandedSections.department ? styles.departmentFilterList : ''}`}
+            >
               {(departments || []).length > 0 ? (
                 <>
                   {/* Toggle all departments */}
@@ -547,7 +649,7 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
                     style={{ 
                       borderBottom: '1px solid var(--color-border)', 
                       paddingBottom: '8px', 
-                      marginBottom: '4px' 
+                      marginBottom: '8px' 
                     }}
                   >
                     <div className={styles.checkboxWrapper}>
@@ -580,8 +682,8 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
                     <span className={styles.filterLabel} style={{ fontWeight: 600 }}>Tất cả</span>
                   </label>
                   
-                  {/* Individual department checkboxes */}
-                  {(departments || []).map((dept) => (
+                  {/* Root departments (no parent) */}
+                  {rootDepartments.map((dept) => (
                     <label key={dept.id} className={styles.filterItem}>
                       <div className={styles.checkboxWrapper}>
                         <input
@@ -613,6 +715,143 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
                       <span className={styles.filterLabel}>{dept.name}</span>
                     </label>
                   ))}
+                  
+                  {/* Grouped departments (with parent) */}
+                  {groupedDepartments.map(({ parent, children }) => {
+                    const isExpanded = expandedDepartmentGroups.has(parent.id);
+                    const childIds = children.map(c => c.id);
+                    const allChildrenSelected = isGroupAllSelected(childIds);
+                    const parentSelected = departmentFilters[parent.id] !== false;
+                    
+                    return (
+                      <div key={parent.id} style={{ marginBottom: '4px' }}>
+                        {/* Parent department with expand/collapse */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <button
+                            type="button"
+                            onClick={() => toggleDepartmentGroup(parent.id)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              padding: '4px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              color: 'var(--color-text-secondary)',
+                              transition: 'transform 0.2s ease'
+                            }}
+                            aria-label={isExpanded ? 'Thu gọn' : 'Mở rộng'}
+                          >
+                            {isExpanded ? (
+                              <ChevronDown size={14} style={{ transform: 'rotate(0deg)' }} />
+                            ) : (
+                              <ChevronRight size={14} style={{ transform: 'rotate(0deg)' }} />
+                            )}
+                          </button>
+                          
+                          <label 
+                            className={styles.filterItem}
+                            style={{ 
+                              flex: 1,
+                              marginBottom: 0,
+                              paddingLeft: '0px'
+                            }}
+                            onClick={(e) => {
+                              // Prevent label click from toggling checkbox when clicking expand button
+                              if ((e.target as HTMLElement).closest('button')) {
+                                e.preventDefault();
+                              }
+                            }}
+                          >
+                            <div className={styles.checkboxWrapper}>
+                              <input
+                                type="checkbox"
+                                checked={parentSelected}
+                                onChange={() => onDepartmentFilterChange(parent.id)}
+                                className={styles.checkbox}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <div 
+                                className={styles.customCheckbox}
+                                style={{ borderColor: parentSelected ? '#005cb6' : undefined }}
+                              >
+                                {parentSelected && (
+                                  <div className={styles.checkmark} style={{ background: '#005cb6' }}>
+                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                      <path 
+                                        d="M2 6L5 9L10 3" 
+                                        stroke="white" 
+                                        strokeWidth="2" 
+                                        strokeLinecap="round" 
+                                        strokeLinejoin="round"
+                                      />
+                                    </svg>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <Building2 size={16} style={{ color: '#005cb6' }} />
+                            <span className={styles.filterLabel} style={{ fontWeight: 500 }}>{parent.name}</span>
+                          </label>
+                        </div>
+                        
+                        {/* Children departments (collapsible) */}
+                        <div
+                          style={{
+                            maxHeight: isExpanded ? '1000px' : '0',
+                            overflow: 'hidden',
+                            transition: 'max-height 0.3s ease-out',
+                            marginLeft: '24px',
+                            marginTop: '4px',
+                            marginBottom: '4px'
+                          }}
+                        >
+                          {/* Individual child departments */}
+                          {children.map((child) => (
+                            <label 
+                              key={child.id} 
+                              className={styles.filterItem}
+                              style={{ 
+                                marginBottom: '2px',
+                                paddingLeft: '8px',
+                                opacity: isExpanded ? 1 : 0,
+                                transition: 'opacity 0.2s ease'
+                              }}
+                            >
+                              <div className={styles.checkboxWrapper}>
+                                <input
+                                  type="checkbox"
+                                  checked={departmentFilters[child.id] !== false}
+                                  onChange={() => onDepartmentFilterChange(child.id)}
+                                  className={styles.checkbox}
+                                />
+                                <div 
+                                  className={styles.customCheckbox}
+                                  style={{ borderColor: departmentFilters[child.id] !== false ? '#005cb6' : undefined }}
+                                >
+                                  {departmentFilters[child.id] !== false && (
+                                    <div className={styles.checkmark} style={{ background: '#005cb6' }}>
+                                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                        <path 
+                                          d="M2 6L5 9L10 3" 
+                                          stroke="white" 
+                                          strokeWidth="2" 
+                                          strokeLinecap="round" 
+                                          strokeLinejoin="round"
+                                        />
+                                      </svg>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <Building2 size={14} style={{ color: '#005cb6', opacity: 0.7 }} />
+                              <span className={styles.filterLabel} style={{ fontSize: '13px' }}>{child.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </>
               ) : (
                 <div className={styles.noResults}>

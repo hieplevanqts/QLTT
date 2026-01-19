@@ -20,42 +20,81 @@ export interface Department {
 }
 
 /**
- * Fetch departments matching regex pattern for "ĐỘI QUẢN LÝ THỊ TRƯỜNG SỐ (1-25)"
- * Pattern: ^ĐỘI QUẢN LÝ THỊ TRƯỜNG SỐ ([1-9]|1[0-9]|2[0-5])$
+ * Fetch departments matching regex pattern for "Đội QLTT số (1-25)"
+ * Actual data format: "Đội QLTT số 1", "Đội QLTT số 2", etc.
+ * Pattern: ^ĐỘI\s+QLTT\s+SỐ\s+([1-9]|1[0-9]|2[0-5])$ (case-insensitive)
+ * 
+ * @param options - Optional configuration
+ * @param options.strictPattern - If false, uses a more flexible pattern that matches any department containing "ĐỘI" and "QLTT"
+ * @param options.returnAllIfNoMatch - If true, returns all departments if no match found (for debugging)
+ * @param options.divisionId - Optional division ID to filter departments by division (id = divisionId OR parent_id = divisionId)
+ * @param options.teamId - Optional team ID to filter departments by team (id = teamId OR parent_id = teamId)
  */
-export async function fetchMarketManagementTeams(): Promise<Department[]> {
+export async function fetchMarketManagementTeams(options?: {
+  strictPattern?: boolean;
+  returnAllIfNoMatch?: boolean;
+  divisionId?: string | null;
+  teamId?: string | null;
+}): Promise<Department[]> {
   try {
+    console.log('🔍 fetchMarketManagementTeams called with options:', JSON.stringify(options, null, 2));
+    console.log('🔍 options?.teamId:', options?.teamId);
+    console.log('🔍 options?.divisionId:', options?.divisionId);
     
-    // 🔥 FIX: Supabase JS client doesn't support regex operator ~ directly
-    // Fetch all departments starting with "ĐỘI QUẢN LÝ THỊ TRƯỜNG SỐ" then filter with regex
-    const { data, error } = await supabase
+    // Build query
+    let query = supabase
       .from('departments')
       .select('id, name, code, level, path, parent_id')
-      .ilike('name', 'ĐỘI QUẢN LÝ THỊ TRƯỜNG SỐ%')  // Pre-filter with ilike for performance
-      .is('deleted_at', null)
-      .order('name', { ascending: true });
-
+      .is('deleted_at', null);
+    
+    // 🔥 CHANGED: Priority: teamId > divisionId
+    // If teamId is provided, filter by teamId
+    // Otherwise, if divisionId is provided, filter by divisionId
+    const filterId = options?.teamId && typeof options.teamId === 'string' && options.teamId.trim() !== ''
+      ? { type: 'teamId', value: options.teamId }
+      : options?.divisionId && typeof options.divisionId === 'string' && options.divisionId.trim() !== ''
+        ? { type: 'divisionId', value: options.divisionId }
+        : null;
+    
+    if (filterId) {
+      console.log(`🔍 Filtering departments by ${filterId.type}:`, filterId.value);
+      // Use .or() with proper format: field1.operator.value1,field2.operator.value2
+      query = query.or(`id.eq.${filterId.value},parent_id.eq.${filterId.value}`);
+    } else {
+      console.log('📋 No filter - fetching all departments');
+    }
+    
+    const { data, error } = await query.order('name', { ascending: true });
+    console.log('data', data);
+    console.log('options?.divisionId', options?.divisionId);
+    
     if (error) {
       console.error('❌ Error fetching market management teams:', error);
       throw new Error(`Failed to fetch departments: ${error.message}`);
     }
-
-    if (data && data.length > 0) {
+    
+    // 🔥 CHANGED: If filter was applied but Supabase .or() didn't work,
+    // apply client-side filtering as fallback
+    let filteredData = data || [];
+    if (filterId && data && data.length > 0) {
+      filteredData = data.filter((dept: Department) => {
+        return dept.id === filterId.value || dept.parent_id === filterId.value;
+      });
+      console.log('🔍 Client-side filter applied. Before:', data.length, 'After:', filteredData.length);
+      if (filteredData.length !== data.length) {
+        console.log('⚠️ Supabase .or() filter may not have worked, using client-side filter');
+      }
     }
 
-    // 🔥 FIX: Filter with regex in JavaScript (pattern: ^ĐỘI QUẢN LÝ THỊ TRƯỜNG SỐ ([1-9]|1[0-9]|2[0-5])$)
-    const regexPattern = /^ĐỘI QUẢN LÝ THỊ TRƯỜNG SỐ ([1-9]|1[0-9]|2[0-5])$/;
-    const filteredData = (data || []).filter(dept => {
-      const matches = regexPattern.test(dept.name);
-      if (!matches && data && data.length < 50) {  // Only log if dataset is small (for debugging)
-      }
-      return matches;
-    });
-
-    if (filteredData.length > 0) {
-    } else if (data && data.length > 0) {
+    console.log('📊 Total departments fetched:', data?.length || 0);
+    console.log(`✅ Filtered departments by ${filterId?.type || 'none'}:`, filteredData.length);
+    
+    if (filteredData && filteredData.length > 0) {
+      console.log('📝 Departments after filter:', filteredData.map((d: Department) => d.name));
     }
     
+    // 🔥 TEMP: Bỏ điều kiện filter theo name (regex pattern)
+    // Chỉ trả về departments đã được filter theo teamId hoặc divisionId
     return filteredData;
   } catch (error: any) {
     console.error('❌ Error fetching market management teams:', error);

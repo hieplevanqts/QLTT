@@ -41,17 +41,32 @@ export function ScopeSelector() {
 
   const handleTeamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation();
-    const teamId = e.target.value || null;
+    const rawValue = e.target.value;
+    console.log('🔄 ScopeSelector: handleTeamChange - e.target.value:', rawValue);
+    console.log('🔄 ScopeSelector: handleTeamChange - typeof e.target.value:', typeof rawValue);
+    console.log('🔄 ScopeSelector: handleTeamChange - e.target.value === "":', rawValue === '');
+    
+    // 🔥 FIX: Convert empty string to null, but keep valid teamId strings
+    const teamId = rawValue && rawValue.trim() !== '' ? rawValue : null;
+    console.log('🔄 ScopeSelector: handleTeamChange - teamId after processing:', teamId);
+    
     setSelectedTeam(teamId || '');
     setSelectedArea('');
 
-    setScope({
-      divisionId: selectedDivision || null,
+    // 🔥 FIX: Use scope.divisionId from context instead of selectedDivision from local state
+    // to ensure we have the latest value
+    console.log('🔄 ScopeSelector: Current scope.divisionId:', scope.divisionId);
+    
+    const newScope = {
+      divisionId: scope.divisionId || null,  // 🔥 FIX: Use scope.divisionId instead of selectedDivision
       teamId,
       areaId: null,
       province: null,
       ward: null,
-    });
+    };
+    
+    console.log('🔄 ScopeSelector: setScope called with:', newScope);
+    setScope(newScope);
   };
 
   const handleAreaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -60,9 +75,10 @@ export function ScopeSelector() {
     setSelectedArea(areaId || '');
 
     const area = availableAreas.find((item) => item.id === areaId);
+    // 🔥 FIX: Use scope values from context instead of local state
     setScope({
-      divisionId: selectedDivision || null,
-      teamId: selectedTeam || null,
+      divisionId: scope.divisionId || null,  // 🔥 FIX: Use scope.divisionId
+      teamId: scope.teamId || null,            // 🔥 FIX: Use scope.teamId
       areaId,
       province: area?.provinceCode || null,
       ward: area?.wardCode || null,
@@ -72,6 +88,14 @@ export function ScopeSelector() {
   const isDivisionDisabled = isLoading;
   const isTeamDisabled = isLoading || !selectedDivision;
   const isAreaDisabled = isLoading || !selectedTeam;
+  
+  // 🔥 DEBUG: Log availableTeams
+  useEffect(() => {
+    console.log('🔄 ScopeSelector: availableTeams:', availableTeams.length, availableTeams.map(t => ({ id: t.id, name: t.name })));
+    console.log('🔄 ScopeSelector: scope.divisionId:', scope.divisionId);
+    console.log('🔄 ScopeSelector: selectedDivision:', selectedDivision);
+    console.log('🔄 ScopeSelector: selectedTeam:', selectedTeam);
+  }, [availableTeams, scope.divisionId, selectedDivision, selectedTeam]);
 
   return (
     <div 
