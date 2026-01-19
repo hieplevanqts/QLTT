@@ -73,7 +73,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
           return;
         }
 
-        // Check if session is expired
+        // Check if session is expired using expires_at from backend
         if (session.expires_at) {
           const expiresAt = session.expires_at * 1000; // Convert to milliseconds
           const now = Date.now();
