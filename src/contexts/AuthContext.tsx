@@ -328,6 +328,7 @@ function getUserRoleInfo(username: string): Pick<UserInfo, 'role' | 'roleDisplay
   };
 }
 
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -479,7 +480,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (session && session.user) {
-          // Check if session is expired
+          // Check if session is expired using expires_at from backend
           if (session.expires_at) {
             const expiresAt = session.expires_at * 1000; // Convert to milliseconds
             const now = Date.now();
@@ -580,7 +581,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (event === 'SIGNED_IN' || (event === 'TOKEN_REFRESHED' && session)) {
         // User signed in or token refreshed successfully
         if (session && session.user) {
-          // Check if session is expired
+          // Check if session is expired using expires_at from backend
           if (session.expires_at) {
             const expiresAt = session.expires_at * 1000;
             const now = Date.now();
@@ -658,7 +659,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        // Check if session is expired
+        // Check if session is expired using expires_at from backend
         if (session.expires_at) {
           const expiresAt = session.expires_at * 1000;
           const now = Date.now();
