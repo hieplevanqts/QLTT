@@ -91,11 +91,11 @@ export const TenantService = {
   /**
    * Get tenant by ID
    */
-  async getById(id: string): Promise<Tenant | null> {
+  async getById(_id: string): Promise<Tenant | null> {
     const { data, error } = await getSupabase()
       .from('tenants')
       .select('*')
-      .eq('_id', id)
+      .eq('_id', _id)
       .is('deleted_at', null)
       .single();
 
@@ -162,7 +162,7 @@ export const TenantService = {
   /**
    * Update tenant with optimistic locking
    */
-  async update(id: string, updates: Partial<Tenant>, currentVersion: number): Promise<Tenant> {
+  async update(_id: string, updates: Partial<Tenant>, currentVersion: number): Promise<Tenant> {
     const { data, error } = await getSupabase()
       .from('tenants')
       .update({
@@ -170,7 +170,7 @@ export const TenantService = {
         updated_at: new Date().toISOString(),
         version: currentVersion + 1,
       })
-      .eq('_id', id)
+      .eq('_id', _id)
       .eq('version', currentVersion)
       .is('deleted_at', null)
       .select()
@@ -189,11 +189,11 @@ export const TenantService = {
   /**
    * Soft delete tenant
    */
-  async delete(id: string): Promise<void> {
+  async delete(_id: string): Promise<void> {
     const { error } = await getSupabase()
       .from('tenants')
       .update({ deleted_at: new Date().toISOString() })
-      .eq('_id', id);
+      .eq('_id', _id);
 
     if (error) handleError(error);
   },
