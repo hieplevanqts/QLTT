@@ -35,6 +35,7 @@ import RoleList from '../pages/system/RoleList';
 import SystemSettings from '../pages/system/SystemSettings';
 import Error404 from '../pages/system/Error404';
 // Plans module - moved to /src/app/pages/plans/
+import { PlansProvider } from '../app/contexts/PlansContext';
 import { PlansList } from '../app/pages/plans/PlansList';
 import { PlanCreate } from '../app/pages/plans/PlanCreate';
 import { PlanDetail } from '../app/pages/plans/PlanDetail';
@@ -76,12 +77,18 @@ import ImportLeads from '../pages/lead-risk/ImportLeads';
 import ImportReview from '../pages/lead-risk/ImportReview';
 import AssignmentDispatch from '../pages/lead-risk/AssignmentDispatch';
 
+import { InspectionRoundsProvider } from '../contexts/InspectionRoundsContext';
+
 // Wrapper component for protected routes
 function ProtectedLayout() {
   return (
-    <ProtectedRoute>
-      <MainLayout />
-    </ProtectedRoute>
+    <PlansProvider>
+      <InspectionRoundsProvider>
+        <ProtectedRoute>
+          <MainLayout />
+        </ProtectedRoute>
+      </InspectionRoundsProvider>
+    </PlansProvider>
   );
 }
 

@@ -23,12 +23,37 @@ export function ScopeSelector() {
     setSelectedArea(scope.areaId || '');
   }, [scope.divisionId, scope.teamId, scope.areaId]);
 
+  // Restore saved division from localStorage
+  useEffect(() => {
+    if (!isLoading && availableDivisions.length > 0 && !scope.divisionId) {
+        const savedDivisionId = localStorage.getItem('division_id');
+        if (savedDivisionId) {
+            const divisionExists = availableDivisions.some((d: any) => d.id === savedDivisionId);
+            if (divisionExists) {
+                setScope({
+                    divisionId: savedDivisionId,
+                    teamId: null,
+                    areaId: null,
+                    province: null,
+                    ward: null,
+                });
+            }
+        }
+    }
+  }, [availableDivisions, isLoading, scope.divisionId, setScope]);
+
   const handleDivisionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation();
     const divisionId = e.target.value || null;
     setSelectedDivision(divisionId || '');
     setSelectedTeam('');
     setSelectedArea('');
+
+    if (divisionId) {
+        localStorage.setItem('division_id', divisionId);
+    } else {
+        localStorage.removeItem('division_id');
+    }
 
     setScope({
       divisionId,

@@ -329,7 +329,7 @@ export default function VerticalSidebar({
                         )}
                       >
                         <ListChecks className="h-4 w-4 shrink-0" />
-                        <span>Danh sách kế hoạch</span>
+                        <span>Kế hoạch kiểm tra</span>
                       </div>
                     </Link>
                     

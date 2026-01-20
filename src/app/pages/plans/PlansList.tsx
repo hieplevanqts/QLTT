@@ -164,18 +164,20 @@ export function PlansList() {
 
   // Get actions for each plan
   const getPlanActions = (plan: Plan): Action[] => {
-    const actions: Action[] = [];
+    // Default actions available for all statuses
+    const actions: Action[] = [
+      {
+        label: 'Xem chi tiết',
+        icon: <Eye size={16} />,
+        onClick: () => navigate(`/plans/${encodeURIComponent(plan.id)}`),
+        priority: 10,
+      }
+    ];
 
     switch (plan.status) {
       case 'draft':
-        // Nháp: Xem chi tiết, Chỉnh sửa, Gửi duyệt, Tải đề xuất, Xóa
+        // Nháp: Chỉnh sửa, Gửi duyệt, Tải đề xuất, Xóa
         actions.push(
-          {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => navigate(`/plans/${encodeURIComponent(plan.id)}`),
-            priority: 10,
-          },
           {
             label: 'Chỉnh sửa',
             icon: <Edit size={16} />,
@@ -209,14 +211,8 @@ export function PlansList() {
         break;
 
       case 'pending_approval':
-        // Chờ duyệt: Xem chi tiết, Phê duyệt, Tải đề xuất, Từ chối
+        // Chờ duyệt: Phê duyệt, Tải đề xuất, Từ chối
         actions.push(
-          {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => navigate(`/plans/${encodeURIComponent(plan.id)}`),
-            priority: 10,
-          },
           {
             label: 'Phê duyệt',
             icon: <CheckCircle2 size={16} />,
@@ -244,14 +240,8 @@ export function PlansList() {
         break;
 
       case 'approved':
-        // Đã duyệt: Xem chi tiết, Triển khai, Tải đề xuất, Chỉnh sửa
+        // Đã duyệt: Triển khai, Tải đề xuất, Chỉnh sửa
         actions.push(
-          {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => navigate(`/plans/${encodeURIComponent(plan.id)}`),
-            priority: 10,
-          },
           {
             label: 'Triển khai',
             icon: <PlayCircle size={16} />,
@@ -277,14 +267,8 @@ export function PlansList() {
         break;
 
       case 'active':
-        // Đang thực hiện: Xem chi tiết, Phiên làm việc, Báo cáo, Tải đề xuất, Tạm dừng
+        // Đang thực hiện: Phiên làm việc, Báo cáo, Tải đề xuất, Tạm dừng
         actions.push(
-          {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => navigate(`/plans/${encodeURIComponent(plan.id)}`),
-            priority: 10,
-          },
           {
             label: 'Phiên làm việc',
             icon: <Calendar size={16} />,
@@ -321,14 +305,8 @@ export function PlansList() {
         break;
 
       case 'completed':
-        // Hoàn thành: Xem chi tiết, Báo cáo, Tải đề xuất
+        // Hoàn thành: Báo cáo, Tải đề xuất
         actions.push(
-          {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => navigate(`/plans/${encodeURIComponent(plan.id)}`),
-            priority: 10,
-          },
           {
             label: 'Báo cáo (M08)',
             icon: <BarChart3 size={16} />,
@@ -349,28 +327,6 @@ export function PlansList() {
           }
         );
         break;
-
-      case 'cancelled':
-        // Đã hủy: Xem chi tiết
-        actions.push(
-          {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => navigate(`/plans/${encodeURIComponent(plan.id)}`),
-            priority: 10,
-          }
-        );
-        break;
-
-      default:
-        actions.push(
-          {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => navigate(`/plans/${encodeURIComponent(plan.id)}`),
-            priority: 10,
-          }
-        );
     }
 
     return actions;
@@ -588,9 +544,10 @@ export function PlansList() {
         <PageHeader
           breadcrumbs={[
             { label: 'Trang chủ', href: '/' },
-            { label: 'Kế hoạch tác nghiệp' }
+            { label: 'Kế hoạch tác nghiệp', href: '/plans/list' },
+            { label: 'Kế hoạch kiểm tra' }
           ]}
-          title="Kế hoạch tác nghiệp"
+          title="Kế hoạch kiểm tra"
         />
         <div style={{ padding: '48px', textAlign: 'center' }}>
           <RefreshCw className="animate-spin" style={{ margin: '0 auto 16px' }} size={32} />
@@ -607,9 +564,10 @@ export function PlansList() {
         <PageHeader
           breadcrumbs={[
             { label: 'Trang chủ', href: '/' },
-            { label: 'Kế hoạch tác nghiệp' }
+            { label: 'Kế hoạch tác nghiệp', href: '/plans/list' },
+            { label: 'Kế hoạch kiểm tra' }
           ]}
-          title="Kế hoạch tác nghiệp"
+          title="Kế hoạch kiểm tra"
         />
         <EmptyState
           type="error"
@@ -629,9 +587,10 @@ export function PlansList() {
       <PageHeader
         breadcrumbs={[
           { label: 'Trang chủ', href: '/' },
-          { label: 'Kế hoạch tác nghiệp' }
+          { label: 'Kế hoạch tác nghiệp', href: '/plans/list' },
+          { label: 'Kế hoạch kiểm tra' }
         ]}
-        title="Kế hoạch tác nghiệp"
+        title="Kế hoạch kiểm tra"
         actions={
           <div style={{ display: 'flex', gap: '8px' }}>
             <Button variant="outline" size="sm" onClick={() => {
@@ -822,7 +781,7 @@ export function PlansList() {
             isOpen={modalState.type === 'sendApproval'} 
             onClose={closeModal}
             plan={modalState.plan}
-            onConfirm={(note) => {
+            onConfirm={() => {
               toast.success(`Đã gửi kế hoạch "${modalState.plan?.name}" đi phê duyệt`);
             }}
           />
@@ -830,7 +789,7 @@ export function PlansList() {
             isOpen={modalState.type === 'approve'} 
             onClose={closeModal}
             plan={modalState.plan}
-            onConfirm={(note) => {
+            onConfirm={() => {
               toast.success(`Kế hoạch "${modalState.plan?.name}" đã được phê duyệt`);
             }}
           />
