@@ -28,9 +28,11 @@ import {
 import styles from './PlanDetail.module.css';
 import { KeHoachTacNghiepStatusBadge } from '@/app/components/plans/KeHoachTacNghiepStatusBadge';
 import { 
+  type Plan,
   mockPlans, 
   mockHistoryEvents 
 } from '@/app/data/kehoach-mock-data';
+import { useSupabasePlan } from '@/hooks/useSupabasePlans';
 import { mockInspectionRounds } from '@/app/data/inspection-rounds-mock-data';
 import { mockInspectionTasks } from '@/app/data/inspection-tasks-mock-data';
 import {
@@ -51,6 +53,10 @@ import EmptyState from '@/ui-kit/EmptyState';
 
 type TabType = 'info' | 'inspections' | 'sessions' | 'history';
 
+import { useSupabaseInspectionRounds } from '@/hooks/useSupabaseInspectionRounds';
+
+// ... other imports
+
 export function PlanDetail() {
   const navigate = useNavigate();
   const { planId } = useParams<{ planId: string }>();
@@ -59,19 +65,27 @@ export function PlanDetail() {
   // Modal states
   const [modalState, setModalState] = useState<{
     type: 'sendApproval' | 'approve' | 'reject' | 'recall' | 'deploy' | 'pause' | 'delete' | null;
-    plan: typeof mockPlans[0] | null;
+    plan: Plan | null;
   }>({ type: null, plan: null });
 
   const closeModal = () => setModalState({ type: null, plan: null });
-  const openModal = (type: typeof modalState.type, planData: typeof mockPlans[0]) => 
+  const openModal = (type: typeof modalState.type, planData: Plan) => 
     setModalState({ type, plan: planData });
 
   // Decode planId since it's URL encoded
   const decodedPlanId = planId ? decodeURIComponent(planId) : undefined;
-  const plan = mockPlans.find((p) => p.id === decodedPlanId);
+  
+  // Use Supabase hook to fetch plan
+  const { plan, loading: planLoading, error: planError } = useSupabasePlan(decodedPlanId);
+
+  // Use Supabase hook to fetch inspection rounds
+  const { rounds: planRounds, loading: roundsLoading, error: roundsError } = useSupabaseInspectionRounds(
+    decodedPlanId, 
+    activeTab === 'inspections'
+  );
   
   // Get related data từ data sources chính thức
-  const planRounds = mockInspectionRounds?.filter(r => r.planId === decodedPlanId) || [];
+  // const planRounds = mockInspectionRounds?.filter(r => r.planId === decodedPlanId) || []; // Replaced by hook
   const planTasks = mockInspectionTasks?.filter(t => t.planId === decodedPlanId) || [];
   const planHistory = mockHistoryEvents?.filter(h => h.planId === decodedPlanId) || [];
   
@@ -87,11 +101,25 @@ export function PlanDetail() {
     { id: 'history' as TabType, label: 'Lịch sử', badge: planHistory.length }
   ];
 
-  if (!plan) {
+  if (planLoading) {
+    return (
+      <div className={styles.container}>
+        <div style={{ padding: '64px', textAlign: 'center' }}>
+          <div className="animate-spin" style={{ width: '32px', height: '32px', margin: '0 auto 16px', border: '2px solid transparent', borderTopColor: 'var(--color-primary)', borderRadius: '50%' }}></div>
+          <p>Đang tải thông tin kế hoạch...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (planError || !plan) {
     return (
       <div className={styles.container}>
         <div className={styles.emptyState}>
-          <h3 className={styles.emptyTitle}>Không tìm thấy kế hoạch</h3>
+          <h3 className={styles.emptyTitle}>{planError || 'Không tìm thấy kế hoạch'}</h3>
+          <p className={styles.emptyDesc}>
+            {planError ? 'Đã xảy ra lỗi khi tải dữ liệu' : 'Kế hoạch này không tồn tại hoặc đã bị xóa'}
+          </p>
           <button className={styles.primaryButton} onClick={() => navigate('/plans/list')}>
             Quay lại danh sách
           </button>
@@ -265,22 +293,29 @@ export function PlanDetail() {
       },
     },
     {
-      key: 'action',
+      key: 'eventType',
       label: 'Hành động',
       sortable: true,
       render: (event) => {
-        const actionConfig: Record<string, { icon: any; color: string }> = {
-          created: { icon: <Plus size={16} />, color: 'var(--success)' },
-          updated: { icon: <Edit size={16} />, color: 'var(--info)' },
-          approved: { icon: <CheckCircle2 size={16} />, color: 'var(--success)' },
-          rejected: { icon: <XCircle size={16} />, color: 'var(--destructive)' },
-          status_changed: { icon: <Clock size={16} />, color: 'var(--warning)' },
+        const actionConfig: Record<string, { icon: any; color: string; label: string }> = {
+          created: { icon: <Plus size={16} />, color: 'var(--success)', label: 'Tạo mới' },
+          submitted: { icon: <Send size={16} />, color: 'var(--info)', label: 'Trình duyệt' },
+          approved: { icon: <CheckCircle2 size={16} />, color: 'var(--success)', label: 'Phê duyệt' },
+          rejected: { icon: <XCircle size={16} />, color: 'var(--destructive)', label: 'Từ chối' },
+          paused: { icon: <PauseCircle size={16} />, color: 'var(--warning)', label: 'Tạm dừng' },
+          deployed: { icon: <PlayCircle size={16} />, color: 'var(--primary)', label: 'Triển khai' },
+          cancelled: { icon: <XCircle size={16} />, color: 'var(--destructive)', label: 'Hủy' },
+          status_changed: { icon: <Clock size={16} />, color: 'var(--warning)', label: 'Đổi trạng thái' },
         };
-        const config = actionConfig[event.action] || { icon: <History size={16} />, color: 'var(--muted-foreground)' };
+        const config = actionConfig[event.eventType] || { 
+          icon: <History size={16} />, 
+          color: 'var(--muted-foreground)',
+          label: event.eventType
+        };
         return (
           <div className={styles.historyAction}>
             <span style={{ color: config.color }}>{config.icon}</span>
-            <span>{event.action}</span>
+            <span>{config.label}</span>
           </div>
         );
       },
@@ -577,7 +612,7 @@ export function PlanDetail() {
                   />
                 ) : (
                   <EmptyState
-                    icon={Layers}
+                    icon={<Layers size={48} />}
                     title="Chưa có đợt kiểm tra"
                     description="Tạo đợt kiểm tra mới cho kế hoạch này"
                   />
@@ -605,7 +640,7 @@ export function PlanDetail() {
                   />
                 ) : (
                   <EmptyState
-                    icon={Calendar}
+                    icon={<Calendar size={48} />}
                     title="Chưa có phiên làm việc"
                     description="Các phiên làm việc sẽ hiển thị ở đây khi đợt kiểm tra được triển khai"
                   />
@@ -629,7 +664,7 @@ export function PlanDetail() {
                   />
                 ) : (
                   <EmptyState
-                    icon={History}
+                    icon={<History size={48} />}
                     title="Chưa có lịch sử"
                     description="Các thay đổi của kế hoạch sẽ được ghi lại ở đây"
                   />

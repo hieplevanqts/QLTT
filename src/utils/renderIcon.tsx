@@ -1,9 +1,9 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, isValidElement } from 'react';
 import { LucideIcon } from 'lucide-react';
 
 /**
  * Safely renders an icon that could be either:
- * - A Lucide Icon component type (function)
+ * - A Lucide Icon component type (function or forwardRef object)
  * - Already rendered JSX (ReactNode)
  * - undefined/null
  * 
@@ -14,13 +14,19 @@ export function renderIcon(
   props?: { className?: string; size?: number }
 ): ReactNode {
   if (!icon) return null;
+
+  // 1. If it's already a React Element (e.g., <Icon />), clone it with new props
+  if (isValidElement(icon)) {
+    return React.cloneElement(icon as React.ReactElement, props);
+  }
   
-  // Check if icon is a React component (function)
-  if (typeof icon === 'function') {
-    const IconComponent = icon as LucideIcon;
+  // 2. If it's a component type (function or object with render/$$typeof), render it
+  // Lucide icons can be functions or ForwardRef objects depending on build
+  if (typeof icon === 'function' || (typeof icon === 'object' && icon !== null)) {
+    const IconComponent = icon as React.ElementType;
     return <IconComponent {...props} />;
   }
   
-  // Otherwise, icon is already rendered JSX - return as is
+  // 3. Fallback for primitive types (though unlikely for icons)
   return icon;
 }
