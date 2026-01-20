@@ -85,6 +85,7 @@ export interface Permission {
  * Role - Vai trò người dùng
  */
 export interface Role {
+  _id?: string; // Added _id to match database schema
   id: string; // UUID from database
   code: string;
   name: string;

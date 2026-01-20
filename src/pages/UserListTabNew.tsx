@@ -6,11 +6,9 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Users,
   Search,
   Plus,
   Edit,
-  Trash2,
   Eye,
   RefreshCw,
   AlertCircle,
@@ -20,7 +18,6 @@ import {
   Lock,
   Unlock,
   Check,
-  Clock,
   Shield,
   Mail,
   Phone,
@@ -35,6 +32,7 @@ import { UserModal } from '../components/UserModal';
 import { DatabaseErrorAlert } from '../components/DatabaseErrorAlert';
 import bcrypt from 'bcryptjs';
 import { DepartmentTreeSelect } from '../components/DepartmentTreeSelect';
+import { Role } from '../lib/supabase';
 
 // Default password
 const DEFAULT_PASSWORD = 'Couppa@123';
@@ -72,11 +70,7 @@ interface User {
   updated_at: string;
   last_login?: string;
   user_roles?: {
-    roles: {
-      id: string;
-      name: string;
-      code: string;
-    };
+    roles: Role; // Updated to use the Role interface
   }[];
   department_users?: {
     departments: {
@@ -93,13 +87,6 @@ interface User {
     code: string;
     level: number;
   };
-}
-
-interface Role {
-  id: string;
-  code: string;
-  name: string;
-  description?: string;
 }
 
 interface Department {
@@ -149,7 +136,7 @@ export const UserListTabNew: React.FC = () => {
         console.error('❌ Error fetching roles:', rolesError);
         toast.error(`Lỗi tải vai trò: ${rolesError.message}`);
       } else {
-        setRoles(rolesData || []);
+        setRoles(rolesData.map(role => ({ ...role, _id: role.id })) || []);
       }
 
       // Fetch departments
@@ -163,7 +150,7 @@ export const UserListTabNew: React.FC = () => {
         console.error('❌ Error fetching departments:', deptError);
         toast.error(`Lỗi tải phòng ban: ${deptError.message}`);
       } else {
-        setDepartments(departmentsData || []);
+        setDepartments(departmentsData.map(dept => ({ ...dept, _id: dept.id })) || []);
       }
 
       // Fetch users with their roles
@@ -192,7 +179,6 @@ export const UserListTabNew: React.FC = () => {
       if (usersError) {
         console.error('❌ Error fetching users:', usersError);
         setDatabaseError(usersError); // Set the error for display
-        // toast.error(`Lỗi tải người dùng: ${usersError.message}`);
       } else {
         
         // ✅ Manually map departments to users (no foreign key constraint)
@@ -201,15 +187,16 @@ export const UserListTabNew: React.FC = () => {
             const department = user.department_users[0].departments;
             return {
               ...user,
+              _id: user.id,
               department: {
-                id: department.id,
+                _id: department.id,
                 name: department.name,
                 code: department.code,
                 level: department.level,
               },
             };
           }
-          return user;
+          return { ...user, _id: user.id };
         });
         
         setUsers(usersWithDepartments || []);
@@ -217,10 +204,6 @@ export const UserListTabNew: React.FC = () => {
     } catch (error) {
       console.error('❌ Error in fetchData:', error);
       toast.error('Lỗi kết nối Supabase');
-      setUsers([]);
-      setDatabaseError(error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -233,7 +216,7 @@ export const UserListTabNew: React.FC = () => {
     // Role filter
     if (selectedRoleId !== 'all') {
       const hasRole = user.user_roles?.some(
-        (ur) => ur.roles.id === selectedRoleId
+        (ur: { roles: Role }) => ur.roles._id === selectedRoleId
       );
       if (!hasRole) return false;
     }
@@ -305,21 +288,9 @@ export const UserListTabNew: React.FC = () => {
       const salt = bcrypt.genSaltSync(10);
       const hashedPassword = bcrypt.hashSync(DEFAULT_PASSWORD, salt);
 
-      // Debug: First, try to fetch the current user data to see schema
-      const { data: currentUser, error: fetchError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userToReset.id)
-        .single();
-
-      if (fetchError) {
-        console.error('❌ Error fetching user for debug:', fetchError);
-      } else {
-      }
-
       // Update password trong database
       // Note: Trong production, nên hash password ở server-side để bảo mật hơn
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('users')
         .update({ 
           password: hashedPassword,
@@ -499,7 +470,7 @@ export const UserListTabNew: React.FC = () => {
                 <option value="all">Tất cả vai trò ({users.length})</option>
                 {roles.map((role) => {
                   const count = users.filter((u) =>
-                    u.user_roles?.some((ur) => ur.roles.id === role.id)
+                    u.user_roles?.some((ur: { roles: Role }) => ur.roles._id === role._id)
                   ).length;
                   return (
                     <option key={role.id} value={role.id}>
@@ -634,8 +605,8 @@ export const UserListTabNew: React.FC = () => {
                   <td>
                     {user.user_roles && user.user_roles.length > 0 ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        {user.user_roles.map((ur) => (
-                          <span key={ur.roles.id} className={styles.badge}>
+                        {user.user_roles.map((ur: { roles: Role }) => (
+                          <span key={ur.roles._id} className={styles.badge}>
                             <Shield size={12} />
                             {ur.roles.name}
                           </span>
