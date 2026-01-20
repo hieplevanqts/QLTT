@@ -26,14 +26,34 @@ import { fetchMerchants, fetchMerchantStats, MerchantStats } from '../utils/api/
 import { fetchMarketManagementTeams, Department } from '../utils/api/departmentsApi';
 import { officersData, Officer, teamsData, departmentData } from '../data/officerTeamData';
 import { useQLTTScope } from '../contexts/QLTTScopeContext';
+import { useAppSelector, useAppDispatch } from '../app/hooks';
 
 type CategoryFilter = {
   [key: string]: boolean;  // Dynamic keys from point_status table
 };
 
 export default function MapPage() {
-  // 🔥 NEW: Get scope from QLTTScopeContext to filter departments by teamId
-  const { scope, setScope, isLoading: isScopeLoading, hasInitialized: isScopeInitialized } = useQLTTScope();
+  // 🔥 Redux Store - Logging dữ liệu từ store
+  const reduxAuth = useAppSelector((state) => state.auth);
+  const reduxQLTTScope = useAppSelector((state) => state.qlttScope);
+  const dispatch = useAppDispatch();
+  
+  // 🔥 NEW: Get scope from Redux store (not from context anymore)
+  const divisionId = reduxQLTTScope?.scope?.divisionId;
+  const teamId = reduxQLTTScope?.scope?.teamId;
+  const isScopeLoading = reduxQLTTScope?.isLoading || false;
+  const isScopeInitialized = reduxQLTTScope?.hasInitialized || false;
+  
+  // Log Redux state khi component mount
+  useEffect(() => {
+    console.log('📊 Redux Auth State:', reduxAuth);
+    console.log('📊 Redux QLTT Scope State:', reduxQLTTScope);
+    console.log('📊 Redux QLTT Scope - Division ID:', reduxQLTTScope?.scope?.divisionId);
+    console.log('📊 Redux QLTT Scope - Team ID:', reduxQLTTScope?.scope?.teamId);
+    console.log('📊 Redux QLTT Scope - Available Divisions:', reduxQLTTScope?.availableDivisions?.length);
+    console.log('📊 Redux QLTT Scope - Available Teams:', reduxQLTTScope?.availableTeams?.length);
+    console.log('📊 Redux Dispatch:', dispatch);
+  }, [reduxAuth, reduxQLTTScope, dispatch]);
   
   // Point statuses from point_status table
   const [pointStatuses, setPointStatuses] = useState<PointStatus[]>([]);
@@ -214,15 +234,16 @@ export default function MapPage() {
   
   // 🔥 CHANGED: Fetch departments from departments table on mount and when teamId or divisionId changes
   useEffect(() => {
-    // 🔥 FIX: Wait for scope to be loaded from localStorage/context before fetching
+    // 🔥 FIX: Wait for scope to be loaded from Redux store before fetching
     if (isScopeLoading || !isScopeInitialized) {
-      console.log('⏳ MapPage: Waiting for scope to load...', { isScopeLoading, isScopeInitialized });
+      console.log('⏳ MapPage: Waiting for scope to load from Redux...', { isScopeLoading, isScopeInitialized });
       return;
     }
     
-    console.log('🔄 MapPage: scope.teamId changed:', scope.teamId);
-    console.log('🔄 MapPage: scope.divisionId changed:', scope.divisionId);
-    console.log('🔄 MapPage: Full scope object:', JSON.stringify(scope, null, 2));
+    console.log('✅ MapPage: Scope initialized! Now fetching departments');
+    console.log('🔄 MapPage: scope.teamId changed:', teamId);
+    console.log('🔄 MapPage: scope.divisionId changed:', divisionId);
+    console.log('🔄 MapPage: Full scope object:', JSON.stringify({ divisionId, teamId }, null, 2));
     
     async function loadDepartments() {
       try {
@@ -230,11 +251,11 @@ export default function MapPage() {
         
         // 🔥 CHANGED: Priority: teamId > divisionId
         // Handle null, undefined, and empty string properly
-        const teamIdToPass = scope.teamId && typeof scope.teamId === 'string' && scope.teamId.trim() !== '' 
-          ? scope.teamId 
+        const teamIdToPass = teamId && typeof teamId === 'string' && teamId.trim() !== '' 
+          ? teamId 
           : undefined;
-        const divisionIdToPass = scope.divisionId && typeof scope.divisionId === 'string' && scope.divisionId.trim() !== '' 
-          ? scope.divisionId 
+        const divisionIdToPass = divisionId && typeof divisionId === 'string' && divisionId.trim() !== '' 
+          ? divisionId 
           : undefined;
         
         console.log('📡 MapPage: Calling fetchMarketManagementTeams');
@@ -296,7 +317,7 @@ export default function MapPage() {
     }
     
     loadDepartments();
-  }, [scope.teamId, scope.divisionId, scope, isScopeLoading, isScopeInitialized]); // 🔥 FIX: Wait for scope to load before fetching
+  }, [teamId, divisionId, isScopeLoading, isScopeInitialized]); // 🔥 FIX: Use Redux scope values from divisionId and teamId
   
   // 🔥 NEW: Load saved filters from localStorage on mount
   useEffect(() => {
@@ -450,12 +471,28 @@ export default function MapPage() {
       showMerchants,
       showMapPoints,
       showOfficers,
-      departmentsIds: JSON.stringify(departments.map((d: Department) => d.id).sort())  // 🔥 FIX: Include departments IDs array to trigger when departments list changes
+      departmentsIds: JSON.stringify(departments.map((d: Department) => d.id).sort()),  // 🔥 FIX: Include departments IDs array to trigger when departments list changes
+      divisionId: divisionId || '',  // 🔥 NEW: Include divisionId to trigger when scope division changes
+      teamId: teamId || ''  // 🔥 NEW: Include teamId to trigger when scope team changes
     });
-  }, [filters, businessTypeFilters, departmentFilters, categories.length, showMerchants, showMapPoints, showOfficers, departments]);
+  }, [filters, businessTypeFilters, departmentFilters, categories.length, showMerchants, showMapPoints, showOfficers, departments, divisionId, teamId]);
   
   // 🔥 FIX: Use ref to track last filters key (prevent duplicate API calls)
   const lastFiltersKeyRef = useRef<string>('');
+  
+  // 🔥 NEW: Reset merchants refs when divisionId or teamId changes (scope change)
+  // This ensures merchants are refetched when user changes department
+  useEffect(() => {
+    console.log('🔄 MapPage: divisionId or teamId changed, resetting merchants refs');
+    console.log('  - divisionId:', divisionId);
+    console.log('  - teamId:', teamId);
+    
+    // Reset refs to force merchants refetch
+    lastFiltersKeyRef.current = '';
+    hasFetchedMerchantsRef.current = false;
+    
+    console.log('✅ MapPage: Merchants refs reset, merchants will refetch on next render');
+  }, [divisionId, teamId]);
   
   // 🔥 NEW: Fetch merchants from merchants table when Merchants layer is selected
   useEffect(() => {
@@ -547,32 +584,54 @@ export default function MapPage() {
         const enabledDepartmentIds = Object.keys(departmentFilters).filter(id => departmentFilters[id] === true);
         const totalDepartmentFilters = Object.keys(departmentFilters).length;
         
-        // 🔥 FIX: Always filter by department IDs if there are filters set
-        // If all enabled (= "Tất cả") → use all department IDs from departments list
-        // If some enabled → use only enabled IDs
+        // 🔥 NEW: Filter by scope (divisionId or teamId) if available
+        // Priority: teamId > divisionId > departmentFilters UI
         let departmentIdsToFilter: string[] | undefined = undefined;
         
-        if (totalDepartmentFilters > 0) {
+        // 🔥 LOGIC: Priority filtering
+        // 1. If scope.teamId exists → filter by this team ONLY
+        // 2. Else if scope.divisionId exists → filter by all teams under this division
+        // 3. Else use departmentFilters from UI checkboxes
+        
+        if (teamId) {
+          // 🔥 Case 1: User selected a team in scope → filter by THIS TEAM ONLY
+          departmentIdsToFilter = [teamId];
+          console.log('🔍 MapPage: scope.teamId is set, filtering by teamId:', teamId);
+        } else if (divisionId) {
+          // 🔥 Case 2: User selected a division → filter by ALL TEAMS under this division
+          const teamsUnderDivision = departments.filter(
+            (d: Department) => d.parent_id === divisionId || d.id === divisionId
+          );
+          departmentIdsToFilter = teamsUnderDivision.map((d: Department) => d.id);
+          console.log('🔍 MapPage: scope.divisionId is set, filtering by all teams under division:', 
+            { divisionId, teamIds: departmentIdsToFilter });
+        } else if (totalDepartmentFilters > 0) {
+          // 🔥 Case 3: Use UI checkbox filters
           if (enabledDepartmentIds.length === totalDepartmentFilters) {
             // All departments selected (= "Tất cả") → filter by all department IDs from departments list
             departmentIdsToFilter = departments.map((d: Department) => d.id);
-            console.log('🔍 MapPage: All departments selected, using all department IDs:', departmentIdsToFilter);
+            console.log('🔍 MapPage: All departments selected (UI), using all department IDs:', departmentIdsToFilter);
           } else if (enabledDepartmentIds.length > 0) {
             // Some departments selected → filter by enabled IDs only
             departmentIdsToFilter = enabledDepartmentIds;
-            console.log('🔍 MapPage: Some departments selected, using enabled IDs:', departmentIdsToFilter);
+            console.log('🔍 MapPage: Some departments selected (UI), using enabled IDs:', departmentIdsToFilter);
           } else {
             // No departments selected → no merchants (empty array)
             departmentIdsToFilter = [];
-            console.log('🔍 MapPage: No departments selected, returning empty array');
+            console.log('🔍 MapPage: No departments selected (UI), returning empty array');
           }
+        } else {
+          // 🔥 Case 4: No scope filter & no UI filter → undefined (no filter, show ALL merchants)
+          departmentIdsToFilter = undefined;
+          console.log('🔍 MapPage: No scope filter & no UI filter, showing ALL merchants');
         }
         
-        console.log('🔍 MapPage: departmentFilters from UI:', departmentFilters);
-        console.log('🔍 MapPage: enabledDepartmentIds:', enabledDepartmentIds);
-        console.log('🔍 MapPage: totalDepartmentFilters:', totalDepartmentFilters);
-        console.log('🔍 MapPage: departments list:', departments.map((d: Department) => ({ id: d.id, name: d.name })));
-        console.log('🔍 MapPage: Final departmentIdsToFilter for fetchMerchants:', departmentIdsToFilter);
+        console.log('🔍 MapPage: Final departmentIdsToFilter logic:');
+        console.log('  - divisionId (Redux):', divisionId);
+        console.log('  - teamId (Redux):', teamId);
+        console.log('  - departmentFilters from UI:', departmentFilters);
+        console.log('  - departments list:', departments.map((d: Department) => ({ id: d.id, name: d.name, parent_id: d.parent_id })));
+        console.log('  - Final departmentIdsToFilter for fetchMerchants:', departmentIdsToFilter);
         
         // 🔥 FIX: Always call fetchMerchants, pass departmentIdsToFilter (can be undefined, array, or empty array)
         const merchants = await fetchMerchants(
@@ -597,7 +656,7 @@ export default function MapPage() {
     
     // Don't update lastFiltersKeyRef here - only update after successful API call
     loadMerchants();
-  }, [filtersKey, pointStatuses.length, showMerchants, showMapPoints, showOfficers, departments.length, isScopeLoading, isScopeInitialized]); // 🔥 FIX: Include departments.length to trigger when departments change
+  }, [filtersKey, pointStatuses.length, showMerchants, showMapPoints, showOfficers, departments.length, isScopeLoading, isScopeInitialized, divisionId, teamId]); // 🔥 NEW: Include divisionId and teamId to trigger merchants fetch when scope changes
   
   // 🔥 NEW: Clear restaurants when Officers layer is selected (ward boundaries don't need points)
   useEffect(() => {
