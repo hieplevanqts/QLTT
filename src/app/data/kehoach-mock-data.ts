@@ -24,6 +24,7 @@ export interface Plan {
   startDate: string;
   endDate: string;
   createdBy: string;
+  createdById?: string;
   createdAt: string;
   // M03 - Quyết định giao quyền từ INS
   insDecisionM03?: {

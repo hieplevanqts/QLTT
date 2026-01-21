@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
-import { type InspectionRound } from '@/app/data/inspection-rounds-mock-data';
-import { fetchInspectionRoundsApi } from '@/utils/api/plansApi';
+import { type InspectionRound, type InspectionRoundStatus } from '@/app/data/inspection-rounds-mock-data';
+export type { InspectionRound, InspectionRoundStatus };
+import { fetchInspectionRoundsApi, updateInspectionRoundApi, deleteInspectionRoundApi } from '@/utils/api/plansApi';
 
 interface UseSupabaseInspectionRoundsReturn {
   rounds: InspectionRound[];
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
+  updateRoundStatus: (id: string, status: string, notes?: string) => Promise<void>;
+  deleteRound: (id: string) => Promise<void>;
 }
 
 export function useSupabaseInspectionRounds(planId?: string, enabled: boolean = true): UseSupabaseInspectionRoundsReturn {
@@ -41,10 +44,32 @@ export function useSupabaseInspectionRounds(planId?: string, enabled: boolean = 
     }
   }, [planId, enabled]);
 
+  const updateRoundStatus = async (id: string, status: string, notes?: string) => {
+    try {
+      await updateInspectionRoundApi(id, { status: status as InspectionRoundStatus });
+      await fetchRounds();
+    } catch (err: any) {
+      console.error('Error updating round status:', err);
+      throw err;
+    }
+  };
+
+  const deleteRound = async (id: string) => {
+    try {
+      await deleteInspectionRoundApi(id);
+      await fetchRounds();
+    } catch (err: any) {
+      console.error('Error deleting round:', err);
+      throw err;
+    }
+  };
+
   return {
     rounds,
     loading,
     error,
     refetch: fetchRounds,
+    updateRoundStatus,
+    deleteRound,
   };
 }

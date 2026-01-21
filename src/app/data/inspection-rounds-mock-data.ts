@@ -38,7 +38,9 @@ export interface InspectionRound {
   name: string;
   code: string; // Mã đợt kiểm tra
   planId?: string; // Liên kết với kế hoạch
+  planCode?: string;
   planName?: string;
+  quarter?: string;
   type: InspectionType;
   status: InspectionRoundStatus;
   
@@ -50,10 +52,11 @@ export interface InspectionRound {
   
   // Team
   leadUnit: string; // Đơn vị chủ trì
+  teamLeader?: string;
   team: InspectionTeamMember[];
   teamSize: number;
   
-  // Targets
+  // Targets / Stats
   totalTargets: number; // Tổng số cơ sở cần kiểm tra
   inspectedTargets: number; // Số cơ sở đã kiểm tra
   
@@ -66,6 +69,24 @@ export interface InspectionRound {
   createdBy: string;
   createdAt: string;
   notes?: string;
+  formTemplate?: string;
+  scope?: string;
+  scopeDetails?: {
+    provinces: string[];
+    districts: string[];
+    wards: string[];
+  };
+  
+  // Legacy/UI Stats helper
+  stats?: {
+    totalSessions: number;
+    completedSessions: number;
+    storesInspected: number;
+    storesPlanned: number;
+    violationsFound: number;
+    violationRate: number;
+    progress: number;
+  };
 }
 
 // Mock Inspection Rounds

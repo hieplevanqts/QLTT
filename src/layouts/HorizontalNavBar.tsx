@@ -161,7 +161,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                   <DropdownMenuItem asChild>
                     <Link to="/plans/list" className="flex items-center gap-3 cursor-pointer">
                       <ListChecks className="h-4 w-4" />
-                      <div className="font-medium">Danh sách kế hoạch</div>
+                      <div className="font-medium">Kế hoạch kiểm tra</div>
                     </Link>
                   </DropdownMenuItem>
                   
@@ -398,7 +398,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                             )}
                           >
                             <ListChecks className="h-4 w-4" />
-                            <span>Danh sách kế hoạch</span>
+                            <span>Kế hoạch kiểm tra</span>
                           </Link>
                           
                           <Link

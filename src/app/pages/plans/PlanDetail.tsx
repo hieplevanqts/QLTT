@@ -19,14 +19,11 @@ import {
   Trash2,
   CheckCircle2,
   Clock,
-  AlertCircle,
-  MapPinned,
-  Phone,
-  Mail,
-  History
+  History,
+  ClipboardCheck,
 } from 'lucide-react';
 import styles from './PlanDetail.module.css';
-import { KeHoachTacNghiepStatusBadge } from '@/app/components/plans/KeHoachTacNghiepStatusBadge';
+import { StatusBadge } from '@/app/components/common/StatusBadge';
 import { 
   type Plan,
   mockPlans, 
@@ -42,14 +39,17 @@ import {
   RecallModal,
   DeployModal,
   PauseModal,
-  DeletePlanModal
+  DeletePlanModal,
+  CompletePlanModal,
+  ResumeModal,
+  CancelPlanModal
 } from '@/app/components/plans/PlanActionModals';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/app/components/ui/card';
 import DataTable, { Column } from '@/ui-kit/DataTable';
 import ActionColumn, { Action } from '@/patterns/ActionColumn';
-import { InspectionRoundStatusBadge } from '@/app/components/inspections/InspectionRoundStatusBadge';
 import EmptyState from '@/ui-kit/EmptyState';
+import { updatePlanApi, deletePlanApi } from '@/utils/api/plansApi';
 
 type TabType = 'info' | 'inspections' | 'sessions' | 'history';
 
@@ -64,7 +64,7 @@ export function PlanDetail() {
 
   // Modal states
   const [modalState, setModalState] = useState<{
-    type: 'sendApproval' | 'approve' | 'reject' | 'recall' | 'deploy' | 'pause' | 'delete' | null;
+    type: 'sendApproval' | 'approve' | 'reject' | 'recall' | 'deploy' | 'pause' | 'delete' | 'complete' | 'resume' | 'cancel' | null;
     plan: Plan | null;
   }>({ type: null, plan: null });
 
@@ -76,10 +76,10 @@ export function PlanDetail() {
   const decodedPlanId = planId ? decodeURIComponent(planId) : undefined;
   
   // Use Supabase hook to fetch plan
-  const { plan, loading: planLoading, error: planError } = useSupabasePlan(decodedPlanId);
+  const { plan, loading: planLoading, error: planError, refetch } = useSupabasePlan(decodedPlanId);
 
   // Use Supabase hook to fetch inspection rounds
-  const { rounds: planRounds, loading: roundsLoading, error: roundsError } = useSupabaseInspectionRounds(
+  const { rounds: planRounds, loading: roundsLoading, error: roundsError, updateRoundStatus: updatePlanRoundStatus } = useSupabaseInspectionRounds(
     decodedPlanId, 
     activeTab === 'inspections'
   );
@@ -142,11 +142,13 @@ export function PlanDetail() {
       key: 'name',
       label: 'Tên đợt kiểm tra',
       sortable: true,
+      width: '300px',
+      truncate: true,
       render: (round) => (
         <div>
           <div className={styles.roundName}>{round.name}</div>
           <div className={styles.roundType}>
-            <InspectionRoundStatusBadge type="inspectionType" value={round.type} size="sm" />
+            <StatusBadge type="inspectionType" value={round.type} size="sm" />
           </div>
         </div>
       ),
@@ -155,6 +157,7 @@ export function PlanDetail() {
       key: 'time',
       label: 'Thời gian',
       sortable: true,
+      width: '180px',
       render: (round) => {
         const startDate = new Date(round.startDate);
         const endDate = new Date(round.endDate);
@@ -171,28 +174,57 @@ export function PlanDetail() {
       key: 'leadUnit',
       label: 'Đơn vị chủ trì',
       sortable: true,
+      width: '200px',
+      truncate: true,
     },
     {
       key: 'status',
       label: 'Trạng thái',
-      render: (round) => <InspectionRoundStatusBadge type="round" value={round.status} size="sm" />,
+      width: '140px',
+      render: (round) => <StatusBadge type="round" value={round.status} size="sm" />,
     },
     {
       key: 'actions',
       label: 'Thao tác',
       sticky: 'right',
-      render: (round) => (
-        <ActionColumn
-          actions={[
-            {
-              label: 'Xem chi tiết',
-              icon: <Eye size={16} />,
-              onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}`),
-              priority: 10,
+      width: '120px',
+      render: (round) => {
+        const actions: Action[] = [
+          {
+            label: 'Xem chi tiết',
+            icon: <Eye size={16} />,
+            onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}`),
+            priority: 10,
+          },
+        ];
+
+        if (round.status === 'active' || round.status === 'in_progress') {
+          actions.push({
+            label: 'Hoàn thành',
+            icon: <ClipboardCheck size={16} />,
+            onClick: async () => {
+              try {
+                await updatePlanRoundStatus(round.id, 'completed');
+                toast.success(`Đã hoàn thành đợt kiểm tra "${round.name}"`);
+              } catch (err) {
+                toast.error('Lỗi khi cập nhật trạng thái');
+              }
             },
-          ]}
-        />
-      ),
+            priority: 9,
+          });
+        }
+
+        if (round.status === 'draft') {
+          actions.push({
+            label: 'Chỉnh sửa',
+            icon: <Edit size={16} />,
+            onClick: () => navigate(`/plans/inspection-rounds/create-new?mode=edit&id=${encodeURIComponent(round.id)}`),
+            priority: 8,
+          });
+        }
+
+        return <ActionColumn actions={actions} />;
+      },
     },
   ];
 
@@ -350,7 +382,7 @@ export function PlanDetail() {
           <div className={styles.headerTitle}>
             <div className={styles.headerTitleRow}>
               <span className={styles.planId}>{plan.id}</span>
-              <KeHoachTacNghiepStatusBadge type="plan" value={plan.status} size="sm" />
+              <StatusBadge type="plan" value={plan.status} size="sm" />
             </div>
             <h1 className={styles.pageTitle}>{plan.name}</h1>
           </div>
@@ -408,6 +440,61 @@ export function PlanDetail() {
                 >
                   <CheckCircle2 size={18} />
                   Phê duyệt
+                </button>
+              </>
+            )}
+
+            {/* Approved status actions */}
+            {plan.status === 'approved' && (
+              <>
+                <button 
+                  className={styles.primaryButton}
+                  onClick={() => openModal('deploy', plan)}
+                >
+                  <PlayCircle size={18} />
+                  Triển khai
+                </button>
+              </>
+            )}
+
+            {/* In progress status actions */}
+            {plan.status === 'active' && (
+              <>
+                <button 
+                  className={styles.warningButton}
+                  onClick={() => openModal('pause', plan)}
+                >
+                  <PauseCircle size={18} />
+                  Tạm dừng
+                </button>
+                <button 
+                  className={styles.primaryButton}
+                  onClick={() => openModal('complete', plan)}
+                  style={{ background: 'var(--success)' }}
+                >
+                  <ClipboardCheck size={18} />
+                  Hoàn thành
+                </button>
+              </>
+            )}
+
+            {/* Paused status actions */}
+            {plan.status === 'paused' && (
+              <>
+                <button 
+                  className={styles.primaryButton}
+                  onClick={() => openModal('resume', plan)}
+                >
+                  <PlayCircle size={18} />
+                  Tiếp tục
+                </button>
+                <button 
+                  className={styles.outlineButton}
+                  onClick={() => openModal('cancel', plan)}
+                  style={{ color: 'var(--destructive)', borderColor: 'var(--destructive)' }}
+                >
+                  <XCircle size={18} />
+                  Hủy kế hoạch
                 </button>
               </>
             )}
@@ -488,7 +575,7 @@ export function PlanDetail() {
                   <div className={styles.infoField}>
                     <div className={styles.infoLabel}>Ưu tiên</div>
                     <div className={styles.infoValue}>
-                      <KeHoachTacNghiepStatusBadge type="priority" value={plan.priority} size="sm" />
+                      <StatusBadge type="priority" value={plan.priority} size="sm" />
                     </div>
                   </div>
 
@@ -682,66 +769,173 @@ export function PlanDetail() {
             isOpen={modalState.type === 'sendApproval'} 
             onClose={closeModal}
             plan={modalState.plan}
-            onConfirm={(note) => {
-              closeModal();
-              toast.success(`Đã gửi kế hoạch "${modalState.plan?.name}" đi phê duyệt`);
+            onConfirm={async (note) => {
+              if (modalState.plan) {
+                try {
+                  await updatePlanApi(modalState.plan.id, { status: 'pending_approval' });
+                  toast.success(`Đã gửi kế hoạch "${modalState.plan?.name}" đi phê duyệt`);
+                  closeModal();
+                  refetch();
+                } catch (error: any) {
+                  toast.error(`Lỗi: ${error.message}`);
+                }
+              }
             }}
           />
           <ApproveModal 
             isOpen={modalState.type === 'approve'} 
             onClose={closeModal}
             plan={modalState.plan}
-            onConfirm={(note) => {
-              closeModal();
-              toast.success(`Kế hoạch "${modalState.plan?.name}" đã được phê duyệt`);
+            onConfirm={async (note) => {
+              if (modalState.plan) {
+                try {
+                  await updatePlanApi(modalState.plan.id, { status: 'approved' });
+                  toast.success(`Kế hoạch "${modalState.plan?.name}" đã được phê duyệt`);
+                  closeModal();
+                  refetch();
+                } catch (error: any) {
+                  toast.error(`Lỗi: ${error.message}`);
+                }
+              }
             }}
           />
           <RejectModal 
             isOpen={modalState.type === 'reject'} 
             onClose={closeModal}
             plan={modalState.plan}
-            onConfirm={(reason) => {
-              closeModal();
-              toast.error(`Kế hoạch "${modalState.plan?.name}" đã bị từ chối`);
+            onConfirm={async (reason) => {
+              if (modalState.plan) {
+                try {
+                  await updatePlanApi(modalState.plan.id, { status: 'rejected' });
+                  toast.error(`Kế hoạch "${modalState.plan?.name}" đã bị từ chối`);
+                  closeModal();
+                  refetch();
+                } catch (error: any) {
+                  toast.error(`Lỗi: ${error.message}`);
+                }
+              }
             }}
           />
           <RecallModal 
             isOpen={modalState.type === 'recall'} 
             onClose={closeModal}
             plan={modalState.plan}
-            onConfirm={() => {
-              closeModal();
-              toast.info(`Đã thu hồi kế hoạch "${modalState.plan?.name}"`);
+            onConfirm={async () => {
+              if (modalState.plan) {
+                try {
+                  await updatePlanApi(modalState.plan.id, { status: 'draft' });
+                  toast.info(`Đã thu hồi kế hoạch "${modalState.plan?.name}" về bản nháp`);
+                  closeModal();
+                  refetch();
+                } catch (error: any) {
+                  toast.error(`Lỗi: ${error.message}`);
+                }
+              }
             }}
           />
           <DeployModal 
             isOpen={modalState.type === 'deploy'} 
             onClose={closeModal}
             plan={modalState.plan}
-            onConfirm={(startDate) => {
-              closeModal();
-              toast.success(`Đã triển khai kế hoạch "${modalState.plan?.name}" từ ${startDate}`);
+            onConfirm={async (startDate) => {
+              if (modalState.plan) {
+                try {
+                  await updatePlanApi(modalState.plan.id, { status: 'active', startDate });
+                  toast.success(`Đã triển khai kế hoạch "${modalState.plan?.name}" từ ${startDate}`);
+                  closeModal();
+                  refetch();
+                } catch (error: any) {
+                  toast.error(`Lỗi: ${error.message}`);
+                }
+              }
             }}
           />
           <PauseModal 
             isOpen={modalState.type === 'pause'} 
             onClose={closeModal}
             plan={modalState.plan}
-            onConfirm={(reason) => {
-              closeModal();
-              toast.warning(`Đã tạm dừng kế hoạch "${modalState.plan?.name}"`);
+            onConfirm={async (reason) => {
+              if (modalState.plan) {
+                try {
+                  await updatePlanApi(modalState.plan.id, { status: 'paused' });
+                  toast.warning(`Đã tạm dừng kế hoạch "${modalState.plan?.name}"`);
+                  closeModal();
+                  refetch();
+                } catch (error: any) {
+                  toast.error(`Lỗi: ${error.message}`);
+                }
+              }
             }}
           />
           <DeletePlanModal 
             isOpen={modalState.type === 'delete'} 
             onClose={closeModal}
             plan={modalState.plan}
-            onConfirm={() => {
-              closeModal();
-              toast.success(`Đã xóa kế hoạch "${modalState.plan?.name}"`);
-              navigate('/plans/list');
+            onConfirm={async () => {
+              if (modalState.plan) {
+                try {
+                  await deletePlanApi(modalState.plan.id);
+                  toast.success(`Đã xóa kế hoạch "${modalState.plan?.name}"`);
+                  closeModal();
+                  navigate('/plans/list');
+                } catch (error: any) {
+                  toast.error(`Lỗi: ${error.message}`);
+                }
+              }
             }}
           />
+          <CompletePlanModal
+            isOpen={modalState.type === 'complete'}
+            onClose={closeModal}
+            plan={modalState.plan}
+            onConfirm={async () => {
+              if (modalState.plan) {
+                try {
+                  await updatePlanApi(modalState.plan.id, { status: 'completed' });
+                  toast.success(`Đã hoàn thành kế hoạch "${modalState.plan?.name}"`);
+                  closeModal();
+                  refetch();
+                } catch (error: any) {
+                  toast.error(`Lỗi: ${error.message}`);
+                }
+              }
+            }}
+          />
+          <ResumeModal
+            isOpen={modalState.type === 'resume'}
+            onClose={closeModal}
+            plan={modalState.plan}
+            onConfirm={async () => {
+              if (modalState.plan) {
+                try {
+                  await updatePlanApi(modalState.plan.id, { status: 'active' });
+                  toast.success(`Đã tiếp tục kế hoạch "${modalState.plan?.name}"`);
+                  closeModal();
+                  refetch();
+                } catch (error: any) {
+                  toast.error(`Lỗi: ${error.message}`);
+                }
+              }
+            }}
+          />
+          <CancelPlanModal
+            isOpen={modalState.type === 'cancel'}
+            onClose={closeModal}
+            plan={modalState.plan}
+            onConfirm={async (reason) => {
+              if (modalState.plan) {
+                try {
+                  await updatePlanApi(modalState.plan.id, { status: 'cancelled' });
+                  toast.error(`Đã hủy kế hoạch "${modalState.plan?.name}"`);
+                  closeModal();
+                  refetch();
+                } catch (error: any) {
+                  toast.error(`Lỗi: ${error.message}`);
+                }
+              }
+            }}
+          />
+
         </>
       )}
     </div>

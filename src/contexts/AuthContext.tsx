@@ -8,6 +8,7 @@ export type UserLevel = 'cuc' | 'chicuc' | 'doi';
 export type UserRole = 'lanhdao' | 'kehoach' | 'doitruong' | 'thanhtra' | 'canbohosocanbo' | 'phantich';
 
 export interface UserInfo {
+  _id: string;
   username: string;
   fullName: string;
   level: UserLevel;
@@ -166,7 +167,7 @@ function getDepartmentLevelFromCode(code?: string | null): number | undefined {
 }
 
 // 🔥 NEW: Fetch user department from database (users -> department_users -> departments)
-async function fetchUserDepartment(userId: string): Promise<{ _id: string; name: string; code?: string; level?: number; address?: string; latitude?: number; longitude?: number; parent_id?: string | null } | null> {
+async function fetchUserDepartment(userId: string): Promise<{ id: string; name: string; code?: string; level?: number; address?: string; latitude?: number; longitude?: number; parent_id?: string | null } | null> {
   try {
     
     // Query department_users with nested select to get departments data (including address)
@@ -198,14 +199,14 @@ async function fetchUserDepartment(userId: string): Promise<{ _id: string; name:
     }
     
     // Extract department data from nested structure
-    const departmentData = departmentUsers[0]?.departments;
+    const departmentData = departmentUsers[0]?.departments as any;
     if (!departmentData || !departmentData._id) {
       return null;
     }
     
     const inferredLevel = getDepartmentLevelFromCode(departmentData.code);
     const departmentInfo = {
-      _id: departmentData._id,
+      id: departmentData._id,
       name: departmentData.name || '',
       code: departmentData.code || undefined,
       level: departmentData.level ?? inferredLevel,
@@ -533,6 +534,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               fetchUserRoleName(supabaseUser.id),
             ]);
             const userInfo: UserInfo = {
+              _id: supabaseUser.id,
               username: supabaseUser.email || '',
               fullName: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User',
               level: 'cuc', // Default, should be fetched from database
@@ -598,7 +600,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const parsedUser = JSON.parse(storedUser) as UserInfo;
             // 🔥 FIX: Refresh role name if it's still the default/mock value
             if (!parsedUser.roleDisplay || parsedUser.roleDisplay === 'Người dùng' || parsedUser.roleDisplay.includes('Quản lý')) {
-              const roleName = await fetchUserRoleName(session.user._id);
+              const roleName = await fetchUserRoleName(session.user.id);
               if (roleName) {
                 parsedUser.roleDisplay = roleName;
                 localStorage.setItem('mappa-user', JSON.stringify(parsedUser));
@@ -612,6 +614,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // 🔥 FIX: Fetch role name from database
             const roleName = await fetchUserRoleName(supabaseUser.id);
             const userInfo: UserInfo = {
+              _id: supabaseUser.id,
               username: supabaseUser.email || '',
               fullName: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User',
               level: 'cuc',
@@ -735,6 +738,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ]);
       
       const userInfo: UserInfo = {
+        _id: supabaseUser.id,
         username,
         fullName: supabaseUser.user_metadata?.full_name || fullName,
         ...parsedInfo,
