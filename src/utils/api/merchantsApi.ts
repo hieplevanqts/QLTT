@@ -32,20 +32,19 @@ export interface FetchMerchantsOptions {
   departments?: any;
 }
 
-export async function fetchMerchants(p0: string[] | undefined, businessTypes: string[] | undefined, departmentIdsToFilter: string[] | undefined, teamId: string | null, divisionId: string, departmentIds: string[] | null, options?: FetchMerchantsOptions): Promise<Restaurant[]> {
+export async function fetchMerchants(p0: string[] | undefined, businessTypes: string[] | undefined, departmentIdsToFilter: string[] | undefined, teamId: string | null, divisionId: string, departmentIds: string[], businessTypeFilters: string[] | null, options?: FetchMerchantsOptions): Promise<Restaurant[]> {
   const opts = options || {};
 
   try {
     // Build query with all filters
-    let url = `${SUPABASE_REST_URL}/merchants?limit=1000&order=created_at.desc&select=*`;
 
-    // 🔥 Backend Filter 1: Status codes
+    let url = `${SUPABASE_REST_URL}/merchants?select=*&limit=10000&order=created_at.desc`;
+    // let url = `${SUPABASE_REST_URL}/merchants?select=*,category_merchants!inner(category_id)&limit=10000&order=created_at.desc`;
     if (opts.statusCodes && opts.statusCodes.length > 0) {
       const statusFilter = opts.statusCodes.map(code => `status.eq.${code}`).join(',');
       url += `&or=(${statusFilter})`;
     }
 
-    // 🔥 Backend Filter 2: Business types
     if (opts.businessTypes && opts.businessTypes.length > 0) {
       const typeFilter = opts.businessTypes.map(type => `business_type.eq.${encodeURIComponent(type)}`).join(',');
       url += `&or=(${typeFilter})`;
@@ -68,13 +67,29 @@ export async function fetchMerchants(p0: string[] | undefined, businessTypes: st
       const ids = [divisionId, ...(departments?.map(d => d._id) || [])];
       const idString = ids.join(',');
       url += `&department_id=in.(${idString})`;
-
-      console.log('URL mới tối ưu:', url);
     }
+
+    // const activeCategoryIds = Object.keys(businessTypeFilters ?? {}).filter(
+    //   (key) => businessTypeFilters?.[key] === true
+    // );
+
+    // if (activeCategoryIds.length > 0) {
+    //   const idString = activeCategoryIds.join(',');
+    //   url += `&category_merchants.category_id=in.(${idString})`;
+    // }
+
     const response = await fetch(url, {
       method: 'GET',
       headers: getHeaders()
     });
+
+
+
+
+
+
+
+    
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -84,6 +99,7 @@ export async function fetchMerchants(p0: string[] | undefined, businessTypes: st
     }
 
     const data = await response.json();
+    
     let merchants = data
       .filter((merchant: any) => {
         const hasCoords = typeof merchant.latitude === 'number' && typeof merchant.longitude === 'number';
