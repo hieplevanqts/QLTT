@@ -105,6 +105,12 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
 
     if (!isOpen) return null;
 
+    // 🔥 DEBUG: Log department data
+    console.log('📊 MapFilterPanel: Component rendered');
+    console.log('  - departments array:', departments?.length || 0, departments);
+    console.log('  - departmentFilters:', departmentFilters);
+    console.log('  - isOpen:', isOpen);
+
     const toggleSection = (section: keyof typeof expandedSections) => {
       setExpandedSections(prev => ({
         ...prev,
@@ -260,6 +266,11 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
     };
     
     const { rootDepartments, groupedDepartments } = flattenTreeForRender(departmentTree);
+    
+    // 🔥 DEBUG: Log tree structure
+    console.log('📊 MapFilterPanel: Department tree structure');
+    console.log('  - rootDepartments:', rootDepartments.length, rootDepartments.map(d => ({ id: d.id, name: d.name })));
+    console.log('  - groupedDepartments:', groupedDepartments.length, groupedDepartments.map(g => ({ parent: g.parent.name, children: g.children.map(c => c.name) })));
     
     // 🔥 NEW: Toggle department group expand/collapse
     const toggleDepartmentGroup = (parentId: string) => {

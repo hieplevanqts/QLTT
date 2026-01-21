@@ -1,0 +1,178 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  font-family: 'Inter', sans-serif;
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+/* Sizes */
+.sm {
+  padding: 2px 8px;
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+
+.md {
+  padding: 4px 12px;
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+
+.lg {
+  padding: 6px 16px;
+  font-size: var(--text-base);
+  line-height: 1.5;
+}
+
+/* Plan & Round Status Variants */
+.draft {
+  background: rgba(102, 112, 133, 0.1);
+  color: rgba(102, 112, 133, 1);
+}
+
+.pending_approval {
+  background: rgba(247, 162, 59, 0.1);
+  color: rgba(194, 120, 3, 1);
+}
+
+.approved {
+  background: rgba(0, 92, 182, 0.1);
+  color: rgba(0, 92, 182, 1);
+}
+
+.active {
+  background: rgba(15, 202, 122, 0.1);
+  color: rgba(3, 152, 85, 1);
+}
+
+.completed {
+  background: rgba(15, 202, 122, 0.1);
+  color: rgba(3, 152, 85, 1);
+}
+
+.paused {
+  background: rgba(247, 162, 59, 0.15);
+  color: rgba(194, 120, 3, 1);
+}
+
+.rejected {
+  background: rgba(217, 45, 32, 0.1);
+  color: rgba(217, 45, 32, 1);
+}
+
+.cancelled {
+  background: rgba(102, 112, 133, 0.15);
+  color: rgba(71, 85, 105, 1);
+}
+
+/* Inspection Round Specific Statuses */
+.in_progress {
+  background: rgba(0, 199, 242, 0.1);
+  color: rgba(0, 119, 182, 1);
+}
+
+/* Task Status Variants */
+.not_started {
+  background: rgba(208, 213, 221, 0.5);
+  color: rgba(52, 64, 84, 1);
+}
+
+.blocked {
+  background: rgba(217, 45, 32, 0.1);
+  color: rgba(217, 45, 32, 1);
+}
+
+.verified {
+  background: rgba(105, 92, 251, 0.1);
+  color: rgba(79, 70, 229, 1);
+}
+
+.closed {
+  background: rgba(102, 112, 133, 0.2);
+  color: rgba(102, 112, 133, 1);
+}
+
+/* SLA Status Variants */
+.on_track {
+  background: rgba(15, 202, 122, 0.1);
+  color: rgba(3, 152, 85, 1);
+}
+
+.at_risk {
+  background: rgba(247, 162, 59, 0.1);
+  color: rgba(194, 120, 3, 1);
+}
+
+.overdue {
+  background: rgba(217, 45, 32, 0.1);
+  color: rgba(217, 45, 32, 1);
+}
+
+/* Priority Variants */
+.low {
+  background: rgba(168, 162, 158, 0.1);
+  color: rgb(120, 113, 108);
+  border-color: rgba(168, 162, 158, 0.3);
+}
+
+.medium {
+  background: rgba(59, 130, 246, 0.1);
+  color: rgb(37, 99, 235);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.high {
+  background: rgba(234, 88, 12, 0.1);
+  color: rgb(194, 65, 12);
+  border-color: rgba(234, 88, 12, 0.3);
+}
+
+.critical {
+  background: rgba(220, 38, 38, 0.1);
+  color: rgb(185, 28, 28);
+  border-color: rgba(220, 38, 38, 0.3);
+}
+
+/* Plan Type Variants */
+.periodic {
+  background: rgba(6, 182, 212, 0.1);
+  color: rgb(14, 116, 144);
+  border-color: rgba(6, 182, 212, 0.3);
+}
+
+.thematic {
+  background: rgba(168, 85, 247, 0.1);
+  color: rgb(124, 58, 237);
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+.urgent {
+  background: rgba(234, 88, 12, 0.1);
+  color: rgb(194, 65, 12);
+  border-color: rgba(234, 88, 12, 0.3);
+}
+
+/* Inspection Type Variants */
+.routine {
+  background: rgba(102, 112, 133, 0.1);
+  color: rgba(102, 112, 133, 1);
+}
+
+.targeted {
+  background: rgba(0, 92, 182, 0.1);
+  color: rgba(0, 92, 182, 1);
+}
+
+.sudden {
+  background: rgba(247, 162, 59, 0.1);
+  color: rgba(194, 120, 3, 1);
+}
+
+.followup {
+  background: rgba(0, 92, 182, 0.1);
+  color: rgba(0, 92, 182, 1);
+}

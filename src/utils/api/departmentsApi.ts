@@ -44,7 +44,7 @@ export async function fetchMarketManagementTeams(options?: {
     // Build query
     let query = supabase
       .from('departments')
-      .select('id:_id, name, code, level, path, parent_id')
+      .select('id, name, code, level, path, parent_id')
       .is('deleted_at', null);
     
     // 🔥 CHANGED: Priority: teamId > divisionId
@@ -59,7 +59,7 @@ export async function fetchMarketManagementTeams(options?: {
     if (filterId) {
       console.log(`🔍 Filtering departments by ${filterId.type}:`, filterId.value);
       // Use .or() with proper format: field1.operator.value1,field2.operator.value2
-      query = query.or(`id.eq.${filterId.value},parent_id.eq.${filterId.value}`);
+      query = query.or(`_id.eq.${filterId.value},parent_id.eq.${filterId.value}`);
     } else {
       console.log('📋 No filter - fetching all departments');
     }
@@ -73,15 +73,21 @@ export async function fetchMarketManagementTeams(options?: {
       throw new Error(`Failed to fetch departments: ${error.message}`);
     }
     
+    // 🔥 MAP _id to id for application compatibility
+    const mappedData = (data || []).map((dept: any) => ({
+      ...dept,
+      id: dept._id
+    }));
+
     // 🔥 CHANGED: If filter was applied but Supabase .or() didn't work,
     // apply client-side filtering as fallback
-    let filteredData = data || [];
-    if (filterId && data && data.length > 0) {
-      filteredData = data.filter((dept: Department) => {
+    let filteredData = mappedData || [];
+    if (filterId && mappedData && mappedData.length > 0) {
+      filteredData = mappedData.filter((dept: Department) => {
         return dept.id === filterId.value || dept.parent_id === filterId.value;
       });
-      console.log('🔍 Client-side filter applied. Before:', data.length, 'After:', filteredData.length);
-      if (filteredData.length !== data.length) {
+      console.log('🔍 Client-side filter applied. Before:', mappedData.length, 'After:', filteredData.length);
+      if (filteredData.length !== mappedData.length) {
         console.log('⚠️ Supabase .or() filter may not have worked, using client-side filter');
       }
     }

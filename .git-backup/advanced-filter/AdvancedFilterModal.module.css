@@ -1,0 +1,222 @@
+.modalContent {
+  max-width: 1400px !important;
+  width: 95vw;
+  max-height: 90vh;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: var(--spacing-6);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.headerLeft {
+  display: flex;
+  gap: var(--spacing-4);
+  align-items: flex-start;
+}
+
+.headerIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-radius: var(--radius-lg);
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-1) 0;
+  line-height: 1.2;
+}
+
+.subtitle {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.closeButton {
+  padding: var(--spacing-2);
+  background: transparent;
+  border: none;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+
+.closeButton:hover {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
+/* Content */
+.content {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Filter Panel (Left) */
+.filterPanel {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.filterBuilder {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-6);
+}
+
+/* Scrollbar styling */
+.filterBuilder::-webkit-scrollbar {
+  width: 8px;
+}
+
+.filterBuilder::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+.filterBuilder::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+.filterBuilder::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-tertiary);
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-4) var(--spacing-6);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.actionsLeft {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+.actionsRight {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+/* Presets Panel (Right) */
+.presetsPanel {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-secondary);
+  overflow: hidden;
+}
+
+.presetsPanelHeader {
+  padding: var(--spacing-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.presetsPanelTitle {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .modalContent {
+    width: 98vw;
+    max-height: 95vh;
+  }
+
+  .content {
+    grid-template-columns: 1fr 280px;
+  }
+}
+
+@media (max-width: 768px) {
+  .modalContent {
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .header {
+    padding: var(--spacing-4);
+  }
+
+  .headerLeft {
+    gap: var(--spacing-3);
+  }
+
+  .headerIcon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .title {
+    font-size: var(--font-size-lg);
+  }
+
+  .subtitle {
+    font-size: var(--font-size-xs);
+  }
+
+  .content {
+    grid-template-columns: 1fr;
+  }
+
+  .presetsPanel {
+    display: none; /* Hide on mobile, or make it a separate tab */
+  }
+
+  .filterBuilder {
+    padding: var(--spacing-4);
+  }
+
+  .actions {
+    padding: var(--spacing-3) var(--spacing-4);
+    flex-direction: column;
+  }
+
+  .actionsLeft,
+  .actionsRight {
+    width: 100%;
+  }
+
+  .actionsRight {
+    flex-direction: column-reverse;
+  }
+
+  .actionsLeft button,
+  .actionsRight button {
+    width: 100%;
+  }
+}

@@ -27,15 +27,12 @@ interface SendForApprovalModalProps {
   isOpen: boolean;
   onClose: () => void;
   plan: Plan;
-  onConfirm: (note: string) => void;
+  onConfirm: () => void;
 }
 
 export function SendForApprovalModal({ isOpen, onClose, plan, onConfirm }: SendForApprovalModalProps) {
-  const [note, setNote] = useState('');
-
   const handleSubmit = () => {
-    onConfirm(note);
-    setNote('');
+    onConfirm();
     onClose();
   };
 
@@ -54,18 +51,9 @@ export function SendForApprovalModal({ isOpen, onClose, plan, onConfirm }: SendF
         </button>
       </div>
 
-      <div className={styles.modalBody}>
-        <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Ghi chú (không bắt buộc)</label>
-          <textarea
-            className={styles.textarea}
-            placeholder="Nhập ghi chú kèm theo..."
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            rows={4}
-          />
-        </div>
 
+
+      <div className={styles.modalBody}>
         <div className={styles.infoBox}>
           <p>Kế hoạch sẽ được chuyển sang trạng thái <strong>"Chờ phê duyệt"</strong></p>
         </div>
@@ -89,15 +77,12 @@ interface ApproveModalProps {
   isOpen: boolean;
   onClose: () => void;
   plan: Plan;
-  onConfirm: (note: string) => void;
+  onConfirm: () => void;
 }
 
 export function ApproveModal({ isOpen, onClose, plan, onConfirm }: ApproveModalProps) {
-  const [note, setNote] = useState('');
-
   const handleSubmit = () => {
-    onConfirm(note);
-    setNote('');
+    onConfirm();
     onClose();
   };
 
@@ -116,18 +101,9 @@ export function ApproveModal({ isOpen, onClose, plan, onConfirm }: ApproveModalP
         </button>
       </div>
 
-      <div className={styles.modalBody}>
-        <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Ý kiến phê duyệt</label>
-          <textarea
-            className={styles.textarea}
-            placeholder="Nhập ý kiến..."
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            rows={4}
-          />
-        </div>
 
+
+      <div className={styles.modalBody}>
         <div className={styles.infoBox} style={{ background: '#10B98115', borderColor: '#10B981' }}>
           <p>Kế hoạch sẽ được chuyển sang trạng thái <strong>"Đã phê duyệt"</strong></p>
         </div>

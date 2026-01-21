@@ -1,0 +1,148 @@
+.condition {
+  display: flex;
+  gap: var(--spacing-3);
+  align-items: flex-start;
+  padding: var(--spacing-3);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: all 0.2s;
+}
+
+.condition:hover {
+  border-color: var(--color-border-hover);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.fieldSelect {
+  flex: 1;
+  min-width: 180px;
+}
+
+.operatorSelect {
+  flex: 0.8;
+  min-width: 150px;
+}
+
+.valueInput {
+  flex: 1.2;
+  min-width: 200px;
+}
+
+.select {
+  width: 100%;
+}
+
+.input {
+  width: 100%;
+  padding: var(--spacing-2) var(--spacing-3);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-primary);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.input:disabled {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
+}
+
+.input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+/* Date Range */
+.dateRange {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.dateRangeSeparator {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.dateRange .input {
+  flex: 1;
+  min-width: 120px;
+}
+
+/* Number Range */
+.numberRange {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.numberRangeSeparator {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.numberRange .input {
+  flex: 1;
+  min-width: 80px;
+}
+
+/* Boolean */
+.booleanPlaceholder {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  min-height: 38px;
+}
+
+.booleanText {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+
+/* Remove Button */
+.removeButton {
+  flex-shrink: 0;
+  padding: var(--spacing-2);
+  color: var(--color-text-tertiary);
+  transition: all 0.2s;
+}
+
+.removeButton:hover {
+  color: var(--color-danger);
+  background: var(--color-danger-light);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .condition {
+    flex-direction: column;
+  }
+
+  .fieldSelect,
+  .operatorSelect,
+  .valueInput {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .removeButton {
+    align-self: flex-end;
+  }
+}

@@ -94,10 +94,15 @@ export const DepartmentsTab: React.FC = () => {
         return;
       }
 
-      setDepartments(data || []);
+      const mappedData = (data || []).map((dept: any) => ({
+        ...dept,
+        id: dept._id || dept.id,
+      }));
+
+      setDepartments(mappedData);
 
       // Build tree structure
-      const tree = buildTree(data || []);
+      const tree = buildTree(mappedData);
       setTreeData(tree);
     } catch (error) {
       console.error('❌ Error in fetchDepartments:', error);
@@ -429,7 +434,7 @@ export const DepartmentsTab: React.FC = () => {
         // Recursively clone children
         if (source.children && source.children.length > 0) {
           for (const child of source.children) {
-            await cloneDepartmentRecursive(child, clonedDept.id, usedCodes);
+            await cloneDepartmentRecursive(child, (clonedDept as any)._id, usedCodes);
           }
         }
       };

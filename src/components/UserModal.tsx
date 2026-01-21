@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, User, Mail, Phone, Shield, Lock, Building2 } from 'lucide-react';
+import { X, Save, User, Mail, Phone, Shield, Lock } from 'lucide-react';
 import styles from '../pages/AdminPage.module.css';
 import { toast } from 'sonner';
-import { supabase } from '../lib/supabase';
-import bcrypt from 'bcryptjs';
+import { supabase, Role } from '../lib/supabase';
 
 // Default password for all new users
 const DEFAULT_PASSWORD = 'Couppa@123';
@@ -41,11 +40,7 @@ interface User {
   updated_at: string;
   last_login?: string;
   user_roles?: {
-    roles: {
-      id: string;
-      code: string;
-      name: string;
-    };
+    roles: Role; // Updated to use the Role interface
   }[];
   department_users?: {
     departments: {
@@ -62,13 +57,6 @@ interface User {
     code: string;
     level: number;
   };
-}
-
-interface Role {
-  id: string;
-  code: string;
-  name: string;
-  description?: string;
 }
 
 interface Department {
@@ -319,7 +307,6 @@ export const UserModal: React.FC<UserModalProps> = ({
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [generatedUsername, setGeneratedUsername] = useState<string>(''); // ✅ State for username
-  const [checkingUsername, setCheckingUsername] = useState(false); // ✅ State for checking username availability
 
   useEffect(() => {
     if (user) {
@@ -332,7 +319,7 @@ export const UserModal: React.FC<UserModalProps> = ({
       });
 
       // Set selected roles
-      const roleIds = user.user_roles?.map((ur) => ur.roles.id) || [];
+      const roleIds = user.user_roles?.map((ur) => ur.roles._id) || [];
       setSelectedRoleIds(roleIds);
 
       // Set selected department
@@ -367,16 +354,11 @@ export const UserModal: React.FC<UserModalProps> = ({
   useEffect(() => {
     const checkAndGenerateUsername = async () => {
       if (formData.full_name.trim() && selectedDepartmentId) {
-        setCheckingUsername(true);
-        
         const baseUsername = generateUsername(formData.full_name, selectedDepartmentId, departments);
         
         // ✅ Check database and generate unique username
         const uniqueUsername = await generateUniqueUsername(baseUsername, user?.id);
         setGeneratedUsername(uniqueUsername);
-        
-        
-        setCheckingUsername(false);
       } else {
         setGeneratedUsername('');
       }
@@ -465,13 +447,13 @@ export const UserModal: React.FC<UserModalProps> = ({
           return;
         }
 
-        userId = authData.user.id;
+        userId = authData.user._id;
 
         // Step 2: Insert/Update user in public.users table (using auth user id)
-        const { data: newUser, error: insertError } = await supabase
+        const { error: insertError } = await supabase
           .from('users')
           .insert([{
-            id: userId, // Use auth.users id
+            _id: userId, // Use auth.users id
             email: formData.email.trim(),
             full_name: formData.full_name.trim(),
             phone: formData.phone.trim() || null,
@@ -508,7 +490,7 @@ export const UserModal: React.FC<UserModalProps> = ({
         
         const { data: rpcResult, error: rpcError } = await supabase
           .rpc('update_user_profile', {
-            p_user_id: user.id,
+            p_user_id: user._id,
             p_email: formData.email.trim(),
             p_phone: formData.phone.trim() || null,
             p_full_name: formData.full_name.trim(),
@@ -523,7 +505,7 @@ export const UserModal: React.FC<UserModalProps> = ({
           const { error: updateError } = await supabase
             .from('users')
             .update(userData)
-            .eq('_id', user.id);
+            .eq('_id', user._id);
 
           if (updateError) {
             console.error('❌ Error updating user:', updateError);
@@ -541,7 +523,7 @@ export const UserModal: React.FC<UserModalProps> = ({
           
         }
 
-        userId = user.id;
+        userId = user._id;
       } else {
         return;
       }
@@ -830,7 +812,7 @@ export const UserModal: React.FC<UserModalProps> = ({
                   ) : (
                     roles.map((role) => (
                       <label
-                        key={role.id}
+                        key={role._id}
                         style={{
                           display: 'flex',
                           alignItems: 'flex-start',
@@ -923,7 +905,7 @@ export const UserModal: React.FC<UserModalProps> = ({
                 >
                   <option value="">-- Chọn phòng ban --</option>
                   {buildDepartmentOptions(departments).map((dept) => (
-                    <option key={dept.id} value={dept.id}>
+                    <option key={dept._id} value={dept._id}>
                       {dept.label}
                     </option>
                   ))}
