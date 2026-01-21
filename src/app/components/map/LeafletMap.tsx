@@ -333,19 +333,7 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       return isValid;
     });
     
-    
-    if (validRestaurants.length > 0) {
-      console.log({
-        id: validRestaurants[0].id, 
-        name: validRestaurants[0].name,
-        lat: validRestaurants[0].lat,
-        lng: validRestaurants[0].lng,
-        type: validRestaurants[0].type,
-        category: validRestaurants[0].category,
-        status: validRestaurants[0].status
-      });
-    }
-
+   
     // Add new markers
     let markersAdded = 0;
     filteredRestaurants.forEach((restaurant, index) => {

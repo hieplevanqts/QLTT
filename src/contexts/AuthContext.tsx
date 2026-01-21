@@ -167,7 +167,7 @@ function getDepartmentLevelFromCode(code?: string | null): number | undefined {
 }
 
 // 🔥 NEW: Fetch user department from database (users -> department_users -> departments)
-async function fetchUserDepartment(userId: string): Promise<{ id: string; name: string; code?: string; level?: number; address?: string; latitude?: number; longitude?: number; parent_id?: string | null } | null> {
+async function fetchUserDepartment(userId: string): Promise<{ _id: string; name: string; code?: string; level?: number; address?: string; latitude?: number; longitude?: number; parent_id?: string | null } | null> {
   try {
     
     // Query department_users with nested select to get departments data (including address)
@@ -600,7 +600,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const parsedUser = JSON.parse(storedUser) as UserInfo;
             // 🔥 FIX: Refresh role name if it's still the default/mock value
             if (!parsedUser.roleDisplay || parsedUser.roleDisplay === 'Người dùng' || parsedUser.roleDisplay.includes('Quản lý')) {
-              const roleName = await fetchUserRoleName(session.user.id);
+              const roleName = await fetchUserRoleName(session.user._id);
               if (roleName) {
                 parsedUser.roleDisplay = roleName;
                 localStorage.setItem('mappa-user', JSON.stringify(parsedUser));

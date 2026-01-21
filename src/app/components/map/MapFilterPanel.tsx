@@ -631,7 +631,7 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
           </div>
 
           {/* 🔥 NEW: Department Filter Checkboxes - Grouped by parent_id */}
-          <div className={styles.filterSection}>
+          <div className={styles.filterSection} style={{ display: 'none'}}>
             <button 
               className={styles.sectionHeader}
               onClick={() => toggleSection('department')}
