@@ -14,10 +14,7 @@ interface FullscreenMapModalProps {
   isOpen: boolean;
   onClose: () => void;
   filters: {
-    certified: boolean;
-    hotspot: boolean;
-    scheduled: boolean;
-    inspected: boolean;
+    [key: string]: boolean;  // Dynamic keys from point_status table
   };
   businessTypeFilters: {
     [key: string]: boolean;
@@ -33,7 +30,7 @@ interface FullscreenMapModalProps {
   categories: Category[];  // 🔥 NEW: Categories for mapping ID to name
   merchantStats?: MerchantStats | null;  // 🔥 NEW: Merchant statistics from API
   onPointClick?: (point: Restaurant) => void;
-  onFilterChange: (key: keyof FullscreenMapModalProps['filters']) => void;
+  onFilterChange: (key: string) => void;  // Dynamic key instead of keyof
   onBusinessTypeFilterChange: (type: string) => void;
   onBusinessTypeToggleAll: (checked: boolean) => void;  // 🔥 NEW: Toggle all business types
   onProvinceChange: (province: string) => void;
