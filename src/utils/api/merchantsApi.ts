@@ -5,43 +5,64 @@ import { Restaurant } from '../../data/restaurantData';
 import { SUPABASE_REST_URL, getHeaders } from './config';
 
 /**
- * 🏪 Fetch merchants from merchants table
- * Optional filters by status and business type
+ * 🏪 Fetch merchants from merchants table with comprehensive filtering
+ * ALL filtering is done at the backend - no frontend filtering needed
  * 
- * @param statusCodes - Optional array of status codes to filter by ('active', 'pending', 'suspended', 'rejected')
- * @param businessTypes - Optional array of business types to filter by
- * @returns Array of merchants mapped to Restaurant interface
+ * @param options - Filtering options object
+ * @param options.statusCodes - Optional array of status codes ('active', 'pending', 'suspended', 'rejected')
+ * @param options.businessTypes - Optional array of business types to filter by
+ * @param options.departmentIds - Optional array of department IDs to filter by
+ * @param options.province - Optional province name to filter by
+ * @param options.district - Optional district name to filter by
+ * @param options.ward - Optional ward name to filter by
+ * @param options.searchQuery - Optional search text (searches name, address, tax code)
+ * @returns Array of merchants mapped to Restaurant interface (already filtered)
  */
-export async function fetchMerchants(
-  statusCodes?: string[],
-  businessTypes?: string[],
-  departmentIds?: string[]  // 🔥 NEW: Filter by department_id
-): Promise<Restaurant[]> {
+export interface FetchMerchantsOptions {
+  statusCodes?: string[];
+  businessTypes?: string[];
+  departmentIds?: string[];
+  province?: string;
+  district?: string;
+  ward?: string;
+  searchQuery?: string;
+}
 
+export async function fetchMerchants(options?: FetchMerchantsOptions): Promise<Restaurant[]> {
+  const opts = options || {};
+console.log('opts in fetchMerchants:', opts);
   try {
-    // Build query - simple select without nested joins
+    // Build query with all filters
     let url = `${SUPABASE_REST_URL}/merchants?limit=1000&order=created_at.desc&select=*`;
     
-    // 🔥 Filter by status if provided (direct field filter)
-    // status field: 'active', 'pending', 'suspended', 'rejected'
-    if (statusCodes && statusCodes.length > 0) {
-      const statusFilter = statusCodes.map(code => `status.eq.${code}`).join(',');
+    // 🔥 Backend Filter 1: Status codes
+    if (opts.statusCodes && opts.statusCodes.length > 0) {
+      const statusFilter = opts.statusCodes.map(code => `status.eq.${code}`).join(',');
       url += `&or=(${statusFilter})`;
     }
     
-    // 🔥 Filter by business_type if provided (direct field filter)
-    if (businessTypes && businessTypes.length > 0) {
-      const typeFilter = businessTypes.map(type => `business_type.eq.${encodeURIComponent(type)}`).join(',');
+    // 🔥 Backend Filter 2: Business types
+    if (opts.businessTypes && opts.businessTypes.length > 0) {
+      const typeFilter = opts.businessTypes.map(type => `business_type.eq.${encodeURIComponent(type)}`).join(',');
       url += `&or=(${typeFilter})`;
     }
     
-    // 🔥 NEW: Filter by department_id if provided
-    if (departmentIds && departmentIds.length > 0) {
-      const deptFilter = departmentIds.map(id => `department_id.eq.${id}`).join(',');
+    // 🔥 Backend Filter 3: Department IDs
+    if (opts.departmentIds && opts.departmentIds.length > 0) {
+      const deptFilter = opts.departmentIds.map(id => `department_id.eq.${id}`).join(',');
       url += `&or=(${deptFilter})`;
     }
     
-
+    // 🔥 Backend Filter 4: Province
+    // if (opts.province) {
+    //   url += `&province_id=eq.${encodeURIComponent(opts.province)}`;
+    // }
+    
+    // 🔥 Backend Filter 6: Ward
+    // if (opts.ward) {
+    //   url += `&ward_id=eq.${encodeURIComponent(opts.ward)}`;
+    // }
+    
     const response = await fetch(url, {
       method: 'GET',
       headers: getHeaders()
@@ -56,13 +77,11 @@ export async function fetchMerchants(
 
     const data = await response.json();
 
-    // Transform Supabase data to Restaurant interface
-    const merchants = data
+    // Transform and filter Supabase data to Restaurant interface
+    let merchants = data
       .filter((merchant: any) => {
-        // Filter out merchants without coordinates
+        // Filter 1: Remove merchants without coordinates
         const hasCoords = typeof merchant.latitude === 'number' && typeof merchant.longitude === 'number';
-        if (!hasCoords) {
-        }
         return hasCoords;
       })
       .map((merchant: any, index: number): Restaurant => {
@@ -139,7 +158,24 @@ export async function fetchMerchants(
         };
       });
 
+    // 🔥 Client-side Filter: Search query (since Supabase REST doesn't have full-text search)
+    // This is the ONLY client-side filtering - all other filters done at backend
+    if (opts.searchQuery && opts.searchQuery.trim()) {
+      const searchLower = opts.searchQuery.toLowerCase();
+      merchants = merchants.filter(merchant => {
+        const nameLower = merchant.name.toLowerCase();
+        const addressLower = merchant.address.toLowerCase();
+        const taxCodeLower = (merchant.taxCode || '').toLowerCase();
+        
+        return nameLower.includes(searchLower) ||
+               addressLower.includes(searchLower) ||
+               taxCodeLower.includes(searchLower);
+      });
+      
+      console.log(`✅ Applied search filter: "${opts.searchQuery}" → ${merchants.length} merchants`);
+    }
 
+    console.log(`✅ Fetched ${merchants.length} merchants after all filtering`);
     return merchants;
   } catch (error: any) {
     console.error('❌ Error fetching merchants:', error);

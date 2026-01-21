@@ -8,10 +8,7 @@ import { Category } from '../../../utils/api/categoriesApi';
 import { Department, fetchMarketManagementTeams } from '../../../utils/api/departmentsApi';
 
 type CategoryFilter = {
-  certified: boolean;
-  hotspot: boolean;
-  scheduled: boolean;
-  inspected: boolean;
+  [key: string]: boolean;  // Dynamic keys from point_status table
 };
 
 type BusinessTypeFilter = {
@@ -552,6 +549,7 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
               {/* 🔥 NEW: "Tất cả" checkbox - Toggle all business types */}
               {allCategoryItem && !businessTypeSearch.trim() && (
                 <label 
+                  key="__all_business_types__"
                   className={styles.filterItem}
                   style={{ 
                     borderBottom: '1px solid var(--color-border)', 

@@ -8,10 +8,7 @@ import { generateWardColorMap } from '../../../utils/colorUtils';
 import { teamsData, Team } from '../../../data/officerTeamData';
 
 type CategoryFilter = {
-  certified: boolean;
-  hotspot: boolean;
-  scheduled: boolean;
-  inspected: boolean;
+  [key: string]: boolean;  // Dynamic keys from point_status table
 };
 
 interface LeafletMapProps {
