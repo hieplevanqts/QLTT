@@ -11,6 +11,7 @@ import { type Plan, type PlanType, type Priority } from '../../data/kehoach-mock
 import { SelectInsDecisionModal, type InsDecision } from '../../components/plans/SelectInsDecisionModal';
 import { supabase } from '../../../lib/supabase';
 import { useQLTTScope } from '../../../contexts/QLTTScopeContext';
+import { useAuth } from '../../../contexts/AuthContext';
 import { createPlanApi } from '../../../utils/api/plansApi';
 
 type PlanTypeTab = 'periodic' | 'thematic' | 'urgent';
@@ -21,6 +22,8 @@ export function PlanCreate() {
   const { planId } = useParams(); // Get planId from URL params
   const { addPlan, updatePlan, plans } = usePlans();
   const { scope } = useQLTTScope();
+  const { user } = useAuth();
+  console.log("user",user);
   
   // Check if in edit mode
   const isEditMode = !!planId;
@@ -48,6 +51,7 @@ export function PlanCreate() {
     startDate: '',
     endDate: '',
     responsibleUnit: '',
+    responsibleUnitId: '',
     cooperatingUnits: '',
     scopeArea: '',
     description: '',
@@ -77,7 +81,7 @@ export function PlanCreate() {
       try {
         const { data, error } = await supabase
           .from('departments')
-          .select('id, name')
+          .select('_id, name')
           .eq('parent_id', divisionId);
 
         if (error) {
@@ -86,7 +90,8 @@ export function PlanCreate() {
         }
 
         if (data) {
-          setManagingUnits(data);
+          // Map _id to id for consistency
+          setManagingUnits(data.map((u: any) => ({ id: u._id, name: u.name })));
         }
       } catch (err) {
         console.error('Error fetching managing units:', err);
@@ -119,6 +124,7 @@ export function PlanCreate() {
         startDate: editingPlan.startDate,
         endDate: editingPlan.endDate,
         responsibleUnit: editingPlan.responsibleUnit,
+        responsibleUnitId: editingPlan.leadUnit || '',
         cooperatingUnits: '', // Not in Plan interface, keep empty
         scopeArea: editingPlan.scopeLocation,
         description: editingPlan.topic,
@@ -229,6 +235,7 @@ export function PlanCreate() {
         scope: formData.scopeArea || 'Toàn quốc',
         scopeLocation: formData.scopeArea || 'Toàn quốc',
         responsibleUnit: formData.responsibleUnit,
+        leadUnit: formData.responsibleUnitId,
         objectives: formData.objectives || 'N/A',
         startDate: formData.startDate,
         endDate: formData.endDate || formData.startDate,
@@ -252,12 +259,14 @@ export function PlanCreate() {
         scope: formData.scopeArea || 'Toàn quốc',
         scopeLocation: formData.scopeArea || 'Toàn quốc',
         responsibleUnit: formData.responsibleUnit,
+        leadUnit: formData.responsibleUnitId,
         objectives: formData.objectives || 'N/A',
         status: 'draft',
         priority: formData.priority,
         startDate: formData.startDate,
         endDate: formData.endDate || formData.startDate,
-        createdBy: 'Người tạo hiện tại',
+        createdBy: user?.fullName || 'Người tạo hiện tại',
+        createdById: user?._id,
         createdAt: new Date().toISOString(),
         // Save M03 if selected
         insDecisionM03: selectedM03 ? {
@@ -446,8 +455,24 @@ export function PlanCreate() {
             </label>
             <select
               className={`${styles.select} ${errors.responsibleUnit ? styles.inputError : ''}`}
-              value={formData.responsibleUnit}
-              onChange={(e) => handleChange('responsibleUnit', e.target.value)}
+              value={formData.responsibleUnitId || formData.responsibleUnit}
+              onChange={(e) => {
+                const unitId = e.target.value;
+                const unit = managingUnits.find(u => u.id === unitId);
+                setFormData(prev => ({
+                  ...prev,
+                  responsibleUnit: unit ? unit.name : unitId,
+                  responsibleUnitId: unitId
+                }));
+                // Clear error
+                if (errors.responsibleUnit) {
+                  setErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors.responsibleUnit;
+                    return newErrors;
+                  });
+                }
+              }}
             >
               <option value="">Chọn đơn vị...</option>
               {managingUnits.length > 0 ? (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -11,25 +11,23 @@ import {
   Download,
   Edit,
   CheckCircle,
+  AlertCircle,
+  Target,
   ClipboardCheck,
   BarChart3,
-  Clock,
-  Target,
-  AlertCircle,
-  Store,
   Eye,
-  History,
-  UserCircle,
   RefreshCw,
   Trash2,
   Upload,
-  Settings,
 } from 'lucide-react';
+
 import styles from './InspectionRoundDetail.module.css';
 import { InspectionRoundStatusBadge } from '../../components/inspections/InspectionRoundStatusBadge';
 import { CreateSessionDialog } from '../../components/inspections/CreateSessionDialog';
-import { Button } from '../../components/ui/button';
 import { InsFormDetailDialog } from '../../components/inspections/InsFormDetailDialog';
+
+import { useSupabaseInspectionRound } from '@/hooks/useSupabaseInspectionRound';
+import { toast } from 'sonner';
 
 type TabType = 'overview' | 'sessions' | 'team' | 'scope' | 'history';
 
@@ -41,70 +39,9 @@ const TABS = [
   { id: 'history' as TabType, label: 'Lịch sử cập nhật', badge: 12 },
 ];
 
-interface InspectionRoundData {
-  id: string;
-  code: string;
-  name: string;
-  planCode: string;
-  planName: string;
-  quarter: string;
-  status: 'planning' | 'preparing' | 'in_progress' | 'reporting' | 'completed' | 'cancelled';
-  type: 'routine' | 'targeted' | 'sudden' | 'followup';
-  startDate: string;
-  endDate: string;
-  scope: string;
-  scopeDetails: {
-    provinces: string[];
-    districts: string[];
-    wards: string[];
-  };
-  formTemplate: string;
-  teamLeader: string;
-  leadUnit: string;
-  notes: string;
-  stats: {
-    totalSessions: number;
-    completedSessions: number;
-    storesInspected: number;
-    storesPlanned: number;
-    violationsFound: number;
-    violationRate: number;
-    progress: number;
-  };
-}
 
-// Mock data
-const mockRoundData: InspectionRoundData = {
-  id: 'IR-2025-001',
-  code: 'Đợt 1',
-  name: 'Kiểm tra Tết Nguyên Đán 2025',
-  planCode: 'KH-2025-001',
-  planName: 'Kế hoạch kiểm tra định kỳ của hàng',
-  quarter: 'Q1/2025',
-  status: 'in_progress',
-  type: 'routine',
-  startDate: '2025-01-01',
-  endDate: '2025-01-31',
-  scope: '3 phường/xã',
-  scopeDetails: {
-    provinces: ['Hà Nội'],
-    districts: ['Hoàn Kiếm'],
-    wards: ['Hàng Bạc', 'Hàng Đào', 'Hàng Gai'],
-  },
-  formTemplate: 'Biểu mẫu kiểm tra an toàn thực phẩm Tết',
-  teamLeader: 'Nguyễn Văn A',
-  leadUnit: 'Chi cục QLTT TP Hà Nội',
-  notes: 'Tập trung kiểm tra các mặt hàng thực phẩm thiết yếu dịp Tết Nguyên Đán 2025. Ưu tiên các cơ sở kinh doanh quy mô lớn, siêu thị, chợ truyền thống.',
-  stats: {
-    totalSessions: 15,
-    completedSessions: 9,
-    storesInspected: 48,
-    storesPlanned: 42,
-    violationsFound: 12,
-    violationRate: 25,
-    progress: 65,
-  },
-};
+
+
 
 // Mock sessions data
 const mockSessions = [
@@ -355,14 +292,13 @@ const mockHistory = [
 export default function InspectionRoundDetail() {
   const { roundId } = useParams();
   const navigate = useNavigate();
+  const { round: data, loading, error, updateStatus } = useSupabaseInspectionRound(roundId);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [sessions, setSessions] = useState(mockSessions);
   const [showInsFormDetail, setShowInsFormDetail] = useState(false);
   const [selectedInsForm, setSelectedInsForm] = useState<{ code: string; type: string; name: string } | null>(null);
 
-  const decodedRoundId = roundId ? decodeURIComponent(roundId) : undefined;
-  const data = mockRoundData; // In real app: fetch by roundId
 
   const handleCreateSession = (sessionData: {
     storeId: string;
@@ -393,11 +329,22 @@ export default function InspectionRoundDetail() {
     setSessions([...sessions, newSession]);
   };
 
-  if (!data) {
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.loadingState}>
+          <RefreshCw className={styles.loadingIcon} size={40} />
+          <p>Đang tải thông tin đợt kiểm tra...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !data) {
     return (
       <div className={styles.container}>
         <div className={styles.emptyState}>
-          <h3 className={styles.emptyTitle}>Không tìm thấy đợt kiểm tra</h3>
+          <h3 className={styles.emptyTitle}>{error || 'Không tìm thấy đợt kiểm tra'}</h3>
           <button className={styles.primaryButton} onClick={() => navigate('/plans/inspection-rounds')}>
             Quay lại danh sách
           </button>
@@ -406,16 +353,25 @@ export default function InspectionRoundDetail() {
     );
   }
 
-  const percentIncrease = Math.round(((data.stats.storesInspected - data.stats.storesPlanned) / data.stats.storesPlanned) * 100);
+  const percentIncrease = data.stats 
+    ? Math.round(((data.stats.storesInspected - data.stats.storesPlanned) / data.stats.storesPlanned) * 100)
+    : 0;
 
   const handleBack = () => {
     navigate('/plans/inspection-rounds');
   };
 
   const handleEdit = () => {
+    navigate(`/plans/inspection-rounds/create-new?mode=edit&id=${encodeURIComponent(data.id)}`);
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
+    try {
+      await updateStatus('completed');
+      toast.success('Đã hoàn thành đợt kiểm tra');
+    } catch (err) {
+      toast.error('Lỗi khi cập nhật trạng thái');
+    }
   };
 
   const handleInsFormClick = (insForm: { code: string; type: string; name: string }) => {
@@ -446,7 +402,7 @@ export default function InspectionRoundDetail() {
 
           <div className={styles.headerActions}>
             <button className={styles.primaryButton} onClick={handleComplete}>
-              <CheckCircle size={18} />
+              <ClipboardCheck size={18} />
               Hoàn thành
             </button>
             <button className={styles.outlineButton} onClick={handleEdit}>
@@ -487,11 +443,12 @@ export default function InspectionRoundDetail() {
                 </div>
                 <div className={styles.statContent}>
                   <div className={styles.statLabel}>Tổng phiên kiểm tra</div>
-                  <div className={styles.statValue}>{data.stats.totalSessions}</div>
+                  <div className={styles.statValue}>{data.stats?.totalSessions || 0}</div>
                   <div className={styles.statSubtext}>
-                    {data.stats.completedSessions} đã hoàn thành
+                    {data.stats?.completedSessions || 0} đã hoàn thành
                   </div>
                 </div>
+
               </div>
 
               <div className={styles.statCard}>
@@ -500,11 +457,12 @@ export default function InspectionRoundDetail() {
                 </div>
                 <div className={styles.statContent}>
                   <div className={styles.statLabel}>Cửa hàng đã kiểm tra</div>
-                  <div className={styles.statValue}>{data.stats.storesInspected}</div>
+                  <div className={styles.statValue}>{data.stats?.storesInspected || 0}</div>
                   <div className={`${styles.statSubtext} ${styles.statPositive}`}>
                     +{percentIncrease}% so vi dự kiến
                   </div>
                 </div>
+
               </div>
 
               <div className={styles.statCard}>
@@ -514,12 +472,13 @@ export default function InspectionRoundDetail() {
                 <div className={styles.statContent}>
                   <div className={styles.statLabel}>Vi phạm phát hiện</div>
                   <div className={`${styles.statValue} ${styles.statDanger}`}>
-                    {data.stats.violationsFound}
+                    {data.stats?.violationsFound || 0}
                   </div>
                   <div className={styles.statSubtext}>
-                    {data.stats.violationRate}% tỷ lệ phát hiện
+                    {data.stats?.violationRate || 0}% tỷ lệ phát hiện
                   </div>
                 </div>
+
               </div>
 
               <div className={styles.statCard}>
@@ -528,14 +487,15 @@ export default function InspectionRoundDetail() {
                 </div>
                 <div className={styles.statContent}>
                   <div className={styles.statLabel}>Tiến độ</div>
-                  <div className={styles.statValue}>{data.stats.progress}%</div>
+                  <div className={styles.statValue}>{data.stats?.progress || 0}%</div>
                   <div className={styles.progressBar}>
                     <div
                       className={styles.progressFill}
-                      style={{ width: `${data.stats.progress}%` }}
+                      style={{ width: `${data.stats?.progress || 0}%` }}
                     />
                   </div>
                 </div>
+
               </div>
             </div>
 
@@ -580,7 +540,7 @@ export default function InspectionRoundDetail() {
                   <div className={styles.infoLabel}>Phạm vi</div>
                   <div className={styles.infoValue}>
                     <MapPin size={16} className={styles.infoIcon} />
-                    {data.scope}
+                    {data.scope || 'Chưa xác định'}
                   </div>
                 </div>
 
@@ -588,7 +548,7 @@ export default function InspectionRoundDetail() {
                   <div className={styles.infoLabel}>Đội trưởng</div>
                   <div className={styles.infoValue}>
                     <Users size={16} className={styles.infoIcon} />
-                    {data.teamLeader}
+                    {data.teamLeader || 'Chưa xác định'}
                   </div>
                 </div>
 
@@ -705,6 +665,7 @@ export default function InspectionRoundDetail() {
                 </thead>
                 <tbody>
                   {sessions.map((session, index) => (
+
                     <tr key={session.id}>
                       <td className={styles.textCenter}>{index + 1}</td>
                       <td>
@@ -727,7 +688,7 @@ export default function InspectionRoundDetail() {
                         </div>
                       </td>
                       <td>
-                        <InspectionRoundStatusBadge type="session" value={session.status} size="sm" />
+                        <InspectionRoundStatusBadge type="round" value={session.status as any} size="sm" />
                       </td>
                       <td className={styles.textCenter}>
                         {session.violationCount > 0 ? (
@@ -819,18 +780,22 @@ export default function InspectionRoundDetail() {
             
             <div className={styles.scopeHeader}>
               <p className={styles.scopeDesc}>
-                Danh sách phường/xã ({data.scopeDetails.wards.length})
+                Danh sách phường/xã ({data.scopeDetails?.wards?.length || 0})
               </p>
             </div>
 
             <div className={styles.wardsList}>
-              {data.scopeDetails.wards.map((ward, index) => (
+              {data.scopeDetails?.wards?.map((ward: string, index: number) => (
                 <div key={index} className={styles.wardItem}>
                   <MapPin size={20} className={styles.wardIcon} />
                   <span className={styles.wardName}>{ward}</span>
                 </div>
               ))}
+              {(!data.scopeDetails?.wards || data.scopeDetails.wards.length === 0) && (
+                <p className={styles.emptyText}>Chưa xác định phạm vi kiểm tra</p>
+              )}
             </div>
+
           </div>
         )}
 

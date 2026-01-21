@@ -166,9 +166,9 @@ export default function AdvancedFilterModal({
     }
   };
 
-  const activeFilterCount = Object.values(localValues).filter(v => {
+  const activeFilterCount = Object.values(localValues || {}).filter(v => {
     if (Array.isArray(v)) return v.length > 0;
-    if (typeof v === 'object' && v !== null) return v.startDate || v.endDate;
+    if (typeof v === 'object' && v !== null) return (v as any).startDate || (v as any).endDate;
     return v && v !== 'all' && v !== '';
   }).length;
 

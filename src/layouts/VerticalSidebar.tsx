@@ -270,7 +270,7 @@ export default function VerticalSidebar({
                     <DropdownMenuItem asChild>
                       <Link to="/plans/list" className="flex items-center gap-3 cursor-pointer">
                         <ListChecks className="h-4 w-4" />
-                        <div className="font-medium">Danh sách kế hoạch</div>
+                        <div className="font-medium">Kế hoạch kiểm tra</div>
                       </Link>
                     </DropdownMenuItem>
                     
