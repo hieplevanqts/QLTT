@@ -29,6 +29,8 @@ import {
 import { cn } from '../app/components/ui/utils';
 import { useLayout } from '../contexts/LayoutContext';
 import { useAuth } from '../contexts/AuthContext'; // 🔥 NEW: Import useAuth for permissions
+import { useMenuRegistry } from '../hooks/useMenuRegistry';
+import { buildMenuTree, filterMenuTree, type MenuNode } from '../utils/menuRegistry';
 import mappaLogo from '../assets/79505e63e97894ec2d06837c57cf53a19680f611.png';
 
 // 🔥 NEW: Permission code mapping (from Insert.sql lines 39-46)
@@ -78,8 +80,51 @@ const mappaModules = [
       { path: '/reports', label: 'Báo cáo' },
     ],
   },
-  { path: '/admin', label: 'Quản trị', icon: Settings, permissionCode: 'ADMIN_VIEW' },
+  {
+    path: '/admin',
+    label: 'Quản trị',
+    icon: Settings,
+    permissionCode: 'ADMIN_VIEW',
+    hasSubmenu: true,
+    submenu: [
+      { path: '/system/modules', label: 'Quản trị Module' },
+      { path: '/system/users', label: 'Người dùng' },
+      { path: '/system/roles', label: 'Vai trò' },
+      { path: '/system/settings', label: 'Cấu hình' },
+    ],
+  },
 ];
+
+const menuIconMap = {
+  LayoutDashboard,
+  Map,
+  Building2,
+  TriangleAlert,
+  ClipboardList,
+  MapPin,
+  FileBox,
+  BarChart3,
+  Settings,
+} as const;
+
+const resolveMenuIcon = (icon?: string | null) => {
+  if (!icon) return LayoutDashboard;
+  return (menuIconMap as Record<string, any>)[icon] || LayoutDashboard;
+};
+
+const menuTreeToModules = (nodes: MenuNode[]) => {
+  return nodes.map(node => ({
+    path: node.path || '',
+    label: node.label,
+    icon: resolveMenuIcon(node.icon),
+    permissionCode: '',
+    hasSubmenu: node.children.length > 0,
+    submenu: node.children.map(child => ({
+      path: child.path || '',
+      label: child.label,
+    })),
+  }));
+};
 
 interface VerticalSidebarProps {
   collapsed?: boolean;
@@ -98,6 +143,7 @@ export default function VerticalSidebar({
   );
   const { setLayoutMode } = useLayout();
   const { user } = useAuth(); // 🔥 NEW: Get user with permissions
+  const { menus } = useMenuRegistry();
 
   // 🔥 NEW: Get user permission codes
   const userPermissionCodes = user?.permissions || [];
@@ -108,8 +154,15 @@ export default function VerticalSidebar({
     return userPermissionCodes.includes(permissionCode);
   };
 
-  // 🔥 NEW: Filter menu modules based on user permissions
-  const visibleModules = mappaModules.filter(module => hasPermission(module.permissionCode));
+  const registryTree = React.useMemo(() => (menus ? buildMenuTree(menus) : []), [menus]);
+  const filteredRegistryTree = React.useMemo(
+    () => filterMenuTree(registryTree, userPermissionCodes, user?.roleCode),
+    [registryTree, userPermissionCodes, user?.roleCode],
+  );
+  const registryModules = React.useMemo(() => menuTreeToModules(filteredRegistryTree), [filteredRegistryTree]);
+  const visibleModules = registryModules.length > 0
+    ? registryModules
+    : mappaModules.filter(module => hasPermission(module.permissionCode));
 
   // Mock permissions - In real app, this would come from user context/auth
   const userPermissions = {
@@ -234,12 +287,12 @@ export default function VerticalSidebar({
             // "Phiên kiểm tra" KHÔNG active khi ở /plans/inspection-session
             isActive = location.pathname === '/tasks' && location.pathname !== '/plans/inspection-session';
           } else if ((module as any).hasSubmenu && (module as any).submenu) {
-            // Submenu modules (lead-risk, reports)
+            // Submenu modules (lead-risk, reports, admin)
             if (module.path === '/reports') {
-              // Báo cáo & Thống kê submenu
               isActive = location.pathname === '/dashboard' || location.pathname === '/reports';
+            } else if (module.path === '/admin') {
+              isActive = location.pathname.startsWith('/system') || location.pathname === '/admin';
             } else {
-              // Lead-risk submenu
               isActive = location.pathname.startsWith('/lead-risk') || location.pathname === '/leads';
             }
           } else {
@@ -396,7 +449,7 @@ export default function VerticalSidebar({
                           to={item.path}
                           className={cn(
                             'cursor-pointer',
-                            location.pathname === item.path && 'bg-primary/10 text-primary'
+                            (location.pathname === item.path || location.pathname.startsWith(item.path + '/')) && 'bg-primary/10 text-primary'
                           )}
                         >
                           {item.label}
@@ -438,12 +491,12 @@ export default function VerticalSidebar({
                       <Link
                         key={item.path}
                         to={item.path}
-                        className={cn(
-                          'block px-3 py-2 rounded-lg text-sm transition-colors',
-                          location.pathname === item.path
-                            ? 'text-primary bg-primary/10 font-medium'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                        )}
+                          className={cn(
+                            'block px-3 py-2 rounded-lg text-sm transition-colors',
+                            (location.pathname === item.path || location.pathname.startsWith(item.path + '/'))
+                              ? 'text-primary bg-primary/10 font-medium'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                          )}
                       >
                         {item.label}
                       </Link>

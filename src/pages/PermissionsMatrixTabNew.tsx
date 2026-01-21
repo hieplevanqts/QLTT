@@ -99,14 +99,14 @@ export const PermissionsMatrixTabNew: React.FC = () => {
         // Test modules
         const { data: modulesData, error: modulesError } = await supabase
           .from('modules')
-          .select('*')
+          .select('*, id:_id')
           .order('order_index', { ascending: true });
         
         
         // Test permissions
         const { data: permissionsData, error: permissionsError } = await supabase
           .from('permissions')
-          .select('*')
+          .select('*, id:_id')
           .limit(5);
         
         
@@ -123,7 +123,7 @@ export const PermissionsMatrixTabNew: React.FC = () => {
       // Fetch modules from modules table
       const { data: modulesData, error: modulesError } = await supabase
         .from('modules')
-        .select('*')
+        .select('*, id:_id')
         .order('order_index', { ascending: true });
 
       if (modulesError) {
@@ -161,7 +161,7 @@ export const PermissionsMatrixTabNew: React.FC = () => {
       // Fetch permissions
       const { data: permissionsData, error: permissionsError } = await supabase
         .from('permissions')
-        .select('*')
+        .select('*, id:_id')
         .order('module_id', { ascending: true })
         .order('code', { ascending: true });
 
@@ -296,7 +296,7 @@ export const PermissionsMatrixTabNew: React.FC = () => {
       const { error } = await supabase
         .from('permissions')
         .delete()
-        .eq('id', permission.id);
+        .eq('_id', permission.id);
 
       if (error) {
         console.error('❌ Error deleting permission:', error);
@@ -317,7 +317,7 @@ export const PermissionsMatrixTabNew: React.FC = () => {
       const { error } = await supabase
         .from('permissions')
         .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq('id', permission.id);
+        .eq('_id', permission.id);
 
       if (error) {
         console.error('❌ Error updating permission status:', error);
@@ -689,7 +689,7 @@ const PermissionModal: React.FC<PermissionModalProps> = ({
             ...formData,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', permission.id);
+          .eq('_id', permission.id);
 
         if (error) {
           console.error('❌ Error updating permission:', error);

@@ -218,7 +218,7 @@ export const LeadService = {
   async getByCode(code: string, tenantId: string): Promise<LeadDB | null> {
     const { data, error } = await getSupabase()
       .from('leads')
-      .select('*')
+      .select('*, id:_id')
       .eq('code', code)
       .eq('tenant_id', tenantId)
       .is('deleted_at', null)
@@ -237,8 +237,8 @@ export const LeadService = {
   async getById(id: string, tenantId: string): Promise<LeadDB | null> {
     const { data, error } = await getSupabase()
       .from('leads')
-      .select('*')
-      .eq('id', id)
+      .select('*, id:_id')
+      .eq('_id', id)
       .eq('tenant_id', tenantId)
       .is('deleted_at', null)
       .single();
@@ -257,7 +257,7 @@ export const LeadService = {
   async list(tenantId: string, filter?: LeadFilter): Promise<PaginatedResponse<LeadDB>> {
     let query = getSupabase()
       .from('leads')
-      .select('*', { count: 'exact' })
+      .select('*, id:_id', { count: 'exact' })
       .eq('tenant_id', tenantId)
       .is('deleted_at', null);
 
@@ -351,7 +351,7 @@ export const LeadService = {
   async getInbox(tenantId: string): Promise<LeadDB[]> {
     const { data, error } = await getSupabase()
       .from('leads')
-      .select('*')
+      .select('*, id:_id')
       .eq('tenant_id', tenantId)
       .is('assigned_to', null)
       .in('status', ['new', 'triaged', 'pendingInfo'])
@@ -373,7 +373,7 @@ export const LeadService = {
   async getWatchlist(tenantId: string, userId: string): Promise<LeadDB[]> {
     const { data, error } = await getSupabase()
       .from('leads')
-      .select('*')
+      .select('*, id:_id')
       .eq('tenant_id', tenantId)
       .eq('is_watched', true)
       .contains('assigned_to', { userId: userId })
@@ -405,7 +405,7 @@ export const LeadService = {
   async getByStore(tenantId: string, storeId: string): Promise<LeadDB[]> {
     const { data, error } = await getSupabase()
       .from('leads')
-      .select('*')
+      .select('*, id:_id')
       .eq('tenant_id', tenantId)
       .eq('store_id', storeId)
       .is('deleted_at', null)
@@ -445,7 +445,7 @@ export const LeadService = {
         ...updates,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', id)
+      .eq('_id', id)
       .eq('tenant_id', tenantId)
       .is('deleted_at', null)
       .select()
@@ -465,7 +465,7 @@ export const LeadService = {
     const { error } = await getSupabase()
       .from('leads')
       .update({ deleted_at: new Date().toISOString() })
-      .eq('id', id)
+      .eq('_id', id)
       .eq('tenant_id', tenantId);
 
     if (error) {
@@ -481,7 +481,7 @@ export const LeadService = {
     const { error } = await getSupabase()
       .from('leads')
       .update({ is_watched: isWatched })
-      .eq('id', id)
+      .eq('_id', id)
       .eq('tenant_id', tenantId);
 
     if (error) {
@@ -505,7 +505,7 @@ export const LeadService = {
         assigned_at: new Date().toISOString(),
         status: 'assigned',
       })
-      .eq('id', id)
+      .eq('_id', id)
       .eq('tenant_id', tenantId);
 
     if (error) {
@@ -545,7 +545,7 @@ export const LeadActivityService = {
   async getByLead(leadId: string, limit = 50): Promise<LeadActivityDB[]> {
     const { data, error } = await getSupabase()
       .from('lead_activities')
-      .select('*')
+      .select('*, id:_id')
       .eq('lead_id', leadId)
       .order('created_at', { ascending: false })
       .limit(limit);
@@ -587,7 +587,7 @@ export const LeadEvidenceService = {
   async getByLead(leadId: string): Promise<LeadEvidenceDB[]> {
     const { data, error } = await getSupabase()
       .from('lead_evidence')
-      .select('*')
+      .select('*, id:_id')
       .eq('lead_id', leadId)
       .order('uploaded_at', { ascending: false });
 

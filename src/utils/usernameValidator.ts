@@ -145,7 +145,7 @@ export async function validateUsername(
       // Check if province exists
       const { data: province, error } = await supabase
         .from('provinces')
-        .select('id, code, name')
+        .select('id:_id, code, name')
         .eq('code', code)
         .single();
 
@@ -179,7 +179,7 @@ export async function validateUsername(
       // Check if province exists
       const { data: province, error: provinceError } = await supabase
         .from('provinces')
-        .select('id, code, name')
+        .select('id:_id, code, name')
         .eq('code', provinceCode)
         .single();
 
@@ -199,7 +199,7 @@ export async function validateUsername(
       // Check if ward exists and belongs to province
       const { data: ward, error: wardError } = await supabase
         .from('wards')
-        .select('id, code, name, province_id')
+        .select('id:_id, code, name, province_id')
         .eq('code', wardCode)
         .single();
 

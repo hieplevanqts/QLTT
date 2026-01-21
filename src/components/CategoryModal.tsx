@@ -95,7 +95,7 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
             name: formData.name.trim(),
             icon: formData.icon.trim(),
           })
-          .eq('id', category.id);
+          .eq('_id', category.id);
 
         if (error) {
           console.error('❌ Error updating category:', error);

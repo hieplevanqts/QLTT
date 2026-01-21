@@ -118,7 +118,7 @@ export const SecurityConfigTab: React.FC = () => {
 
       const { data, error } = await supabase
         .from('security_config')
-        .select('*')
+        .select('*, id:_id')
         .single();
 
       if (error) {

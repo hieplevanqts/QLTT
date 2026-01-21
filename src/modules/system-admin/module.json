@@ -1,0 +1,11 @@
+{
+  "id": "system-admin",
+  "name": "System Admin",
+  "version": "0.1.0",
+  "basePath": "/system",
+  "entry": "src/modules/system-admin/index.ts",
+  "routes": "src/modules/system-admin/routes.tsx",
+  "routeExport": "systemModulesRoute",
+  "permissions": ["ADMIN_VIEW", "ADMIN_WRITE"],
+  "ui": { "menuLabel": "Quan tri", "menuPath": "/system/modules" }
+}

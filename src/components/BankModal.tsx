@@ -94,7 +94,7 @@ export const BankModal: React.FC<BankModalProps> = ({ mode, bank, onClose, onSav
         const { error } = await supabase
           .from('banks')
           .update(bankData)
-          .eq('id', bank.id);
+          .eq('_id', bank.id);
 
         if (error) {
           console.error('❌ Error updating bank:', error);

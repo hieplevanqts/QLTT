@@ -1,4 +1,4 @@
-import { Navigate, createBrowserRouter } from 'react-router-dom';
+import { Navigate, Outlet, createBrowserRouter } from 'react-router-dom';
 import RootLayout from '../layouts/RootLayout';
 import MainLayout from '../layouts/MainLayout';
 import OverviewPage from '../pages/OverviewPage';
@@ -75,6 +75,7 @@ import RiskIndicators from '../pages/lead-risk/RiskIndicators';
 import ImportLeads from '../pages/lead-risk/ImportLeads';
 import ImportReview from '../pages/lead-risk/ImportReview';
 import AssignmentDispatch from '../pages/lead-risk/AssignmentDispatch';
+import { installedRoutes } from '../imports/installedModules';
 
 // Wrapper component for protected routes
 function ProtectedLayout() {
@@ -285,6 +286,7 @@ export const router = createBrowserRouter([
               </PermissionProtectedRoute>
             ),
           },
+          ...installedRoutes,
           // Account pages
           {
             path: 'account/profile',

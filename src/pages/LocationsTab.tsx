@@ -86,7 +86,7 @@ export const LocationsTab: React.FC = () => {
 
       const { data, error } = await supabase
         .from('provinces')
-        .select('*')
+        .select('*, id:_id')
         .order('code', { ascending: true });
 
       if (error) {
@@ -200,7 +200,7 @@ export const LocationsTab: React.FC = () => {
       // Check if province has wards
       const { count, error: countError } = await supabase
         .from('wards')
-        .select('*', { count: 'exact', head: true })
+        .select('*, id:_id', { count: 'exact', head: true })
         .eq('provinceId', province.id);
 
       if (countError) {
@@ -217,7 +217,7 @@ export const LocationsTab: React.FC = () => {
       const { error } = await supabase
         .from('provinces')
         .delete()
-        .eq('id', province.id);
+        .eq('_id', province.id);
 
       if (error) {
         console.error('❌ Error deleting province:', error);
@@ -271,7 +271,7 @@ export const LocationsTab: React.FC = () => {
       const { error } = await supabase
         .from('wards')
         .delete()
-        .eq('id', ward.id);
+        .eq('_id', ward.id);
 
       if (error) {
         console.error('❌ Error deleting ward:', error);

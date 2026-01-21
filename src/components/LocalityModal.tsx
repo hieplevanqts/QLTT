@@ -96,7 +96,7 @@ export const LocalityModal: React.FC<LocalityModalProps> = ({
     try {
       const { data, error } = await supabase
         .from('provinces')
-        .select('*')
+        .select('*, id:_id')
         .order('name', { ascending: true });
 
       if (error) {
@@ -115,7 +115,7 @@ export const LocalityModal: React.FC<LocalityModalProps> = ({
     try {
       const { data, error } = await supabase
         .from('wards')
-        .select('*')
+        .select('*, id:_id')
         .order('name', { ascending: true });
 
       if (error) {
@@ -134,7 +134,7 @@ export const LocalityModal: React.FC<LocalityModalProps> = ({
     try {
       const { data, error } = await supabase
         .from('categories')
-        .select('*')
+        .select('*, id:_id')
         .order('name', { ascending: true });
 
       if (error) throw error;

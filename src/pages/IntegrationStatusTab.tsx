@@ -82,7 +82,7 @@ export const IntegrationStatusTab: React.FC = () => {
 
       const { data, error } = await supabase
         .from('integration_services')
-        .select('*')
+        .select('*, id:_id')
         .order('service_name', { ascending: true });
 
       if (error) {
@@ -105,7 +105,7 @@ export const IntegrationStatusTab: React.FC = () => {
 
       const { data, error } = await supabase
         .from('integration_error_logs')
-        .select('*')
+        .select('*, id:_id')
         .eq('service_id', serviceId)
         .order('error_timestamp', { ascending: false })
         .limit(10);

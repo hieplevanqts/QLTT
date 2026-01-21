@@ -26,7 +26,7 @@ export async function fetchProvinces(): Promise<ProvinceApiData[]> {
     
     const { data, error } = await supabase
       .from('provinces')
-      .select('id, code, name')
+      .select('id:_id, code, name')
       .order('code', { ascending: true });
 
     if (error) {
@@ -60,7 +60,7 @@ export async function fetchAllWards(): Promise<WardApiData[]> {
       // 🔥 FIX: Use 'province_id' (snake_case) as that's the database field name
       const { data, error } = await supabase
         .from('wards')
-        .select('id, code, name, province_id')
+        .select('id:_id, code, name, province_id')
         .order('code', { ascending: true })
         .range(start, end);
 
@@ -108,7 +108,7 @@ export async function fetchWardsByProvinceCode(provinceCode: string): Promise<Wa
     // First, get province ID from code
     const { data: provincesData, error: provinceError } = await supabase
       .from('provinces')
-      .select('id, code')
+      .select('id:_id, code')
       .eq('code', provinceCode)
       .limit(1);
 
@@ -136,7 +136,7 @@ export async function fetchWardsByProvinceCode(provinceCode: string): Promise<Wa
       // 🔥 FIX: Use 'province_id' (snake_case) as that's the database field name
       const { data, error } = await supabase
         .from('wards')
-        .select('id, code, name, province_id')
+        .select('id:_id, code, name, province_id')
         .eq('province_id', provinceId)
         .order('code', { ascending: true })
         .range(start, end);

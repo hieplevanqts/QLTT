@@ -82,7 +82,7 @@ export const SystemMonitorTab: React.FC = () => {
 
       const { data, error } = await supabase
         .from('job_monitor_items')
-        .select('*')
+        .select('*, id:_id')
         .order('job_monitor_items_started_at', { ascending: false });
 
       if (error) {

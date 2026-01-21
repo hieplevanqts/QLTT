@@ -26,7 +26,7 @@ export function useSupabasePlans(): UseSupabasePlansReturn {
 
       const { data, error: fetchError } = await supabase
         .from('map_inspection_plans')
-        .select('*')
+        .select('*, id:_id')
         .order('created_at', { ascending: false });
 
       if (fetchError) {

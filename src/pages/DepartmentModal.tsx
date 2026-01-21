@@ -128,7 +128,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
     try {
       const { data, error } = await supabase
         .from('departments')
-        .select('*')
+        .select('*, id:_id')
         .is('deleted_at', null)
         .order('name');
 
@@ -148,7 +148,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
       
       const { data, error, count } = await supabase
         .from('areas')
-        .select('*', { count: 'exact' })
+        .select('*, id:_id', { count: 'exact' })
         .order('name');
 
       console.log({
@@ -185,7 +185,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
       
       const { data, error } = await supabase
         .from('department_areas')
-        .select('*');
+        .select('*, id:_id');
 
       console.log({
         data, 
@@ -387,7 +387,7 @@ export const DepartmentModal: React.FC<DepartmentModalProps> = ({
         const { error } = await supabase
           .from('departments')
           .update(dataToSave)
-          .eq('id', department.id);
+          .eq('_id', department.id);
 
         if (error) throw error;
 

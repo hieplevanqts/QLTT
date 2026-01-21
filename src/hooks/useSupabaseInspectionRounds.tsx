@@ -55,7 +55,7 @@ export function useSupabaseInspectionRounds(): UseSupabaseInspectionRoundsReturn
 
       const { data, error: fetchError } = await supabase
         .from('map_inspection_campaigns')
-        .select('*')
+        .select('*, id:_id')
         .order('created_at', { ascending: false });
 
       if (fetchError) {
@@ -114,7 +114,7 @@ export function useSupabaseInspectionRounds(): UseSupabaseInspectionRoundsReturn
           last_update_time: timestamp,
           updated_at: timestamp,
         })
-        .eq('id', roundId)
+        .eq('_id', roundId)
         .select()
         .single();
 
