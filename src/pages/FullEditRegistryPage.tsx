@@ -24,6 +24,12 @@ import { SensitiveFieldWarning } from '../ui-kit/SensitiveFieldWarning';
 import { MapLocationPicker } from '../ui-kit/MapLocationPicker';
 import styles from './FullEditRegistryPage.module.css';
 
+// Transform provinces object to array for usage in component
+const provinceList = Object.values(provinces).map(p => ({
+  ...p,
+  code: p.name
+}));
+
 // Define sensitive fields that require approval
 const SENSITIVE_FIELDS = new Set([
   'address',
@@ -150,7 +156,7 @@ export default function FullEditRegistryPage() {
           if (store.jurisdictionCode) {
             setSelectedDistrict(store.jurisdictionCode);
             const wardList = getWardsByDistrict(store.jurisdictionCode);
-            setWards(wardList);
+            setWards(wardList.map(w => ({ ...w, code: w.name })));
           }
         }
       } catch (error) {
@@ -210,20 +216,20 @@ export default function FullEditRegistryPage() {
   // Handlers
   const handleProvinceChange = (provinceCode: string) => {
     setSelectedProvince(provinceCode);
-    const province = provinces.find((p) => p.code === provinceCode);
-    
+    const province = provinceList.find((p) => p.code === provinceCode);
+
     // Get all districts for this province
     const districtList = getDistrictsByProvince(provinceCode);
     setDistricts(districtList);
-    
+
     // Get all wards from all districts in this province
     const allWards: any[] = [];
     districtList.forEach((district) => {
-      const wardList = getWardsByDistrict(district.code);
+      const wardList = getWardsByDistrict(district.name);
       allWards.push(...wardList);
     });
-    setWards(allWards);
-    
+    setWards(allWards.map(w => ({ ...w, code: w.name })));
+
     setFormData({
       ...formData,
       provinceCode,
@@ -266,8 +272,8 @@ export default function FullEditRegistryPage() {
       if (
         confirm(
           'Bạn có chắc muốn hủy? Tất cả thay đổi chưa lưu sẽ bị mất.\n\nSố thay đổi: ' +
-            changes.length +
-            ' trường'
+          changes.length +
+          ' trường'
         )
       ) {
         navigate(`/registry/stores/${id}`);
@@ -564,13 +570,13 @@ export default function FullEditRegistryPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="industryName">Ngành kinh doanh</Label>
-                    <Select
+                    <Select 
                       value={formData.industryName || ''}
                       onValueChange={(value) =>
                         setFormData({ ...formData, industryName: value })
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className='placeholder:text-gray-500 border-gray-300'>
                         <SelectValue placeholder="Chọn ngành kinh doanh" />
                       </SelectTrigger>
                       <SelectContent>
@@ -605,8 +611,8 @@ export default function FullEditRegistryPage() {
                         setFormData({ ...formData, operationStatus: value })
                       }
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn trạng thái hoạt động" />
+                      <SelectTrigger className='placeholder:text-gray-500 border-gray-300'>
+                        <SelectValue placeholder="Chọn trạng thái hoạt động" className='placeholder:text-gray-500' />
                       </SelectTrigger>
                       <SelectContent>
                         {OPERATION_STATUS_OPTIONS.map((option) => (
@@ -654,11 +660,11 @@ export default function FullEditRegistryPage() {
                   <div className="space-y-2">
                     <Label htmlFor="province">Tỉnh/Thành phố</Label>
                     <Select value={selectedProvince} onValueChange={handleProvinceChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn tỉnh/thành phố" />
+                      <SelectTrigger className='placeholder:text-gray-500 border-gray-300'>
+                        <SelectValue className='placeholder:text-gray-500' placeholder="Chọn tỉnh/thành phố" />
                       </SelectTrigger>
                       <SelectContent>
-                        {provinces.map((province) => (
+                        {provinceList.map((province) => (
                           <SelectItem key={province.code} value={province.code}>
                             {province.name}
                           </SelectItem>
@@ -674,8 +680,8 @@ export default function FullEditRegistryPage() {
                       onValueChange={handleWardChange}
                       disabled={!selectedProvince}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder={selectedProvince ? "Chọn phường/xã" : "Chọn tỉnh/thành trước"} />
+                      <SelectTrigger className='placeholder:text-gray-500 border-gray-300'>
+                        <SelectValue className='placeholder:text-gray-500' placeholder={selectedProvince ? "Chọn phường/xã" : "Chọn tỉnh/thành trước"} />
                       </SelectTrigger>
                       <SelectContent>
                         {wards.map((ward) => (

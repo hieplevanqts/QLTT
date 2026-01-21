@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { 
-  Building2, 
-  X, 
-  Upload, 
-  Loader2, 
+import {
+  Building2,
+  X,
+  Upload,
+  Loader2,
   Sparkles,
   FileText,
   Users,
@@ -55,8 +55,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '../app/components/ui/tooltip';
-import { 
-  provinces, 
+import {
+  provinces,
   getWardsByProvince
 } from '../data/vietnamLocations';
 import { INDUSTRIES, searchIndustries } from '../data/industries';
@@ -73,7 +73,7 @@ interface AddStoreDialogTabbedProps {
 
 export interface NewStoreData {
   // Tab 1: Thông tin HKD
-  name: string;
+  business_name: string;
   taxCode: string;
   industryName: string;
   establishedDate?: string; // Optional
@@ -84,13 +84,14 @@ export interface NewStoreData {
   website?: string;
   fax?: string;
   notes?: string;
-  
+
   // Tab 2: Thông tin chủ hộ (All optional)
   ownerName?: string;
   ownerBirthYear?: string;
   ownerIdNumber?: string;
   ownerPhone?: string;
-  
+  ownerPhone2?: string;
+
   // Tab 3: Địa chỉ (All optional)
   registeredAddress?: string;
   province?: string;
@@ -100,7 +101,7 @@ export interface NewStoreData {
   productionAddress?: string;
   latitude?: number;
   longitude?: number;
-  
+
   // Internal fields
   status?: string;
   managementUnit?: string;
@@ -134,41 +135,41 @@ interface FieldMetadata {
 
 export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreDialogTabbedProps) {
   const [activeTab, setActiveTab] = useState<'business' | 'owner' | 'address'>('business');
-  
+
   // File upload state
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Form data
   const [formData, setFormData] = useState<Partial<NewStoreData>>({
     operationStatus: 'active',
   });
-  
+
   // Field metadata for tracking auto-filled fields
   const [fieldMetadata, setFieldMetadata] = useState<FieldMetadata>({});
-  
+
   // Validation errors
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  
+
   // Province/Ward state (NO District)
   const [selectedProvince, setSelectedProvince] = useState('');
   const [selectedWard, setSelectedWard] = useState('');
-  
+
   // Get wards directly from province (no district)
   const wards = useMemo(() => {
     return selectedProvince ? getWardsByProvince(selectedProvince) : [];
   }, [selectedProvince]);
-  
+
   // Mock OCR extraction
   const mockExtractData = async (file: File): Promise<ExtractedData> => {
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 2000));
-    
+
     // Mock extracted data based on file name
     const fileName = file.name.toLowerCase();
-    
+
     if (fileName.includes('business') || fileName.includes('license') || fileName.includes('gpkd')) {
       return {
         name: 'Công ty TNHH Thương mại Dịch vụ ABC',
@@ -189,7 +190,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
         ownerPhone: '0912345678',
       };
     }
-    
+
     // Default mock data
     return {
       name: 'Cửa hàng tiện lợi XYZ',
@@ -199,15 +200,15 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
       ownerPhone: '0923456789',
     };
   };
-  
+
   // Handle file upload
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    
+
     await processFile(file);
   };
-  
+
   // Process file (shared for input and drag & drop)
   const processFile = async (file: File) => {
     // Validate file type
@@ -216,17 +217,17 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
       toast.error('Chỉ hỗ trợ file JPG, PNG, WEBP, PDF');
       return;
     }
-    
+
     // Validate file size (10MB)
     const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       toast.error('Kích thước file vượt quá 10MB');
       return;
     }
-    
+
     // Check if user has manually edited fields
     const hasManualEdits = Object.values(fieldMetadata).some(meta => meta.isManuallyEdited);
-    
+
     if (hasManualEdits && uploadedFile) {
       const confirmReupload = window.confirm(
         'Bạn đã chỉnh sửa một số trường thủ công. Upload lại sẽ ghi đè dữ liệu. Bạn có chắc chắn?'
@@ -239,17 +240,17 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
         return;
       }
     }
-    
+
     setIsUploading(true);
     setUploadedFile(file);
-    
+
     try {
       const extractedData = await mockExtractData(file);
-      
+
       // Auto-fill form data
       const newFormData = { ...formData };
       const newMetadata: FieldMetadata = {};
-      
+
       Object.entries(extractedData).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           newFormData[key as keyof NewStoreData] = value as any;
@@ -259,10 +260,10 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
           };
         }
       });
-      
+
       setFormData(newFormData);
       setFieldMetadata(prev => ({ ...prev, ...newMetadata }));
-      
+
       toast.success(
         <div>
           <div className="flex items-center gap-2">
@@ -281,40 +282,40 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
       setIsUploading(false);
     }
   };
-  
+
   // Drag & Drop handlers
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
   };
-  
+
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
   };
-  
+
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
   };
-  
+
   const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-    
+
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
       await processFile(files[0]);
     }
   };
-  
+
   // Handle field change
   const handleFieldChange = (field: keyof NewStoreData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
+
     // Mark as manually edited if it was auto-filled
     if (fieldMetadata[field]?.isAutoFilled) {
       setFieldMetadata(prev => ({
@@ -325,7 +326,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
         },
       }));
     }
-    
+
     // Clear error
     if (errors[field]) {
       setErrors(prev => {
@@ -335,14 +336,14 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
       });
     }
   };
-  
+
   // Validate form
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {};
-    
+
     // Tab 1: Thông tin HKD
-    if (!formData.name?.trim()) {
-      newErrors.name = 'Vui lòng nhập tên hộ kinh doanh';
+    if (!formData.business_name?.trim()) {
+      newErrors.business_name = 'Vui lòng nhập tên cơ sở kinh doanh';
     }
     if (!formData.taxCode?.trim()) {
       newErrors.taxCode = 'Vui lòng nhập mã số thuế';
@@ -359,7 +360,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
     if (formData.businessPhone && !/^\d+$/.test(formData.businessPhone)) {
       newErrors.businessPhone = 'Số điện thoại phải là số';
     }
-    
+
     // Tab 2: Thông tin chủ hộ
     if (formData.ownerName && !formData.ownerName.trim()) {
       newErrors.ownerName = 'Vui lòng nhập tên chủ hộ';
@@ -373,19 +374,19 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
     if (formData.ownerPhone && !/^\d+$/.test(formData.ownerPhone)) {
       newErrors.ownerPhone = 'Số điện thoại phải là số';
     }
-    
+
     // Tab 3: Địa chỉ (All optional - no validation)
-    
+
     setErrors(newErrors);
-    
+
     // Navigate to first tab with errors
     if (Object.keys(newErrors).length > 0) {
       const errorFields = Object.keys(newErrors);
-      
+
       const businessFields = ['name', 'taxCode', 'industryName', 'operationStatus', 'businessArea', 'businessPhone'];
       const ownerFields = ['ownerName', 'ownerBirthYear', 'ownerIdNumber', 'ownerPhone'];
       const addressFields = ['registeredAddress', 'province', 'ward'];
-      
+
       if (errorFields.some(f => businessFields.includes(f))) {
         setActiveTab('business');
         toast.error('Vui lòng điền đầy đủ thông tin HKD');
@@ -396,22 +397,23 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
         setActiveTab('address');
         toast.error('Vui lòng điền đầy đủ thông tin địa chỉ');
       }
-      
+
       return false;
     }
-    
+
     return true;
   };
-  
+
   // Handle submit
   const handleSubmit = () => {
     if (!validateForm()) {
       return;
     }
-    
+
     const submissionData: NewStoreData = {
-      name: formData.name!,
+      business_name: formData.business_name!,
       taxCode: formData.taxCode!,
+      fax: formData.fax,
       industryName: formData.industryName!,
       establishedDate: formData.establishedDate,
       operationStatus: formData.operationStatus!,
@@ -419,12 +421,12 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
       businessPhone: formData.businessPhone,
       email: formData.email,
       website: formData.website,
-      fax: formData.fax,
       notes: formData.notes,
       ownerName: formData.ownerName,
       ownerBirthYear: formData.ownerBirthYear,
       ownerIdNumber: formData.ownerIdNumber,
       ownerPhone: formData.ownerPhone,
+      ownerPhone2: formData.ownerPhone2,
       registeredAddress: formData.registeredAddress,
       province: selectedProvince || undefined,
       jurisdiction: selectedProvince ? '' : undefined,
@@ -436,10 +438,10 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
       status: 'pending',
       managementUnit: selectedProvince ? `Chi cục QLTT ${selectedProvince}` : undefined,
     };
-    
+
     onSubmit?.(submissionData);
     onOpenChange(false);
-    
+
     // Reset form
     setFormData({ operationStatus: 'active' });
     setFieldMetadata({});
@@ -449,7 +451,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
     setSelectedWard('');
     setErrors({});
   };
-  
+
   // Handle map location selected
   const handleMapLocationSelected = (data: {
     address: string;
@@ -468,7 +470,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
     setSelectedProvince(data.province);
     setSelectedWard(data.ward);
   };
-  
+
   // Render field with auto-fill indicator
   const renderFieldWithIndicator = (
     field: keyof NewStoreData,
@@ -476,7 +478,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
     inputElement: React.ReactNode
   ) => {
     const isAutoFilled = fieldMetadata[field]?.isAutoFilled && !fieldMetadata[field]?.isManuallyEdited;
-    
+
     return (
       <div className="space-y-2">
         <Label htmlFor={field} className="flex items-center gap-2">
@@ -507,7 +509,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
       </div>
     );
   };
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={styles.dialogContent}>
@@ -520,9 +522,9 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
             Upload file để tự động điền thông tin hoặc nhập thủ công
           </DialogDescription>
         </DialogHeader>
-        
+
         {/* File Upload Section */}
-        <div 
+        <div
           className={`${styles.uploadSection} ${isDragging ? styles.isDragging : ''}`}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
@@ -537,7 +539,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
             onChange={handleFileUpload}
             className="hidden"
           />
-          
+
           {!uploadedFile ? (
             <>
               <Upload className="w-8 h-8 text-gray-400" />
@@ -590,7 +592,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
             </>
           )}
         </div>
-        
+
         {/* Tabs Navigation */}
         <div className={styles.tabsNav}>
           <button
@@ -627,23 +629,23 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
             )}
           </button>
         </div>
-        
+
         {/* Tab Content */}
         <div className={styles.tabContent}>
           {/* Tab 1: Thông tin HKD */}
           {activeTab === 'business' && (
             <div className={styles.formGrid}>
               {renderFieldWithIndicator(
-                'name',
-                'Tên hộ kinh doanh *',
+                'business_name',
+                'Tên cơ sở kinh doanh *',
                 <Input
-                  id="name"
-                  value={formData.name || ''}
-                  onChange={(e) => handleFieldChange('name', e.target.value)}
-                  placeholder="Nhập tên hộ kinh doanh"
+                  id="business_name"
+                  value={formData.business_name || ''}
+                  onChange={(e) => handleFieldChange('business_name', e.target.value)}
+                  placeholder="Nhập tên cơ sở kinh doanh"
                 />
               )}
-              
+
               {renderFieldWithIndicator(
                 'taxCode',
                 'Mã số thuế *',
@@ -654,7 +656,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                   placeholder="Nhập mã số thuế"
                 />
               )}
-              
+
               {/* Industry Name - Searchable Select (Combobox) - Select2 Style */}
               <div className="space-y-2">
                 <Label htmlFor="industryName" className="flex items-center gap-2">
@@ -733,7 +735,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                   </p>
                 )}
               </div>
-              
+
               {renderFieldWithIndicator(
                 'establishedDate',
                 'Ngày thành lập',
@@ -744,7 +746,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                   onChange={(e) => handleFieldChange('establishedDate', e.target.value)}
                 />
               )}
-              
+
               {renderFieldWithIndicator(
                 'operationStatus',
                 'Tình trạng hoạt động *',
@@ -762,7 +764,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                   </SelectContent>
                 </Select>
               )}
-              
+
               {renderFieldWithIndicator(
                 'businessArea',
                 'Diện tích cửa hàng (m²)',
@@ -774,7 +776,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                   placeholder="Nhập diện tích"
                 />
               )}
-              
+
               {renderFieldWithIndicator(
                 'businessPhone',
                 'SĐT hộ kinh doanh',
@@ -786,7 +788,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                   placeholder="Nhập số điện thoại"
                 />
               )}
-              
+
               {renderFieldWithIndicator(
                 'email',
                 'Email',
@@ -798,7 +800,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                   placeholder="Nhập email"
                 />
               )}
-              
+
               {renderFieldWithIndicator(
                 'website',
                 'Website',
@@ -810,7 +812,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                   placeholder="Nhập website"
                 />
               )}
-              
+
               {renderFieldWithIndicator(
                 'fax',
                 'Fax',
@@ -821,7 +823,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                   placeholder="Nhập số fax"
                 />
               )}
-              
+
               <div className="space-y-2 col-span-2">
                 <Label htmlFor="notes">Ghi chú</Label>
                 <Textarea
@@ -834,7 +836,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
               </div>
             </div>
           )}
-          
+
           {/* Tab 2: Thông tin chủ hộ */}
           {activeTab === 'owner' && (
             <div className={styles.formGrid}>
@@ -848,7 +850,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                   placeholder="Nhập tên chủ hộ"
                 />
               )}
-              
+
               {renderFieldWithIndicator(
                 'ownerBirthYear',
                 'Năm sinh chủ hộ',
@@ -862,7 +864,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                   max="2100"
                 />
               )}
-              
+
               {renderFieldWithIndicator(
                 'ownerIdNumber',
                 'Số CMTND / CCCD / ĐDCN',
@@ -873,7 +875,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                   placeholder="Nhập số CMTND/CCCD/ĐDCN"
                 />
               )}
-              
+
               {renderFieldWithIndicator(
                 'ownerPhone',
                 'Số điện thoại chủ hộ',
@@ -885,9 +887,22 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                   placeholder="Nhập số điện thoại"
                 />
               )}
+
+              {renderFieldWithIndicator(
+                'ownerPhone2',
+                'Số điện thoại khác (nếu có)',
+                <Input
+                  id="ownerPhone2"
+                  type="tel"
+                  className='placeholder:text-gray-500'
+                  value={formData.ownerPhone2 || ''}
+                  onChange={(e) => handleFieldChange('ownerPhone2', e.target.value)}
+                  placeholder="Nhập số điện thoại"
+                />
+              )}
             </div>
           )}
-          
+
           {/* Tab 3: ịa chỉ */}
           {activeTab === 'address' && (
             <div className={styles.addressTab}>
@@ -902,7 +917,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                     placeholder="Nhập địa chỉ đăng ký kinh doanh"
                   />
                 )}
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="province">Tỉnh / Thành phố</Label>
                   <Select
@@ -923,8 +938,8 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                       <SelectValue placeholder="Chọn Tỉnh/Thành phố" />
                     </SelectTrigger>
                     <SelectContent>
-                      {provinces.map((prov) => (
-                        <SelectItem key={prov.code} value={prov.code}>
+                      {Object.values(provinces).map((prov) => (
+                        <SelectItem key={prov.name} value={prov.name}>
                           {prov.name}
                         </SelectItem>
                       ))}
@@ -937,7 +952,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                     </p>
                   )}
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="ward">Phường / Xã</Label>
                   <Select
@@ -959,7 +974,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                     </SelectTrigger>
                     <SelectContent>
                       {wards.map((ward) => (
-                        <SelectItem key={ward.code} value={ward.code}>
+                        <SelectItem key={`${ward.district}_${ward.name}`} value={ward.name}>
                           {ward.name}
                         </SelectItem>
                       ))}
@@ -972,7 +987,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                     </p>
                   )}
                 </div>
-                
+
                 <div className="space-y-2 col-span-2">
                   <Label htmlFor="headquarterAddress">Địa chỉ trụ sở chính (nếu khác)</Label>
                   <Input
@@ -982,7 +997,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                     placeholder="Nhập địa chỉ trụ sở chính"
                   />
                 </div>
-                
+
                 <div className="space-y-2 col-span-2">
                   <Label htmlFor="productionAddress">Địa chỉ cơ sở sản xuất (nếu có)</Label>
                   <Input
@@ -993,7 +1008,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                   />
                 </div>
               </div>
-              
+
               {/* Map Integration */}
               <div className="mt-4">
                 <Label className="inline-flex items-center gap-1.5 mb-3" style={{ display: 'inline-flex', alignItems: 'center', lineHeight: '1' }}>
@@ -1017,7 +1032,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
             </div>
           )}
         </div>
-        
+
         {/* Footer */}
         <DialogFooter>
           <Button
