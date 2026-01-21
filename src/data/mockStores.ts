@@ -9,6 +9,7 @@ export interface Store {
   status: FacilityStatus;
   riskLevel: 'low' | 'medium' | 'high' | 'none';
   lastInspection: string;
+  area_name: string;
   province?: string; // Province name (for display)
   provinceCode?: string; // Province code (for form editing)
   jurisdiction: string; // District name (for display)
@@ -241,8 +242,8 @@ export const mockStores: Store[] = Array.from({ length: 10000 }, (_, index) => {
     'Kinh doanh hàng tiêu dùng',
   ];
   
-  // Operation Status
-  const operationStatuses = ['Đang hoạt động', 'Tạm ngừng', 'Không hoạt động'];
+  // Operation Status - Use API values ('active', 'pending', 'rejected', 'suspended'), not labels
+  const operationStatuses = ['active', 'pending', 'rejected', 'suspended'];
   
   // Generate Tax Code (Vietnam format: 10 or 13 digits)
   // Format: XXXXXXXXXX or XXXXXXXXXX-XXX

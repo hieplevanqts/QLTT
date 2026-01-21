@@ -30,7 +30,7 @@ import { Button } from '../../components/ui/button';
 import { type InspectionTask, type TaskStatus } from '../../data/inspection-tasks-mock-data';
 import { mockPlans } from '../../data/kehoach-mock-data';
 import { mockInspectionRounds } from '../../data/inspection-rounds-mock-data';
-import { fetchInspectionSessionsApi, updateInspectionSessionApi } from '../../../utils/api/inspectionSessionsApi';
+import { fetchInspectionSessionsApi, updateInspectionSessionApi, createInspectionSessionApi } from '../../../utils/api/inspectionSessionsApi';
 import { TaskCard } from '../../components/tasks/TaskCard';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { getStatusProps } from '../../utils/status-badge-helper';
@@ -40,9 +40,8 @@ import { type InfiniteScrollSelectOption } from '../../../ui-kit/InfiniteScrollS
 import { type DateRange } from '../../../ui-kit/DateRangePicker';
 import { toast } from 'sonner';
 import CreateTaskModal, { type CreateTaskFormData } from '../../components/tasks/CreateTaskModal';
-import { EditTaskModal, type EditTaskFormData } from '../../components/tasks/EditTaskModal';
 import { TaskDetailModal } from '../../components/tasks/TaskDetailModal';
-import InspectionResultModal, { type InspectionResultData } from '../../components/sessions/InspectionResultModal';
+import InspectionResultModal from '../../components/sessions/InspectionResultModal';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../../components/ui/select';
 import ActionColumn, { type Action } from '../../../patterns/ActionColumn';
 import { Card, CardContent } from '../../components/ui/card';
@@ -120,6 +119,22 @@ interface KanbanColumnProps {
 }
 
 function KanbanColumn({ column, tasks, onTaskClick, onDropTask, getTaskActions }: KanbanColumnProps) {
+  const [visibleCount, setVisibleCount] = useState(12);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop <= clientHeight + 100) {
+      if (visibleCount < tasks.length) {
+        setVisibleCount(prev => prev + 12);
+      }
+    }
+  };
+
+  // Reset visibleCount when switching columns or when data changes significantly
+  useEffect(() => {
+    setVisibleCount(12);
+  }, [column.key]);
+
   const [{ isOver, canDrop }, drop] = useDrop({
     accept: 'TASK',
     canDrop: (item: { id: string; status: TaskStatus }) => {
@@ -170,21 +185,29 @@ function KanbanColumn({ column, tasks, onTaskClick, onDropTask, getTaskActions }
       </div>
 
       {/* Column Content */}
-      <div className={styles.columnContent}>
+      <div className={styles.columnContent} onScroll={handleScroll}>
         {tasks.length === 0 ? (
           <div className={styles.emptyColumn}>
             <XCircle size={24} />
             <p>Không có phiên làm việc</p>
           </div>
         ) : (
-          tasks.map(task => (
-            <DraggableTask
-              key={task.id}
-              task={task}
-              onClick={onTaskClick}
-              actions={getTaskActions(task)}
-            />
-          ))
+          <>
+            {tasks.slice(0, visibleCount).map(task => (
+              <DraggableTask
+                key={task.id}
+                task={task}
+                onClick={onTaskClick}
+                actions={getTaskActions(task)}
+              />
+            ))}
+            {visibleCount < tasks.length && (
+              <div className={styles.loadingMoreItems}>
+                <RefreshCw size={16} className="animate-spin" />
+                <span>Đang tải thêm...</span>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -261,6 +284,7 @@ export function TaskBoard() {
         description: session.description || '',
         targetName: session.merchantName,
         targetAddress: session.merchantAddress,
+        merchantId: session.merchantId,
         assignee: { id: session.userId || '', name: session.userName },
         assignedBy: { id: '', name: '--' },
         assignedDate: session.createdAt,
@@ -629,76 +653,58 @@ export function TaskBoard() {
   }, [searchParams]);
 
   // Handle create task
-  const handleCreateTask = (formData: CreateTaskFormData) => {
-    // Generate new task ID
-    const newId = `task-${Date.now()}`;
-    const newCode = `NV-${String(tasks.length + 1).padStart(4, '0')}`;
+  const handleCreateOrUpdateTask = async (formData: CreateTaskFormData, taskId?: string) => {
+    if (taskId) {
+      // HANDLE EDIT
+      try {
+        await updateInspectionSessionApi(taskId, {
+          name: formData.title,
+          description: formData.description,
+          merchant_id: formData.merchantId,
+          campaign_id: formData.roundId,
+          user_id: formData.assigneeId || null,
+          start_time: formData.startDate,
+          deadline_time: formData.dueDate,
+          status: formData.status === 'not_started' ? 1 : 
+                  formData.status === 'in_progress' ? 2 : 
+                  formData.status === 'completed' ? 3 : 
+                  formData.status === 'closed' ? 4 : 5,
+        });
 
-    // Find assignee and round details from mock data
-    const assignee = {
-      id: formData.assigneeId,
-      name: 'Người thực hiện', // In production, look up from user list
-    };
+        toast.success(`Đã cập nhật nhiệm vụ "${formData.title}" thành công!`);
+        // Refresh local list
+        loadSessions();
+      } catch (error) {
+        console.error('Error updating task:', error);
+        toast.error('Có lỗi xảy ra khi cập nhật nhiệm vụ');
+      }
+      return;
+    }
 
-    const newTask: InspectionTask = {
-      id: newId,
-      code: newCode,
-      roundId: formData.roundId,
-      roundName: 'Tên đợt kiểm tra', // In production, look up from round list
-      planId: formData.planId,
-      planName: formData.planId ? 'Tên kế hoạch' : undefined,
-      type: formData.planId ? 'passive' : 'proactive',
-      title: formData.title,
-      description: formData.description,
-      targetName: formData.targetName,
-      targetAddress: 'Địa chỉ mẫu', // formData doesn't have targetAddress in its type currently
-      targetCode: `CS-${String(Math.floor(Math.random() * 1000)).padStart(4, '0')}`,
-      assignee,
-      assignedBy: {
-        id: 'current-user',
-        name: 'Người tạo',
-      },
-      assignedDate: new Date().toISOString(),
-      status: formData.status,
-      priority: formData.priority,
-      dueDate: formData.dueDate,
-      startDate: formData.startDate || new Date().toISOString(),
-      progress: 0,
-      checklistTotal: 0,
-      checklistCompleted: 0,
-      tags: [],
-    };
+    // HANDLE CREATE
+    try {
+      const newSession = await createInspectionSessionApi({
+        name: formData.title,
+        description: formData.description,
+        merchant_id: formData.merchantId,
+        campaign_id: formData.roundId,
+        user_id: formData.assigneeId || null,
+        start_time: formData.startDate,
+        deadline_time: formData.dueDate,
+        status: 1, // not_started
+        type: formData.planId ? 'proactive' : 'passive', // Use planId to determine type
+        note: formData.description,
+      });
 
-    // Add to tasks list
-    setTasks([newTask, ...tasks]);
-    toast.success(`Đã tạo nhiệm vụ "${formData.title}" thành công!`);
-  };
-
-  // Handle edit task
-  const handleEditTask = (taskId: string, formData: EditTaskFormData) => {
-    const taskIndex = tasks.findIndex(t => t.id === taskId);
-    if (taskIndex === -1) return;
-
-    const updatedTask: InspectionTask = {
-      ...tasks[taskIndex],
-      title: formData.title,
-      description: formData.description,
-      targetName: formData.targetName,
-      roundId: formData.roundId,
-      planId: formData.planId,
-      assignee: {
-        id: formData.assigneeId,
-        name: 'Người thực hiện', // In production, look up from user list
-      },
-      status: formData.status,
-      priority: formData.priority,
-      dueDate: formData.dueDate,
-    };
-
-    const updatedTasks = [...tasks];
-    updatedTasks[taskIndex] = updatedTask;
-    setTasks(updatedTasks);
-    toast.success(`Đã cập nhật nhiệm vụ \"${formData.title}\" thành công!`);
+      if (newSession) {
+        toast.success(`Đã tạo nhiệm vụ "${formData.title}" thành công!`);
+        // Refresh local list
+        loadSessions();
+      }
+    } catch (error) {
+      console.error('Error creating task:', error);
+      toast.error('Có lỗi xảy ra khi tạo nhiệm vụ');
+    }
   };
 
   // Action handlers for task actions
@@ -707,7 +713,7 @@ export function TaskBoard() {
     setIsDeployModalOpen(true);
   };
 
-  const handleConfirmStartTask = (startDate: string) => {
+  const handleConfirmStartTask = () => {
     if (actionTask) {
       handleStatusChange(actionTask.id, 'in_progress');
       // In a real app, we would also update the startDate of the task here
@@ -1226,15 +1232,19 @@ export function TaskBoard() {
       <CreateTaskModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSubmit={handleCreateTask}
+        onSubmit={handleCreateOrUpdateTask}
       />
 
-      {/* Edit Task Modal */}
-      <EditTaskModal
+      {/* Edit Task Modal - REUSING CreateTaskModal */}
+      <CreateTaskModal
         isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        onSubmit={handleEditTask}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedTask(null);
+        }}
+        onSubmit={handleCreateOrUpdateTask}
         task={selectedTask}
+        taskId={selectedTask?.id}
       />
 
       {/* Task Detail Modal */}
@@ -1268,10 +1278,10 @@ export function TaskBoard() {
         } : null}
         isOpen={isEnterResultsModalOpen}
         onClose={() => setIsEnterResultsModalOpen(false)}
-        onSave={(data: InspectionResultData) => {
+        onSave={() => {
           toast.success('Đã lưu kết quả kiểm tra');
         }}
-        onComplete={(data: InspectionResultData) => {
+        onComplete={() => {
           if (actionTask) {
             handleStatusChange(actionTask.id, 'completed');
           }

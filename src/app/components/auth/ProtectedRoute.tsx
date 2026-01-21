@@ -21,20 +21,28 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   // 1. Kiểm tra storage khi mount
   useEffect(() => {
     const checkStorage = async () => {
+      // If already authenticated, mark as checked
       if (isAuthenticated) {
         setHasCheckedStorage(true);
         return;
       }
 
-      try {
-        const storedToken = await getStoredToken();
-        if (storedToken && !isRestoring) {
-          dispatch(restoreSessionRequest());
+      // 🔥 FIX: Check storage even if restore is in progress (as a fallback)
+      // This ensures we trigger restore if rootSaga hasn't run yet
+      if (!hasCheckedStorage) {
+        try {
+          const storedToken = await getStoredToken();
+          if (storedToken) {
+            // Only trigger restore if not already restoring
+            if (!isRestoring) {
+              dispatch(restoreSessionRequest());
+            }
+          }
+          setHasCheckedStorage(true);
+        } catch (error) {
+          console.error('❌ ProtectedRoute: Error checking storage:', error);
+          setHasCheckedStorage(true);
         }
-      } catch {
-        // Error silently handled for production
-      } finally {
-        setHasCheckedStorage(true);
       }
     };
     checkStorage();
@@ -71,7 +79,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       const timer = setTimeout(() => {
         setRestoreTimeout(true);
       }, 5000);
-      return () => clearTimeout(timer);
+      
+      return () => clearTimeout(timeout);
     }
   }, [isRestoring, restoreTimeout]);
 
@@ -112,7 +121,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   );
 
   const shouldWait = (isLoading || (isRestoring && !restoreTimeout)) || (!isAuthenticated && !hasCheckedStorage);
-  
+
   if (shouldWait) return <LoadingScreen message="Đang tải..." />;
 
   if (!isAuthenticated && !isRestoring && !isLoading) {

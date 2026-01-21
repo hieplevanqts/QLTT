@@ -41,6 +41,8 @@ export interface InspectionRound {
   quarter?: string;
   type: InspectionType;
   status: InspectionRoundStatus;
+  provinceId?: string;
+  wardId?: string;
   startDate: string;
   endDate: string;
   actualStartDate?: string;

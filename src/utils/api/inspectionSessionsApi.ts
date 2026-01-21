@@ -134,3 +134,37 @@ export async function updateInspectionSessionApi(id: string, updates: Partial<In
     throw error;
   }
 }
+
+export async function createInspectionSessionApi(session: Partial<InspectionSessionResponse>): Promise<InspectionSession | null> {
+  try {
+    const url = `${SUPABASE_REST_URL}/map_inspection_sessions`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        ...getHeaders(),
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({
+        ...session,
+        status: session.status || 1, // Default to 'not_started'
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+    });
+    
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status} - ${errText}`);
+    }
+    
+    const data: InspectionSessionResponse[] = await response.json();
+    if (!data || data.length === 0) return null;
+    
+    return mapRowToSession(data[0]);
+  } catch (error) {
+    console.error('createInspectionSessionApi Error:', error);
+    throw error;
+  }
+}

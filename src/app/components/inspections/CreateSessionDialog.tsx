@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Calendar, Users, Store, FileText, Plus, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Calendar, Users, Store, FileText, Plus, AlertCircle, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -17,60 +17,89 @@ import {
 } from '../ui/select';
 import styles from './CreateSessionDialog.module.css';
 import { toast } from 'sonner';
+import { fetchMerchants } from '@/utils/api/merchantsApi';
+import { fetchDepartmentUsers } from '@/utils/api/departmentUsersApi';
+import { Restaurant } from '@/data/restaurantData';
 
 interface CreateSessionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   roundName: string;
+  roundId?: string;
+  leadUnitId?: string;
+  provinceId?: string;
+  wardId?: string;
   onCreateSession?: (sessionData: {
     storeId: string;
     storeName: string;
     storeAddress: string;
-    inspectorId: string;
-    inspectorName: string;
+    inspectorId: string | null;
+    inspectorName: string | null;
     startDate: string;
     endDate: string;
     notes: string;
   }) => void;
 }
 
-// Mock data
-const mockStores = [
-  {
-    id: '1',
-    name: 'Cửa hàng Thực phẩm An Khang',
-    address: '123 Nguyễn Trãi, Phường Bến Nghé',
-  },
-  {
-    id: '2',
-    name: 'Siêu thị mini Phú Thọ',
-    address: '456 Lê Hồng Phong, Phường Bến Thành',
-  },
-  {
-    id: '3',
-    name: 'Cửa hàng Sức khỏe Việt',
-    address: '789 Võ Văn Tần, Phường Nguyễn Thái Bình',
-  },
-  {
-    id: '4',
-    name: 'Chợ Bến Thành',
-    address: 'Lê Lợi, Phường Bến Thành',
-  },
-];
-
-const mockInspectors = [
-  { id: '1', name: 'Nguyễn Văn A', position: 'Thanh tra viên chính' },
-  { id: '2', name: 'Trần Thị B', position: 'Thanh tra viên' },
-  { id: '3', name: 'Lê Văn C', position: 'Thanh tra viên' },
-  { id: '4', name: 'Phạm Thị D', position: 'Thanh tra viên cấp cao' },
-];
 
 export function CreateSessionDialog({
   open,
   onOpenChange,
   roundName,
+  leadUnitId,
+  provinceId,
+  wardId,
   onCreateSession,
 }: CreateSessionDialogProps) {
+  const [merchants, setMerchants] = useState<Restaurant[]>([]);
+  const [loadingMerchants, setLoadingMerchants] = useState(false);
+  const [inspectors, setInspectors] = useState<{ id: string; name: string; position: string }[]>([]);
+  const [loadingInspectors, setLoadingInspectors] = useState(false);
+
+  // Fetch merchants logic
+  useEffect(() => {
+    if (open) {
+      const loadMerchants = async () => {
+        setLoadingMerchants(true);
+        try {
+          const data = await fetchMerchants(undefined, undefined, undefined, provinceId, wardId);
+          setMerchants(data);
+        } catch (error) {
+          console.error("Error fetching merchants:", error);
+          toast.error("Không thể tải danh sách cửa hàng");
+        } finally {
+          setLoadingMerchants(false);
+        }
+      };
+      loadMerchants();
+    }
+  }, [open, provinceId, wardId]);
+
+  // Fetch inspectors logic
+  useEffect(() => {
+    if (open && leadUnitId) {
+      const loadInspectors = async () => {
+        setLoadingInspectors(true);
+        try {
+          const data = await fetchDepartmentUsers(leadUnitId);
+          const mapped = data.map(item => ({
+            id: item.user_id,
+            name: item.users?.full_name || 'Không xác định',
+            position: 'Thanh tra viên' // Standard position if not provided by API
+          }));
+          setInspectors(mapped);
+        } catch (error) {
+          console.error("Error fetching inspectors:", error);
+          toast.error("Không thể tải danh sách thanh tra viên");
+        } finally {
+          setLoadingInspectors(false);
+        }
+      };
+      loadInspectors();
+    } else if (open && !leadUnitId) {
+      setInspectors([]);
+    }
+  }, [open, leadUnitId]);
   const [formData, setFormData] = useState({
     storeId: '',
     inspectorId: '',
@@ -87,7 +116,6 @@ export function CreateSessionDialog({
     // Validation
     const newErrors: Record<string, string> = {};
     if (!formData.storeId) newErrors.storeId = 'Vui lòng chọn cửa hàng';
-    if (!formData.inspectorId) newErrors.inspectorId = 'Vui lòng chọn thanh tra viên';
     if (!formData.startDate) newErrors.startDate = 'Vui lòng chọn ngày bắt đầu';
     if (!formData.endDate) newErrors.endDate = 'Vui lòng chọn ngày kết thúc';
     
@@ -106,17 +134,17 @@ export function CreateSessionDialog({
     }
 
     // Submit logic
-    const selectedStore = mockStores.find((s) => s.id === formData.storeId);
-    const selectedInspector = mockInspectors.find((i) => i.id === formData.inspectorId);
+    const selectedStore = merchants.find((s) => s.id === formData.storeId);
+    const selectedInspector = inspectors.find((i) => i.id === formData.inspectorId);
 
     // Call onCreateSession callback if provided
-    if (onCreateSession && selectedStore && selectedInspector) {
+    if (onCreateSession && selectedStore) {
       onCreateSession({
         storeId: selectedStore.id,
         storeName: selectedStore.name,
         storeAddress: selectedStore.address,
-        inspectorId: selectedInspector.id,
-        inspectorName: selectedInspector.name,
+        inspectorId: selectedInspector?.id || null,
+        inspectorName: selectedInspector?.name || null,
         startDate: formData.startDate,
         endDate: formData.endDate,
         notes: formData.notes,
@@ -183,14 +211,25 @@ export function CreateSessionDialog({
                   <SelectValue placeholder="Chọn cửa hàng kiểm tra..." />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px]">
-                  {mockStores.map((store) => (
-                    <SelectItem key={store.id} value={store.id} className="cursor-pointer focus:bg-primary/5">
-                      <div className={styles.storeOption}>
-                        <div className={styles.storeName}>{store.name}</div>
-                        <div className={styles.storeAddress}>{store.address}</div>
-                      </div>
-                    </SelectItem>
-                  ))}
+                  {loadingMerchants ? (
+                    <div className="flex items-center justify-center p-4">
+                      <Loader2 className="w-5 h-5 animate-spin text-primary mr-2" />
+                      <span className="text-sm">Đang tải cửa hàng...</span>
+                    </div>
+                  ) : merchants.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      Không tìm thấy cửa hàng nào trong khu vực này
+                    </div>
+                  ) : (
+                    merchants.map((store) => (
+                      <SelectItem key={store.id} value={store.id} className="cursor-pointer focus:bg-primary/5">
+                        <div className={styles.storeOption}>
+                          <div className={styles.storeName}>{store.name}</div>
+                          <div className={styles.storeAddress}>{store.address}</div>
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               {errors.storeId && (
@@ -204,7 +243,7 @@ export function CreateSessionDialog({
             <div className={styles.formField}>
               <label className={styles.label}>
                 <Users size={14} className={styles.labelIcon} />
-                Thanh tra viên phụ trách <span className={styles.required}>*</span>
+                Thanh tra viên phụ trách
               </label>
               <Select
                 value={formData.inspectorId}
@@ -217,14 +256,25 @@ export function CreateSessionDialog({
                   <SelectValue placeholder="Chọn thanh tra viên phụ trách..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockInspectors.map((inspector) => (
-                    <SelectItem key={inspector.id} value={inspector.id} className="cursor-pointer focus:bg-primary/5">
-                      <div className={styles.inspectorOption}>
-                        <div className={styles.inspectorName}>{inspector.name}</div>
-                        <div className={styles.inspectorPosition}>{inspector.position}</div>
-                      </div>
-                    </SelectItem>
-                  ))}
+                  {loadingInspectors ? (
+                    <div className="flex items-center justify-center p-4">
+                      <Loader2 className="w-5 h-5 animate-spin text-primary mr-2" />
+                      <span className="text-sm">Đang tải danh sách...</span>
+                    </div>
+                  ) : inspectors.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      {!leadUnitId ? 'Vui lòng chọn đợt kiểm tra trước' : 'Không có thanh tra viên nào trong đơn vị này'}
+                    </div>
+                  ) : (
+                    inspectors.map((inspector) => (
+                      <SelectItem key={inspector.id} value={inspector.id} className="cursor-pointer focus:bg-primary/5">
+                        <div className={styles.inspectorOption}>
+                          <div className={styles.inspectorName}>{inspector.name}</div>
+                          <div className={styles.inspectorPosition}>{inspector.position}</div>
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               {errors.inspectorId && (
