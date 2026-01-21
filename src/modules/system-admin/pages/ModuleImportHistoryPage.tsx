@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { History, RefreshCcw, Upload } from "lucide-react";
+import { History, RefreshCcw, Trash2, Upload } from "lucide-react";
 
 import PageHeader from "../../../layouts/PageHeader";
 import { Button } from "../../../app/components/ui/button";
@@ -46,6 +46,7 @@ export default function ModuleImportHistoryPage() {
   const [jobs, setJobs] = useState<ImportJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deletingZip, setDeletingZip] = useState<string | null>(null);
 
   const loadJobs = async () => {
     try {
@@ -63,6 +64,20 @@ export default function ModuleImportHistoryPage() {
   useEffect(() => {
     void loadJobs();
   }, []);
+
+  const handleDeleteZip = async (jobId: string) => {
+    const confirmed = window.confirm("Xóa file ZIP lưu trữ của job này?");
+    if (!confirmed) return;
+    try {
+      setDeletingZip(jobId);
+      await moduleAdminService.deleteJobZip(jobId);
+      await loadJobs();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không thể xóa ZIP lưu trữ.");
+    } finally {
+      setDeletingZip(null);
+    }
+  };
 
   const completedCount = useMemo(
     () => jobs.filter((job) => job.status === "completed").length,
@@ -150,6 +165,7 @@ export default function ModuleImportHistoryPage() {
                     <TableHead>Mô-đun</TableHead>
                     <TableHead>Trạng thái</TableHead>
                     <TableHead>File</TableHead>
+                    <TableHead>ZIP lưu</TableHead>
                     <TableHead>Dung lượng</TableHead>
                     <TableHead>Thời gian</TableHead>
                     <TableHead>Thông báo</TableHead>
@@ -164,7 +180,25 @@ export default function ModuleImportHistoryPage() {
                         <Badge variant={statusVariant(job.status)}>{statusLabel[job.status]}</Badge>
                       </TableCell>
                       <TableCell>{job.fileName ?? "-"}</TableCell>
-                      <TableCell>{formatFileSize(job.fileSize)}</TableCell>
+                      <TableCell>
+                        {job.storedZipName ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs">{job.storedZipName}</span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Xóa ZIP lưu trữ"
+                              onClick={() => void handleDeleteZip(job.id)}
+                              disabled={deletingZip === job.id}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
+                      <TableCell>{formatFileSize(job.storedZipSize ?? job.fileSize)}</TableCell>
                       <TableCell>{formatDateTime(job.createdAt)}</TableCell>
                       <TableCell className="text-muted-foreground">
                         {job.errorMessage ?? "-"}

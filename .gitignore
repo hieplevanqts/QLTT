@@ -82,3 +82,4 @@ supabase/.temp/
 .cache/
 # System Admin local storage
 .system_admin/
+backupmodules/

@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../../app/component
 import { Badge } from "../../../app/components/ui/badge";
 import { Input } from "../../../app/components/ui/input";
 import { InstalledModulesTable } from "../components/InstalledModulesTable";
+import ModuleRollbackDialog from "../components/ModuleRollbackDialog";
 import { moduleAdminService } from "../services/moduleAdminService";
 import { ModuleInfo } from "../types";
 
@@ -21,6 +22,8 @@ export default function ModuleRegistryPage() {
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [rollbackTarget, setRollbackTarget] = useState<ModuleInfo | null>(null);
+  const [rollbackOpen, setRollbackOpen] = useState(false);
 
   const loadModules = async () => {
     try {
@@ -78,15 +81,10 @@ export default function ModuleRegistryPage() {
     [modules],
   );
 
-  const handleRollback = async (moduleId: string) => {
-    const confirmed = window.confirm(`Rollback mô-đun "${moduleId}" về bản backup gần nhất?`);
-    if (!confirmed) return;
-    try {
-      await moduleAdminService.rollbackModule(moduleId);
-      await loadModules();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Rollback thất bại.");
-    }
+  const handleRollback = (moduleId: string) => {
+    const target = modules.find((item) => item.id === moduleId) ?? null;
+    setRollbackTarget(target);
+    setRollbackOpen(true);
   };
 
   return (
@@ -204,6 +202,17 @@ export default function ModuleRegistryPage() {
           </CardContent>
         </Card>
       </div>
+
+      <ModuleRollbackDialog
+        open={rollbackOpen}
+        onOpenChange={(value) => {
+          setRollbackOpen(value);
+          if (!value) setRollbackTarget(null);
+        }}
+        moduleId={rollbackTarget?.id}
+        moduleName={rollbackTarget?.name}
+        onCompleted={() => void loadModules()}
+      />
     </div>
   );
 }

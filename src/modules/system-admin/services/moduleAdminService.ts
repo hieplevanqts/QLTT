@@ -1,4 +1,12 @@
-import type { ImportJob, MenuItem, ModuleDetail, ModuleInfo, ModuleManifestOverrides } from "../types";
+import type {
+  ImportJob,
+  MenuItem,
+  ModuleDetail,
+  ModuleInfo,
+  ModuleManifestOverrides,
+  ModuleUpdateAnalysis,
+  ReleaseType,
+} from "../types";
 
 const API_BASE = import.meta.env.VITE_SYSTEM_ADMIN_API ?? "http://localhost:8889";
 
@@ -25,7 +33,62 @@ export const moduleAdminService = {
   },
   getImportJobs: () => request<ImportJob[]>("/system-admin/modules/import-jobs"),
   getImportJob: (jobId: string) => request<ImportJob>(`/system-admin/modules/import-jobs/${jobId}`),
-  rollbackModule: (id: string) => request<ImportJob>(`/system-admin/modules/${id}/rollback`, { method: "POST" }),
+  rollbackModule: async (id: string, payload?: {
+    jobId?: string;
+    file?: File;
+    requestedBy?: string;
+    requestedByName?: string;
+  }) => {
+    if (payload?.file) {
+      const data = new FormData();
+      data.append("file", payload.file);
+      if (payload.requestedBy) data.append("requestedBy", payload.requestedBy);
+      if (payload.requestedByName) data.append("requestedByName", payload.requestedByName);
+      return request<ImportJob>(`/system-admin/modules/${id}/rollback/upload`, { method: "POST", body: data });
+    }
+
+    const body = payload && (payload.jobId || payload.requestedBy || payload.requestedByName)
+      ? JSON.stringify({
+          jobId: payload.jobId,
+          requestedBy: payload.requestedBy,
+          requestedByName: payload.requestedByName,
+        })
+      : undefined;
+    return request<ImportJob>(`/system-admin/modules/${id}/rollback`, {
+      method: "POST",
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body,
+    });
+  },
+  inspectUpdate: async (id: string, file: File) => {
+    const data = new FormData();
+    data.append("file", file);
+    return request<ModuleUpdateAnalysis>(`/system-admin/modules/${id}/update/inspect`, {
+      method: "POST",
+      body: data,
+    });
+  },
+  updateModule: async (id: string, payload: {
+    file: File;
+    updateType: ReleaseType;
+    selectedMenuIds?: string[];
+    updatedBy?: string;
+    updatedByName?: string;
+  }) => {
+    const data = new FormData();
+    data.append("file", payload.file);
+    data.append("updateType", payload.updateType);
+    if (payload.selectedMenuIds) {
+      data.append("selectedMenuIds", JSON.stringify(payload.selectedMenuIds));
+    }
+    if (payload.updatedBy) {
+      data.append("updatedBy", payload.updatedBy);
+    }
+    if (payload.updatedByName) {
+      data.append("updatedByName", payload.updatedByName);
+    }
+    return request<ImportJob>(`/system-admin/modules/${id}/update`, { method: "POST", body: data });
+  },
   getMenus: () => request<MenuItem[]>("/system-admin/menus"),
   createMenu: (payload: MenuItem) =>
     request<MenuItem>("/system-admin/menus", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }),
@@ -36,4 +99,6 @@ export const moduleAdminService = {
       body: JSON.stringify(payload),
     }),
   deleteMenu: (id: string) => request<{ ok: boolean }>(`/system-admin/menus/${id}`, { method: "DELETE" }),
+  deleteJobZip: (jobId: string) =>
+    request<ImportJob>(`/system-admin/modules/import-jobs/${jobId}/zip`, { method: "DELETE" }),
 };

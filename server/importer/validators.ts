@@ -1,6 +1,6 @@
 import path from 'node:path';
 import semver from 'semver';
-import type { ModuleManifest, ModuleRegistryEntry, ValidationContext, ValidationResult } from './types';
+import type { ModuleManifest, ModuleRegistryEntry, ReleaseType, ValidationContext, ValidationResult } from './types';
 
 export class ValidationError extends Error {
   code: string;
@@ -108,6 +108,11 @@ const validateManifestSchema = (manifest: ModuleManifest) => {
   return errors;
 };
 
+const isValidReleaseType = (value?: string): value is ReleaseType => {
+  if (!value) return false;
+  return value === 'patch' || value === 'minor' || value === 'major';
+};
+
 const buildValidationResult = (type: 'success' | 'error', message: string, details?: string): ValidationResult => ({
   type,
   message,
@@ -201,6 +206,17 @@ export function validateZipEntries(entries: ZipEntryInfo[], ctx: ValidationConte
     );
   }
 
+  if (ctx.requireReleaseType) {
+    const releaseType = selectedManifest.release?.type;
+    if (!releaseType || !isValidReleaseType(releaseType)) {
+      throw new ValidationError(
+        'RELEASE_TYPE_MISSING',
+        'module.json missing "release.type"',
+        [buildValidationResult('error', 'module.json missing "release.type"')],
+      );
+    }
+  }
+
   const moduleRootPrefix = moduleRoot ? `${normalizeZipPath(moduleRoot)}/` : '';
   const hasInvalidEntry = moduleRootPrefix
     ? entries.some(entry => {
@@ -254,7 +270,7 @@ export function validateZipEntries(entries: ZipEntryInfo[], ctx: ValidationConte
     );
   }
 
-  if (existing && !semver.gt(selectedManifest.version, existing.version)) {
+  if (existing && (ctx.requireNewerVersion ?? true) && !semver.gt(selectedManifest.version, existing.version)) {
     throw new ValidationError(
       'SEMVER_NOT_GREATER',
       'Version must be greater than existing version',

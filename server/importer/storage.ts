@@ -11,6 +11,7 @@ const REGISTRY_FILE = 'registry.json';
 const HISTORY_FILE = 'import_history.json';
 const MENU_FILE = 'menu_registry.json';
 const BACKUPS_DIR = 'backups';
+const BACKUPMODULES_DIR = 'backupmodules';
 const UPLOADS_DIR = 'uploads';
 const TMP_DIR = 'tmp';
 
@@ -21,6 +22,8 @@ export const getRegistryPath = () => path.join(getSystemAdminDir(), REGISTRY_FIL
 export const getHistoryPath = () => path.join(getSystemAdminDir(), HISTORY_FILE);
 export const getMenuRegistryPath = () => path.join(getSystemAdminDir(), MENU_FILE);
 export const getBackupsDir = () => path.join(getSystemAdminDir(), BACKUPS_DIR);
+export const getBackupModulesDir = () => path.join(getRepoRoot(), BACKUPMODULES_DIR);
+export const getZipsDir = () => getBackupModulesDir();
 export const getUploadsDir = () => path.join(getSystemAdminDir(), UPLOADS_DIR);
 export const getTmpDir = () => path.join(getSystemAdminDir(), TMP_DIR);
 export const getModulesRoot = () => path.join(getRepoRoot(), 'src', 'modules');
@@ -79,6 +82,7 @@ const writeJsonFile = async <T>(filePath: string, data: T) => {
 export const ensureSystemAdminDirs = async () => {
   await ensureDir(getSystemAdminDir());
   await ensureDir(getBackupsDir());
+  await ensureDir(getBackupModulesDir());
   await ensureDir(getUploadsDir());
   await ensureDir(getTmpDir());
 };

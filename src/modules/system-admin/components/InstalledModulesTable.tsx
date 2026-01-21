@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, Package, RotateCcw } from 'lucide-react';
+import { Eye, Package, RotateCcw, UploadCloud } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
 import type { ModuleInfo } from '../types';
@@ -88,6 +88,11 @@ export function InstalledModulesTable({ modules, onRollback }: InstalledModulesT
                 <Link to={`/system/modules/${module.id}`}>
                   <Button variant="ghost" size="icon" title="Xem chi tiết">
                     <Eye className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link to={`/system/modules/${module.id}/update`}>
+                  <Button variant="ghost" size="icon" title="Cập nhật mô-đun">
+                    <UploadCloud className="h-4 w-4" />
                   </Button>
                 </Link>
                 {onRollback && module.id !== 'system-admin' && (

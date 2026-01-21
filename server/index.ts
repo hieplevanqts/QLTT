@@ -16,8 +16,8 @@ import {
   loadRegistry,
   updateMenuItem,
 } from './importer/storage';
-import { importModuleZip, rollbackModule } from './importer/moduleImporter';
-import type { MenuItem, ModuleManifest } from './importer/types';
+import { deleteStoredZip, importModuleZip, inspectModuleUpdate, rollbackModule, rollbackModuleFromZip, updateModuleZip } from './importer/moduleImporter';
+import type { MenuItem, ModuleManifest, ReleaseType } from './importer/types';
 
 const PORT = Number(process.env.SYSTEM_ADMIN_PORT || 8889);
 const app = express();
@@ -47,11 +47,41 @@ swaggerSpec.paths = {
       parameters: [{ name: 'id', in: 'path', required: true }],
       responses: { 200: { description: 'OK' }, 404: { description: 'Not found' } },
     },
-    post: { summary: 'Rollback module', responses: { 200: { description: 'OK' } } },
+  },
+  '/system-admin/modules/{id}/rollback': {
+    post: {
+      summary: 'Rollback module from history',
+      parameters: [{ name: 'id', in: 'path', required: true }],
+      responses: { 200: { description: 'OK' } },
+    },
+  },
+  '/system-admin/modules/{id}/rollback/upload': {
+    post: {
+      summary: 'Rollback module from uploaded zip',
+      parameters: [{ name: 'id', in: 'path', required: true }],
+      requestBody: { required: true },
+      responses: { 200: { description: 'OK' } },
+    },
   },
   '/system-admin/modules/import': {
     post: {
       summary: 'Import module zip',
+      requestBody: { required: true },
+      responses: { 200: { description: 'Job created' } },
+    },
+  },
+  '/system-admin/modules/{id}/update/inspect': {
+    post: {
+      summary: 'Inspect module update zip',
+      parameters: [{ name: 'id', in: 'path', required: true }],
+      requestBody: { required: true },
+      responses: { 200: { description: 'OK' } },
+    },
+  },
+  '/system-admin/modules/{id}/update': {
+    post: {
+      summary: 'Apply module update',
+      parameters: [{ name: 'id', in: 'path', required: true }],
       requestBody: { required: true },
       responses: { 200: { description: 'Job created' } },
     },
@@ -62,6 +92,13 @@ swaggerSpec.paths = {
   '/system-admin/modules/import-jobs/{jobId}': {
     get: {
       summary: 'Get import job detail',
+      parameters: [{ name: 'jobId', in: 'path', required: true }],
+      responses: { 200: { description: 'OK' }, 404: { description: 'Not found' } },
+    },
+  },
+  '/system-admin/modules/import-jobs/{jobId}/zip': {
+    delete: {
+      summary: 'Delete stored zip for a job',
       parameters: [{ name: 'jobId', in: 'path', required: true }],
       responses: { 200: { description: 'OK' }, 404: { description: 'Not found' } },
     },
@@ -115,22 +152,6 @@ app.get('/system-admin/modules', async (_req, res) => {
   }
 });
 
-app.get('/system-admin/modules/:id', async (req, res) => {
-  try {
-    const registry = await loadRegistry();
-    const module = registry.find(item => item.id === req.params.id);
-    if (!module) {
-      res.status(404).json({ code: 'MODULE_NOT_FOUND', message: 'Module not found' });
-      return;
-    }
-    const moduleDir = path.join(getModulesRoot(), module.id);
-    const files = await listFiles(moduleDir);
-    res.json({ ...module, files });
-  } catch (error: any) {
-    res.status(500).json({ code: 'MODULE_DETAIL_FAILED', message: error.message });
-  }
-});
-
 app.post('/system-admin/modules/import', upload.single('file'), async (req, res) => {
   if (!req.file) {
     res.status(400).json({ code: 'FILE_REQUIRED', message: 'File is required' });
@@ -162,6 +183,60 @@ app.post('/system-admin/modules/import', upload.single('file'), async (req, res)
   }
 });
 
+app.post('/system-admin/modules/:id/update/inspect', upload.single('file'), async (req, res) => {
+  if (!req.file) {
+    res.status(400).json({ code: 'FILE_REQUIRED', message: 'File is required' });
+    return;
+  }
+
+  try {
+    const analysis = await inspectModuleUpdate(req.file.path, req.file.originalname, req.params.id);
+    res.json(analysis);
+  } catch (error: any) {
+    res.status(500).json({ code: 'UPDATE_INSPECT_FAILED', message: error.message });
+  } finally {
+    if (req.file?.path) {
+      fs.unlink(req.file.path).catch(() => undefined);
+    }
+  }
+});
+
+app.post('/system-admin/modules/:id/update', upload.single('file'), async (req, res) => {
+  if (!req.file) {
+    res.status(400).json({ code: 'FILE_REQUIRED', message: 'File is required' });
+    return;
+  }
+
+  const updateType = req.body?.updateType as ReleaseType | undefined;
+  if (!updateType || !['patch', 'minor', 'major'].includes(updateType)) {
+    res.status(400).json({ code: 'UPDATE_TYPE_REQUIRED', message: 'updateType is required' });
+    return;
+  }
+
+  let selectedMenuIds: string[] | undefined;
+  if (req.body?.selectedMenuIds) {
+    try {
+      selectedMenuIds = JSON.parse(req.body.selectedMenuIds);
+    } catch (error: any) {
+      res.status(400).json({ code: 'MENU_IDS_INVALID', message: 'selectedMenuIds is invalid JSON' });
+      return;
+    }
+  }
+
+  try {
+    const job = await updateModuleZip(req.file.path, req.file.originalname, req.file.size, {
+      moduleId: req.params.id,
+      updateType,
+      selectedMenuIds,
+      updatedBy: req.body?.updatedBy,
+      updatedByName: req.body?.updatedByName,
+    });
+    res.json(job);
+  } catch (error: any) {
+    res.status(500).json({ code: 'UPDATE_FAILED', message: error.message });
+  }
+});
+
 app.get('/system-admin/modules/import-jobs', async (_req, res) => {
   try {
     const history = await loadImportHistory();
@@ -185,12 +260,63 @@ app.get('/system-admin/modules/import-jobs/:jobId', async (req, res) => {
   }
 });
 
+app.get('/system-admin/modules/:id', async (req, res) => {
+  try {
+    const registry = await loadRegistry();
+    const module = registry.find(item => item.id === req.params.id);
+    if (!module) {
+      res.status(404).json({ code: 'MODULE_NOT_FOUND', message: 'Module not found' });
+      return;
+    }
+    const moduleDir = path.join(getModulesRoot(), module.id);
+    const files = await listFiles(moduleDir);
+    res.json({ ...module, files });
+  } catch (error: any) {
+    res.status(500).json({ code: 'MODULE_DETAIL_FAILED', message: error.message });
+  }
+});
+
 app.post('/system-admin/modules/:id/rollback', async (req, res) => {
   try {
-    const job = await rollbackModule(req.params.id, 'system-admin');
+    const job = await rollbackModule(req.params.id, {
+      jobId: req.body?.jobId,
+      requestedBy: req.body?.requestedBy,
+      requestedByName: req.body?.requestedByName,
+    });
     res.json(job);
   } catch (error: any) {
     res.status(500).json({ code: 'ROLLBACK_FAILED', message: error.message });
+  }
+});
+
+app.post('/system-admin/modules/:id/rollback/upload', upload.single('file'), async (req, res) => {
+  if (!req.file) {
+    res.status(400).json({ code: 'FILE_REQUIRED', message: 'File is required' });
+    return;
+  }
+
+  try {
+    const job = await rollbackModuleFromZip(req.file.path, req.file.originalname, req.file.size, {
+      moduleId: req.params.id,
+      requestedBy: req.body?.requestedBy,
+      requestedByName: req.body?.requestedByName,
+    });
+    res.json(job);
+  } catch (error: any) {
+    res.status(500).json({ code: 'ROLLBACK_FAILED', message: error.message });
+  }
+});
+
+app.delete('/system-admin/modules/import-jobs/:jobId/zip', async (req, res) => {
+  try {
+    const job = await deleteStoredZip(req.params.jobId);
+    if (!job) {
+      res.status(404).json({ code: 'JOB_NOT_FOUND', message: 'Job not found' });
+      return;
+    }
+    res.json(job);
+  } catch (error: any) {
+    res.status(500).json({ code: 'ZIP_DELETE_FAILED', message: error.message });
   }
 });
 

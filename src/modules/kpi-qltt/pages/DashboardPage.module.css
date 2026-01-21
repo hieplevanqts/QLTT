@@ -1,0 +1,140 @@
+.dashboardPage {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.title {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-page-title);
+  font-weight: var(--font-weight-bold);
+  color: var(--foreground);
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  margin: 0;
+}
+
+.periodSelector {
+  display: flex;
+  gap: 8px;
+  background: var(--muted);
+  padding: 4px;
+  border-radius: var(--radius);
+}
+
+.periodButton {
+  padding: 8px 16px;
+  border: none;
+  border-radius: calc(var(--radius) - 2px);
+  background: transparent;
+  color: var(--muted-foreground);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.periodButton:hover {
+  color: var(--foreground);
+}
+
+.periodButtonActive {
+  background: var(--card);
+  color: var(--primary);
+  box-shadow: 0px 1px 2px 0px rgba(16,24,40,0.06);
+}
+
+.infoSection {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.infoCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 24px;
+  box-shadow: var(--elevation-sm);
+}
+
+.infoCard h3 {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+  margin: 0 0 16px 0;
+}
+
+.infoCard p {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  line-height: 1.6;
+  margin: 0 0 16px 0;
+}
+
+.highlightList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.highlightList li {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background: var(--muted);
+  border-radius: var(--radius);
+  border-left: 3px solid var(--primary);
+}
+
+.highlightList li strong {
+  color: var(--primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.recommendList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.recommendList li {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  padding: 10px 0 10px 24px;
+  position: relative;
+  line-height: 1.5;
+}
+
+.recommendList li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--primary);
+  font-weight: var(--font-weight-bold);
+}
+
+.recommendList li + li {
+  border-top: 1px solid var(--border);
+}

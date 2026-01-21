@@ -130,6 +130,10 @@ export default function ModuleImportPage() {
   const validationResults = useMemo(() => job?.validationResults ?? [], [job]);
   const timelineEvents = useMemo(() => job?.timeline ?? [], [job]);
   const isBusy = step === "uploading" || step === "processing";
+  const moduleJsonErrors = useMemo(
+    () => validationResults.filter((item) => item.type === "error" && /module\\.json/i.test(item.message)),
+    [validationResults],
+  );
 
   const updateOverrideField = (key: keyof typeof overrideForm, value: string) => {
     setOverrideForm((prev) => ({ ...prev, [key]: value }));
@@ -305,109 +309,6 @@ export default function ModuleImportPage() {
           </Card>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Bổ sung cấu hình module.json</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              Chỉ điền khi cần sửa hoặc bổ sung. Giá trị trống sẽ không ghi đè.
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="module-name">Tên mô-đun</Label>
-                <Input
-                  id="module-name"
-                  placeholder="KPI & Thống kê QLTT"
-                  value={overrideForm.name}
-                  onChange={(event) => updateOverrideField("name", event.target.value)}
-                  disabled={isBusy}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="module-version">Phiên bản</Label>
-                <Input
-                  id="module-version"
-                  placeholder="0.1.0"
-                  value={overrideForm.version}
-                  onChange={(event) => updateOverrideField("version", event.target.value)}
-                  disabled={isBusy}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="module-basepath">basePath</Label>
-                <Input
-                  id="module-basepath"
-                  placeholder="/kpi"
-                  value={overrideForm.basePath}
-                  onChange={(event) => updateOverrideField("basePath", event.target.value)}
-                  disabled={isBusy}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="module-route-export">routeExport</Label>
-                <Input
-                  id="module-route-export"
-                  placeholder="kpiQlttRoute"
-                  value={overrideForm.routeExport}
-                  onChange={(event) => updateOverrideField("routeExport", event.target.value)}
-                  disabled={isBusy}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="module-entry">entry</Label>
-                <Input
-                  id="module-entry"
-                  placeholder="src/modules/kpi-qltt/index.ts"
-                  value={overrideForm.entry}
-                  onChange={(event) => updateOverrideField("entry", event.target.value)}
-                  disabled={isBusy}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="module-routes">routes</Label>
-                <Input
-                  id="module-routes"
-                  placeholder="src/modules/kpi-qltt/routes.tsx"
-                  value={overrideForm.routes}
-                  onChange={(event) => updateOverrideField("routes", event.target.value)}
-                  disabled={isBusy}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="module-permissions">permissions (phân tách bằng dấu phẩy)</Label>
-                <Input
-                  id="module-permissions"
-                  placeholder="reports:read, reports:export"
-                  value={overrideForm.permissions}
-                  onChange={(event) => updateOverrideField("permissions", event.target.value)}
-                  disabled={isBusy}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="module-menu-label">ui.menuLabel</Label>
-                <Input
-                  id="module-menu-label"
-                  placeholder="KPI QLTT"
-                  value={overrideForm.menuLabel}
-                  onChange={(event) => updateOverrideField("menuLabel", event.target.value)}
-                  disabled={isBusy}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="module-menu-path">ui.menuPath</Label>
-                <Input
-                  id="module-menu-path"
-                  placeholder="/kpi"
-                  value={overrideForm.menuPath}
-                  onChange={(event) => updateOverrideField("menuPath", event.target.value)}
-                  disabled={isBusy}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         <div className="grid gap-6 lg:grid-cols-[1.1fr,0.9fr]">
           <Card>
             <CardHeader>
@@ -470,6 +371,122 @@ export default function ModuleImportPage() {
                 <ValidationResults results={validationResults} />
               ) : (
                 <div className="text-sm text-muted-foreground">Chưa có dữ liệu kiểm tra.</div>
+              )}
+              {file && (
+                <div className="mt-4 space-y-4 border-t pt-4">
+                  <div className="space-y-1">
+                    <div className="text-sm font-medium">Sửa nhanh module.json</div>
+                    <div className="text-xs text-muted-foreground">
+                      Điền các trường còn thiếu rồi bấm import lại. Giá trị trống sẽ không ghi đè.
+                    </div>
+                    {moduleJsonErrors.length > 0 && (
+                      <div className="text-xs text-destructive">
+                        {moduleJsonErrors.map((item) => item.message).join(", ")}
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="module-route-export-inline">routeExport</Label>
+                      <Input
+                        id="module-route-export-inline"
+                        placeholder="kpiQlttRoute"
+                        value={overrideForm.routeExport}
+                        onChange={(event) => updateOverrideField("routeExport", event.target.value)}
+                        disabled={isBusy}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="module-basepath-inline">basePath</Label>
+                      <Input
+                        id="module-basepath-inline"
+                        placeholder="/kpi"
+                        value={overrideForm.basePath}
+                        onChange={(event) => updateOverrideField("basePath", event.target.value)}
+                        disabled={isBusy}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="module-entry-inline">entry</Label>
+                      <Input
+                        id="module-entry-inline"
+                        placeholder="src/modules/kpi-qltt/index.ts"
+                        value={overrideForm.entry}
+                        onChange={(event) => updateOverrideField("entry", event.target.value)}
+                        disabled={isBusy}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="module-routes-inline">routes</Label>
+                      <Input
+                        id="module-routes-inline"
+                        placeholder="src/modules/kpi-qltt/routes.tsx"
+                        value={overrideForm.routes}
+                        onChange={(event) => updateOverrideField("routes", event.target.value)}
+                        disabled={isBusy}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="module-menu-label-inline">ui.menuLabel</Label>
+                      <Input
+                        id="module-menu-label-inline"
+                        placeholder="KPI QLTT"
+                        value={overrideForm.menuLabel}
+                        onChange={(event) => updateOverrideField("menuLabel", event.target.value)}
+                        disabled={isBusy}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="module-menu-path-inline">ui.menuPath</Label>
+                      <Input
+                        id="module-menu-path-inline"
+                        placeholder="/kpi"
+                        value={overrideForm.menuPath}
+                        onChange={(event) => updateOverrideField("menuPath", event.target.value)}
+                        disabled={isBusy}
+                      />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                      <Label htmlFor="module-permissions-inline">permissions (phân tách bằng dấu phẩy)</Label>
+                      <Input
+                        id="module-permissions-inline"
+                        placeholder="reports:read, reports:export"
+                        value={overrideForm.permissions}
+                        onChange={(event) => updateOverrideField("permissions", event.target.value)}
+                        disabled={isBusy}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="module-name-inline">Tên mô-đun</Label>
+                      <Input
+                        id="module-name-inline"
+                        placeholder="KPI & Thống kê QLTT"
+                        value={overrideForm.name}
+                        onChange={(event) => updateOverrideField("name", event.target.value)}
+                        disabled={isBusy}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="module-version-inline">Phiên bản</Label>
+                      <Input
+                        id="module-version-inline"
+                        placeholder="0.1.0"
+                        value={overrideForm.version}
+                        onChange={(event) => updateOverrideField("version", event.target.value)}
+                        disabled={isBusy}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Button
+                      variant="outline"
+                      onClick={() => void handleImport()}
+                      disabled={!file || isBusy}
+                    >
+                      {isBusy ? "Đang xử lý..." : "Import lại với cấu hình này"}
+                    </Button>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>

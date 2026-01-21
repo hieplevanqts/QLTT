@@ -8,6 +8,7 @@ import { Badge } from "../../../app/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../app/components/ui/card";
 import { moduleAdminService } from "../services/moduleAdminService";
 import { ModuleDetail } from "../types";
+import ModuleRollbackDialog from "../components/ModuleRollbackDialog";
 
 const formatDateTime = (value?: string) => {
   if (!value) return "-";
@@ -26,6 +27,7 @@ export default function ModuleDetailPage() {
   const [detail, setDetail] = useState<ModuleDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [rollbackOpen, setRollbackOpen] = useState(false);
 
   useEffect(() => {
     const loadDetail = async () => {
@@ -50,16 +52,13 @@ export default function ModuleDetailPage() {
     void loadDetail();
   }, [id]);
 
-  const handleRollback = async () => {
+  const handleRollbackCompleted = async () => {
     if (!detail?.id) return;
-    const confirmed = window.confirm(`Rollback mô-đun "${detail.id}"?`);
-    if (!confirmed) return;
     try {
-      await moduleAdminService.rollbackModule(detail.id);
       const refreshed = await moduleAdminService.getModule(detail.id);
       setDetail(refreshed);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Rollback thất bại.");
+      setError(err instanceof Error ? err.message : "Không thể tải lại mô-đun sau rollback.");
     }
   };
 
@@ -81,7 +80,14 @@ export default function ModuleDetailPage() {
                 Quay lại
               </Link>
             </Button>
-            <Button variant="destructive" onClick={() => void handleRollback()} disabled={!detail}>
+            {detail?.id && (
+              <Button variant="outline" asChild>
+                <Link to={`/system/modules/${detail.id}/update`}>
+                  Cập nhật mô-đun
+                </Link>
+              </Button>
+            )}
+            <Button variant="destructive" onClick={() => setRollbackOpen(true)} disabled={!detail}>
               <RotateCcw className="h-4 w-4" />
               Rollback
             </Button>
@@ -174,6 +180,14 @@ export default function ModuleDetailPage() {
           </div>
         )}
       </div>
+
+      <ModuleRollbackDialog
+        open={rollbackOpen}
+        onOpenChange={setRollbackOpen}
+        moduleId={detail?.id}
+        moduleName={detail?.name}
+        onCompleted={handleRollbackCompleted}
+      />
     </div>
   );
 }
