@@ -37,11 +37,7 @@ export async function fetchMarketManagementTeams(options?: {
   teamId?: string | null;
 }): Promise<Department[]> {
   try {
-    console.log('🔍 fetchMarketManagementTeams called with options:', JSON.stringify(options, null, 2));
-    console.log('🔍 options?.teamId:', options?.teamId);
-    console.log('🔍 options?.divisionId:', options?.divisionId);
-    
-    // Build query
+   
     let query = supabase
       .from('departments')
       .select('_id, name, code, level, path, parent_id')
@@ -65,9 +61,7 @@ export async function fetchMarketManagementTeams(options?: {
     }
     
     const { data, error } = await query.order('name', { ascending: true });
-    console.log('data', data);
-    console.log('options?.divisionId', options?.divisionId);
-    
+   
     if (error) {
       console.error('❌ Error fetching market management teams:', error);
       throw new Error(`Failed to fetch departments: ${error.message}`);
@@ -92,12 +86,6 @@ export async function fetchMarketManagementTeams(options?: {
       }
     }
 
-    console.log('📊 Total departments fetched:', data?.length || 0);
-    console.log(`✅ Filtered departments by ${filterId?.type || 'none'}:`, filteredData.length);
-    
-    if (filteredData && filteredData.length > 0) {
-      console.log('📝 Departments after filter:', filteredData.map((d: Department) => d.name));
-    }
     
     // 🔥 TEMP: Bỏ điều kiện filter theo name (regex pattern)
     // Chỉ trả về departments đã được filter theo teamId hoặc divisionId
