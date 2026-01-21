@@ -208,7 +208,7 @@ async function fetchUserDepartment(userId: string): Promise<{ _id: string; name:
       .select(`
         department_id,
         departments (
-          _id,
+          id:_id,
           name,
           code,
           level,

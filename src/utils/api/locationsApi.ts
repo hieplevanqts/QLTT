@@ -42,16 +42,16 @@ export interface WardCoordinates {
  */
 export async function fetchProvinces(): Promise<ProvinceApiData[]> {
   try {
-    const response = await axios.get<ProvinceApiData[]>(
-      `${SUPABASE_REST_URL}/provinces`,
-      {
-        params: {
-          select: '_id,code,name',
-          order: 'code.asc'
-        },
-        headers: getHeaders()
-      }
-    );
+    
+    const { data, error } = await supabase
+      .from('provinces')
+      .select('id:_id, code, name')
+      .order('code', { ascending: true });
+
+    if (error) {
+      console.error('❌ Error fetching provinces:', error);
+      throw new Error(`Failed to fetch provinces: ${error.message}`);
+    }
 
     return response.data || [];
   } catch (error: any) {
@@ -76,21 +76,14 @@ export async function fetchAllWards(): Promise<WardApiData[]> {
 
     while (hasMore) {
       const start = page * pageSize;
+      const end = start + pageSize - 1;
 
-      const response = await axios.get<WardApiData[]>(
-        `${SUPABASE_REST_URL}/wards`,
-        {
-          params: {
-            select: '_id,code,name,province_id',
-            order: 'code.asc',
-            limit: pageSize,
-            offset: start
-          },
-          headers: getHeaders()
-        }
-      );
-
-      const data = response.data || [];
+      // 🔥 FIX: Use 'province_id' (snake_case) as that's the database field name
+      const { data, error } = await supabase
+        .from('wards')
+        .select('id:_id, code, name, province_id')
+        .order('code', { ascending: true })
+        .range(start, end);
 
       // 🔥 DEBUG: Log field names in first ward
       if (data && data.length > 0 && page === 0) {
@@ -128,10 +121,28 @@ export async function fetchAllWards(): Promise<WardApiData[]> {
 /**
  * Fetch wards by province ID from Supabase wards table using axios
  */
-export async function fetchWardsByProvinceId(provinceId: string): Promise<WardApiData[]> {
-  if (!provinceId) return [];
-  
+export async function fetchWardsByProvinceCode(provinceCode: string): Promise<WardApiData[]> {
   try {
+    
+    // First, get province ID from code
+    const { data: provincesData, error: provinceError } = await supabase
+      .from('provinces')
+      .select('id:_id, code')
+      .eq('code', provinceCode)
+      .limit(1);
+
+    if (provinceError) {
+      console.error('❌ Error fetching province:', provinceError);
+      throw new Error(`Failed to fetch province: ${provinceError.message}`);
+    }
+
+    if (!provincesData || provincesData.length === 0) {
+      return [];
+    }
+
+    const provinceId = provincesData[0].id;
+
+    // Then fetch wards by provinceId
     let allWards: WardApiData[] = [];
     let page = 0;
     const pageSize = 1000;
@@ -139,22 +150,20 @@ export async function fetchWardsByProvinceId(provinceId: string): Promise<WardAp
 
     while (hasMore) {
       const start = page * pageSize;
+      const end = start + pageSize - 1;
 
-      const response = await axios.get<WardApiData[]>(
-        `${SUPABASE_REST_URL}/wards`,
-        {
-          params: {
-            select: '_id,code,name,province_id',
-            province_id: `eq.${provinceId}`,
-            order: 'code.asc',
-            limit: pageSize,
-            offset: start
-          },
-          headers: getHeaders()
-        }
-      );
+      // 🔥 FIX: Use 'province_id' (snake_case) as that's the database field name
+      const { data, error } = await supabase
+        .from('wards')
+        .select('id:_id, code, name, province_id')
+        .eq('province_id', provinceId)
+        .order('code', { ascending: true })
+        .range(start, end);
 
-      const data = response.data || [];
+      if (error) {
+        console.error('❌ Error fetching wards:', error);
+        throw new Error(`Failed to fetch wards: ${error.message}`);
+      }
 
       if (!data || data.length === 0) {
         hasMore = false;

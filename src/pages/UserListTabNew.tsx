@@ -288,6 +288,18 @@ export const UserListTabNew: React.FC = () => {
       const salt = bcrypt.genSaltSync(10);
       const hashedPassword = bcrypt.hashSync(DEFAULT_PASSWORD, salt);
 
+      // Debug: First, try to fetch the current user data to see schema
+      const { data: currentUser, error: fetchError } = await supabase
+        .from('users')
+        .select('*, id:_id')
+        .eq('_id', userToReset.id)
+        .single();
+
+      if (fetchError) {
+        console.error('❌ Error fetching user for debug:', fetchError);
+      } else {
+      }
+
       // Update password trong database
       // Note: Trong production, nên hash password ở server-side để bảo mật hơn
       const { error } = await supabase

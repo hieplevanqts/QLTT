@@ -123,7 +123,7 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
         ] = await Promise.all([
           supabase
             .from('departments')
-            .select('_id, parent_id, name, code, level')
+            .select('id:_id, parent_id, name, code, level')
             .is('deleted_at', null)
             .order('path', { ascending: true }),
           supabase
@@ -131,13 +131,13 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
             .select('department_id, area_id'),
           supabase
             .from('areas')
-            .select('_id, code, name, level, province_id, ward_id'),
+            .select('id:_id, code, name, level, "provinceId", "wardId"'),
           supabase
             .from('wards')
-            .select('_id, code, name, province_id'),
+            .select('id:_id, code, name, province_id'),
           supabase
             .from('provinces')
-            .select('_id, code, name'),
+            .select('id:_id, code, name'),
         ]);
 
         if (departmentsError) {
