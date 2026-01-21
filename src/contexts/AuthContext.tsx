@@ -206,7 +206,7 @@ async function fetchUserDepartment(userId: string): Promise<{ _id: string; name:
     
     const inferredLevel = getDepartmentLevelFromCode(departmentData.code);
     const departmentInfo = {
-      id: departmentData._id,
+      _id: departmentData._id,
       name: departmentData.name || '',
       code: departmentData.code || undefined,
       level: departmentData.level ?? inferredLevel,
