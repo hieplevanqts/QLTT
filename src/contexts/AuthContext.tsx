@@ -91,7 +91,7 @@ async function fetchUserPermissions(userId: string): Promise<string[]> {
     const { data: permissions, error: permissionsError } = await supabase
       .from(Tables.PERMISSIONS)
       .select('code')
-      .in('id', permissionIds);
+      .in('_id', permissionIds);
     
     if (permissionsError) {
       console.error('❌ Error fetching permission codes:', permissionsError);
@@ -137,7 +137,7 @@ async function fetchUserRoleName(userId: string): Promise<string | null> {
     const { data: role, error: roleError } = await supabase
       .from(Tables.ROLES)
       .select('name')
-      .eq('id', roleId)
+      .eq('_id', roleId)
       .single();
     
     if (roleError) {
@@ -166,7 +166,7 @@ function getDepartmentLevelFromCode(code?: string | null): number | undefined {
 }
 
 // 🔥 NEW: Fetch user department from database (users -> department_users -> departments)
-async function fetchUserDepartment(userId: string): Promise<{ id: string; name: string; code?: string; level?: number; address?: string; latitude?: number; longitude?: number; parent_id?: string | null } | null> {
+async function fetchUserDepartment(userId: string): Promise<{ _id: string; name: string; code?: string; level?: number; address?: string; latitude?: number; longitude?: number; parent_id?: string | null } | null> {
   try {
     
     // Query department_users with nested select to get departments data (including address)
@@ -175,7 +175,7 @@ async function fetchUserDepartment(userId: string): Promise<{ id: string; name: 
       .select(`
         department_id,
         departments (
-          id,
+          _id,
           name,
           code,
           level,
@@ -199,13 +199,13 @@ async function fetchUserDepartment(userId: string): Promise<{ id: string; name: 
     
     // Extract department data from nested structure
     const departmentData = departmentUsers[0]?.departments;
-    if (!departmentData || !departmentData.id) {
+    if (!departmentData || !departmentData._id) {
       return null;
     }
     
     const inferredLevel = getDepartmentLevelFromCode(departmentData.code);
     const departmentInfo = {
-      id: departmentData.id,
+      _id: departmentData._id,
       name: departmentData.name || '',
       code: departmentData.code || undefined,
       level: departmentData.level ?? inferredLevel,
@@ -598,7 +598,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const parsedUser = JSON.parse(storedUser) as UserInfo;
             // 🔥 FIX: Refresh role name if it's still the default/mock value
             if (!parsedUser.roleDisplay || parsedUser.roleDisplay === 'Người dùng' || parsedUser.roleDisplay.includes('Quản lý')) {
-              const roleName = await fetchUserRoleName(session.user.id);
+              const roleName = await fetchUserRoleName(session.user._id);
               if (roleName) {
                 parsedUser.roleDisplay = roleName;
                 localStorage.setItem('mappa-user', JSON.stringify(parsedUser));

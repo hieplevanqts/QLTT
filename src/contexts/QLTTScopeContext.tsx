@@ -5,13 +5,13 @@ import { supabase } from '../lib/supabase';
 export interface QLTTScope {
   divisionId: string | null; // Chi cục (departments level 2)
   teamId: string | null;     // Đội (departments level 3)
-  areaId: string | null;     // areas.id
+  areaId: string | null;     // areas._id
   province: string | null;   // province code (for downstream filters)
   ward: string | null;       // ward code (for downstream filters)
 }
 
 interface ScopeDepartment {
-  id: string;
+  _id: string;
   parent_id: string | null;
   name: string;
   code?: string | null;
@@ -19,7 +19,7 @@ interface ScopeDepartment {
 }
 
 interface AreaRow {
-  id: string;
+  _id: string;
   code: string;
   name: string;
   level: string;
@@ -33,14 +33,14 @@ interface DepartmentAreaRow {
 }
 
 interface WardRow {
-  id: string;
+  _id: string;
   code: string;
   name: string;
   province_id: string;
 }
 
 interface ProvinceRow {
-  id: string;
+  _id: string;
   code: string;
   name: string;
 }
@@ -121,7 +121,7 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
         ] = await Promise.all([
           supabase
             .from('departments')
-            .select('id, parent_id, name, code, level')
+            .select('_id, parent_id, name, code, level')
             .is('deleted_at', null)
             .order('path', { ascending: true }),
           supabase
@@ -129,13 +129,13 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
             .select('department_id, area_id'),
           supabase
             .from('areas')
-            .select('id, code, name, level, "provinceId", "wardId"'),
+            .select('_id, code, name, level, "provinceId", "wardId"'),
           supabase
             .from('wards')
-            .select('id, code, name, province_id'),
+            .select('_id, code, name, province_id'),
           supabase
             .from('provinces')
-            .select('id, code, name'),
+            .select('_id, code, name'),
         ]);
 
         if (departmentsError) {
@@ -156,11 +156,36 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
 
         if (!isMounted) return;
 
-        setDepartments(departmentsData || []);
+        setDepartments((departmentsData || []).map((dept) => ({
+          id: dept._id,
+          parent_id: dept.parent_id,
+          name: dept.name,
+          code: dept.code,
+          level: dept.level,
+        })));
+
         setDepartmentAreas(departmentAreasData || []);
-        setAreas(areasData || []);
-        setWards(wardsData || []);
-        setProvinces(provincesData || []);
+        setAreas((areasData || []).map((area) => ({
+          id: area._id,
+          code: area.code,
+          name: area.name,
+          level: area.level,
+          provinceId: area.provinceId,
+          wardId: area.wardId,
+        })));
+
+        setWards((wardsData || []).map((ward) => ({
+          id: ward._id,
+          code: ward.code,
+          name: ward.name,
+          province_id: ward.province_id,
+        })));
+
+        setProvinces((provincesData || []).map((province) => ({
+          id: province._id,
+          code: province.code,
+          name: province.name,
+        })));
       } catch (error: any) {
         console.error('❌ QLTTScopeContext: Failed to load scope data:', error);
       } finally {
