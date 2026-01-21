@@ -172,7 +172,7 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
     // Build business type data from categories
     // 🔥 FIX: Use category.id as key (for API filtering), but display category.name
     const businessTypeData = (categories || []).map(category => ({
-      key: category.id,  // 🔥 Changed to category.id for API
+      key: category._id,  // 🔥 Changed to category.id for API
       label: category.name,                                  // 📦 FROM DB
       icon: businessTypeIconMap[category.name]?.icon || Store,  // 🎨 HARDCODED (fallback to Store)
       color: businessTypeIconMap[category.name]?.color || '#9ca3af',  // 🎨 HARDCODED
@@ -263,11 +263,6 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
     };
     
     const { rootDepartments, groupedDepartments } = flattenTreeForRender(departmentTree);
-    
-    // 🔥 DEBUG: Log tree structure
-    console.log('📊 MapFilterPanel: Department tree structure');
-    console.log('  - rootDepartments:', rootDepartments.length, rootDepartments.map(d => ({ id: d.id, name: d.name })));
-    console.log('  - groupedDepartments:', groupedDepartments.length, groupedDepartments.map(g => ({ parent: g.parent.name, children: g.children.map(c => c.name) })));
     
     // 🔥 NEW: Toggle department group expand/collapse
     const toggleDepartmentGroup = (parentId: string) => {

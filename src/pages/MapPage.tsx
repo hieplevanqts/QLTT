@@ -208,7 +208,7 @@ export default function MapPage() {
           isInitializingFiltersRef.current = true; // 🔥 FIX: Mark as initializing
           const initialBusinessTypeFilters: { [key: string]: boolean } = {};
           cats.forEach((cat) => {
-            initialBusinessTypeFilters[cat.id] = true;  // 🔥 ALL categories enabled by default
+            initialBusinessTypeFilters[cat._id] = true;  // 🔥 ALL categories enabled by default
           });
           setBusinessTypeFilters(initialBusinessTypeFilters);
           setPendingBusinessTypeFilters(initialBusinessTypeFilters);  // 🔥 Sync pending
@@ -333,7 +333,7 @@ export default function MapPage() {
         // 🔥 VALIDATE: Check if saved business type filters match current categories
         if (savedFilters.businessTypeFilters) {
           const savedBusinessTypeKeys = Object.keys(savedFilters.businessTypeFilters);
-          const validCategoryIds = categories.map(c => c.id);
+          const validCategoryIds = categories.map(c => c._id);
           const isValidBusinessTypeFilter = savedBusinessTypeKeys.every(key => validCategoryIds.includes(key));
           
           if (isValidBusinessTypeFilter) {
@@ -346,7 +346,7 @@ export default function MapPage() {
           } else {
           }
         }
-        
+        console.log('businessTypeFilters', businessTypeFilters);
         if (savedFilters.selectedProvince) {
           setSelectedProvince(savedFilters.selectedProvince);
         } else {
@@ -494,12 +494,12 @@ export default function MapPage() {
         
         // 🔥 Get business types from categories
         // For merchants, we filter by business_type field (text) instead of category IDs
-        const activeBusinessTypes = Object.keys(businessTypeFilters).filter(key => businessTypeFilters[key] === true);
+        const activeBusinessTypes = Object.keys(businessTypeFilters).filter(key => businessTypeFilters[key] === false);
         
         // Map category IDs to category names
         const businessTypeNames = activeBusinessTypes
           .map(categoryId => {
-            const category = categories.find(c => c.id === categoryId);
+            const category = categories.find(c => c._id === categoryId);
             return category?.name;
           })
           .filter((name): name is string => name !== undefined);
@@ -559,8 +559,8 @@ export default function MapPage() {
           departmentIdsToFilter,
           teamId,
           divisionId,
-          { departmentIds: departments.map(d => d.id) } // assuming Department has an 'id' property
-
+          { departmentIds: departments.map(d => d.id) }, // assuming Department has an 'id' property
+          businessTypeFilters
         );
         
         setRestaurants(merchants);
@@ -814,12 +814,13 @@ export default function MapPage() {
     setPendingFilters(newFilters);  // Keep pending in sync
   };
 
-  const handleBusinessTypeFilterChange = (type: string) => {
+  const handleBusinessTypeFilterChange = (key: string) => {
+    
     const newFilters = {
       ...businessTypeFilters,
-      [type]: !businessTypeFilters[type]
+      [key]: !businessTypeFilters[key]
     };
-    
+    console.log('newFilters', newFilters);
     setBusinessTypeFilters(newFilters);
     setPendingBusinessTypeFilters(newFilters);  // Keep pending in sync
   };
@@ -1236,7 +1237,7 @@ export default function MapPage() {
   // 🔥 NEW: Check if there are unapplied changes
   const hasUnappliedChanges = useMemo(() => {
     // 🔥 DISABLED: Real-time filtering - no need for "Apply" button
-    return false;
+    // return false;
     
     // Check if filters differ
     const filtersDiffer = Object.keys(filters).some(key => {
@@ -1250,7 +1251,7 @@ export default function MapPage() {
     
     return filtersDiffer || businessTypeFiltersDiffer;
   }, [filters, pendingFilters, businessTypeFilters, pendingBusinessTypeFilters]);
-
+  console.log('pendingBusinessTypeFilters', pendingBusinessTypeFilters)
   // Get autocomplete suggestions (limit to 8 results)
   const autocompleteSuggestions = searchQuery.trim() 
     ? filteredRestaurants.slice(0, 8)

@@ -87,7 +87,7 @@ export const LocationStatsCard = React.forwardRef<HTMLDivElement, LocationStatsC
     // 🔥 Map category IDs to names
     const activeBusinessTypeNames = activeBusinessTypes
       .map(categoryId => {
-        const category = categories.find(cat => cat.id === categoryId);
+        const category = categories.find(cat => cat._id === categoryId);
         return category?.name || categoryId; // Fallback to ID if not found
       });
     
@@ -121,6 +121,7 @@ export const LocationStatsCard = React.forwardRef<HTMLDivElement, LocationStatsC
 
         <div className={styles.content}>
           {/* Business Type Filters (if any) */}
+
           {hasBusinessTypeFilter && (() => {
             const hasMore = activeBusinessTypeNames.length > MAX_VISIBLE_TYPES;
             
