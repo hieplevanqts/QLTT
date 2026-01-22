@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Building2, AlertTriangle, CheckCircle2, Map, X, ChevronDown, ChevronUp } from 'lucide-react';
 import styles from './LocationStatsCard.module.css';
 import { provinces, districts, wards } from '../../../data/vietnamLocations';
 import { Restaurant } from '../../../data/restaurantData';
 import { Category } from '../../../utils/api/categoriesApi';
+import { fetchProvinces, fetchWardsByProvinceId, ProvinceApiData, WardApiData } from '../../../utils/api/locationsApi';
+import { getDepartmentManager } from '../../../utils/api/departmentUsersApi';
 
 interface LocationStatsCardProps {
   selectedProvince?: string;
@@ -13,6 +15,8 @@ interface LocationStatsCardProps {
   businessTypeFilters: { [key: string]: boolean };
   categories: Category[];  // 🔥 NEW: Categories for mapping ID to name
   merchantStats?: { total: number; certified: number; hotspot: number } | null;  // 🔥 NEW: Stats from API
+  divisionId?: string | null;  // 🔥 NEW: Division ID for fetching manager
+  teamId?: string | null;  // 🔥 NEW: Team ID for fetching manager (priority)
   onClose: () => void;
   isVisible: boolean;
   onVisibilityChange: (visible: boolean) => void;
@@ -27,7 +31,8 @@ export const LocationStatsCard = React.forwardRef<HTMLDivElement, LocationStatsC
     filteredRestaurants,
     businessTypeFilters,
     categories,  // 🔥 NEW: Categories for mapping ID to name
-    merchantStats,  // 🔥 NEW: Stats from API
+    divisionId,  // 🔥 NEW: Division ID
+    teamId,  // 🔥 NEW: Team ID (priority)
     onClose,
     isVisible,
     onVisibilityChange,
@@ -40,30 +45,96 @@ export const LocationStatsCard = React.forwardRef<HTMLDivElement, LocationStatsC
     const [showAllBusinessTypes, setShowAllBusinessTypes] = React.useState(false);
     const MAX_VISIBLE_TYPES = 2; // Show only 2 types initially (less clutter)
 
-    // Default to Hà Nội if no province selected
-    const defaultProvince = 'Hà Nội';
-    const activeProvince = selectedProvince || defaultProvince;
+    // 🔥 NEW: State for provinces and wards from API
+    const [provincesDB, setProvincesDB] = useState<ProvinceApiData[]>([]);
+    const [wardsDB, setWardsDB] = useState<WardApiData[]>([]);
+    
+    // 🔥 NEW: State for department manager
+    const [departmentManager, setDepartmentManager] = useState<{ id: string; full_name: string; email?: string; phone?: string } | null>(null);
 
-    // Get location data
-    const provinceData = activeProvince ? provinces[activeProvince] : null;
-    const districtData = selectedDistrict 
-      ? districts[activeProvince]?.find(d => d.name === selectedDistrict)
+    // Load provinces from API
+    useEffect(() => {
+      const loadProvinces = async () => {
+        try {
+          const data = await fetchProvinces();
+          setProvincesDB(data);
+        } catch (error) {
+          console.error('Error loading provinces:', error);
+        }
+      };
+      loadProvinces();
+    }, []);
+
+    // Load wards when province is selected
+    useEffect(() => {
+      const loadWards = async () => {
+        if (selectedProvince) {
+          try {
+            const data = await fetchWardsByProvinceId(selectedProvince);
+            setWardsDB(data);
+          } catch (error) {
+            console.error('Error loading wards:', error);
+            setWardsDB([]);
+          }
+        } else {
+          setWardsDB([]);
+        }
+      };
+      loadWards();
+    }, [selectedProvince]);
+
+    // 🔥 NEW: Load department manager when teamId or divisionId changes
+    useEffect(() => {
+      const loadManager = async () => {
+        if (teamId || divisionId) {
+          try {
+            const manager = await getDepartmentManager(teamId, divisionId);
+            setDepartmentManager(manager);
+          } catch (error) {
+            console.error('Error loading department manager:', error);
+            setDepartmentManager(null);
+          }
+        } else {
+          setDepartmentManager(null);
+        }
+      };
+      loadManager();
+    }, [teamId, divisionId]);
+
+    // 🔥 FIX: Map province ID to name
+    const provinceName = selectedProvince && selectedProvince !== 'undefined'
+      ? (provincesDB.find(p => p._id === selectedProvince)?.name || (selectedProvince.length > 20 ? null : selectedProvince))
       : null;
-    const wardData = selectedWard 
-      ? wards[selectedDistrict]?.find(w => w.name === selectedWard)
+
+    // 🔥 FIX: Map ward ID to name
+    const wardName = selectedWard && selectedWard !== 'undefined'
+      ? (wardsDB.find(w => w._id === selectedWard)?.name || (selectedWard.length > 20 ? null : selectedWard))
+      : null;
+
+    // Get location data from static data (for officer and area info)
+    const provinceData = provinceName && provinceName !== 'undefined' ? provinces[provinceName] : null;
+    const districtData = selectedDistrict && selectedDistrict !== 'undefined'
+      ? districts[provinceName || '']?.find(d => d.name === selectedDistrict)
+      : null;
+    const wardData = wardName && wardName !== 'undefined' && selectedDistrict
+      ? (wards[selectedDistrict] || []).find((w: any) => w.name === wardName)
       : null;
 
     // Determine current location level
     const currentLocation = wardData || districtData || provinceData;
-    const locationName = selectedWard || selectedDistrict || activeProvince;
-    const officer = currentLocation?.officer || 'Chưa phân công';
+    // 🔥 FIX: Show "Toàn quốc" if no location is selected, otherwise show the selected location
+    const locationName = wardName || (selectedDistrict && selectedDistrict !== 'undefined' ? selectedDistrict : null) || provinceName || 'Toàn quốc';
+    // 🔥 NEW: Use department manager from API, fallback to static data
+    const officer = departmentManager?.full_name || currentLocation?.officer || 'Chưa phân công';
     const area = currentLocation?.area;
 
-    // Calculate stats - use API stats if available, otherwise fallback to filteredRestaurants
-    const totalBusinesses = merchantStats?.total ?? filteredRestaurants.length;
-    const certifiedCount = merchantStats?.certified ?? filteredRestaurants.filter(r => r.category === 'certified').length;
-    const hotspotCount = merchantStats?.hotspot ?? filteredRestaurants.filter(r => r.category === 'hotspot').length;
-    // These are still calculated from filteredRestaurants as they're not in API stats
+    // 🔥 FIX: Use filteredRestaurants which is already filtered by categories from API
+    // filteredRestaurants comes from restaurants (filtered by categories) + search query filter
+    // So it already includes category filtering from the backend
+    // Calculate stats directly from filteredRestaurants (already filtered by categories)
+    const totalBusinesses = filteredRestaurants.length;
+    const certifiedCount = filteredRestaurants.filter(r => r.category === 'certified').length;
+    const hotspotCount = filteredRestaurants.filter(r => r.category === 'hotspot').length;
     const scheduledCount = filteredRestaurants.filter(r => r.category === 'scheduled').length;
     const inspectedCount = filteredRestaurants.filter(r => r.category === 'inspected').length;
 
@@ -84,12 +155,13 @@ export const LocationStatsCard = React.forwardRef<HTMLDivElement, LocationStatsC
       .map(([type, _]) => type);
     const hasBusinessTypeFilter = activeBusinessTypes.length > 0;
     
-    // 🔥 Map category IDs to names
+    // 🔥 Map category IDs to names and filter out undefined/invalid values
     const activeBusinessTypeNames = activeBusinessTypes
       .map(categoryId => {
-        const category = categories.find(cat => cat._id === categoryId);
-        return category?.name || categoryId; // Fallback to ID if not found
-      });
+        const category = categories.find(cat => (cat as any)._id === categoryId || cat.id === categoryId);
+        return category?.name || null; // Return null if not found
+      })
+      .filter((name): name is string => name !== null && name !== undefined && name !== 'undefined' && name.trim() !== '');
     
     // 🐛 DEBUG: Log data for debugging count issues
     // console.log(filteredRestaurants.map(r => ({
@@ -122,7 +194,7 @@ export const LocationStatsCard = React.forwardRef<HTMLDivElement, LocationStatsC
         <div className={styles.content}>
           {/* Business Type Filters (if any) */}
 
-          {hasBusinessTypeFilter && (() => {
+          {hasBusinessTypeFilter && activeBusinessTypeNames.length > 0 && (() => {
             const hasMore = activeBusinessTypeNames.length > MAX_VISIBLE_TYPES;
             
             // When collapsed: show only first 2 types
@@ -134,7 +206,7 @@ export const LocationStatsCard = React.forwardRef<HTMLDivElement, LocationStatsC
               <div className={styles.businessTypesRow}>
                 <Building2 size={14} className={styles.icon} />
                 <div className={styles.businessTypesList}>
-                  {visibleTypes.map((type) => (
+                  {visibleTypes.filter(type => type && type !== 'undefined').map((type) => (
                     <span key={type} className={styles.businessTypeBadge}>
                       {type}
                     </span>

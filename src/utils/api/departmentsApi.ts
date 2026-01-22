@@ -52,15 +52,51 @@ export async function fetchMarketManagementTeams(options?: {
         ? { type: 'divisionId', value: options.divisionId }
         : null;
     
+    let data: any[] = [];
+    let error: any = null;
+    
     if (filterId) {
       console.log(`🔍 Filtering departments by ${filterId.type}:`, filterId.value);
-      // Use .or() with proper format: field1.operator.value1,field2.operator.value2
-      query = query.or(`_id.eq.${filterId.value},parent_id.eq.${filterId.value}`);
+      // 🔥 FIX: Fetch twice and merge to avoid .or() issues with _id field
+      // Query 1: _id = filterId.value
+      const query1 = supabase
+        .from('departments')
+        .select('_id, name, code, level, path, parent_id')
+        .is('deleted_at', null)
+        .eq('_id', filterId.value);
+      
+      // Query 2: parent_id = filterId.value
+      const query2 = supabase
+        .from('departments')
+        .select('_id, name, code, level, path, parent_id')
+        .is('deleted_at', null)
+        .eq('parent_id', filterId.value);
+      
+      // Execute both queries in parallel
+      const [result1, result2] = await Promise.all([
+        query1.order('name', { ascending: true }),
+        query2.order('name', { ascending: true })
+      ]);
+      
+      if (result1.error) {
+        error = result1.error;
+      } else if (result2.error) {
+        error = result2.error;
+      } else {
+        // Merge results and remove duplicates
+        const merged = [...(result1.data || []), ...(result2.data || [])];
+        const uniqueMap = new Map();
+        merged.forEach((dept: any) => {
+          uniqueMap.set(dept._id, dept);
+        });
+        data = Array.from(uniqueMap.values());
+      }
     } else {
       console.log('📋 No filter - fetching all departments');
+      const result = await query.order('name', { ascending: true });
+      data = result.data || [];
+      error = result.error;
     }
-    
-    const { data, error } = await query.order('name', { ascending: true });
    
     if (error) {
       console.error('❌ Error fetching market management teams:', error);
