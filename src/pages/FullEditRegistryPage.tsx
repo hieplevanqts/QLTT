@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, X, AlertCircle, Shield, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
@@ -17,18 +17,12 @@ import {
 } from '../app/components/ui/select';
 import { Badge } from '../app/components/ui/badge';
 import { Store, getStoreById, updateStore } from '../data/mockStores';
-import { provinces, getDistrictsByProvince, getWardsByDistrict } from '../data/vietnamLocations';
+import { fetchProvinces, fetchAllWards, type ProvinceApiData, type WardApiData } from '../utils/api/locationsApi';
 import { DiffPreviewSection, FieldChange } from '../ui-kit/DiffPreviewSection';
 import { ChangeReasonDialog } from '../ui-kit/ChangeReasonDialog';
 import { SensitiveFieldWarning } from '../ui-kit/SensitiveFieldWarning';
 import { MapLocationPicker } from '../ui-kit/MapLocationPicker';
 import styles from './FullEditRegistryPage.module.css';
-
-// Transform provinces object to array for usage in component
-const provinceList = Object.values(provinces).map(p => ({
-  ...p,
-  code: p.name
-}));
 
 // Define sensitive fields that require approval
 const SENSITIVE_FIELDS = new Set([
@@ -115,7 +109,6 @@ export default function FullEditRegistryPage() {
   const [step, setStep] = useState<EditStep>('form');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasPermission, setHasPermission] = useState(true);
   const [originalStore, setOriginalStore] = useState<Store | null>(null);
   const [showReasonDialog, setShowReasonDialog] = useState(false);
 
@@ -124,9 +117,10 @@ export default function FullEditRegistryPage() {
   const [tagInput, setTagInput] = useState('');
 
   // Location cascading
+  const [apiProvinces, setApiProvinces] = useState<ProvinceApiData[]>([]);
+  const [allWards, setAllWards] = useState<WardApiData[]>([]);
+  const [loadingProvinces, setLoadingProvinces] = useState(false);
   const [selectedProvince, setSelectedProvince] = useState('');
-  const [selectedDistrict, setSelectedDistrict] = useState('');
-  const [districts, setDistricts] = useState<any[]>([]);
   const [wards, setWards] = useState<any[]>([]);
 
   // Load store data
@@ -147,17 +141,10 @@ export default function FullEditRegistryPage() {
         setOriginalStore(store);
         setFormData(store);
 
-        // Initialize location selects
-        if (store.provinceCode) {
-          setSelectedProvince(store.provinceCode);
-          const districtList = getDistrictsByProvince(store.provinceCode);
-          setDistricts(districtList);
-
-          if (store.jurisdictionCode) {
-            setSelectedDistrict(store.jurisdictionCode);
-            const wardList = getWardsByDistrict(store.jurisdictionCode);
-            setWards(wardList.map(w => ({ ...w, code: w.name })));
-          }
+        // Initialize location selects with province name
+        if (store.province) {
+          setSelectedProvince(store.province);
+          handleProvinceChange(store.province);
         }
       } catch (error) {
         console.error('Error loading store:', error);
@@ -171,6 +158,56 @@ export default function FullEditRegistryPage() {
       loadStore();
     }
   }, [id, navigate]);
+
+  // Fetch provinces and wards on mount
+  useEffect(() => {
+    loadLocationData();
+  }, []);
+
+  const loadLocationData = async () => {
+    try {
+      setLoadingProvinces(true);
+      const prov = await fetchProvinces();
+      setApiProvinces(prov);
+    } catch (error) {
+      console.error('Error fetching provinces:', error);
+      toast.error('Không thể tải danh sách tỉnh/thành phố');
+    } finally {
+      setLoadingProvinces(false);
+    }
+
+    try {
+      const w = await fetchAllWards();
+      setAllWards(w);
+    } catch (error) {
+      console.error('Error fetching wards:', error);
+      toast.error('Không thể tải danh sách phường/xã');
+    }
+  };
+
+  const handleProvinceChange = (provinceName: string) => {
+    setSelectedProvince(provinceName);
+    setFormData(prev => ({
+      ...prev,
+      province: provinceName,
+      ward: '',
+    }));
+
+    const provinceData = apiProvinces.find(p => p.name === provinceName);
+    if (!provinceData) {
+      console.warn('⚠️ Province not found:', provinceName);
+      setWards([]);
+      return;
+    }
+
+    console.log('🔍 Filtering wards for province:', provinceData.name, 'ID:', provinceData._id);
+    console.log('   Total wards in allWards:', allWards.length);
+    console.log('   Sample wards province_id:', allWards.slice(0, 5).map(w => ({ id: w._id, name: w.name, province_id: w.province_id })));
+    
+    const filteredWards = allWards.filter(w => w.province_id === provinceData._id);
+    console.log('✅ Found wards:', filteredWards.length, 'wards for this province');
+    setWards(filteredWards);
+  };
 
   // Detect changes
   const changes = useMemo((): FieldChange[] => {
@@ -214,41 +251,6 @@ export default function FullEditRegistryPage() {
   const sensitiveFieldsChanged = changes.filter((c) => c.isSensitive).map((c) => c.label);
 
   // Handlers
-  const handleProvinceChange = (provinceCode: string) => {
-    setSelectedProvince(provinceCode);
-    const province = provinceList.find((p) => p.code === provinceCode);
-
-    // Get all districts for this province
-    const districtList = getDistrictsByProvince(provinceCode);
-    setDistricts(districtList);
-
-    // Get all wards from all districts in this province
-    const allWards: any[] = [];
-    districtList.forEach((district) => {
-      const wardList = getWardsByDistrict(district.name);
-      allWards.push(...wardList);
-    });
-    setWards(allWards.map(w => ({ ...w, code: w.name })));
-
-    setFormData({
-      ...formData,
-      provinceCode,
-      province: province?.name || '',
-      wardCode: '',
-      ward: '',
-    });
-  };
-
-  const handleWardChange = (wardCode: string) => {
-    const ward = wards.find((w) => w.code === wardCode);
-
-    setFormData({
-      ...formData,
-      wardCode,
-      ward: ward?.name || '',
-    });
-  };
-
   const handleAddTag = () => {
     const tag = tagInput.trim();
     if (tag && !(formData.tags || []).includes(tag)) {
@@ -374,34 +376,6 @@ export default function FullEditRegistryPage() {
     );
   }
 
-  // No permission
-  if (!hasPermission) {
-    return (
-      <div className={styles.pageContainer}>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Card className="max-w-md">
-            <CardContent className="pt-6">
-              <div className="text-center space-y-4">
-                <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-full bg-destructive/10">
-                  <AlertCircle className="h-6 w-6 text-destructive" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold">Không có quyền truy cập</h3>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Bạn không có quyền chỉnh sửa đầy đủ thông tin cơ sở này.
-                  </p>
-                </div>
-                <Button onClick={() => navigate(`/registry/stores/${id}`)}>
-                  Quay lại chi tiết
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
   // Not found
   if (!originalStore) {
     return (
@@ -420,16 +394,15 @@ export default function FullEditRegistryPage() {
   }
 
   return (
-    <div className={styles.pageContainer}>
+    <div className={ `${styles.pageContainer} pb-2` }>
       <PageHeader
         breadcrumbs={[
           { label: 'Trang chủ', href: '/' },
-          { label: 'Cơ sở & Địa bàn', href: '/registry/stores' },
+          { label: 'Cơ sở quản lý', href: '/registry/stores' },
           { label: originalStore.name, href: `/registry/stores/${id}` },
           { label: 'Chỉnh sửa đầy đủ' },
         ]}
         title="Chỉnh sửa đầy đủ"
-        subtitle={originalStore.name}
         actions={
           <Button variant="outline" onClick={handleCancel}>
             <ArrowLeft size={16} />
@@ -661,11 +634,11 @@ export default function FullEditRegistryPage() {
                     <Label htmlFor="province">Tỉnh/Thành phố</Label>
                     <Select value={selectedProvince} onValueChange={handleProvinceChange}>
                       <SelectTrigger className='placeholder:text-gray-500 border-gray-300'>
-                        <SelectValue className='placeholder:text-gray-500' placeholder="Chọn tỉnh/thành phố" />
+                        <SelectValue className='placeholder:text-gray-500' placeholder={loadingProvinces ? "Đang tải..." : "Chọn tỉnh/thành phố"} />
                       </SelectTrigger>
                       <SelectContent>
-                        {provinceList.map((province) => (
-                          <SelectItem key={province.code} value={province.code}>
+                        {apiProvinces.map((province) => (
+                          <SelectItem key={province._id} value={province.name}>
                             {province.name}
                           </SelectItem>
                         ))}
@@ -676,8 +649,8 @@ export default function FullEditRegistryPage() {
                   <div className="space-y-2">
                     <Label htmlFor="ward">Phường/Xã</Label>
                     <Select
-                      value={formData.wardCode || ''}
-                      onValueChange={handleWardChange}
+                      value={formData.ward || ''}
+                      onValueChange={(wardName) => setFormData({ ...formData, ward: wardName })}
                       disabled={!selectedProvince}
                     >
                       <SelectTrigger className='placeholder:text-gray-500 border-gray-300'>
@@ -685,7 +658,7 @@ export default function FullEditRegistryPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {wards.map((ward) => (
-                          <SelectItem key={ward.code} value={ward.code}>
+                          <SelectItem key={ward._id} value={ward.name}>
                             {ward.name}
                           </SelectItem>
                         ))}

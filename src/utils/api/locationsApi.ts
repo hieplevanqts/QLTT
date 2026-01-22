@@ -1,166 +1,205 @@
 /**
- * Locations API - Fetch provinces and wards from Supabase
+ * Locations API - Fetch provinces and wards from Supabase REST API
+ * Using direct REST API calls with Bearer token authentication
  */
 
-import { supabase } from '../../lib/supabase';
+import { projectId, publicAnonKey } from '../../../utils/supabase/info';
+
+const baseUrl = `https://${projectId}.supabase.co/rest/v1`;
 
 export interface ProvinceApiData {
-  id: string;
+  _id: string;
   code: string;
   name: string;
 }
 
 export interface WardApiData {
-  id: string;
+  _id: string;
   code: string;
   name: string;
-  province_id?: string;  // 🔥 FIX: Database uses snake_case 'province_id'
-  provinceId?: string;   // Keep for backward compatibility if Supabase transforms it
+  province_id?: string;
+  provinceId?: string;
 }
 
 /**
- * Fetch all provinces from Supabase provinces table
+ * Fetch all provinces from Supabase provinces table via REST API
  */
 export async function fetchProvinces(): Promise<ProvinceApiData[]> {
   try {
+    console.log('📡 Fetching provinces from:', `${baseUrl}/provinces`);
     
-    const { data, error } = await supabase
-      .from('provinces')
-      .select('id, code, name')
-      .order('code', { ascending: true });
+    const response = await fetch(`${baseUrl}/provinces?select=_id,code,name&order=code.asc&limit=10000`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${publicAnonKey}`,
+        'apikey': publicAnonKey,
+      },
+    });
 
-    if (error) {
-      console.error('❌ Error fetching provinces:', error);
-      throw new Error(`Failed to fetch provinces: ${error.message}`);
+    console.log('📡 Provinces response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Error fetching provinces:', response.status, errorText);
+      throw new Error(`Failed to fetch provinces: ${response.statusText}`);
     }
 
+    const data = await response.json();
+    console.log('✅ Provinces fetched:', data?.length || 0, 'provinces');
+    
+    // Debug: Log all province IDs
+    if (data && data.length > 0) {
+      console.log('📊 Province IDs and names:', data.map((p: any) => ({ _id: p._id, name: p.name })));
+    }
+    
     return data || [];
   } catch (error: any) {
-    console.error('❌ Error fetching provinces:', error);
+    console.error('❌ Error fetching provinces:', error.message);
     throw error;
   }
 }
 
 /**
- * Fetch all wards from Supabase wards table
- * Supports pagination for large datasets
+ * Fetch all wards from Supabase areas table via REST API with pagination
  */
 export async function fetchAllWards(): Promise<WardApiData[]> {
   try {
+    console.log('📡 Fetching all wards from:', `${baseUrl}/areas`);
     
     let allWards: WardApiData[] = [];
-    let page = 0;
-    const pageSize = 1000;
+    let offset = 0;
+    const pageSize = 1000; // REST API default limit
     let hasMore = true;
 
     while (hasMore) {
-      const start = page * pageSize;
-      const end = start + pageSize - 1;
+      console.log(`📄 Fetching page - offset: ${offset}, limit: ${pageSize}`);
+      
+      const response = await fetch(
+        `${baseUrl}/areas?select=_id,code,name,province_id&order=code.asc&limit=${pageSize}&offset=${offset}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${publicAnonKey}`,
+            'apikey': publicAnonKey,
+          },
+        }
+      );
 
-      // 🔥 FIX: Use 'province_id' (snake_case) as that's the database field name
-      const { data, error } = await supabase
-        .from('wards')
-        .select('id, code, name, province_id')
-        .order('code', { ascending: true })
-        .range(start, end);
+      console.log(`📡 Page response status: ${response.status}`);
 
-      // 🔥 DEBUG: Log field names in first ward
-      if (data && data.length > 0 && page === 0 && start === 0) {
-        console.log({
-          keys: Object.keys(data[0]),
-          provinceId: data[0].provinceId,
-          province_id: (data[0] as any).province_id,
-          provinceid: (data[0] as any).provinceid,
-          fullObject: data[0],
-        });
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Error fetching wards page:', response.status, errorText);
+        throw new Error(`Failed to fetch wards: ${response.statusText}`);
       }
 
-      if (error) {
-        console.error('❌ Error fetching wards:', error);
-        throw new Error(`Failed to fetch wards: ${error.message}`);
-      }
+      const data = await response.json();
+      console.log(`✅ Page fetched: ${data?.length || 0} wards`);
 
       if (!data || data.length === 0) {
         hasMore = false;
+        console.log('✅ All pages fetched!');
       } else {
         allWards = [...allWards, ...data];
         if (data.length < pageSize) {
           hasMore = false;
-        } else {
-          page++;
+          console.log('✅ Final page reached!');
         }
+        offset += pageSize;
       }
     }
 
+    console.log('✅ Total wards fetched:', allWards.length);
+    
+    // Debug: Log province_id distribution
+    if (allWards.length > 0) {
+      const provinceIdCount = new Map<string, number>();
+      allWards.forEach((w: any) => {
+        const pid = w.province_id || 'null';
+        provinceIdCount.set(pid, (provinceIdCount.get(pid) || 0) + 1);
+      });
+      console.log('📊 Wards distribution by province_id:', Array.from(provinceIdCount.entries()));
+      console.log('🔍 Sample wards from each province:');
+      const sampledProvinces = new Set<string>();
+      allWards.slice(0, 20).forEach((w: any) => {
+        if (!sampledProvinces.has(w.province_id) && w.province_id) {
+          sampledProvinces.add(w.province_id);
+          console.log(`   Province ${w.province_id}: ${w.name}`);
+        }
+      });
+    }
+    
     return allWards;
   } catch (error: any) {
-    console.error('❌ Error fetching wards:', error);
+    console.error('❌ Error fetching wards:', error.message);
     throw error;
   }
 }
 
 /**
- * Fetch wards by province code from Supabase wards table
+ * Fetch wards by province code from Supabase areas table via REST API
  */
 export async function fetchWardsByProvinceCode(provinceCode: string): Promise<WardApiData[]> {
   try {
+    console.log('📡 Fetching wards for province:', provinceCode);
     
     // First, get province ID from code
-    const { data: provincesData, error: provinceError } = await supabase
-      .from('provinces')
-      .select('id, code')
-      .eq('code', provinceCode)
-      .limit(1);
+    const provinceResponse = await fetch(
+      `${baseUrl}/provinces?code=eq.${provinceCode.trim()}&select=_id`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${publicAnonKey}`,
+          'apikey': publicAnonKey,
+        },
+      }
+    );
 
-    if (provinceError) {
-      console.error('❌ Error fetching province:', provinceError);
-      throw new Error(`Failed to fetch province: ${provinceError.message}`);
+    if (!provinceResponse.ok) {
+      const errorText = await provinceResponse.text();
+      console.error('❌ Error fetching province:', provinceResponse.status, errorText);
+      throw new Error(`Failed to fetch province: ${provinceResponse.statusText}`);
     }
 
-    if (!provincesData || provincesData.length === 0) {
+    const provinces = await provinceResponse.json();
+    if (!provinces || provinces.length === 0) {
+      console.warn('⚠️ Province not found:', provinceCode);
       return [];
     }
 
-    const provinceId = provincesData[0].id;
+    const provinceId = provinces[0]._id;
+    console.log('✅ Province ID found:', provinceId);
 
-    // Then fetch wards by provinceId
-    let allWards: WardApiData[] = [];
-    let page = 0;
-    const pageSize = 1000;
-    let hasMore = true;
-
-    while (hasMore) {
-      const start = page * pageSize;
-      const end = start + pageSize - 1;
-
-      // 🔥 FIX: Use 'province_id' (snake_case) as that's the database field name
-      const { data, error } = await supabase
-        .from('wards')
-        .select('id, code, name, province_id')
-        .eq('province_id', provinceId)
-        .order('code', { ascending: true })
-        .range(start, end);
-
-      if (error) {
-        console.error('❌ Error fetching wards:', error);
-        throw new Error(`Failed to fetch wards: ${error.message}`);
+    // Now fetch wards by province_id
+    const wardsResponse = await fetch(
+      `${baseUrl}/areas?province_id=eq.${provinceId}&select=_id,code,name,province_id&order=code.asc`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${publicAnonKey}`,
+          'apikey': publicAnonKey,
+        },
       }
+    );
 
-      if (!data || data.length === 0) {
-        hasMore = false;
-      } else {
-        allWards = [...allWards, ...data];
-        if (data.length < pageSize) {
-          hasMore = false;
-        } else {
-          page++;
-        }
-      }
+    console.log('📡 Wards response status:', wardsResponse.status);
+
+    if (!wardsResponse.ok) {
+      const errorText = await wardsResponse.text();
+      console.error('❌ Error fetching wards:', wardsResponse.status, errorText);
+      throw new Error(`Failed to fetch wards: ${wardsResponse.statusText}`);
     }
 
-    return allWards;
+    const wards = await wardsResponse.json();
+    console.log('✅ Wards fetched for province:', wards?.length || 0, 'wards');
+    
+    return wards || [];
   } catch (error: any) {
-    console.error(`❌ Error fetching wards for province ${provinceCode}:`, error);
+    console.error(`❌ Error fetching wards for province ${provinceCode}:`, error.message);
     throw error;
   }
 }

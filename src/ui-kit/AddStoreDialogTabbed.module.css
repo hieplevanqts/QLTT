@@ -3,6 +3,66 @@
    Simple, Minimal, Professional styling
    ===================================================== */
 
+/* ===== CSS VARIABLES (DESIGN TOKENS) ===== */
+:root {
+  /* Colors */
+  --primary: #3b82f6;
+  --primary-bg: #eff6ff;
+  --primary-text: #1e40af;
+  
+  --destructive: #ef4444;
+  --destructive-bg: #fef2f2;
+  --destructive-text: #991b1b;
+  
+  --success: #22c55e;
+  --success-bg: #f0fdf4;
+  --success-text: #166534;
+  
+  --warning: #f59e0b;
+  --warning-bg: #fffbeb;
+  --warning-text: #b45309;
+  
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --border: #e5e7eb;
+  --background: #ffffff;
+  
+  /* Spacing */
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-5: 1.25rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  
+  /* Border Radius */
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+  
+  /* Typography */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-xl: 1.25rem;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  
+  /* Scrollbar */
+  --scrollbar-width: 8px;
+  --scrollbar-border-radius: 4px;
+  --scrollbar-color: #d1d5db;
+  --scrollbar-color-hover: #9ca3af;
+  --scrollbar-color-active: #6b7280;
+}
+
 /* ===== DIALOG CONTENT ===== */
 .dialogContent {
   max-width: 900px;

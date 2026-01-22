@@ -28,6 +28,7 @@ import {
   getDistrictsByProvince,
   getWardsByDistrict,
 } from '../data/vietnamLocations';
+import { fetchProvinces, fetchAllWards, type ProvinceApiData, type WardApiData } from '../utils/api/locationsApi';
 import { mockStores } from '../data/mockStores';
 import styles from './EditRegistryPage.module.css';
 
@@ -46,12 +47,17 @@ export default function EditRegistryPage() {
   // Find store by ID
   const store = mockStores.find((s) => s.id === Number(id));
 
+  // API Data
+  const [apiProvinces, setApiProvinces] = useState<ProvinceApiData[]>([]);
+  const [allWards, setAllWards] = useState<WardApiData[]>([]);
+  const [loadingProvinces, setLoadingProvinces] = useState(false);
+  const [loadingWards, setLoadingWards] = useState(false);
+
   const [formData, setFormData] = useState({
     name: '',
     address: '',
     type: '',
     province: '',
-    jurisdiction: '',
     ward: '',
     managementUnit: '',
     latitude: undefined as number | undefined,
@@ -64,18 +70,54 @@ export default function EditRegistryPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showDiffPreview, setShowDiffPreview] = useState(false);
 
-  // Get available districts and wards
-  const availableDistricts = useMemo(() => {
-    if (!formData.province) return [];
-    return getDistrictsByProvince(formData.province);
-  }, [formData.province]);
+  // Fetch provinces and wards on mount
+  useEffect(() => {
+    loadLocationData();
+  }, []);
 
+  const loadLocationData = async () => {
+    try {
+      setLoadingProvinces(true);
+      const prov = await fetchProvinces();
+      setApiProvinces(prov);
+    } catch (error) {
+      console.error('Error fetching provinces:', error);
+    } finally {
+      setLoadingProvinces(false);
+    }
+
+    try {
+      setLoadingWards(true);
+      const w = await fetchAllWards();
+      setAllWards(w);
+    } catch (error) {
+      console.error('Error fetching wards:', error);
+    } finally {
+      setLoadingWards(false);
+    }
+  };
+
+  // Get available wards by province
   const availableWards = useMemo(() => {
-    if (!formData.province || !formData.jurisdiction) return [];
-    const district = availableDistricts.find((d) => d.name === formData.jurisdiction);
-    if (!district) return [];
-    return getWardsByDistrict(district.code);
-  }, [formData.province, formData.jurisdiction, availableDistricts]);
+    if (!formData.province || !allWards.length) {
+      console.log('⚠️ Skipping filter - province:', formData.province, 'allWards.length:', allWards.length);
+      return [];
+    }
+    
+    const provinceData = apiProvinces.find(p => p.name === formData.province);
+    if (!provinceData) {
+      console.warn('⚠️ Province not found:', formData.province, 'Available:', apiProvinces.map(p => p.name));
+      return [];
+    }
+    
+    console.log('🔍 Filtering wards for province:', provinceData.name, 'ID:', provinceData._id);
+    console.log('   Total wards:', allWards.length);
+    console.log('   Sample wards province_id:', allWards.slice(0, 5).map(w => w.province_id));
+    
+    const filtered = allWards.filter(w => w.province_id === provinceData._id);
+    console.log('✅ Found wards:', filtered.length, filtered.map(w => w.name).slice(0, 5));
+    return filtered;
+  }, [formData.province, allWards, apiProvinces]);
 
   // Initialize form
   useEffect(() => {
@@ -84,9 +126,8 @@ export default function EditRegistryPage() {
         name: store.name,
         address: store.address,
         type: store.type,
-        province: store.provinceCode || '79',
-        jurisdiction: store.jurisdiction,
-        ward: store.wardCode || '',
+        province: store.province || '',
+        ward: store.ward || '',
         managementUnit: store.managementUnit,
         latitude: store.latitude,
         longitude: store.longitude,
@@ -130,24 +171,22 @@ export default function EditRegistryPage() {
       });
     }
 
-    const oldProvince = provinces.find((p) => p.code === store.provinceCode)?.name || '';
-    const newProvince = provinces.find((p) => p.code === formData.province)?.name || '';
-    if (oldProvince !== newProvince) {
+    if (formData.province !== store.province) {
       detected.push({
         field: 'province',
         label: 'Tỉnh/Thành phố',
-        oldValue: oldProvince,
-        newValue: newProvince,
+        oldValue: store.province || '',
+        newValue: formData.province,
         isSensitive: true,
       });
     }
 
-    if (formData.jurisdiction !== store.jurisdiction) {
+    if (formData.ward !== store.ward) {
       detected.push({
-        field: 'jurisdiction',
-        label: 'Quận/Huyện',
-        oldValue: store.jurisdiction,
-        newValue: formData.jurisdiction,
+        field: 'ward',
+        label: 'Phường/Xã',
+        oldValue: store.ward || '',
+        newValue: formData.ward,
         isSensitive: true,
       });
     }
@@ -223,9 +262,6 @@ export default function EditRegistryPage() {
     }
     if (!formData.province) {
       newErrors.province = 'Vui lòng chọn tỉnh/thành phố';
-    }
-    if (!formData.jurisdiction) {
-      newErrors.jurisdiction = 'Vui lòng chọn quận/huyện';
     }
     if (!formData.ward) {
       newErrors.ward = 'Vui lòng chọn phường/xã';
@@ -453,17 +489,16 @@ export default function EditRegistryPage() {
                       setFormData({
                         ...formData,
                         province: value,
-                        jurisdiction: '',
                         ward: '',
                       });
                     }}
                   >
                     <SelectTrigger id="province">
-                      <SelectValue placeholder="Chọn tỉnh/thành" />
+                      <SelectValue placeholder={loadingProvinces ? "Đang tải..." : "Chọn tỉnh/thành"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {provinces.map((province) => (
-                        <SelectItem key={province.code} value={province.code}>
+                      {apiProvinces.map((province) => (
+                        <SelectItem key={province._id} value={province.name}>
                           {province.name}
                         </SelectItem>
                       ))}
@@ -473,52 +508,21 @@ export default function EditRegistryPage() {
                 </div>
 
                 <div className={styles.formField}>
-                  <Label htmlFor="jurisdiction">
-                    Quận/Huyện <span className={styles.required}>*</span>
+                  <Label htmlFor="ward">
+                    Phường/Xã <span className={styles.required}>*</span>
                     <span className={styles.sensitiveMark}>(Nhạy cảm)</span>
                   </Label>
                   <Select
-                    value={formData.jurisdiction}
-                    onValueChange={(val) => {
-                      setFormData({
-                        ...formData,
-                        jurisdiction: val,
-                        ward: '',
-                      });
-                    }}
+                    value={formData.ward}
+                    onValueChange={(val) => setFormData({ ...formData, ward: val })}
                     disabled={!formData.province}
-                  >
-                    <SelectTrigger id="jurisdiction">
-                      <SelectValue placeholder="Chọn quận/huyện" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableDistricts.map((district) => (
-                        <SelectItem key={district.code} value={district.name}>
-                          {district.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.jurisdiction && <p className={styles.error}>{errors.jurisdiction}</p>}
-                </div>
-              </div>
-
-              <div className={styles.formField}>
-                <Label htmlFor="ward">
-                  Phường/Xã <span className={styles.required}>*</span>
-                  <span className={styles.sensitiveMark}>(Nhạy cảm)</span>
-                </Label>
-                <Select
-                  value={formData.ward}
-                  onValueChange={(val) => setFormData({ ...formData, ward: val })}
-                  disabled={!formData.jurisdiction}
                 >
                   <SelectTrigger id="ward">
-                    <SelectValue placeholder="Chọn phường/xã" />
+                    <SelectValue placeholder={formData.province ? "Chọn phường/xã" : "Chọn tỉnh/thành trước"} />
                   </SelectTrigger>
                   <SelectContent>
                     {availableWards.map((ward) => (
-                      <SelectItem key={ward.code} value={ward.code}>
+                      <SelectItem key={ward._id} value={ward.name}>
                         {ward.name}
                       </SelectItem>
                     ))}
@@ -526,8 +530,9 @@ export default function EditRegistryPage() {
                 </Select>
                 {errors.ward && <p className={styles.error}>{errors.ward}</p>}
               </div>
+            </div>
 
-              <div className={styles.formField}>
+            <div className={styles.formField}>
                 <Label htmlFor="address">
                   Địa chỉ <span className={styles.required}>*</span>
                   <span className={styles.sensitiveMark}>(Nhạy cảm)</span>

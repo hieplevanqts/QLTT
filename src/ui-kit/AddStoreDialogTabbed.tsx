@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Building2,
   X,
@@ -59,6 +59,7 @@ import {
   provinces,
   getWardsByProvince
 } from '../data/vietnamLocations';
+import { fetchProvinces, fetchAllWards, type ProvinceApiData, type WardApiData } from '../utils/api/locationsApi';
 import { INDUSTRIES, searchIndustries } from '../data/industries';
 import { toast } from 'sonner';
 import styles from './AddStoreDialogTabbed.module.css';
@@ -153,14 +154,66 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
   // Validation errors
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
+  // API Data
+  const [apiProvinces, setApiProvinces] = useState<ProvinceApiData[]>([]);
+  const [allWards, setAllWards] = useState<WardApiData[]>([]);
+  const [loadingProvinces, setLoadingProvinces] = useState(false);
+  const [loadingWards, setLoadingWards] = useState(false);
+
   // Province/Ward state (NO District)
   const [selectedProvince, setSelectedProvince] = useState('');
   const [selectedWard, setSelectedWard] = useState('');
 
+  // Fetch location data on mount
+  useEffect(() => {
+    loadLocationData();
+  }, []);
+
+  const loadLocationData = async () => {
+    try {
+      setLoadingProvinces(true);
+      const prov = await fetchProvinces();
+      setApiProvinces(prov);
+    } catch (error) {
+      console.error('Error fetching provinces:', error);
+      toast.error('Không thể tải danh sách tỉnh/thành phố');
+    } finally {
+      setLoadingProvinces(false);
+    }
+
+    try {
+      setLoadingWards(true);
+      const w = await fetchAllWards();
+      setAllWards(w);
+    } catch (error) {
+      console.error('Error fetching wards:', error);
+      toast.error('Không thể tải danh sách phường/xã');
+    } finally {
+      setLoadingWards(false);
+    }
+  };
+
   // Get wards directly from province (no district)
   const wards = useMemo(() => {
-    return selectedProvince ? getWardsByProvince(selectedProvince) : [];
-  }, [selectedProvince]);
+    if (!selectedProvince || !allWards.length) {
+      console.log('⚠️ Skipping filter - province:', selectedProvince, 'allWards.length:', allWards.length);
+      return [];
+    }
+    
+    const provinceData = apiProvinces.find(p => p.name === selectedProvince);
+    if (!provinceData) {
+      console.warn('⚠️ Province not found:', selectedProvince, 'Available:', apiProvinces.map(p => p.name));
+      return [];
+    }
+    
+    console.log('🔍 Filtering wards for province:', provinceData.name, 'ID:', provinceData._id);
+    console.log('   Total wards:', allWards.length);
+    console.log('   Sample wards:', allWards.slice(0, 5).map(w => ({ name: w.name, province_id: w.province_id })));
+    
+    const filtered = allWards.filter(w => w.province_id === provinceData._id);
+    console.log('✅ Found wards:', filtered.length, filtered.map(w => w.name).slice(0, 5));
+    return filtered;
+  }, [selectedProvince, allWards, apiProvinces]);
 
   // Mock OCR extraction
   const mockExtractData = async (file: File): Promise<ExtractedData> => {
@@ -882,6 +935,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                 <Input
                   id="ownerPhone"
                   type="tel"
+                  className='placeholder:text-gray-500'
                   value={formData.ownerPhone || ''}
                   onChange={(e) => handleFieldChange('ownerPhone', e.target.value)}
                   placeholder="Nhập số điện thoại"
@@ -907,16 +961,6 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
           {activeTab === 'address' && (
             <div className={styles.addressTab}>
               <div className={styles.formGrid}>
-                {renderFieldWithIndicator(
-                  'registeredAddress',
-                  'Địa chỉ đăng ký kinh doanh',
-                  <Input
-                    id="registeredAddress"
-                    value={formData.registeredAddress || ''}
-                    onChange={(e) => handleFieldChange('registeredAddress', e.target.value)}
-                    placeholder="Nhập địa chỉ đăng ký kinh doanh"
-                  />
-                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="province">Tỉnh / Thành phố</Label>
@@ -938,8 +982,8 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                       <SelectValue placeholder="Chọn Tỉnh/Thành phố" />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.values(provinces).map((prov) => (
-                        <SelectItem key={prov.name} value={prov.name}>
+                      {apiProvinces.map((prov) => (
+                        <SelectItem key={prov._id} value={prov.name}>
                           {prov.name}
                         </SelectItem>
                       ))}
@@ -974,7 +1018,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                     </SelectTrigger>
                     <SelectContent>
                       {wards.map((ward) => (
-                        <SelectItem key={`${ward.district}_${ward.name}`} value={ward.name}>
+                        <SelectItem key={ward._id} value={ward.name}>
                           {ward.name}
                         </SelectItem>
                       ))}
@@ -987,6 +1031,17 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                     </p>
                   )}
                 </div>
+
+                {renderFieldWithIndicator(
+                  'registeredAddress',
+                  'Địa chỉ đăng ký kinh doanh',
+                  <Input
+                    id="registeredAddress"
+                    value={formData.registeredAddress || ''}
+                    onChange={(e) => handleFieldChange('registeredAddress', e.target.value)}
+                    placeholder="Nhập địa chỉ đăng ký kinh doanh"
+                  />
+                )}
 
                 <div className="space-y-2 col-span-2">
                   <Label htmlFor="headquarterAddress">Địa chỉ trụ sở chính (nếu khác)</Label>
