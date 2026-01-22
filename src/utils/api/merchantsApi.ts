@@ -3,7 +3,7 @@
 
 import { Restaurant } from '../../data/restaurantData';
 import { SUPABASE_REST_URL, getHeaders } from './config';
-import { supabase } from '../../lib/supabase';
+import axios from 'axios';
 
 
 /**
@@ -35,149 +35,183 @@ export interface FetchMerchantsOptions {
 export async function fetchMerchants(p0: string[] | undefined, businessTypes: string[] | undefined, departmentIdsToFilter: string[] | undefined, teamId: string | null, divisionId: string, departmentIds: string[], businessTypeFilters: string[] | null, options?: FetchMerchantsOptions): Promise<Restaurant[]> {
   const opts = options || {};
 
-  try {
-    // Build query with all filters
 
-    let url = `${SUPABASE_REST_URL}/merchants?select=*&limit=10000&order=created_at.desc`;
-    // let url = `${SUPABASE_REST_URL}/merchants?select=*,category_merchants!inner(category_id)&limit=10000&order=created_at.desc`;
+  try {
+    // --- A. CẬP NHẬT URL TRÌNH DUYỆT (KHÔNG TẢI LẠI TRANG) ---
+    const currentBrowserUrl = new URL(window.location.href);
+
+    // Gán hoặc xóa params dựa trên giá trị của opts để đồng bộ thanh địa chỉ
     if (opts.statusCodes && opts.statusCodes.length > 0) {
-      const statusFilter = opts.statusCodes.map(code => `status.eq.${code}`).join(',');
-      url += `&or=(${statusFilter})`;
+      currentBrowserUrl.searchParams.set('status', opts.statusCodes.join(','));
+    } else {
+      currentBrowserUrl.searchParams.delete('status');
     }
 
     if (opts.businessTypes && opts.businessTypes.length > 0) {
-      const typeFilter = opts.businessTypes.map(type => `business_type.eq.${encodeURIComponent(type)}`).join(',');
-      url += `&or=(${typeFilter})`;
+      currentBrowserUrl.searchParams.set('type', opts.businessTypes.join(','));
+    } else {
+      currentBrowserUrl.searchParams.delete('type');
     }
 
-    if (Array.isArray(departmentIds) && departmentIds.length > 0) {
-      const idString = departmentIds.join(',');
-      url += `&department_id=in.(${idString})`;
+    if (opts.searchQuery?.trim()) {
+      currentBrowserUrl.searchParams.set('search', opts.searchQuery);
+    } else {
+      currentBrowserUrl.searchParams.delete('search');
     }
-    if (teamId && teamId !== null) {
-      url += `&department_id=eq.${teamId}`;
+
+    // Cập nhật thanh địa chỉ trình duyệt
+    window.history.pushState({}, '', currentBrowserUrl.toString());
+
+    // --- B. XỬ LÝ GỌI API BACKEND (SUPABASE) ---
+    const url = new URL(`${SUPABASE_REST_URL}/merchants`);
+
+    // 1. Thiết lập các tham số mặc định cho API
+    url.searchParams.set('limit', '10000');
+    url.searchParams.set('order', 'created_at.desc');
+
+    // 2. Xử lý Select và Join bảng (Khắc phục lỗi PGRST108)
+    // Lấy danh sách ID category hợp lệ, loại bỏ các giá trị undefined/null
+    const activeCategoryIds = Object.keys(businessTypeFilters ?? {}).filter(
+      (key: string) => (businessTypeFilters as any)?.[key] === true && key !== "undefined" && key !== "null"
+    );
+
+    // Chỉ join category_merchants!inner khi có filter danh mục (để tối ưu và tránh lỗi resource)
+    if (activeCategoryIds.length > 0) {
+      url.searchParams.set('select', '*,category_merchants!inner(category_id)');
+      url.searchParams.set('category_merchants.category_id', `in.(${activeCategoryIds.join(',')})`);
+    } else {
+      url.searchParams.set('select', '*');
+    }
+
+    // 3. Gom tất cả Department ID (Tránh lặp tham số gây lỗi 400)
+    let allDeptIds: string[] = [];
+
+    if (Array.isArray(departmentIds) && departmentIds.length > 0) {
+      allDeptIds = [...allDeptIds, ...departmentIds];
+    }
+
+    if (teamId) {
+      allDeptIds.push(teamId);
     }
 
     if (divisionId) {
-      const { data: departments } = await supabase
-        .from('departments')
-        .select('_id')
-        .eq('parent_id', divisionId);
-
-      const ids = [divisionId, ...(departments?.map(d => d._id) || [])];
-      const idString = ids.join(',');
-      url += `&department_id=in.(${idString})`;
+      // Lấy danh sách phòng ban con từ Supabase REST API
+      try {
+        const response = await axios.get(`${SUPABASE_REST_URL}/departments`, {
+          params: {
+            select: '_id',
+            parent_id: `eq.${divisionId}`
+          },
+          headers: getHeaders()
+        });
+        const subDepartments = response.data || [];
+        const subIds = subDepartments.map((d: any) => d._id) || [];
+        allDeptIds = [...allDeptIds, divisionId, ...subIds];
+      } catch (error: any) {
+        console.error('❌ Error fetching sub-departments:', error);
+        // Nếu lỗi, vẫn thêm divisionId vào danh sách
+        allDeptIds.push(divisionId);
+      }
     }
 
-    // const activeCategoryIds = Object.keys(businessTypeFilters ?? {}).filter(
-    //   (key) => businessTypeFilters?.[key] === true
-    // );
+    // Loại bỏ các ID trùng lặp, giá trị rỗng hoặc "undefined"
+    const uniqueDeptIds = Array.from(new Set(allDeptIds)).filter(id => id && id !== "undefined");
+    if (uniqueDeptIds.length > 0) {
+      url.searchParams.set('department_id', `in.(${uniqueDeptIds.join(',')})`);
+    }
 
-    // if (activeCategoryIds.length > 0) {
-    //   const idString = activeCategoryIds.join(',');
-    //   url += `&category_merchants.category_id=in.(${idString})`;
-    // }
+    // 4. Xử lý Status Codes cho API (Dùng toán tử 'in' thay cho 'or' lồng nhau)
+    // Map từ string status codes ('active', 'pending', 'suspended', 'rejected') sang integer (1, 2, 3, 4)
+    if (opts.statusCodes && opts.statusCodes.length > 0) {
+      const validStatuses = opts.statusCodes.filter(s => s && s !== "undefined");
+      if (validStatuses.length > 0) {
+        // Map string status codes to integers
+        const statusMap: { [key: string]: number } = {
+          'active': 1,      // certified
+          'pending': 3,      // scheduled
+          'suspended': 2,   // hotspot
+          'rejected': 4     // inspected
+        };
+        const statusIntegers = validStatuses
+          .map(s => statusMap[s])
+          .filter((s): s is number => s !== undefined);
+        
+        if (statusIntegers.length > 0) {
+          url.searchParams.set('status', `in.(${statusIntegers.join(',')})`);
+        }
+      }
+    }
 
-    const response = await fetch(url, {
-      method: 'GET',
+    // 5. Xử lý Business Types trực tiếp trên bảng merchants (nếu có)
+    if (opts.businessTypes && opts.businessTypes.length > 0) {
+      const validTypes = opts.businessTypes.filter(t => t && t !== "undefined");
+      if (validTypes.length > 0) {
+        // Lưu ý: PostgREST tự động encode khi dùng searchParams.set
+        url.searchParams.set('business_type', `in.(${validTypes.join(',')})`);
+      }
+    }
+    if (opts.province) {
+      // Sử dụng province_id cho UUID
+      url.searchParams.set('province_id', `eq.${opts.province}`);
+    }
+
+    if (opts.ward) {
+      // Sử dụng ward_id cho UUID
+      url.searchParams.set('ward_id', `eq.${opts.ward}`);
+    }
+    // 6. Thực hiện Fetch từ Supabase REST API bằng axios
+    const response = await axios.get(url.toString(), {
       headers: getHeaders()
     });
 
+    const data = response.data;
 
-
-
-
-
-
-    
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Fetch failed:', response.status, response.statusText);
-      console.error('Error details:', errorText);
-      throw new Error(`Failed to fetch merchants: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    
+    // 7. Mapping dữ liệu về interface Restaurant
     let merchants = data
-      .filter((merchant: any) => {
-        const hasCoords = typeof merchant.latitude === 'number' && typeof merchant.longitude === 'number';
-        return hasCoords;
-      })
-      .map((merchant: any, index: number): Restaurant => {
-        const lat = parseFloat(merchant.latitude);
-        const lng = parseFloat(merchant.longitude);
-        if (isNaN(lat) || isNaN(lng)) {
-          console.error('❌ Invalid coordinates:', { lat: merchant.latitude, lng: merchant.longitude });
-        }
-        const businessType = merchant.business_type || 'Doanh nghiệp';
-        const category = mapMerchantStatusToCategory(merchant.status);
-        const statusName = getMerchantStatusName(merchant.status, merchant.license_status);
-        return {
-          // Use business_name as name
-          id: merchant.id || `merchant-${Math.random()}`,
-          name: merchant.business_name || 'Unnamed Merchant',
-          address: merchant.address || '',
-          lat,
-          lng,
+      .filter((m: any) => m.latitude !== null && m.longitude !== null)
+      .map((m: any): Restaurant => {
+        const businessType = m.business_type || 'Doanh nghiệp';
+        const lat = parseFloat(m.latitude);
+        const lng = parseFloat(m.longitude);
 
-          // Business type from direct field
+        return {
+          id: m.id || `merchant-${Math.random()}`,
+          name: m.business_name || 'Unnamed Merchant',
+          address: m.address || '',
+          lat: isNaN(lat) ? 0 : lat,
+          lng: isNaN(lng) ? 0 : lng,
           type: businessType,
           businessType: businessType,
-
-          // Map status to category for color coding
-          category: category,
-
-          // Location from direct fields
-          province: merchant.province || 'Hà Nội',
-          district: merchant.district || '',
-          ward: merchant.ward || '',
-
-          // Phone as hotline
-          hotline: merchant.owner_phone || undefined,
-
-          // Tax code from backend
-          taxCode: merchant.tax_code || undefined,
-
-          // No logo field in merchants table
-          logo: undefined,
-          images: undefined,
-
-          // No review fields in merchants table
-          reviewScore: undefined,
-          reviewCount: undefined,
-
-          // No opening hours in merchants table
-          openingHours: undefined,
-
-          // Store raw status
-          status: merchant.status || undefined,
-          statusName: statusName || undefined,
+          category: mapMerchantStatusToCategory(m.status),
+          province: m.province || '',
+          district: m.district || '',
+          ward: m.ward || '',
+          hotline: m.owner_phone || undefined,
+          taxCode: m.tax_code || undefined,
+          status: m.status || undefined,
+          statusName: getMerchantStatusName(m.status, m.license_status) || undefined,
         };
       });
 
-    // 🔥 Client-side Filter: Search query (since Supabase REST doesn't have full-text search)
-    // This is the ONLY client-side filtering - all other filters done at backend
-    if (opts.searchQuery && opts.searchQuery.trim()) {
-      const searchLower = opts.searchQuery.toLowerCase();
-      merchants = merchants.filter(merchant => {
-        const nameLower = merchant.name.toLowerCase();
-        const addressLower = merchant.address.toLowerCase();
-        const taxCodeLower = (merchant.taxCode || '').toLowerCase();
-
-        return nameLower.includes(searchLower) ||
-          addressLower.includes(searchLower) ||
-          taxCodeLower.includes(searchLower);
-      });
-
+    // 8. Client-side Search (Dành cho tìm kiếm text nhanh)
+    if (opts.searchQuery?.trim()) {
+      const s = opts.searchQuery.toLowerCase();
+      merchants = merchants.filter((m: Restaurant) =>
+        m.name.toLowerCase().includes(s) ||
+        m.address.toLowerCase().includes(s) ||
+        (m.taxCode || '').toLowerCase().includes(s)
+      );
     }
 
     return merchants;
+
   } catch (error: any) {
-    console.error('❌ Error fetching merchants:', error);
+    console.error('❌ Error in fetchMerchants:', error);
     throw error;
   }
+
+
+
 }
 
 /**
@@ -248,53 +282,30 @@ export interface MerchantStats {
   hotspot: number;  // suspended status
 }
 
+
+/**
+ * 📊 Fetch statistics for merchants
+ * GỌI LẠI fetchMerchants để đồng bộ 100% dữ liệu và logic filter
+ */
 export async function fetchMerchantStats(
-  province?: string,
-  district?: string,
-  ward?: string
+  province?: string, // province_id (UUID)
+  district?: string, // Tạm thời bỏ qua theo logic hiện tại
+  ward?: string      // ward_id (UUID)
 ): Promise<MerchantStats> {
   try {
+    // Gọi hàm fetch chính với options location
+    const merchants = await fetchMerchants(
+      undefined, undefined, undefined, null, '', [], null, 
+      { province, ward } 
+    );
 
-    // Build location filters
-    let url = `${SUPABASE_REST_URL}/merchants?select=status`;
-
-    // Add location filters if provided
-    if (province) {
-      url += `&province=eq.${encodeURIComponent(province)}`;
-    }
-    if (district) {
-      url += `&district=eq.${encodeURIComponent(district)}`;
-    }
-    if (ward) {
-      url += `&ward=eq.${encodeURIComponent(ward)}`;
-    }
-
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: getHeaders()
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Fetch stats failed:', response.status, response.statusText);
-      console.error('Error details:', errorText);
-      // Return default stats on error (don't throw - background call)
-      return { total: 0, certified: 0, hotspot: 0 };
-    }
-
-    const data = await response.json();
-
-    // Count by status
-    const total = data.length;
-    const certified = data.filter((m: any) => m.status === 'active').length;
-    const hotspot = data.filter((m: any) => m.status === 'suspended').length;
-
-
-    return { total, certified, hotspot };
-  } catch (error: any) {
-    console.error('❌ Error fetching merchant stats (background):', error);
-    // Return default stats on error (don't throw - background call)
+    return {
+      total: merchants.length,
+      certified: merchants.filter(m => m.category === 'certified').length,
+      hotspot: merchants.filter(m => m.category === 'hotspot').length,
+    };
+  } catch (error) {
+    console.error('❌ Error in fetchMerchantStats:', error);
     return { total: 0, certified: 0, hotspot: 0 };
   }
 }
