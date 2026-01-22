@@ -121,24 +121,12 @@ export async function fetchMerchants(p0: string[] | undefined, businessTypes: st
     }
 
     // 4. Xử lý Status Codes cho API (Dùng toán tử 'in' thay cho 'or' lồng nhau)
-    // Map từ string status codes ('active', 'pending', 'suspended', 'rejected') sang integer (1, 2, 3, 4)
+    // Status trong database là TEXT ('active', 'pending', 'suspended', 'rejected'), không phải integer
     if (opts.statusCodes && opts.statusCodes.length > 0) {
       const validStatuses = opts.statusCodes.filter(s => s && s !== "undefined");
       if (validStatuses.length > 0) {
-        // Map string status codes to integers
-        const statusMap: { [key: string]: number } = {
-          'active': 1,      // certified
-          'pending': 3,      // scheduled
-          'suspended': 2,   // hotspot
-          'rejected': 4     // inspected
-        };
-        const statusIntegers = validStatuses
-          .map(s => statusMap[s])
-          .filter((s): s is number => s !== undefined);
-        
-        if (statusIntegers.length > 0) {
-          url.searchParams.set('status', `in.(${statusIntegers.join(',')})`);
-        }
+        // Query trực tiếp với string values (không cần map sang integer)
+        url.searchParams.set('status', `in.(${validStatuses.join(',')})`);
       }
     }
 
