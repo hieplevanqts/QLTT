@@ -1,7 +1,6 @@
-import React from 'react';
 import styles from './StatusBadge.module.css';
-import type { PlanStatus, TaskStatus, SLAStatus, Priority } from '../../data/kehoach-mock-data';
-import type { InspectionRoundStatus, InspectionType } from '../../data/inspection-rounds-mock-data';
+import type { PlanStatus, TaskStatus, SLAStatus, Priority } from '@/app/types/plans';
+import type { InspectionRoundStatus, InspectionType } from '@/app/types/inspections';
 
 type BadgeType = 
   | 'plan' 
@@ -50,9 +49,7 @@ const roundStatusLabels: Record<InspectionRoundStatus, string> = {
 const taskStatusLabels: Record<TaskStatus, string> = {
   not_started: 'Chưa bắt đầu',
   in_progress: 'Đang thực hiện',
-  blocked: 'Bị chặn',
   completed: 'Hoàn thành',
-  verified: 'Đã xác nhận',
   closed: 'Đã đóng'
 };
 

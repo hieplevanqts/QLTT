@@ -19,7 +19,7 @@ import styles from './InspectionRoundCreate.module.css';
 import DateRangePicker, { DateRange } from '@/ui-kit/DateRangePicker';
 import { mockPlans } from '@/app/data/kehoach-mock-data';
 import { mockStores } from '@/data/mockStores';
-import { useInspectionRounds } from '@/contexts/InspectionRoundsContext';
+import { useSupabaseInspectionRounds } from '@/hooks/useSupabaseInspectionRounds';
 import type { InspectionRound } from '@/app/data/inspection-rounds-mock-data';
 import {
   InspectionDecisionModal,
@@ -156,7 +156,8 @@ export default function InspectionRoundCreate() {
   const editMode = searchParams.get('mode') === 'edit';
   const editId = searchParams.get('id');
   
-  const { addRound, updateRound, getRoundById } = useInspectionRounds();
+  // Use real API hook
+  const { createRound, updateRound, getRoundById } = useSupabaseInspectionRounds(undefined, false); // false = don't fetch list automatically
   
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -177,33 +178,40 @@ export default function InspectionRoundCreate() {
     selectedStores: [],
   });
 
+  // Check if round is approved (for edit mode) - now handled via state since fetch is async
+  const [isApproved, setIsApproved] = useState(false);
+
   // Load data if in edit mode
   useEffect(() => {
-    if (editMode && editId) {
-      const existingRound = getRoundById(editId);
-      if (existingRound) {
-        // Map existing round data to form data
-        setFormData({
-          code: existingRound.code,
-          name: existingRound.name,
-          relatedPlanId: existingRound.planId || '',
-          startDate: existingRound.startDate,
-          endDate: existingRound.endDate,
-          leadUnit: existingRound.leadUnit,
-          scopeArea: existingRound.leadUnit, // Using leadUnit as scopeArea for now
-          priority: 'medium', // Default since we don't have this in InspectionRound type
-          selectedForms: [], // Would need to be stored in InspectionRound type
-          selectedStores: [], // Would need to map from targets
-        });
-      } else {
-        toast.error('Không tìm thấy đợt kiểm tra');
-        navigate('/plans/inspection-rounds');
-      }
+    async function loadData() {
+        if (editMode && editId) {
+        const existingRound = await getRoundById(editId);
+        if (existingRound) {
+            setIsApproved(existingRound.status === 'approved');
+            // Map existing round data to form data
+            setFormData({
+            code: existingRound.code || existingRound.id, // Fallback to ID if code missing
+            name: existingRound.name,
+            relatedPlanId: existingRound.planId || '',
+            startDate: existingRound.startDate,
+            endDate: existingRound.endDate,
+            leadUnit: existingRound.leadUnit, // owner_dept
+            scopeArea: existingRound.leadUnit, // Using leadUnit as scopeArea for now
+            priority: 'medium', // Default since we don't have this in InspectionRound type yet perfectly mapped
+            selectedForms: [], // Would need to be stored in InspectionRound type in backend
+            selectedStores: [], // Would need to map from targets/stats
+            });
+        } else {
+            toast.error('Không tìm thấy đợt kiểm tra');
+            navigate('/plans/inspection-rounds');
+        }
+        }
     }
+    loadData();
   }, [editMode, editId, navigate, getRoundById]);
 
   // Mock user role - Change this to test different scenarios
-  const userRole = 'district'; // 'district' | 'ward'
+  const userRole: 'district' | 'ward' = 'district'; // 'district' | 'ward'
   const userWard = 'Phường Bến Nghé'; // For ward users
 
   // Filter stores based on selection
@@ -226,9 +234,6 @@ export default function InspectionRoundCreate() {
   const [assignmentDecision, setAssignmentDecision] = useState<InsDecision | null>(null);
   const [amendmentDecision, setAmendmentDecision] = useState<InsDecision | null>(null);
   const [extensionDecision, setExtensionDecision] = useState<InsDecision | null>(null);
-
-  // Check if round is approved (for edit mode)
-  const isApproved = editMode && editId ? getRoundById(editId)?.status === 'approved' : false;
 
   // Filter stores
   const filteredStores = mockStores.filter(store => {
@@ -328,52 +333,56 @@ export default function InspectionRoundCreate() {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateStep3()) {
       return;
     }
 
-    if (editMode && editId) {
-      // Update existing round
-      updateRound(editId, {
-        name: formData.name,
-        planId: formData.relatedPlanId || undefined,
-        planName: formData.relatedPlanId ? approvedPlans.find(p => p.id === formData.relatedPlanId)?.name : undefined,
-        startDate: formData.startDate!,
-        endDate: formData.endDate!,
-        leadUnit: formData.leadUnit || userWard,
-        totalTargets: formData.selectedStores.length,
-      });
-      toast.success('Đã cập nhật đợt kiểm tra thành công');
-    } else {
-      // Create new round
-      const currentDate = new Date();
-      const newRound: InspectionRound = {
-        id: formData.code,
-        code: formData.code,
-        name: formData.name,
-        planId: formData.relatedPlanId || undefined,
-        planName: formData.relatedPlanId ? approvedPlans.find(p => p.id === formData.relatedPlanId)?.name : undefined,
-        type: 'routine',
-        status: 'draft', // Trạng thái mặc định là Nháp
-        startDate: formData.startDate!,
-        endDate: formData.endDate!,
-        leadUnit: formData.leadUnit || userWard,
-        team: [],
-        teamSize: 0,
-        totalTargets: formData.selectedStores.length,
-        inspectedTargets: 0,
-        createdBy: 'Người dùng hiện tại',
-        createdAt: currentDate.toISOString().split('T')[0],
-        notes: formData.selectedForms.length > 0 
-          ? `Sử dụng biểu mẫu: ${formData.selectedForms.join(', ')}` 
-          : undefined,
-      };
-      addRound(newRound);
-      toast.success('Đã tạo đợt kiểm tra thành công');
+    try {
+        if (editMode && editId) {
+            // Update existing round
+            await updateRound(editId, {
+                name: formData.name,
+                planId: formData.relatedPlanId || undefined,
+                planName: formData.relatedPlanId ? approvedPlans.find(p => p.id === formData.relatedPlanId)?.name : undefined,
+                startDate: formData.startDate!,
+                endDate: formData.endDate!,
+                leadUnit: formData.leadUnit || userWard,
+                totalTargets: formData.selectedStores.length,
+            });
+            toast.success('Đã cập nhật đợt kiểm tra thành công');
+        } else {
+            // Create new round
+            const currentDate = new Date();
+            const newRound: Partial<InspectionRound> = {
+                code: formData.code,
+                name: formData.name,
+                planId: formData.relatedPlanId || undefined,
+                planName: formData.relatedPlanId ? approvedPlans.find(p => p.id === formData.relatedPlanId)?.name : undefined,
+                type: 'routine',
+                status: 'draft', // Trạng thái mặc định là Nháp
+                startDate: formData.startDate!,
+                endDate: formData.endDate!,
+                leadUnit: formData.leadUnit || userWard,
+                team: [],
+                teamSize: 0,
+                totalTargets: formData.selectedStores.length,
+                inspectedTargets: 0,
+                createdBy: 'Người dùng hiện tại',
+                createdAt: currentDate.toISOString().split('T')[0],
+                notes: formData.selectedForms.length > 0 
+                ? `Sử dụng biểu mẫu: ${formData.selectedForms.join(', ')}` 
+                : undefined,
+            };
+            await createRound(newRound);
+            toast.success('Đã tạo đợt kiểm tra thành công');
+        }
+        
+        navigate('/plans/inspection-rounds');
+    } catch (error) {
+        console.error("Submit Error", error);
+        toast.error('Có lỗi xảy ra, vui lòng thử lại');
     }
-    
-    navigate('/plans/inspection-rounds');
   };
 
   const handleSaveDraft = () => {

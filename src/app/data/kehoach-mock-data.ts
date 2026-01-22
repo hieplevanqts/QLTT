@@ -770,7 +770,7 @@ export const mockTasks: Task[] = [
     targetId: 'TG-003',
     title: 'Xác minh đầu mối nghi vấn tại Nguyễn Trãi',
     description: 'Kiểm tra cơ sở bán rau quả có dấu hiệu vi phạm',
-    status: 'blocked',
+    status: 'in_progress',
     priority: 'critical',
     assignee: {
       id: 'U003',
@@ -833,7 +833,7 @@ export const mockTasks: Task[] = [
     planId: 'KH-2026-Q1-001',
     title: 'Lấy mẫu kiểm nghiệm rau củ tại chợ',
     description: 'Lấy mẫu rau củ để kiểm nghiệm tồn dư hóa chất bảo vệ thực vật',
-    status: 'verified',
+    status: 'completed',
     priority: 'high',
     assignee: {
       id: 'U005',
@@ -1055,9 +1055,12 @@ export const mockMerchants: Merchant[] = mockPlans.flatMap((plan, planIndex) => 
 // Inspection Rounds (Đợt kiểm tra)
 export type InspectionRoundStatus = 
   | 'draft'              // Nháp
-  | 'preparing'          // Chuẩn bị
+  | 'pending_approval'   // Chờ duyệt
+  | 'approved'           // Đã duyệt
+  | 'rejected'           // Từ chối duyệt
+  | 'active'             // Đang triển khai
+  | 'paused'             // Tạm dừng
   | 'in_progress'        // Đang kiểm tra
-  | 'reporting'          // Hoàn thành báo cáo
   | 'completed'          // Hoàn thành
   | 'cancelled';         // Đã hủy
 
@@ -1164,7 +1167,7 @@ export const mockInspectionRounds: InspectionRound[] = mockPlans.flatMap((plan, 
       violationCount = inspectedTargets - passedCount - warningCount;
       actualStartDate = `${planYear}-${String(planQuarter * 3 - 2).padStart(2, '0')}-${String(5 + i * 2).padStart(2, '0')}`;
     } else if (i === 1) {
-      status = 'preparing';
+      status = 'approved';
       type = 'routine';
       inspectedTargets = 0;
     } else if (i === 2) {
@@ -1177,7 +1180,7 @@ export const mockInspectionRounds: InspectionRound[] = mockPlans.flatMap((plan, 
       actualStartDate = `${planYear}-${String(planQuarter * 3 - 2).padStart(2, '0')}-${String(5 + i * 2).padStart(2, '0')}`;
       actualEndDate = `${planYear}-${String(planQuarter * 3 - 2).padStart(2, '0')}-${String(10 + i * 2).padStart(2, '0')}`;
     } else if (i === 3) {
-      status = 'reporting';
+      status = 'active';
       type = 'routine';
       inspectedTargets = totalTargets;
       passedCount = Math.floor(totalTargets * 0.7);
@@ -1190,7 +1193,7 @@ export const mockInspectionRounds: InspectionRound[] = mockPlans.flatMap((plan, 
       type = i % 2 === 0 ? 'sudden' : 'followup';
       inspectedTargets = 0;
     } else {
-      status = 'preparing';
+      status = 'cancelled';
       type = 'routine';
       inspectedTargets = 0;
     }

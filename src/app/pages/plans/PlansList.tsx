@@ -7,25 +7,20 @@ import {
   ClipboardList, 
   CircleCheck, 
   Clock, 
-  AlertCircle,
-  CircleX,
-  Eye,
-  Edit,
-  Calendar,
-  FileEdit,
-  Send,
-  CheckCircle2,
-  PlayCircle,
-  PauseCircle,
-  FileText,
-  Trash2,
-  XCircle,
-  X,
-  AlertTriangle,
-  Filter,
-  FileDown,
-  BarChart3,
-  ClipboardCheck,
+  Eye, 
+  Edit, 
+  Calendar, 
+  FileEdit, 
+  Send, 
+  CheckCircle2, 
+  PlayCircle, 
+  PauseCircle, 
+  Trash2, 
+  XCircle, 
+  Filter, 
+  FileDown, 
+  BarChart3, 
+  ClipboardCheck, 
 } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '../../../layouts/PageHeader';
@@ -42,7 +37,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../components/ui/select';
-import SummaryCard from '../../../patterns/SummaryCard';
 import ModernSummaryCard from '../../../patterns/ModernSummaryCard';
 import BulkActionBar, { BulkAction } from '../../../patterns/BulkActionBar';
 import FilterActionBar from '../../../patterns/FilterActionBar';

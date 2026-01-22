@@ -60,6 +60,7 @@ export interface Store {
   businessLicenseFile?: string; // File giấy phép
   // Compatibility
   district?: string; // District name for compatibility
+  hasComplaints?: boolean; // Added for filtering support
 }
 
 const storeTypes = [

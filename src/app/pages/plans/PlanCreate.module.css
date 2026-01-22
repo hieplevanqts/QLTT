@@ -140,6 +140,12 @@
   gap: var(--spacing-2);
 }
 
+.formRow {
+  display: flex;
+  gap: var(--spacing-4);
+  width: 100%;
+}
+
 .label {
   font-family: 'Inter', sans-serif;
   font-size: var(--font-size-sm);

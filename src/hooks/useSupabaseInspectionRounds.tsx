@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react';
-import { type InspectionRound, type InspectionRoundStatus } from '@/app/data/inspection-rounds-mock-data';
+import { type InspectionRound, type InspectionRoundStatus } from '@/app/types/inspections';
 export type { InspectionRound, InspectionRoundStatus };
-import { fetchInspectionRoundsApi, updateInspectionRoundApi, deleteInspectionRoundApi } from '@/utils/api/plansApi';
+import { 
+  fetchInspectionRoundsApi, 
+  updateInspectionRoundApi, 
+  deleteInspectionRoundApi,
+  fetchInspectionRoundByIdApi, 
+  createInspectionRoundApi 
+} from '@/utils/api/plansApi';
 
 interface UseSupabaseInspectionRoundsReturn {
   rounds: InspectionRound[];
@@ -10,6 +16,9 @@ interface UseSupabaseInspectionRoundsReturn {
   refetch: () => Promise<void>;
   updateRoundStatus: (id: string, status: string, notes?: string) => Promise<void>;
   deleteRound: (id: string) => Promise<void>;
+  getRoundById: (id: string) => Promise<InspectionRound | null>;
+  createRound: (round: Partial<InspectionRound>) => Promise<InspectionRound | null>;
+  updateRound: (id: string, round: Partial<InspectionRound>) => Promise<InspectionRound | null>;
 }
 
 export function useSupabaseInspectionRounds(planId?: string, enabled: boolean = true): UseSupabaseInspectionRoundsReturn {
@@ -46,7 +55,7 @@ export function useSupabaseInspectionRounds(planId?: string, enabled: boolean = 
 
   const updateRoundStatus = async (id: string, status: string, notes?: string) => {
     try {
-      await updateInspectionRoundApi(id, { status: status as InspectionRoundStatus });
+      await updateInspectionRoundApi(id, { status: status as InspectionRoundStatus, notes });
       await fetchRounds();
     } catch (err: any) {
       console.error('Error updating round status:', err);
@@ -64,6 +73,37 @@ export function useSupabaseInspectionRounds(planId?: string, enabled: boolean = 
     }
   };
 
+  const getRoundById = async (id: string) => {
+    try {
+      return await fetchInspectionRoundByIdApi(id);
+    } catch (err) {
+      console.error('Error fetching round by id:', err);
+      return null;
+    }
+  };
+
+  const createRound = async (round: Partial<InspectionRound>) => {
+    try {
+      const newRound = await createInspectionRoundApi(round);
+      await fetchRounds(); // Refresh list
+      return newRound;
+    } catch (err) {
+      console.error('Error creating round:', err);
+      throw err;
+    }
+  };
+
+  const updateRound = async (id: string, round: Partial<InspectionRound>) => {
+    try {
+      const updated = await updateInspectionRoundApi(id, round);
+      await fetchRounds(); // Refresh list
+      return updated;
+    } catch (err) {
+      console.error('Error updating round:', err);
+      throw err;
+    }
+  };
+
   return {
     rounds,
     loading,
@@ -71,5 +111,8 @@ export function useSupabaseInspectionRounds(planId?: string, enabled: boolean = 
     refetch: fetchRounds,
     updateRoundStatus,
     deleteRound,
+    getRoundById,
+    createRound,
+    updateRound,
   };
 }

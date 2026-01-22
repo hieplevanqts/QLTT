@@ -12,7 +12,7 @@ import { SelectInsDecisionModal, type InsDecision } from '../../components/plans
 import { supabase } from '../../../lib/supabase';
 import { useQLTTScope } from '../../../contexts/QLTTScopeContext';
 import { useAuth } from '../../../contexts/AuthContext';
-import { createPlanApi } from '../../../utils/api/plansApi';
+import { createPlanApi, fetchPlanByIdApi, updatePlanApi } from '../../../utils/api/plansApi';
 
 type PlanTypeTab = 'periodic' | 'thematic' | 'urgent';
 
@@ -20,14 +20,18 @@ export function PlanCreate() {
   const navigate = useNavigate();
   const location = useLocation();
   const { planId } = useParams(); // Get planId from URL params
-  const { addPlan, updatePlan, plans } = usePlans();
+  const { addPlan, updatePlan: contextUpdatePlan, plans } = usePlans(); // Rename context updatePlan to avoid conflict if we use api directly
   const { scope } = useQLTTScope();
   const { user } = useAuth();
-  console.log("user",user);
   
   // Check if in edit mode
   const isEditMode = !!planId;
-  const editingPlan = isEditMode ? plans.find(p => p.id === planId) : null;
+  
+  // State to hold the plan being edited, fetched from API
+  const [fetchedPlan, setFetchedPlan] = useState<Plan | null>(null);
+
+  // Use fetched plan if available, otherwise try finding in context (fallback)
+  const editingPlan = fetchedPlan || (isEditMode ? plans.find(p => p.id === planId) : null);
   
   // Read URL parameter to set initial tab
   const searchParams = new URLSearchParams(location.search);
@@ -57,7 +61,12 @@ export function PlanCreate() {
     description: '',
     objectives: '',
     priority: 'medium' as Priority,
+    provinceId: '', // For UI selection
+    wardId: '',     // For UI selection
   });
+
+  const [provinces, setProvinces] = useState<{_id: string, name: string}[]>([]);
+  const [wards, setWards] = useState<{_id: string, name: string}[]>([]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [dateRange, setDateRange] = useState<DateRange>({ startDate: null, endDate: null });
@@ -67,6 +76,16 @@ export function PlanCreate() {
   const [showM03Modal, setShowM03Modal] = useState(false);
 
   const [managingUnits, setManagingUnits] = useState<{id: string, name: string}[]>([]);
+
+  // Helper functions
+  const getPlanTypeLabel = (type: PlanTypeTab): string => {
+    switch(type) {
+      case 'periodic': return 'Kiểm tra định kỳ';
+      case 'thematic': return 'Kiểm tra chuyên đề';
+      case 'urgent': return 'Kiểm tra đột xuất';
+      default: return 'Kiểm tra định kỳ';
+    }
+  };
 
   // Fetch departments based on scope
   useEffect(() => {
@@ -101,45 +120,107 @@ export function PlanCreate() {
     fetchManagingUnits();
   }, [scope.divisionId]); // Re-run when division changes
 
-  // Helper functions - must be defined before useEffect
-  const getPlanTypeLabel = (type: PlanTypeTab): string => {
-    switch(type) {
-      case 'periodic': return 'Kiểm tra định kỳ';
-      case 'thematic': return 'Kiểm tra chuyên đề';
-      case 'urgent': return 'Kiểm tra đột xuất';
-    }
-  };
-
-  // Load existing plan data in edit mode
+  // Fetch provinces
   useEffect(() => {
-    if (isEditMode && editingPlan) {
-      // Parse year from startDate
-      const planYear = new Date(editingPlan.startDate).getFullYear().toString();
-      
-      setFormData({
-        planCategory: getPlanTypeLabel(editingPlan.planType as PlanTypeTab),
-        year: planYear,
-        quarter: editingPlan.quarter,
-        title: editingPlan.name,
-        startDate: editingPlan.startDate,
-        endDate: editingPlan.endDate,
-        responsibleUnit: editingPlan.responsibleUnit,
-        responsibleUnitId: editingPlan.leadUnit || '',
-        cooperatingUnits: '', // Not in Plan interface, keep empty
-        scopeArea: editingPlan.scopeLocation,
-        description: editingPlan.topic,
-        objectives: editingPlan.objectives,
-        priority: editingPlan.priority,
-      });
-      
-      setDateRange({
-        startDate: editingPlan.startDate,
-        endDate: editingPlan.endDate,
-      });
-      
-      setActiveTab(editingPlan.planType as PlanTypeTab);
+    async function fetchProvinces() {
+      try {
+        const { data, error } = await supabase
+          .from('provinces')
+          .select('_id, name')
+          .order('name');
+        
+        if (error) {
+          console.error('Error fetching provinces:', error);
+          return;
+        }
+
+        if (data) {
+          setProvinces(data);
+        }
+      } catch (err) {
+        console.error('Error fetching provinces:', err);
+      }
     }
-  }, [isEditMode, editingPlan]);
+    fetchProvinces();
+  }, []);
+
+  // Fetch wards when province changes
+  useEffect(() => {
+    async function fetchWards() {
+      if (!formData.provinceId) {
+        setWards([]);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('wards')
+          .select('_id, name')
+          .eq('province_id', formData.provinceId)
+          .order('name');
+        
+        if (error) {
+          console.error('Error fetching wards:', error);
+          return;
+        }
+
+        if (data) {
+          setWards(data);
+        }
+      } catch (err) {
+        console.error('Error fetching wards:', err);
+      }
+    }
+    fetchWards();
+  }, [formData.provinceId]);
+
+  // Fetch plan data from API when editing
+  useEffect(() => {
+    async function loadPlan() {
+      if (isEditMode && planId) {
+        try {
+          const plan = await fetchPlanByIdApi(planId);
+          if (plan) {
+            setFetchedPlan(plan);
+            
+            // Populate form data immediately upon fetch
+            const planYear = new Date(plan.startDate).getFullYear().toString();
+            setFormData(prev => ({
+              ...prev,
+              planCategory: getPlanTypeLabel(plan.planType as PlanTypeTab),
+              year: planYear,
+              quarter: plan.quarter,
+              title: plan.name,
+              startDate: plan.startDate,
+              endDate: plan.endDate,
+              responsibleUnit: plan.responsibleUnit,
+              responsibleUnitId: plan.leadUnit || '',
+              cooperatingUnits: '', 
+              scopeArea: plan.scopeLocation,
+              description: plan.topic,
+              objectives: plan.objectives,
+              priority: plan.priority,
+              provinceId: (plan as any).provinceId || '',
+              wardId: (plan as any).wardId || '',
+            }));
+
+            setDateRange({
+              startDate: plan.startDate,
+              endDate: plan.endDate,
+            });
+
+            setActiveTab(plan.planType as PlanTypeTab);
+          } else {
+            toast.error('Không tìm thấy kế hoạch');
+          }
+        } catch (error) {
+          console.error('Error fetching plan:', error);
+          toast.error('Không thể tải thông tin kế hoạch');
+        }
+      }
+    }
+    loadPlan();
+  }, [isEditMode, planId]);
 
   const getTabTitle = (type: PlanTypeTab): string => {
     switch(type) {
@@ -213,6 +294,14 @@ export function PlanCreate() {
       newErrors.responsibleUnit = 'Vui lòng chọn đơn vị chủ trì';
     }
 
+    if (!formData.provinceId) {
+      newErrors.provinceId = 'Vui lòng chọn Tỉnh/Thành phố';
+    }
+
+    if (!formData.wardId) {
+      newErrors.wardId = 'Vui lòng chọn Phường/Xã';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -250,7 +339,12 @@ export function PlanCreate() {
       // Note: ID will be generated by Backend, but we keep frontend ID for mock context if needed
       const newPlanId = `KH-${activeTab === 'periodic' ? 'DK' : activeTab === 'thematic' ? 'CD' : 'DX'}-${String(plans.length + 1).padStart(4, '0')}`;
       
-      const newPlan: Plan = {
+      // Resolve Province/Ward IDs (required by DB schema)
+      // Already selected in UI
+      const provinceId = formData.provinceId;
+      const wardId = formData.wardId;
+
+      const newPlan: any = {
         id: newPlanId,
         name: formData.title,
         planType: activeTab as PlanType,
@@ -265,6 +359,9 @@ export function PlanCreate() {
         priority: formData.priority,
         startDate: formData.startDate,
         endDate: formData.endDate || formData.startDate,
+        // Pass resolved UUIDs
+        provinceId: provinceId,
+        wardId: wardId,
         createdBy: user?.fullName || 'Người tạo hiện tại',
         createdById: user?._id,
         createdAt: new Date().toISOString(),
@@ -562,18 +659,48 @@ export function PlanCreate() {
             </select>
           </div>
 
-          {/* Khu vực kiểm tra */}
+          {/* Location Selection */}
           <div className={styles.formGroup}>
             <label className={styles.label}>
-              Khu vực kiểm tra
+              Khu vực kiểm tra <span className={styles.required}>*</span>
             </label>
-            <input
-              type="text"
-              className={styles.input}
-              value={formData.scopeArea}
-              onChange={(e) => handleChange('scopeArea', e.target.value)}
-              placeholder="Ví dụ: Thành phố Hồ Chí Minh, Tỉnh Đồng Nai"
-            />
+            <div className={styles.formRow}>
+              {/* Province */}
+              <select
+                className={`${styles.select} ${errors.provinceId ? styles.inputError : ''}`}
+                value={formData.provinceId}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  handleChange('provinceId', val);
+                  handleChange('wardId', ''); // Reset ward
+                }}
+              >
+                <option value="">Chọn Tỉnh/Thành phố</option>
+                {provinces.map(p => (
+                  <option key={p._id} value={p._id}>{p.name}</option>
+                ))}
+              </select>
+              
+              {/* Ward */}
+              <select
+                className={`${styles.select} ${errors.wardId ? styles.inputError : ''}`}
+                value={formData.wardId}
+                onChange={(e) => handleChange('wardId', e.target.value)}
+                disabled={!formData.provinceId}
+              >
+                <option value="">Chọn Phường/Xã</option>
+                {wards.map(w => (
+                  <option key={w._id} value={w._id}>{w.name}</option>
+                ))}
+              </select>
+            </div>
+            
+            {(errors.provinceId || errors.wardId) && (
+              <span className={styles.errorText}>
+                <AlertCircle size={14} />
+                {errors.provinceId || errors.wardId}
+              </span>
+            )}
           </div>
 
           {/* Mô tả kế hoạch */}
