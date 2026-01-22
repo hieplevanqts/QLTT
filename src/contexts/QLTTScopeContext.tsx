@@ -129,7 +129,7 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
             .select('department_id, area_id'),
           supabase
             .from('areas')
-            .select('_id, code, name, level, province_id, ward_id'),
+            .select('_id, code, name, level, "provinceId", "wardId"'),
           supabase
             .from('wards')
             .select('_id, code, name, province_id'),
@@ -170,8 +170,8 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
           code: area.code,
           name: area.name,
           level: area.level,
-          provinceId: area.province_id,
-          wardId: area.ward_id,
+          provinceId: area.provinceId,
+          wardId: area.wardId,
         })));
 
         setWards((wardsData || []).map((ward) => ({

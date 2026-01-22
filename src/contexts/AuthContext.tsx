@@ -199,14 +199,14 @@ async function fetchUserDepartment(userId: string): Promise<{ _id: string; name:
     }
     
     // Extract department data from nested structure
-    const departmentData = departmentUsers[0]?.departments as any;
+    const departmentData = departmentUsers[0]?.departments;
     if (!departmentData || !departmentData._id) {
       return null;
     }
     
     const inferredLevel = getDepartmentLevelFromCode(departmentData.code);
     const departmentInfo = {
-      id: departmentData._id,
+      _id: departmentData._id,
       name: departmentData.name || '',
       code: departmentData.code || undefined,
       level: departmentData.level ?? inferredLevel,
