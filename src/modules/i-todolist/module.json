@@ -1,0 +1,17 @@
+{
+  "id": "i-todolist",
+  "name": "Nhật ký công việc",
+  "version": "1.0.0",
+  "basePath": "/todolist",
+  "entry": "src/modules/i-todolist/index.ts",
+  "routes": "src/modules/i-todolist/routes.tsx",
+  "routeExport": "iTodolistRoute",
+  "permissions": [
+    "todolist:read",
+    "todolist:write"
+  ],
+  "ui": {
+    "menuLabel": "Nhiệm vụ",
+    "menuPath": "/todolist"
+  }
+}

@@ -1,0 +1,151 @@
+.panel {
+  width: 280px;
+  height: 100%;
+  background: var(--color-card);
+  border-right: var(--border-width) solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md);
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.title {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-white);
+  margin: 0;
+}
+
+.toggleButton {
+  background: transparent;
+  border: none;
+  padding: var(--spacing-1);
+  cursor: pointer;
+  color: var(--color-muted-foreground);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggleButton:hover {
+  color: var(--color-foreground);
+}
+
+.createButton {
+  width: 100%;
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  border: none;
+  border-radius: var(--radius);
+  padding: var(--spacing-2-5) var(--spacing-md);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  margin: var(--spacing-md);
+  transition: all 0.2s;
+}
+
+.createButton:hover {
+  opacity: 0.9;
+}
+
+.topicsList {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-2) var(--spacing-md);
+}
+
+.topicItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-2-5) var(--spacing-3);
+  margin-bottom: var(--spacing-1);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+.topicItem:hover {
+  background: var(--color-muted);
+}
+
+.topicItem.active {
+  background: var(--color-muted);
+}
+
+.colorIndicator {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.topicContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.topicName {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.topicCount {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-white);
+  flex-shrink: 0;
+}
+
+.allTasksItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-2-5) var(--spacing-3);
+  margin-bottom: var(--spacing-3);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+.allTasksItem:hover {
+  background: var(--color-muted);
+}
+
+.allTasksItem.active {
+  background: var(--color-muted);
+}
+
+.folderIcon {
+  color: var(--color-white);
+  flex-shrink: 0;
+}

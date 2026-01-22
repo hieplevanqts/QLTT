@@ -1,0 +1,163 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  background: var(--color-card);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-4);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--spacing-3);
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.monthName {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-foreground);
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--spacing-1);
+}
+
+.weekday {
+  text-align: center;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-muted-foreground);
+  padding: var(--spacing-2);
+  text-transform: uppercase;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--spacing-1);
+}
+
+.day {
+  min-height: 100px;
+  padding: var(--spacing-2);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  transition: all 0.15s ease;
+}
+
+.day:hover {
+  background: var(--color-muted);
+}
+
+.day.otherMonth {
+  opacity: 0.4;
+}
+
+.day.today {
+  background: rgba(0, 92, 182, 0.05);
+  border-color: var(--color-primary);
+}
+
+.dayHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-2);
+}
+
+.dayNumber {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-foreground);
+}
+
+.taskCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 var(--spacing-1);
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  border-radius: var(--radius-full);
+  font-family: var(--font-family-base);
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+}
+
+.dayTasks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.taskItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1-5);
+  width: 100%;
+  padding: var(--spacing-1) var(--spacing-2);
+  background: var(--color-card);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.taskItem:hover {
+  border-color: var(--color-primary);
+  background: rgba(0, 92, 182, 0.05);
+}
+
+.taskTitle {
+  flex: 1;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-xs);
+  color: var(--color-foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.moreTasksText {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-xs);
+  color: var(--color-muted-foreground);
+  text-align: center;
+  padding: var(--spacing-1);
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .day {
+    min-height: 80px;
+  }
+
+  .taskTitle {
+    display: none;
+  }
+
+  .taskItem {
+    justify-content: center;
+  }
+}

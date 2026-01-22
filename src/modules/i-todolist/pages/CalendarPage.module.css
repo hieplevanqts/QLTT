@@ -1,0 +1,67 @@
+.container {
+  display: flex;
+  height: calc(100vh - 120px);
+  background: var(--color-background);
+}
+
+.mainContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.header {
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--color-card);
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-2);
+}
+
+.title {
+  font-family: var(--font-family-base);
+  font-size: var(--text-page-title);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-white);
+  margin: 0;
+}
+
+.viewTabs {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+.tabButton {
+  padding: var(--spacing-2) var(--spacing-4);
+  background: transparent;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-foreground);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tabButton:hover {
+  background: var(--color-muted);
+}
+
+.tabButton.active {
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  border-color: var(--color-primary);
+}
+
+.calendarWrapper {
+  flex: 1;
+  overflow: auto;
+  padding: var(--spacing-lg);
+}

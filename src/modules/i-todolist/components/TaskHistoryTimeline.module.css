@@ -1,0 +1,83 @@
+.container {
+  margin-top: var(--spacing-6);
+}
+
+.title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-4);
+}
+
+.loading,
+.empty {
+  text-align: center;
+  padding: var(--spacing-6);
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+}
+
+.timeline {
+  position: relative;
+  padding-left: var(--spacing-4);
+}
+
+.timelineItem {
+  position: relative;
+  padding-bottom: var(--spacing-4);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+}
+
+.timelineIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.timelineLine {
+  position: absolute;
+  left: 15px;
+  top: 32px;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-border-subtle);
+}
+
+.timelineContent {
+  flex: 1;
+  padding-top: var(--spacing-1);
+}
+
+.timelineDescription {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-1);
+}
+
+.timelineMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+.timelineAuthor {
+  font-weight: var(--font-weight-medium);
+}
+
+.timelineDot {
+  color: var(--color-text-tertiary);
+}
+
+.timelineDate {
+  color: var(--color-text-tertiary);
+}
