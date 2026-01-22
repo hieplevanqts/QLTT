@@ -6,6 +6,7 @@ import { districtBoundaries } from '../../../data/districtBoundaries';
 import { getWardByName, wardBoundariesData, WardBoundary } from '../../../data/wardBoundaries';
 import { generateWardColorMap } from '../../../utils/colorUtils';
 import { teamsData, Team } from '../../../data/officerTeamData';
+import { fetchProvinceCoordinates, fetchWardCoordinates } from '../../../utils/api/locationsApi';
 
 type CategoryFilter = {
   [key: string]: boolean;  // Dynamic keys from point_status table
@@ -147,6 +148,8 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
   const previousSelectedRestaurantIdRef = useRef<string | null>(null); // Track selected restaurant changes
   const updateMarkersRef = useRef<(() => void) | null>(null); // 🔥 NEW: Ref to hold updateMarkers function
   const previousShowMerchantsRef = useRef<boolean>(false); // Track previous showMerchants state
+  const previousSelectedProvinceRef = useRef<string | undefined>(undefined); // Track previous selected province
+  const previousSelectedWardRef = useRef<string | undefined>(undefined); // Track previous selected ward
 
   // Calculate marker size - fixed, no scaling
   const getMarkerSize = (zoom: number) => {
@@ -1016,6 +1019,200 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
     // Update previous state
     previousShowMerchantsRef.current = showMerchants;
   }, [showMerchants]);
+
+  // 🔥 NEW: Zoom to province or ward when selected
+  useEffect(() => {
+    // Wait a bit for map to be fully ready and for merchants to be loaded
+    const timeoutId = setTimeout(() => {
+      if (!mapInstanceRef.current || !leafletRef.current) {
+        console.log('⏳ LeafletMap: Map not ready yet, waiting...', {
+          mapInstance: !!mapInstanceRef.current,
+          leaflet: !!leafletRef.current
+        });
+        return;
+      }
+      
+      // Check if province or ward changed
+      const provinceChanged = selectedProvince !== previousSelectedProvinceRef.current;
+      const wardChanged = selectedWard !== previousSelectedWardRef.current;
+      
+      if (!provinceChanged && !wardChanged) {
+        return;
+      }
+      
+      console.log('🗺️ LeafletMap: Location filter changed', {
+        selectedProvince,
+        selectedWard,
+        provinceChanged,
+        wardChanged,
+        restaurantsCount: restaurants.length,
+        filteredRestaurantsCount: filteredRestaurants.length
+      });
+      
+    // Priority: ward > province
+    if (selectedWard && wardChanged) {
+      console.log('📍 LeafletMap: Fetching ward coordinates for:', selectedWard);
+      // Fetch ward coordinates and zoom to ward
+      fetchWardCoordinates(selectedWard).then((coords) => {
+        console.log('📍 LeafletMap: Ward coordinates received:', coords);
+        
+        let center: [number, number] | null = null;
+        let bounds: any = null;
+        
+        // Try to get coordinates from database first
+        if (coords && coords.center_lat && coords.center_lng) {
+          center = [coords.center_lat, coords.center_lng];
+          if (coords.bounds && Array.isArray(coords.bounds) && coords.bounds.length === 2) {
+            const [[south, west], [north, east]] = coords.bounds;
+            bounds = leafletRef.current.latLngBounds([south, west], [north, east]);
+          }
+        } else {
+          // Fallback: Calculate center from merchants that are already filtered by ward_id
+          // Use restaurants prop directly as it's already filtered by MapPage
+          const merchantsToUse = restaurants.length > 0 ? restaurants : filteredRestaurants;
+          console.log('📍 LeafletMap: No coordinates from DB, using fallback from merchants. Total merchants:', merchantsToUse.length, 'restaurants:', restaurants.length, 'filtered:', filteredRestaurants.length);
+          
+          if (merchantsToUse.length > 0) {
+            const validMerchants = merchantsToUse.filter(m => m.lat && m.lng && m.lat !== 0 && m.lng !== 0);
+            console.log('📍 LeafletMap: Valid merchants with coordinates:', validMerchants.length);
+            
+            if (validMerchants.length > 0) {
+              const avgLat = validMerchants.reduce((sum, m) => sum + (m.lat || 0), 0) / validMerchants.length;
+              const avgLng = validMerchants.reduce((sum, m) => sum + (m.lng || 0), 0) / validMerchants.length;
+              center = [avgLat, avgLng];
+              console.log('📍 LeafletMap: Using fallback center from merchants:', center, validMerchants.length);
+            } else {
+              console.warn('📍 LeafletMap: No valid merchants with coordinates for fallback');
+            }
+          } else {
+            console.warn('📍 LeafletMap: No merchants available for fallback');
+          }
+        }
+        
+        if (center && mapInstanceRef.current) {
+          if (bounds) {
+            mapInstanceRef.current.fitBounds(bounds, {
+              padding: [50, 50],
+              animate: true,
+              duration: 0.8
+            });
+            console.log('📍 LeafletMap: Fitted to ward bounds');
+          } else {
+            mapInstanceRef.current.setView(center, 15, {
+              animate: true,
+              duration: 0.8
+            });
+            console.log('📍 LeafletMap: Zoomed to ward center');
+          }
+        } else {
+          console.warn('⚠️ LeafletMap: No coordinates available for ward:', selectedWard);
+        }
+      }).catch((error) => {
+        console.error('❌ LeafletMap: Error fetching ward coordinates:', error);
+        // Fallback: use merchants that are already filtered by ward_id
+        const merchantsToUse = restaurants.length > 0 ? restaurants : filteredRestaurants;
+        console.log('📍 LeafletMap: Error fallback - using merchants. Total:', merchantsToUse.length, 'restaurants:', restaurants.length);
+        if (merchantsToUse.length > 0 && mapInstanceRef.current) {
+          const validMerchants = merchantsToUse.filter(m => m.lat && m.lng && m.lat !== 0 && m.lng !== 0);
+          if (validMerchants.length > 0) {
+            const avgLat = validMerchants.reduce((sum, m) => sum + (m.lat || 0), 0) / validMerchants.length;
+            const avgLng = validMerchants.reduce((sum, m) => sum + (m.lng || 0), 0) / validMerchants.length;
+            mapInstanceRef.current.setView([avgLat, avgLng], 15, {
+              animate: true,
+              duration: 0.8
+            });
+            console.log('📍 LeafletMap: Error fallback zoom to merchants center:', [avgLat, avgLng], validMerchants.length);
+          }
+        }
+      });
+    } else if (selectedProvince && provinceChanged && !selectedWard) {
+      console.log('🗺️ LeafletMap: Fetching province coordinates for:', selectedProvince);
+      // Fetch province coordinates and zoom to province
+      fetchProvinceCoordinates(selectedProvince).then((coords) => {
+        console.log('🗺️ LeafletMap: Province coordinates received:', coords);
+        
+        let center: [number, number] | null = null;
+        let bounds: any = null;
+        
+        // Try to get coordinates from database first
+        if (coords && coords.center_lat && coords.center_lng) {
+          center = [coords.center_lat, coords.center_lng];
+          if (coords.bounds && Array.isArray(coords.bounds) && coords.bounds.length === 2) {
+            const [[south, west], [north, east]] = coords.bounds;
+            bounds = leafletRef.current.latLngBounds([south, west], [north, east]);
+          }
+        } else {
+          // Fallback: Calculate center from merchants that are already filtered by province_id
+          // Use restaurants prop directly as it's already filtered by MapPage
+          const merchantsToUse = restaurants.length > 0 ? restaurants : filteredRestaurants;
+          console.log('🗺️ LeafletMap: No coordinates from DB, using fallback from merchants. Total merchants:', merchantsToUse.length, 'restaurants:', restaurants.length, 'filtered:', filteredRestaurants.length);
+          
+          if (merchantsToUse.length > 0) {
+            const validMerchants = merchantsToUse.filter(m => m.lat && m.lng && m.lat !== 0 && m.lng !== 0);
+            console.log('🗺️ LeafletMap: Valid merchants with coordinates:', validMerchants.length);
+            
+            if (validMerchants.length > 0) {
+              const avgLat = validMerchants.reduce((sum, m) => sum + (m.lat || 0), 0) / validMerchants.length;
+              const avgLng = validMerchants.reduce((sum, m) => sum + (m.lng || 0), 0) / validMerchants.length;
+              center = [avgLat, avgLng];
+              console.log('🗺️ LeafletMap: Using fallback center from merchants:', center, validMerchants.length);
+            } else {
+              console.warn('🗺️ LeafletMap: No valid merchants with coordinates for fallback');
+            }
+          } else {
+            console.warn('🗺️ LeafletMap: No merchants available for fallback');
+          }
+        }
+        
+        if (center && mapInstanceRef.current) {
+          if (bounds) {
+            mapInstanceRef.current.fitBounds(bounds, {
+              padding: [50, 50],
+              animate: true,
+              duration: 0.8
+            });
+            console.log('🗺️ LeafletMap: Fitted to province bounds');
+          } else {
+            mapInstanceRef.current.setView(center, 11, {
+              animate: true,
+              duration: 0.8
+            });
+            console.log('🗺️ LeafletMap: Zoomed to province center');
+          }
+        } else {
+          console.warn('⚠️ LeafletMap: No coordinates available for province:', selectedProvince);
+        }
+      }).catch((error) => {
+        console.error('❌ LeafletMap: Error fetching province coordinates:', error);
+        // Fallback: use merchants that are already filtered by province_id
+        const merchantsToUse = restaurants.length > 0 ? restaurants : filteredRestaurants;
+        console.log('🗺️ LeafletMap: Error fallback - using merchants. Total:', merchantsToUse.length, 'restaurants:', restaurants.length);
+        if (merchantsToUse.length > 0 && mapInstanceRef.current) {
+          const validMerchants = merchantsToUse.filter(m => m.lat && m.lng && m.lat !== 0 && m.lng !== 0);
+          if (validMerchants.length > 0) {
+            const avgLat = validMerchants.reduce((sum, m) => sum + (m.lat || 0), 0) / validMerchants.length;
+            const avgLng = validMerchants.reduce((sum, m) => sum + (m.lng || 0), 0) / validMerchants.length;
+            mapInstanceRef.current.setView([avgLat, avgLng], 11, {
+              animate: true,
+              duration: 0.8
+            });
+            console.log('🗺️ LeafletMap: Error fallback zoom to merchants center:', [avgLat, avgLng], validMerchants.length);
+          }
+        }
+      });
+      } else if (!selectedProvince && !selectedWard && (provinceChanged || wardChanged)) {
+        // Reset zoom when filters are cleared
+        console.log('🗺️ LeafletMap: Location filters cleared, resetting view');
+        // Could reset to default view here if needed
+      }
+      
+      // Update previous refs
+      previousSelectedProvinceRef.current = selectedProvince;
+      previousSelectedWardRef.current = selectedWard;
+    }, 300); // Small delay to ensure map is ready
+    
+    return () => clearTimeout(timeoutId);
+  }, [selectedProvince, selectedWard, restaurants.length, filteredRestaurants.length]); // Add restaurants.length to trigger when merchants are loaded
 
   return (
     <>

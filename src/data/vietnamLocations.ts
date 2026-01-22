@@ -1,4 +1,5 @@
 // Dữ liệu địa giới hành chính Việt Nam - 63 tỉnh/thành phố
+import { supabase } from '@/utils/supabaseHelpers';
 import { hanoiWards } from './hanoiWards';
 
 export interface Province {
@@ -106,7 +107,7 @@ export const provinces: { [key: string]: Province } = {
     center: [20.2506, 105.9745],
     bounds: [[20.0000, 105.6000], [20.5000, 106.3000]]
   },
-  
+
   // Tây Bắc
   'Sơn La': {
     name: 'Sơn La',
@@ -133,7 +134,7 @@ export const provinces: { [key: string]: Province } = {
     center: [21.7167, 104.8986],
     bounds: [[21.4000, 104.3000], [22.2000, 105.3000]]
   },
-  
+
   // Đông Bắc
   'Hà Giang': {
     name: 'Hà Giang',
@@ -160,7 +161,7 @@ export const provinces: { [key: string]: Province } = {
     center: [21.8537, 106.7610],
     bounds: [[21.4000, 106.4000], [22.4000, 107.2000]]
   },
-  
+
   // Bắc Trung Bộ
   'Thanh Hóa': {
     name: 'Thanh Hóa',
@@ -192,7 +193,7 @@ export const provinces: { [key: string]: Province } = {
     center: [16.4637, 107.5909],
     bounds: [[16.0000, 107.1000], [16.9000, 108.1000]]
   },
-  
+
   // Duyên hải Nam Trung Bộ
   'Đà Nẵng': {
     name: 'Đà Nẵng',
@@ -234,7 +235,7 @@ export const provinces: { [key: string]: Province } = {
     center: [11.0904, 108.0720],
     bounds: [[10.5000, 107.4000], [11.7000, 108.8000]]
   },
-  
+
   // Tây Nguyên
   'Kon Tum': {
     name: 'Kon Tum',
@@ -261,7 +262,7 @@ export const provinces: { [key: string]: Province } = {
     center: [11.5753, 108.1429],
     bounds: [[10.9000, 107.4000], [12.3000, 108.8000]]
   },
-  
+
   // Đông Nam Bộ
   'Hồ Chí Minh': {
     name: 'Hồ Chí Minh',
@@ -293,7 +294,7 @@ export const provinces: { [key: string]: Province } = {
     center: [10.5417, 107.2429],
     bounds: [[10.1000, 106.9000], [10.9000, 107.7000]]
   },
-  
+
   // Đồng bằng sông Cửu Long
   'Long An': {
     name: 'Long An',
@@ -428,7 +429,7 @@ export const districts: { [key: string]: District[] } = {
 export const wards: { [key: string]: Ward[] } = {
   // Import tất cả phường Hà Nội từ hanoiWards.ts
   ...hanoiWards,
-  
+
   // TP HCM - Quận 1
   'Quận 1': [
     { name: 'Phường Bến Nghé', district: 'Quận 1', province: 'Hồ Chí Minh' },
@@ -442,7 +443,7 @@ export const wards: { [key: string]: Ward[] } = {
     { name: 'Phường Phạm Ngũ Lão', district: 'Quận 1', province: 'Hồ Chí Minh' },
     { name: 'Phường Tân Định', district: 'Quận 1', province: 'Hồ Chí Minh' },
   ],
-  
+
   // Đà Nẵng - Hải Châu
   'Hải Châu': [
     { name: 'Phường Hải Châu I', district: 'Hải Châu', province: 'Đà Nẵng' },
@@ -459,26 +460,48 @@ export function getProvinceNames(): string[] {
   return Object.keys(provinces).sort();
 }
 
-export function getDistrictsByProvince(provinceName: string): District[] {
-  return districts[provinceName] || [];
+/**
+ * Lấy danh sách tất cả tỉnh/thành phố từ bảng provinces
+ */
+export async function getProvincesFromDb() {
+  try {
+    const { data, error } = await supabase
+      .from('provinces')
+      .select('_id, name')
+      .order('name', { ascending: true });
+
+    if (error) {
+      console.error('❌ Lỗi lấy danh sách tỉnh:', error);
+      return [];
+    }
+    console.log('data', data);
+    return data || [];
+  } catch (error) {
+    console.error('❌ Lỗi kết nối database:', error);
+    return [];
+  }
 }
 
-export function getWardsByDistrict(districtName: string): Ward[] {
-  return wards[districtName] || [];
-}
+// export function getDistrictsByProvince(provinceName: string): District[] {
+//   return districts[provinceName] || [];
+// }
+
+// export function getWardsByDistrict(districtName: string): Ward[] {
+//   return wards[districtName] || [];
+// }
 
 export function getWardsByProvince(provinceName: string): Ward[] {
   // Get all districts in this province
   const provinceDistricts = getDistrictsByProvince(provinceName);
   const districtNames = provinceDistricts.map(d => d.name);
-  
+
   // Get all wards in those districts
   const allWards: Ward[] = [];
   districtNames.forEach(districtName => {
     const districtWards = wards[districtName] || [];
     allWards.push(...districtWards);
   });
-  
+
   return allWards;
 }
 
@@ -507,3 +530,141 @@ export const getWardByCode = (code: string): Ward | undefined => {
   }
   return undefined;
 };
+
+
+// vietnamLocations.ts
+
+/**
+ * 🏔️ Lấy danh sách Quận/Huyện dựa trên province_id (UUID) từ backend
+ */
+export async function getDistrictsByProvince(provinceId: string): Promise<District[]> {
+  if (!provinceId) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('districts')
+      .select('*')
+      .eq('province_id', provinceId)
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+
+    // Map dữ liệu từ DB sang interface District nếu cần
+    return (data || []).map(d => ({
+      _id: d._id || d.id, // Đảm bảo lấy đúng trường ID
+      name: d.name,
+      province: d.province_id,
+      center: d.center || [0, 0],
+      bounds: d.bounds || [[0, 0], [0, 0]]
+    }));
+  } catch (error) {
+    console.error('❌ Error fetching districts:', error);
+    return [];
+  }
+}
+
+/**
+ * 🏡 Lấy danh sách Xã/Phường dựa trên district_id (UUID) từ backend
+ */
+export async function getWardsByDistrict(districtId: string): Promise<Ward[]> {
+  if (!districtId) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('wards')
+      .select('*')
+      .eq('district_id', districtId)
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+
+    return (data || []).map(w => ({
+      _id: w._id || w.id,
+      name: w.name,
+      district: w.district_id,
+      province: w.province_id
+    }));
+  } catch (error) {
+    console.error('❌ Error fetching wards:', error);
+    return [];
+  }
+}
+
+
+// vietnamLocations.ts
+
+/**
+ * 🏔️ Lấy danh sách Quận/Huyện dựa trên province_id (UUID) từ backend
+ */
+export async function getDistrictsByProvinceFromDb(provinceId: string): Promise<District[]> {
+  if (!provinceId) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('districts')
+      .select('*')
+      .eq('province_id', provinceId)
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+
+    // Map dữ liệu từ DB sang interface District nếu cần
+    return (data || []).map(d => ({
+      _id: d._id || d.id, // Đảm bảo lấy đúng trường ID
+      name: d.name,
+      province: d.province_id,
+      center: d.center || [0, 0],
+      bounds: d.bounds || [[0, 0], [0, 0]]
+    }));
+  } catch (error) {
+    console.error('❌ Error fetching districts:', error);
+    return [];
+  }
+}
+
+/**
+ * 🏡 Lấy danh sách Xã/Phường dựa trên district_id (UUID) từ backend
+ */
+export async function getWardsByDistrictFromDb(districtId: string): Promise<Ward[]> {
+  if (!districtId) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('wards')
+      .select('*')
+      .eq('district_id', districtId)
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+
+    return (data || []).map(w => ({
+      _id: w._id || w.id,
+      name: w.name,
+      district: w.district_id,
+      province: w.province_id
+    }));
+  } catch (error) {
+    console.error('❌ Error fetching wards:', error);
+    return [];
+  }
+}
+
+
+/**
+ * 🏡 Lấy danh sách tất cả Xã/Phường của một Tỉnh dựa trên province_id (UUID)
+ */
+export async function getWardsByProvinceFromDb(provinceId: string) {
+  if (!provinceId) return [];
+  try {
+    const { data, error } = await supabase
+      .from('wards')
+      .select('*')
+      .eq('province_id', provinceId);
+      
+    if (error) throw error;
+    return data || []; // Trả về mảng
+  } catch (error) {
+    console.error(error);
+    return []; // Luôn trả về mảng để tránh lỗi .map
+  }
+}
