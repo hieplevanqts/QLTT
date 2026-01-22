@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+﻿import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import PageHeader from '../layouts/PageHeader';
 import { Button } from '../app/components/ui/button';
 import { MapPin, SlidersHorizontal, BarChart3 } from 'lucide-react';
@@ -18,14 +18,22 @@ import { UploadExcelModal } from '../app/components/map/UploadExcelModal';
 import { Toaster } from 'sonner';
 import styles from './MapPage.module.css';
 import { Restaurant } from '../data/restaurantData';
-import { getProvinceNames, getDistrictsByProvince, getWardsByDistrict } from '../data/vietnamLocations';
-import { fetchMapPoints } from '../utils/api/mapPointsApi';
+// Import utility functions
+import { formatTime, formatDate } from './utils/dateUtils';
+import {
+  mapStatusCodesToMerchantStatus,
+  calculateBusinessTypes,
+  calculateDepartmentIdsToFilter,
+  calculateBusinessTypeFiltersArray,
+  filterRestaurantsBySearch,
+} from './utils/filterUtils';
+import { useMapFilters } from './hooks/useMapFilters';
+import { getProvinceNames } from '../data/vietnamLocations';
 import { fetchPointStatuses, PointStatus, buildFilterObjectFromStatuses } from '../utils/api/pointStatusApi';
 import { fetchCategories, Category } from '../utils/api/categoriesApi';
 import { fetchMerchants, fetchMerchantStats, MerchantStats } from '../utils/api/merchantsApi';
 import { fetchMarketManagementTeams, Department } from '../utils/api/departmentsApi';
-import { officersData, Officer, teamsData, departmentData } from '../data/officerTeamData';
-import { useQLTTScope } from '../contexts/QLTTScopeContext';
+import { officersData, Officer, teamsData } from '../data/officerTeamData';
 import { useAppSelector, useAppDispatch } from '../app/hooks';
 import {
   setFilters,
@@ -40,7 +48,6 @@ import {
   setSelectedDistrict,
   setSelectedWard,
   setFilterPanelOpen,
-  setInitializing,
 } from '../store/slices/mapFiltersSlice';
 
 type CategoryFilter = {
@@ -72,12 +79,6 @@ export default function MapPage() {
   const selectedWard = mapFilters.selectedWard;
   const isFilterPanelOpen = mapFilters.isFilterPanelOpen;
   
-  // Log Redux state khi component mount
-  useEffect(() => {
-    console.log('📊 Redux Auth State:', reduxAuth);
-    console.log('📊 Redux QLTT Scope State:', reduxQLTTScope);
-    
-  }, [reduxAuth, reduxQLTTScope, dispatch]);
   
   // Point statuses from point_status table
   const [pointStatuses, setPointStatuses] = useState<PointStatus[]>([]);
@@ -122,22 +123,6 @@ export default function MapPage() {
     return () => clearInterval(timer);
   }, []);
   
-  // Format time display
-  const formatTime = (date: Date) => {
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    const seconds = date.getSeconds().toString().padStart(2, '0');
-    return `${hours}:${minutes}:${seconds}`;
-  };
-  
-  const formatDate = (date: Date) => {
-    const days = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
-    const dayName = days[date.getDay()];
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${dayName}, ${day}/${month}/${year}`;
-  };
   
   // 🔥 DISABLED: Auto-save search query (causes localStorage stale closure issues)
   // Users must click "Reset" or change filters to trigger save
@@ -248,7 +233,6 @@ export default function MapPage() {
   useEffect(() => {
     // 🔥 FIX: Wait for scope to be loaded from Redux store before fetching
     if (isScopeLoading || !isScopeInitialized) {
-      console.log('⏳ MapPage: Waiting for scope to load from Redux...', { isScopeLoading, isScopeInitialized });
       return;
     }
     
@@ -381,124 +365,56 @@ export default function MapPage() {
   useEffect(() => {
     // Fetch if Merchants OR MapPoints layer is active
     if (!showMerchants && !showMapPoints) {
-      console.log('⏭️ MapPage: Skipping merchants fetch - No active layer');
       return;
     }
     
+    // 🔥 FIX: Wait for essential data to be loaded before fetching merchants
+    if (isScopeLoading || !isScopeInitialized) {
+      return;
+    }
+    
+    // 🔥 FIX: Wait for pointStatuses and categories to be loaded (needed for filters)
+    if (pointStatuses.length === 0 || categories.length === 0) {
+      return;
+    }
+    
+    // 🔥 FIX: Wait for departments to be loaded if we need them for filtering
+    // Only wait if we don't have departmentIds in filters yet and we have teamId/divisionId
+    if (Object.keys(departmentFilters).length === 0 && departments.length === 0 && (teamId || divisionId)) {
+      return; // Wait for departments to load when we have teamId/divisionId
+    }
+    
+    // 🔥 FIX: Check if filters key has changed or if this is the first fetch
+    // Allow first fetch even if filtersKey hasn't changed yet
+    if (lastFiltersKeyRef.current === filtersKey && hasFetchedMerchantsRef.current) {
+      return; // Skip if filters haven't changed and we've already fetched
+    }
+    
     async function loadMerchants() {
-      console.log('🔄 MapPage: Starting merchants fetch...', {
-        filtersKey,
-        selectedProvince,
-        selectedWard,
-        showMerchants,
-        showMapPoints
-      });
-      
       if (!hasFetchedMerchantsRef.current) {
         setIsLoadingData(true);
       }
       setDataError(null);
       
       try {
-        // 🔥 Map point_status codes to merchant status codes
-        // point_status: certified, hotspot, scheduled, inspected
-        // merchant status: active, pending, suspended, rejected
+        // Map point_status codes to merchant status codes
         const activeFilterCodes = Object.keys(filters).filter(key => filters[key] === true);
+        const merchantStatusCodes = mapStatusCodesToMerchantStatus(activeFilterCodes);
         
-        // Map to merchant status codes
-        const merchantStatusCodes = activeFilterCodes.map(code => {
-          switch (code) {
-            case 'certified': return 'active';
-            case 'scheduled': return 'pending';
-            case 'hotspot': return 'suspended';
-            case 'inspected': return 'rejected';
-            default: return code;
-          }
-        });
-        
-        
-        // 🔥 Get business types from categories
-        // For merchants, we filter by business_type field (text) instead of category IDs
-        // 🔥 FIX: Get enabled business types (true), not disabled ones (false)
+        // Calculate business types filter
         const activeBusinessTypes = Object.keys(businessTypeFilters).filter(key => businessTypeFilters[key] === true);
+        const businessTypes = calculateBusinessTypes(activeBusinessTypes, categories);
         
-        // Map category IDs to category names
-        const businessTypeNames = activeBusinessTypes
-          .map(categoryId => {
-            const category = categories.find(c => c.id === categoryId);
-            return category?.name;
-          })
-          .filter((name): name is string => name !== undefined);
+        // Calculate department IDs to filter
+        const departmentIdsToFilter = calculateDepartmentIdsToFilter(
+          departmentFilters,
+          departments,
+          teamId,
+          divisionId
+        );
         
-        // 🔥 NEW LOGIC: Check if ALL categories are selected (= "Tất cả")
-        const totalCategories = categories.length;
-        const allCategoriesSelected = activeBusinessTypes.length === totalCategories && totalCategories > 0;
-        
-        const businessTypes = allCategoriesSelected
-          ? undefined  // 🔥 ALL selected = no filter (get all merchants)
-          : businessTypeNames.length > 0 
-            ? businessTypeNames  // 🔥 SOME selected = filter by names
-            : undefined;  // 🔥 NONE selected = no filter
-        
-        
-        // 🔥 FIX: Get enabled department IDs from departmentFilters (UI checkboxes)
-        const enabledDepartmentIds = Object.keys(departmentFilters).filter(id => departmentFilters[id] === true);
-        const totalDepartmentFilters = Object.keys(departmentFilters).length;
-        
-        let departmentIdsToFilter: string[] | undefined = undefined;
-        
-        if (teamId) {
-          // 🔥 Case 1: User selected a team in scope → filter by THIS TEAM ONLY
-          departmentIdsToFilter = [teamId];
-          
-        } else if (divisionId) {
-          // 🔥 Case 2: User selected a division → filter by ALL TEAMS under this division
-          const teamsUnderDivision = departments.filter(
-            (d: Department) => d.parent_id === divisionId || d.id === divisionId
-          );
-          departmentIdsToFilter = teamsUnderDivision.map((d: Department) => d.id);
-          
-        } else if (totalDepartmentFilters > 0) {
-          // 🔥 Case 3: Use UI checkbox filters
-          if (enabledDepartmentIds.length === totalDepartmentFilters) {
-            // All departments selected (= "Tất cả") → filter by all department IDs from departments list
-            departmentIdsToFilter = departments.map((d: Department) => d.id);
-            
-          } else if (enabledDepartmentIds.length > 0) {
-            // Some departments selected → filter by enabled IDs only
-            departmentIdsToFilter = enabledDepartmentIds;
-            
-          } else {
-            // No departments selected → no merchants (empty array)
-            departmentIdsToFilter = [];
-            
-          }
-        } else {
-          // 🔥 Case 4: No scope filter & no UI filter → undefined (no filter, show ALL merchants)
-          departmentIdsToFilter = undefined;
-          
-        }
-        
-        // Convert businessTypeFilters object to array of keys with true values
-        const businessTypeFiltersArray = businessTypeFilters 
-          ? Object.keys(businessTypeFilters).filter(key => businessTypeFilters[key] === true)
-          : null;
-        
-        console.log('🔄 MapPage: Fetching merchants with filters:', {
-          filters, // 🔥 DEBUG: Show raw filters from Redux
-          activeFilterCodes, // 🔥 DEBUG: Show active filter codes
-          merchantStatusCodes,
-          businessTypeFilters, // 🔥 DEBUG: Show raw businessTypeFilters from Redux
-          activeBusinessTypes, // 🔥 DEBUG: Show active business type keys
-          businessTypeNames, // 🔥 DEBUG: Show mapped business type names
-          businessTypes,
-          departmentFilters, // 🔥 DEBUG: Show raw departmentFilters from Redux
-          departmentIdsToFilter,
-          selectedProvince,
-          selectedWard,
-          showMerchants,
-          showMapPoints
-        });
+        // Calculate business type filters array for category_merchants join
+        const businessTypeFiltersArray = calculateBusinessTypeFiltersArray(businessTypeFilters, categories);
         
         const merchants = await fetchMerchants(
           merchantStatusCodes.length > 0 ? merchantStatusCodes : undefined,
@@ -512,16 +428,11 @@ export default function MapPage() {
             statusCodes: merchantStatusCodes.length > 0 ? merchantStatusCodes : undefined, // 🔥 FIX: Pass statusCodes to options
             businessTypes: businessTypes,
             departmentIds: departmentIdsToFilter,
+            categoryIds: businessTypeFiltersArray && businessTypeFiltersArray.length > 0 ? businessTypeFiltersArray : undefined, // 🔥 NEW: Pass category IDs to options
             province: selectedProvince || undefined,
             ward: selectedWard || undefined
           }
         );
-        
-        console.log('✅ MapPage: Merchants fetched:', {
-          count: merchants.length,
-          withProvince: selectedProvince ? merchants.filter(m => m.province).length : 'N/A',
-          withWard: selectedWard ? merchants.filter(m => m.ward).length : 'N/A'
-        });
         
         setRestaurants(merchants);
         setIsLoadingData(false);
@@ -538,15 +449,16 @@ export default function MapPage() {
     
     // Don't update lastFiltersKeyRef here - only update after successful API call
     loadMerchants();
-  }, [filtersKey, pointStatuses.length, showMerchants, showMapPoints, showOfficers, departments.length, isScopeLoading, isScopeInitialized, divisionId, teamId, filters, businessTypeFilters, departmentFilters, categories.length, selectedProvince, selectedWard]); // 🔥 Include all filter dependencies
+  }, [filtersKey, pointStatuses.length, showMerchants, showMapPoints, departments.length, isScopeLoading, isScopeInitialized, divisionId, teamId, filters, businessTypeFilters, departmentFilters, categories.length, selectedProvince, selectedWard]); // 🔥 Include all filter dependencies
   
   // 🔥 NEW: Clear restaurants when Officers layer is selected (ward boundaries don't need points)
+  // Only clear if Officers layer is active AND merchants/mappoints layers are not active
   useEffect(() => {
-    if (showOfficers) {
+    if (showOfficers && !showMerchants && !showMapPoints) {
       setRestaurants([]);
       setIsLoadingData(false);
     }
-  }, [showOfficers]);
+  }, [showOfficers, showMerchants, showMapPoints]);
   
   // Setup global function for popup button click
   useEffect(() => {
@@ -759,106 +671,29 @@ export default function MapPage() {
     }
   };
 
-  const handleFilterChange = (category: keyof CategoryFilter) => {
-    const newFilters = {
-      ...filters,
-      [category]: !filters[category]
-    };
-    
-    dispatch(setFilters(newFilters));
-    dispatch(setPendingFilters(newFilters));  // Keep pending in sync
-  };
-
-  const handleBusinessTypeFilterChange = (key: string) => {
-    
-    const newFilters = {
-      ...businessTypeFilters,
-      [key]: !businessTypeFilters[key]
-    };
-    console.log('newFilters', newFilters);
-    dispatch(setBusinessTypeFilters(newFilters));
-    dispatch(setPendingBusinessTypeFilters(newFilters));  // Keep pending in sync
-  };
-  
-  // 🔥 NEW: Handle "Tất cả" checkbox for business types
-  const handleBusinessTypeToggleAll = (checked: boolean) => {
-    const newFilters: { [key: string]: boolean } = {};
-    Object.keys(businessTypeFilters).forEach(key => {
-      newFilters[key] = checked;
-    });
-    
-    dispatch(setBusinessTypeFilters(newFilters));
-    dispatch(setPendingBusinessTypeFilters(newFilters));  // Keep pending in sync
-  };
-  
-  // 🔥 NEW: Handle department filter change
-  const handleDepartmentFilterChange = (departmentId: string) => {
-    const newFilters = {
-      ...departmentFilters,
-      [departmentId]: !departmentFilters[departmentId]
-    };
-    
-    dispatch(setDepartmentFilters(newFilters));
-    dispatch(setPendingDepartmentFilters(newFilters));  // Keep pending in sync
-  };
-  
-  // 🔥 NEW: Handle "Tất cả" checkbox for departments
-  const handleDepartmentToggleAll = (checked: boolean) => {
-    const newFilters: { [key: string]: boolean } = {};
-    Object.keys(departmentFilters).forEach(key => {
-      newFilters[key] = checked;
-    });
-    
-    dispatch(setDepartmentFilters(newFilters));
-    dispatch(setPendingDepartmentFilters(newFilters));  // Keep pending in sync
-  };
-  
-  // 🔥 NEW: Apply pending filters to actual filters
-  const handleApplyFilters = () => {
-    
-    dispatch(applyPendingFilters());  // Apply all pending filters at once
-    
-  };
-  
-  // 🔥 REMOVED: Save filters to localStorage - now using Redux store only
-  // Filters are automatically saved to Redux store when dispatch actions are called
-  const handleSaveFilters = () => {
-    // No-op: Filters are already in Redux store
-    // This function is kept for compatibility with existing code that calls it
-  };
-  
-  // 🔥 NEW: Reset all filters to default
-  const handleResetAllFilters = () => {
-    
-    // Reset status filters - enable all
-    const defaultFilters = buildFilterObjectFromStatuses(pointStatuses);
-    dispatch(setFilters(defaultFilters));
-    dispatch(setPendingFilters(defaultFilters));
-    
-    // Reset business type filters - enable all
-    const defaultBusinessTypeFilters: { [key: string]: boolean } = {};
-    categories.forEach((cat) => {
-      defaultBusinessTypeFilters[cat.id] = true;
-    });
-    dispatch(setBusinessTypeFilters(defaultBusinessTypeFilters));
-    dispatch(setPendingBusinessTypeFilters(defaultBusinessTypeFilters));
-    
-    // Reset location filters
-    dispatch(setSelectedProvince(''));
-    dispatch(setSelectedDistrict(''));
-    dispatch(setSelectedWard(''));
-    
-    // Reset date range
-    setCustomStartDate('');
-    setCustomEndDate('');
-    
-    // Reset search query
-    setSearchQuery('');
-    
-    // Clear localStorage (handled by resetFilters action)
-    dispatch(resetFilters());
-    
-  };
+  // Use filter handlers hook
+  const {
+    handleFilterChange,
+    handleBusinessTypeFilterChange,
+    handleBusinessTypeToggleAll,
+    handleDepartmentFilterChange,
+    handleDepartmentToggleAll,
+    handleApplyFilters,
+    handleSaveFilters,
+    handleResetAllFilters,
+  } = useMapFilters({
+    filters,
+    businessTypeFilters,
+    departmentFilters,
+    pendingFilters,
+    pendingBusinessTypeFilters,
+    pendingDepartmentFilters,
+    pointStatuses,
+    categories,
+    setCustomStartDate,
+    setCustomEndDate,
+    setSearchQuery,
+  });
   
   // Handle stat card click to filter by category
   const handleStatCardClick = (category: keyof CategoryFilter | 'all') => {
@@ -908,26 +743,7 @@ export default function MapPage() {
   
   // Apply search filter only (location filtering is done by backend via fetchMerchants)
   const filteredRestaurants = useMemo(() => {
-    // Use restaurants directly from fetchMerchants (already filtered by backend)
-    if (!restaurants || restaurants.length === 0) {
-      return [];
-    }
-    
-    // Only apply search filter (client-side)
-    if (searchQuery.trim() === '') {
-      return restaurants;
-    }
-    
-    const searchLower = searchQuery.toLowerCase();
-    return restaurants.filter((restaurant) => {
-      const nameLower = restaurant.name.toLowerCase();
-      const addressLower = restaurant.address.toLowerCase();
-      const typeLower = restaurant.type.toLowerCase();
-      
-      return nameLower.includes(searchLower) ||
-             addressLower.includes(searchLower) ||
-             typeLower.includes(searchLower);
-    });
+    return filterRestaurantsBySearch(restaurants, searchQuery);
   }, [restaurants, searchQuery]);
   
   // 🔥 NEW: Log final search results
@@ -953,7 +769,7 @@ export default function MapPage() {
     
     return filtersDiffer || businessTypeFiltersDiffer;
   }, [filters, pendingFilters, businessTypeFilters, pendingBusinessTypeFilters]);
- 
+
   const autocompleteSuggestions = searchQuery.trim() 
     ? filteredRestaurants.slice(0, 8)
     : [];
@@ -972,62 +788,23 @@ export default function MapPage() {
   };
   
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100vh - 7.5rem)' }}>
+    <div className={`flex flex-col ${styles.pageContainer}`}>
       <PageHeader
         breadcrumbs={[{ label: 'Trang chủ', href: '/' }, { label: 'Bản đồ điều hành' }]}
         title={
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)' }}>
+          <div className={styles.headerTitleContainer}>
             <span>Bản đồ điều hành</span>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--spacing-3)',
-              paddingLeft: 'var(--spacing-4)',
-              borderLeft: '1px solid var(--color-border)',
-              fontSize: 'var(--font-size-sm)',
-              color: 'var(--color-text-secondary)',
-              fontFamily: 'var(--font-family-mono)',
-              fontWeight: '500'
-            }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                <div style={{
-                  fontSize: 'var(--font-size-base)',
-                  color: 'var(--color-text)',
-                  fontWeight: '600',
-                  lineHeight: 1.2
-                }}>
+            <div className={styles.headerClockContainer}>
+              <div className={styles.headerClockTime}>
+                <div className={styles.headerClockTimeValue}>
                   {formatTime(currentTime)}
                 </div>
-                <div style={{
-                  fontSize: 'var(--font-size-xs)',
-                  color: 'var(--color-text-secondary)',
-                  lineHeight: 1.2
-                }}>
+                <div className={styles.headerClockDateValue}>
                   {formatDate(currentTime)}
                 </div>
               </div>
-              <div style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: '#22c55e',
-                animation: 'pulse-dot 2s ease-in-out infinite',
-                boxShadow: '0 0 0 0 rgba(34, 197, 94, 0.7)'
-              }}></div>
+              <div className={styles.headerClockDot}></div>
             </div>
-            <style>{`
-              @keyframes pulse-dot {
-                0% {
-                  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
-                }
-                70% {
-                  box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
-                }
-                100% {
-                  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
-                }
-              }
-            `}</style>
           </div>
         }
         actions={
@@ -1047,8 +824,9 @@ export default function MapPage() {
             />
             
             {/* Map Layer Select */}
-            <div style={{ position: 'relative' }}>
+            <div className={styles.mapLayerSelectWrapper}>
               <select
+                className={styles.mapLayerSelect}
                 value={
                   showMapPoints ? 'mappoint' : 
                   showMerchants ? 'merchant' : 
@@ -1071,34 +849,6 @@ export default function MapPage() {
                     setSelectedTeamId(''); // Reset team selection when switching to officers layer
                   }
                 }}
-                style={{
-                  fontFamily: 'var(--font-family-base)',
-                  fontSize: 'var(--font-size-sm)',
-                  fontWeight: '500',
-                  padding: '0 var(--spacing-4) 0 var(--spacing-3)',
-                  height: '36px',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--color-border)',
-                  backgroundColor: 'var(--color-surface)',
-                  color: 'var(--color-text)',
-                  cursor: 'pointer',
-                  outline: 'none',
-                  appearance: 'none',
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right var(--spacing-2) center',
-                  backgroundSize: '16px',
-                  minWidth: '160px',
-                  transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--color-primary)';
-                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0, 92, 182, 0.1)';
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--color-border)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
               >
                 {/* Tạm ẩn map_points layer */}
                 {/* <option value="mappoint">📍 Chủ hộ kinh doanh</option> */}
@@ -1113,67 +863,15 @@ export default function MapPage() {
         }
       />
 
-      {/* Loading State */}
-      {isLoadingData && (
-        <div style={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: 'var(--color-background)',
-          color: 'var(--color-text-secondary)',
-          fontFamily: 'var(--font-family-base)',
-          fontSize: 'var(--font-size-base)'
-        }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              border: '4px solid var(--color-border)',
-              borderTop: '4px solid var(--color-primary)',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-              margin: '0 auto var(--spacing-4)'
-            }} />
-            <div>Đang tải dữ liệu bản đồ...</div>
-          </div>
-        </div>
-      )}
-
       {/* Error State */}
       {dataError && !isLoadingData && (
-        <div style={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: 'var(--color-background)',
-          padding: 'var(--spacing-6)'
-        }}>
-          <div style={{
-            maxWidth: '500px',
-            padding: 'var(--spacing-6)',
-            backgroundColor: 'var(--color-surface)',
-            borderRadius: 'var(--radius-lg)',
-            border: '1px solid var(--color-border)',
-            textAlign: 'center',
-            fontFamily: 'var(--font-family-base)'
-          }}>
-            <div style={{ fontSize: '48px', marginBottom: 'var(--spacing-4)' }}>⚠️</div>
-            <h3 style={{
-              fontSize: 'var(--font-size-lg)',
-              fontWeight: '600',
-              marginBottom: 'var(--spacing-3)',
-              color: 'var(--color-text)'
-            }}>
+        <div className={styles.errorContainer}>
+          <div className={styles.errorContent}>
+            <div className={styles.errorIcon}>⚠️</div>
+            <h3 className={styles.errorTitle}>
               Không thể tải dữ liệu
             </h3>
-            <p style={{
-              fontSize: 'var(--font-size-sm)',
-              color: 'var(--color-text-secondary)',
-              marginBottom: 'var(--spacing-5)',
-              lineHeight: 1.6
-            }}>
+            <p className={styles.errorMessage}>
               {dataError}
             </p>
             <Button onClick={() => window.location.reload()}>
@@ -1185,9 +883,20 @@ export default function MapPage() {
 
       {/* Map Content - Show after initial load (don't hide when filters change) */}
       {(hasInitialDataLoaded || !isLoadingData) && !dataError && (
-        <div style={{ flex: 1, display: 'flex', padding: 'var(--spacing-6) var(--spacing-6) var(--spacing-6) var(--spacing-6)' }}>
+        <div className={styles.mapContentContainer}>
           {/* Map Canvas - Now takes full width */}
-          <div className={styles.mapContainer} style={{ position: 'relative', width: '100%', height: '100%' }} ref={mapContainerRef}>
+          <div className={`${styles.mapContainer} ${styles.mapWrapper}`} ref={mapContainerRef}>
+            {/* Loading Overlay - Centered on map with opacity 0.5, no background */}
+            {isLoadingData && (
+              <div className={styles.loadingOverlay}>
+                <div className={styles.loadingContent}>
+                  <div className={styles.loadingSpinner} />
+                  <div className={styles.loadingText}>
+                    Đang tải dữ liệu bản đồ...
+                  </div>
+                </div>
+              </div>
+            )}
             {/* Map Legend - Horizontal at Top */}
             {!showOfficers && isLegendVisible && (() => {
               // 🔥 Color mapping - HARDCODED (giữ nguyên theo design system)
@@ -1229,6 +938,8 @@ export default function MapPage() {
                 businessTypeFilters={businessTypeFilters}
                 categories={categories}
                 merchantStats={merchantStats}
+                divisionId={divisionId}
+                teamId={teamId}
                 onClose={() => {
                   dispatch(setSelectedProvince(''));
                   dispatch(setSelectedDistrict(''));
@@ -1273,40 +984,14 @@ export default function MapPage() {
             )}
 
             {/* Filter Panel with Toggle Buttons */}
-            <div style={{
-              position: 'absolute',
-              top: '80px', // Below zoom controls (+ and - buttons)
-              left: '10px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
-              zIndex: 500 // Above all map overlays
-            }}>
+            <div className={styles.mapControls}>
               {/* Legend Toggle Button - Only show when NOT on Officers layer */}
               {!showOfficers && (
                 <button
-                  style={{
-                    width: '34px',
-                    height: '34px',
-                    borderRadius: '4px',
-                    border: '2px solid rgba(0,0,0,0.2)',
-                    background: 'white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    boxShadow: 'none',
-                    transition: 'background 0.2s'
-                  }}
+                  className={styles.mapControlButton}
                   onClick={() => setIsLegendVisible(!isLegendVisible)}
                   aria-label="Mở/Đóng chú giải"
                   title="Chú giải bản đồ"
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#f4f4f4';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'white';
-                  }}
                 >
                   <MapPin size={18} strokeWidth={2.5} />
                 </button>
@@ -1315,28 +1000,10 @@ export default function MapPage() {
               {/* Stats Toggle Button - Only show when NOT on Officers layer */}
               {!showOfficers && (
                 <button
-                  style={{
-                    width: '34px',
-                    height: '34px',
-                    borderRadius: '4px',
-                    border: '2px solid rgba(0,0,0,0.2)',
-                    background: 'white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    boxShadow: 'none',
-                    transition: 'background 0.2s'
-                  }}
+                  className={styles.mapControlButton}
                   onClick={() => setIsStatsCardVisible(!isStatsCardVisible)}
                   aria-label="Mở/Đóng thống kê"
                   title="Thống kê địa bàn"
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#f4f4f4';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'white';
-                  }}
                 >
                   <BarChart3 size={18} strokeWidth={2.5} />
                 </button>
@@ -1345,33 +1012,10 @@ export default function MapPage() {
               {/* Filter Toggle Button */}
               <button
                 ref={filterToggleBtnRef}
-                style={{
-                  width: '34px',
-                  height: '34px',
-                  borderRadius: '4px',
-                  border: '2px solid rgba(0,0,0,0.2)',
-                  background: isFilterPanelOpen ? 'var(--primary)' : 'white',
-                  color: isFilterPanelOpen ? 'white' : 'inherit',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  boxShadow: 'none',
-                  transition: 'background 0.2s'
-                }}
+                className={`${styles.mapControlButton} ${isFilterPanelOpen ? styles.mapControlButtonActive : ''}`}
                 onClick={() => dispatch(setFilterPanelOpen(!isFilterPanelOpen))}
                 aria-label="Mở/Đóng bộ lọc"
                 title="Bộ lọc nâng cao"
-                onMouseEnter={(e) => {
-                  if (!isFilterPanelOpen) {
-                    e.currentTarget.style.background = '#f4f4f4';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isFilterPanelOpen) {
-                    e.currentTarget.style.background = 'white';
-                  }
-                }}
               >
                 <SlidersHorizontal size={18} strokeWidth={2.5} />
               </button>
@@ -1379,33 +1023,10 @@ export default function MapPage() {
               {/* Officer Stats Toggle Button - Only show when Officers layer is active */}
               {showOfficers && (
                 <button
-                  style={{
-                    width: '34px',
-                    height: '34px',
-                    borderRadius: '4px',
-                    border: '2px solid rgba(0,0,0,0.2)',
-                    background: isOfficerStatsVisible ? 'var(--primary)' : 'white',
-                    color: isOfficerStatsVisible ? 'white' : 'inherit',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    boxShadow: 'none',
-                    transition: 'background 0.2s'
-                  }}
+                  className={`${styles.mapControlButton} ${isOfficerStatsVisible ? styles.mapControlButtonActive : ''}`}
                   onClick={() => setIsOfficerStatsVisible(!isOfficerStatsVisible)}
                   aria-label="Mở/Đóng thống kê cán bộ"
                   title="Thống kê cán bộ quản lý"
-                  onMouseEnter={(e) => {
-                    if (!isOfficerStatsVisible) {
-                      e.currentTarget.style.background = '#f4f4f4';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isOfficerStatsVisible) {
-                      e.currentTarget.style.background = 'white';
-                    }
-                  }}
                 >
                   <BarChart3 size={18} strokeWidth={2.5} />
                 </button>
@@ -1503,6 +1124,8 @@ export default function MapPage() {
         pointStatuses={pointStatuses}  // 🔥 PASS: Dynamic statuses to fullscreen modal
         categories={categories}  // 🔥 NEW: Pass categories for mapping ID to name
         merchantStats={merchantStats}  // 🔥 NEW: Pass merchant statistics to fullscreen modal
+        divisionId={divisionId}
+        teamId={teamId}
         onPointClick={handlePointClick}
         onFilterChange={handleFilterChange}
         onBusinessTypeFilterChange={handleBusinessTypeFilterChange}

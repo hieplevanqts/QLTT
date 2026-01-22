@@ -24,6 +24,7 @@ export interface FetchMerchantsOptions {
   statusCodes?: string[];
   businessTypes?: string[];
   departmentIds?: string[];
+  categoryIds?: string[];  // 🔥 NEW: Category IDs for filtering
   province?: string;
   district?: string;
   ward?: string;
@@ -40,27 +41,124 @@ export async function fetchMerchants(p0: string[] | undefined, businessTypes: st
     // --- A. CẬP NHẬT URL TRÌNH DUYỆT (KHÔNG TẢI LẠI TRANG) ---
     const currentBrowserUrl = new URL(window.location.href);
 
-    // Gán hoặc xóa params dựa trên giá trị của opts để đồng bộ thanh địa chỉ
-    if (opts.statusCodes && opts.statusCodes.length > 0) {
-      currentBrowserUrl.searchParams.set('status', opts.statusCodes.join(','));
-    } else {
-      currentBrowserUrl.searchParams.delete('status');
+    // 🔥 FIX: Build URL manually to preserve existing params and avoid encoding comma as %2C
+    // Get base URL without search params
+    const baseUrl = `${currentBrowserUrl.origin}${currentBrowserUrl.pathname}`;
+    
+    // Parse existing params manually to preserve them
+    const existingParams = new Map<string, string>();
+    currentBrowserUrl.searchParams.forEach((value, key) => {
+      existingParams.set(key, value);
+    });
+    
+    // Update or add params
+    // Only update/delete if the param is explicitly provided in opts
+    if (opts.hasOwnProperty('statusCodes')) {
+      if (opts.statusCodes && opts.statusCodes.length > 0) {
+        existingParams.set('status', opts.statusCodes.join(','));
+      } else {
+        existingParams.delete('status');
+      }
     }
-
-    if (opts.businessTypes && opts.businessTypes.length > 0) {
-      currentBrowserUrl.searchParams.set('type', opts.businessTypes.join(','));
-    } else {
-      currentBrowserUrl.searchParams.delete('type');
+    // If statusCodes not provided, keep existing value
+    
+    if (opts.hasOwnProperty('businessTypes')) {
+      if (opts.businessTypes && opts.businessTypes.length > 0) {
+        existingParams.set('type', opts.businessTypes.join(','));
+      } else {
+        existingParams.delete('type');
+      }
     }
-
-    if (opts.searchQuery?.trim()) {
-      currentBrowserUrl.searchParams.set('search', opts.searchQuery);
-    } else {
-      currentBrowserUrl.searchParams.delete('search');
+    // If businessTypes not provided, keep existing value
+    
+    // 🔥 NEW: Update or add categories param (category IDs)
+    // Filter out undefined, null, empty string, and "undefined" string
+    if (opts.hasOwnProperty('categoryIds')) {
+      if (opts.categoryIds && Array.isArray(opts.categoryIds)) {
+        const validCategoryIds = opts.categoryIds.filter(
+          (id): id is string => 
+            id !== null && 
+            id !== undefined && 
+            typeof id === 'string' && 
+            id !== 'undefined' && 
+            id !== 'null' && 
+            id.trim() !== ''
+        );
+        
+        if (validCategoryIds.length > 0) {
+          existingParams.set('categories', validCategoryIds.join(','));
+        } else {
+          existingParams.delete('categories');
+        }
+      } else {
+        existingParams.delete('categories');
+      }
     }
-
+    // If categoryIds not provided, keep existing value
+    
+    if (opts.hasOwnProperty('searchQuery')) {
+      if (opts.searchQuery?.trim()) {
+        existingParams.set('search', opts.searchQuery);
+      } else {
+        existingParams.delete('search');
+      }
+    }
+    // If searchQuery not provided, keep existing value
+    
+    // 🔥 NEW: Update or add province param
+    // Only update if province is provided and not empty
+    if (opts.province && typeof opts.province === 'string' && opts.province.trim() !== '') {
+      existingParams.set('province', opts.province);
+    } else {
+      // Only delete if explicitly set to empty/undefined (don't delete if not provided)
+      if (opts.hasOwnProperty('province')) {
+        existingParams.delete('province');
+      }
+    }
+    
+    // 🔥 NEW: Update or add ward param
+    // Only update if ward is provided and not empty
+    if (opts.ward && typeof opts.ward === 'string' && opts.ward.trim() !== '') {
+      existingParams.set('ward', opts.ward);
+    } else {
+      // Only delete if explicitly set to empty/undefined (don't delete if not provided)
+      if (opts.hasOwnProperty('ward')) {
+        existingParams.delete('ward');
+      }
+    }
+    
+    // 🔥 NEW: Update or add divisionId param
+    if (divisionId && typeof divisionId === 'string' && divisionId.trim() !== '') {
+      existingParams.set('divisionId', divisionId);
+    } else {
+      existingParams.delete('divisionId');
+    }
+    
+    // 🔥 NEW: Update or add teamId param (priority over divisionId)
+    if (teamId && typeof teamId === 'string' && teamId.trim() !== '') {
+      existingParams.set('teamId', teamId);
+    } else {
+      existingParams.delete('teamId');
+    }
+    
+    // Build URL string manually to avoid encoding comma
+    const paramStrings: string[] = [];
+    existingParams.forEach((value, key) => {
+      // Only encode value if it contains special characters (not comma)
+      // Encode: search, province, ward (UUIDs), divisionId, teamId
+      // Don't encode: status, type, categories (comma-separated lists)
+      const encodedValue = (key === 'search' || key === 'province' || key === 'ward' || key === 'divisionId' || key === 'teamId')
+        ? encodeURIComponent(value) 
+        : value; // Keep comma unencoded for status/type/categories
+      paramStrings.push(`${key}=${encodedValue}`);
+    });
+    
+    const finalUrl = paramStrings.length > 0 
+      ? `${baseUrl}?${paramStrings.join('&')}`
+      : baseUrl;
+    
     // Cập nhật thanh địa chỉ trình duyệt
-    window.history.pushState({}, '', currentBrowserUrl.toString());
+    window.history.pushState({}, '', finalUrl);
 
     // --- B. XỬ LÝ GỌI API BACKEND (SUPABASE) ---
     const url = new URL(`${SUPABASE_REST_URL}/merchants`);
@@ -69,11 +167,12 @@ export async function fetchMerchants(p0: string[] | undefined, businessTypes: st
     url.searchParams.set('limit', '10000');
     url.searchParams.set('order', 'created_at.desc');
 
-    // 2. Xử lý Select và Join bảng (Khắc phục lỗi PGRST108)
+    // 2. 🔥 FIX: Xử lý Select và Join bảng category_merchants
+    // businessTypeFilters là array of category IDs (string[])
     // Lấy danh sách ID category hợp lệ, loại bỏ các giá trị undefined/null
-    const activeCategoryIds = Object.keys(businessTypeFilters ?? {}).filter(
-      (key: string) => (businessTypeFilters as any)?.[key] === true && key !== "undefined" && key !== "null"
-    );
+    const activeCategoryIds = Array.isArray(businessTypeFilters) 
+      ? businessTypeFilters.filter((id: string) => id && id !== "undefined" && id !== "null")
+      : [];
 
     // Chỉ join category_merchants!inner khi có filter danh mục (để tối ưu và tránh lỗi resource)
     if (activeCategoryIds.length > 0) {
@@ -83,41 +182,45 @@ export async function fetchMerchants(p0: string[] | undefined, businessTypes: st
       url.searchParams.set('select', '*');
     }
 
-    // 3. Gom tất cả Department ID (Tránh lặp tham số gây lỗi 400)
-    let allDeptIds: string[] = [];
+    // 3. 🔥 FIX: Use departmentIds from options (UI checkboxes) as primary source
+    // If options.departmentIds is provided, use it directly (already calculated in MapPage)
+    // Otherwise, fall back to teamId/divisionId logic
+    let finalDepartmentIds: string[] | undefined = undefined;
 
-    if (Array.isArray(departmentIds) && departmentIds.length > 0) {
-      allDeptIds = [...allDeptIds, ...departmentIds];
-    }
-
-    if (teamId) {
-      allDeptIds.push(teamId);
-    }
-
-    if (divisionId) {
-      // Lấy danh sách phòng ban con từ Supabase REST API
+    if (opts.departmentIds && Array.isArray(opts.departmentIds) && opts.departmentIds.length > 0) {
+      // 🔥 PRIORITY: Use departmentIds from options (from UI checkboxes or calculated from teamId/divisionId)
+      finalDepartmentIds = opts.departmentIds.filter(id => id && id !== "undefined");
+    } else if (teamId) {
+      // Fallback: Use teamId if no departmentIds in options
+      finalDepartmentIds = [teamId];
+    } else if (divisionId) {
+      // Fallback: Use divisionId and fetch sub-departments if no departmentIds in options
       try {
-        const response = await axios.get(`${SUPABASE_REST_URL}/departments`, {
-          params: {
-            select: '_id',
-            parent_id: `eq.${divisionId}`
-          },
+        // 🔥 FIX: Fetch departments where _id = divisionId OR parent_id = divisionId
+        // PostgREST or syntax: or=(condition1,condition2)
+        // Build URL manually to avoid URLSearchParams encoding issues
+        const orCondition = `(_id.eq.${divisionId},parent_id.eq.${divisionId})`;
+        const urlString = `${SUPABASE_REST_URL}/departments?select=_id&or=${encodeURIComponent(orCondition)}`;
+        
+        const response = await axios.get(urlString, {
           headers: getHeaders()
         });
         const subDepartments = response.data || [];
-        const subIds = subDepartments.map((d: any) => d._id) || [];
-        allDeptIds = [...allDeptIds, divisionId, ...subIds];
+        const subIds = subDepartments.map((d: any) => d._id).filter((id: any) => id) || [];
+        finalDepartmentIds = [divisionId, ...subIds];
       } catch (error: any) {
         console.error('❌ Error fetching sub-departments:', error);
         // Nếu lỗi, vẫn thêm divisionId vào danh sách
-        allDeptIds.push(divisionId);
+        finalDepartmentIds = [divisionId];
       }
     }
 
-    // Loại bỏ các ID trùng lặp, giá trị rỗng hoặc "undefined"
-    const uniqueDeptIds = Array.from(new Set(allDeptIds)).filter(id => id && id !== "undefined");
-    if (uniqueDeptIds.length > 0) {
-      url.searchParams.set('department_id', `in.(${uniqueDeptIds.join(',')})`);
+    // Apply department_id filter if we have IDs
+    if (finalDepartmentIds && finalDepartmentIds.length > 0) {
+      const uniqueDeptIds = Array.from(new Set(finalDepartmentIds)).filter(id => id && id !== "undefined");
+      if (uniqueDeptIds.length > 0) {
+        url.searchParams.set('department_id', `in.(${uniqueDeptIds.join(',')})`);
+      }
     }
 
     // 4. Xử lý Status Codes cho API (Dùng toán tử 'in' thay cho 'or' lồng nhau)
@@ -130,14 +233,15 @@ export async function fetchMerchants(p0: string[] | undefined, businessTypes: st
       }
     }
 
-    // 5. Xử lý Business Types trực tiếp trên bảng merchants (nếu có)
-    if (opts.businessTypes && opts.businessTypes.length > 0) {
-      const validTypes = opts.businessTypes.filter(t => t && t !== "undefined");
-      if (validTypes.length > 0) {
-        // Lưu ý: PostgREST tự động encode khi dùng searchParams.set
-        url.searchParams.set('business_type', `in.(${validTypes.join(',')})`);
-      }
-    }
+    // 5. 🔥 REMOVED: Business Types filter by business_type field
+    // Không cần filter bằng business_type field vì đã filter bằng category_merchants ở trên
+    // Nếu cần filter bằng business_type, chỉ dùng khi không có category filter
+    // if (opts.businessTypes && opts.businessTypes.length > 0 && activeCategoryIds.length === 0) {
+    //   const validTypes = opts.businessTypes.filter(t => t && t !== "undefined");
+    //   if (validTypes.length > 0) {
+    //     url.searchParams.set('business_type', `in.(${validTypes.join(',')})`);
+    //   }
+    // }
     if (opts.province) {
       // Sử dụng province_id cho UUID
       url.searchParams.set('province_id', `eq.${opts.province}`);
@@ -156,18 +260,28 @@ export async function fetchMerchants(p0: string[] | undefined, businessTypes: st
 
     // 7. Mapping dữ liệu về interface Restaurant
     let merchants = data
-      .filter((m: any) => m.latitude !== null && m.longitude !== null)
+      .filter((m: any) => {
+        // 🔥 FIX: Check for valid coordinates - allow 0,0 but filter out null/undefined/NaN
+        const hasLat = m.latitude !== null && m.latitude !== undefined && m.latitude !== '';
+        const hasLng = m.longitude !== null && m.longitude !== undefined && m.longitude !== '';
+        if (!hasLat || !hasLng) return false;
+        
+        const lat = parseFloat(m.latitude);
+        const lng = parseFloat(m.longitude);
+        // Allow valid numbers (including 0,0) but filter out NaN
+        return !isNaN(lat) && !isNaN(lng);
+      })
       .map((m: any): Restaurant => {
         const businessType = m.business_type || 'Doanh nghiệp';
         const lat = parseFloat(m.latitude);
         const lng = parseFloat(m.longitude);
 
         return {
-          id: m.id || `merchant-${Math.random()}`,
+          id: m._id || m.id || `merchant-${Math.random()}`,
           name: m.business_name || 'Unnamed Merchant',
           address: m.address || '',
-          lat: isNaN(lat) ? 0 : lat,
-          lng: isNaN(lng) ? 0 : lng,
+          lat: lat, // 🔥 FIX: Don't convert NaN to 0, let it be NaN so MerchantsLayer can filter it out
+          lng: lng, // 🔥 FIX: Don't convert NaN to 0, let it be NaN so MerchantsLayer can filter it out
           type: businessType,
           businessType: businessType,
           category: mapMerchantStatusToCategory(m.status),
