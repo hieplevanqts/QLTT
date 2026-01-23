@@ -565,7 +565,7 @@ export function PlanDetail() {
                   </div>
 
                   <div className={styles.infoField}>
-                    <div className={styles.infoLabel}>Phạm vi thực hiện</div>
+                    <div className={styles.infoLabel}>Khu vực kiểm tra</div>
                     <div className={styles.infoValue}>
                       <MapPin size={16} className={styles.infoIcon} />
                       {plan.scopeLocation}

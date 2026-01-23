@@ -9,16 +9,16 @@
   align-items: center;
   gap: var(--spacing-2);
   width: 100%;
-  height: 36px;
-  padding: 0 var(--spacing-3);
-  background: var(--input-background);
-  border: var(--border-width) solid var(--border);
-  border-radius: var(--radius-md);
+  height: 44px;
+  padding: 0 var(--spacing-4);
+  background: #f9fafb;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
   font-family: 'Inter', sans-serif;
-  font-size: var(--font-size-sm);
+  font-size: 14px;
   color: var(--foreground);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   outline: none;
 }
 
@@ -27,8 +27,9 @@
 }
 
 .trigger:focus {
-  border-color: var(--ring);
+  border-color: #005cb6;
   box-shadow: 0 0 0 3px rgba(0, 92, 182, 0.1);
+  background: white;
 }
 
 .icon {

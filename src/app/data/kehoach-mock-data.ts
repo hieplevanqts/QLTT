@@ -9,6 +9,7 @@ export type SLAStatus = 'on_track' | 'at_risk' | 'overdue';
 
 export interface Plan {
   id: string;
+  code?: string;
   name: string;
   planType: PlanType;
   quarter: string;

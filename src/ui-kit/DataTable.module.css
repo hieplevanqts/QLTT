@@ -9,24 +9,18 @@
 /* Force table to use fixed layout for consistent column widths */
 .tableWrapper table {
   table-layout: fixed;
+  min-width: 1200px; /* Force minimum width to trigger scroll on small screens */
   width: 100%;
 }
 
-/* Truncate text with ellipsis */
-.truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
-}
-
-/* Ensure table cells don't overflow */
+/* Ensure table cells handle long content correctly */
 .tableWrapper th,
 .tableWrapper td {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  padding: 12px 16px;
+  vertical-align: middle;
   word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal; /* Allow text wrapping */
 }
 
 /* Allow wrapping for specific cells if needed */
