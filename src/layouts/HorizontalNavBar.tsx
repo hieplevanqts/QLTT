@@ -27,25 +27,13 @@ import {
 } from '../app/components/ui/dropdown-menu';
 import { cn } from '../app/components/ui/utils';
 import { useLayout } from '../contexts/LayoutContext';
-import { useAuth } from '../contexts/AuthContext'; // 🔥 NEW: Import useAuth for permissions
+import { useAppSelector } from '../app/hooks';
+import { RootState } from '../store/rootReducer';
 
 interface HorizontalNavBarProps {
   mobileMenuOpen: boolean;
   onClose: () => void;
 }
-
-// 🔥 NEW: Permission code mapping (from Insert.sql lines 39-46)
-const PERMISSION_MAP: { [path: string]: string } = {
-  '/overview': '', // No permission required (always visible)
-  '/map': 'MAP_VIEW',
-  '/stores': 'STORES_VIEW',
-  '/leads': 'LEAD_RISK',
-  '/plans': 'PLAN_VIEW',
-  '/tasks': 'TASKS_VIEW', // or FIELD_TASKS_VIEW
-  '/evidence': 'EVIDENCE_VIEW',
-  '/reports': '', // No permission required
-  '/admin': 'ADMIN_VIEW',
-};
 
 // MAPPA Main Modules
 const mappaModules = [
@@ -87,10 +75,11 @@ const mappaModules = [
 export default function HorizontalNavBar({ mobileMenuOpen, onClose }: HorizontalNavBarProps) {
   const location = useLocation();
   const { setLayoutMode } = useLayout();
-  const { user } = useAuth(); // 🔥 NEW: Get user with permissions
+  // Get user from Redux instead of AuthContext
+  const { user } = useAppSelector((state: RootState) => state.auth);
   const [mobileSubmenuOpen, setMobileSubmenuOpen] = React.useState<string | null>(null);
 
-  // 🔥 NEW: Get user permission codes
+  // Get user permission codes
   const userPermissionCodes = user?.permissions || [];
   
   // 🔥 NEW: Helper function to check if user has permission for a menu item
@@ -129,8 +118,8 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
             // Chỉ active khi ở /plans (root) - không bao giờ vì ta không có route này
             isActive = false;
           } else if (module.path === '/tasks') {
-            // "Phiên kiểm tra" KHÔNG active khi ở /plans/inspection-session
-            isActive = location.pathname === '/tasks' && location.pathname !== '/plans/inspection-session';
+            // "Phiên kiểm tra" active khi ở /tasks nhưng không ở /plans/inspection-session
+            isActive = location.pathname === '/tasks' || (location.pathname.startsWith('/tasks/') && location.pathname !== '/plans/inspection-session');
           } else if ((module as any).hasSubmenu && (module as any).submenu) {
             // Lead-risk submenu
             isActive = location.pathname.startsWith('/lead-risk') || location.pathname === '/leads';
@@ -348,8 +337,8 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                   // "Kế hoạch tác nghiệp" menu cha KHÔNG active khi ở submenu
                   isModuleActive = false;
                 } else if (module.path === '/tasks') {
-                  // "Phiên kiểm tra" KHÔNG active khi ở /plans/inspection-session
-                  isModuleActive = location.pathname === '/tasks' && location.pathname !== '/plans/inspection-session';
+                  // "Phiên kiểm tra" active khi ở /tasks nhưng không ở /plans/inspection-session
+                  isModuleActive = location.pathname === '/tasks' || (location.pathname.startsWith('/tasks/') && location.pathname !== '/plans/inspection-session');
                 } else if ((module as any).hasSubmenu && (module as any).submenu) {
                   // Lead-risk submenu
                   isModuleActive = location.pathname.startsWith('/lead-risk') || location.pathname === '/leads';

@@ -11,7 +11,8 @@ import { type Plan, type PlanType, type Priority } from '../../data/kehoach-mock
 import { SelectInsDecisionModal, type InsDecision } from '../../components/plans/SelectInsDecisionModal';
 import { supabase } from '../../../lib/supabase';
 import { useQLTTScope } from '../../../contexts/QLTTScopeContext';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAppSelector } from '../../../app/hooks';
+import { RootState } from '../../../store/rootReducer';
 import { createPlanApi, fetchPlanByIdApi, updatePlanApi } from '../../../utils/api/plansApi';
 
 type PlanTypeTab = 'periodic' | 'thematic' | 'urgent';
@@ -22,7 +23,8 @@ export function PlanCreate() {
   const { planId } = useParams(); // Get planId from URL params
   const { addPlan, updatePlan: contextUpdatePlan, plans } = usePlans(); // Rename context updatePlan to avoid conflict if we use api directly
   const { scope } = useQLTTScope();
-  const { user } = useAuth();
+  // Get user from Redux instead of AuthContext
+  const { user } = useAppSelector((state: RootState) => state.auth);
   
   // Check if in edit mode
   const isEditMode = !!planId;

@@ -1,5 +1,6 @@
 import React from 'react';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAppSelector } from '../../../app/hooks';
+import { RootState } from '../../../store/rootReducer';
 import PageHeader from '../../../layouts/PageHeader';
 import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -80,7 +81,8 @@ const PERMISSION_RULES: PermissionRule[] = [
 ];
 
 export default function PermissionDemoPage() {
-  const { user } = useAuth();
+  // Get user from Redux instead of AuthContext
+  const { user } = useAppSelector((state: RootState) => state.auth);
 
   if (!user) {
     return <div>Loading...</div>;

@@ -28,7 +28,8 @@ import {
 } from '../app/components/ui/dropdown-menu';
 import { cn } from '../app/components/ui/utils';
 import { useLayout } from '../contexts/LayoutContext';
-import { useAuth } from '../contexts/AuthContext'; // 🔥 NEW: Import useAuth for permissions
+import { useAppSelector } from '../app/hooks';
+import { RootState } from '../store/rootReducer';
 import mappaLogo from '../assets/79505e63e97894ec2d06837c57cf53a19680f611.png';
 
 // 🔥 NEW: Permission code mapping (from Insert.sql lines 39-46)
@@ -97,9 +98,10 @@ export default function VerticalSidebar({
     location.pathname.startsWith('/plans') || location.pathname.startsWith('/inspections')
   );
   const { setLayoutMode } = useLayout();
-  const { user } = useAuth(); // 🔥 NEW: Get user with permissions
+  // Get user from Redux instead of AuthContext
+  const { user } = useAppSelector((state: RootState) => state.auth);
 
-  // 🔥 NEW: Get user permission codes
+  // Get user permission codes
   const userPermissionCodes = user?.permissions || [];
   
   // 🔥 NEW: Helper function to check if user has permission for a menu item

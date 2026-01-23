@@ -1,15 +1,14 @@
 import { Navigate, useLocation, Outlet } from 'react-router-dom';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAppSelector } from '../../../app/hooks';
+import { RootState } from '../../../store/rootReducer';
 import MainLayout from '../../../layouts/MainLayout';
 
 export function ProtectedLayout() {
-  const { isAuthenticated, checkSession } = useAuth();
+  // Get auth state from Redux instead of AuthContext
+  const { isAuthenticated } = useAppSelector((state: RootState) => state.auth);
   const location = useLocation();
 
-  // Check if session is still valid
-  const isSessionValid = checkSession();
-
-  if (!isAuthenticated || !isSessionValid) {
+  if (!isAuthenticated) {
     // Redirect to login page but save the location they were trying to access
     return <Navigate to="/auth/login" state={{ from: location }} replace />;
   }

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
-import { useAuth } from './AuthContext';
+import { useAppSelector } from '../app/hooks';
+import { RootState } from '../store/rootReducer';
 import { supabase } from '../lib/supabase';
 
 export interface QLTTScope {
@@ -82,8 +83,8 @@ const getDepartmentLevelFromCode = (code?: string | null): number | undefined =>
 };
 
 export function QLTTScopeProvider({ children }: { children: ReactNode }) {
-  const authContext = useAuth();
-  const user = authContext?.user || null;
+  // Get user from Redux instead of AuthContext
+  const { user } = useAppSelector((state: RootState) => state.auth);
 
   const [scope, setScope] = useState<QLTTScope>({
     divisionId: null,
