@@ -1258,7 +1258,7 @@ export default function StoresListPage() {
           
           const newStore: Store = {
             id: newId,
-            name: data.name,
+            name: data.business_name,
             type: data.industryName || 'Chưa xác định',
             address: data.registeredAddress,
             province: data.province,

@@ -110,7 +110,7 @@ export interface NewStoreData {
 
 // OCR Extracted data structure
 interface ExtractedData {
-  name?: string;
+  business_name?: string;
   taxCode?: string;
   industryName?: string;
   establishedDate?: string;
@@ -225,7 +225,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
 
     if (fileName.includes('business') || fileName.includes('license') || fileName.includes('gpkd')) {
       return {
-        name: 'Công ty TNHH Thương mại Dịch vụ ABC',
+        business_name: 'Công ty TNHH Thương mại Dịch vụ ABC',
         taxCode: '0123456789',
         industryName: 'Bán lẻ thực phẩm',
         establishedDate: '2020-01-15',
@@ -246,7 +246,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
 
     // Default mock data
     return {
-      name: 'Cửa hàng tiện lợi XYZ',
+      business_name: 'Cửa hàng tiện lợi Tiến Hùng',
       taxCode: '0987654321',
       industryName: 'Bán lẻ hàng hóa tổng hợp',
       ownerName: 'Trần Thị B',
@@ -952,6 +952,18 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                   value={formData.ownerPhone2 || ''}
                   onChange={(e) => handleFieldChange('ownerPhone2', e.target.value)}
                   placeholder="Nhập số điện thoại"
+                />
+              )}
+
+              {renderFieldWithIndicator(
+                'email',
+                'Email chủ hộ',
+                <Input 
+                  id="email"
+                  type="email"
+                  value={formData.email || '' }
+                  onChange={(e) => handleFieldChange('email', e.target.value)}
+                  placeholder="Nhập email"
                 />
               )}
             </div>
