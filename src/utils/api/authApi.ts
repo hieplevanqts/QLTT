@@ -13,6 +13,7 @@ const AUTH_API_BASE_URL = import.meta.env.VITE_AUTH_API_URL || import.meta.env.V
 export interface LoginCredentials {
   email: string;
   password: string;
+  expiresIn?: number; // Optional: Request specific expiration time in seconds (may not be supported by Supabase)
 }
 
 export interface LoginResponse {
@@ -49,13 +50,28 @@ export async function login(credentials: LoginCredentials): Promise<LoginRespons
     }
 
     // Build URL with query parameters
-    const url = `${AUTH_API_BASE_URL}/auth/v1/token?grant_type=password`;
+    // Note: Supabase Auth may not support custom expires_in, but we can try
+    let url = `${AUTH_API_BASE_URL}/auth/v1/token?grant_type=password`;
+    
+    // Try to add expires_in parameter if provided (Supabase may ignore this)
+    if (credentials.expiresIn) {
+      url += `&expires_in=${credentials.expiresIn}`;
+      console.log('🔧 Login: Attempting to set custom expires_in:', credentials.expiresIn, 'seconds');
+    }
     
     // Supabase Auth expects JSON body { email, password }
-    const response = await axios.post<LoginResponse>(url, {
+    // Note: expires_in in body may not be supported by Supabase Auth
+    const requestBody: any = {
       email: credentials.email,
       password: credentials.password,
-    }, {
+    };
+    
+    // Try adding expires_in to body (Supabase may ignore this)
+    if (credentials.expiresIn) {
+      requestBody.expires_in = credentials.expiresIn;
+    }
+    
+    const response = await axios.post<LoginResponse>(url, requestBody, {
       headers: {
         'Content-Type': 'application/json',
         // Supabase Auth requires api key in request headers
@@ -64,7 +80,22 @@ export async function login(credentials: LoginCredentials): Promise<LoginRespons
       },
     });
 
-    return response.data;
+    const loginResponse = response.data;
+    
+    // Log token expiry info
+    if (loginResponse.expires_in) {
+      const expiresInMinutes = Math.round(loginResponse.expires_in / 60);
+      const expiresInHours = (loginResponse.expires_in / 3600).toFixed(2);
+      console.log('🔑 Login Response:', {
+        hasAccessToken: !!loginResponse.access_token,
+        hasRefreshToken: !!loginResponse.refresh_token,
+        expiresIn: `${loginResponse.expires_in}s (${expiresInMinutes} minutes / ${expiresInHours} hours)`,
+      });
+    } else {
+      console.warn('⚠️ Login Response: No expires_in provided');
+    }
+    
+    return loginResponse;
   } catch (error: any) {
     // Handle axios errors
     if (error.response) {
@@ -97,27 +128,116 @@ export async function logout(): Promise<void> {
 }
 
 /**
- * Store access token using professional storage
+ * Store access token and refresh token using professional storage
  */
-export async function storeToken(token: string, expiresIn?: number): Promise<void> {
-  console.log('💾 StoreToken: Storing token...', { hasToken: !!token, expiresIn });
+export async function storeToken(token: string, expiresIn?: number, refreshToken?: string): Promise<void> {
+  console.log('💾 StoreToken: Storing token...', { 
+    hasToken: !!token, 
+    expiresIn: expiresIn ? `${expiresIn}s (${Math.round(expiresIn / 60)} minutes)` : 'not provided',
+    hasRefreshToken: !!refreshToken 
+  });
+  
+  // Validate expiresIn
+  if (expiresIn && expiresIn < 60) {
+    console.warn('⚠️ StoreToken: expiresIn is very short:', expiresIn, 'seconds. This might cause premature logout.');
+  }
+  
   await tokenStorage.setToken(token, expiresIn);
+  
+  // Store refresh token if provided
+  if (refreshToken) {
+    await tokenStorage.setRefreshToken(refreshToken);
+  }
+  
   const stored = await tokenStorage.getToken();
   console.log('✅ StoreToken: Token stored successfully', { hasStoredToken: !!stored });
+  
+  // Verify expiry was stored correctly
+  if (expiresIn) {
+    const expiresAt = await tokenStorage.getTokenExpiry();
+    if (expiresAt) {
+      const now = Date.now();
+      const timeUntilExpiry = expiresAt - now;
+      const minutesUntilExpiry = Math.round(timeUntilExpiry / 1000 / 60);
+      console.log('✅ StoreToken: Expiry verified', {
+        expiresAt: new Date(expiresAt).toISOString(),
+        now: new Date(now).toISOString(),
+        minutesUntilExpiry: `${minutesUntilExpiry} minutes`,
+        hoursUntilExpiry: `${(minutesUntilExpiry / 60).toFixed(2)} hours`
+      });
+    }
+  }
+}
+
+/**
+ * Refresh access token using refresh token
+ */
+export async function refreshAccessToken(): Promise<LoginResponse | null> {
+  try {
+    const refreshToken = await tokenStorage.getRefreshToken();
+    
+    if (!refreshToken) {
+      console.log('❌ RefreshToken: No refresh token found');
+      return null;
+    }
+
+    if (!AUTH_API_BASE_URL) {
+      throw new Error('Thiếu cấu hình AUTH_API_BASE_URL');
+    }
+    if (!apiKey) {
+      throw new Error('Thiếu Supabase anon key');
+    }
+
+    const url = `${AUTH_API_BASE_URL}/auth/v1/token?grant_type=refresh_token`;
+    
+    const response = await axios.post<LoginResponse>(url, {
+      refresh_token: refreshToken,
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: apiKey,
+        Authorization: `Bearer ${apiKey}`,
+      },
+    });
+
+    // Store new tokens
+    if (response.data.access_token) {
+      await storeToken(
+        response.data.access_token, 
+        response.data.expires_in,
+        response.data.refresh_token
+      );
+    }
+
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ RefreshToken: Error refreshing token:', error);
+    // Don't logout on refresh failure - let the app continue with existing token
+    // Only logout if token is actually expired (handled by restoreSession)
+    // This prevents premature logout when refresh fails but token is still valid
+    return null;
+  }
 }
 
 /**
  * Get stored access token
  */
 export async function getStoredToken(): Promise<string | null> {
-  return await tokenStorage.getToken();
+  const token = await tokenStorage.getToken();
+  console.log('🔍 getStoredToken:', { 
+    hasToken: !!token,
+    tokenLength: token?.length || 0,
+    tokenPreview: token ? token.substring(0, 20) + '...' : 'null'
+  });
+  return token;
 }
 
 /**
- * Check if token is expired
+ * Check if token is expired or will expire soon
+ * @param bufferMinutes - Buffer time in minutes before actual expiry (default: 5 minutes)
  */
-export async function isTokenExpired(): Promise<boolean> {
-  return await tokenStorage.isTokenExpired();
+export async function isTokenExpired(bufferMinutes: number = 0): Promise<boolean> {
+  return await tokenStorage.isTokenExpired(bufferMinutes);
 }
 
 /**
@@ -151,18 +271,76 @@ export async function fetchUserInfo(token: string): Promise<User | null> {
 
     const userData = response.data;
     
+    // Fetch user role name
+    let roleDisplay: string | null = null;
+    try {
+      roleDisplay = await fetchUserRoleName(userData.id, token);
+    } catch (error) {
+      console.warn('⚠️ Failed to fetch user role name:', error);
+    }
+    
     return {
       id: userData.id,
       email: userData.email,
       name: userData.user_metadata?.name || userData.user_metadata?.full_name || userData.email,
+      roleDisplay: roleDisplay || userData.user_metadata?.roleDisplay || undefined,
       ...userData.user_metadata,
     };
   } catch (error: any) {
     console.error('Error fetching user info:', error);
     if (error.response?.status === 401) {
-      // Token invalid, clear it
-      await logout();
+      // Check if token is actually expired before logging out
+      const expired = await isTokenExpired(0);
+      if (expired) {
+        console.log('⚠️ FetchUserInfo: Token is expired, logging out...');
+        await logout();
+      } else {
+        console.warn('⚠️ FetchUserInfo: Got 401 but token is not expired, might be temporary API issue');
+        // Don't logout - token might still be valid, just API issue
+      }
     }
+    return null;
+  }
+}
+
+/**
+ * Fetch user role name from database
+ */
+export async function fetchUserRoleName(userId: string, token: string): Promise<string | null> {
+  try {
+    if (!AUTH_API_BASE_URL) {
+      return null;
+    }
+
+    // Get user_roles
+    const userRolesUrl = `${AUTH_API_BASE_URL}/rest/v1/user_roles?user_id=eq.${userId}&select=role_id&limit=1`;
+    const userRolesResponse = await axios.get<{ role_id: string }[]>(userRolesUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: apiKey,
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const roleIds = userRolesResponse.data?.map(ur => ur.role_id) || [];
+    
+    if (roleIds.length === 0) {
+      return null;
+    }
+
+    // Get role name from roles table
+    const rolesUrl = `${AUTH_API_BASE_URL}/rest/v1/roles?_id=eq.${roleIds[0]}&select=name`;
+    const rolesResponse = await axios.get<{ name: string }[]>(rolesUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: apiKey,
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return rolesResponse.data?.[0]?.name || null;
+  } catch (error: any) {
+    console.error('Error fetching user role name:', error);
     return null;
   }
 }
@@ -234,7 +412,7 @@ export async function fetchUserPermissions(userId: string, token: string): Promi
 export async function restoreSession(): Promise<{ token: string; user: User | null } | null> {
   try {
     console.log('🔄 RestoreSession: Starting session restore...');
-    const token = await getStoredToken();
+    let token = await getStoredToken();
     
     if (!token) {
       console.log('❌ RestoreSession: No token found in storage');
@@ -243,12 +421,24 @@ export async function restoreSession(): Promise<{ token: string; user: User | nu
 
     console.log('✅ RestoreSession: Token found in storage', { tokenLength: token.length });
 
-    // Check if token is expired
-    const expired = await isTokenExpired();
+    // Check if token is actually expired (no buffer - only check if truly expired)
+    // Buffer time is handled by auto-refresh service, not here
+    const expired = await isTokenExpired(0);
     if (expired) {
-      console.log('❌ RestoreSession: Token is expired, clearing...');
-      await logout();
-      return null;
+      console.log('⚠️ RestoreSession: Token is expired, attempting to refresh...');
+      
+      // Try to refresh token
+      const refreshResponse = await refreshAccessToken();
+      if (refreshResponse && refreshResponse.access_token) {
+        console.log('✅ RestoreSession: Token refreshed successfully');
+        token = refreshResponse.access_token;
+      } else {
+        console.log('❌ RestoreSession: Failed to refresh token');
+        // Don't logout here - let ProtectedRoute handle it
+        // This allows user to continue using the app if refresh fails but token is still valid
+        // The auto-refresh service will handle refresh before expiry
+        return null;
+      }
     }
 
     console.log('✅ RestoreSession: Token is valid, fetching user info...');

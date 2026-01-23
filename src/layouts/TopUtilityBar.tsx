@@ -110,7 +110,7 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
               <div className="flex flex-col items-start min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-foreground whitespace-nowrap">
-                    Xin chào, {user?.fullName || 'Người dùng'}
+                    Xin chào, {user?.name || 'Người dùng'}
                   </span>
                   {/* Online Status Indicator */}
                   <span 
@@ -122,7 +122,7 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
                   </span>
                 </div>
                 <span className="text-xs text-muted-foreground whitespace-nowrap">
-                  {user?.email || 'Phần mềm Quản lý thị trường'}
+                  {user?.roleDisplay || user?.name || 'Phần mềm Quản lý thị trường'}
                 </span>
               </div>
               {/* Scope Selector - Active at Hà Nội by default */}

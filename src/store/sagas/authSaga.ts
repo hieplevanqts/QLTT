@@ -28,10 +28,10 @@ function* handleLogin(action: PayloadAction<{ email: string; password: string }>
       password: action.payload.password,
     });
 
-    // Store token using professional storage (encrypted, secure)
+    // Store token and refresh token using professional storage (encrypted, secure)
     if (response.access_token) {
       console.log('💾 AuthSaga: Storing token after login...');
-      yield call(storeToken, response.access_token, response.expires_in);
+      yield call(storeToken, response.access_token, response.expires_in, response.refresh_token);
       console.log('✅ AuthSaga: Token stored successfully');
     } else {
       console.warn('⚠️ AuthSaga: No access_token in login response');

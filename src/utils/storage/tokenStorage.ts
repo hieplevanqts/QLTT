@@ -250,11 +250,40 @@ export class TokenStorage {
         
       case StorageStrategy.ENCRYPTED_LOCAL_STORAGE:
         localStorage.setItem(key, value);
-        console.log('✅ TokenStorage: Token stored in localStorage', { key, hasValue: !!value });
+        // Verify token was stored correctly
+        const stored = localStorage.getItem(key);
+        console.log('✅ TokenStorage: Token stored in localStorage', { 
+          key, 
+          hasValue: !!value,
+          valueLength: value.length,
+          stored: !!stored,
+          storedLength: stored?.length || 0,
+          storedMatches: stored === value,
+          // Log all auth keys after storing
+          allAuthKeys: Object.keys(localStorage).filter(k => k.includes('auth') || k.includes('token') || k.includes('mappa'))
+        });
+        if (!stored || stored !== value) {
+          console.error('❌ TokenStorage: Token was not stored correctly!', {
+            expectedLength: value.length,
+            storedLength: stored?.length || 0
+          });
+        }
         if (expiresIn) {
+          // expiresIn is in seconds, convert to milliseconds
           const expiresAt = Date.now() + expiresIn * 1000;
           localStorage.setItem(this.getKey('token_expires_at'), expiresAt.toString());
-          console.log('✅ TokenStorage: Expiry stored', { expiresAt: new Date(expiresAt).toISOString() });
+          const now = new Date();
+          const expiryDate = new Date(expiresAt);
+          const durationMinutes = Math.round((expiresAt - Date.now()) / 1000 / 60);
+          console.log('✅ TokenStorage: Expiry stored', { 
+            expiresIn: `${expiresIn}s (${Math.round(expiresIn / 60)} minutes)`,
+            expiresAt: expiryDate.toISOString(),
+            now: now.toISOString(),
+            durationMinutes: `${durationMinutes} minutes`,
+            durationHours: `${(durationMinutes / 60).toFixed(2)} hours`
+          });
+        } else {
+          console.warn('⚠️ TokenStorage: No expiresIn provided, token will not expire automatically');
         }
         break;
         
@@ -307,12 +336,38 @@ export class TokenStorage {
         
       case StorageStrategy.ENCRYPTED_LOCAL_STORAGE:
         value = localStorage.getItem(key);
+        const allAuthKeys = Object.keys(localStorage).filter(k => k.includes('auth') || k.includes('token') || k.includes('mappa'));
         console.log('🔍 TokenStorage: Retrieved from localStorage', { 
           key, 
           hasValue: !!value,
           valueLength: value?.length || 0,
-          allKeys: Object.keys(localStorage).filter(k => k.includes('auth'))
+          valueType: typeof value,
+          isEmpty: value === '',
+          isNull: value === null,
+          allAuthKeys: allAuthKeys,
+          allAuthKeysCount: allAuthKeys.length,
+          localStorageSize: localStorage.length,
+          // Check if key exists in localStorage
+          keyExists: localStorage.hasOwnProperty(key),
+          // Check all localStorage keys for debugging
+          allLocalStorageKeys: Object.keys(localStorage).slice(0, 20) // First 20 keys
         });
+        // If value is empty string, treat as null
+        if (value === '') {
+          console.warn('⚠️ TokenStorage: Empty string found, treating as null');
+          value = null;
+        }
+        // If value is null, check if there's a token stored with a different key
+        if (value === null && allAuthKeys.length > 0) {
+          console.warn('⚠️ TokenStorage: Token not found with expected key, but found other auth keys:', allAuthKeys);
+          // Try to find token in other keys
+          for (const otherKey of allAuthKeys) {
+            const otherValue = localStorage.getItem(otherKey);
+            if (otherValue && otherValue.length > 100) {
+              console.log(`🔍 TokenStorage: Found potential token in key: ${otherKey}`, { length: otherValue.length });
+            }
+          }
+        }
         break;
         
       case StorageStrategy.SESSION_STORAGE:
@@ -330,21 +385,73 @@ export class TokenStorage {
     
     // Decrypt if needed
     if (value && this.config.encrypt && this.config.strategy !== StorageStrategy.HTTP_ONLY_COOKIE) {
+      console.log('🔓 TokenStorage: Attempting to decrypt token...', {
+        valueLength: value.length,
+        valuePreview: value.substring(0, 20) + '...'
+      });
       try {
         const decrypted = SimpleEncryption.decrypt(value);
         console.log('🔓 TokenStorage: Token decrypted', { 
           hasDecrypted: !!decrypted,
-          decryptedLength: decrypted?.length || 0 
+          decryptedLength: decrypted?.length || 0,
+          decryptedPreview: decrypted ? decrypted.substring(0, 20) + '...' : 'empty'
         });
+        if (!decrypted || decrypted.length === 0) {
+          console.warn('⚠️ TokenStorage: Decryption returned empty string, token might not be encrypted');
+          // If decryption returns empty, token might not be encrypted
+          // Try returning original value
+          return value;
+        }
         return decrypted;
       } catch (error) {
         console.error('❌ TokenStorage: Decryption error:', error);
-        return null;
+        console.warn('⚠️ TokenStorage: Token might not be encrypted, trying to return original value');
+        // If decryption fails, token might not be encrypted
+        // Try returning original value as fallback
+        return value;
       }
     }
     
-    console.log('✅ TokenStorage: Returning token', { hasValue: !!value });
+    console.log('✅ TokenStorage: Returning token', { 
+      hasValue: !!value,
+      valueLength: value?.length || 0,
+      isEncrypted: false
+    });
     return value;
+  }
+  
+  /**
+   * Get token expiry timestamp
+   */
+  async getTokenExpiry(): Promise<number | null> {
+    const expiresKey = this.getKey('token_expires_at');
+    let expiresAt: string | null = null;
+    
+    switch (this.config.strategy) {
+      case StorageStrategy.HTTP_ONLY_COOKIE:
+      case StorageStrategy.ENCRYPTED_LOCAL_STORAGE:
+        expiresAt = localStorage.getItem(expiresKey);
+        break;
+        
+      case StorageStrategy.SESSION_STORAGE:
+        expiresAt = sessionStorage.getItem(expiresKey);
+        break;
+        
+      case StorageStrategy.INDEXED_DB:
+        expiresAt = await IndexedDBStorage.getItem(expiresKey);
+        break;
+        
+      case StorageStrategy.MEMORY:
+        expiresAt = MemoryStorage.getItem(expiresKey);
+        break;
+    }
+    
+    if (!expiresAt) {
+      return null;
+    }
+    
+    const timestamp = parseInt(expiresAt, 10);
+    return isNaN(timestamp) ? null : timestamp;
   }
   
   /**
@@ -384,9 +491,75 @@ export class TokenStorage {
   }
   
   /**
-   * Check if token is expired
+   * Store refresh token
    */
-  async isTokenExpired(): Promise<boolean> {
+  async setRefreshToken(refreshToken: string): Promise<void> {
+    const key = this.getKey('refresh_token');
+    let value = refreshToken;
+    
+    // Encrypt if enabled
+    if (this.config.encrypt && this.config.strategy !== StorageStrategy.HTTP_ONLY_COOKIE) {
+      value = SimpleEncryption.encrypt(refreshToken);
+    }
+    
+    switch (this.config.strategy) {
+      case StorageStrategy.HTTP_ONLY_COOKIE:
+      case StorageStrategy.ENCRYPTED_LOCAL_STORAGE:
+        localStorage.setItem(key, value);
+        break;
+      case StorageStrategy.SESSION_STORAGE:
+        sessionStorage.setItem(key, value);
+        break;
+      case StorageStrategy.INDEXED_DB:
+        await IndexedDBStorage.setItem(key, value);
+        break;
+      case StorageStrategy.MEMORY:
+        MemoryStorage.setItem(key, value);
+        break;
+    }
+  }
+
+  /**
+   * Get refresh token
+   */
+  async getRefreshToken(): Promise<string | null> {
+    const key = this.getKey('refresh_token');
+    let value: string | null = null;
+    
+    switch (this.config.strategy) {
+      case StorageStrategy.HTTP_ONLY_COOKIE:
+      case StorageStrategy.ENCRYPTED_LOCAL_STORAGE:
+        value = localStorage.getItem(key);
+        break;
+      case StorageStrategy.SESSION_STORAGE:
+        value = sessionStorage.getItem(key);
+        break;
+      case StorageStrategy.INDEXED_DB:
+        value = await IndexedDBStorage.getItem(key);
+        break;
+      case StorageStrategy.MEMORY:
+        value = MemoryStorage.getItem(key);
+        break;
+    }
+    
+    // Decrypt if needed
+    if (value && this.config.encrypt && this.config.strategy !== StorageStrategy.HTTP_ONLY_COOKIE) {
+      try {
+        return SimpleEncryption.decrypt(value);
+      } catch (error) {
+        console.error('Decryption error for refresh token:', error);
+        return null;
+      }
+    }
+    
+    return value;
+  }
+
+  /**
+   * Check if token is expired or will expire soon (with buffer time)
+   * @param bufferMinutes - Buffer time in minutes before actual expiry (default: 0 = only check if truly expired)
+   */
+  async isTokenExpired(bufferMinutes: number = 0): Promise<boolean> {
     const expiresKey = this.getKey('token_expires_at');
     let expiresAt: string | null = null;
     
@@ -409,11 +582,18 @@ export class TokenStorage {
         break;
     }
     
+    const now = Date.now();
+    const expiresAtTimestamp = expiresAt ? parseInt(expiresAt, 10) : null;
+    const timeUntilExpiry = expiresAtTimestamp ? expiresAtTimestamp - now : null;
+    const minutesUntilExpiry = timeUntilExpiry ? Math.round(timeUntilExpiry / 1000 / 60) : null;
+    
     console.log('⏰ TokenStorage.isTokenExpired:', { 
       expiresKey, 
       hasExpiresAt: !!expiresAt,
-      expiresAt: expiresAt ? new Date(parseInt(expiresAt, 10)).toISOString() : null,
-      now: new Date().toISOString()
+      expiresAt: expiresAtTimestamp ? new Date(expiresAtTimestamp).toISOString() : null,
+      now: new Date(now).toISOString(),
+      timeUntilExpiry: timeUntilExpiry ? `${Math.round(timeUntilExpiry / 1000)}s` : null,
+      minutesUntilExpiry: minutesUntilExpiry !== null ? `${minutesUntilExpiry} minutes` : null,
     });
     
     // If no expiry stored, assume token is valid (no expiry)
@@ -423,9 +603,28 @@ export class TokenStorage {
       return false;
     }
     
-    const isExpired = Date.now() >= parseInt(expiresAt, 10);
-    console.log('⏰ TokenStorage: Token expiry check', { isExpired });
-    return isExpired;
+    // Check if expired or will expire within buffer time
+    const bufferMs = bufferMinutes * 60 * 1000;
+    const isExpired = now >= expiresAtTimestamp!;
+    const willExpireSoon = !isExpired && timeUntilExpiry! <= bufferMs;
+    
+    if (isExpired) {
+      console.log('❌ TokenStorage: Token is EXPIRED', { 
+        expiredBy: `${Math.abs(minutesUntilExpiry!)} minutes ago` 
+      });
+    } else if (willExpireSoon) {
+      console.log('⚠️ TokenStorage: Token will expire soon (within buffer)', { 
+        expiresIn: `${minutesUntilExpiry} minutes`,
+        bufferMinutes
+      });
+    } else {
+      console.log('✅ TokenStorage: Token is VALID', { 
+        expiresIn: `${minutesUntilExpiry} minutes` 
+      });
+    }
+    
+    // Return true if expired or will expire soon (to trigger refresh)
+    return isExpired || willExpireSoon;
   }
   
   /**
