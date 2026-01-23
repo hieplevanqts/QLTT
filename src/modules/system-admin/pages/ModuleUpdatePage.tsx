@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, AlertTriangle, FileArchive, RefreshCcw, UploadCloud } from "lucide-react";
 
 import PageHeader from "../../../layouts/PageHeader";
@@ -7,6 +7,7 @@ import { Button } from "../../../app/components/ui/button";
 import { Badge } from "../../../app/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../app/components/ui/card";
 import { Checkbox } from "../../../app/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../../../app/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "../../../app/components/ui/radio-group";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../app/components/ui/table";
 import { ZipUploadBox } from "../components/ZipUploadBox";
@@ -44,6 +45,7 @@ const diffRow = (label: string, current?: string, next?: string) => ({
 
 export default function ModuleUpdatePage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [detail, setDetail] = useState<ModuleDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(true);
@@ -57,6 +59,7 @@ export default function ModuleUpdatePage() {
   const [error, setError] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [progressOpen, setProgressOpen] = useState(false);
 
   useEffect(() => {
     const loadDetail = async () => {
@@ -129,6 +132,7 @@ export default function ModuleUpdatePage() {
     try {
       setUpdating(true);
       setError(null);
+      setProgressOpen(true);
       const createdJob = await moduleAdminService.updateModule(id, {
         file,
         updateType: selectedType,
@@ -143,6 +147,17 @@ export default function ModuleUpdatePage() {
       setUpdating(false);
     }
   };
+
+  useEffect(() => {
+    if (!job) return;
+    if (job.status === "completed") {
+      const timer = setTimeout(() => {
+        navigate("/system/modules");
+      }, 1200);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [job, navigate]);
 
   const validationResults = useMemo(() => analysis?.validationResults ?? [], [analysis]);
   const hasValidationErrors = validationResults.some((item) => item.type === "error");
@@ -422,6 +437,37 @@ export default function ModuleUpdatePage() {
           </Card>
         )}
       </div>
+
+      <Dialog open={progressOpen} onOpenChange={setProgressOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Đang cập nhật mô-đun</DialogTitle>
+            <DialogDescription>
+              Hệ thống đang xử lý gói cập nhật. Vui lòng không tắt tab trong lúc chạy.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {updating && !job && (
+              <div className="text-sm text-muted-foreground">Đang gửi gói cập nhật...</div>
+            )}
+            {job?.timeline && job.timeline.length > 0 && (
+              <ImportJobTimeline events={job.timeline} />
+            )}
+            {job?.status === "completed" && (
+              <Badge variant="secondary">Hoàn tất. Đang chuyển về danh sách mô-đun...</Badge>
+            )}
+            {job?.status === "failed" && (
+              <Badge variant="destructive">Cập nhật thất bại</Badge>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setProgressOpen(false)}>
+              Đóng
+            </Button>
+            <Button onClick={() => navigate("/system/modules")}>Về danh sách mô-đun</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

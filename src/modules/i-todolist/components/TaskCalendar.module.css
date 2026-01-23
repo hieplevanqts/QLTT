@@ -1,163 +1,170 @@
+/* ========== Task Calendar ========== */
 .container {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-4);
-  background: var(--color-card);
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-4);
+  background: var(--card);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--spacing-6);
 }
 
 .header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding-bottom: var(--spacing-3);
-  border-bottom: var(--border-width) solid var(--color-border);
+  align-items: center;
+  margin-bottom: var(--spacing-4);
 }
 
-.monthName {
+.title {
   font-family: var(--font-family-base);
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
-  color: var(--color-foreground);
+  color: var(--foreground);
   margin: 0;
-  text-transform: capitalize;
 }
 
-.controls {
+.nav {
   display: flex;
-  align-items: center;
   gap: var(--spacing-2);
-}
-
-.weekdays {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: var(--spacing-1);
-}
-
-.weekday {
-  text-align: center;
-  font-family: var(--font-family-base);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-muted-foreground);
-  padding: var(--spacing-2);
-  text-transform: uppercase;
+  align-items: center;
 }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: var(--spacing-1);
-}
-
-.day {
-  min-height: 100px;
-  padding: var(--spacing-2);
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-background);
-  transition: all 0.15s ease;
-}
-
-.day:hover {
-  background: var(--color-muted);
-}
-
-.day.otherMonth {
-  opacity: 0.4;
-}
-
-.day.today {
-  background: rgba(0, 92, 182, 0.05);
-  border-color: var(--color-primary);
+  gap: 1px;
+  background: var(--border);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
 }
 
 .dayHeader {
+  text-align: center;
+  padding: var(--spacing-2);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  background: var(--muted);
+}
+
+.dayCell {
+  min-height: 100px;
+  padding: var(--spacing-2);
+  background: var(--background);
+  cursor: pointer;
+  transition: all 0.15s ease;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--spacing-2);
+  flex-direction: column;
+  position: relative;
+}
+
+.dayCell:hover {
+  background: var(--muted);
+}
+
+.dayCell.today {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.dayCell.otherMonth {
+  opacity: 0.3;
 }
 
 .dayNumber {
   font-family: var(--font-family-base);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  color: var(--color-foreground);
+  color: var(--foreground);
+  margin-bottom: var(--spacing-2);
 }
 
-.taskCount {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 var(--spacing-1);
-  background: var(--color-primary);
-  color: var(--color-primary-foreground);
-  border-radius: var(--radius-full);
-  font-family: var(--font-family-base);
-  font-size: 10px;
-  font-weight: var(--font-weight-semibold);
+.dayCell.today .dayNumber {
+  color: var(--primary-foreground);
+  font-weight: var(--font-weight-bold);
 }
 
-.dayTasks {
+.dayCell.otherMonth .dayNumber {
+  color: var(--muted-foreground);
+}
+
+.tasksContainer {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-1);
+  flex: 1;
 }
 
 .taskItem {
   display: flex;
   align-items: center;
-  gap: var(--spacing-1-5);
-  width: 100%;
-  padding: var(--spacing-1) var(--spacing-2);
-  background: var(--color-card);
-  border: var(--border-width) solid var(--color-border);
+  gap: var(--spacing-1);
+  padding: var(--spacing-1) var(--spacing-1-5);
+  background: var(--card);
+  border: var(--border-width) solid var(--border);
   border-radius: var(--radius-sm);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-xs);
+  color: var(--foreground);
   cursor: pointer;
   transition: all 0.15s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-align: left;
+  width: 100%;
 }
 
 .taskItem:hover {
-  border-color: var(--color-primary);
-  background: rgba(0, 92, 182, 0.05);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
 }
 
-.taskTitle {
-  flex: 1;
-  font-family: var(--font-family-base);
-  font-size: var(--font-size-xs);
-  color: var(--color-foreground);
+.dayCell.today .taskItem {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.dayCell.today .taskItem:hover {
+  background: var(--primary-foreground);
+  color: var(--primary);
+}
+
+.taskText {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
 }
 
-.moreTasksText {
+.more {
+  padding: var(--spacing-1);
   font-family: var(--font-family-base);
   font-size: var(--font-size-xs);
-  color: var(--color-muted-foreground);
+  color: var(--muted-foreground);
   text-align: center;
-  padding: var(--spacing-1);
-  font-style: italic;
 }
 
+.dayCell.today .more {
+  color: var(--primary-foreground);
+  opacity: 0.8;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
-  .day {
-    min-height: 80px;
+  .container {
+    padding: var(--spacing-4);
   }
 
-  .taskTitle {
-    display: none;
+  .dayCell {
+    min-height: 80px;
+    padding: var(--spacing-1);
   }
 
   .taskItem {
-    justify-content: center;
+    font-size: 10px;
+    padding: 2px 4px;
   }
 }

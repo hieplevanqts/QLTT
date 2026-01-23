@@ -9,7 +9,7 @@
     "build": "vite build",
     "dev": "vite"
   },
-  "dependencies": {
+  "dependencies": {      
     "adm-zip": "^0.5.10",
     "cors": "^2.8.5",
     "express": "^4.19.2",

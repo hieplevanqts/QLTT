@@ -46,8 +46,8 @@
 }
 
 .modulesTable th:nth-child(7) {
-  width: 140px;
-  min-width: 140px;
+  width: 180px;
+  min-width: 180px;
   text-align: center;
 }
 

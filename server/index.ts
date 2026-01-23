@@ -3,6 +3,7 @@ import cors from 'cors';
 import multer from 'multer';
 import path from 'node:path';
 import fs from 'node:fs/promises';
+import crypto from 'node:crypto';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import {
@@ -19,7 +20,7 @@ import {
 import { deleteStoredZip, importModuleZip, inspectModuleUpdate, rollbackModule, rollbackModuleFromZip, updateModuleZip } from './importer/moduleImporter';
 import type { MenuItem, ModuleManifest, ReleaseType } from './importer/types';
 
-const PORT = Number(process.env.SYSTEM_ADMIN_PORT || 8889);
+const PORT = Number(process.env.SYSTEM_ADMIN_PORT || 7788);
 const app = express();
 
 app.use(cors());
@@ -141,6 +142,77 @@ const listFiles = async (dir: string, prefix = ''): Promise<string[]> => {
     }
   }
   return results;
+};
+
+const listFileHashes = async (dir: string, prefix = ''): Promise<Record<string, string>> => {
+  const results: Record<string, string> = {};
+  const entries = await fs.readdir(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const entryPath = path.join(dir, entry.name);
+    const relative = path.join(prefix, entry.name);
+    if (entry.isDirectory()) {
+      const nested = await listFileHashes(entryPath, relative);
+      Object.assign(results, nested);
+    } else if (entry.isFile()) {
+      const buffer = await fs.readFile(entryPath);
+      const hash = crypto.createHash('sha1').update(buffer).digest('hex');
+      results[relative.replace(/\\/g, '/')] = hash;
+    }
+  }
+  return results;
+};
+
+const diffFileMaps = (current: Record<string, string>, previous: Record<string, string>) => {
+  const added: string[] = [];
+  const modified: string[] = [];
+  const removed: string[] = [];
+
+  Object.entries(current).forEach(([file, hash]) => {
+    if (!previous[file]) {
+      added.push(file);
+    } else if (previous[file] !== hash) {
+      modified.push(file);
+    }
+  });
+
+  Object.keys(previous).forEach((file) => {
+    if (!current[file]) {
+      removed.push(file);
+    }
+  });
+
+  return { added, modified, removed };
+};
+
+const toModuleRelative = (moduleId: string, fullPath: string) => {
+  const normalized = fullPath.replace(/\\/g, '/');
+  const prefix = `src/modules/${moduleId}/`;
+  return normalized.startsWith(prefix) ? normalized.slice(prefix.length) : normalized;
+};
+
+const collectMissingCssImports = async (moduleDir: string, files: string[]) => {
+  const missing = new Set<string>();
+  const cssImports = /import\s+(?:[^'"]+\s+from\s+)?['"]([^'"]+\.css)['"]/g;
+  const tsFiles = files.filter(file => file.endsWith('.ts') || file.endsWith('.tsx'));
+  const fileSet = new Set(files);
+
+  for (const file of tsFiles) {
+    const filePath = path.join(moduleDir, file);
+    const content = await fs.readFile(filePath, 'utf8');
+    let match: RegExpExecArray | null;
+    while ((match = cssImports.exec(content)) !== null) {
+      const importPath = match[1];
+      if (!importPath.startsWith('.')) {
+        continue;
+      }
+      const resolved = path.normalize(path.join(path.dirname(file), importPath)).replace(/\\/g, '/');
+      if (!fileSet.has(resolved)) {
+        missing.add(resolved);
+      }
+    }
+  }
+
+  return Array.from(missing);
 };
 
 app.get('/system-admin/modules', async (_req, res) => {
@@ -270,7 +342,58 @@ app.get('/system-admin/modules/:id', async (req, res) => {
     }
     const moduleDir = path.join(getModulesRoot(), module.id);
     const files = await listFiles(moduleDir);
-    res.json({ ...module, files });
+
+    let fileChanges: {
+      baseVersion?: string;
+      baseJobId?: string;
+      baseAt?: string;
+      added: string[];
+      modified: string[];
+      removed: string[];
+    } | undefined;
+
+    const cssFiles = files.filter(file => file.endsWith('.css'));
+    const missingCssImports = await collectMissingCssImports(moduleDir, files);
+
+    const history = await loadImportHistory();
+    const latestBackup = history
+      .filter(job => job.moduleId === module.id && job.backupPath)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+
+    if (latestBackup?.backupPath) {
+      const currentHashes = await listFileHashes(moduleDir);
+      const previousHashes = await listFileHashes(latestBackup.backupPath);
+      const diff = diffFileMaps(currentHashes, previousHashes);
+      fileChanges = {
+        baseVersion: latestBackup.backupVersion ?? latestBackup.previousVersion ?? latestBackup.version,
+        baseJobId: latestBackup.id,
+        baseAt: latestBackup.createdAt,
+        ...diff,
+      };
+    }
+
+    const addedSet = new Set(fileChanges?.added ?? []);
+    const modifiedSet = new Set(fileChanges?.modified ?? []);
+    const cssAudit = cssFiles.map(file => ({
+      path: file,
+      status: addedSet.has(file) ? 'added' : modifiedSet.has(file) ? 'modified' : 'unchanged',
+    }));
+
+    const entryRel = toModuleRelative(module.id, module.entry);
+    const routesRel = toModuleRelative(module.id, module.routes);
+    const fileHealth = {
+      entryExists: files.includes(entryRel),
+      routesExists: files.includes(routesRel),
+    };
+
+    res.json({
+      ...module,
+      files,
+      fileChanges,
+      cssAudit,
+      missingCssImports,
+      fileHealth,
+    });
   } catch (error: any) {
     res.status(500).json({ code: 'MODULE_DETAIL_FAILED', message: error.message });
   }

@@ -63,6 +63,10 @@ export interface ModuleManifest {
   entry: string;
   routes: string;
   permissions: string[];
+  dependencies?: string[] | Record<string, string>;
+  package?: {
+    dependencies?: Record<string, string>;
+  };
   ui: {
     menuLabel: string;
     menuPath: string;

@@ -1,8 +1,27 @@
 # Module Nhật ký công việc (i-todolist)
 
+**Version**: `1.0.1` | **Status**: ✅ Active | **Compatibility**: MAPPA Portal 0.1.0 - 0.9.0
+
 ## Tổng quan
 
 Module quản lý nhật ký công việc cá nhân với khả năng xem theo lịch và danh sách, phân loại theo chủ đề/phiên, theo dõi tiến độ và ghi chú chi tiết.
+
+## Release Information
+
+- **Current Version**: `1.0.1` (PATCH)
+- **Release Type**: Metadata standardization
+- **Breaking Changes**: None
+- **Min App Version**: `0.1.0`
+- **Max App Version**: `0.9.0`
+
+### Latest Changes (v1.0.1 - 2026-01-22)
+- ✨ Chuẩn hóa metadata `release` và `compat` theo tiêu chuẩn Codex
+- ✅ Thêm trường `release` với type, notes, breaking changes
+- ✅ Thêm trường `compat` với minAppVersion và maxAppVersion
+- ✅ Cập nhật tài liệu INTEGRATION.md với Release & Compatibility section
+- ✅ Thêm Upgrade Notes cho version transition
+- 🔧 Không có thay đổi về UI, logic xử lý, hoặc routes
+- ✅ Tương thích ngược hoàn toàn với v1.0.0
 
 ## Cấu trúc module
 
@@ -182,4 +201,23 @@ Module tuân thủ 100% design system với các tokens:
 
 ## Version History
 
-- **1.0.0** (2026-01-22): Initial release với Calendar, List views và Topics Panel
+### v1.0.1 (2026-01-22) - PATCH
+**Metadata Standardization**
+- ✨ Chuẩn hóa metadata `release` và `compat` theo tiêu chuẩn Codex
+- ✅ Thêm trường `release` với type, notes, breaking changes
+- ✅ Thêm trường `compat` với minAppVersion và maxAppVersion
+- ✅ Cập nhật tài liệu INTEGRATION.md với Release & Compatibility section
+- ✅ Thêm Upgrade Notes cho version transition
+- 🔧 Không có thay đổi về UI, logic xử lý, hoặc routes
+- ✅ Tương thích ngược hoàn toàn với v1.0.0
+
+### v1.0.0 (2026-01-21) - INITIAL
+**Initial Release**
+- ✨ Calendar view với navigation tháng
+- ✨ List view với search và filters
+- ✨ Topics/Phiên management với sidebar panel
+- ✨ CRUD operations đầy đủ cho tasks
+- ✨ Comment system
+- ✨ Responsive design
+- ✨ CSS Modules với design tokens integration
+- ✨ localStorage persistence

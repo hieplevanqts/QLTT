@@ -3,8 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
 import type { Task } from '../types';
 import { taskService } from '../services/taskService';
-import { Button } from '@/app/components/ui/button';
-import styles from './TaskFormPage.module.css';
+import { Button } from '../components/Button';
 
 export function TaskFormPage() {
   const navigate = useNavigate();
@@ -22,6 +21,7 @@ export function TaskFormPage() {
     tags: '',
     notes: '',
     estimatedHours: '',
+    topicId: '',
   });
 
   useEffect(() => {
@@ -42,6 +42,7 @@ export function TaskFormPage() {
         tags: task.tags.join(', '),
         notes: task.notes,
         estimatedHours: task.estimatedHours?.toString() || '',
+        topicId: task.topicId || '',
       });
     }
   };
@@ -68,6 +69,7 @@ export function TaskFormPage() {
         notes: formData.notes,
         attachments: [],
         estimatedHours: formData.estimatedHours ? Number(formData.estimatedHours) : undefined,
+        topicId: formData.topicId || undefined,
       };
 
       if (isEdit && editId) {
@@ -82,65 +84,74 @@ export function TaskFormPage() {
     }
   };
 
+  // Load topics for dropdown
+  const [topics, setTopics] = useState<any[]>([]);
+  useEffect(() => {
+    const savedTopics = localStorage.getItem('todolist_topics');
+    if (savedTopics) {
+      setTopics(JSON.parse(savedTopics));
+    }
+  }, []);
+
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
+    <div className="todolist-form-container">
+      <div className="todolist-form-header">
         <Button variant="ghost" size="sm" onClick={() => navigate('/todolist/list')}>
           <ArrowLeft className="h-4 w-4" />
           Quay lại
         </Button>
-        <h1 className={styles.title}>
+        <h1 className="todolist-form-title">
           {isEdit ? 'Chỉnh sửa công việc' : 'Tạo công việc mới'}
         </h1>
       </div>
 
-      <form onSubmit={handleSubmit} className={styles.form}>
-        <div className={styles.formGroup}>
-          <label className={styles.label}>
-            Tiêu đề <span className={styles.required}>*</span>
+      <form onSubmit={handleSubmit} className="todolist-form">
+        <div className="todolist-form-group">
+          <label className="todolist-form-label">
+            Tiêu đề <span className="todolist-form-required">*</span>
           </label>
           <input
             type="text"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className={styles.input}
+            className="todolist-form-input"
             placeholder="Nhập tiêu đề công việc"
             required
           />
         </div>
 
-        <div className={styles.formGroup}>
-          <label className={styles.label}>Mô tả</label>
+        <div className="todolist-form-group">
+          <label className="todolist-form-label">Mô tả</label>
           <textarea
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className={styles.textarea}
+            className="todolist-form-textarea"
             placeholder="Mô tả chi tiết công việc"
             rows={4}
           />
         </div>
 
-        <div className={styles.formRow}>
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              Ngày đến hạn <span className={styles.required}>*</span>
+        <div className="todolist-form-row">
+          <div className="todolist-form-group">
+            <label className="todolist-form-label">
+              Ngày đến hạn <span className="todolist-form-required">*</span>
             </label>
             <input
               type="date"
               value={formData.dueDate}
               onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-              className={styles.input}
+              className="todolist-form-input"
               required
             />
           </div>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Thời gian ước tính (giờ)</label>
+          <div className="todolist-form-group">
+            <label className="todolist-form-label">Thời gian ước tính (giờ)</label>
             <input
               type="number"
               value={formData.estimatedHours}
               onChange={(e) => setFormData({ ...formData, estimatedHours: e.target.value })}
-              className={styles.input}
+              className="todolist-form-input"
               placeholder="0"
               min="0"
               step="0.5"
@@ -148,15 +159,15 @@ export function TaskFormPage() {
           </div>
         </div>
 
-        <div className={styles.formRow}>
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Trạng thái</label>
+        <div className="todolist-form-row">
+          <div className="todolist-form-group">
+            <label className="todolist-form-label">Trạng thái</label>
             <select
               value={formData.status}
               onChange={(e) =>
                 setFormData({ ...formData, status: e.target.value as Task['status'] })
               }
-              className={styles.select}
+              className="todolist-form-select"
             >
               <option value="not-started">Chưa bắt đầu</option>
               <option value="in-progress">Đang làm</option>
@@ -165,14 +176,14 @@ export function TaskFormPage() {
             </select>
           </div>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Mức độ ưu tiên</label>
+          <div className="todolist-form-group">
+            <label className="todolist-form-label">Mức độ ưu tiên</label>
             <select
               value={formData.priority}
               onChange={(e) =>
                 setFormData({ ...formData, priority: e.target.value as Task['priority'] })
               }
-              className={styles.select}
+              className="todolist-form-select"
             >
               <option value="low">Thấp</option>
               <option value="medium">Trung bình</option>
@@ -182,30 +193,53 @@ export function TaskFormPage() {
           </div>
         </div>
 
-        <div className={styles.formGroup}>
-          <label className={styles.label}>Nhãn (Tags)</label>
+        <div className="todolist-form-group">
+          <label className="todolist-form-label">Chủ đề</label>
+          <select
+            value={formData.topicId}
+            onChange={(e) => setFormData({ ...formData, topicId: e.target.value })}
+            className="todolist-form-select"
+          >
+            <option value="">-- Chọn chủ đề --</option>
+            {topics.map((topic) => (
+              <option key={topic.id} value={topic.id}>
+                {topic.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="todolist-form-group">
+          <label className="todolist-form-label">Nhãn (Tags)</label>
           <input
             type="text"
             value={formData.tags}
             onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-            className={styles.input}
+            className="todolist-form-input"
             placeholder="Nhập các nhãn, cách nhau bằng dấu phẩy"
           />
-          <span className={styles.hint}>Ví dụ: báo cáo, quan trọng, urgent</span>
+          <span style={{
+            fontSize: 'var(--font-size-xs)',
+            color: 'var(--muted-foreground)',
+            marginTop: 'var(--spacing-1)',
+            display: 'block'
+          }}>
+            Ví dụ: báo cáo, quan trọng, urgent
+          </span>
         </div>
 
-        <div className={styles.formGroup}>
-          <label className={styles.label}>Ghi chú</label>
+        <div className="todolist-form-group">
+          <label className="todolist-form-label">Ghi chú</label>
           <textarea
             value={formData.notes}
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            className={styles.textarea}
+            className="todolist-form-textarea"
             placeholder="Ghi chú thêm về công việc"
             rows={4}
           />
         </div>
 
-        <div className={styles.formActions}>
+        <div className="todolist-form-actions">
           <Button
             type="button"
             variant="outline"

@@ -8,7 +8,7 @@ import type {
   ReleaseType,
 } from "../types";
 
-const API_BASE = import.meta.env.VITE_SYSTEM_ADMIN_API ?? "http://localhost:8889";
+const API_BASE = import.meta.env.VITE_SYSTEM_ADMIN_API ?? "http://localhost:7788";
 
 const request = async <T>(path: string, options?: RequestInit): Promise<T> => {
   const response = await fetch(`${API_BASE}${path}`, options);

@@ -1,0 +1,49 @@
+/* ========== Notification Banner ========== */
+.banner {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-4);
+  background: rgba(59, 130, 246, 0.08);
+  border: var(--border-width) solid rgba(59, 130, 246, 0.3);
+  border-radius: var(--radius);
+  margin-bottom: var(--spacing-4);
+}
+
+.icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(59, 130, 246, 0.15);
+  border-radius: var(--radius);
+  color: var(--info);
+}
+
+.content {
+  flex: 1;
+}
+
+.title {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+  margin: 0 0 var(--spacing-1) 0;
+}
+
+.description {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  color: var(--muted-foreground);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  gap: var(--spacing-2);
+  flex-shrink: 0;
+}

@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, Package, RotateCcw, UploadCloud } from 'lucide-react';
+import { Eye, MonitorPlay, Package, RotateCcw, UploadCloud } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
 import type { ModuleInfo } from '../types';
@@ -13,9 +13,10 @@ import styles from './InstalledModulesTable.module.css';
 interface InstalledModulesTableProps {
   modules: ModuleInfo[];
   onRollback?: (id: string) => void;
+  onPreview?: (module: ModuleInfo) => void;
 }
 
-export function InstalledModulesTable({ modules, onRollback }: InstalledModulesTableProps) {
+export function InstalledModulesTable({ modules, onRollback, onPreview }: InstalledModulesTableProps) {
   const formatDate = (dateString?: string): string => {
     if (!dateString) return '-';
     const date = new Date(dateString);
@@ -90,6 +91,16 @@ export function InstalledModulesTable({ modules, onRollback }: InstalledModulesT
                     <Eye className="h-4 w-4" />
                   </Button>
                 </Link>
+                {onPreview && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    title="Xem trước phiên bản"
+                    onClick={() => onPreview(module)}
+                  >
+                    <MonitorPlay className="h-4 w-4" />
+                  </Button>
+                )}
                 <Link to={`/system/modules/${module.id}/update`}>
                   <Button variant="ghost" size="icon" title="Cập nhật mô-đun">
                     <UploadCloud className="h-4 w-4" />

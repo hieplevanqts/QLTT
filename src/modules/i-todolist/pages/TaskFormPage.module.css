@@ -1,30 +1,39 @@
-.container {
-  max-width: 800px;
-  margin: 0 auto;
+/* ========== Task Form Page ========== */
+.page {
   padding: var(--spacing-6);
   background: var(--background);
   min-height: 100vh;
 }
 
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
 .header {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-3);
   margin-bottom: var(--spacing-6);
 }
 
+.backButton {
+  margin-bottom: var(--spacing-3);
+}
+
 .title {
-  font-size: var(--text-page-title);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-white);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--foreground);
   margin: 0;
 }
 
-.form {
+.card {
   background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
   padding: var(--spacing-6);
+}
+
+.form {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-5);
@@ -38,11 +47,12 @@
 
 .formRow {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr 1fr;
   gap: var(--spacing-4);
 }
 
 .label {
+  font-family: var(--font-family-base);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   color: var(--foreground);
@@ -53,60 +63,63 @@
 }
 
 .input,
-.select,
-.textarea {
-  width: 100%;
+.textarea,
+.select {
   padding: var(--spacing-2-5) var(--spacing-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--input-background);
-  color: var(--foreground);
+  font-family: var(--font-family-base);
   font-size: var(--font-size-sm);
-  transition: all 0.15s ease;
+  color: var(--foreground);
+  background: var(--background);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  outline: none;
+  transition: border-color 0.15s ease;
 }
 
 .input:focus,
-.select:focus,
-.textarea:focus {
-  outline: none;
+.textarea:focus,
+.select:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(0, 92, 182, 0.1);
 }
 
 .textarea {
   resize: vertical;
-  font-family: 'Inter', sans-serif;
-}
-
-.select {
-  cursor: pointer;
+  min-height: 120px;
 }
 
 .hint {
+  font-family: var(--font-family-base);
   font-size: var(--font-size-xs);
   color: var(--muted-foreground);
-  font-style: italic;
 }
 
-.formActions {
+.actions {
   display: flex;
-  align-items: center;
   justify-content: flex-end;
   gap: var(--spacing-3);
   padding-top: var(--spacing-4);
-  border-top: 1px solid var(--border);
+  border-top: var(--border-width) solid var(--border);
 }
 
+/* Responsive */
 @media (max-width: 768px) {
-  .container {
+  .page {
     padding: var(--spacing-4);
   }
 
-  .form {
+  .card {
     padding: var(--spacing-4);
   }
 
   .formRow {
     grid-template-columns: 1fr;
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+  }
+
+  .actions button {
+    width: 100%;
   }
 }

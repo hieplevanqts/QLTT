@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Task } from '../types';
-import { TaskStatusBadge } from './TaskStatusBadge';
 import { PriorityIndicator } from './PriorityIndicator';
-import { Button } from '@/app/components/ui/button';
+import { Button } from './Button';
 import styles from './TaskCalendar.module.css';
 
 interface TaskCalendarProps {
@@ -24,7 +23,6 @@ export function TaskCalendar({ tasks = [], onTaskClick }: TaskCalendarProps) {
     const month = currentDate.getMonth();
 
     const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - firstDay.getDay());
 
@@ -87,50 +85,47 @@ export function TaskCalendar({ tasks = [], onTaskClick }: TaskCalendarProps) {
     <div className={styles.container}>
       {/* Calendar header */}
       <div className={styles.header}>
-        <h2 className={styles.monthName}>{monthName}</h2>
-        <div className={styles.controls}>
+        <h2 className={styles.title}>{monthName}</h2>
+        <div className={styles.nav}>
           <Button variant="outline" size="sm" onClick={handleToday}>
             Hôm nay
           </Button>
           <Button variant="outline" size="icon-sm" onClick={handlePrevMonth}>
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft size={16} />
           </Button>
           <Button variant="outline" size="icon-sm" onClick={handleNextMonth}>
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight size={16} />
           </Button>
         </div>
       </div>
 
       {/* Weekday headers */}
-      <div className={styles.weekdays}>
+      <div className={styles.grid}>
         {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map((day) => (
-          <div key={day} className={styles.weekday}>
+          <div key={day} className={styles.dayHeader}>
             {day}
           </div>
         ))}
-      </div>
 
-      {/* Calendar grid */}
-      <div className={styles.grid}>
+        {/* Calendar grid */}
         {calendarDays.map((date, index) => {
           const dateTasks = getTasksForDate(date);
           const isOtherMonth = !isCurrentMonth(date);
           const isTodayDate = isToday(date);
 
+          const dayCellClass = [
+            styles.dayCell,
+            isOtherMonth ? styles.otherMonth : '',
+            isTodayDate ? styles.today : '',
+          ]
+            .filter(Boolean)
+            .join(' ');
+
           return (
-            <div
-              key={index}
-              className={`${styles.day} ${isOtherMonth ? styles.otherMonth : ''} ${
-                isTodayDate ? styles.today : ''
-              }`}
-            >
-              <div className={styles.dayHeader}>
-                <span className={styles.dayNumber}>{date.getDate()}</span>
-                {dateTasks.length > 0 && (
-                  <span className={styles.taskCount}>{dateTasks.length}</span>
-                )}
-              </div>
-              <div className={styles.dayTasks}>
+            <div key={index} className={dayCellClass}>
+              <span className={styles.dayNumber}>{date.getDate()}</span>
+              
+              <div className={styles.tasksContainer}>
                 {dateTasks.slice(0, 3).map((task) => (
                   <button
                     key={task.id}
@@ -139,11 +134,11 @@ export function TaskCalendar({ tasks = [], onTaskClick }: TaskCalendarProps) {
                     title={task.title}
                   >
                     <PriorityIndicator priority={task.priority} size="sm" />
-                    <span className={styles.taskTitle}>{task.title}</span>
+                    <span className={styles.taskText}>{task.title}</span>
                   </button>
                 ))}
                 {dateTasks.length > 3 && (
-                  <div className={styles.moreTasksText}>
+                  <div className={styles.more}>
                     +{dateTasks.length - 3} công việc khác
                   </div>
                 )}

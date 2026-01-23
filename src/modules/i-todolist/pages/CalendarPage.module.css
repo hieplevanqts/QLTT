@@ -1,67 +1,76 @@
-.container {
+/* ========== Calendar Page ========== */
+.page {
   display: flex;
-  height: calc(100vh - 120px);
-  background: var(--color-background);
+  gap: var(--spacing-6);
+  padding: var(--spacing-6);
+  background: var(--background);
+  min-height: 100vh;
 }
 
 .mainContent {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 .header {
-  padding: var(--spacing-md) var(--spacing-lg);
-  background: var(--color-card);
-  border-bottom: var(--border-width) solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-6);
 }
 
-.titleRow {
+.headerLeft {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--spacing-2);
+  flex-direction: column;
+  gap: var(--spacing-1);
 }
 
 .title {
   font-family: var(--font-family-base);
-  font-size: var(--text-page-title);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-white);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--foreground);
   margin: 0;
 }
 
-.viewTabs {
+.subtitle {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  color: var(--muted-foreground);
+  margin: 0;
+}
+
+.actions {
   display: flex;
   gap: var(--spacing-2);
 }
 
-.tabButton {
-  padding: var(--spacing-2) var(--spacing-4);
-  background: transparent;
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius);
-  font-family: var(--font-family-base);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-foreground);
-  cursor: pointer;
-  transition: all 0.2s;
+.content {
+  display: flex;
+  flex-direction: column;
 }
 
-.tabButton:hover {
-  background: var(--color-muted);
+/* Responsive */
+@media (max-width: 1024px) {
+  .page {
+    flex-direction: column;
+  }
 }
 
-.tabButton.active {
-  background: var(--color-primary);
-  color: var(--color-primary-foreground);
-  border-color: var(--color-primary);
-}
+@media (max-width: 768px) {
+  .page {
+    padding: var(--spacing-4);
+  }
 
-.calendarWrapper {
-  flex: 1;
-  overflow: auto;
-  padding: var(--spacing-lg);
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-3);
+  }
+
+  .actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
 }

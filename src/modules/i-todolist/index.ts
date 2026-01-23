@@ -6,6 +6,9 @@
  * phân loại ưu tiên và ghi chú chi tiết
  */
 
+// Import module styles
+import './styles.css';
+
 export { iTodolistRoute } from './routes';
 
 // Export types

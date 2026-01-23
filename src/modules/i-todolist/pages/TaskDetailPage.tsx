@@ -7,8 +7,7 @@ import { TaskStatusBadge } from '../components/TaskStatusBadge';
 import { PriorityIndicator } from '../components/PriorityIndicator';
 import { CommentSection } from '../components/CommentSection';
 import { TaskHistoryTimeline } from '../components/TaskHistoryTimeline';
-import { Button } from '@/app/components/ui/button';
-import styles from './TaskDetailPage.module.css';
+import { Button } from '../components/Button';
 
 export function TaskDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -70,8 +69,8 @@ export function TaskDetailPage() {
 
   if (loading) {
     return (
-      <div className={styles.loading}>
-        <div className={styles.spinner} />
+      <div className="todolist-loading">
+        <div className="todolist-spinner" />
         <p>Đang tải dữ liệu...</p>
       </div>
     );
@@ -79,8 +78,8 @@ export function TaskDetailPage() {
 
   if (!task) {
     return (
-      <div className={styles.container}>
-        <div className={styles.error}>
+      <div className="todolist-detail-container">
+        <div className="todolist-empty">
           <p>Không tìm thấy công việc</p>
           <Button onClick={() => navigate('/todolist/list')}>Quay lại danh sách</Button>
         </div>
@@ -89,14 +88,14 @@ export function TaskDetailPage() {
   }
 
   return (
-    <div className={styles.container}>
+    <div className="todolist-detail-container">
       {/* Header */}
-      <div className={styles.header}>
+      <div className="todolist-detail-header">
         <Button variant="ghost" size="sm" onClick={() => navigate('/todolist/list')}>
           <ArrowLeft className="h-4 w-4" />
           Quay lại
         </Button>
-        <div className={styles.headerActions}>
+        <div className="todolist-detail-actions">
           <Button
             variant="outline"
             size="sm"
@@ -117,126 +116,151 @@ export function TaskDetailPage() {
         </div>
       </div>
 
-      <div className={styles.content}>
+      <div className="todolist-detail-content">
         {/* Main Info */}
-        <div className={styles.mainCard}>
-          <div className={styles.titleSection}>
-            <div className={styles.titleRow}>
+        <div className="todolist-detail-main">
+          <div className="todolist-detail-card">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)', marginBottom: 'var(--spacing-4)' }}>
               <PriorityIndicator priority={task.priority} showLabel size="lg" />
-              <h1 className={styles.title}>{task.title}</h1>
+              <h1 className="todolist-detail-title">{task.title}</h1>
             </div>
+            
             {isOverdue(task) && (
-              <div className={styles.overdueAlert}>⚠️ Công việc đã quá hạn!</div>
-            )}
-          </div>
-
-          <p className={styles.description}>{task.description}</p>
-
-          {/* Metadata */}
-          <div className={styles.metadata}>
-            <div className={styles.metaItem}>
-              <Calendar className="h-4 w-4" />
-              <span>Đến hạn:</span>
-              <strong>{formatDate(task.dueDate)}</strong>
-            </div>
-
-            <div className={styles.metaItem}>
-              <Clock className="h-4 w-4" />
-              <span>Thời gian ước tính:</span>
-              <strong>{task.estimatedHours || 0} giờ</strong>
-            </div>
-
-            {task.actualHours && (
-              <div className={styles.metaItem}>
-                <Clock className="h-4 w-4" />
-                <span>Thời gian thực tế:</span>
-                <strong>{task.actualHours} giờ</strong>
+              <div style={{
+                padding: 'var(--spacing-2) var(--spacing-3)',
+                background: 'rgba(239, 68, 68, 0.1)',
+                color: 'var(--destructive)',
+                borderRadius: 'var(--radius)',
+                marginBottom: 'var(--spacing-4)',
+                fontSize: 'var(--font-size-sm)',
+                fontWeight: 'var(--font-weight-medium)'
+              }}>
+                ⚠️ Công việc đã quá hạn!
               </div>
             )}
 
-            {task.tags.length > 0 && (
-              <div className={styles.metaItem}>
-                <Tag className="h-4 w-4" />
-                <div className={styles.tags}>
-                  {task.tags.map((tag) => (
-                    <span key={tag} className={styles.tag}>
-                      {tag}
-                    </span>
-                  ))}
+            <div className="todolist-detail-description" style={{ marginBottom: 'var(--spacing-6)' }}>
+              {task.description}
+            </div>
+
+            {/* Metadata */}
+            <div className="todolist-detail-info-grid" style={{ marginBottom: 'var(--spacing-6)' }}>
+              <div className="todolist-detail-info-item">
+                <div className="todolist-detail-info-label">
+                  <Calendar className="h-3 w-3" style={{ display: 'inline', marginRight: '4px' }} />
+                  Đến hạn
                 </div>
+                <div className="todolist-detail-info-value">{formatDate(task.dueDate)}</div>
+              </div>
+
+              <div className="todolist-detail-info-item">
+                <div className="todolist-detail-info-label">
+                  <Clock className="h-3 w-3" style={{ display: 'inline', marginRight: '4px' }} />
+                  Thời gian ước tính
+                </div>
+                <div className="todolist-detail-info-value">{task.estimatedHours || 0} giờ</div>
+              </div>
+
+              {task.actualHours && (
+                <div className="todolist-detail-info-item">
+                  <div className="todolist-detail-info-label">
+                    <Clock className="h-3 w-3" style={{ display: 'inline', marginRight: '4px' }} />
+                    Thời gian thực tế
+                  </div>
+                  <div className="todolist-detail-info-value">{task.actualHours} giờ</div>
+                </div>
+              )}
+
+              {task.tags.length > 0 && (
+                <div className="todolist-detail-info-item">
+                  <div className="todolist-detail-info-label">
+                    <Tag className="h-3 w-3" style={{ display: 'inline', marginRight: '4px' }} />
+                    Nhãn
+                  </div>
+                  <div className="todolist-task-tags">
+                    {task.tags.map((tag) => (
+                      <span key={tag} className="todolist-task-tag">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Status Control */}
+            <div style={{ marginBottom: 'var(--spacing-6)' }}>
+              <div className="todolist-detail-info-label" style={{ marginBottom: 'var(--spacing-2)' }}>
+                Trạng thái
+              </div>
+              <div style={{ display: 'flex', gap: 'var(--spacing-2)', flexWrap: 'wrap' }}>
+                {['not-started', 'in-progress', 'completed', 'paused'].map((status) => {
+                  const labels = {
+                    'not-started': 'Chưa bắt đầu',
+                    'in-progress': 'Đang làm',
+                    'completed': 'Hoàn thành',
+                    'paused': 'Tạm dừng'
+                  };
+                  return (
+                    <button
+                      key={status}
+                      onClick={() => handleStatusChange(status as Task['status'])}
+                      className="todolist-tab-button"
+                      style={{
+                        background: task.status === status ? 'var(--primary)' : 'transparent',
+                        color: task.status === status ? 'var(--primary-foreground)' : 'var(--foreground)',
+                        borderColor: task.status === status ? 'var(--primary)' : 'var(--border)'
+                      }}
+                    >
+                      {labels[status as keyof typeof labels]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Notes */}
+            {task.notes && (
+              <div style={{ marginBottom: 'var(--spacing-6)' }}>
+                <h3 className="todolist-detail-section-title">Ghi chú</h3>
+                <div className="todolist-detail-description">{task.notes}</div>
               </div>
             )}
-          </div>
 
-          {/* Status Control */}
-          <div className={styles.statusSection}>
-            <span className={styles.statusLabel}>Trạng thái:</span>
-            <div className={styles.statusButtons}>
-              <button
-                onClick={() => handleStatusChange('not-started')}
-                className={`${styles.statusBtn} ${
-                  task.status === 'not-started' ? styles.active : ''
-                }`}
-              >
-                Chưa bắt đầu
-              </button>
-              <button
-                onClick={() => handleStatusChange('in-progress')}
-                className={`${styles.statusBtn} ${
-                  task.status === 'in-progress' ? styles.active : ''
-                }`}
-              >
-                Đang làm
-              </button>
-              <button
-                onClick={() => handleStatusChange('completed')}
-                className={`${styles.statusBtn} ${
-                  task.status === 'completed' ? styles.active : ''
-                }`}
-              >
-                Hoàn thành
-              </button>
-              <button
-                onClick={() => handleStatusChange('paused')}
-                className={`${styles.statusBtn} ${task.status === 'paused' ? styles.active : ''}`}
-              >
-                Tạm dừng
-              </button>
-            </div>
-          </div>
-
-          {/* Notes */}
-          {task.notes && (
-            <div className={styles.notesSection}>
-              <h3 className={styles.sectionTitle}>Ghi chú</h3>
-              <div className={styles.notes}>{task.notes}</div>
-            </div>
-          )}
-
-          {/* Timestamps */}
-          <div className={styles.timestamps}>
-            <div className={styles.timestamp}>
-              <span>Tạo lúc:</span> {formatDateTime(task.createdAt)}
-            </div>
-            <div className={styles.timestamp}>
-              <span>Cập nhật:</span> {formatDateTime(task.updatedAt)}
-            </div>
-            {task.completedAt && (
-              <div className={styles.timestamp}>
-                <span>Hoàn thành:</span> {formatDateTime(task.completedAt)}
+            {/* Timestamps */}
+            <div style={{
+              display: 'flex',
+              gap: 'var(--spacing-4)',
+              paddingTop: 'var(--spacing-4)',
+              borderTop: 'var(--border-width) solid var(--border)',
+              fontSize: 'var(--font-size-xs)',
+              color: 'var(--muted-foreground)'
+            }}>
+              <div>
+                <strong>Tạo lúc:</strong> {formatDateTime(task.createdAt)}
               </div>
-            )}
+              <div>
+                <strong>Cập nhật:</strong> {formatDateTime(task.updatedAt)}
+              </div>
+              {task.completedAt && (
+                <div>
+                  <strong>Hoàn thành:</strong> {formatDateTime(task.completedAt)}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Comments */}
+          <div className="todolist-detail-card">
+            <CommentSection taskId={task.id} />
           </div>
         </div>
 
-        {/* Comments */}
-        <div className={styles.commentsCard}>
-          <CommentSection taskId={task.id} />
-        </div>
-
-        {/* History Timeline */}
-        <div className={styles.historyCard}>
-          <TaskHistoryTimeline taskId={task.id} />
+        {/* Sidebar */}
+        <div className="todolist-detail-sidebar">
+          <div className="todolist-detail-card">
+            <TaskHistoryTimeline taskId={task.id} />
+          </div>
         </div>
       </div>
     </div>

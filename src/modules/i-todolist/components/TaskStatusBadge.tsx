@@ -9,30 +9,29 @@ interface TaskStatusBadgeProps {
 const STATUS_CONFIG = {
   'not-started': {
     label: 'Chưa bắt đầu',
-    className: 'notStarted',
   },
   'in-progress': {
     label: 'Đang làm',
-    className: 'inProgress',
   },
   completed: {
     label: 'Hoàn thành',
-    className: 'completed',
   },
   paused: {
     label: 'Tạm dừng',
-    className: 'paused',
   },
 };
 
 export function TaskStatusBadge({ status, size = 'md' }: TaskStatusBadgeProps) {
   const config = STATUS_CONFIG[status];
 
+  const badgeClass = [
+    styles.badge,
+    styles[status.replace('-', '')],
+    styles[size]
+  ].filter(Boolean).join(' ');
+
   return (
-    <span
-      className={`${styles.badge} ${styles[config.className]} ${styles[size]}`}
-      data-status={status}
-    >
+    <span className={badgeClass}>
       {config.label}
     </span>
   );

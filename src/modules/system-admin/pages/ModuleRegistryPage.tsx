@@ -9,6 +9,7 @@ import { Badge } from "../../../app/components/ui/badge";
 import { Input } from "../../../app/components/ui/input";
 import { InstalledModulesTable } from "../components/InstalledModulesTable";
 import ModuleRollbackDialog from "../components/ModuleRollbackDialog";
+import ModulePreviewDialog from "../components/ModulePreviewDialog";
 import { moduleAdminService } from "../services/moduleAdminService";
 import { ModuleInfo } from "../types";
 
@@ -24,6 +25,8 @@ export default function ModuleRegistryPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [rollbackTarget, setRollbackTarget] = useState<ModuleInfo | null>(null);
   const [rollbackOpen, setRollbackOpen] = useState(false);
+  const [previewTarget, setPreviewTarget] = useState<ModuleInfo | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const loadModules = async () => {
     try {
@@ -197,7 +200,14 @@ export default function ModuleRegistryPage() {
                 Chưa có mô-đun nào. Hãy import mô-đun mới để bắt đầu.
               </div>
             ) : (
-              <InstalledModulesTable modules={sortedModules} onRollback={handleRollback} />
+              <InstalledModulesTable
+                modules={sortedModules}
+                onRollback={handleRollback}
+                onPreview={(module) => {
+                  setPreviewTarget(module);
+                  setPreviewOpen(true);
+                }}
+              />
             )}
           </CardContent>
         </Card>
@@ -212,6 +222,17 @@ export default function ModuleRegistryPage() {
         moduleId={rollbackTarget?.id}
         moduleName={rollbackTarget?.name}
         onCompleted={() => void loadModules()}
+      />
+
+      <ModulePreviewDialog
+        open={previewOpen}
+        onOpenChange={(value) => {
+          setPreviewOpen(value);
+          if (!value) setPreviewTarget(null);
+        }}
+        moduleId={previewTarget?.id}
+        moduleName={previewTarget?.name}
+        basePath={previewTarget?.basePath}
       />
     </div>
   );

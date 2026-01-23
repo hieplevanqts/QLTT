@@ -1,83 +1,83 @@
-.container {
-  margin-top: var(--spacing-6);
-}
-
-.title {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
-  margin-bottom: var(--spacing-4);
-}
-
-.loading,
-.empty {
-  text-align: center;
-  padding: var(--spacing-6);
-  color: var(--color-text-tertiary);
-  font-size: var(--font-size-sm);
-}
-
+/* ========== Task History Timeline ========== */
 .timeline {
-  position: relative;
-  padding-left: var(--spacing-4);
-}
-
-.timelineItem {
-  position: relative;
-  padding-bottom: var(--spacing-4);
   display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-3);
+  flex-direction: column;
+  gap: var(--spacing-4);
 }
 
-.timelineIcon {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-full);
+.item {
+  display: flex;
+  gap: var(--spacing-3);
+  position: relative;
+}
+
+.item:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 32px;
+  bottom: -16px;
+  width: 2px;
+  background: var(--border);
+}
+
+.iconWrapper {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  background: var(--background);
+  border: 2px solid var(--border);
+  position: relative;
   z-index: 1;
 }
 
-.timelineLine {
-  position: absolute;
-  left: 15px;
-  top: 32px;
-  bottom: 0;
-  width: 2px;
-  background: var(--color-border-subtle);
+.iconWrapper.created {
+  border-color: var(--success);
+  color: var(--success);
 }
 
-.timelineContent {
+.iconWrapper.updated {
+  border-color: var(--info);
+  color: var(--info);
+}
+
+.iconWrapper.completed {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.iconWrapper.statusChanged {
+  border-color: var(--warning);
+  color: var(--warning);
+}
+
+.content {
   flex: 1;
-  padding-top: var(--spacing-1);
+  padding-top: 2px;
 }
 
-.timelineDescription {
+.action {
+  font-family: var(--font-family-base);
   font-size: var(--font-size-sm);
-  color: var(--color-text-primary);
-  margin-bottom: var(--spacing-1);
-}
-
-.timelineMeta {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-tertiary);
-}
-
-.timelineAuthor {
+  color: var(--foreground);
+  margin: 0 0 var(--spacing-0-5) 0;
   font-weight: var(--font-weight-medium);
 }
 
-.timelineDot {
-  color: var(--color-text-tertiary);
+.timestamp {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-xs);
+  color: var(--muted-foreground);
 }
 
-.timelineDate {
-  color: var(--color-text-tertiary);
+.empty {
+  text-align: center;
+  padding: var(--spacing-6);
+  color: var(--muted-foreground);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
 }

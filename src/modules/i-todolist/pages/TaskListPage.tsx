@@ -1,19 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter, Eye, Edit, Trash2, Calendar, List } from 'lucide-react';
-import type { Task, Topic } from '../types';
+import { Search, Plus, Calendar, List, Eye, Edit2, Trash2, MoreVertical, Filter } from 'lucide-react';
 import { taskService } from '../services/taskService';
+import type { Task, Topic } from '../types';
 import { TaskStatusBadge } from '../components/TaskStatusBadge';
 import { PriorityIndicator } from '../components/PriorityIndicator';
 import { TopicsPanel } from '../components/TopicsPanel';
-import { Button } from '@/app/components/ui/button';
+import { Button } from '../components/Button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/app/components/ui/dropdown-menu';
-import styles from './TaskListPage.module.css';
+} from '../components/DropdownMenu';
 
 export function TaskListPage() {
   const navigate = useNavigate();
@@ -34,7 +33,9 @@ export function TaskListPage() {
   }, []);
 
   useEffect(() => {
-    loadTopics();
+    if (tasks.length > 0) {
+      loadTopics();
+    }
   }, [tasks]);
 
   useEffect(() => {
@@ -85,12 +86,17 @@ export function TaskListPage() {
           id: 'topic-3',
           name: 'Dự án Website',
           color: '#F97316',
-          taskCount: 1,
+          taskCount: 0,
           createdAt: new Date().toISOString(),
         },
       ];
-      setTopics(defaultTopics);
-      localStorage.setItem('todolist_topics', JSON.stringify(defaultTopics));
+      // Update task count for default topics
+      const topicsWithCount = defaultTopics.map((topic) => ({
+        ...topic,
+        taskCount: tasks.filter((t) => t.topicId === topic.id).length,
+      }));
+      setTopics(topicsWithCount);
+      localStorage.setItem('todolist_topics', JSON.stringify(topicsWithCount));
     }
   };
 
@@ -170,15 +176,15 @@ export function TaskListPage() {
 
   if (loading) {
     return (
-      <div className={styles.loading}>
-        <div className={styles.spinner} />
+      <div className="todolist-loading">
+        <div className="todolist-spinner" />
         <p>Đang tải dữ liệu...</p>
       </div>
     );
   }
 
   return (
-    <div className={styles.container}>
+    <div className="todolist-container">
       <TopicsPanel
         topics={topics}
         selectedTopicId={selectedTopicId}
@@ -187,24 +193,24 @@ export function TaskListPage() {
         totalTaskCount={tasks.length}
       />
 
-      <div className={styles.mainContent}>
+      <div className="todolist-main-content">
         {/* Page Header */}
-        <div className={styles.header}>
+        <div className="todolist-page-header">
           <div>
-            <h1 className={styles.title}>Danh sách công việc</h1>
-            <p className={styles.subtitle}>
+            <h1 className="todolist-page-title">Danh sách công việc</h1>
+            <p className="todolist-page-subtitle">
               Quản lý {tasks.length} công việc • {filteredTasks.length} kết quả
             </p>
           </div>
-          <div className={styles.actions}>
+          <div className="todolist-page-actions">
             <button
-              className={styles.tabButton}
+              className="todolist-tab-button"
               onClick={() => navigate('/todolist')}
             >
               <Calendar size={16} style={{ display: 'inline', marginRight: '6px' }} />
               Lịch
             </button>
-            <button className={`${styles.tabButton} ${styles.active}`}>
+            <button className="todolist-tab-button active">
               <List size={16} style={{ display: 'inline', marginRight: '6px' }} />
               Danh sách
             </button>
@@ -215,27 +221,27 @@ export function TaskListPage() {
           </div>
         </div>
 
-        <div className={styles.contentWrapper}>
+        <div className="todolist-content-wrapper">
           {/* Filters & Search */}
-          <div className={styles.toolbar}>
-            <div className={styles.searchBox}>
+          <div className="todolist-toolbar">
+            <div className="todolist-search-box">
               <Search className="h-4 w-4" style={{ color: 'var(--muted-foreground)' }} />
               <input
                 type="text"
                 placeholder="Tìm kiếm công việc..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={styles.searchInput}
+                className="todolist-search-input"
               />
             </div>
 
-            <div className={styles.filters}>
+            <div className="todolist-filters">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm">
                     <Filter className="h-4 w-4" />
                     Trạng thái
-                    {statusFilter !== 'all' && <span className={styles.filterBadge}>1</span>}
+                    {statusFilter !== 'all' && <span className="todolist-filter-badge">1</span>}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -262,7 +268,7 @@ export function TaskListPage() {
                   <Button variant="outline" size="sm">
                     <Filter className="h-4 w-4" />
                     Ưu tiên
-                    {priorityFilter !== 'all' && <span className={styles.filterBadge}>1</span>}
+                    {priorityFilter !== 'all' && <span className="todolist-filter-badge">1</span>}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -289,7 +295,7 @@ export function TaskListPage() {
                   <Button variant="outline" size="sm">
                     <Filter className="h-4 w-4" />
                     Hạn chót
-                    {overdueFilter && <span className={styles.filterBadge}>1</span>}
+                    {overdueFilter && <span className="todolist-filter-badge">1</span>}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -307,7 +313,7 @@ export function TaskListPage() {
                   <Button variant="outline" size="sm">
                     <Filter className="h-4 w-4" />
                     Thẻ
-                    {selectedTag && <span className={styles.filterBadge}>1</span>}
+                    {selectedTag && <span className="todolist-filter-badge">1</span>}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -325,26 +331,26 @@ export function TaskListPage() {
           </div>
 
           {/* Task List */}
-          <div className={styles.taskList}>
+          <div className="todolist-task-list">
             {filteredTasks.length === 0 ? (
-              <div className={styles.empty}>
+              <div className="todolist-empty">
                 <p>Không tìm thấy công việc nào</p>
               </div>
             ) : (
               filteredTasks.map((task) => (
                 <div
                   key={task.id}
-                  className={`${styles.taskCard} ${isOverdue(task) ? styles.overdue : ''}`}
+                  className={`todolist-task-card ${isOverdue(task) ? 'overdue' : ''}`}
                 >
-                  <div className={styles.taskContent}>
-                    <div className={styles.taskHeader}>
+                  <div className="todolist-task-content">
+                    <div className="todolist-task-header">
                       <PriorityIndicator priority={task.priority} size="md" />
-                      <h3 className={styles.taskTitle}>{task.title}</h3>
+                      <h3 className="todolist-task-title">{task.title}</h3>
                     </div>
-                    <p className={styles.taskDescription}>{task.description}</p>
-                    <div className={styles.taskMeta}>
+                    <p className="todolist-task-description">{task.description}</p>
+                    <div className="todolist-task-meta">
                       <TaskStatusBadge status={task.status} size="sm" />
-                      <span className={styles.metaItem}>
+                      <span className="todolist-meta-item">
                         <svg
                           className="h-3 w-3"
                           viewBox="0 0 24 24"
@@ -361,9 +367,9 @@ export function TaskListPage() {
                         {formatDate(task.dueDate)}
                       </span>
                       {task.tags.length > 0 && (
-                        <div className={styles.tags}>
+                        <div className="todolist-task-tags">
                           {task.tags.slice(0, 2).map((tag) => (
-                            <span key={tag} className={styles.tag}>
+                            <span key={tag} className="todolist-task-tag">
                               {tag}
                             </span>
                           ))}
@@ -371,7 +377,7 @@ export function TaskListPage() {
                       )}
                     </div>
                   </div>
-                  <div className={styles.taskActions}>
+                  <div className="todolist-task-actions">
                     <Button
                       variant="ghost"
                       size="icon-sm"
@@ -386,7 +392,7 @@ export function TaskListPage() {
                       onClick={() => navigate(`/todolist/create?edit=${task.id}`)}
                       title="Chỉnh sửa"
                     >
-                      <Edit className="h-4 w-4" />
+                      <Edit2 className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"

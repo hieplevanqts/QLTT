@@ -10,42 +10,42 @@ interface PriorityIndicatorProps {
 const PRIORITY_CONFIG = {
   urgent: {
     label: 'Khẩn cấp',
-    color: '#D92D20', // destructive
   },
   high: {
     label: 'Cao',
-    color: '#FB9238', // warning
   },
   medium: {
     label: 'Trung bình',
-    color: '#3B82F6', // info
   },
   low: {
     label: 'Thấp',
-    color: '#667085', // muted-foreground
   },
 };
 
 export function PriorityIndicator({ priority, showLabel = false, size = 'md' }: PriorityIndicatorProps) {
   const config = PRIORITY_CONFIG[priority];
 
+  const dotClass = [
+    styles.dot,
+    styles[priority],
+    styles[size]
+  ].filter(Boolean).join(' ');
+
   if (!showLabel) {
     return (
       <span
-        className={`${styles.dot} ${styles[size]}`}
-        style={{ backgroundColor: config.color }}
+        className={dotClass}
         title={config.label}
       />
     );
   }
 
   return (
-    <span className={styles.indicator}>
-      <span
-        className={`${styles.dot} ${styles[size]}`}
-        style={{ backgroundColor: config.color }}
-      />
-      <span className={styles.label}>{config.label}</span>
+    <span className={styles.wrapper}>
+      <span className={dotClass} />
+      <span className={styles.label}>
+        {config.label}
+      </span>
     </span>
   );
 }

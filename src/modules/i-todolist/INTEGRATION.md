@@ -4,9 +4,29 @@
 
 - **ID**: `i-todolist`
 - **Tên**: Nhật ký công việc
+- **Version**: `1.0.1`
 - **Base Path**: `/todolist`
 - **Route Export**: `iTodolistRoute`
 - **Permissions**: `['todolist:read', 'todolist:write']`
+
+## Release & Compatibility
+
+### Release Information
+- **Type**: `patch`
+- **Release Notes**: Chuẩn hóa metadata module.json theo yêu cầu importer (release/compat); đồng bộ tài liệu tích hợp.
+- **Breaking Changes**: `[]` (Không có thay đổi breaking)
+
+### Compatibility
+- **Minimum App Version**: `0.1.0`
+- **Maximum App Version**: `0.9.0`
+
+### Upgrade Notes
+
+#### v1.0.0 → v1.0.1 (PATCH)
+- **Loại thay đổi**: Metadata chuẩn hóa
+- **Nội dung**: Chuẩn hóa metadata release/compat để tương thích với Codex, không thay đổi UI/Route
+- **Action required**: Không cần thay đổi code. Module tương thích ngược hoàn toàn.
+- **Tác động**: Không ảnh hưởng đến UI, logic xử lý, hoặc routes hiện có
 
 ## Cấu trúc thư mục
 
@@ -229,3 +249,9 @@ Nếu có vấn đề:
 - ✅ Responsive design
 - ✅ CSS Modules
 - ✅ Design tokens integration
+
+### v1.0.1 (2026-01-22)
+- ✨ Metadata chuẩn hóa
+- ✅ Chuẩn hóa metadata release/compat để tương thích với Codex
+- ✅ Không thay đổi UI/Route
+- ✅ Tương thích ngược hoàn toàn

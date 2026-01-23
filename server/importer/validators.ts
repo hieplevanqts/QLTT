@@ -1,6 +1,8 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import semver from 'semver';
 import type { ModuleManifest, ModuleRegistryEntry, ReleaseType, ValidationContext, ValidationResult } from './types';
+import { getRepoRoot } from './storage';
 
 export class ValidationError extends Error {
   code: string;
@@ -93,6 +95,11 @@ const getModuleIdFromRoot = (rootPath: string) => {
   return parts[parts.length - 1];
 };
 
+const isStringRecord = (value: unknown): value is Record<string, string> => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  return Object.values(value).every((entry) => typeof entry === 'string');
+};
+
 const validateManifestSchema = (manifest: ModuleManifest) => {
   const errors: string[] = [];
   if (!manifest.id) errors.push('module.json missing "id"');
@@ -105,6 +112,20 @@ const validateManifestSchema = (manifest: ModuleManifest) => {
   if (!manifest.ui?.menuLabel) errors.push('module.json missing "ui.menuLabel"');
   if (!manifest.ui?.menuPath) errors.push('module.json missing "ui.menuPath"');
   if (!manifest.routeExport) errors.push('module.json missing "routeExport"');
+  if (manifest.dependencies) {
+    if (Array.isArray(manifest.dependencies)) {
+      if (manifest.dependencies.some(dep => typeof dep !== 'string')) {
+        errors.push('module.json "dependencies" must be a string array');
+      }
+    } else if (!isStringRecord(manifest.dependencies)) {
+      errors.push('module.json "dependencies" must be a string map');
+    }
+  }
+  if (manifest.package?.dependencies) {
+    if (!isStringRecord(manifest.package.dependencies)) {
+      errors.push('module.json "package.dependencies" must be a string map');
+    }
+  }
   return errors;
 };
 
@@ -113,11 +134,79 @@ const isValidReleaseType = (value?: string): value is ReleaseType => {
   return value === 'patch' || value === 'minor' || value === 'major';
 };
 
-const buildValidationResult = (type: 'success' | 'error', message: string, details?: string): ValidationResult => ({
+const buildValidationResult = (type: 'success' | 'warning' | 'error', message: string, details?: string): ValidationResult => ({
   type,
   message,
   details,
 });
+
+const loadProjectDependencies = () => {
+  try {
+    const pkgPath = path.join(getRepoRoot(), 'package.json');
+    const content = fs.readFileSync(pkgPath, 'utf8');
+    const pkg = JSON.parse(content) as {
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+      peerDependencies?: Record<string, string>;
+      optionalDependencies?: Record<string, string>;
+    };
+    return new Set([
+      ...Object.keys(pkg.dependencies || {}),
+      ...Object.keys(pkg.devDependencies || {}),
+      ...Object.keys(pkg.peerDependencies || {}),
+      ...Object.keys(pkg.optionalDependencies || {}),
+    ]);
+  } catch {
+    return new Set<string>();
+  }
+};
+
+const getPackageName = (specifier: string) => {
+  if (specifier.startsWith('@')) {
+    const parts = specifier.split('/');
+    return parts.length >= 2 ? `${parts[0]}/${parts[1]}` : specifier;
+  }
+  return specifier.split('/')[0];
+};
+
+const shouldTreatAsExternal = (specifier: string) => {
+  if (specifier.startsWith('.') || specifier.startsWith('/')) return false;
+  if (specifier.startsWith('@/') || specifier.startsWith('src/')) return false;
+  return true;
+};
+
+const collectExternalImports = (entries: ZipEntryInfo[], moduleRootPrefix: string) => {
+  const external = new Set<string>();
+  const importRegex = /import\s+(?:[^'"]+\s+from\s+)?['"]([^'"]+)['"]/g;
+  const exportRegex = /export\s+[^'"]+\s+from\s+['"]([^'"]+)['"]/g;
+  const requireRegex = /require\(\s*['"]([^'"]+)['"]\s*\)/g;
+
+  entries.forEach((entry) => {
+    if (entry.isDirectory) return;
+    const normalized = normalizeZipPath(entry.entryName);
+    const relativePath = moduleRootPrefix && normalized.startsWith(moduleRootPrefix)
+      ? normalized.slice(moduleRootPrefix.length)
+      : normalized;
+    if (!(relativePath.endsWith('.ts') || relativePath.endsWith('.tsx'))) {
+      return;
+    }
+
+    const content = entry.getData().toString('utf8');
+    const collect = (regex: RegExp) => {
+      let match: RegExpExecArray | null;
+      while ((match = regex.exec(content)) !== null) {
+        const spec = match[1];
+        if (!spec || !shouldTreatAsExternal(spec)) continue;
+        external.add(getPackageName(spec));
+      }
+    };
+    collect(importRegex);
+    collect(exportRegex);
+    collect(requireRegex);
+  });
+
+  return external;
+};
 
 export function validateZipEntries(entries: ZipEntryInfo[], ctx: ValidationContext): ValidatedZipResult {
   const results: ValidationResult[] = [];
@@ -199,9 +288,10 @@ export function validateZipEntries(entries: ZipEntryInfo[], ctx: ValidationConte
 
   const schemaErrors = validateManifestSchema(selectedManifest);
   if (schemaErrors.length > 0) {
+    const schemaMessage = `Invalid module.json: ${schemaErrors.join('; ')}`;
     throw new ValidationError(
       'MODULE_JSON_INVALID',
-      'Invalid module.json',
+      schemaMessage,
       schemaErrors.map(err => buildValidationResult('error', err)),
     );
   }
@@ -284,6 +374,42 @@ export function validateZipEntries(entries: ZipEntryInfo[], ctx: ValidationConte
       'basePath already exists',
       [buildValidationResult('error', 'basePath bi trung voi module khac', selectedManifest.basePath)],
     );
+  }
+
+  const externalImports = collectExternalImports(entries, moduleRootPrefix);
+  if (externalImports.size > 0) {
+    const declaredDeps = Array.isArray(selectedManifest.dependencies)
+      ? selectedManifest.dependencies
+      : selectedManifest.dependencies && typeof selectedManifest.dependencies === 'object'
+        ? Object.keys(selectedManifest.dependencies)
+        : [];
+    const declaredPackageDeps = selectedManifest.package?.dependencies
+      ? Object.keys(selectedManifest.package.dependencies)
+      : [];
+    const declaredAll = new Set([...declaredDeps, ...declaredPackageDeps]);
+    const missingInManifest = [...externalImports].filter(dep => !declaredAll.has(dep));
+    if (missingInManifest.length > 0) {
+      results.push(buildValidationResult(
+        'warning',
+        'module.json thiếu khai báo dependencies',
+        missingInManifest.join(', '),
+      ));
+    }
+
+    const projectDeps = loadProjectDependencies();
+    const missingInProject = [...externalImports].filter(dep => !projectDeps.has(dep));
+    if (missingInProject.length > 0) {
+      const versionSpec = (dep: string) => selectedManifest.package?.dependencies?.[dep];
+      const installList = missingInProject.map(dep => {
+        const version = versionSpec(dep);
+        return version ? `${dep}@${version}` : dep;
+      });
+      results.push(buildValidationResult(
+        'warning',
+        'Project chưa cài dependencies',
+        `${missingInProject.join(', ')} | npm i ${installList.join(' ')}`,
+      ));
+    }
   }
 
   results.push(buildValidationResult('success', 'Cau truc zip hop le'));

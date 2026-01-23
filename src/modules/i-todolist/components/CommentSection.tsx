@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Send, Trash2 } from 'lucide-react';
+import { Trash2, Send } from 'lucide-react';
 import type { Comment } from '../types';
 import { commentService } from '../services/taskService';
-import { Button } from '@/app/components/ui/button';
+import { Button } from './Button';
 import styles from './CommentSection.module.css';
 
 interface CommentSectionProps {
@@ -79,30 +79,35 @@ export function CommentSection({ taskId }: CommentSectionProps) {
         />
         <div className={styles.formActions}>
           <Button type="submit" size="sm" disabled={!newComment.trim() || loading}>
-            <Send className="h-4 w-4" />
+            <Send size={16} />
             Gửi
           </Button>
         </div>
       </form>
 
       {/* Comments list */}
-      <div className={styles.list}>
+      <div className={styles.commentsList}>
         {comments.length === 0 ? (
           <div className={styles.empty}>Chưa có bình luận nào</div>
         ) : (
           comments.map((comment) => (
             <div key={comment.id} className={styles.comment}>
-              <div className={styles.commentHeader}>
-                <span className={styles.author}>{comment.author}</span>
-                <span className={styles.time}>{formatDate(comment.createdAt)}</span>
+              <div className={styles.avatar}>
+                {comment.author.charAt(0).toUpperCase()}
               </div>
-              <div className={styles.commentContent}>{comment.content}</div>
+              <div className={styles.commentContent}>
+                <div className={styles.commentHeader}>
+                  <span className={styles.author}>{comment.author}</span>
+                  <span className={styles.time}>{formatDate(comment.createdAt)}</span>
+                </div>
+                <div className={styles.text}>{comment.content}</div>
+              </div>
               <button
                 onClick={() => handleDelete(comment.id)}
                 className={styles.deleteButton}
                 title="Xóa bình luận"
               >
-                <Trash2 className="h-3 w-3" />
+                <Trash2 size={14} />
               </button>
             </div>
           ))

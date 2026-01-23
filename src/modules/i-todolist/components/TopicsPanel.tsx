@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Plus, Folder, Minimize2 } from 'lucide-react';
+import { Plus, Folder, LayoutGrid } from 'lucide-react';
 import type { Topic } from '../types';
 import styles from './TopicsPanel.module.css';
 
@@ -21,29 +20,33 @@ export function TopicsPanel({
   return (
     <div className={styles.panel}>
       <div className={styles.header}>
-        <h2 className={styles.title}>Chủ đề / Phiên</h2>
-        <button className={styles.toggleButton} aria-label="Thu gọn">
-          <Minimize2 size={18} />
+        <div className={styles.headerTitle}>
+          <span>Chủ đề / Phiên</span>
+          <button className={styles.layoutButton} aria-label="Cài đặt">
+            <LayoutGrid size={16} />
+          </button>
+        </div>
+      </div>
+
+      <div className={styles.buttonWrapper}>
+        <button className={styles.createButton} onClick={onCreateTopic}>
+          <Plus size={16} />
+          Tạo chủ đề mới
         </button>
       </div>
 
-      <button className={styles.createButton} onClick={onCreateTopic}>
-        <Plus size={18} />
-        Tạo chủ đề mới
-      </button>
-
-      <div className={styles.topicsList}>
+      <div className={styles.list}>
         <button
-          className={`${styles.allTasksItem} ${
+          className={`${styles.topicItem} ${
             selectedTopicId === null ? styles.active : ''
           }`}
           onClick={() => onTopicSelect(null)}
         >
-          <Folder size={16} className={styles.folderIcon} />
+          <Folder size={16} className={styles.topicIcon} />
           <div className={styles.topicContent}>
-            <div className={styles.topicName}>Tất cả nhiệm vụ</div>
+            <span className={styles.topicName}>Tất cả nhiệm vụ</span>
           </div>
-          <div className={styles.topicCount}>{totalTaskCount}</div>
+          <span className={styles.count}>{totalTaskCount}</span>
         </button>
 
         {topics.map((topic) => (
@@ -55,13 +58,13 @@ export function TopicsPanel({
             onClick={() => onTopicSelect(topic.id)}
           >
             <div
-              className={styles.colorIndicator}
+              className={styles.colorDot}
               style={{ backgroundColor: topic.color }}
             />
             <div className={styles.topicContent}>
-              <div className={styles.topicName}>{topic.name}</div>
+              <span className={styles.topicName}>{topic.name}</span>
             </div>
-            <div className={styles.topicCount}>{topic.taskCount}</div>
+            <span className={styles.count}>{topic.taskCount}</span>
           </button>
         ))}
       </div>

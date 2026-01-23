@@ -1,14 +1,11 @@
-.indicator {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-1-5);
-}
-
+/* ========== Priority Indicator ========== */
 .dot {
+  display: inline-block;
   border-radius: var(--radius-full);
   flex-shrink: 0;
 }
 
+/* Sizes */
 .dot.sm {
   width: 6px;
   height: 6px;
@@ -24,8 +21,32 @@
   height: 10px;
 }
 
+/* Priority Colors */
+.dot.urgent {
+  background-color: var(--destructive);
+}
+
+.dot.high {
+  background-color: var(--warning);
+}
+
+.dot.medium {
+  background-color: var(--info);
+}
+
+.dot.low {
+  background-color: var(--muted-foreground);
+}
+
+/* With Label */
+.wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
 .label {
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
   color: var(--foreground);
 }

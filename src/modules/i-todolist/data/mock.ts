@@ -1,5 +1,12 @@
 import type { Task, Comment } from '../types';
 
+// Helper to get date relative to now
+const getRelativeDate = (hoursFromNow: number) => {
+  const date = new Date();
+  date.setHours(date.getHours() + hoursFromNow);
+  return date.toISOString();
+};
+
 export const MOCK_TASKS: Task[] = [
   {
     id: '1',
@@ -7,8 +14,9 @@ export const MOCK_TASKS: Task[] = [
     description: 'Tổng hợp dữ liệu và viết báo cáo tổng kết công việc tháng đầu năm',
     status: 'in-progress',
     priority: 'urgent',
-    dueDate: '2026-01-25T17:00:00Z',
+    dueDate: getRelativeDate(3), // Due in 3 hours - will trigger notification
     tags: ['báo cáo', 'quan trọng'],
+    topicId: 'topic-1',
     notes: 'Cần phối hợp với phòng kế hoạch để lấy số liệu',
     attachments: [],
     createdAt: '2026-01-15T08:00:00Z',
@@ -24,6 +32,7 @@ export const MOCK_TASKS: Task[] = [
     priority: 'high',
     dueDate: '2026-01-28T17:00:00Z',
     tags: ['tài liệu', 'api', 'technical'],
+    topicId: 'topic-3',
     notes: 'Tham khảo tài liệu cũ và ghi chú của team dev',
     attachments: [],
     createdAt: '2026-01-18T09:00:00Z',
@@ -37,8 +46,9 @@ export const MOCK_TASKS: Task[] = [
     description: 'Kiểm tra và review code cho pull request module thanh toán',
     status: 'not-started',
     priority: 'high',
-    dueDate: '2026-01-22T17:00:00Z',
+    dueDate: getRelativeDate(12), // Due in 12 hours - will trigger notification
     tags: ['code-review', 'urgent'],
+    topicId: 'topic-2',
     notes: 'Chú ý kiểm tra logic xử lý exception',
     attachments: [],
     createdAt: '2026-01-21T08:30:00Z',
@@ -53,6 +63,7 @@ export const MOCK_TASKS: Task[] = [
     priority: 'medium',
     dueDate: '2026-01-20T14:00:00Z',
     tags: ['meeting', 'weekly'],
+    topicId: 'topic-1',
     notes: 'Đã thảo luận kế hoạch sprint mới',
     attachments: [],
     createdAt: '2026-01-13T10:00:00Z',
@@ -69,6 +80,7 @@ export const MOCK_TASKS: Task[] = [
     priority: 'medium',
     dueDate: '2026-01-19T17:00:00Z',
     tags: ['support', 'customer'],
+    topicId: 'topic-2',
     notes: 'Đã hướng dẫn reset password và xác nhận email',
     attachments: [],
     createdAt: '2026-01-19T09:00:00Z',
@@ -85,6 +97,7 @@ export const MOCK_TASKS: Task[] = [
     priority: 'low',
     dueDate: '2026-01-18T17:00:00Z',
     tags: ['training', 'presentation'],
+    topicId: 'topic-1',
     notes: 'Slides đã được duyệt bởi trưởng phòng',
     attachments: [],
     createdAt: '2026-01-10T10:00:00Z',
@@ -101,6 +114,7 @@ export const MOCK_TASKS: Task[] = [
     priority: 'high',
     dueDate: '2026-01-30T17:00:00Z',
     tags: ['testing', 'payment', 'qa'],
+    topicId: 'topic-3',
     notes: 'Cần test với cả môi trường sandbox và production',
     attachments: [],
     createdAt: '2026-01-20T14:00:00Z',
@@ -115,6 +129,7 @@ export const MOCK_TASKS: Task[] = [
     priority: 'low',
     dueDate: '2026-02-15T17:00:00Z',
     tags: ['learning', 'research', 'react'],
+    topicId: 'topic-2',
     notes: 'Tạm dừng để ưu tiên các công việc khác',
     attachments: [],
     createdAt: '2026-01-05T09:00:00Z',

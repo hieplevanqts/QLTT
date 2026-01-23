@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Clock, CheckCircle2, Edit2, MessageCircle } from 'lucide-react';
+import { Clock, CheckCircle2, Edit2, MessageCircle, PlusCircle } from 'lucide-react';
 import { historyService } from '../services/taskService';
 import type { TaskHistory } from '../types';
 import styles from './TaskHistoryTimeline.module.css';
@@ -39,7 +39,7 @@ export function TaskHistoryTimeline({ taskId }: TaskHistoryTimelineProps) {
   const getActionIcon = (action: TaskHistory['action']) => {
     switch (action) {
       case 'created':
-        return <CheckCircle2 size={16} />;
+        return <PlusCircle size={16} />;
       case 'status_changed':
         return <CheckCircle2 size={16} />;
       case 'updated':
@@ -51,23 +51,23 @@ export function TaskHistoryTimeline({ taskId }: TaskHistoryTimelineProps) {
     }
   };
 
-  const getActionColor = (action: TaskHistory['action']) => {
+  const getActionClass = (action: TaskHistory['action']) => {
     switch (action) {
       case 'created':
-        return 'var(--color-success)';
+        return styles.created;
       case 'status_changed':
-        return 'var(--color-primary)';
+        return styles.statusChanged;
       case 'updated':
-        return 'var(--color-warning)';
-      case 'commented':
-        return 'var(--color-info)';
+        return styles.updated;
+      case 'completed':
+        return styles.completed;
       default:
-        return 'var(--color-text-tertiary)';
+        return '';
     }
   };
 
   if (loading) {
-    return <div className={styles.loading}>Đang tải lịch sử...</div>;
+    return <div className={styles.empty}>Đang tải lịch sử...</div>;
   }
 
   if (history.length === 0) {
@@ -75,29 +75,20 @@ export function TaskHistoryTimeline({ taskId }: TaskHistoryTimelineProps) {
   }
 
   return (
-    <div className={styles.container}>
-      <h3 className={styles.title}>Lịch sử thay đổi</h3>
-      <div className={styles.timeline}>
-        {history.map((entry, index) => (
-          <div key={entry.id} className={styles.timelineItem}>
-            <div 
-              className={styles.timelineIcon}
-              style={{ backgroundColor: getActionColor(entry.action) }}
-            >
-              {getActionIcon(entry.action)}
-            </div>
-            <div className={styles.timelineContent}>
-              <div className={styles.timelineDescription}>{entry.description}</div>
-              <div className={styles.timelineMeta}>
-                <span className={styles.timelineAuthor}>{entry.author}</span>
-                <span className={styles.timelineDot}>•</span>
-                <span className={styles.timelineDate}>{formatDate(entry.createdAt)}</span>
-              </div>
-            </div>
-            {index < history.length - 1 && <div className={styles.timelineLine} />}
+    <div className={styles.timeline}>
+      {history.map((entry) => (
+        <div key={entry.id} className={styles.item}>
+          <div className={`${styles.iconWrapper} ${getActionClass(entry.action)}`}>
+            {getActionIcon(entry.action)}
           </div>
-        ))}
-      </div>
+          <div className={styles.content}>
+            <p className={styles.action}>
+              <strong>{entry.author}</strong> {entry.description}
+            </p>
+            <span className={styles.timestamp}>{formatDate(entry.createdAt)}</span>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

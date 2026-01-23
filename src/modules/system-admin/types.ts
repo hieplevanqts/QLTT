@@ -80,6 +80,20 @@ export type ModuleInfo = {
 
 export type ModuleDetail = ModuleInfo & {
   files?: string[];
+  fileChanges?: {
+    baseVersion?: string;
+    baseJobId?: string;
+    baseAt?: string;
+    added: string[];
+    modified: string[];
+    removed: string[];
+  };
+  cssAudit?: { path: string; status: "added" | "modified" | "unchanged" }[];
+  missingCssImports?: string[];
+  fileHealth?: {
+    entryExists: boolean;
+    routesExists: boolean;
+  };
 };
 
 export type ModuleManifestOverrides = {
