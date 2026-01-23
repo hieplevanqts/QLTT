@@ -3,12 +3,15 @@ import styles from './LeafletMap.module.css';
 import { Restaurant } from '../../../data/restaurantData';
 import { districtBoundaries } from '../../../data/districtBoundaries';
 import { getWardByName, wardBoundariesData } from '../../../data/wardBoundaries';
-import { teamsData } from '../../../data/officerTeamData';
 import { fetchProvinceCoordinates, fetchWardCoordinates } from '../../../utils/api/locationsApi';
 // Import utility functions
 import { getMarkerSize, getIconSize } from './utils/markerUtils';
 import { generatePopupContent } from './utils/popupUtils';
 import { generateMarkerIconHtml, hasAlertStyling } from './utils/markerRenderer';
+// Import hooks and utils for department areas
+import { useDepartmentAreas } from './hooks/useDepartmentAreas';
+import { transformDepartmentAreasToMapData, calculateAverageCenter, getValidCenters } from './utils/departmentAreasUtils';
+import { useAppSelector } from '../../../app/hooks';
 
 type CategoryFilter = {
   [key: string]: boolean;  // Dynamic keys from point_status table
@@ -50,6 +53,42 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
   const previousShowMerchantsRef = useRef<boolean>(false); // Track previous showMerchants state
   const previousSelectedProvinceRef = useRef<string | undefined>(undefined); // Track previous selected province
   const previousSelectedWardRef = useRef<string | undefined>(undefined); // Track previous selected ward
+  
+  // 🔥 Get divisionId and teamId from Redux store for department areas
+  const reduxQLTTScope = useAppSelector((state) => state.qlttScope);
+  const divisionId = reduxQLTTScope?.scope?.divisionId;
+  const teamId = reduxQLTTScope?.scope?.teamId;
+  
+  // 🔥 Fetch department areas from API (priority: selectedTeamId > teamId > divisionId)
+  // 🔥 FIX: Always fetch when we have divisionId/teamId, not just when showWardBoundaries is true
+  // This ensures data is available when user switches to officers layer
+  const targetDepartmentId = selectedTeamId || teamId || divisionId;
+  const { departmentAreas, isLoading: isLoadingDepartmentAreas, error: departmentAreasError, currentDepartmentId } = useDepartmentAreas(
+    targetDepartmentId || null,
+    true // Always enabled - fetch data whenever we have a department ID
+  );
+  
+  // 🔥 Transform department areas data to map-friendly format
+  const departmentMapData = useMemo(() => {
+    if (!targetDepartmentId) {
+      return null;
+    }
+    
+    if (isLoadingDepartmentAreas) {
+      return null;
+    }
+    
+    if (departmentAreasError) {
+      return null;
+    }
+    
+    if (!departmentAreas) {
+      return null;
+    }
+    
+    const transformed = transformDepartmentAreasToMapData(departmentAreas, targetDepartmentId);
+    return transformed;
+  }, [departmentAreas, targetDepartmentId, currentDepartmentId, isLoadingDepartmentAreas, departmentAreasError]);
 
   // Marker size and icon size are now imported from utils
 
@@ -88,146 +127,131 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       restaurants: filteredRestaurants.slice(0, 3).map(r => ({ id: r.id, name: r.name, lat: r.lat, lng: r.lng }))
     });
 
-    // 🔥 NEW: If showWardBoundaries is true, render team markers instead of polygons
-    // But still render restaurant markers if showMerchants is true
-    if (showWardBoundaries) {
+    // 🔥 FIX: Render department markers ONLY when showWardBoundaries is true AND showMerchants is false
+    // Department markers should NOT appear on merchants layer
+    if (showWardBoundaries && !showMerchants) {
       
       // Remove old ward boundaries (polygons)
       wardBoundariesLayerRef.current.forEach(polygon => polygon.remove());
       wardBoundariesLayerRef.current = [];
       
-      // Filter teams if selectedTeamId is provided
-      const teamsToRender = selectedTeamId 
-        ? teamsData.filter(t => t.id === selectedTeamId)
-        : teamsData;
-      
-      // Calculate center position for each team based on their managed wards
-      teamsToRender.forEach((team) => {
-        // Find center coordinates for all wards managed by this team
-        const teamWardCenters: [number, number][] = [];
+      if (isLoadingDepartmentAreas) {
+        // Show loading state (optional - can add loading indicator)
+      } else if (departmentAreasError) {
+        // Show error message
+      } else if (departmentMapData && departmentMapData.areas.length > 0) {
+        // 🔥 Render department markers from API data
+        const validCenters = getValidCenters(departmentMapData);
         
-        team.managedWards.forEach((ward) => {
-          // Find ward boundary data to get center coordinates
-          const wardBoundary = wardBoundariesData.find(
-            w => w.name === ward.name && w.district === ward.district
-          );
+        if (validCenters.length > 0) {
+          // Calculate average center for the department
+          const departmentCenter = calculateAverageCenter(validCenters);
           
-          if (wardBoundary && wardBoundary.center) {
-            teamWardCenters.push(wardBoundary.center);
-          } else {
-            // Fallback: try to find district center from districtBoundaries
-            // This is a fallback if ward boundary data is not available
-            const districtData = districtBoundaries[ward.district];
-            if (districtData && districtData.center) {
-              teamWardCenters.push(districtData.center);
-            }
+          if (departmentCenter) {
+            // Create department icon (SVG - person/group icon)
+            const departmentIconSvg = `
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#005cb6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            `;
+            
+            // Create custom icon for department
+            const departmentIcon = L.divIcon({
+              html: `
+                <div style="
+                  background: white;
+                  border-radius: 50%;
+                  width: 28px;
+                  height: 28px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+                  border: 2px solid #005cb6;
+                ">
+                  ${departmentIconSvg}
+                </div>
+              `,
+              className: 'department-marker',
+              iconSize: [28, 28],
+              iconAnchor: [14, 14],
+            });
+            
+            // Create marker for department
+            const departmentMarker = L.marker(departmentCenter, { icon: departmentIcon });
+            
+            // Create tooltip content with department information
+            const areaCount = departmentMapData.areas.length;
+            const officers = departmentMapData.areas
+              .map(area => area.coordinates.officer)
+              .filter((officer): officer is string => officer !== null && officer !== '');
+            const uniqueOfficers = Array.from(new Set(officers));
+            
+            const tooltipContent = `
+              <div style="
+                font-family: 'Inter', sans-serif;
+                max-width: 300px;
+                padding: 8px;
+              ">
+                <div style="
+                  font-weight: 600;
+                  font-size: 14px;
+                  color: #005cb6;
+                  margin-bottom: 8px;
+                  border-bottom: 2px solid #005cb6;
+                  padding-bottom: 4px;
+                ">
+                  Phòng ban
+                </div>
+                <div style="font-size: 12px; margin-bottom: 6px;">
+                  <strong>Địa bàn phụ trách:</strong> ${areaCount} khu vực
+                </div>
+                ${uniqueOfficers.length > 0 ? `
+                  <div style="font-size: 12px; margin-bottom: 6px;">
+                    <strong>Cán bộ phụ trách:</strong> ${uniqueOfficers.length} người
+                  </div>
+                  <div style="font-size: 11px; color: #666; margin-top: 8px; max-height: 120px; overflow-y: auto;">
+                    <strong>Danh sách cán bộ:</strong><br/>
+                    ${uniqueOfficers.map(officer => `• ${officer}`).join('<br/>')}
+                  </div>
+                ` : ''}
+              </div>
+            `;
+            
+            // Add tooltip on hover
+            departmentMarker.bindTooltip(tooltipContent, {
+              permanent: false,
+              direction: 'top',
+              className: 'department-tooltip',
+              offset: [0, -10],
+            });
+            
+            // Add click handler to open department detail modal
+            departmentMarker.on('click', () => {
+              // Call window function to open department detail (similar to openPointDetail)
+              if (typeof (window as any).openDepartmentDetail === 'function') {
+                (window as any).openDepartmentDetail(departmentMapData.departmentId, departmentMapData);
+              }
+            });
+            
+            departmentMarker.addTo(mapInstanceRef.current);
+            markersRef.current.push(departmentMarker);
           }
-        });
-        
-        if (teamWardCenters.length === 0) return;
-        
-        // Calculate average center position for the team
-        const avgLat = teamWardCenters.reduce((sum, [lat]) => sum + lat, 0) / teamWardCenters.length;
-        const avgLng = teamWardCenters.reduce((sum, [, lng]) => sum + lng, 0) / teamWardCenters.length;
-        const teamCenter: [number, number] = [avgLat, avgLng];
-        
-        // Create team icon (SVG - person/group icon)
-        const teamIconSvg = `
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#005cb6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-          </svg>
-        `;
-        
-        // Create custom icon for team
-        const teamIcon = L.divIcon({
-          html: `
-            <div style="
-              background: white;
-              border-radius: 50%;
-              width: 28px;
-              height: 28px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-              border: 2px solid #005cb6;
-            ">
-              ${teamIconSvg}
-            </div>
-          `,
-          className: 'team-marker',
-          iconSize: [28, 28],
-          iconAnchor: [14, 14],
-        });
-        
-        // Create marker for team
-        const teamMarker = L.marker(teamCenter, { icon: teamIcon });
-        
-        // Create tooltip content with team information
-        const teamLeader = team.officers.find(o => o.isTeamLeader) || team.officers[0];
-        const tooltipContent = `
-          <div style="
-            font-family: 'Inter', sans-serif;
-            max-width: 300px;
-            padding: 8px;
-          ">
-            <div style="
-              font-weight: 600;
-              font-size: 14px;
-              color: #005cb6;
-              margin-bottom: 8px;
-              border-bottom: 2px solid #005cb6;
-              padding-bottom: 4px;
-            ">
-              ${team.name}
-            </div>
-            <div style="font-size: 12px; margin-bottom: 6px;">
-              <strong>Đội trưởng:</strong> ${teamLeader.fullName}
-            </div>
-            <div style="font-size: 12px; margin-bottom: 6px;">
-              <strong>Số cán bộ:</strong> ${team.officers.length}
-            </div>
-            <div style="font-size: 12px; margin-bottom: 6px;">
-              <strong>Địa bàn phụ trách:</strong> ${team.managedWards.length} phường/xã
-            </div>
-            <div style="font-size: 11px; color: #666; margin-top: 8px; max-height: 120px; overflow-y: auto;">
-              <strong>Danh sách cán bộ:</strong><br/>
-              ${team.officers.map(o => 
-                `• ${o.fullName} ${o.isTeamLeader ? '(Đội trưởng)' : ''}`
-              ).join('<br/>')}
-            </div>
-          </div>
-        `;
-        
-        // Add tooltip on hover
-        teamMarker.bindTooltip(tooltipContent, {
-          permanent: false,
-          direction: 'top',
-          className: 'team-tooltip',
-          offset: [0, -10],
-        });
-        
-        // Add click handler
-        teamMarker.on('click', () => {
-          if (onWardClick && team.managedWards.length > 0) {
-            const firstWard = team.managedWards[0];
-            onWardClick(firstWard.name, firstWard.district);
-          }
-        });
-        
-        teamMarker.addTo(mapInstanceRef.current);
-        markersRef.current.push(teamMarker);
-      });
+        }
+      }
       
-      // 🔥 FIX: Only exit early if showMerchants is false
-      // If showMerchants is true, continue to render restaurant markers
-      if (!showMerchants) {
-      return; // Exit early - don't render restaurant markers
+      // 🔥 FIX: Exit early - don't render restaurant markers when showing department markers
+      // Department markers should ONLY appear when showWardBoundaries = true AND showMerchants = false
+      return;
     }
-      // Otherwise, continue to render restaurant markers below
+    
+    // 🔥 FIX: Only render merchant markers when showMerchants is true
+    // This ensures department markers don't appear on merchants layer
+    if (!showMerchants) {
+      return; // Exit early - don't render restaurant markers
     }
     
    
@@ -241,7 +265,6 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       const hasValidLng = restaurant.lng !== null && restaurant.lng !== undefined && !isNaN(restaurant.lng);
       if (!hasValidLat || !hasValidLng) {
         invalidCount++;
-        console.log('❌ Invalid coordinates:', { id: restaurant.id, name: restaurant.name, lat: restaurant.lat, lng: restaurant.lng });
         return;
       }
       validCount++;
@@ -271,11 +294,7 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
         selectedMarkerRef.current = marker;
       }
     });
-    
-    // 🔥 DEBUG: Log marker counts
-    console.log('✅ LeafletMap markers added:', { validCount, invalidCount, total: filteredRestaurants.length });
-    
-  }, [filteredRestaurants, selectedRestaurant, showWardBoundaries]); // 🔥 FIX: Removed onPointClick - it's only used in HTML onclick handler, not in the function body
+  }, [filteredRestaurants, selectedRestaurant, showWardBoundaries, departmentMapData, isLoadingDepartmentAreas, departmentAreasError]); // 🔥 FIX: Added departmentMapData and loading states to dependencies
 
   // 🔥 Store updateMarkers in ref for map init to use
   useEffect(() => {
@@ -473,48 +492,27 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
     handleAutoZoom();
   }, [handleAutoZoom]);
 
-  // 🔥 NEW: Zoom to selected team when selectedTeamId changes (for officers layer)
+  // 🔥 NEW: Zoom to selected department when departmentMapData changes (for officers layer)
   useEffect(() => {
     if (!mapInstanceRef.current || !leafletRef.current || !showWardBoundaries) return;
-    if (!selectedTeamId) return;
+    if (!departmentMapData || departmentMapData.areas.length === 0) return;
     
-    const L = leafletRef.current;
-    const selectedTeam = teamsData.find(t => t.id === selectedTeamId);
-    if (!selectedTeam) return;
+    const validCenters = getValidCenters(departmentMapData);
+    if (validCenters.length === 0) return;
     
-    const teamWardCenters: [number, number][] = [];
+    const departmentCenter = calculateAverageCenter(validCenters);
+    if (!departmentCenter) return;
     
-    selectedTeam.managedWards.forEach((ward) => {
-      const wardBoundary = wardBoundariesData.find(
-        w => w.name === ward.name && w.district === ward.district
-      );
-      
-      if (wardBoundary && wardBoundary.center) {
-        teamWardCenters.push(wardBoundary.center);
-      } else {
-        const districtData = districtBoundaries[ward.district];
-        if (districtData && districtData.center) {
-          teamWardCenters.push(districtData.center);
-        }
+    // Zoom to department center
+    setTimeout(() => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.setView(departmentCenter, 14, {
+          animate: true,
+          duration: 0.8
+        });
       }
-    });
-    
-    if (teamWardCenters.length > 0) {
-      const avgLat = teamWardCenters.reduce((sum, [lat]) => sum + lat, 0) / teamWardCenters.length;
-      const avgLng = teamWardCenters.reduce((sum, [, lng]) => sum + lng, 0) / teamWardCenters.length;
-      const teamCenter: [number, number] = [avgLat, avgLng];
-      
-      // Zoom to team center
-      setTimeout(() => {
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.setView(teamCenter, 14, {
-            animate: true,
-            duration: 0.8
-          });
-        }
-      }, 300); // Delay to ensure markers are rendered first
-    }
-  }, [selectedTeamId, showWardBoundaries]);
+    }, 300); // Delay to ensure markers are rendered first
+  }, [departmentMapData, showWardBoundaries]);
 
   // Handle district boundary highlighting and zoom
   useEffect(() => {
@@ -666,10 +664,6 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
     // Wait a bit for map to be fully ready and for merchants to be loaded
     const timeoutId = setTimeout(() => {
       if (!mapInstanceRef.current || !leafletRef.current) {
-        console.log('⏳ LeafletMap: Map not ready yet, waiting...', {
-          mapInstance: !!mapInstanceRef.current,
-          leaflet: !!leafletRef.current
-        });
         return;
       }
       
@@ -680,15 +674,6 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       if (!provinceChanged && !wardChanged) {
         return;
       }
-      
-      console.log('🗺️ LeafletMap: Location filter changed', {
-        selectedProvince,
-        selectedWard,
-        provinceChanged,
-        wardChanged,
-        restaurantsCount: restaurants.length,
-        filteredRestaurantsCount: filteredRestaurants.length
-      });
       
     // Priority: ward > province
     // 🔥 NOTE: ward_coordinates API is called for map zooming (getting boundaries), NOT for filtering merchants
@@ -705,8 +690,6 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
         const avgLng = validMerchants.reduce((sum, m) => sum + (m.lng || 0), 0) / validMerchants.length;
         const center: [number, number] = [avgLat, avgLng];
         
-        console.log('📍 LeafletMap: Using merchants coordinates for ward (skipping API call):', center, validMerchants.length);
-        
         if (mapInstanceRef.current) {
           mapInstanceRef.current.setView(center, 15, {
             animate: true,
@@ -717,10 +700,7 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       }
       
       // Only call API if we don't have merchants (for accurate boundaries)
-      console.log('📍 LeafletMap: No merchants available, fetching ward coordinates from API for:', selectedWard);
       fetchWardCoordinates(selectedWard).then((coords) => {
-        console.log('📍 LeafletMap: Ward coordinates received:', coords);
-        
         let center: [number, number] | null = null;
         let bounds: any = null;
         
@@ -735,22 +715,15 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
           // Fallback: Calculate center from merchants that are already filtered by ward_id
           // Use restaurants prop directly as it's already filtered by MapPage
           const merchantsToUse = restaurants.length > 0 ? restaurants : filteredRestaurants;
-          console.log('📍 LeafletMap: No coordinates from DB, using fallback from merchants. Total merchants:', merchantsToUse.length, 'restaurants:', restaurants.length, 'filtered:', filteredRestaurants.length);
           
           if (merchantsToUse.length > 0) {
             const validMerchants = merchantsToUse.filter(m => m.lat && m.lng && m.lat !== 0 && m.lng !== 0);
-            console.log('📍 LeafletMap: Valid merchants with coordinates:', validMerchants.length);
             
             if (validMerchants.length > 0) {
               const avgLat = validMerchants.reduce((sum, m) => sum + (m.lat || 0), 0) / validMerchants.length;
               const avgLng = validMerchants.reduce((sum, m) => sum + (m.lng || 0), 0) / validMerchants.length;
               center = [avgLat, avgLng];
-              console.log('📍 LeafletMap: Using fallback center from merchants:', center, validMerchants.length);
-            } else {
-              console.warn('📍 LeafletMap: No valid merchants with coordinates for fallback');
             }
-          } else {
-            console.warn('📍 LeafletMap: No merchants available for fallback');
           }
         }
         
@@ -761,22 +734,16 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
               animate: true,
               duration: 0.8
             });
-            console.log('📍 LeafletMap: Fitted to ward bounds');
           } else {
             mapInstanceRef.current.setView(center, 15, {
               animate: true,
               duration: 0.8
             });
-            console.log('📍 LeafletMap: Zoomed to ward center');
           }
-        } else {
-          console.warn('⚠️ LeafletMap: No coordinates available for ward:', selectedWard);
         }
       }).catch((error) => {
-        console.error('❌ LeafletMap: Error fetching ward coordinates:', error);
         // Fallback: use merchants that are already filtered by ward_id
         const merchantsToUse = restaurants.length > 0 ? restaurants : filteredRestaurants;
-        console.log('📍 LeafletMap: Error fallback - using merchants. Total:', merchantsToUse.length, 'restaurants:', restaurants.length);
         if (merchantsToUse.length > 0 && mapInstanceRef.current) {
           const validMerchants = merchantsToUse.filter(m => m.lat && m.lng && m.lat !== 0 && m.lng !== 0);
           if (validMerchants.length > 0) {
@@ -786,7 +753,6 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
               animate: true,
               duration: 0.8
             });
-            console.log('📍 LeafletMap: Error fallback zoom to merchants center:', [avgLat, avgLng], validMerchants.length);
           }
         }
       });
@@ -805,8 +771,6 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
         const avgLng = validMerchants.reduce((sum, m) => sum + (m.lng || 0), 0) / validMerchants.length;
         const center: [number, number] = [avgLat, avgLng];
         
-        console.log('🗺️ LeafletMap: Using merchants coordinates for province (skipping API call):', center, validMerchants.length);
-        
         if (mapInstanceRef.current) {
           mapInstanceRef.current.setView(center, 12, {
             animate: true,
@@ -817,10 +781,7 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       }
       
       // Only call API if we don't have merchants (for accurate boundaries)
-      console.log('🗺️ LeafletMap: No merchants available, fetching province coordinates from API for:', selectedProvince);
       fetchProvinceCoordinates(selectedProvince).then((coords) => {
-        console.log('🗺️ LeafletMap: Province coordinates received:', coords);
-        
         let center: [number, number] | null = null;
         let bounds: any = null;
         
@@ -835,22 +796,15 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
           // Fallback: Calculate center from merchants that are already filtered by province_id
           // Use restaurants prop directly as it's already filtered by MapPage
           const merchantsToUse = restaurants.length > 0 ? restaurants : filteredRestaurants;
-          console.log('🗺️ LeafletMap: No coordinates from DB, using fallback from merchants. Total merchants:', merchantsToUse.length, 'restaurants:', restaurants.length, 'filtered:', filteredRestaurants.length);
           
           if (merchantsToUse.length > 0) {
             const validMerchants = merchantsToUse.filter(m => m.lat && m.lng && m.lat !== 0 && m.lng !== 0);
-            console.log('🗺️ LeafletMap: Valid merchants with coordinates:', validMerchants.length);
             
             if (validMerchants.length > 0) {
               const avgLat = validMerchants.reduce((sum, m) => sum + (m.lat || 0), 0) / validMerchants.length;
               const avgLng = validMerchants.reduce((sum, m) => sum + (m.lng || 0), 0) / validMerchants.length;
               center = [avgLat, avgLng];
-              console.log('🗺️ LeafletMap: Using fallback center from merchants:', center, validMerchants.length);
-            } else {
-              console.warn('🗺️ LeafletMap: No valid merchants with coordinates for fallback');
             }
-          } else {
-            console.warn('🗺️ LeafletMap: No merchants available for fallback');
           }
         }
         
@@ -861,22 +815,16 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
               animate: true,
               duration: 0.8
             });
-            console.log('🗺️ LeafletMap: Fitted to province bounds');
           } else {
             mapInstanceRef.current.setView(center, 11, {
               animate: true,
               duration: 0.8
             });
-            console.log('🗺️ LeafletMap: Zoomed to province center');
           }
-        } else {
-          console.warn('⚠️ LeafletMap: No coordinates available for province:', selectedProvince);
         }
       }).catch((error) => {
-        console.error('❌ LeafletMap: Error fetching province coordinates:', error);
         // Fallback: use merchants that are already filtered by province_id
         const merchantsToUse = restaurants.length > 0 ? restaurants : filteredRestaurants;
-        console.log('🗺️ LeafletMap: Error fallback - using merchants. Total:', merchantsToUse.length, 'restaurants:', restaurants.length);
         if (merchantsToUse.length > 0 && mapInstanceRef.current) {
           const validMerchants = merchantsToUse.filter(m => m.lat && m.lng && m.lat !== 0 && m.lng !== 0);
           if (validMerchants.length > 0) {
@@ -886,14 +834,9 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
               animate: true,
               duration: 0.8
             });
-            console.log('🗺️ LeafletMap: Error fallback zoom to merchants center:', [avgLat, avgLng], validMerchants.length);
           }
         }
       });
-      } else if (!selectedProvince && !selectedWard && (provinceChanged || wardChanged)) {
-        // Reset zoom when filters are cleared
-        console.log('🗺️ LeafletMap: Location filters cleared, resetting view');
-        // Could reset to default view here if needed
       }
       
       // Update previous refs
