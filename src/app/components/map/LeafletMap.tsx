@@ -70,37 +70,23 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
   
   // 🔥 Transform department areas data to map-friendly format
   const departmentMapData = useMemo(() => {
-    console.log('🔍 LeafletMap: Computing departmentMapData:', {
-      departmentAreas: !!departmentAreas,
-      departmentAreasValue: departmentAreas,
-      targetDepartmentId,
-      currentDepartmentId,
-      isLoading: isLoadingDepartmentAreas,
-      hasError: !!departmentAreasError
-    });
-    
     if (!targetDepartmentId) {
-      console.log('⚠️ LeafletMap: No targetDepartmentId');
       return null;
     }
     
     if (isLoadingDepartmentAreas) {
-      console.log('⏳ LeafletMap: Still loading department areas...');
       return null;
     }
     
     if (departmentAreasError) {
-      console.error('❌ LeafletMap: Error loading department areas:', departmentAreasError);
       return null;
     }
     
     if (!departmentAreas) {
-      console.log('⚠️ LeafletMap: No departmentAreas data available');
       return null;
     }
     
     const transformed = transformDepartmentAreasToMapData(departmentAreas, targetDepartmentId);
-    console.log('✅ LeafletMap: Transformed departmentMapData:', transformed);
     return transformed;
   }, [departmentAreas, targetDepartmentId, currentDepartmentId, isLoadingDepartmentAreas, departmentAreasError]);
 
@@ -133,14 +119,6 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
     markersRef.current = [];
     selectedMarkerRef.current = null;
 
-    // 🔥 DEBUG: Log restaurants count
-    console.log('🗺️ LeafletMap updateMarkers:', {
-      showWardBoundaries,
-      showMerchants,
-      restaurantsCount: filteredRestaurants.length,
-      restaurants: filteredRestaurants.slice(0, 3).map(r => ({ id: r.id, name: r.name, lat: r.lat, lng: r.lng }))
-    });
-
     // 🔥 FIX: Render department markers ONLY when showWardBoundaries is true AND showMerchants is false
     // Department markers should NOT appear on merchants layer
     if (showWardBoundaries && !showMerchants) {
@@ -149,50 +127,17 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       wardBoundariesLayerRef.current.forEach(polygon => polygon.remove());
       wardBoundariesLayerRef.current = [];
       
-      // 🔥 Check if we have department areas data from API
-      console.log('🔍 LeafletMap: Checking department areas state:', {
-        isLoading: isLoadingDepartmentAreas,
-        hasError: !!departmentAreasError,
-        error: departmentAreasError,
-        hasDepartmentMapData: !!departmentMapData,
-        departmentMapDataAreasCount: departmentMapData?.areas.length || 0,
-        targetDepartmentId,
-        currentDepartmentId,
-        hasDepartmentAreas: !!departmentAreas,
-        departmentAreasValue: departmentAreas,
-        departmentAreasType: typeof departmentAreas,
-        departmentAreasIsArray: Array.isArray(departmentAreas),
-        showWardBoundaries,
-        showMerchants
-      });
-      
       if (isLoadingDepartmentAreas) {
         // Show loading state (optional - can add loading indicator)
-        console.log('🔄 Loading department areas...');
       } else if (departmentAreasError) {
         // Show error message
-        console.error('❌ Error loading department areas:', departmentAreasError);
-        console.warn('⚠️ Không thể tải dữ liệu departments từ API. Vui lòng kiểm tra tài liệu: docs/DEPARTMENT_AREAS_DATA_SETUP.md');
       } else if (departmentMapData && departmentMapData.areas.length > 0) {
         // 🔥 Render department markers from API data
-        console.log('🔍 LeafletMap: Rendering department markers, departmentMapData:', {
-          departmentId: departmentMapData.departmentId,
-          areasCount: departmentMapData.areas.length,
-          areas: departmentMapData.areas.map(a => ({
-            provinceId: a.provinceId,
-            wardId: a.wardId,
-            center: a.coordinates.center,
-            hasCenter: a.coordinates.center !== null
-          }))
-        });
-        
         const validCenters = getValidCenters(departmentMapData);
-        console.log('🔍 LeafletMap: Valid centers:', validCenters);
         
         if (validCenters.length > 0) {
           // Calculate average center for the department
           const departmentCenter = calculateAverageCenter(validCenters);
-          console.log('🔍 LeafletMap: Department center calculated:', departmentCenter);
           
           if (departmentCenter) {
             // Create department icon (SVG - person/group icon)
@@ -281,21 +226,13 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
               // Call window function to open department detail (similar to openPointDetail)
               if (typeof (window as any).openDepartmentDetail === 'function') {
                 (window as any).openDepartmentDetail(departmentMapData.departmentId, departmentMapData);
-              } else {
-                console.warn('⚠️ openDepartmentDetail function not found. Please add it to MapPage.');
-                console.log('Department clicked:', departmentMapData.departmentId, departmentMapData);
               }
             });
             
             departmentMarker.addTo(mapInstanceRef.current);
             markersRef.current.push(departmentMarker);
           }
-        } else {
-          console.warn('⚠️ Department areas data không có tọa độ hợp lệ. Vui lòng kiểm tra tài liệu: docs/DEPARTMENT_AREAS_DATA_SETUP.md');
         }
-      } else {
-        // No data available
-        console.warn('⚠️ Không có dữ liệu department areas. Vui lòng thêm dữ liệu vào bảng department_areas. Xem hướng dẫn: docs/DEPARTMENT_AREAS_DATA_SETUP.md');
       }
       
       // 🔥 FIX: Exit early - don't render restaurant markers when showing department markers
@@ -320,7 +257,6 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       const hasValidLng = restaurant.lng !== null && restaurant.lng !== undefined && !isNaN(restaurant.lng);
       if (!hasValidLat || !hasValidLng) {
         invalidCount++;
-        console.log('❌ Invalid coordinates:', { id: restaurant.id, name: restaurant.name, lat: restaurant.lat, lng: restaurant.lng });
         return;
       }
       validCount++;
@@ -350,10 +286,6 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
         selectedMarkerRef.current = marker;
       }
     });
-    
-    // 🔥 DEBUG: Log marker counts
-    console.log('✅ LeafletMap markers added:', { validCount, invalidCount, total: filteredRestaurants.length });
-    
   }, [filteredRestaurants, selectedRestaurant, showWardBoundaries, departmentMapData, isLoadingDepartmentAreas, departmentAreasError]); // 🔥 FIX: Added departmentMapData and loading states to dependencies
 
   // 🔥 Store updateMarkers in ref for map init to use
@@ -724,10 +656,6 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
     // Wait a bit for map to be fully ready and for merchants to be loaded
     const timeoutId = setTimeout(() => {
       if (!mapInstanceRef.current || !leafletRef.current) {
-        console.log('⏳ LeafletMap: Map not ready yet, waiting...', {
-          mapInstance: !!mapInstanceRef.current,
-          leaflet: !!leafletRef.current
-        });
         return;
       }
       
@@ -738,15 +666,6 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       if (!provinceChanged && !wardChanged) {
         return;
       }
-      
-      console.log('🗺️ LeafletMap: Location filter changed', {
-        selectedProvince,
-        selectedWard,
-        provinceChanged,
-        wardChanged,
-        restaurantsCount: restaurants.length,
-        filteredRestaurantsCount: filteredRestaurants.length
-      });
       
     // Priority: ward > province
     // 🔥 NOTE: ward_coordinates API is called for map zooming (getting boundaries), NOT for filtering merchants
@@ -763,8 +682,6 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
         const avgLng = validMerchants.reduce((sum, m) => sum + (m.lng || 0), 0) / validMerchants.length;
         const center: [number, number] = [avgLat, avgLng];
         
-        console.log('📍 LeafletMap: Using merchants coordinates for ward (skipping API call):', center, validMerchants.length);
-        
         if (mapInstanceRef.current) {
           mapInstanceRef.current.setView(center, 15, {
             animate: true,
@@ -775,10 +692,7 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       }
       
       // Only call API if we don't have merchants (for accurate boundaries)
-      console.log('📍 LeafletMap: No merchants available, fetching ward coordinates from API for:', selectedWard);
       fetchWardCoordinates(selectedWard).then((coords) => {
-        console.log('📍 LeafletMap: Ward coordinates received:', coords);
-        
         let center: [number, number] | null = null;
         let bounds: any = null;
         
@@ -793,22 +707,15 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
           // Fallback: Calculate center from merchants that are already filtered by ward_id
           // Use restaurants prop directly as it's already filtered by MapPage
           const merchantsToUse = restaurants.length > 0 ? restaurants : filteredRestaurants;
-          console.log('📍 LeafletMap: No coordinates from DB, using fallback from merchants. Total merchants:', merchantsToUse.length, 'restaurants:', restaurants.length, 'filtered:', filteredRestaurants.length);
           
           if (merchantsToUse.length > 0) {
             const validMerchants = merchantsToUse.filter(m => m.lat && m.lng && m.lat !== 0 && m.lng !== 0);
-            console.log('📍 LeafletMap: Valid merchants with coordinates:', validMerchants.length);
             
             if (validMerchants.length > 0) {
               const avgLat = validMerchants.reduce((sum, m) => sum + (m.lat || 0), 0) / validMerchants.length;
               const avgLng = validMerchants.reduce((sum, m) => sum + (m.lng || 0), 0) / validMerchants.length;
               center = [avgLat, avgLng];
-              console.log('📍 LeafletMap: Using fallback center from merchants:', center, validMerchants.length);
-            } else {
-              console.warn('📍 LeafletMap: No valid merchants with coordinates for fallback');
             }
-          } else {
-            console.warn('📍 LeafletMap: No merchants available for fallback');
           }
         }
         
@@ -819,22 +726,16 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
               animate: true,
               duration: 0.8
             });
-            console.log('📍 LeafletMap: Fitted to ward bounds');
           } else {
             mapInstanceRef.current.setView(center, 15, {
               animate: true,
               duration: 0.8
             });
-            console.log('📍 LeafletMap: Zoomed to ward center');
           }
-        } else {
-          console.warn('⚠️ LeafletMap: No coordinates available for ward:', selectedWard);
         }
       }).catch((error) => {
-        console.error('❌ LeafletMap: Error fetching ward coordinates:', error);
         // Fallback: use merchants that are already filtered by ward_id
         const merchantsToUse = restaurants.length > 0 ? restaurants : filteredRestaurants;
-        console.log('📍 LeafletMap: Error fallback - using merchants. Total:', merchantsToUse.length, 'restaurants:', restaurants.length);
         if (merchantsToUse.length > 0 && mapInstanceRef.current) {
           const validMerchants = merchantsToUse.filter(m => m.lat && m.lng && m.lat !== 0 && m.lng !== 0);
           if (validMerchants.length > 0) {
@@ -844,7 +745,6 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
               animate: true,
               duration: 0.8
             });
-            console.log('📍 LeafletMap: Error fallback zoom to merchants center:', [avgLat, avgLng], validMerchants.length);
           }
         }
       });
@@ -863,8 +763,6 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
         const avgLng = validMerchants.reduce((sum, m) => sum + (m.lng || 0), 0) / validMerchants.length;
         const center: [number, number] = [avgLat, avgLng];
         
-        console.log('🗺️ LeafletMap: Using merchants coordinates for province (skipping API call):', center, validMerchants.length);
-        
         if (mapInstanceRef.current) {
           mapInstanceRef.current.setView(center, 12, {
             animate: true,
@@ -875,10 +773,7 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       }
       
       // Only call API if we don't have merchants (for accurate boundaries)
-      console.log('🗺️ LeafletMap: No merchants available, fetching province coordinates from API for:', selectedProvince);
       fetchProvinceCoordinates(selectedProvince).then((coords) => {
-        console.log('🗺️ LeafletMap: Province coordinates received:', coords);
-        
         let center: [number, number] | null = null;
         let bounds: any = null;
         
@@ -893,22 +788,15 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
           // Fallback: Calculate center from merchants that are already filtered by province_id
           // Use restaurants prop directly as it's already filtered by MapPage
           const merchantsToUse = restaurants.length > 0 ? restaurants : filteredRestaurants;
-          console.log('🗺️ LeafletMap: No coordinates from DB, using fallback from merchants. Total merchants:', merchantsToUse.length, 'restaurants:', restaurants.length, 'filtered:', filteredRestaurants.length);
           
           if (merchantsToUse.length > 0) {
             const validMerchants = merchantsToUse.filter(m => m.lat && m.lng && m.lat !== 0 && m.lng !== 0);
-            console.log('🗺️ LeafletMap: Valid merchants with coordinates:', validMerchants.length);
             
             if (validMerchants.length > 0) {
               const avgLat = validMerchants.reduce((sum, m) => sum + (m.lat || 0), 0) / validMerchants.length;
               const avgLng = validMerchants.reduce((sum, m) => sum + (m.lng || 0), 0) / validMerchants.length;
               center = [avgLat, avgLng];
-              console.log('🗺️ LeafletMap: Using fallback center from merchants:', center, validMerchants.length);
-            } else {
-              console.warn('🗺️ LeafletMap: No valid merchants with coordinates for fallback');
             }
-          } else {
-            console.warn('🗺️ LeafletMap: No merchants available for fallback');
           }
         }
         
@@ -919,22 +807,16 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
               animate: true,
               duration: 0.8
             });
-            console.log('🗺️ LeafletMap: Fitted to province bounds');
           } else {
             mapInstanceRef.current.setView(center, 11, {
               animate: true,
               duration: 0.8
             });
-            console.log('🗺️ LeafletMap: Zoomed to province center');
           }
-        } else {
-          console.warn('⚠️ LeafletMap: No coordinates available for province:', selectedProvince);
         }
       }).catch((error) => {
-        console.error('❌ LeafletMap: Error fetching province coordinates:', error);
         // Fallback: use merchants that are already filtered by province_id
         const merchantsToUse = restaurants.length > 0 ? restaurants : filteredRestaurants;
-        console.log('🗺️ LeafletMap: Error fallback - using merchants. Total:', merchantsToUse.length, 'restaurants:', restaurants.length);
         if (merchantsToUse.length > 0 && mapInstanceRef.current) {
           const validMerchants = merchantsToUse.filter(m => m.lat && m.lng && m.lat !== 0 && m.lng !== 0);
           if (validMerchants.length > 0) {
@@ -944,14 +826,9 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
               animate: true,
               duration: 0.8
             });
-            console.log('🗺️ LeafletMap: Error fallback zoom to merchants center:', [avgLat, avgLng], validMerchants.length);
           }
         }
       });
-      } else if (!selectedProvince && !selectedWard && (provinceChanged || wardChanged)) {
-        // Reset zoom when filters are cleared
-        console.log('🗺️ LeafletMap: Location filters cleared, resetting view');
-        // Could reset to default view here if needed
       }
       
       // Update previous refs

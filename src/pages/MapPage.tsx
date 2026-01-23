@@ -375,11 +375,10 @@ export default function MapPage() {
   // 🔥 FIX: Auto-enable showOfficers when divisionId or teamId is available (on initial load)
   // This ensures department points are visible when user first loads the page
   useEffect(() => {
-    if ((divisionId || teamId) && !showOfficers && !showMerchants && !showMapPoints) {
-      // Only auto-enable if no other layers are active
-      console.log('🔄 MapPage: Auto-enabling showOfficers because divisionId/teamId is available');
-      setShowOfficers(true);
-    }
+      if ((divisionId || teamId) && !showOfficers && !showMerchants && !showMapPoints) {
+        // Only auto-enable if no other layers are active
+        setShowOfficers(true);
+      }
   }, [divisionId, teamId, showOfficers, showMerchants, showMapPoints]);
   
   // 🔥 FIX: Use ref to track last filters key (prevent duplicate API calls)
@@ -558,7 +557,6 @@ export default function MapPage() {
     
     // 🔥 NEW: Setup global function for department detail modal
     (window as any).openDepartmentDetail = (departmentId: string, departmentData?: any) => {
-      console.log('🔍 MapPage: Opening department detail for:', departmentId, departmentData);
       setSelectedDepartmentId(departmentId);
       setSelectedDepartmentData(departmentData);
       setIsDepartmentModalOpen(true);

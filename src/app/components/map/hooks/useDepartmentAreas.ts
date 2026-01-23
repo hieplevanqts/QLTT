@@ -38,23 +38,11 @@ export function useDepartmentAreas(departmentId: string | null | undefined, enab
   
   // Fetch department areas when enabled and department ID changes
   useEffect(() => {
-    console.log('🔄 useDepartmentAreas: Effect triggered', {
-      enabled,
-      targetDepartmentId,
-      selectedDepartmentId,
-      departmentId,
-      currentDepartmentId: departmentAreas.currentDepartmentId,
-      isLoading: departmentAreas.isLoading,
-      hasData: !!departmentAreas.data
-    });
-    
     if (!enabled) {
-      console.log('⚠️ useDepartmentAreas: Not enabled, skipping fetch');
       return;
     }
     
     if (!targetDepartmentId) {
-      console.log('⚠️ useDepartmentAreas: No targetDepartmentId, clearing data');
       dispatch(setDepartmentAreas(null));
       dispatch(setCurrentDepartmentId(null));
       return;
@@ -63,7 +51,6 @@ export function useDepartmentAreas(departmentId: string | null | undefined, enab
     // 🔥 FIX: Always fetch when targetDepartmentId changes, even if already loaded
     // This ensures that when user selects a different department, we fetch new data
     if (departmentAreas.isLoading) {
-      console.log('⏳ useDepartmentAreas: Already loading, skipping');
       return; // Skip if already loading
     }
     
@@ -71,21 +58,12 @@ export function useDepartmentAreas(departmentId: string | null | undefined, enab
     const needsFetch = departmentAreas.currentDepartmentId !== targetDepartmentId;
     
     if (!needsFetch && departmentAreas.data) {
-      console.log('✅ useDepartmentAreas: Data already loaded for department:', targetDepartmentId);
       return;
     }
-    
-    console.log('🔄 useDepartmentAreas: Fetching data for department:', targetDepartmentId, {
-      previousDepartmentId: departmentAreas.currentDepartmentId,
-      selectedDepartmentId,
-      departmentId,
-      needsFetch
-    });
     
     async function loadDepartmentAreas() {
       if (!targetDepartmentId) return; // Type guard
       
-      console.log('🔄 useDepartmentAreas: Starting fetch for department:', targetDepartmentId, { isDivision });
       dispatch(setCurrentDepartmentId(targetDepartmentId));
       dispatch(setLoading(true));
       
@@ -94,26 +72,21 @@ export function useDepartmentAreas(departmentId: string | null | undefined, enab
         
         // 🔥 FIX: If it's a division, fetch all department IDs first, then fetch areas for all
         if (isDivision) {
-          console.log('🔄 useDepartmentAreas: Fetching department IDs for division:', targetDepartmentId);
           const departmentIds = await fetchDepartmentIdsByDivision(targetDepartmentId);
           
           if (departmentIds.length === 0) {
-            console.warn('⚠️ useDepartmentAreas: No department IDs found for division:', targetDepartmentId);
             dispatch(setDepartmentAreas(null));
             dispatch(setError('No departments found for this division'));
             return;
           }
           
-          console.log('✅ useDepartmentAreas: Found', departmentIds.length, 'department IDs, fetching areas...');
           data = await fetchDepartmentAreas(departmentIds);
         } else {
           // Single department (team or selected department)
           data = await fetchDepartmentAreas(targetDepartmentId);
         }
         
-        console.log('✅ useDepartmentAreas: Fetch completed, data:', data);
         dispatch(setDepartmentAreas(data));
-        console.log('✅ useDepartmentAreas: Data loaded and dispatched for department:', targetDepartmentId);
       } catch (error: any) {
         console.error('❌ useDepartmentAreas: Failed to fetch department areas:', error);
         const errorMessage = error?.message ? String(error.message) : 'Failed to fetch department areas';

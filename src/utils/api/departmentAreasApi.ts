@@ -44,8 +44,6 @@ export async function fetchDepartmentIdsByDivision(divisionId: string): Promise<
     // Query 2: Get all departments with parent_id = divisionId
     const url2 = `${SUPABASE_REST_URL}/departments?select=_id&parent_id=eq.${divisionId}&deleted_at=is.null`;
     
-    console.log('🔍 DepartmentAreasAPI: Fetching department IDs for division:', divisionId);
-    
     const [response1, response2] = await Promise.all([
       axios.get(url1, { headers: getHeaders() }),
       axios.get(url2, { headers: getHeaders() })
@@ -61,7 +59,6 @@ export async function fetchDepartmentIdsByDivision(divisionId: string): Promise<
     ];
     
     const uniqueIds = Array.from(new Set(allIds));
-    console.log('✅ DepartmentAreasAPI: Found', uniqueIds.length, 'department IDs:', uniqueIds);
     
     return uniqueIds;
   } catch (error: any) {
@@ -95,43 +92,11 @@ export async function fetchDepartmentAreas(departmentId: string | string[]): Pro
     const idsParam = validIds.join(',');
     const url = `${SUPABASE_REST_URL}/department_areas?select=areas(province_id,ward_id,wards_with_coordinates(center_lat,center_lng,bounds,area,officer))&department_id=in.(${idsParam})`;
     
-    // 🔥 DEBUG: Log the actual URL being called
-    console.log('🔍 DepartmentAreasAPI: Calling URL:', url);
-    console.log('🔍 DepartmentAreasAPI: Base URL:', SUPABASE_REST_URL);
-    console.log('🔍 DepartmentAreasAPI: Department ID:', departmentId);
-    
     const response = await axios.get(url, {
       headers: getHeaders()
     });
     
-    // 🔥 DEBUG: Log response status and headers
-    console.log('🔍 DepartmentAreasAPI: Response status:', response.status);
-    console.log('🔍 DepartmentAreasAPI: Response headers:', response.headers);
-    
     const data = response.data || [];
-    
-    // 🔥 DEBUG: Log response structure to understand API format
-    console.log('🔍 DepartmentAreasAPI: Raw response:', {
-      isArray: Array.isArray(data),
-      length: Array.isArray(data) ? data.length : 'N/A',
-      firstItem: Array.isArray(data) && data.length > 0 ? data[0] : data,
-      firstItemType: Array.isArray(data) && data.length > 0 ? typeof data[0] : typeof data,
-      hasAreas: Array.isArray(data) && data.length > 0 
-        ? 'areas' in (data[0] || {})
-        : 'areas' in (data || {}),
-      areasType: Array.isArray(data) && data.length > 0 && data[0]?.areas
-        ? typeof data[0].areas
-        : data?.areas ? typeof data.areas : 'N/A',
-      areasIsArray: Array.isArray(data) && data.length > 0 && data[0]?.areas
-        ? Array.isArray(data[0].areas)
-        : data?.areas ? Array.isArray(data.areas) : false,
-      areasKeys: Array.isArray(data) && data.length > 0 && data[0]?.areas && typeof data[0].areas === 'object'
-        ? Object.keys(data[0].areas)
-        : data?.areas && typeof data.areas === 'object'
-        ? Object.keys(data.areas)
-        : []
-    });
-    console.log('🔍 DepartmentAreasAPI: Data:', data);
     
     // 🔥 FIX: Handle response structure
     // API returns array of department_areas records, each with an 'areas' object (not array)
@@ -153,7 +118,6 @@ export async function fetchDepartmentAreas(departmentId: string | string[]): Pro
       }
       
       if (areasArray.length > 0) {
-        console.log('✅ DepartmentAreasAPI: Extracted', areasArray.length, 'areas from', data.length, 'records');
         return { areas: areasArray } as DepartmentAreasResponse;
       }
     } else if (data && typeof data === 'object' && !Array.isArray(data)) {
@@ -162,10 +126,8 @@ export async function fetchDepartmentAreas(departmentId: string | string[]): Pro
         const areasObj = data.areas;
         // If areas is an object, wrap it in array
         if (areasObj && typeof areasObj === 'object' && !Array.isArray(areasObj)) {
-          console.log('✅ DepartmentAreasAPI: Found single areas object');
           return { areas: [areasObj as Area] } as DepartmentAreasResponse;
         } else if (Array.isArray(areasObj)) {
-          console.log('✅ DepartmentAreasAPI: Found areas array');
           return { areas: areasObj } as DepartmentAreasResponse;
         }
       }
