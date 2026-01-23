@@ -3,7 +3,6 @@
 
 import { Restaurant } from '../../data/restaurantData';
 import { SUPABASE_REST_URL, getHeaders } from './config';
-import axios from 'axios';
 
 
 /**
@@ -89,7 +88,7 @@ export async function fetchMerchants(
         const category = mapMerchantStatusToCategory(merchant.status);
         
         // Get human-readable status name
-        const statusName = getMerchantStatusName(merchant.status, merchant.license_status);
+        const statusName = getMerchantStatusName(merchant.status);
 
         // Debug log for first merchant
         if (index === 0) {
@@ -105,33 +104,23 @@ export async function fetchMerchants(
         }
 
         return {
-          id: m._id || m.id || `merchant-${Math.random()}`,
-          name: m.business_name || 'Unnamed Merchant',
-          address: m.address || '',
+          id: merchant._id || merchant.id || `merchant-${Math.random()}`,
+          name: merchant.business_name || 'Unnamed Merchant',
+          address: merchant.address || '',
           lat: lat, // 🔥 FIX: Don't convert NaN to 0, let it be NaN so MerchantsLayer can filter it out
           lng: lng, // 🔥 FIX: Don't convert NaN to 0, let it be NaN so MerchantsLayer can filter it out
           type: businessType,
           businessType: businessType,
-          category: mapMerchantStatusToCategory(m.status),
-          province: m.province || '',
-          district: m.district || '',
-          ward: m.ward || '',
-          hotline: m.owner_phone || undefined,
-          taxCode: m.tax_code || undefined,
-          status: m.status || undefined,
-          statusName: getMerchantStatusName(m.status, m.license_status) || undefined,
+          category: category,
+          province: merchant.province || '',
+          district: merchant.district || '',
+          ward: merchant.ward || '',
+          hotline: merchant.owner_phone || undefined,
+          taxCode: merchant.tax_code || undefined,
+          status: merchant.status || undefined,
+          statusName: statusName || undefined,
         };
       });
-
-    // 8. Client-side Search (Dành cho tìm kiếm text nhanh)
-    if (opts.searchQuery?.trim()) {
-      const s = opts.searchQuery.toLowerCase();
-      merchants = merchants.filter((m: Restaurant) =>
-        m.name.toLowerCase().includes(s) ||
-        m.address.toLowerCase().includes(s) ||
-        (m.taxCode || '').toLowerCase().includes(s)
-      );
-    }
 
     return merchants;
 
@@ -142,18 +131,6 @@ export async function fetchMerchants(
 
 
 
-}
-
-/**
- * Map status from merchants table to category filter keys
- * Similar to mapSupabaseStatus in mapPointsApi.ts
- */
-function mapMerchantStatus(status?: number | string): 'certified' | 'hotspot' | 'scheduled' | 'inspected' {
-  // Default mapping - can be customized based on your business logic
-  if (status === 1 || status === 'certified') return 'certified';
-  if (status === 2 || status === 'hotspot') return 'hotspot';
-  if (status === 3 || status === 'scheduled') return 'scheduled';
-  return 'inspected'; // Default
 }
 
 /**
@@ -179,10 +156,9 @@ function mapMerchantStatusToCategory(status: string): 'certified' | 'hotspot' | 
 /**
  * Get human-readable status name
  * @param status - Merchant status ('active', 'pending', 'suspended', 'rejected')
- * @param licenseStatus - License status (optional)
  * @returns Status name
  */
-function getMerchantStatusName(status: string, licenseStatus?: string): string {
+function getMerchantStatusName(status: string): string {
   switch (status) {
     case 'active':
       return 'Hoạt động';
