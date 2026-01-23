@@ -13,6 +13,7 @@ import { OfficerStatsOverlay } from '../app/components/map/OfficerStatsOverlay';
 import { LocationStatsCard } from '../app/components/map/LocationStatsCard';
 import { MapLegend } from '../app/components/map/MapLegend';
 import { OfficerInfoModal } from '../app/components/map/OfficerInfoModal';
+import { DepartmentDetailModal } from '../app/components/map/DepartmentDetailModal';
 import { DateRangePicker } from '../app/components/map/DateRangePicker';
 import { UploadExcelModal } from '../app/components/map/UploadExcelModal';
 import { Toaster } from 'sonner';
@@ -48,6 +49,7 @@ import {
   setSelectedDistrict,
   setSelectedWard,
   setFilterPanelOpen,
+  setLimit,
 } from '../store/slices/mapFiltersSlice';
 
 type CategoryFilter = {
@@ -78,7 +80,7 @@ export default function MapPage() {
   const selectedDistrict = mapFilters.selectedDistrict;
   const selectedWard = mapFilters.selectedWard;
   const isFilterPanelOpen = mapFilters.isFilterPanelOpen;
-  
+  const limit = mapFilters.limit;
   
   // Point statuses from point_status table
   const [pointStatuses, setPointStatuses] = useState<PointStatus[]>([]);
@@ -110,6 +112,11 @@ export default function MapPage() {
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<keyof CategoryFilter | 'all'>('all');
+  
+  // 🔥 NEW: Department detail modal state
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string | null>(null);
+  const [selectedDepartmentData, setSelectedDepartmentData] = useState<any>(null);
+  const [isDepartmentModalOpen, setIsDepartmentModalOpen] = useState(false);
   
   // 🔥 NEW: Realtime clock for header
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -155,6 +162,7 @@ export default function MapPage() {
   // 🔥 NEW: Map layer toggles
   const [showMapPoints, setShowMapPoints] = useState(false);  // MapPoint layer (tạm ẩn)
   const [showMerchants, setShowMerchants] = useState(true);  // Merchant layer (hiển thị với tên "Chủ Hộ Kinh Doanh")
+  // 🔥 FIX: Default to false on initial load - Merchants layer is the default, Officers layer can be enabled manually
   const [showOfficers, setShowOfficers] = useState(false);  // Officers layer (Cán bộ quản lý)
   
   // 🔥 NEW: Selected team for officers layer filter
@@ -301,6 +309,19 @@ export default function MapPage() {
     loadDepartments();
   }, [teamId, divisionId, isScopeLoading, isScopeInitialized]); // 🔥 FIX: Use Redux scope values from divisionId and teamId
   
+  // 🔥 NEW: Initialize limit from URL params on mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlLimit = urlParams.get('limit');
+    if (urlLimit) {
+      const parsedLimit = parseInt(urlLimit, 10);
+      if (!isNaN(parsedLimit) && parsedLimit > 0) {
+        dispatch(setLimit(parsedLimit));
+      }
+    }
+    // If no limit in URL, Redux store already has default value (100)
+  }, [dispatch]);
+  
   // 🔥 REMOVED: Load saved filters from localStorage - now using Redux store only
   // Filters are already in Redux store, no need to load from localStorage
   // Mark initial load complete immediately
@@ -350,6 +371,16 @@ export default function MapPage() {
       selectedWard: selectedWard || ''  // 🔥 NEW: Include selectedWard to trigger when location changes
     });
   }, [filters, businessTypeFilters, departmentFilters, categories.length, showMerchants, showMapPoints, showOfficers, departments, divisionId, teamId, selectedProvince, selectedWard]);
+  
+  // 🔥 FIX: Auto-enable showOfficers when divisionId or teamId is available (on initial load)
+  // This ensures department points are visible when user first loads the page
+  useEffect(() => {
+    if ((divisionId || teamId) && !showOfficers && !showMerchants && !showMapPoints) {
+      // Only auto-enable if no other layers are active
+      console.log('🔄 MapPage: Auto-enabling showOfficers because divisionId/teamId is available');
+      setShowOfficers(true);
+    }
+  }, [divisionId, teamId, showOfficers, showMerchants, showMapPoints]);
   
   // 🔥 FIX: Use ref to track last filters key (prevent duplicate API calls)
   const lastFiltersKeyRef = useRef<string>('');
@@ -430,7 +461,8 @@ export default function MapPage() {
             departmentIds: departmentIdsToFilter,
             categoryIds: businessTypeFiltersArray && businessTypeFiltersArray.length > 0 ? businessTypeFiltersArray : undefined, // 🔥 NEW: Pass category IDs to options
             province: selectedProvince || undefined,
-            ward: selectedWard || undefined
+            ward: selectedWard || undefined,
+            limit: limit // 🔥 NEW: Pass limit from Redux store
           }
         );
         
@@ -459,6 +491,34 @@ export default function MapPage() {
       setIsLoadingData(false);
     }
   }, [showOfficers, showMerchants, showMapPoints]);
+  
+  // 🔥 FIX: Track previous layer state to detect actual layer changes
+  const previousShowOfficersRef = useRef<boolean>(false);
+  const previousShowMerchantsRef = useRef<boolean>(true);
+  
+  // 🔥 FIX: Reset UI states when switching between layers (only on actual change, not initial load)
+  useEffect(() => {
+    const officersChanged = previousShowOfficersRef.current !== showOfficers;
+    const merchantsChanged = previousShowMerchantsRef.current !== showMerchants;
+    
+    // Only reset if there was an actual layer change
+    if (officersChanged || merchantsChanged) {
+      if (showOfficers && !showMerchants) {
+        // When switching TO Officers layer (and Merchants is off), hide merchants layer UI components
+        setIsLegendVisible(false);
+        setIsStatsCardVisible(false);
+        dispatch(setFilterPanelOpen(false)); // Close filter panel when switching layers
+      } else if (showMerchants && !showOfficers) {
+        // When switching TO Merchants layer (and Officers is off), hide officers layer UI components
+        setIsOfficerStatsVisible(false);
+        dispatch(setFilterPanelOpen(false)); // Close filter panel when switching layers
+      }
+      
+      // Update refs
+      previousShowOfficersRef.current = showOfficers;
+      previousShowMerchantsRef.current = showMerchants;
+    }
+  }, [showOfficers, showMerchants, dispatch]);
   
   // Setup global function for popup button click
   useEffect(() => {
@@ -496,9 +556,18 @@ export default function MapPage() {
       }
     };
     
+    // 🔥 NEW: Setup global function for department detail modal
+    (window as any).openDepartmentDetail = (departmentId: string, departmentData?: any) => {
+      console.log('🔍 MapPage: Opening department detail for:', departmentId, departmentData);
+      setSelectedDepartmentId(departmentId);
+      setSelectedDepartmentData(departmentData);
+      setIsDepartmentModalOpen(true);
+    };
+    
     return () => {
       delete (window as any).openPointDetail;
       delete (window as any).openPointReview;
+      delete (window as any).openDepartmentDetail;
     };
   }, [restaurants]);
   
@@ -897,8 +966,8 @@ export default function MapPage() {
                 </div>
               </div>
             )}
-            {/* Map Legend - Horizontal at Top */}
-            {!showOfficers && isLegendVisible && (() => {
+            {/* Map Legend - Horizontal at Top - Only show on Merchants layer */}
+            {showMerchants && !showOfficers && isLegendVisible && (() => {
               // 🔥 Color mapping - HARDCODED (giữ nguyên theo design system)
               const colorMap: { [key: string]: string } = {
                 'certified': '#22c55e',   // Green
@@ -928,8 +997,8 @@ export default function MapPage() {
               );
             })()}
 
-            {/* 🔥 Only show Location Stats Card when NOT on Officers layer */}
-            {!showOfficers && (
+            {/* 🔥 Only show Location Stats Card when Merchants layer is active AND Officers layer is NOT active */}
+            {showMerchants && !showOfficers && (
               <LocationStatsCard
                 selectedProvince={selectedProvince}
                 selectedDistrict={selectedDistrict}
@@ -974,8 +1043,8 @@ export default function MapPage() {
               }}
             />
 
-            {/* Officer Stats Overlay - Only show when Officers layer is active */}
-            {showOfficers && (
+            {/* Officer Stats Overlay - Only show when Officers layer is active AND Merchants layer is NOT active */}
+            {showOfficers && !showMerchants && (
               <OfficerStatsOverlay
                 selectedTeamId={selectedTeamId}
                 isVisible={isOfficerStatsVisible}
@@ -985,8 +1054,8 @@ export default function MapPage() {
 
             {/* Filter Panel with Toggle Buttons */}
             <div className={styles.mapControls}>
-              {/* Legend Toggle Button - Only show when NOT on Officers layer */}
-              {!showOfficers && (
+              {/* Legend Toggle Button - Only show on Merchants layer */}
+              {showMerchants && !showOfficers && (
                 <button
                   className={styles.mapControlButton}
                   onClick={() => setIsLegendVisible(!isLegendVisible)}
@@ -997,8 +1066,8 @@ export default function MapPage() {
                 </button>
               )}
 
-              {/* Stats Toggle Button - Only show when NOT on Officers layer */}
-              {!showOfficers && (
+              {/* Stats Toggle Button - Only show on Merchants layer */}
+              {showMerchants && !showOfficers && (
                 <button
                   className={styles.mapControlButton}
                   onClick={() => setIsStatsCardVisible(!isStatsCardVisible)}
@@ -1009,19 +1078,21 @@ export default function MapPage() {
                 </button>
               )}
 
-              {/* Filter Toggle Button */}
-              <button
-                ref={filterToggleBtnRef}
-                className={`${styles.mapControlButton} ${isFilterPanelOpen ? styles.mapControlButtonActive : ''}`}
-                onClick={() => dispatch(setFilterPanelOpen(!isFilterPanelOpen))}
-                aria-label="Mở/Đóng bộ lọc"
-                title="Bộ lọc nâng cao"
-              >
-                <SlidersHorizontal size={18} strokeWidth={2.5} />
-              </button>
+              {/* Filter Toggle Button - Show on both layers but different panels */}
+              {(showMerchants || showOfficers) && (
+                <button
+                  ref={filterToggleBtnRef}
+                  className={`${styles.mapControlButton} ${isFilterPanelOpen ? styles.mapControlButtonActive : ''}`}
+                  onClick={() => dispatch(setFilterPanelOpen(!isFilterPanelOpen))}
+                  aria-label="Mở/Đóng bộ lọc"
+                  title={showOfficers ? "Bộ lọc cán bộ" : "Bộ lọc nâng cao"}
+                >
+                  <SlidersHorizontal size={18} strokeWidth={2.5} />
+                </button>
+              )}
 
-              {/* Officer Stats Toggle Button - Only show when Officers layer is active */}
-              {showOfficers && (
+              {/* Officer Stats Toggle Button - Only show when Officers layer is active AND Merchants layer is NOT active */}
+              {showOfficers && !showMerchants && (
                 <button
                   className={`${styles.mapControlButton} ${isOfficerStatsVisible ? styles.mapControlButtonActive : ''}`}
                   onClick={() => setIsOfficerStatsVisible(!isOfficerStatsVisible)}
@@ -1033,8 +1104,8 @@ export default function MapPage() {
               )}
             </div>
 
-            {/* Filter Panel - Different panel for Officers layer */}
-            {showOfficers ? (
+            {/* Filter Panel - Different panel for each layer */}
+            {showOfficers && !showMerchants ? (
               <OfficerFilterPanel
                 isOpen={isFilterPanelOpen}
                 selectedTeamId={selectedTeamId}
@@ -1044,7 +1115,7 @@ export default function MapPage() {
                 }}
                 ref={filterPanelRef}
               />
-            ) : (
+            ) : showMerchants && !showOfficers ? (
               <MapFilterPanel
                 isOpen={isFilterPanelOpen}
                 filters={pendingFilters}  // 🔥 CHANGED: Use pending filters for UI
@@ -1081,7 +1152,7 @@ export default function MapPage() {
                 hasUnappliedChanges={hasUnappliedChanges}  // 🔥 NEW: Show button when changes exist
                 ref={filterPanelRef}
               />
-            )}
+            ) : null}
           </div>
         </div>
       )}
@@ -1106,6 +1177,14 @@ export default function MapPage() {
         onClose={() => setIsOfficerModalOpen(false)}
         officer={selectedOfficer}
         wardName={selectedWardName}
+      />
+      
+      {/* 🔥 NEW: Department Detail Modal */}
+      <DepartmentDetailModal
+        isOpen={isDepartmentModalOpen}
+        onClose={() => setIsDepartmentModalOpen(false)}
+        departmentId={selectedDepartmentId || ''}
+        departmentData={selectedDepartmentData}
       />
       
       {/* Fullscreen Map Modal */}

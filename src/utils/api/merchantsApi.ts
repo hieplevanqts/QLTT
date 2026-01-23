@@ -29,28 +29,37 @@ export interface FetchMerchantsOptions {
   district?: string;
   ward?: string;
   searchQuery?: string;
+  limit?: number;  // 🔥 NEW: Limit for pagination (default: 10000)
   data?: any;
   departments?: any;
 }
 
-export async function fetchMerchants(p0: string[] | undefined, businessTypes: string[] | undefined, departmentIdsToFilter: string[] | undefined, teamId: string | null, divisionId: string, departmentIds: string[], businessTypeFilters: string[] | null, options?: FetchMerchantsOptions): Promise<Restaurant[]> {
+export async function fetchMerchants(
+  p0: string[] | undefined,
+  businessTypes: string[] | undefined,
+  departmentIdsToFilter: string[] | undefined,
+  teamId: string | null, divisionId: string,
+  departmentIds: string[],
+  businessTypeFilters: string[] | null,
+  options?: FetchMerchantsOptions
+): Promise<Restaurant[]> {
   const opts = options || {};
 
 
   try {
-    // --- A. CẬP NHẬT URL TRÌNH DUYỆT (KHÔNG TẢI LẠI TRANG) ---
+    // --- A. UPDATE BROWSER URL (DO NOT RELOAD PAGE) ---
     const currentBrowserUrl = new URL(window.location.href);
 
     // 🔥 FIX: Build URL manually to preserve existing params and avoid encoding comma as %2C
     // Get base URL without search params
     const baseUrl = `${currentBrowserUrl.origin}${currentBrowserUrl.pathname}`;
-    
+
     // Parse existing params manually to preserve them
     const existingParams = new Map<string, string>();
     currentBrowserUrl.searchParams.forEach((value, key) => {
       existingParams.set(key, value);
     });
-    
+
     // Update or add params
     // Only update/delete if the param is explicitly provided in opts
     if (opts.hasOwnProperty('statusCodes')) {
@@ -61,7 +70,7 @@ export async function fetchMerchants(p0: string[] | undefined, businessTypes: st
       }
     }
     // If statusCodes not provided, keep existing value
-    
+
     if (opts.hasOwnProperty('businessTypes')) {
       if (opts.businessTypes && opts.businessTypes.length > 0) {
         existingParams.set('type', opts.businessTypes.join(','));
@@ -70,21 +79,21 @@ export async function fetchMerchants(p0: string[] | undefined, businessTypes: st
       }
     }
     // If businessTypes not provided, keep existing value
-    
+
     // 🔥 NEW: Update or add categories param (category IDs)
     // Filter out undefined, null, empty string, and "undefined" string
     if (opts.hasOwnProperty('categoryIds')) {
       if (opts.categoryIds && Array.isArray(opts.categoryIds)) {
         const validCategoryIds = opts.categoryIds.filter(
-          (id): id is string => 
-            id !== null && 
-            id !== undefined && 
-            typeof id === 'string' && 
-            id !== 'undefined' && 
-            id !== 'null' && 
+          (id): id is string =>
+            id !== null &&
+            id !== undefined &&
+            typeof id === 'string' &&
+            id !== 'undefined' &&
+            id !== 'null' &&
             id.trim() !== ''
         );
-        
+
         if (validCategoryIds.length > 0) {
           existingParams.set('categories', validCategoryIds.join(','));
         } else {
@@ -95,7 +104,7 @@ export async function fetchMerchants(p0: string[] | undefined, businessTypes: st
       }
     }
     // If categoryIds not provided, keep existing value
-    
+
     if (opts.hasOwnProperty('searchQuery')) {
       if (opts.searchQuery?.trim()) {
         existingParams.set('search', opts.searchQuery);
@@ -104,7 +113,7 @@ export async function fetchMerchants(p0: string[] | undefined, businessTypes: st
       }
     }
     // If searchQuery not provided, keep existing value
-    
+
     // 🔥 NEW: Update or add province param
     // Only update if province is provided and not empty
     if (opts.province && typeof opts.province === 'string' && opts.province.trim() !== '') {
@@ -115,7 +124,7 @@ export async function fetchMerchants(p0: string[] | undefined, businessTypes: st
         existingParams.delete('province');
       }
     }
-    
+
     // 🔥 NEW: Update or add ward param
     // Only update if ward is provided and not empty
     if (opts.ward && typeof opts.ward === 'string' && opts.ward.trim() !== '') {
@@ -126,21 +135,36 @@ export async function fetchMerchants(p0: string[] | undefined, businessTypes: st
         existingParams.delete('ward');
       }
     }
-    
+
     // 🔥 NEW: Update or add divisionId param
     if (divisionId && typeof divisionId === 'string' && divisionId.trim() !== '') {
       existingParams.set('divisionId', divisionId);
     } else {
       existingParams.delete('divisionId');
     }
-    
+
     // 🔥 NEW: Update or add teamId param (priority over divisionId)
     if (teamId && typeof teamId === 'string' && teamId.trim() !== '') {
       existingParams.set('teamId', teamId);
     } else {
       existingParams.delete('teamId');
     }
-    
+
+    // 🔥 NEW: Update or add limit param
+    // Priority: opts.limit > URL params > default (10000)
+    let finalLimit: number;
+    if (opts.hasOwnProperty('limit') && opts.limit !== undefined && opts.limit !== null) {
+      finalLimit = opts.limit;
+    } else {
+      const urlLimit = currentBrowserUrl.searchParams.get('limit');
+      finalLimit = urlLimit ? parseInt(urlLimit, 10) : 10000; // Default: 10000
+      // Validate limit value
+      if (isNaN(finalLimit) || finalLimit < 1) {
+        finalLimit = 10000;
+      }
+    }
+    existingParams.set('limit', finalLimit.toString());
+
     // Build URL string manually to avoid encoding comma
     const paramStrings: string[] = [];
     existingParams.forEach((value, key) => {
@@ -148,29 +172,28 @@ export async function fetchMerchants(p0: string[] | undefined, businessTypes: st
       // Encode: search, province, ward (UUIDs), divisionId, teamId
       // Don't encode: status, type, categories (comma-separated lists)
       const encodedValue = (key === 'search' || key === 'province' || key === 'ward' || key === 'divisionId' || key === 'teamId')
-        ? encodeURIComponent(value) 
+        ? encodeURIComponent(value)
         : value; // Keep comma unencoded for status/type/categories
       paramStrings.push(`${key}=${encodedValue}`);
     });
-    
-    const finalUrl = paramStrings.length > 0 
+
+    const finalUrl = paramStrings.length > 0
       ? `${baseUrl}?${paramStrings.join('&')}`
       : baseUrl;
-    
-    // Cập nhật thanh địa chỉ trình duyệt
+
+    // Update browser address bar
     window.history.pushState({}, '', finalUrl);
 
-    // --- B. XỬ LÝ GỌI API BACKEND (SUPABASE) ---
+    // --- B. HANDLING API BACKEND CALLS (SUPABASE) ---
     const url = new URL(`${SUPABASE_REST_URL}/merchants`);
-
-    // 1. Thiết lập các tham số mặc định cho API
-    url.searchParams.set('limit', '10000');
-    url.searchParams.set('order', 'created_at.desc');
-
-    // 2. 🔥 FIX: Xử lý Select và Join bảng category_merchants
+    
+    // 🔥 FIX: Apply all filters FIRST, then set limit and order at the END
+    // This ensures filters are applied before limiting results
+    
+    // 1. 🔥 FIX: Xử lý Select và Join bảng category_merchants
     // businessTypeFilters là array of category IDs (string[])
     // Lấy danh sách ID category hợp lệ, loại bỏ các giá trị undefined/null
-    const activeCategoryIds = Array.isArray(businessTypeFilters) 
+    const activeCategoryIds = Array.isArray(businessTypeFilters)
       ? businessTypeFilters.filter((id: string) => id && id !== "undefined" && id !== "null")
       : [];
 
@@ -201,7 +224,7 @@ export async function fetchMerchants(p0: string[] | undefined, businessTypes: st
         // Build URL manually to avoid URLSearchParams encoding issues
         const orCondition = `(_id.eq.${divisionId},parent_id.eq.${divisionId})`;
         const urlString = `${SUPABASE_REST_URL}/departments?select=_id&or=${encodeURIComponent(orCondition)}`;
-        
+
         const response = await axios.get(urlString, {
           headers: getHeaders()
         });
@@ -251,6 +274,12 @@ export async function fetchMerchants(p0: string[] | undefined, businessTypes: st
       // Sử dụng ward_id cho UUID
       url.searchParams.set('ward_id', `eq.${opts.ward}`);
     }
+    
+    // 🔥 FIX: Set limit and order LAST - after all filters have been applied
+    // This ensures PostgREST applies filters first, then limits the filtered results
+    url.searchParams.set('limit', finalLimit.toString());
+    url.searchParams.set('order', 'created_at.desc');
+    
     // 6. Thực hiện Fetch từ Supabase REST API bằng axios
     const response = await axios.get(url.toString(), {
       headers: getHeaders()
@@ -265,7 +294,7 @@ export async function fetchMerchants(p0: string[] | undefined, businessTypes: st
         const hasLat = m.latitude !== null && m.latitude !== undefined && m.latitude !== '';
         const hasLng = m.longitude !== null && m.longitude !== undefined && m.longitude !== '';
         if (!hasLat || !hasLng) return false;
-        
+
         const lat = parseFloat(m.latitude);
         const lng = parseFloat(m.longitude);
         // Allow valid numbers (including 0,0) but filter out NaN
@@ -397,8 +426,8 @@ export async function fetchMerchantStats(
   try {
     // Gọi hàm fetch chính với options location
     const merchants = await fetchMerchants(
-      undefined, undefined, undefined, null, '', [], null, 
-      { province, ward } 
+      undefined, undefined, undefined, null, '', [], null,
+      { province, ward }
     );
 
     return {
