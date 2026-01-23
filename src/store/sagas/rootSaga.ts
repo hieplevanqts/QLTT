@@ -2,6 +2,7 @@ import { all, put, fork, call } from 'redux-saga/effects';
 import { watchAuthSaga } from './authSaga';
 import { watchQLTTScopeSaga } from './qlttScopeSaga';
 import { setHasInitialized, loadScopeFromStorage } from '../slices/qlttScopeSlice';
+import { restoreSessionRequest } from '../slices/authSlice';
 // import { watchProductSaga } from './productSaga';
 
 export default function* rootSaga() {
@@ -20,8 +21,19 @@ export default function* rootSaga() {
     }
   }
 
+  // 🔥 NEW: Restore auth session from storage on app startup
+  function* initializeAuth(): Generator<any, any, any> {
+    try {
+      yield put(restoreSessionRequest());
+      console.log('✅ RootSaga: Auth session restore initiated');
+    } catch (error) {
+      console.error('❌ RootSaga: Failed to initialize auth:', error);
+    }
+  }
+
   // 🔥 FIX: Run initialization first, then start watchers
   yield fork(initializeScope);
+  yield fork(initializeAuth);
 
   yield all([
     fork(watchAuthSaga),

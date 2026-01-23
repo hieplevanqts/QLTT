@@ -132,3 +132,35 @@ export async function fetchMarketManagementTeams(options?: {
   }
 }
 
+/**
+ * Fetch department by ID
+ */
+export async function fetchDepartmentById(departmentId: string): Promise<Department | null> {
+  try {
+    const { data, error } = await supabase
+      .from('departments')
+      .select('_id, name, code, level, path, parent_id, address, latitude, longitude, created_at, updated_at')
+      .eq('_id', departmentId)
+      .is('deleted_at', null)
+      .single();
+
+    if (error) {
+      console.error('❌ Error fetching department by ID:', error);
+      throw new Error(`Failed to fetch department: ${error.message}`);
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    // Map _id to id for application compatibility
+    return {
+      ...data,
+      id: data._id,
+      _id: data._id,
+    };
+  } catch (error: any) {
+    console.error('❌ Error fetching department by ID:', error);
+    throw error;
+  }
+}

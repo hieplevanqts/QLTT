@@ -7,7 +7,7 @@ import {
   deleteInspectionRoundApi,
   fetchInspectionRoundByIdApi, 
   createInspectionRoundApi 
-} from '@/utils/api/plansApi';
+} from '@/utils/api/inspectionRoundsApi';
 
 interface UseSupabaseInspectionRoundsReturn {
   rounds: InspectionRound[];

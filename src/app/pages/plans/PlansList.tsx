@@ -343,12 +343,13 @@ export function PlansList() {
       key: 'id',
       label: 'Số/ký hiệu',
       sortable: true,
+      width: '140px',
       render: (plan) => (
         <div>
           <div className={styles.planIdBadgeRow}>
             <KeHoachTacNghiepStatusBadge type="planType" value={plan.planType} size="sm" />
           </div>
-          <div className={styles.planId}>{plan.id}</div>
+          <div className={styles.planId}>{plan.code}</div>
         </div>
       ),
     },
@@ -356,6 +357,7 @@ export function PlansList() {
       key: 'name',
       label: 'Tiêu đề',
       sortable: true,
+      width: '300px',
       render: (plan) => (
         <div>
           <div className={styles.planName}>{plan.name}</div>
@@ -365,8 +367,9 @@ export function PlansList() {
     },
     {
       key: 'scope',
-      label: 'Phạm vi',
+      label: 'Khu vực kiểm tra',
       sortable: true,
+      width: '220px',
       render: (plan) => (
         <span className={styles.planScope}>{plan.scopeLocation}</span>
       ),
@@ -375,6 +378,7 @@ export function PlansList() {
       key: 'leadUnit',
       label: 'Đơn vị chủ trì',
       sortable: true,
+      width: '180px',
       render: (plan) => (
         <span className={styles.planLeadUnit}>{plan.responsibleUnit}</span>
       ),
@@ -383,6 +387,7 @@ export function PlansList() {
       key: 'time',
       label: 'Thời gian',
       sortable: true,
+      width: '180px',
       render: (plan) => {
         const startDate = new Date(plan.startDate);
         const endDate = new Date(plan.endDate);
@@ -399,17 +404,20 @@ export function PlansList() {
       key: 'priority',
       label: 'Ưu tiên',
       sortable: true,
+      width: '130px',
       render: (plan) => <KeHoachTacNghiepStatusBadge type="priority" value={plan.priority} size="sm" />,
     },
     {
       key: 'status',
       label: 'Trạng thái',
+      width: '150px',
       render: (plan) => <KeHoachTacNghiepStatusBadge type="plan" value={plan.status} size="sm" />,
     },
     {
       key: 'creator',
       label: 'Người lập',
       sortable: true,
+      width: '160px',
       render: (plan) => <span className={styles.creator}>{plan.createdBy}</span>,
     },
     {

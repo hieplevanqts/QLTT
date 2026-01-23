@@ -25,6 +25,9 @@ interface MapFiltersState {
   // UI state
   isFilterPanelOpen: boolean;
   isInitializing: boolean;
+  
+  // Pagination
+  limit: number;
 }
 
 const initialState: MapFiltersState = {
@@ -39,6 +42,7 @@ const initialState: MapFiltersState = {
   selectedWard: '',
   isFilterPanelOpen: false,
   isInitializing: false,
+  limit: 10000, // Default limit value
 };
 
 const mapFiltersSlice = createSlice({
@@ -117,6 +121,11 @@ const mapFiltersSlice = createSlice({
     setInitializing: (state, action: PayloadAction<boolean>) => {
       state.isInitializing = action.payload;
     },
+    
+    // Pagination
+    setLimit: (state, action: PayloadAction<number>) => {
+      state.limit = action.payload;
+    },
   },
 });
 
@@ -134,6 +143,7 @@ export const {
   setSelectedWard,
   setFilterPanelOpen,
   setInitializing,
+  setLimit,
 } = mapFiltersSlice.actions;
 
 export default mapFiltersSlice.reducer;

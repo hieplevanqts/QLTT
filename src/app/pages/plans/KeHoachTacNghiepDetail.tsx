@@ -73,7 +73,7 @@ export function PlanDetail() {
   // Dynamic tabs with badges
   const TABS_DYNAMIC = [
     { id: 'info' as TabType, label: 'Thông tin chung' },
-    { id: 'scope' as TabType, label: 'Phạm vi & Đối tượng' },
+    { id: 'scope' as TabType, label: 'Khu vực & Đối tượng' },
     { id: 'inspections' as TabType, label: 'Đợt kiểm tra', badge: inspectionRoundsCount },
     { id: 'sessions' as TabType, label: 'Phiên kiểm tra', badge: inspectionSessionsCount },
     { id: 'history' as TabType, label: 'Lịch sử' }
@@ -261,7 +261,7 @@ export function PlanDetail() {
               </div>
 
               <div className={styles.infoField}>
-                <div className={styles.infoLabel}>Phạm vi thực hiện</div>
+                <div className={styles.infoLabel}>Khu vực kiểm tra</div>
                 <div className={styles.infoValue}>
                   <MapPin size={16} className={styles.infoIcon} />
                   {plan.scopeLocation}
@@ -303,7 +303,7 @@ export function PlanDetail() {
           return (
             <div className={styles.scopeContent}>
               <div className={styles.scopeSection}>
-                <h2 className={styles.scopeSectionTitle}>Phạm vi địa bàn</h2>
+                <h2 className={styles.scopeSectionTitle}>Khu vực kiểm tra</h2>
                 <div className={styles.scopeLocation}>
                   <MapPin size={20} className={styles.scopeIcon} />
                   <div>
