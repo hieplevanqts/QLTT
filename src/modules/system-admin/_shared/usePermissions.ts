@@ -67,10 +67,16 @@ export function usePermissions() {
         'sa.masterdata.catalog.update',
       ]);
 
+  const hasAdminAccess =
+    userPermissions.includes('admin:access') || userPermissions.includes('ADMIN_VIEW');
+
   /**
    * Kiểm tra có quyền cụ thể
    */
   const hasPermission = (permission: string): boolean => {
+    if (hasAdminAccess && permission.startsWith('sa.')) {
+      return true;
+    }
     return userPermissions.includes(permission);
   };
 
@@ -78,6 +84,9 @@ export function usePermissions() {
    * Kiểm tra có ít nhất 1 trong các quyền
    */
   const hasAnyPermission = (permissions: string[]): boolean => {
+    if (hasAdminAccess && permissions.some((p) => p.startsWith('sa.'))) {
+      return true;
+    }
     return permissions.some(p => userPermissions.includes(p));
   };
 
@@ -85,6 +94,9 @@ export function usePermissions() {
    * Kiểm tra có tất cả các quyền
    */
   const hasAllPermissions = (permissions: string[]): boolean => {
+    if (hasAdminAccess && permissions.every((p) => p.startsWith('sa.'))) {
+      return true;
+    }
     return permissions.every(p => userPermissions.includes(p));
   };
 
