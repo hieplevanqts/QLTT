@@ -256,6 +256,50 @@ export async function fetchProvinceCoordinates(provinceId: string): Promise<Prov
 }
 
 /**
+ * Fetch ward coordinates from ward_coordinates table by ward ID(s)
+ * @param wardIds - Single ward ID or array of ward IDs
+ * @returns Array of ward coordinates
+ */
+export async function fetchWardCoordinatesByWardIds(wardIds: string | string[]): Promise<Array<WardCoordinates & { ward_id: string }>> {
+  try {
+    const wardIdsArray = Array.isArray(wardIds) ? wardIds : [wardIds];
+    
+    if (wardIdsArray.length === 0) {
+      return [];
+    }
+    
+    // Filter out invalid IDs
+    const validIds = wardIdsArray.filter(id => id && typeof id === 'string' && id.trim() !== '');
+    if (validIds.length === 0) {
+      return [];
+    }
+
+    // Query for multiple ward IDs using PostgREST 'in' operator
+    const idsParam = validIds.join(',');
+    const url = `${SUPABASE_REST_URL}/ward_coordinates?select=ward_id,center_lat,center_lng,bounds,area,officer&ward_id=in.(${idsParam})`;
+    
+    const response = await axios.get<Array<WardCoordinates & { ward_id: string }>>(url, {
+      headers: getHeaders()
+    });
+
+    const data = response.data || [];
+    
+    // Filter only valid coordinates and ensure types are correct
+    return data.filter((coord): coord is WardCoordinates & { ward_id: string } => {
+      if (!coord.ward_id) return false;
+      if (coord.center_lat === null || coord.center_lat === undefined) return false;
+      if (coord.center_lng === null || coord.center_lng === undefined) return false;
+      if (typeof coord.center_lat !== 'number' || typeof coord.center_lng !== 'number') return false;
+      if (isNaN(coord.center_lat) || isNaN(coord.center_lng)) return false;
+      return true;
+    });
+  } catch (error: any) {
+    console.error('❌ Error fetching ward coordinates by ward IDs:', error);
+    throw error;
+  }
+}
+
+/**
  * Fetch ward coordinates from ward_coordinates table
  */
 export async function fetchWardCoordinates(wardId: string): Promise<WardCoordinates | null> {

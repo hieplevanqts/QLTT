@@ -5,6 +5,12 @@ import { DepartmentAreasResponse, Area, WardCoordinates } from '../../../../util
  */
 export interface DepartmentMapData {
   departmentId: string;
+  departments?: Array<{
+    id: string;
+    name: string;
+    latitude: number;
+    longitude: number;
+  }>;
   areas: Array<{
     provinceId: string;
     wardId: string;
@@ -22,7 +28,8 @@ export interface DepartmentMapData {
  */
 export function transformDepartmentAreasToMapData(
   data: DepartmentAreasResponse | null,
-  departmentId: string
+  departmentId: string,
+  departments?: Array<{ id: string; name: string; latitude: number | null; longitude: number | null }> | null
 ): DepartmentMapData | null {
   if (!data) {
     return null;
@@ -120,8 +127,24 @@ export function transformDepartmentAreasToMapData(
     return null;
   }
   
+  // 🔥 NEW: Filter departments to only include those with valid coordinates
+  const validDepartments = departments
+    ? departments.filter(dept => 
+        dept.latitude !== null && 
+        dept.longitude !== null && 
+        !isNaN(dept.latitude) && 
+        !isNaN(dept.longitude)
+      ).map(dept => ({
+        id: dept.id,
+        name: dept.name,
+        latitude: dept.latitude!,
+        longitude: dept.longitude!,
+      }))
+    : undefined;
+
   return {
     departmentId,
+    departments: validDepartments,
     areas: transformedAreas,
   };
 }
