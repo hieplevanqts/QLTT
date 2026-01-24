@@ -16,6 +16,39 @@ import { ModuleInfo } from "../types";
 type SortKey = "name" | "version" | "basePath";
 type StatusFilter = "all" | "active" | "inactive";
 
+type ModuleManifestJson = {
+  id: string;
+  name?: string;
+  version: string;
+  basePath: string;
+  entry: string;
+  routes: string;
+  routeExport?: string;
+  permissions?: string[];
+  ui?: { menuLabel?: string; menuPath?: string };
+};
+
+const localManifestModules = (() => {
+  const manifests = import.meta.glob<{ default: ModuleManifestJson }>(
+    "../**/module.json",
+    { eager: true },
+  );
+  return Object.values(manifests)
+    .map((item) => ("default" in item ? item.default : (item as ModuleManifestJson)))
+    .filter((item) => Boolean(item?.id && item?.version && item?.basePath))
+    .map((item) => ({
+      ...item,
+      status: "active",
+    })) as ModuleInfo[];
+})();
+
+const mergeModules = (remote: ModuleInfo[], local: ModuleInfo[]) => {
+  const merged = new Map<string, ModuleInfo>();
+  local.forEach((item) => merged.set(item.id, item));
+  remote.forEach((item) => merged.set(item.id, item));
+  return Array.from(merged.values());
+};
+
 export default function ModuleRegistryPage() {
   const [modules, setModules] = useState<ModuleInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,9 +66,10 @@ export default function ModuleRegistryPage() {
       setLoading(true);
       setError(null);
       const data = await moduleAdminService.getModules();
-      setModules(data);
+      setModules(mergeModules(data, localManifestModules));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không thể tải danh sách mô-đun.");
+      setModules(localManifestModules);
     } finally {
       setLoading(false);
     }

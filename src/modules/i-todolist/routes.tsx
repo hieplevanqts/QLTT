@@ -1,10 +1,9 @@
 import { RouteObject } from 'react-router-dom';
-import './styles.css';
 import { CalendarPage } from './pages/CalendarPage';
 import { TaskListPage } from './pages/TaskListPage';
 import { TaskFormPage } from './pages/TaskFormPage';
 import { TaskDetailPage } from './pages/TaskDetailPage';
-
+import './styles.css';
 export const iTodolistRoute: RouteObject = {
   path: 'todolist',
   children: [

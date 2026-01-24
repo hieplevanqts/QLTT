@@ -11,6 +11,7 @@ import {
   deleteMenuItem,
   ensureSystemAdminDirs,
   getModulesRoot,
+  getRepoRoot,
   getUploadsDir,
   loadImportHistory,
   loadMenuRegistry,
@@ -188,6 +189,169 @@ const toModuleRelative = (moduleId: string, fullPath: string) => {
   const normalized = fullPath.replace(/\\/g, '/');
   const prefix = `src/modules/${moduleId}/`;
   return normalized.startsWith(prefix) ? normalized.slice(prefix.length) : normalized;
+};
+
+const toSnakeCase = (value: string) =>
+  value
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toLowerCase();
+
+const normalizePrefix = (value?: string) => {
+  if (!value) return '';
+  return toSnakeCase(value.replace(/^\/+/, ''));
+};
+
+const pluralize = (value: string) => (value.endsWith('s') ? value : `${value}s`);
+
+const extractArrayBlock = (content: string, startIndex: number) => {
+  let depth = 0;
+  for (let i = startIndex; i < content.length; i += 1) {
+    const char = content[i];
+    if (char === '[') {
+      depth += 1;
+    } else if (char === ']') {
+      depth -= 1;
+      if (depth === 0) {
+        return content.slice(startIndex, i + 1);
+      }
+    }
+  }
+  return '';
+};
+
+const extractArrayExports = (content: string) => {
+  const exports: { name: string; fields: string[] }[] = [];
+  const exportRegex = /export const ([A-Za-z0-9_]+)[^=]*=\s*\[/g;
+  let match: RegExpExecArray | null;
+  while ((match = exportRegex.exec(content)) !== null) {
+    const name = match[1];
+    const startIndex = match.index + match[0].lastIndexOf('[');
+    const block = extractArrayBlock(content, startIndex);
+    const fieldSet = new Set<string>();
+    const fieldRegex = /\b([A-Za-z_][A-Za-z0-9_]*)\s*:/g;
+    let fieldMatch: RegExpExecArray | null;
+    while ((fieldMatch = fieldRegex.exec(block)) !== null) {
+      fieldSet.add(fieldMatch[1]);
+    }
+    exports.push({ name, fields: [...fieldSet] });
+  }
+  return exports;
+};
+
+const parseSchemaTables = (content: string) => {
+  const tables = new Set<string>();
+  const regex = /CREATE TABLE public\.("?)([A-Za-z0-9_]+)\1/gi;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(content)) !== null) {
+    tables.add(match[2]);
+  }
+  return tables;
+};
+
+const findLatestSchemaSnapshot = async () => {
+  const repoRoot = getRepoRoot();
+  const backupsDir = path.join(repoRoot, 'backups');
+  const candidates: { filePath: string; mtime: number }[] = [];
+
+  const collectSchemaFiles = async (dir: string) => {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const entryPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        await collectSchemaFiles(entryPath);
+      } else if (entry.isFile() && entry.name.endsWith('.schema.sql')) {
+        const stat = await fs.stat(entryPath);
+        candidates.push({ filePath: entryPath, mtime: stat.mtimeMs });
+      }
+    }
+  };
+
+  try {
+    await collectSchemaFiles(backupsDir);
+  } catch {
+    // ignore missing backups dir
+  }
+
+  if (candidates.length > 0) {
+    candidates.sort((a, b) => b.mtime - a.mtime);
+    return candidates[0].filePath;
+  }
+
+  const docsSchema = path.join(repoRoot, 'docs', 'database-schema.sql');
+  try {
+    await fs.stat(docsSchema);
+    return docsSchema;
+  } catch {
+    return null;
+  }
+};
+
+const loadSchemaTableSet = async () => {
+  const schemaPath = await findLatestSchemaSnapshot();
+  if (!schemaPath) return { tables: null, source: null };
+  const content = await fs.readFile(schemaPath, 'utf8');
+  return { tables: parseSchemaTables(content), source: schemaPath };
+};
+
+const inferModuleDataTables = async (moduleId: string, basePath?: string) => {
+  const moduleDir = path.join(getModulesRoot(), moduleId);
+  const dataDir = path.join(moduleDir, 'data');
+  const inferred = new Map<string, { sources: Set<string>; fields: Set<string> }>();
+
+  try {
+    const entries = await listFiles(dataDir);
+    for (const file of entries) {
+      const filePath = path.join(dataDir, file);
+      if (file.endsWith('.json')) {
+        const content = await fs.readFile(filePath, 'utf8');
+        const payload = JSON.parse(content) as unknown;
+        if (Array.isArray(payload)) {
+          const fields = payload.length > 0 && typeof payload[0] === 'object' && payload[0]
+            ? Object.keys(payload[0] as Record<string, unknown>)
+            : [];
+          const baseName = toSnakeCase(path.parse(file).name);
+          if (!inferred.has(baseName)) {
+            inferred.set(baseName, { sources: new Set(), fields: new Set() });
+          }
+          const entry = inferred.get(baseName)!;
+          entry.sources.add(file);
+          fields.forEach((field) => entry.fields.add(field));
+        }
+      } else if (file.endsWith('.ts') || file.endsWith('.tsx')) {
+        const content = await fs.readFile(filePath, 'utf8');
+        const exports = extractArrayExports(content);
+        exports.forEach((item) => {
+          const rawName = item.name.replace(/^MOCK_/, '');
+          const suffix = toSnakeCase(rawName);
+          if (!suffix) return;
+          if (!inferred.has(suffix)) {
+            inferred.set(suffix, { sources: new Set(), fields: new Set() });
+          }
+          const entry = inferred.get(suffix)!;
+          entry.sources.add(`${file}#${item.name}`);
+          item.fields.forEach((field) => entry.fields.add(field));
+        });
+      }
+    }
+  } catch {
+    return [];
+  }
+
+  const prefix = normalizePrefix(basePath || moduleId);
+  const tables = [...inferred.entries()].map(([suffix, meta]) => {
+    const tableName = prefix && !suffix.startsWith(`${prefix}_`)
+      ? `${prefix}_${suffix}`
+      : suffix;
+    return {
+      table: tableName,
+      source: [...meta.sources],
+      fields: [...meta.fields],
+    };
+  });
+
+  return tables;
 };
 
 const collectMissingCssImports = async (moduleDir: string, files: string[]) => {
@@ -386,6 +550,60 @@ app.get('/system-admin/modules/:id', async (req, res) => {
       routesExists: files.includes(routesRel),
     };
 
+    const schemaSnapshot = await loadSchemaTableSet();
+    const inferredTables = await inferModuleDataTables(module.id, module.basePath);
+    const inferredTableNames = new Set(inferredTables.map((table) => table.table));
+
+    const tableRelations = inferredTables.map((table) => {
+      const relations = table.fields
+        .filter(field => /_?id$/i.test(field))
+        .map((field) => {
+          const base = field.replace(/_?id$/i, '');
+          if (!base) {
+            return null;
+          }
+          const targetSuffix = pluralize(toSnakeCase(base));
+          const prefix = normalizePrefix(module.basePath || module.id);
+          const targetTable = prefix && !targetSuffix.startsWith(`${prefix}_`)
+            ? `${prefix}_${targetSuffix}`
+            : targetSuffix;
+          const existsInSchema = schemaSnapshot.tables ? schemaSnapshot.tables.has(targetTable) : null;
+          const status = existsInSchema === null
+            ? 'unknown'
+            : existsInSchema
+              ? 'exists'
+              : 'missing';
+          return {
+            column: field,
+            targetTable,
+            status,
+            existsInMock: inferredTableNames.has(targetTable),
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null);
+
+      const dbStatus = schemaSnapshot.tables
+        ? schemaSnapshot.tables.has(table.table)
+          ? 'exists'
+          : 'missing'
+        : 'unknown';
+
+      return {
+        ...table,
+        dbStatus,
+        relations,
+      };
+    });
+
+    const menus = await loadMenuRegistry();
+    const linkedMenus = menus.filter((menu) =>
+      menu.moduleId === module.id || (module.basePath && menu.path?.startsWith(module.basePath))
+    );
+
+    const schemaSource = schemaSnapshot.source
+      ? path.relative(getRepoRoot(), schemaSnapshot.source).replace(/\\/g, '/')
+      : undefined;
+
     res.json({
       ...module,
       files,
@@ -393,6 +611,12 @@ app.get('/system-admin/modules/:id', async (req, res) => {
       cssAudit,
       missingCssImports,
       fileHealth,
+      dataModel: {
+        prefix: normalizePrefix(module.basePath || module.id),
+        schemaSource,
+        tables: tableRelations,
+      },
+      linkedMenus,
     });
   } catch (error: any) {
     res.status(500).json({ code: 'MODULE_DETAIL_FAILED', message: error.message });

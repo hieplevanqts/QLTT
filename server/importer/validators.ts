@@ -208,6 +208,56 @@ const collectExternalImports = (entries: ZipEntryInfo[], moduleRootPrefix: strin
   return external;
 };
 
+const collectCssImports = (
+  entries: ZipEntryInfo[],
+  moduleRootPrefix: string,
+  moduleId: string,
+) => {
+  const cssImports = new Set<string>();
+  const cssImportRegex = /import\s+(?:[^'"]+\s+from\s+)?['"]([^'"]+\.css)['"]/g;
+  const requireRegex = /require\(\s*['"]([^'"]+\.css)['"]\s*\)/g;
+  const moduleSegment = `modules/${moduleId}/`;
+
+  const addImport = (importPath: string, filePath: string) => {
+    const normalizedImport = importPath.replace(/\\/g, '/');
+    if (normalizedImport.includes(moduleSegment)) {
+      const index = normalizedImport.indexOf(moduleSegment);
+      cssImports.add(normalizedImport.slice(index + moduleSegment.length));
+      return;
+    }
+
+    if (normalizedImport.startsWith('.')) {
+      const resolved = path.posix.resolve(path.posix.dirname(filePath), normalizedImport);
+      cssImports.add(resolved.replace(/^\/+/, ''));
+    }
+  };
+
+  entries.forEach((entry) => {
+    if (entry.isDirectory) return;
+    const normalized = normalizeZipPath(entry.entryName);
+    const relativePath = moduleRootPrefix && normalized.startsWith(moduleRootPrefix)
+      ? normalized.slice(moduleRootPrefix.length)
+      : normalized;
+    if (!(relativePath.endsWith('.ts') || relativePath.endsWith('.tsx'))) {
+      return;
+    }
+
+    const content = entry.getData().toString('utf8');
+    const collect = (regex: RegExp) => {
+      let match: RegExpExecArray | null;
+      while ((match = regex.exec(content)) !== null) {
+        const spec = match[1];
+        if (!spec) continue;
+        addImport(spec, relativePath);
+      }
+    };
+    collect(cssImportRegex);
+    collect(requireRegex);
+  });
+
+  return cssImports;
+};
+
 export function validateZipEntries(entries: ZipEntryInfo[], ctx: ValidationContext): ValidatedZipResult {
   const results: ValidationResult[] = [];
   const fileEntries = entries.filter(entry => !entry.isDirectory);
@@ -408,6 +458,28 @@ export function validateZipEntries(entries: ZipEntryInfo[], ctx: ValidationConte
         'warning',
         'Project chưa cài dependencies',
         `${missingInProject.join(', ')} | npm i ${installList.join(' ')}`,
+      ));
+    }
+  }
+
+  const cssFiles = fileEntries
+    .map(entry => {
+      const normalized = normalizeZipPath(entry.entryName);
+      const relativePath = moduleRootPrefix && normalized.startsWith(moduleRootPrefix)
+        ? normalized.slice(moduleRootPrefix.length)
+        : normalized;
+      return relativePath;
+    })
+    .filter(relativePath => relativePath.endsWith('.css') && !relativePath.endsWith('.module.css'));
+
+  if (cssFiles.length > 0) {
+    const cssImports = collectCssImports(entries, moduleRootPrefix, moduleId);
+    const missingImports = cssFiles.filter(filePath => !cssImports.has(filePath));
+    if (missingImports.length > 0) {
+      results.push(buildValidationResult(
+        'warning',
+        'CSS global chua duoc import',
+        missingImports.join(', '),
       ));
     }
   }

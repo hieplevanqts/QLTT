@@ -94,6 +94,29 @@ export type ModuleDetail = ModuleInfo & {
     entryExists: boolean;
     routesExists: boolean;
   };
+  dataModel?: ModuleDataModel;
+  linkedMenus?: MenuItem[];
+};
+
+export type DataModelRelation = {
+  column: string;
+  targetTable: string;
+  status: "exists" | "missing" | "unknown";
+  existsInMock: boolean;
+};
+
+export type DataModelTable = {
+  table: string;
+  source: string[];
+  fields: string[];
+  dbStatus: "exists" | "missing" | "unknown";
+  relations: DataModelRelation[];
+};
+
+export type ModuleDataModel = {
+  prefix?: string;
+  schemaSource?: string;
+  tables: DataModelTable[];
 };
 
 export type ModuleManifestOverrides = {

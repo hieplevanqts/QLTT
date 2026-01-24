@@ -34,6 +34,10 @@ import UserList from '../pages/system/UserList';
 import RoleList from '../pages/system/RoleList';
 import SystemSettings from '../pages/system/SystemSettings';
 import Error404 from '../pages/system/Error404';
+import { systemAdminDashboardRoute } from '../modules/system-admin/routes';
+import { saMasterDataRoutes } from '../modules/system-admin/sa-master-data';
+import { saIamRoutes } from '../modules/system-admin/sa-iam';
+import { saSystemConfigRoutes } from '../modules/system-admin/sa-system-config';
 // Plans module - moved to /src/app/pages/plans/
 import { PlansProvider } from '../app/contexts/PlansContext';
 import { PlansList } from '../app/pages/plans/PlansList';
@@ -293,6 +297,10 @@ export const router = createBrowserRouter([
               </PermissionProtectedRoute>
             ),
           },
+          systemAdminDashboardRoute,
+          saMasterDataRoutes,
+          saIamRoutes,
+          saSystemConfigRoutes,
           ...installedRoutes,
           // Account pages
           {

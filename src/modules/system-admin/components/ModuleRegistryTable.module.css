@@ -1,0 +1,196 @@
+/* Table */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.table thead {
+  background-color: var(--color-muted);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.table th {
+  padding: var(--spacing-3) var(--spacing-4);
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.table tbody tr {
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color 0.15s;
+}
+
+.table tbody tr:hover {
+  background-color: var(--color-hover);
+}
+
+.table td {
+  padding: var(--spacing-4);
+  vertical-align: middle;
+}
+
+/* Module Info */
+.moduleInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.moduleName {
+  font-weight: 500;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.moduleId {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  font-family: 'Courier New', monospace;
+}
+
+.routeExport {
+  margin-top: var(--spacing-1);
+}
+
+.routeExport code {
+  font-size: var(--font-size-xs);
+  color: var(--color-info);
+  background-color: var(--color-info-subtle);
+  padding: 2px var(--spacing-2);
+  border-radius: var(--radius-sm);
+  font-family: 'Courier New', monospace;
+}
+
+/* Version Badge */
+.versionBadge {
+  display: inline-block;
+  padding: var(--spacing-1) var(--spacing-3);
+  background-color: var(--color-primary-subtle);
+  color: var(--color-primary);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+
+/* Code Path */
+.codePath {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  background-color: var(--color-muted);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--radius-sm);
+  font-family: 'Courier New', monospace;
+}
+
+/* Permission Count */
+.permissionCount {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+/* Release Badge */
+.releaseBadge {
+  display: inline-block;
+  padding: var(--spacing-1) var(--spacing-3);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.releaseMajor {
+  background-color: var(--color-danger-subtle);
+  color: var(--color-danger);
+}
+
+.releaseMinor {
+  background-color: var(--color-warning-subtle);
+  color: var(--color-warning);
+}
+
+.releasePatch {
+  background-color: var(--color-success-subtle);
+  color: var(--color-success);
+}
+
+/* Compatibility */
+.compat {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--font-size-xs);
+}
+
+.compatVersion {
+  font-family: 'Courier New', monospace;
+  color: var(--color-text-secondary);
+}
+
+.compatSeparator {
+  color: var(--color-text-tertiary);
+}
+
+/* Status */
+.statusEnabled,
+.statusDisabled {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-1) var(--spacing-3);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+}
+
+.statusEnabled {
+  background-color: var(--color-success-subtle);
+  color: var(--color-success);
+}
+
+.statusDisabled {
+  background-color: var(--color-muted);
+  color: var(--color-text-secondary);
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+/* Empty State */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-12) var(--spacing-6);
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.emptyState svg {
+  color: var(--color-text-tertiary);
+  margin-bottom: var(--spacing-4);
+}
+
+.emptyState h3 {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-2) 0;
+}
+
+.emptyState p {
+  font-size: var(--font-size-sm);
+  margin: 0;
+}

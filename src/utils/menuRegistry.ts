@@ -1,4 +1,4 @@
-import { MenuItem } from "../modules/system-admin/types";
+import type { MenuItem } from "../modules/system-admin/types";
 
 export type MenuNode = MenuItem & { children: MenuNode[] };
 

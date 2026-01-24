@@ -1,0 +1,49 @@
+/**
+ * PERMISSION GATE - Access denied display
+ */
+
+.denied {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  min-height: 400px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  text-align: center;
+}
+
+.icon {
+  width: 64px;
+  height: 64px;
+  background: rgba(217, 45, 32, 0.1);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--destructive);
+  margin-bottom: 20px;
+}
+
+.title {
+  margin: 0 0 12px 0;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+}
+
+.message {
+  margin: 0 0 24px 0;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  max-width: 500px;
+  line-height: 1.6;
+}
+
+.action {
+  /* Optional action button */
+}

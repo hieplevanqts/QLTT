@@ -1,10 +1,11 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, type RouteObject } from "react-router-dom";
 
 import { PermissionProtectedRoute } from "../../app/components/auth/PermissionProtectedRoute";
 import ModuleDetailPage from "./pages/ModuleDetailPage";
 import ModuleImportHistoryPage from "./pages/ModuleImportHistoryPage";
 import ModuleImportPage from "./pages/ModuleImportPage";
 import ModuleRegistryPage from "./pages/ModuleRegistryPage";
+import SystemAdminDashboardPage from "./pages/SystemAdminDashboardPage";
 import ModuleUpdatePage from "./pages/ModuleUpdatePage";
 import MenuRegistryPage from "./pages/MenuRegistryPage";
 
@@ -23,4 +24,13 @@ export const systemModulesRoute = {
     { path: "modules/:id", element: <ModuleDetailPage /> },
     { path: "menus", element: <MenuRegistryPage /> },
   ],
+};
+
+export const systemAdminDashboardRoute: RouteObject = {
+  path: "system-admin",
+  element: (
+    <PermissionProtectedRoute requiredPermission="ADMIN_VIEW">
+      <SystemAdminDashboardPage />
+    </PermissionProtectedRoute>
+  ),
 };
