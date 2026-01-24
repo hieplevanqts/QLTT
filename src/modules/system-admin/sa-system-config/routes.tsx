@@ -6,16 +6,13 @@
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 
-// Pages
-import {
-  ParametersPage,
-  OrganizationInfoPage,
-  OperationsPage,
-  NotificationsPage,
-  SecurityPage,
-  DatabaseLogsPage,
-  DatabaseBackupsPage
-} from './pages';
+const ParametersPage = React.lazy(() => import('./pages/ParametersPage'));
+const OrganizationInfoPage = React.lazy(() => import('./pages/OrganizationInfoPage'));
+const OperationsPage = React.lazy(() => import('./pages/OperationsPage'));
+const NotificationsPage = React.lazy(() => import('./pages/NotificationsPage'));
+const SecurityPage = React.lazy(() => import('./pages/SecurityPage'));
+const DatabaseLogsPage = React.lazy(() => import('./pages/DatabaseLogsPage'));
+const DatabaseBackupsPage = React.lazy(() => import('./pages/DatabaseBackupsPage'));
 
 /**
  * Route configuration cho SA System Config

@@ -26,7 +26,6 @@ import { supabase } from '../lib/supabase';
 import { Pagination, usePagination } from '../components/Pagination';
 import { ProvinceModal } from '../components/ProvinceModal';
 import { WardModal } from '../components/WardModal';
-import * as XLSX from 'xlsx';
 
 interface Province {
   id: string;
@@ -288,8 +287,9 @@ export const LocationsTab: React.FC = () => {
     }
   };
 
-  const handleExportProvincesExcel = () => {
+  const handleExportProvincesExcel = async () => {
     try {
+      const XLSX = await import('xlsx');
       const excelData = filteredProvinces.map((province, index) => ({
         'STT': index + 1,
         'Mã tỉnh/TP': province.code,
@@ -312,13 +312,14 @@ export const LocationsTab: React.FC = () => {
     }
   };
 
-  const handleExportWardsExcel = () => {
+  const handleExportWardsExcel = async () => {
     if (!selectedProvince) {
       toast.error('Vui lòng chọn tỉnh/thành phố');
       return;
     }
 
     try {
+      const XLSX = await import('xlsx');
       const excelData = filteredWards.map((ward, index) => ({
         'STT': index + 1,
         'Mã phường/xã': ward.code,

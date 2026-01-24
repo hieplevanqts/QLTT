@@ -6,16 +6,13 @@
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 
-// Pages
-import {
-  OrgUnitsPage,
-  DepartmentsPage,
-  JurisdictionsPage,
-  JurisdictionMapPage,
-  CatalogsPage,
-  CatalogItemsPage,
-  CatalogSchemaPage
-} from './pages';
+const OrgUnitsPage = React.lazy(() => import('./pages/OrgUnitsPage'));
+const DepartmentsPage = React.lazy(() => import('./pages/DepartmentsPage'));
+const JurisdictionsPage = React.lazy(() => import('./pages/JurisdictionsPage'));
+const JurisdictionMapPage = React.lazy(() => import('./pages/JurisdictionMapPage'));
+const CatalogsPage = React.lazy(() => import('./pages/CatalogsPage'));
+const CatalogItemsPage = React.lazy(() => import('./pages/CatalogItemsPage'));
+const CatalogSchemaPage = React.lazy(() => import('./pages/CatalogSchemaPage'));
 
 /**
  * Route configuration cho SA Master Data

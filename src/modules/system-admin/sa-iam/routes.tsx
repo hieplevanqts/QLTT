@@ -6,18 +6,15 @@
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 
-// Pages
-import {
-  UsersPage,
-  UserDetailPage,
-  RolesPage,
-  PermissionsPage,
-  AssignmentsPage,
-  UserAssignmentsPage,
-  RoleAssignmentsPage,
-  ModulesPage,
-  MenusPage
-} from './pages';
+const UsersPage = React.lazy(() => import('./pages/UsersPage'));
+const UserDetailPage = React.lazy(() => import('./pages/UserDetailPage'));
+const RolesPage = React.lazy(() => import('./pages/RolesPage'));
+const PermissionsPage = React.lazy(() => import('./pages/PermissionsPage'));
+const AssignmentsPage = React.lazy(() => import('./pages/AssignmentsPage'));
+const UserAssignmentsPage = React.lazy(() => import('./pages/UserAssignmentsPage'));
+const RoleAssignmentsPage = React.lazy(() => import('./pages/RoleAssignmentsPage'));
+const ModulesPage = React.lazy(() => import('./pages/ModulesPage'));
+const MenusPage = React.lazy(() => import('./pages/MenusPage'));
 
 /**
  * Route configuration cho SA IAM

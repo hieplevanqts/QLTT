@@ -1,9 +1,19 @@
+import React from 'react';
 import { RouteObject } from 'react-router-dom';
-import { CalendarPage } from './pages/CalendarPage';
-import { TaskListPage } from './pages/TaskListPage';
-import { TaskFormPage } from './pages/TaskFormPage';
-import { TaskDetailPage } from './pages/TaskDetailPage';
 import './styles.css';
+
+const CalendarPage = React.lazy(() =>
+  import('./pages/CalendarPage').then((module) => ({ default: module.CalendarPage })),
+);
+const TaskListPage = React.lazy(() =>
+  import('./pages/TaskListPage').then((module) => ({ default: module.TaskListPage })),
+);
+const TaskFormPage = React.lazy(() =>
+  import('./pages/TaskFormPage').then((module) => ({ default: module.TaskFormPage })),
+);
+const TaskDetailPage = React.lazy(() =>
+  import('./pages/TaskDetailPage').then((module) => ({ default: module.TaskDetailPage })),
+);
 export const iTodolistRoute: RouteObject = {
   path: 'todolist',
   children: [

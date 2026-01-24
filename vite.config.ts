@@ -34,7 +34,6 @@ export default defineConfig({
       mainFields: ['browser', 'module', 'main'],
       platform: 'browser',
     },
-    force: true, // Force re-optimization
   },
   build: {
     outDir: 'dist',
@@ -74,6 +73,9 @@ export default defineConfig({
   server: {
     host: '0.0.0.0', // Allow external connections (required for Docker)
     port: 5173,
+    headers: {
+      'Cache-Control': 'no-store',
+    },
   },
   base: '/', // Use absolute paths for browser router to work correctly on server
 })

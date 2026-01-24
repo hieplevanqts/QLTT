@@ -1,13 +1,15 @@
+import React from "react";
 import { Outlet, type RouteObject } from "react-router-dom";
 
 import { PermissionProtectedRoute } from "../../app/components/auth/PermissionProtectedRoute";
-import ModuleDetailPage from "./pages/ModuleDetailPage";
-import ModuleImportHistoryPage from "./pages/ModuleImportHistoryPage";
-import ModuleImportPage from "./pages/ModuleImportPage";
-import ModuleRegistryPage from "./pages/ModuleRegistryPage";
-import SystemAdminDashboardPage from "./pages/SystemAdminDashboardPage";
-import ModuleUpdatePage from "./pages/ModuleUpdatePage";
-import MenuRegistryPage from "./pages/MenuRegistryPage";
+
+const ModuleDetailPage = React.lazy(() => import("./pages/ModuleDetailPage"));
+const ModuleImportHistoryPage = React.lazy(() => import("./pages/ModuleImportHistoryPage"));
+const ModuleImportPage = React.lazy(() => import("./pages/ModuleImportPage"));
+const ModuleRegistryPage = React.lazy(() => import("./pages/ModuleRegistryPage"));
+const SystemAdminDashboardPage = React.lazy(() => import("./pages/SystemAdminDashboardPage"));
+const ModuleUpdatePage = React.lazy(() => import("./pages/ModuleUpdatePage"));
+const MenuRegistryPage = React.lazy(() => import("./pages/MenuRegistryPage"));
 
 export const systemModulesRoute = {
   path: "system",
