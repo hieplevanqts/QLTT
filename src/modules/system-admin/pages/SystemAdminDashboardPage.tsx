@@ -75,9 +75,9 @@ const quickSections = [
         tone: "bg-fuchsia-50 text-fuchsia-600",
       },
       {
-        label: "Địa bàn quản lý",
+        label: "Danh mục hành chính",
         description: "Quản lý địa bàn và bản đồ",
-        path: "/system-admin/master-data/jurisdictions",
+        path: "/system-admin/master-data/admin-areas",
         icon: MapPin,
         tone: "bg-emerald-50 text-emerald-600",
       },

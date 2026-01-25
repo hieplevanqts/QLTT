@@ -4,6 +4,7 @@
 
 export { default as OrgUnitsPage } from './OrgUnitsPage';
 export { default as DepartmentsPage } from './DepartmentsPage';
+export { default as AdminAreasPage } from './AdminAreasPage';
 export { default as JurisdictionsPage } from './JurisdictionsPage';
 export { default as JurisdictionMapPage } from './JurisdictionMapPage';
 export { default as CatalogsPage } from './CatalogsPage';

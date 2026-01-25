@@ -8,6 +8,7 @@ import { RouteObject } from 'react-router-dom';
 
 const OrgUnitsPage = React.lazy(() => import('./pages/OrgUnitsPage'));
 const DepartmentsPage = React.lazy(() => import('./pages/DepartmentsPage'));
+const AdminAreasPage = React.lazy(() => import('./pages/AdminAreasPage'));
 const JurisdictionsPage = React.lazy(() => import('./pages/JurisdictionsPage'));
 const JurisdictionMapPage = React.lazy(() => import('./pages/JurisdictionMapPage'));
 const CatalogsPage = React.lazy(() => import('./pages/CatalogsPage'));
@@ -33,6 +34,13 @@ export const saMasterDataRoutes: RouteObject = {
       path: 'departments',
       element: <DepartmentsPage />
       // Permission: sa.masterdata.department.read (checked in component)
+    },
+
+    // Admin Areas - Danh mục hành chính (Province -> Ward)
+    {
+      path: 'admin-areas',
+      element: <AdminAreasPage />
+      // Permission: sa.masterdata.jurisdiction.read (checked in component)
     },
     
     // Jurisdictions - Địa bàn

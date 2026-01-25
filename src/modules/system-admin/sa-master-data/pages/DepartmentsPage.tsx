@@ -1,411 +1,615 @@
-/**
- * DEPARTMENTS PAGE - Quản lý phòng ban
- * Full CRUD with mock service
- */
-
-import React, { useState, useEffect } from 'react';
-import { Plus, Briefcase, Edit2, Power } from 'lucide-react';
-import { toast } from 'sonner';
-import { PermissionGate, EmptyState, LoadingState, usePermissions } from '../../_shared';
+import React from "react";
 import {
-  StatusBadge,
-  DataToolbar,
-  DataTable,
-  Pagination,
-  cellStyles,
-  ConfirmDialog,
-  FormDrawer,
-  FormGroup,
-  formStyles
-} from '../../_shared';
-import PageHeader from '@/layouts/PageHeader';
-import { Button } from '@/app/components/ui/button';
-import { Card, CardContent } from '@/app/components/ui/card';
-import type { Department, OrgUnit } from '../types';
-import type { CreateDepartmentPayload, UpdateDepartmentPayload } from '../../mocks/masterData.types';
+  Button,
+  Card,
+  Drawer,
+  Form,
+  Input,
+  InputNumber,
+  Modal,
+  Select,
+  Space,
+  Switch,
+  Table,
+  Tabs,
+  Tag,
+  Typography,
+  message,
+} from "antd";
+import type { ColumnsType } from "antd/es/table";
 import {
-  listDepartments,
-  getDepartmentById,
-  createDepartment,
-  updateDepartment,
-  deleteDepartment,
-  listOrgUnits
-} from '../../mocks/masterData.service';
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  EditOutlined,
+  PlusOutlined,
+  StopOutlined,
+  UserAddOutlined,
+} from "@ant-design/icons";
 
-type FormMode = 'create' | 'edit' | null;
+import PageHeader from "@/layouts/PageHeader";
+import { PermissionGate, usePermissions } from "../../_shared";
+import { useAuth } from "../../../../contexts/AuthContext";
+import { useQLTTScope } from "../../../../contexts/QLTTScopeContext";
+import {
+  subDepartmentsService,
+  type SubDepartmentRecord,
+  type SubDepartmentPayload,
+} from "../services/subDepartments.service";
+import {
+  subDepartmentUsersService,
+  type SubDepartmentMember,
+  type UserOption,
+} from "../services/subDepartmentUsers.service";
 
-interface FormData {
+type FormMode = "create" | "edit";
+
+type StatusFilter = "all" | "active" | "inactive";
+
+type FormValues = {
   code: string;
   name: string;
-  orgUnitId: string;
-  description: string;
-  status: 'active' | 'inactive';
-}
+  order_index?: number | null;
+  is_active?: boolean;
+};
 
-const initialFormData: FormData = {
-  code: '',
-  name: '',
-  orgUnitId: '',
-  description: '',
-  status: 'active'
+const statusLabel = (value?: boolean | null) => (value ? "Hoạt động" : "Ngừng");
+
+const buildUserLabel = (user: UserOption) => {
+  const main = user.full_name || user.username || user.email || user.id;
+  const detail = user.email || user.username;
+  if (detail && detail !== main) {
+    return `${main} (${detail})`;
+  }
+  return main;
 };
 
 export default function DepartmentsPage() {
+  const { user } = useAuth();
+  const { scope } = useQLTTScope();
   const { hasPermission } = usePermissions();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [orgUnits, setOrgUnits] = useState<OrgUnit[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const scopeUnitId = scope.teamId || scope.divisionId || user?.departmentInfo?.id || null;
 
-  const [formMode, setFormMode] = useState<FormMode>(null);
-  const [formData, setFormData] = useState<FormData>(initialFormData);
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [loading, setLoading] = React.useState(false);
+  const [subDepartments, setSubDepartments] = React.useState<SubDepartmentRecord[]>([]);
+  const [total, setTotal] = React.useState(0);
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(10);
+  const [search, setSearch] = React.useState("");
+  const [statusFilter, setStatusFilter] = React.useState<StatusFilter>("all");
 
-  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; id: string | null; name: string }>({
-    open: false,
-    id: null,
-    name: ''
-  });
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+  const [drawerMode, setDrawerMode] = React.useState<FormMode>("create");
+  const [activeTab, setActiveTab] = React.useState("info");
+  const [selected, setSelected] = React.useState<SubDepartmentRecord | null>(null);
 
-  const canCreate = hasPermission('sa.masterdata.department.create');
-  const canUpdate = hasPermission('sa.masterdata.department.update');
-  const canDelete = hasPermission('sa.masterdata.department.delete');
+  const [members, setMembers] = React.useState<SubDepartmentMember[]>([]);
+  const [membersLoading, setMembersLoading] = React.useState(false);
+  const [memberModalOpen, setMemberModalOpen] = React.useState(false);
+  const [memberOptions, setMemberOptions] = React.useState<UserOption[]>([]);
+  const [memberLoading, setMemberLoading] = React.useState(false);
+  const [memberSelection, setMemberSelection] = React.useState<string[]>([]);
 
-  useEffect(() => {
-    loadDepartments();
-    loadOrgUnits();
-  }, [currentPage, searchQuery]);
+  const [form] = Form.useForm<FormValues>();
+  const canCreate = hasPermission("sa.masterdata.department.create");
+  const canUpdate = hasPermission("sa.masterdata.department.update");
 
-  const loadDepartments = async () => {
+  const loadSubDepartments = React.useCallback(async () => {
+    if (!scopeUnitId) {
+      return;
+    }
     setLoading(true);
     try {
-      const response = await listDepartments({
-        page: currentPage,
+      const response = await subDepartmentsService.listSubDepartments({
+        scopeUnitId,
+        search,
+        status: statusFilter,
+        page,
         pageSize,
-        search: searchQuery,
-        sort: { field: 'createdAt', order: 'desc' }
       });
-
-      if (response.success && response.data) {
-        setDepartments(response.data.data);
-        setTotalCount(response.data.total);
-        setTotalPages(response.data.totalPages);
-      } else {
-        toast.error(response.error || 'Lỗi khi tải dữ liệu');
-      }
-    } catch (error) {
-      toast.error('Lỗi khi tải dữ liệu');
+      setSubDepartments(response.data);
+      setTotal(response.total);
+    } catch (err) {
+      const messageText = err instanceof Error ? err.message : "Không thể tải phòng ban.";
+      message.error(messageText);
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, pageSize, scopeUnitId, search, statusFilter]);
 
-  const loadOrgUnits = async () => {
-    const response = await listOrgUnits({ pageSize: 100 });
-    if (response.success && response.data) {
-      setOrgUnits(response.data.data.filter(u => u.status === 'active'));
+  React.useEffect(() => {
+    void loadSubDepartments();
+  }, [loadSubDepartments]);
+
+  const loadMembers = React.useCallback(async (subDepartmentId: string) => {
+    setMembersLoading(true);
+    try {
+      const data = await subDepartmentUsersService.listMembers(subDepartmentId);
+      setMembers(data);
+    } catch (err) {
+      const messageText = err instanceof Error ? err.message : "Không thể tải thành viên.";
+      message.error(messageText);
+    } finally {
+      setMembersLoading(false);
     }
-  };
+  }, []);
+
+  React.useEffect(() => {
+    if (!drawerOpen || !selected || activeTab !== "members") {
+      return;
+    }
+    void loadMembers(selected.id);
+  }, [drawerOpen, selected, activeTab, loadMembers]);
 
   const handleOpenCreate = () => {
-    setFormMode('create');
-    setFormData(initialFormData);
-    setFormErrors({});
-    setEditingId(null);
+    if (!scopeUnitId) {
+      message.error("Chưa xác định đơn vị quản lý.");
+      return;
+    }
+    setDrawerMode("create");
+    setSelected(null);
+    setActiveTab("info");
+    form.resetFields();
+    form.setFieldsValue({
+      is_active: true,
+    });
+    setDrawerOpen(true);
   };
 
-  const handleOpenEdit = async (id: string) => {
-    setFormMode('edit');
-    setEditingId(id);
-    setFormErrors({});
-
-    const response = await getDepartmentById(id);
-    if (response.success && response.data) {
-      setFormData({
-        code: response.data.code,
-        name: response.data.name,
-        orgUnitId: response.data.orgUnitId,
-        description: '',
-        status: response.data.status
+  const handleOpenEdit = async (record: SubDepartmentRecord) => {
+    if (!scopeUnitId) {
+      message.error("Chưa xác định đơn vị quản lý.");
+      return;
+    }
+    try {
+      const detail = await subDepartmentsService.getSubDepartment(record.id, scopeUnitId);
+      if (!detail) {
+        message.warning("Không tìm thấy phòng ban.");
+        return;
+      }
+      setDrawerMode("edit");
+      setSelected(detail);
+      setActiveTab("info");
+      form.resetFields();
+      form.setFieldsValue({
+        code: detail.code,
+        name: detail.name,
+        order_index: detail.order_index ?? undefined,
+        is_active: detail.is_active ?? true,
       });
+      setDrawerOpen(true);
+    } catch (err) {
+      const messageText = err instanceof Error ? err.message : "Không thể tải phòng ban.";
+      message.error(messageText);
     }
   };
 
-  const handleCloseForm = () => {
-    if (!submitting) {
-      setFormMode(null);
-      setFormData(initialFormData);
-      setFormErrors({});
-      setEditingId(null);
-    }
-  };
-
-  const validateForm = (): boolean => {
-    const errors: Record<string, string> = {};
-
-    if (!formData.code.trim()) {
-      errors.code = 'Mã phòng ban là bắt buộc';
-    }
-
-    if (!formData.name.trim()) {
-      errors.name = 'Tên phòng ban là bắt buộc';
-    }
-
-    if (!formData.orgUnitId) {
-      errors.orgUnitId = 'Đơn vị trực thuộc là bắt buộc';
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+  const handleCloseDrawer = () => {
+    if (loading) return;
+    setDrawerOpen(false);
+    setSelected(null);
+    setActiveTab("info");
+    setMembers([]);
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) return;
-
-    setSubmitting(true);
-
+    if (!scopeUnitId) {
+      message.error("Chưa xác định đơn vị quản lý.");
+      return;
+    }
+    if (drawerMode === "create" && !canCreate) {
+      message.warning("Bạn không có quyền tạo phòng ban.");
+      return;
+    }
+    if (drawerMode === "edit" && !canUpdate) {
+      message.warning("Bạn không có quyền cập nhật phòng ban.");
+      return;
+    }
     try {
-      const payload: CreateDepartmentPayload | UpdateDepartmentPayload = {
-        code: formData.code,
-        name: formData.name,
-        orgUnitId: formData.orgUnitId,
-        description: formData.description,
-        status: formData.status
+      const values = await form.validateFields();
+      const payload: SubDepartmentPayload = {
+        department_id: scopeUnitId,
+        code: values.code.trim(),
+        name: values.name.trim(),
+        order_index: typeof values.order_index === "number" ? values.order_index : null,
+        is_active: values.is_active ?? true,
       };
 
-      let response;
-      if (formMode === 'create') {
-        response = await createDepartment(payload as CreateDepartmentPayload);
-      } else if (formMode === 'edit' && editingId) {
-        response = await updateDepartment(editingId, payload);
+      if (drawerMode === "create") {
+        await subDepartmentsService.createSubDepartment(payload);
+        message.success("Tạo phòng ban thành công.");
+      } else if (selected) {
+        await subDepartmentsService.updateSubDepartment(selected.id, scopeUnitId, payload);
+        message.success("Cập nhật phòng ban thành công.");
       }
-
-      if (response && response.success) {
-        toast.success(formMode === 'create' ? 'Tạo phòng ban thành công' : 'Cập nhật phòng ban thành công');
-        handleCloseForm();
-        loadDepartments();
-      } else {
-        toast.error(response?.error || 'Có lỗi xảy ra');
-      }
-    } catch (error) {
-      toast.error('Có lỗi xảy ra');
-    } finally {
-      setSubmitting(false);
+      setDrawerOpen(false);
+      await loadSubDepartments();
+    } catch (err) {
+      const messageText = err instanceof Error ? err.message : "Không thể lưu phòng ban.";
+      message.error(messageText);
     }
   };
 
-  const handleOpenDelete = (id: string, name: string) => {
-    setDeleteDialog({ open: true, id, name });
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!deleteDialog.id) return;
-
-    setSubmitting(true);
+  const handleToggleStatus = async (record: SubDepartmentRecord) => {
+    if (!scopeUnitId) {
+      message.error("Chưa xác định đơn vị quản lý.");
+      return;
+    }
     try {
-      const response = await deleteDepartment(deleteDialog.id, false);
-      if (response.success) {
-        toast.success('Ngừng hoạt động phòng ban thành công');
-        setDeleteDialog({ open: false, id: null, name: '' });
-        loadDepartments();
-      } else {
-        toast.error(response.error || 'Có lỗi xảy ra');
-      }
-    } catch (error) {
-      toast.error('Có lỗi xảy ra');
+      const nextStatus = !record.is_active;
+      await subDepartmentsService.toggleStatus(record.id, scopeUnitId, nextStatus);
+      message.success(nextStatus ? "Đã kích hoạt phòng ban." : "Đã ngừng phòng ban.");
+      await loadSubDepartments();
+    } catch (err) {
+      const messageText = err instanceof Error ? err.message : "Không thể cập nhật trạng thái.";
+      message.error(messageText);
+    }
+  };
+
+  const handleOpenMemberModal = () => {
+    setMemberOptions([]);
+    setMemberSelection([]);
+    setMemberModalOpen(true);
+    if (scopeUnitId) {
+      void handleSearchUsers("");
+    }
+  };
+
+  const handleSearchUsers = async (value: string) => {
+    if (!scopeUnitId) return;
+    setMemberLoading(true);
+    try {
+      const options = await subDepartmentUsersService.searchUsersInScope(scopeUnitId, value, 20);
+      setMemberOptions(options);
+    } catch (err) {
+      const messageText = err instanceof Error ? err.message : "Không thể tìm người dùng.";
+      message.error(messageText);
     } finally {
-      setSubmitting(false);
+      setMemberLoading(false);
     }
   };
 
-  const getOrgUnitName = (orgUnitId: string) => {
-    const orgUnit = orgUnits.find(u => u.id === orgUnitId);
-    return orgUnit ? orgUnit.name : 'N/A';
+  const handleSaveMembers = async () => {
+    if (!selected || memberSelection.length === 0) {
+      setMemberModalOpen(false);
+      return;
+    }
+
+    try {
+      const assignments = await subDepartmentUsersService.getAssignmentsByUserIds(memberSelection);
+      const existingByUser = new Map(assignments.map((item) => [item.user_id, item]));
+      const toMove = assignments.filter((item) => item.sub_department_id !== selected.id);
+      const toInsert = memberSelection.filter((userId) => !existingByUser.has(userId));
+
+      if (toMove.length > 0) {
+        const names = toMove
+          .map((item) => {
+            const option = memberOptions.find((opt) => opt.id === item.user_id);
+            const targetName = item.sub_department?.name || item.sub_department?.code || "phòng ban khác";
+            return `${option ? buildUserLabel(option) : item.user_id} → ${targetName}`;
+          })
+          .join(", ");
+
+        const confirmed = await new Promise<boolean>((resolve) => {
+          Modal.confirm({
+            title: "Chuyển phòng ban cho người dùng?",
+            content: `Một số người dùng đang thuộc phòng ban khác: ${names}. Bạn có muốn chuyển sang phòng ban hiện tại không?`,
+            onOk: () => resolve(true),
+            onCancel: () => resolve(false),
+          });
+        });
+
+        if (!confirmed) {
+          return;
+        }
+      }
+
+      const moveIds = toMove.map((item) => item.user_id);
+      await Promise.all([
+        subDepartmentUsersService.moveUsersToSubDepartment(selected.id, moveIds),
+        subDepartmentUsersService.addUsersToSubDepartment(selected.id, toInsert),
+      ]);
+
+      message.success("Đã cập nhật thành viên.");
+      setMemberModalOpen(false);
+      setMemberSelection([]);
+      await loadMembers(selected.id);
+    } catch (err) {
+      const messageText = err instanceof Error ? err.message : "Không thể cập nhật thành viên.";
+      message.error(messageText);
+    }
   };
 
-  const columns = [
+  const handleRemoveMember = async (member: SubDepartmentMember) => {
+    if (!selected) return;
+    try {
+      await subDepartmentUsersService.removeUsersFromSubDepartment(selected.id, [member.user_id]);
+      message.success("Đã gỡ thành viên khỏi phòng ban.");
+      await loadMembers(selected.id);
+    } catch (err) {
+      const messageText = err instanceof Error ? err.message : "Không thể gỡ thành viên.";
+      message.error(messageText);
+    }
+  };
+
+  const columns: ColumnsType<SubDepartmentRecord> = [
     {
-      header: 'Mã phòng ban',
-      render: (item: Department) => <span className={cellStyles.code}>{item.code}</span>,
-      width: '140px'
+      title: "Mã phòng ban",
+      dataIndex: "code",
+      key: "code",
+      width: 180,
+      render: (value) => <Typography.Text strong>{value}</Typography.Text>,
     },
     {
-      header: 'Tên phòng ban',
-      render: (item: Department) => <span className={cellStyles.name}>{item.name}</span>
+      title: "Tên phòng ban",
+      dataIndex: "name",
+      key: "name",
     },
     {
-      header: 'Đơn vị trực thuộc',
-      render: (item: Department) => <span className={cellStyles.muted}>{getOrgUnitName(item.orgUnitId)}</span>
+      title: "Đơn vị trực thuộc",
+      dataIndex: ["department", "name"],
+      key: "department",
+      render: (_value, record) => record.department?.name || record.department_id,
     },
     {
-      header: 'Trạng thái',
-      render: (item: Department) => (
-        <StatusBadge variant={item.status === 'active' ? 'active' : 'inactive'}>
-          {item.status === 'active' ? 'Hoạt động' : 'Ngừng hoạt động'}
-        </StatusBadge>
+      title: "Trạng thái",
+      dataIndex: "is_active",
+      key: "is_active",
+      width: 140,
+      render: (value) => (
+        <Tag color={value ? "green" : "default"}>{statusLabel(value)}</Tag>
       ),
-      width: '140px'
     },
     {
-      header: 'Thao tác',
-      render: (item: Department) => (
-        <div className={cellStyles.actions}>
-          <button className={cellStyles.actionButton} onClick={() => handleOpenEdit(item.id)} disabled={!canUpdate}>
-            <Edit2 size={14} style={{ marginRight: '4px' }} />
+      title: "Thao tác",
+      key: "actions",
+      width: 200,
+      render: (_value, record) => (
+        <Space>
+          <Button
+            type="default"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => handleOpenEdit(record)}
+            disabled={!canUpdate}
+          >
             Sửa
-          </button>
-          {item.status === 'active' && (
-            <button
-              className={cellStyles.actionButtonDanger}
-              onClick={() => handleOpenDelete(item.id, item.name)}
-              disabled={!canDelete}
-            >
-              <Power size={14} style={{ marginRight: '4px' }} />
-              Ngừng
-            </button>
-          )}
-        </div>
+          </Button>
+          <Button
+            size="small"
+            danger={record.is_active ?? false}
+            icon={record.is_active ? <StopOutlined /> : <CheckCircleOutlined />}
+            onClick={() => void handleToggleStatus(record)}
+            disabled={!canUpdate}
+          >
+            {record.is_active ? "Ngừng" : "Kích hoạt"}
+          </Button>
+        </Space>
       ),
-      width: '180px'
-    }
+    },
+  ];
+
+  const memberColumns: ColumnsType<SubDepartmentMember> = [
+    {
+      title: "Họ và tên",
+      dataIndex: ["user", "full_name"],
+      key: "full_name",
+      render: (_value, record) => record.user?.full_name || record.user?.username || record.user?.email || record.user_id,
+    },
+    {
+      title: "Email",
+      dataIndex: ["user", "email"],
+      key: "email",
+    },
+    {
+      title: "Tài khoản",
+      dataIndex: ["user", "username"],
+      key: "username",
+    },
+    {
+      title: "Thao tác",
+      key: "actions",
+      width: 140,
+      render: (_value, record) => (
+        <Button size="small" danger onClick={() => void handleRemoveMember(record)}>
+          Gỡ
+        </Button>
+      ),
+    },
   ];
 
   return (
     <PermissionGate permission="sa.masterdata.department.read">
-      <div style={{ padding: '24px' }}>
+      <div style={{ padding: 24 }}>
         <PageHeader
-          breadcrumbs={[
-            { label: 'Trang chủ', href: '/' },
-            { label: 'Quản trị hệ thống', href: '/system-admin' },
-            { label: 'Dữ liệu nền' },
-            { label: 'Phòng ban' }
-          ]}
           title="Quản lý Phòng ban"
-          subtitle="Quản lý phòng ban thuộc các đơn vị tổ chức"
-          actions={
-            <Button size="sm" onClick={handleOpenCreate} disabled={!canCreate}>
-              <Plus size={18} />
-              Thêm phòng ban
-            </Button>
-          }
+          breadcrumbs={[
+            { label: "Trang chủ", href: "/" },
+            { label: "Quản trị hệ thống", href: "/system-admin" },
+            { label: "Dữ liệu nền", href: "/system-admin/master-data" },
+            { label: "Phòng ban" },
+          ]}
         />
 
         <Card>
-          <CardContent>
-            <DataToolbar
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              searchPlaceholder="Tìm theo mã, tên phòng ban..."
-              totalCount={totalCount}
-              entityLabel="phòng ban"
-            />
+          {!scopeUnitId ? (
+            <Typography.Text type="danger">
+              Chưa xác định đơn vị quản lý. Vui lòng chọn phạm vi ở thanh trên hoặc kiểm tra lại đơn vị của tài khoản.
+            </Typography.Text>
+          ) : (
+          <Space direction="vertical" style={{ width: "100%" }} size="middle">
+            <Space wrap style={{ width: "100%", justifyContent: "space-between" }}>
+              <Space wrap>
+                <Input.Search
+                  placeholder="Tìm theo mã, tên phòng ban..."
+                  allowClear
+                  onSearch={(value) => {
+                    setSearch(value);
+                    setPage(1);
+                  }}
+                  style={{ width: 280 }}
+                />
+                <Select
+                  value={statusFilter}
+                  onChange={(value) => {
+                    setStatusFilter(value);
+                    setPage(1);
+                  }}
+                  options={[
+                    { value: "all", label: "Tất cả trạng thái" },
+                    { value: "active", label: "Hoạt động" },
+                    { value: "inactive", label: "Ngừng" },
+                  ]}
+                  style={{ width: 180 }}
+                />
+              </Space>
+              <Space>
+                <Typography.Text type="secondary">Tổng: {total} phòng ban</Typography.Text>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={handleOpenCreate}
+                  disabled={!canCreate || !scopeUnitId}
+                >
+                  Thêm phòng ban
+                </Button>
+              </Space>
+            </Space>
 
-            {loading ? (
-              <LoadingState message="Đang tải dữ liệu..." />
-            ) : departments.length === 0 ? (
-              <EmptyState
-                icon={<Briefcase size={48} />}
-                title="Chưa có phòng ban"
-                message="Chưa có phòng ban nào trong hệ thống. Nhấn 'Thêm phòng ban' để bắt đầu."
-              />
-            ) : (
-              <>
-                <DataTable columns={columns} data={departments} keyExtractor={(item) => item.id} />
-                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
-              </>
-            )}
-          </CardContent>
+            <Table
+              rowKey="id"
+              columns={columns}
+              dataSource={subDepartments}
+              loading={loading}
+              pagination={{
+                current: page,
+                pageSize,
+                total,
+                onChange: (nextPage, nextPageSize) => {
+                  setPage(nextPage);
+                  if (nextPageSize !== pageSize) {
+                    setPageSize(nextPageSize ?? 10);
+                  }
+                },
+              }}
+            />
+          </Space>
+          )}
         </Card>
 
-        <FormDrawer
-          open={formMode !== null}
-          onClose={handleCloseForm}
-          title={formMode === 'create' ? 'Thêm phòng ban' : 'Chỉnh sửa phòng ban'}
-          subtitle={formMode === 'create' ? 'Tạo phòng ban mới' : 'Cập nhật thông tin phòng ban'}
-          onSubmit={handleSubmit}
-          loading={submitting}
+        <Drawer
+          open={drawerOpen}
+          onClose={handleCloseDrawer}
+          width={560}
+          title={drawerMode === "create" ? "Thêm phòng ban" : "Chỉnh sửa phòng ban"}
+          extra={
+            <Space>
+              <Button onClick={handleCloseDrawer}>Hủy</Button>
+              <Button
+                type="primary"
+                onClick={handleSubmit}
+                disabled={(drawerMode === "create" && !canCreate) || (drawerMode === "edit" && !canUpdate)}
+              >
+                Lưu
+              </Button>
+            </Space>
+          }
         >
-          <FormGroup label="Mã phòng ban" required error={formErrors.code}>
-            <input
-              type="text"
-              className={`${formStyles.input} ${formErrors.code ? formStyles.inputError : ''}`}
-              value={formData.code}
-              onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-              placeholder="VD: PHONG-TCKT"
-              disabled={submitting}
+          <Tabs
+            activeKey={activeTab}
+            onChange={setActiveTab}
+            items={[
+              {
+                key: "info",
+                label: "Thông tin",
+                children: (
+                  <Form layout="vertical" form={form}>
+                    <Form.Item
+                      name="code"
+                      label="Mã phòng ban"
+                      rules={[{ required: true, message: "Vui lòng nhập mã phòng ban." }]}
+                    >
+                      <Input placeholder="VD: QT-TH" disabled={drawerMode === "edit"} />
+                    </Form.Item>
+                    <Form.Item
+                      name="name"
+                      label="Tên phòng ban"
+                      rules={[{ required: true, message: "Vui lòng nhập tên phòng ban." }]}
+                    >
+                      <Input placeholder="VD: Phòng Tổng hợp" />
+                    </Form.Item>
+                    <Form.Item name="order_index" label="Thứ tự hiển thị">
+                      <InputNumber min={0} style={{ width: "100%" }} />
+                    </Form.Item>
+                    <Form.Item name="is_active" label="Trạng thái" valuePropName="checked">
+                      <Switch
+                        checkedChildren={<CheckCircleOutlined />}
+                        unCheckedChildren={<CloseCircleOutlined />}
+                      />
+                    </Form.Item>
+                  </Form>
+                ),
+              },
+              ...(drawerMode === "edit"
+                ? [
+                    {
+                      key: "members",
+                      label: `Thành viên (${members.length})`,
+                      children: (
+                        <Space direction="vertical" style={{ width: "100%" }} size="middle">
+                          <Space style={{ width: "100%", justifyContent: "space-between" }}>
+                            <Typography.Text type="secondary">
+                              Danh sách người dùng trong phòng ban
+                            </Typography.Text>
+                            <Button icon={<UserAddOutlined />} onClick={handleOpenMemberModal}>
+                              Thêm thành viên
+                            </Button>
+                          </Space>
+                          <Table
+                            rowKey={(record) => String(record.id)}
+                            columns={memberColumns}
+                            dataSource={members}
+                            loading={membersLoading}
+                            pagination={false}
+                          />
+                        </Space>
+                      ),
+                    },
+                  ]
+                : []),
+            ]}
+          />
+        </Drawer>
+
+        <Modal
+          open={memberModalOpen}
+          onCancel={() => setMemberModalOpen(false)}
+          onOk={handleSaveMembers}
+          okText="Lưu"
+          cancelText="Hủy"
+          title="Thêm thành viên"
+        >
+          <Space direction="vertical" style={{ width: "100%" }}>
+            <Typography.Text>
+              Chọn người dùng thuộc cùng đơn vị quản lý để thêm vào phòng ban.
+            </Typography.Text>
+            <Select
+              mode="multiple"
+              showSearch
+              placeholder="Tìm người dùng theo tên/email..."
+              filterOption={false}
+              onSearch={handleSearchUsers}
+              loading={memberLoading}
+              options={memberOptions.map((option) => ({
+                value: option.id,
+                label: buildUserLabel(option),
+              }))}
+              value={memberSelection}
+              onChange={(value) => setMemberSelection(value)}
+              style={{ width: "100%" }}
             />
-          </FormGroup>
-
-          <FormGroup label="Tên phòng ban" required error={formErrors.name}>
-            <input
-              type="text"
-              className={`${formStyles.input} ${formErrors.name ? formStyles.inputError : ''}`}
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="VD: Phòng Tổng hợp"
-              disabled={submitting}
-            />
-          </FormGroup>
-
-          <FormGroup label="Đơn vị trực thuộc" required error={formErrors.orgUnitId}>
-            <select
-              className={`${formStyles.select} ${formErrors.orgUnitId ? formStyles.inputError : ''}`}
-              value={formData.orgUnitId}
-              onChange={(e) => setFormData({ ...formData, orgUnitId: e.target.value })}
-              disabled={submitting}
-            >
-              <option value="">-- Chọn đơn vị --</option>
-              {orgUnits.map((unit) => (
-                <option key={unit.id} value={unit.id}>
-                  {unit.name}
-                </option>
-              ))}
-            </select>
-          </FormGroup>
-
-          <FormGroup label="Mô tả">
-            <textarea
-              className={formStyles.textarea}
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Mô tả về phòng ban..."
-              disabled={submitting}
-              rows={3}
-            />
-          </FormGroup>
-
-          <FormGroup label="Trạng thái" required>
-            <select
-              className={formStyles.select}
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
-              disabled={submitting}
-            >
-              <option value="active">Hoạt động</option>
-              <option value="inactive">Ngừng hoạt động</option>
-            </select>
-          </FormGroup>
-        </FormDrawer>
-
-        <ConfirmDialog
-          open={deleteDialog.open}
-          onClose={() => setDeleteDialog({ open: false, id: null, name: '' })}
-          onConfirm={handleConfirmDelete}
-          title="Ngừng hoạt động phòng ban?"
-          description={`Bạn có chắc muốn ngừng hoạt động phòng ban "${deleteDialog.name}"?`}
-          variant="warning"
-          confirmLabel="Ngừng hoạt động"
-          loading={submitting}
-        />
+          </Space>
+        </Modal>
       </div>
     </PermissionGate>
   );
 }
-
-

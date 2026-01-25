@@ -35,7 +35,7 @@ export default function JurisdictionMapPage() {
           { label: 'Trang chủ', path: '/' },
           { label: 'Quản trị hệ thống', path: '/system-admin' },
           { label: 'Dữ liệu nền', path: '/system-admin/master-data' },
-          { label: 'Địa bàn', path: '/system-admin/master-data/jurisdictions' },
+          { label: 'Danh mục hành chính', path: '/system-admin/master-data/jurisdictions' },
           { label: jurisdiction.name }
         ]}
         actions={
@@ -91,7 +91,7 @@ export default function JurisdictionMapPage() {
               </label>
               <label className={styles.layerItem}>
                 <input type="checkbox" checked disabled />
-                <span>Địa bàn quản lý</span>
+                <span>Danh mục hành chính</span>
               </label>
             </div>
           </div>

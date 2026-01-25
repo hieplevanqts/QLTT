@@ -1,5 +1,5 @@
 /**
- * JURISDICTIONS PAGE (AREAS) - Quản lý địa bàn quản lý
+ * JURISDICTIONS PAGE (AREAS) - Danh mục hành chính
  * Full CRUD with mock service
  */
 
@@ -285,10 +285,10 @@ export default function JurisdictionsPage() {
             { label: 'Trang chủ', href: '/' },
             { label: 'Quản trị hệ thống', href: '/system-admin' },
             { label: 'Dữ liệu nền' },
-            { label: 'Địa bàn quản lý' }
+            { label: 'Danh mục hành chính' }
           ]}
-          title="Quản lý Địa bàn"
-          subtitle="Quản lý địa bàn quản lý theo cấp hành chính"
+          title="Danh mục hành chính"
+          subtitle="Quản lý địa bàn theo cấp hành chính"
           actions={
             <Button size="sm" onClick={handleOpenCreate} disabled={!canCreate}>
               <Plus size={18} />

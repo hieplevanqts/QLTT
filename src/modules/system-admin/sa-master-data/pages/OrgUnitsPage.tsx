@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  Alert,
   Button,
   Card,
   Col,
@@ -9,21 +10,29 @@ import {
   Form,
   Input,
   InputNumber,
+  Modal,
   Popconfirm,
+  Radio,
   Row,
   Select,
   Space,
+  Spin,
   Switch,
+  Table,
+  Tabs,
   Tag,
   Tree,
   Typography,
   message,
 } from "antd";
 import type { DataNode } from "antd/es/tree";
+import type { ColumnsType } from "antd/es/table";
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
+  DeleteOutlined,
   EditOutlined,
+  EyeOutlined,
   EnvironmentOutlined,
   PlusOutlined,
   StopOutlined,
@@ -31,7 +40,14 @@ import {
 
 import PageHeader from "@/layouts/PageHeader";
 import { PermissionGate } from "../../_shared";
+import { useAuth } from "../../../../contexts/AuthContext";
 import { orgUnitsService, type OrgUnitPayload, type OrgUnitRecord } from "../services/orgUnits.service";
+import {
+  unitAreaAssignmentsService,
+  type CoordinatePreview,
+  type ProvinceRecord,
+  type WardRecord,
+} from "../services/unitAreaAssignments.service";
 
 type OrgUnitNode = DataNode & { data: OrgUnitRecord };
 type GeocodeResult = {
@@ -153,6 +169,13 @@ const levelToType = (level?: number | null) => {
   return "other";
 };
 
+const getLevelFromCode = (code?: string | null) => {
+  if (!code) return undefined;
+  const trimmed = code.trim();
+  if (trimmed.length < 2 || trimmed.length % 2 !== 0) return undefined;
+  return trimmed.length / 2;
+};
+
 const findParentLabel = (units: OrgUnitRecord[], parentId?: string | null) => {
   if (!parentId) return "-";
   const parent = units.find((item) => item.id === parentId);
@@ -239,6 +262,7 @@ const geocodeWithOsm = async (address: string, email?: string): Promise<GeocodeR
 };
 
 export default function OrgUnitsPage() {
+  const { user } = useAuth();
   const [loading, setLoading] = React.useState(false);
   const [geoLoading, setGeoLoading] = React.useState(false);
   const [units, setUnits] = React.useState<OrgUnitRecord[]>([]);
@@ -250,12 +274,44 @@ export default function OrgUnitsPage() {
   const [drawerMode, setDrawerMode] = React.useState<"create" | "edit">("create");
   const [parentForCreate, setParentForCreate] = React.useState<OrgUnitRecord | null>(null);
 
+  const [areaTabLoading, setAreaTabLoading] = React.useState(false);
+  const [provinces, setProvinces] = React.useState<ProvinceRecord[]>([]);
+  const [chiCucProvinceId, setChiCucProvinceId] = React.useState<string | null>(null);
+  const [teamMode, setTeamMode] = React.useState<"ALL_PROVINCE" | "WARD_LIST">("ALL_PROVINCE");
+  const [assignedWards, setAssignedWards] = React.useState<WardRecord[]>([]);
+  const [wardOptions, setWardOptions] = React.useState<WardRecord[]>([]);
+  const [wardSelection, setWardSelection] = React.useState<string[]>([]);
+  const [wardLoading, setWardLoading] = React.useState(false);
+  const [coordModalOpen, setCoordModalOpen] = React.useState(false);
+  const [coordLoading, setCoordLoading] = React.useState(false);
+  const [coordTitle, setCoordTitle] = React.useState("Xem tọa độ");
+  const [coordData, setCoordData] = React.useState<CoordinatePreview | null>(null);
+
   const [form] = Form.useForm<OrgUnitPayload>();
 
   const selectedUnit = React.useMemo(
     () => units.find((item) => item.id === selectedId) ?? null,
     [units, selectedId],
   );
+
+  const userDepartmentId = user?.departmentInfo?.id ?? null;
+  const userLevel =
+    user?.departmentInfo?.level ?? getLevelFromCode(user?.departmentInfo?.code);
+
+  const selectedLevel = selectedUnit?.level ?? getLevelFromCode(selectedUnit?.code);
+  const parentUnit = selectedUnit?.parent_id
+    ? units.find((item) => item.id === selectedUnit.parent_id) ?? null
+    : null;
+
+  const canManageSelectedUnit = React.useMemo(() => {
+    if (!selectedUnit) return false;
+    if (userLevel === 1) return true;
+    if (!userDepartmentId || !userLevel) return false;
+    if (userLevel === 2) {
+      return selectedUnit.id === userDepartmentId || selectedUnit.parent_id === userDepartmentId;
+    }
+    return selectedUnit.id === userDepartmentId;
+  }, [selectedUnit, userDepartmentId, userLevel]);
 
   const parentOptions = React.useMemo(() => {
     if (!selectedUnit) {
@@ -319,6 +375,76 @@ export default function OrgUnitsPage() {
   React.useEffect(() => {
     void loadUnits();
   }, [loadUnits]);
+
+  const loadProvinces = React.useCallback(async () => {
+    try {
+      const data = await unitAreaAssignmentsService.listProvinces();
+      setProvinces(data);
+    } catch (err) {
+      const messageText = err instanceof Error ? err.message : "Không thể tải tỉnh/TP.";
+      message.error(messageText);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    void loadProvinces();
+  }, [loadProvinces]);
+
+  const loadAreaTabData = React.useCallback(async () => {
+    if (!selectedUnit || !selectedLevel) {
+      return;
+    }
+
+    setAreaTabLoading(true);
+    try {
+      setChiCucProvinceId(null);
+      setAssignedWards([]);
+      setWardSelection([]);
+      setWardOptions([]);
+      setTeamMode("ALL_PROVINCE");
+
+      if (selectedLevel === 2) {
+        const assignment = await unitAreaAssignmentsService.getChiCucProvinceAssignment(
+          selectedUnit.id,
+        );
+        setChiCucProvinceId(assignment?.province_id ?? null);
+      }
+
+      if (selectedLevel === 3) {
+        if (!parentUnit) {
+          return;
+        }
+
+        const parentAssignment = await unitAreaAssignmentsService.getChiCucProvinceAssignment(
+          parentUnit.id,
+        );
+        const parentProvinceId = parentAssignment?.province_id ?? null;
+        setChiCucProvinceId(parentProvinceId);
+
+        const assignments = await unitAreaAssignmentsService.listTeamAssignments(selectedUnit.id);
+
+        const hasProvince = assignments.some((item) => item.area?.ward_id == null);
+        setTeamMode(hasProvince ? "ALL_PROVINCE" : "WARD_LIST");
+
+        const wardIds = assignments
+          .map((item) => item.area?.ward_id)
+          .filter((wardId): wardId is string => Boolean(wardId));
+        setWardSelection(wardIds);
+        const wardRecords = await unitAreaAssignmentsService.getWardsByIds(wardIds);
+        setAssignedWards(wardRecords);
+        setWardOptions(wardRecords);
+      }
+    } catch (err) {
+      const messageText = err instanceof Error ? err.message : "Không thể tải dữ liệu địa bàn.";
+      message.error(messageText);
+    } finally {
+      setAreaTabLoading(false);
+    }
+  }, [parentUnit, selectedLevel, selectedUnit]);
+
+  React.useEffect(() => {
+    void loadAreaTabData();
+  }, [loadAreaTabData]);
 
   const openCreateRoot = () => {
     setDrawerMode("create");
@@ -541,6 +667,222 @@ export default function OrgUnitsPage() {
     }
   };
 
+  const handleSaveChiCucProvince = async () => {
+    if (!selectedUnit || !chiCucProvinceId) return;
+    if (!canManageSelectedUnit) {
+      message.warning("Bạn không có quyền cập nhật địa bàn của đơn vị này.");
+      return;
+    }
+    try {
+      setAreaTabLoading(true);
+      await unitAreaAssignmentsService.upsertChiCucProvince(selectedUnit.id, chiCucProvinceId);
+      message.success("Đã cập nhật tỉnh/TP phụ trách.");
+      await loadAreaTabData();
+    } catch (err) {
+      const messageText = err instanceof Error ? err.message : "Không thể cập nhật địa bàn.";
+      message.error(messageText);
+    } finally {
+      setAreaTabLoading(false);
+    }
+  };
+
+  const handleTeamModeChange = (nextMode: "ALL_PROVINCE" | "WARD_LIST") => {
+    if (!selectedUnit || !chiCucProvinceId) return;
+    if (nextMode === teamMode) return;
+    if (!canManageSelectedUnit) {
+      message.warning("Bạn không có quyền cập nhật địa bàn của đơn vị này.");
+      return;
+    }
+
+    Modal.confirm({
+      title: "Chuyển chế độ địa bàn?",
+      content: "Thao tác này sẽ ghi đè cấu hình địa bàn hiện tại.",
+      okText: "Xác nhận",
+      cancelText: "Hủy",
+      onOk: async () => {
+        try {
+          setAreaTabLoading(true);
+          if (nextMode === "ALL_PROVINCE") {
+            await unitAreaAssignmentsService.setTeamCoverageAllProvince(
+              selectedUnit.id,
+              chiCucProvinceId,
+            );
+          } else {
+            await unitAreaAssignmentsService.setTeamCoverageWardList(selectedUnit.id, []);
+          }
+          setTeamMode(nextMode);
+          await loadAreaTabData();
+        } catch (err) {
+          const messageText = err instanceof Error ? err.message : "Không thể chuyển chế độ địa bàn.";
+          message.error(messageText);
+        } finally {
+          setAreaTabLoading(false);
+        }
+      },
+    });
+  };
+
+  const handleApplyAllProvince = async () => {
+    if (!selectedUnit || !chiCucProvinceId) return;
+    if (!canManageSelectedUnit) {
+      message.warning("Bạn không có quyền cập nhật địa bàn của đơn vị này.");
+      return;
+    }
+    try {
+      setAreaTabLoading(true);
+      await unitAreaAssignmentsService.setTeamCoverageAllProvince(
+        selectedUnit.id,
+        chiCucProvinceId,
+      );
+      message.success("Đã áp dụng phạm vi toàn tỉnh/TP.");
+      await loadAreaTabData();
+    } catch (err) {
+      const messageText = err instanceof Error ? err.message : "Không thể cập nhật địa bàn.";
+      message.error(messageText);
+    } finally {
+      setAreaTabLoading(false);
+    }
+  };
+
+  const handleSearchWards = async (keyword: string) => {
+    if (!chiCucProvinceId) return;
+    setWardLoading(true);
+    try {
+      const data = await unitAreaAssignmentsService.listWardsByProvince(chiCucProvinceId, keyword, 50);
+      setWardOptions(data);
+    } catch (err) {
+      const messageText = err instanceof Error ? err.message : "Không thể tải danh sách phường/xã.";
+      message.error(messageText);
+    } finally {
+      setWardLoading(false);
+    }
+  };
+
+  const handleSaveWardList = async () => {
+    if (!selectedUnit || !chiCucProvinceId) return;
+    if (!canManageSelectedUnit) {
+      message.warning("Bạn không có quyền cập nhật địa bàn của đơn vị này.");
+      return;
+    }
+    try {
+      setAreaTabLoading(true);
+      const wards = await unitAreaAssignmentsService.getWardsByIds(wardSelection);
+      const invalid = wards.find((ward) => ward.province_id !== chiCucProvinceId);
+      if (invalid) {
+        message.error("Danh sách phường/xã có phần tử ngoài tỉnh/TP của chi cục.");
+        return;
+      }
+      await unitAreaAssignmentsService.setTeamCoverageWardList(selectedUnit.id, wardSelection);
+      message.success("Đã cập nhật danh sách phường/xã.");
+      await loadAreaTabData();
+    } catch (err) {
+      const messageText = err instanceof Error ? err.message : "Không thể cập nhật địa bàn.";
+      message.error(messageText);
+    } finally {
+      setAreaTabLoading(false);
+    }
+  };
+
+  const handleRemoveWard = async (wardId: string) => {
+    if (!selectedUnit) return;
+    if (!canManageSelectedUnit) {
+      message.warning("Bạn không có quyền cập nhật địa bàn của đơn vị này.");
+      return;
+    }
+    try {
+      setAreaTabLoading(true);
+      await unitAreaAssignmentsService.removeTeamWard(selectedUnit.id, wardId);
+      message.success("Đã gỡ phường/xã.");
+      await loadAreaTabData();
+    } catch (err) {
+      const messageText = err instanceof Error ? err.message : "Không thể gỡ phường/xã.";
+      message.error(messageText);
+    } finally {
+      setAreaTabLoading(false);
+    }
+  };
+
+  const openCoordinatePreview = async (
+    scope: "province" | "ward",
+    scopeId: string | null,
+    label?: string,
+  ) => {
+    if (!scopeId) {
+      message.warning("Chưa có địa bàn để xem tọa độ.");
+      return;
+    }
+
+    setCoordTitle(label ? `Tọa độ: ${label}` : "Xem tọa độ");
+    setCoordModalOpen(true);
+    setCoordLoading(true);
+    setCoordData(null);
+
+    try {
+      const data =
+        scope === "province"
+          ? await unitAreaAssignmentsService.getProvinceCoordinates(scopeId)
+          : await unitAreaAssignmentsService.getWardCoordinates(scopeId);
+
+      if (!data) {
+        message.warning("Chưa có tọa độ trong dữ liệu hiện tại.");
+        return;
+      }
+
+      setCoordData(data);
+    } catch (err) {
+      const messageText = err instanceof Error ? err.message : "Không thể tải tọa độ.";
+      message.error(messageText);
+    } finally {
+      setCoordLoading(false);
+    }
+  };
+
+  const wardColumns: ColumnsType<WardRecord> = [
+    {
+      title: "Mã phường/xã",
+      dataIndex: "code",
+      key: "code",
+      width: 160,
+    },
+    {
+      title: "Tên phường/xã",
+      dataIndex: "name",
+      key: "name",
+    },
+    {
+      title: "Thao tác",
+      key: "actions",
+      width: 200,
+      render: (_: unknown, record: WardRecord) => (
+        <Space>
+          <Button
+            size="small"
+            type="link"
+            icon={<EyeOutlined />}
+            onClick={() => openCoordinatePreview("ward", record.id, record.name)}
+          >
+            Xem tọa độ
+          </Button>
+          <Button
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleRemoveWard(record.id)}
+            disabled={!canManageSelectedUnit}
+          >
+            Gỡ
+          </Button>
+        </Space>
+      ),
+    },
+  ];
+
+  const isChiCuc = selectedLevel === 2;
+  const isTeam = selectedLevel === 3;
+  const selectedProvince = chiCucProvinceId
+    ? provinces.find((province) => province.id === chiCucProvinceId) ?? null
+    : null;
+
   return (
     <PermissionGate permission="sa.masterdata.orgunit.read">
       <div className="flex flex-col gap-6">
@@ -618,7 +960,7 @@ export default function OrgUnitsPage() {
                         cancelText="Hủy"
                         onConfirm={handleToggleStatus}
                       >
-                        <Button danger={selectedUnit.is_active} icon={<StopOutlined />}>
+                        <Button danger={Boolean(selectedUnit.is_active)} icon={<StopOutlined />}>
                           {selectedUnit.is_active ? "Ngừng" : "Kích hoạt"}
                         </Button>
                       </Popconfirm>
@@ -629,55 +971,229 @@ export default function OrgUnitsPage() {
                 {!selectedUnit ? (
                   <Empty description="Chọn một đơn vị bên trái để xem chi tiết." />
                 ) : (
-                  <Space direction="vertical" size="large" style={{ width: "100%" }}>
-                    <div>
-                      <Typography.Title level={4} style={{ marginBottom: 4 }}>
-                        {selectedUnit.name}
-                      </Typography.Title>
-                      <Space size="middle">
-                      <Typography.Text type="secondary">
-                        {selectedUnit.code || "-"} • Cấp {selectedUnit.level ?? "-"} •{" "}
-                        {getTypeLabel(selectedUnit.type)}
-                      </Typography.Text>
-                      <Tag color={selectedUnit.is_active ? "green" : "red"}>
-                        {selectedUnit.is_active ? "Hoạt động" : "Ngừng"}
-                      </Tag>
-                      </Space>
-                    </div>
+                  <Tabs
+                    items={[
+                      {
+                        key: "info",
+                        label: "Thông tin",
+                        children: (
+                          <Space direction="vertical" size="large" style={{ width: "100%" }}>
+                            <div>
+                              <Typography.Title level={4} style={{ marginBottom: 4 }}>
+                                {selectedUnit.name}
+                              </Typography.Title>
+                              <Space size="middle">
+                                <Typography.Text type="secondary">
+                                  {selectedUnit.code || "-"} • Cấp {selectedUnit.level ?? "-"} •{" "}
+                                  {getTypeLabel(selectedUnit.type)}
+                                </Typography.Text>
+                                <Tag color={selectedUnit.is_active ? "green" : "red"}>
+                                  {selectedUnit.is_active ? "Hoạt động" : "Ngừng"}
+                                </Tag>
+                              </Space>
+                            </div>
 
-                    <Descriptions column={2} bordered size="small">
-                      <Descriptions.Item label="Mã đơn vị">
-                        {selectedUnit.code || "-"}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="Tên đơn vị">
-                        {selectedUnit.name || "-"}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="Tên ngắn">
-                        {selectedUnit.short_name || "-"}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="Cấp">
-                        {selectedUnit.level ?? "-"}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="Loại">
-                        {getTypeLabel(selectedUnit.type)}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="Thứ tự">
-                        {selectedUnit.order_index ?? "-"}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="Đơn vị cha">
-                        {findParentLabel(units, selectedUnit.parent_id)}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="Địa chỉ">
-                        {selectedUnit.address || "-"}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="Vĩ độ">
-                        {selectedUnit.latitude ?? "-"}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="Kinh độ">
-                        {selectedUnit.longitude ?? "-"}
-                      </Descriptions.Item>
-                    </Descriptions>
-                  </Space>
+                            <Descriptions column={2} bordered size="small">
+                              <Descriptions.Item label="Mã đơn vị">
+                                {selectedUnit.code || "-"}
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Tên đơn vị">
+                                {selectedUnit.name || "-"}
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Tên ngắn">
+                                {selectedUnit.short_name || "-"}
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Cấp">
+                                {selectedUnit.level ?? "-"}
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Loại">
+                                {getTypeLabel(selectedUnit.type)}
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Thứ tự">
+                                {selectedUnit.order_index ?? "-"}
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Đơn vị cha">
+                                {findParentLabel(units, selectedUnit.parent_id)}
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Địa chỉ">
+                                {selectedUnit.address || "-"}
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Vĩ độ">
+                                {selectedUnit.latitude ?? "-"}
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Kinh độ">
+                                {selectedUnit.longitude ?? "-"}
+                              </Descriptions.Item>
+                            </Descriptions>
+                          </Space>
+                        ),
+                      },
+                      {
+                        key: "areas",
+                        label: "Địa bàn",
+                        children: (
+                          <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+                            {!canManageSelectedUnit && (
+                              <Alert
+                                type="warning"
+                                showIcon
+                                message="Bạn chỉ được thao tác trong phạm vi đơn vị của mình."
+                              />
+                            )}
+
+                            {!isChiCuc && !isTeam && (
+                              <Alert
+                                type="info"
+                                showIcon
+                                message="Địa bàn chỉ áp dụng cho Chi cục (cấp 2) và Đội (cấp 3)."
+                              />
+                            )}
+
+                            {isChiCuc && (
+                              <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+                                <Typography.Text strong>Chi cục phụ trách tỉnh/TP</Typography.Text>
+                                <Select
+                                  placeholder="Chọn tỉnh/TP"
+                                  value={chiCucProvinceId ?? undefined}
+                                  options={provinces.map((province) => ({
+                                    value: province.id,
+                                    label: `${province.name} (${province.code})`,
+                                  }))}
+                                  onChange={(value) => setChiCucProvinceId(value)}
+                                  disabled={!canManageSelectedUnit}
+                                  loading={areaTabLoading}
+                                />
+                                <Space>
+                                  <Button
+                                    type="primary"
+                                    onClick={handleSaveChiCucProvince}
+                                    disabled={!chiCucProvinceId || !canManageSelectedUnit}
+                                    loading={areaTabLoading}
+                                  >
+                                    Lưu
+                                  </Button>
+                                  <Button
+                                    type="link"
+                                    icon={<EyeOutlined />}
+                                    onClick={() =>
+                                      openCoordinatePreview(
+                                        "province",
+                                        chiCucProvinceId,
+                                        selectedProvince?.name,
+                                      )
+                                    }
+                                    disabled={!chiCucProvinceId}
+                                  >
+                                    Xem tọa độ
+                                  </Button>
+                                </Space>
+                                {selectedProvince && (
+                                  <Tag color="blue">
+                                    Chi cục phụ trách tỉnh/TP: {selectedProvince.name}
+                                  </Tag>
+                                )}
+                              </Space>
+                            )}
+
+                            {isTeam && (
+                              <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+                                {!selectedProvince ? (
+                                  <Alert
+                                    type="warning"
+                                    showIcon
+                                    message="Chi cục chưa thiết lập tỉnh/TP. Vui lòng cấu hình ở chi cục cha trước."
+                                  />
+                                ) : (
+                                  <>
+                                    <Space align="center" size="middle" wrap>
+                                      <Typography.Text>
+                                        Chi cục cha: {parentUnit?.name || "-"} • Tỉnh/TP:{" "}
+                                        {selectedProvince.name}
+                                      </Typography.Text>
+                                      <Button
+                                        type="link"
+                                        icon={<EyeOutlined />}
+                                        onClick={() =>
+                                          openCoordinatePreview(
+                                            "province",
+                                            selectedProvince.id,
+                                            selectedProvince.name,
+                                          )
+                                        }
+                                      >
+                                        Xem tọa độ tỉnh/TP
+                                      </Button>
+                                    </Space>
+                                    <Radio.Group
+                                      value={teamMode}
+                                      onChange={(event) =>
+                                        handleTeamModeChange(
+                                          event.target.value as "ALL_PROVINCE" | "WARD_LIST",
+                                        )
+                                      }
+                                      disabled={!canManageSelectedUnit}
+                                    >
+                                      <Radio value="ALL_PROVINCE">Toàn tỉnh/TP</Radio>
+                                      <Radio value="WARD_LIST">Chọn phường/xã</Radio>
+                                    </Radio.Group>
+
+                                    {teamMode === "ALL_PROVINCE" ? (
+                                      <Space direction="vertical" size="small">
+                                        <Typography.Text type="secondary">
+                                          Phạm vi: {selectedProvince.name}
+                                        </Typography.Text>
+                                        <Button
+                                          type="primary"
+                                          onClick={handleApplyAllProvince}
+                                          disabled={!canManageSelectedUnit}
+                                          loading={areaTabLoading}
+                                        >
+                                          Áp dụng
+                                        </Button>
+                                      </Space>
+                                    ) : (
+                                      <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+                                        <Select
+                                          mode="multiple"
+                                          showSearch
+                                          placeholder="Chọn phường/xã thuộc tỉnh/TP"
+                                          value={wardSelection}
+                                          onChange={(value) => setWardSelection(value)}
+                                          onSearch={handleSearchWards}
+                                          filterOption={false}
+                                          loading={wardLoading}
+                                          options={wardOptions.map((ward) => ({
+                                            value: ward.id,
+                                            label: `${ward.name} (${ward.code})`,
+                                          }))}
+                                          disabled={!canManageSelectedUnit}
+                                        />
+                                        <Button
+                                          type="primary"
+                                          onClick={handleSaveWardList}
+                                          disabled={!canManageSelectedUnit}
+                                          loading={areaTabLoading}
+                                        >
+                                          Lưu danh sách
+                                        </Button>
+                                        <Table
+                                          rowKey="id"
+                                          dataSource={assignedWards}
+                                          columns={wardColumns}
+                                          loading={areaTabLoading}
+                                          pagination={false}
+                                        />
+                                      </Space>
+                                    )}
+                                  </>
+                                )}
+                              </Space>
+                            )}
+                          </Space>
+                        ),
+                      },
+                    ]}
+                  />
                 )}
               </Card>
             </Col>
@@ -781,6 +1297,48 @@ export default function OrgUnitsPage() {
           </Form.Item>
         </Form>
       </Drawer>
+
+      <Modal
+        title={coordTitle}
+        open={coordModalOpen}
+        onCancel={() => setCoordModalOpen(false)}
+        footer={
+          <Button onClick={() => setCoordModalOpen(false)}>
+            Đóng
+          </Button>
+        }
+      >
+        {coordLoading ? (
+          <div style={{ display: "flex", justifyContent: "center", padding: 24 }}>
+            <Spin />
+          </div>
+        ) : coordData ? (
+          <Space direction="vertical" size="small" style={{ width: "100%" }}>
+            <Typography.Text>Vĩ độ: {coordData.lat.toFixed(6)}</Typography.Text>
+            <Typography.Text>Kinh độ: {coordData.lng.toFixed(6)}</Typography.Text>
+            <Space wrap>
+              <Button
+                type="link"
+                href={`https://www.google.com/maps?q=${coordData.lat},${coordData.lng}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Mở Google Maps
+              </Button>
+              <Button
+                type="link"
+                href={`https://www.openstreetmap.org/?mlat=${coordData.lat}&mlon=${coordData.lng}#map=16/${coordData.lat}/${coordData.lng}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Mở OpenStreetMap
+              </Button>
+            </Space>
+          </Space>
+        ) : (
+          <Empty description="Chưa có tọa độ." />
+        )}
+      </Modal>
     </PermissionGate>
   );
 }

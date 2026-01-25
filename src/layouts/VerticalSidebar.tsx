@@ -107,7 +107,7 @@ const mappaModules = [
       { type: 'separator' },
       { type: 'item', path: '/system-admin/master-data/org-units', label: 'Đơn vị tổ chức', icon: Building2 },
       { type: 'item', path: '/system-admin/master-data/departments', label: 'Phòng ban', icon: Users },
-      { type: 'item', path: '/system-admin/master-data/jurisdictions', label: 'Địa bàn quản lý', icon: MapPin },
+      { type: 'item', path: '/system-admin/master-data/admin-areas', label: 'Danh mục hành chính', icon: MapPin },
       { type: 'item', path: '/system-admin/master-data/catalogs?group=COMMON', label: 'Danh mục dùng chung', icon: Folder },
       { type: 'item', path: '/system-admin/master-data/catalogs?group=DOMAIN', label: 'Danh mục nghiệp vụ QLTT', icon: Layers },
       { type: 'item', path: '/system-admin/master-data/catalogs?group=SYSTEM', label: 'Danh mục kỹ thuật', icon: GitBranch },

@@ -9,7 +9,7 @@ const ADMIN_MENU_SEED: Array<Omit<MenuItem, "parentId">> = [
   { id: "admin-dashboard", label: "Dashboard Quản trị", path: "/system-admin", order: 10, moduleId: "system-admin", icon: "LayoutDashboard" },
   { id: "admin-org-units", label: "Đơn vị tổ chức", path: "/system-admin/master-data/org-units", order: 21, moduleId: "system-admin-master-data", icon: "Building2" },
   { id: "admin-departments", label: "Phòng ban", path: "/system-admin/master-data/departments", order: 22, moduleId: "system-admin-master-data", icon: "Users" },
-  { id: "admin-jurisdictions", label: "Địa bàn quản lý", path: "/system-admin/master-data/jurisdictions", order: 23, moduleId: "system-admin-master-data", icon: "MapPin" },
+  { id: "admin-jurisdictions", label: "Danh mục hành chính", path: "/system-admin/master-data/admin-areas", order: 23, moduleId: "system-admin-master-data", icon: "MapPin" },
   { id: "admin-catalogs-common", label: "Danh mục dùng chung", path: "/system-admin/master-data/catalogs?group=COMMON", order: 24, moduleId: "system-admin-master-data", icon: "Folder" },
   { id: "admin-catalogs-domain", label: "Danh mục nghiệp vụ QLTT", path: "/system-admin/master-data/catalogs?group=DOMAIN", order: 25, moduleId: "system-admin-master-data", icon: "Layers" },
   { id: "admin-catalogs-system", label: "Danh mục kỹ thuật", path: "/system-admin/master-data/catalogs?group=SYSTEM", order: 26, moduleId: "system-admin-master-data", icon: "GitBranch" },
