@@ -344,6 +344,14 @@ const { data } = await supabase
 
 ## 📚 Related Documentation
 
+### Map Components & Features
+- **[Map Documentation](./map/README.md)** - Tất cả tài liệu về Map components, markers, và features
+  - Flow và architecture
+  - Hướng dẫn tạo trang mới
+  - Debug và troubleshooting
+  - Data setup guides
+
+### Code References
 - **Main Implementation**: `/src/pages/MapPage.tsx`
 - **API Client**: `/src/utils/api/restaurantApi.ts`
 - **Server Code**: `/supabase/functions/server/index.tsx`
