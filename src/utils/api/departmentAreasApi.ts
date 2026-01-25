@@ -5,6 +5,19 @@
 import axios from 'axios';
 import { SUPABASE_REST_URL, getHeaders } from './config';
 
+/**
+ * User interface for department users
+ */
+export interface DepartmentUser {
+  _id: string;
+  email?: string;
+  full_name?: string;
+  phone?: string;
+  role?: string;
+  department_id?: string;
+  [key: string]: any; // Allow additional fields
+}
+
 export interface WardCoordinates {
   center_lat: number | null;
   center_lng: number | null;
@@ -178,7 +191,7 @@ export async function fetchDepartmentsWithCoordinates(
       longitude: dept.longitude !== null && dept.longitude !== undefined ? Number(dept.longitude) : null,
     })).filter((dept: any) => dept.latitude !== null && dept.longitude !== null);
   } catch (error: any) {
-    console.error('❌ DepartmentAreasAPI: Failed to fetch departments with coordinates:', error);
+    console.error('DepartmentAreasAPI: Failed to fetch departments with coordinates:', error);
     throw error;
   }
 }
@@ -286,6 +299,15 @@ export async function getWardCoordinatesByDepartment(departmentId: string): Prom
           data: error.response.data
         });
         
+        // 🔥 FIX: Handle 403 session_not_found error gracefully
+        if (error.response.status === 403) {
+          const errorData = error.response.data;
+          if (errorData?.error_code === 'session_not_found') {
+            console.warn('⚠️ DepartmentAreasAPI: Session not found (403), returning empty array');
+            return []; // Return empty array instead of throwing
+          }
+        }
+        
         // Try with departmentId (camelCase) parameter name if first attempt failed
         if (error.response.status === 400 || error.response.status === 404) {
           console.log('🔄 DepartmentAreasAPI: Retrying with departmentId parameter name...');
@@ -298,7 +320,7 @@ export async function getWardCoordinatesByDepartment(departmentId: string): Prom
             
             if (!retryData || !Array.isArray(retryData)) {
               console.warn('⚠️ DepartmentAreasAPI: Retry returned invalid data:', retryData);
-              throw error;
+              return []; // Return empty array instead of throwing
             }
             
             console.log('✅ DepartmentAreasAPI: Retry successful, returned', retryData.length, 'ward coordinates');
@@ -313,16 +335,266 @@ export async function getWardCoordinatesByDepartment(departmentId: string): Prom
             });
           } catch (retryError) {
             console.error('❌ DepartmentAreasAPI: Retry also failed:', retryError);
-            throw error;
+            return []; // Return empty array instead of throwing
           }
         }
       }
       
-      throw error;
+      // 🔥 FIX: Return empty array instead of throwing to prevent app crash
+      console.warn('⚠️ DepartmentAreasAPI: Returning empty array due to error');
+      return [];
     }
   } catch (error: any) {
     console.error('❌ DepartmentAreasAPI: Failed to call RPC get_ward_coordinates_by_department:', error);
     throw error;
+  }
+}
+
+/**
+ * Department interface for departments by ward
+ */
+export interface DepartmentByWard {
+  _id?: string;
+  department_id?: string; // API may return department_id instead of _id
+  department_name?: string; // API returns department_name
+  name?: string; // Fallback
+  code?: string;
+  department_code?: string; // API may return department_code
+  parent_id?: string;
+  type?: string;
+  [key: string]: any; // Allow additional fields
+}
+
+/**
+ * Fetch departments by ward ID using RPC function
+ * @param wardId - Ward ID
+ * @returns Array of departments managing the ward
+ */
+export async function getDepartmentsByWard(wardId: string): Promise<DepartmentByWard[]> {
+  try {
+    if (!wardId || typeof wardId !== 'string' || wardId.trim() === '') {
+      console.warn('DepartmentAreasAPI: Invalid wardId for RPC call');
+      return [];
+    }
+
+    console.log('DepartmentAreasAPI: Calling RPC get_departments_by_ward via axios');
+    console.log('DepartmentAreasAPI: Parameters:', { wardId, type: typeof wardId });
+    
+    // Call RPC function via REST API (PostgREST)
+    const rpcUrl = `${SUPABASE_REST_URL}/rpc/get_departments_by_ward`;
+    
+    // Try with ward_id (snake_case) first
+    const requestBody = { ward_id: wardId };
+    
+    try {
+      console.log('📤 DepartmentAreasAPI: Sending POST request to:', rpcUrl);
+      console.log('📤 DepartmentAreasAPI: Request body:', requestBody);
+      
+      const response = await axios.post(rpcUrl, requestBody, {
+        headers: getHeaders()
+      });
+
+      const data = response.data;
+
+      console.log('DepartmentAreasAPI: RPC response:', {
+        status: response.status,
+        statusText: response.statusText,
+        hasData: !!data,
+        dataType: Array.isArray(data) ? 'array' : typeof data,
+        dataLength: Array.isArray(data) ? data.length : 'N/A',
+        dataSample: Array.isArray(data) && data.length > 0 ? data[0] : data
+      });
+
+      if (!data || !Array.isArray(data)) {
+        console.warn('DepartmentAreasAPI: RPC returned invalid data:', data);
+        // Try with wardId (camelCase) parameter name
+        console.log('DepartmentAreasAPI: Retrying with wardId parameter name...');
+        const retryResponse = await axios.post(rpcUrl, { wardId: wardId }, {
+          headers: getHeaders()
+        });
+        
+        const retryData = retryResponse.data;
+        
+        if (!retryData || !Array.isArray(retryData)) {
+          console.warn('DepartmentAreasAPI: Retry returned invalid data:', retryData);
+          return [];
+        }
+        
+        console.log('DepartmentAreasAPI: Retry successful, returned', retryData.length, 'departments');
+        return retryData;
+      }
+
+      console.log('DepartmentAreasAPI: RPC returned', data.length, 'departments');
+      console.log('DepartmentAreasAPI: First department sample:', data[0]);
+      
+      return data;
+    } catch (error: any) {
+      console.error('DepartmentAreasAPI: RPC call failed:', error);
+      
+      if (error.response) {
+        console.error('DepartmentAreasAPI: Response error:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data
+        });
+        
+        // 🔥 FIX: Handle 403 session_not_found error gracefully
+        if (error.response.status === 403) {
+          const errorData = error.response.data;
+          if (errorData?.error_code === 'session_not_found') {
+            console.warn('DepartmentAreasAPI: Session not found (403), returning empty array');
+            return []; // Return empty array instead of throwing
+          }
+        }
+        
+        // Try with wardId (camelCase) parameter name if first attempt failed
+        if (error.response.status === 400 || error.response.status === 404) {
+          console.log('🔄 DepartmentAreasAPI: Retrying with wardId parameter name...');
+          try {
+            const retryResponse = await axios.post(rpcUrl, { wardId: wardId }, {
+              headers: getHeaders()
+            });
+            
+            const retryData = retryResponse.data;
+            
+            if (!retryData || !Array.isArray(retryData)) {
+              console.warn('⚠️ DepartmentAreasAPI: Retry returned invalid data:', retryData);
+              return []; // Return empty array instead of throwing
+            }
+            
+            console.log('✅ DepartmentAreasAPI: Retry successful, returned', retryData.length, 'departments');
+            return retryData;
+          } catch (retryError) {
+            console.error('❌ DepartmentAreasAPI: Retry also failed:', retryError);
+            return []; // Return empty array instead of throwing
+          }
+        }
+      }
+      
+      // 🔥 FIX: Return empty array instead of throwing to prevent app crash
+      console.warn('⚠️ DepartmentAreasAPI: Returning empty array due to error');
+      return [];
+    }
+  } catch (error: any) {
+    console.error('❌ DepartmentAreasAPI: Failed to call RPC get_departments_by_ward:', error);
+    throw error;
+  }
+}
+
+/**
+ * Fetch users by department ID using RPC function
+ * @param departmentId - Department ID
+ * @returns Array of users belonging to the department
+ */
+export async function getUsersByDepartment(departmentId: string): Promise<DepartmentUser[]> {
+  try {
+    if (!departmentId || typeof departmentId !== 'string' || departmentId.trim() === '') {
+      console.warn('⚠️ DepartmentAreasAPI: Invalid departmentId for RPC call');
+      return [];
+    }
+
+    console.log('🔄 DepartmentAreasAPI: Calling RPC get_users_by_department via axios');
+    console.log('📋 DepartmentAreasAPI: Parameters:', { departmentId, type: typeof departmentId });
+    
+    // Call RPC function via REST API (PostgREST)
+    const rpcUrl = `${SUPABASE_REST_URL}/rpc/get_users_by_department`;
+    
+    // Try with department_id (snake_case) first
+    const requestBody = { department_id: departmentId };
+    
+    try {
+      console.log('📤 DepartmentAreasAPI: Sending POST request to:', rpcUrl);
+      console.log('📤 DepartmentAreasAPI: Request body:', requestBody);
+      
+      const response = await axios.post(rpcUrl, requestBody, {
+        headers: getHeaders()
+      });
+
+      const data = response.data;
+
+      console.log('📦 DepartmentAreasAPI: RPC response:', {
+        status: response.status,
+        statusText: response.statusText,
+        hasData: !!data,
+        dataType: Array.isArray(data) ? 'array' : typeof data,
+        dataLength: Array.isArray(data) ? data.length : 'N/A',
+        dataSample: Array.isArray(data) && data.length > 0 ? data[0] : data
+      });
+
+      if (!data || !Array.isArray(data)) {
+        console.warn('⚠️ DepartmentAreasAPI: RPC returned invalid data:', data);
+        // Try with departmentId (camelCase) parameter name
+        console.log('🔄 DepartmentAreasAPI: Retrying with departmentId parameter name...');
+        const retryResponse = await axios.post(rpcUrl, { departmentId: departmentId }, {
+          headers: getHeaders()
+        });
+        
+        const retryData = retryResponse.data;
+        
+        if (!retryData || !Array.isArray(retryData)) {
+          console.warn('⚠️ DepartmentAreasAPI: Retry returned invalid data:', retryData);
+          return [];
+        }
+        
+        console.log('✅ DepartmentAreasAPI: Retry successful, returned', retryData.length, 'users');
+        return retryData;
+      }
+
+      console.log('✅ DepartmentAreasAPI: RPC returned', data.length, 'users');
+      console.log('📊 DepartmentAreasAPI: First user sample:', data[0]);
+      
+      return data;
+    } catch (error: any) {
+      console.error('❌ DepartmentAreasAPI: RPC call failed:', error);
+      
+      if (error.response) {
+        console.error('❌ DepartmentAreasAPI: Response error:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data
+        });
+        
+        // 🔥 FIX: Handle 403 session_not_found error gracefully
+        if (error.response.status === 403) {
+          const errorData = error.response.data;
+          if (errorData?.error_code === 'session_not_found') {
+            console.warn('⚠️ DepartmentAreasAPI: Session not found (403), returning empty array');
+            return []; // Return empty array instead of throwing
+          }
+        }
+        
+        // Try with departmentId (camelCase) parameter name if first attempt failed
+        if (error.response.status === 400 || error.response.status === 404) {
+          console.log('🔄 DepartmentAreasAPI: Retrying with departmentId parameter name...');
+          try {
+            const retryResponse = await axios.post(rpcUrl, { departmentId: departmentId }, {
+              headers: getHeaders()
+            });
+            
+            const retryData = retryResponse.data;
+            
+            if (!retryData || !Array.isArray(retryData)) {
+              console.warn('⚠️ DepartmentAreasAPI: Retry returned invalid data:', retryData);
+              return []; // Return empty array instead of throwing
+            }
+            
+            console.log('✅ DepartmentAreasAPI: Retry successful, returned', retryData.length, 'users');
+            return retryData;
+          } catch (retryError) {
+            console.error('❌ DepartmentAreasAPI: Retry also failed:', retryError);
+            return []; // Return empty array instead of throwing
+          }
+        }
+      }
+      
+      // 🔥 FIX: Return empty array instead of throwing to prevent app crash
+      console.warn('⚠️ DepartmentAreasAPI: Returning empty array due to error');
+      return [];
+    }
+  } catch (error: any) {
+    console.error('❌ DepartmentAreasAPI: Failed to call RPC get_users_by_department:', error);
+    // 🔥 FIX: Return empty array instead of throwing to prevent app crash
+    return [];
   }
 }
 

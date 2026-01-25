@@ -5,10 +5,16 @@ import { FakeOfficer } from '../utils/departmentDetailUtils';
 
 interface DepartmentOfficerItemProps {
   name: string;
-  details?: FakeOfficer;
+  details?: FakeOfficer | any; // Allow DepartmentUser type
+  email?: string;
+  phone?: string;
 }
 
-export function DepartmentOfficerItem({ name, details }: DepartmentOfficerItemProps) {
+export function DepartmentOfficerItem({ name, details, email, phone }: DepartmentOfficerItemProps) {
+  // Check if details is a real user (has _id) or fake officer (has position)
+  const isRealUser = details && typeof details === 'object' && '_id' in details && !('position' in details);
+  const isFakeOfficer = details && typeof details === 'object' && 'position' in details;
+  
   return (
     <div className={styles.officerItem}>
       <div className={styles.officerInfo}>
@@ -17,7 +23,14 @@ export function DepartmentOfficerItem({ name, details }: DepartmentOfficerItemPr
           <div className={styles.officerName}>
             {name}
           </div>
-          {details && (
+          {isRealUser && (
+            <div className={styles.officerMeta}>
+              {email && <span>{email}</span>}
+              {email && phone && <span>•</span>}
+              {phone && <span>{phone}</span>}
+            </div>
+          )}
+          {isFakeOfficer && (
             <div className={styles.officerMeta}>
               <span>{details.position}</span>
               <span>•</span>
@@ -28,7 +41,7 @@ export function DepartmentOfficerItem({ name, details }: DepartmentOfficerItemPr
           )}
         </div>
       </div>
-      {details && (
+      {isFakeOfficer && details.criteria && (
         <div className={styles.officerStats}>
           <div className={styles.officerStatItem}>
             <div className={`${styles.officerStatValue} ${styles.officerStatValuePrimary}`}>
