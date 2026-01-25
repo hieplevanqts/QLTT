@@ -14,6 +14,7 @@ export interface DepartmentMapData {
   areas: Array<{
     provinceId: string;
     wardId: string;
+    departmentId?: string; // 🔥 NEW: Department ID for this area
     coordinates: {
       center: [number, number] | null;
       bounds: [[number, number], [number, number]] | null;
@@ -111,6 +112,7 @@ export function transformDepartmentAreasToMapData(
       return {
         provinceId: area.province_id || '',
         wardId: area.ward_id || '',
+        departmentId: area.department_id || area.departmentId || undefined, // 🔥 NEW: Include department_id
         coordinates: {
           center,
           bounds: coords?.bounds || null,

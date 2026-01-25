@@ -31,6 +31,13 @@ export function DepartmentDetailModal({ isOpen, onClose, departmentId, departmen
   useEffect(() => {
     if (!isOpen || !departmentId) return;
 
+    // 🔥 FIX: Reset states when departmentId changes to ensure fresh data
+    setDepartment(null);
+    setAreas(null);
+    setDepartmentsByWard(new Map());
+    setUsersByDepartment(new Map());
+    setError(null);
+
     async function loadDepartmentData() {
       setIsLoading(true);
       setError(null);
@@ -59,18 +66,23 @@ export function DepartmentDetailModal({ isOpen, onClose, departmentId, departmen
     }
 
     loadDepartmentData();
-  }, [isOpen, departmentId]);
+  }, [isOpen, departmentId, departmentData]);
 
-  // 🔥 NEW: Fetch users by department when modal opens
+  // 🔥 NEW: Fetch users by department when modal opens or departmentId changes
   useEffect(() => {
     if (!isOpen || !departmentId) {
       setUsers([]);
+      setIsLoadingUsers(false);
       return;
     }
 
+    // 🔥 FIX: Reset users immediately when departmentId changes to show loading state
+    setUsers([]);
+    setIsLoadingUsers(true);
+
     async function loadUsers() {
-      setIsLoadingUsers(true);
       try {
+        console.log('🔄 DepartmentDetailModal: Fetching users for department:', departmentId);
         const departmentUsers = await getUsersByDepartment(departmentId);
         console.log('✅ DepartmentDetailModal: Loaded', departmentUsers.length, 'users for department', departmentId);
         setUsers(departmentUsers);

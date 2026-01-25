@@ -624,8 +624,9 @@ export async function fetchDepartmentAreas(
 
     // 🔥 FIX: Query for multiple department IDs using PostgREST 'in' operator
     // Format: department_id=in.(id1,id2,id3)
+    // 🔥 NEW: Include department_id in select to track which department each area belongs to
     const idsParam = validIds.join(',');
-    const url = `${SUPABASE_REST_URL}/department_areas?select=areas(province_id,ward_id,wards_with_coordinates(center_lat,center_lng,bounds,area,officer))&department_id=in.(${idsParam})`;
+    const url = `${SUPABASE_REST_URL}/department_areas?select=department_id,areas(province_id,ward_id,wards_with_coordinates(center_lat,center_lng,bounds,area,officer))&department_id=in.(${idsParam})`;
     
     console.log('🔍 DepartmentAreasAPI: Fetching from URL:', url);
     
@@ -651,10 +652,13 @@ export async function fetchDepartmentAreas(
       for (const item of data) {
         if (item && typeof item === 'object' && 'areas' in item) {
           const areasObj = item.areas;
+          const departmentId = item.department_id || item.departmentId || null;
           // Check if areas is an object (not array) with ward_id or province_id
           if (areasObj && typeof areasObj === 'object' && !Array.isArray(areasObj)) {
             if ('ward_id' in areasObj || 'province_id' in areasObj) {
-              areasArray.push(areasObj as Area);
+              // 🔥 NEW: Add department_id to area object
+              const areaWithDeptId = { ...areasObj, department_id: departmentId } as any;
+              areasArray.push(areaWithDeptId);
             }
           }
         }

@@ -40,7 +40,8 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const leafletRef = useRef<any>(null);
-  const markersRef = useRef<any[]>([]);
+  const markersRef = useRef<any[]>([]); // Merchant markers
+  const departmentMarkersRef = useRef<any[]>([]); // 🔥 NEW: Department markers (separate from merchant markers)
   const selectedMarkerRef = useRef<any>(null);
   const boundaryLayerRef = useRef<any>(null); // Track boundary layer
   const boundaryHighlightRef = useRef<any>(null); // Track highlight boundary
@@ -122,14 +123,20 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
     const markerSize = getMarkerSize(currentZoom);
     const iconSize = getIconSize(currentZoom);
 
-    // 🔥 FIX: Only remove restaurant markers, not department markers
-    // Department markers are managed by DepartmentMarkersLayer component
+    // 🔥 FIX: When switching to department layer, remove all merchant markers first
+    // Department markers are managed by DepartmentMarkersLayer component and use separate ref
     if (showWardBoundaries && !showMerchants) {
-      // Don't remove markers here - DepartmentMarkersLayer manages its own markers
+      // Remove all merchant markers before showing department markers
+      // Note: departmentMarkersRef is managed by DepartmentMarkersLayer, don't touch it here
+      markersRef.current.forEach(marker => marker.remove());
+      markersRef.current = [];
+      selectedMarkerRef.current = null;
+      // Don't render merchant markers - DepartmentMarkersLayer will handle department markers
       return;
     }
 
     // Remove old markers (only restaurant/merchant markers)
+    // Note: Don't remove departmentMarkersRef - it's managed by DepartmentMarkersLayer
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
     selectedMarkerRef.current = null;
@@ -154,7 +161,18 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
     // 🔥 FIX: Only render merchant markers when showMerchants is true
     // This ensures department markers don't appear on merchants layer
     if (!showMerchants) {
+      // If we're not showing merchants and not showing departments, remove department markers too
+      if (!showWardBoundaries) {
+        departmentMarkersRef.current.forEach(marker => marker.remove());
+        departmentMarkersRef.current = [];
+      }
       return; // Exit early - don't render restaurant markers
+    }
+    
+    // 🔥 FIX: When switching to merchant layer, remove department markers first
+    if (showMerchants && !showWardBoundaries) {
+      departmentMarkersRef.current.forEach(marker => marker.remove());
+      departmentMarkersRef.current = [];
     }
     
    
@@ -761,7 +779,7 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
           departmentMapData={departmentMapData}
           isLoading={isLoadingDepartmentAreas}
           error={departmentAreasError}
-          markersRef={markersRef}
+          markersRef={departmentMarkersRef}
           wardBoundariesLayerRef={wardBoundariesLayerRef}
         />
       )}

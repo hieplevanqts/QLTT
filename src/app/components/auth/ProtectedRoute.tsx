@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAppSelector, useAppDispatch } from '../../../app/hooks';
 import { RootState } from '../../../store/rootReducer';
 import { restoreSessionRequest } from '../../../store/slices/authSlice';
-import { getStoredToken } from '../../../utils/api/authApi';
+import { getStoredToken, isTokenExpired, logout } from '../../../utils/api/authApi';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -44,6 +44,33 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     };
     checkStorage();
   }, [isRestoring, isLoading, isAuthenticated, hasCheckedStorage, dispatch]);
+
+  // 🔥 NEW: Check token expiry periodically and redirect if expired
+  useEffect(() => {
+    if (!isAuthenticated || !token) return;
+
+    const checkTokenExpiry = async () => {
+      try {
+        const expired = await isTokenExpired(0);
+        if (expired) {
+          console.log('🔒 ProtectedRoute: Token expired, logging out and redirecting...');
+          await logout();
+          // Redirect to login
+          window.location.replace('/auth/login');
+        }
+      } catch (error) {
+        console.error('Error checking token expiry:', error);
+      }
+    };
+
+    // Check immediately
+    checkTokenExpiry();
+
+    // Check every 30 seconds
+    const interval = setInterval(checkTokenExpiry, 30000);
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, token]);
 
   // Debug logging (remove in production)
   if (typeof window !== 'undefined' && import.meta.env.DEV) {

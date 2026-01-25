@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { DepartmentMapData } from '../utils/departmentAreasUtils';
 
 interface DepartmentMarkersLayerProps {
@@ -100,9 +100,11 @@ export const DepartmentMarkersLayer: React.FC<DepartmentMarkersLayerProps> = ({
       center: [number, number];
       wardId: string;
       provinceId: string;
+      departmentIds: string[]; // 🔥 NEW: Track all department IDs for this ward
       areas: Array<{
         provinceId: string;
         wardId: string;
+        departmentId?: string; // 🔥 NEW: Department ID for this area
         coordinates: {
           center: [number, number] | null;
           bounds: [[number, number], [number, number]] | null;
@@ -116,15 +118,22 @@ export const DepartmentMarkersLayer: React.FC<DepartmentMarkersLayerProps> = ({
       if (area.coordinates.center) {
         const key = area.wardId || area.provinceId || '';
         if (key && !wardMarkersMap.has(key)) {
+          const departmentIds = area.departmentId ? [area.departmentId] : [];
           wardMarkersMap.set(key, {
             center: area.coordinates.center,
             wardId: area.wardId,
             provinceId: area.provinceId,
+            departmentIds: departmentIds, // 🔥 NEW: Track department IDs
             areas: [area]
           });
         } else if (key && wardMarkersMap.has(key)) {
           // Add area to existing ward marker
-          wardMarkersMap.get(key)!.areas.push(area);
+          const wardData = wardMarkersMap.get(key)!;
+          wardData.areas.push(area);
+          // 🔥 NEW: Add department_id if not already in list
+          if (area.departmentId && !wardData.departmentIds.includes(area.departmentId)) {
+            wardData.departmentIds.push(area.departmentId);
+          }
         }
       } else {
         if (index < 3) { // Log first 3 areas without center
@@ -199,10 +208,23 @@ export const DepartmentMarkersLayer: React.FC<DepartmentMarkersLayerProps> = ({
       // Add click handler to open department detail modal
       wardMarker.on('click', () => {
         if (typeof (window as any).openDepartmentDetail === 'function') {
-          (window as any).openDepartmentDetail(departmentMapData.departmentId, {
-            ...departmentMapData,
+          // 🔥 NEW: Use first department_id from wardData, or fallback to departmentMapData.departmentId
+          const departmentId = wardData.departmentIds.length > 0 
+            ? wardData.departmentIds[0] 
+            : departmentMapData.departmentId;
+          
+          console.log('🔍 DepartmentMarkersLayer: Clicked marker', {
             wardId: wardData.wardId,
-            areas: wardData.areas
+            departmentIds: wardData.departmentIds,
+            selectedDepartmentId: departmentId
+          });
+          
+          (window as any).openDepartmentDetail(departmentId, {
+            ...departmentMapData,
+            departmentId: departmentId, // 🔥 NEW: Use specific department_id for this ward
+            wardId: wardData.wardId,
+            areas: wardData.areas,
+            departmentIds: wardData.departmentIds // 🔥 NEW: Include all department IDs
           });
         }
       });
