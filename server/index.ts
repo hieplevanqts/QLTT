@@ -34,7 +34,8 @@ const swaggerSpec = swaggerJsdoc({
       title: 'System Admin API',
       version: '0.1.0',
     },
-    servers: [{ url: `http://localhost:${PORT}` }],
+    //servers: [{ url: `http://localhost:${PORT}` }],
+    servers: [{ url: process.env.PUBLIC_URL }],
   },
   apis: [],
 });
