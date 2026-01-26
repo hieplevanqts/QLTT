@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -8,7 +8,6 @@ import {
   FileText,
   Store,
   CheckCircle2,
-  Filter,
   Eye,
   X,
   Search,
@@ -17,10 +16,11 @@ import {
 import { toast } from 'sonner';
 import styles from './InspectionRoundCreate.module.css';
 import DateRangePicker, { DateRange } from '@/ui-kit/DateRangePicker';
-import { mockPlans } from '@/app/data/kehoach-mock-data';
 import { mockStores } from '@/data/mockStores';
 import { useSupabaseInspectionRounds } from '@/hooks/useSupabaseInspectionRounds';
 import type { InspectionRound } from '@/app/data/inspection-rounds-mock-data';
+import type { Plan } from '@/app/types/plans';
+import { fetchPlansApi } from '@/utils/api/plansApi';
 import {
   InspectionDecisionModal,
   AssignmentDecisionModal,
@@ -161,6 +161,20 @@ export default function InspectionRoundCreate() {
   
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [realPlans, setRealPlans] = useState<Plan[]>([]);
+
+  // Fetch plans on mount
+  useEffect(() => {
+    const loadPlans = async () => {
+      try {
+        const data = await fetchPlansApi();
+        setRealPlans(data);
+      } catch (err) {
+        console.error("Error fetching plans:", err);
+      }
+    };
+    loadPlans();
+  }, []);
   
   // Generate code first
   const generatedCode = `DKT-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
@@ -211,7 +225,7 @@ export default function InspectionRoundCreate() {
   }, [editMode, editId, navigate, getRoundById]);
 
   // Mock user role - Change this to test different scenarios
-  const userRole: 'district' | 'ward' = 'district'; // 'district' | 'ward'
+  const [userRole] = useState<'district' | 'ward'>('district');
   const userWard = 'Phường Bến Nghé'; // For ward users
 
   // Filter stores based on selection
@@ -279,7 +293,7 @@ export default function InspectionRoundCreate() {
     }
   };
 
-  const validateStep1 = (): boolean => {
+  const validateStep1 = (shouldUpdateErrors: boolean = true): boolean => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
@@ -302,7 +316,9 @@ export default function InspectionRoundCreate() {
       newErrors.scopeArea = 'Vui lòng chọn phạm vi kiểm tra';
     }
 
-    setErrors(newErrors);
+    if (shouldUpdateErrors) {
+      setErrors(newErrors);
+    }
     return Object.keys(newErrors).length === 0;
   };
 
@@ -370,9 +386,6 @@ export default function InspectionRoundCreate() {
                 inspectedTargets: 0,
                 createdBy: 'Người dùng hiện tại',
                 createdAt: currentDate.toISOString().split('T')[0],
-                notes: formData.selectedForms.length > 0 
-                ? `Sử dụng biểu mẫu: ${formData.selectedForms.join(', ')}` 
-                : undefined,
             };
             await createRound(newRound);
             toast.success('Đã tạo đợt kiểm tra thành công');
@@ -417,7 +430,7 @@ export default function InspectionRoundCreate() {
     }));
   };
 
-  const approvedPlans = mockPlans.filter(p => p.status === 'approved' || p.status === 'active');
+  const approvedPlans = realPlans.filter(p => p.status === 'approved' || p.status === 'active');
   
   const selectedForm = mockForms.find(f => f.id === showFormDetailModal);
 
@@ -439,21 +452,30 @@ export default function InspectionRoundCreate() {
       {/* Progress Steps */}
       <div className={styles.stepsContainer}>
         <div className={styles.steps}>
-          <div className={`${styles.step} ${currentStep >= 1 ? styles.stepActive : ''}`}>
+          <div 
+            className={`${styles.step} ${currentStep >= 1 ? styles.stepActive : ''}`}
+            onClick={() => setCurrentStep(1)}
+          >
             <div className={styles.stepNumber}>
               {currentStep > 1 ? <CheckCircle2 size={20} /> : '1'}
             </div>
             <div className={styles.stepLabel}>Thông tin chung</div>
           </div>
           <div className={styles.stepDivider}></div>
-          <div className={`${styles.step} ${currentStep >= 2 ? styles.stepActive : ''}`}>
+          <div 
+            className={`${styles.step} ${currentStep >= 2 ? styles.stepActive : ''} ${validateStep1(false) ? '' : styles.stepDisabled}`}
+            onClick={() => validateStep1() && setCurrentStep(2)}
+          >
             <div className={styles.stepNumber}>
               {currentStep > 2 ? <CheckCircle2 size={20} /> : '2'}
             </div>
             <div className={styles.stepLabel}>Tiêu chí kiểm tra</div>
           </div>
           <div className={styles.stepDivider}></div>
-          <div className={`${styles.step} ${currentStep >= 3 ? styles.stepActive : ''}`}>
+          <div 
+            className={`${styles.step} ${currentStep >= 3 ? styles.stepActive : ''} ${validateStep1(false) ? '' : styles.stepDisabled}`}
+            onClick={() => validateStep1() && setCurrentStep(3)}
+          >
             <div className={styles.stepNumber}>3</div>
             <div className={styles.stepLabel}>Cửa hàng</div>
           </div>
@@ -462,12 +484,12 @@ export default function InspectionRoundCreate() {
 
       {/* Content */}
       <div className={styles.content}>
-        <div className={styles.formContainer}>
+        <div className={styles.form}>
           {/* Step 1: Thông tin chung */}
           {currentStep === 1 && (
             <div className={styles.section}>
               <div className={styles.formGrid}>
-                {/* Mã đợt kiểm tra - Auto generated */}
+                {/* Mã đợt kiểm tra */}
                 <div className={styles.formGroup}>
                   <label className={styles.label}>
                     Mã đợt kiểm tra <span className={styles.required}>*</span>
@@ -476,26 +498,8 @@ export default function InspectionRoundCreate() {
                     type="text"
                     className={styles.input}
                     value={formData.code}
-                    disabled
-                    style={{ background: 'var(--muted)', cursor: 'not-allowed' }}
+                    onChange={(e) => handleChange('code', e.target.value)}
                   />
-                  <span className={styles.helpText}>Hệ thống tự động sinh</span>
-                </div>
-
-                {/* Độ ưu tiên */}
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>
-                    Độ ưu tiên <span className={styles.required}>*</span>
-                  </label>
-                  <select
-                    className={styles.select}
-                    value={formData.priority}
-                    onChange={(e) => handleChange('priority', e.target.value)}
-                  >
-                    <option value="low">Thấp</option>
-                    <option value="medium">Trung bình</option>
-                    <option value="high">Cao</option>
-                  </select>
                 </div>
 
                 {/* Tên đợt kiểm tra */}
@@ -519,6 +523,22 @@ export default function InspectionRoundCreate() {
                   )}
                 </div>
 
+                {/* Độ ưu tiên */}
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>
+                    Độ ưu tiên <span className={styles.required}>*</span>
+                  </label>
+                  <select
+                    className={styles.select}
+                    value={formData.priority}
+                    onChange={(e) => handleChange('priority', e.target.value)}
+                  >
+                    <option value="low">Thấp</option>
+                    <option value="medium">Trung bình</option>
+                    <option value="high">Cao</option>
+                  </select>
+                </div>
+
                 {/* Kế hoạch liên quan - Optional */}
                 <div className={styles.formGroupFull}>
                   <label className={styles.label}>Kế hoạch liên quan</label>
@@ -527,9 +547,8 @@ export default function InspectionRoundCreate() {
                     value={formData.relatedPlanId}
                     onChange={(e) => handleChange('relatedPlanId', e.target.value)}
                     disabled={!!planIdFromUrl}
-                    style={planIdFromUrl ? { background: 'var(--muted)', cursor: 'not-allowed' } : {}}
                   >
-                    <option value="">Không liên kt với kế hoạch</option>
+                    <option value="">Không liên kết với kế hoạch</option>
                     {approvedPlans.map(plan => (
                       <option key={plan.id} value={plan.id}>
                         {plan.id} - {plan.name}
@@ -561,18 +580,18 @@ export default function InspectionRoundCreate() {
                   )}
                 </div>
 
-                {/* Đơn vị chủ trì - Conditional based on user role */}
+                {/* Người chủ trì - Conditional based on user role */}
                 {userRole !== 'ward' && (
                   <div className={styles.formGroup}>
                     <label className={styles.label}>
-                      Đơn vị chủ trì <span className={styles.required}>*</span>
+                      Người chủ trì <span className={styles.required}>*</span>
                     </label>
                     <select
                       className={`${styles.select} ${errors.leadUnit ? styles.inputError : ''}`}
                       value={formData.leadUnit}
                       onChange={(e) => handleChange('leadUnit', e.target.value)}
                     >
-                      <option value="">Chọn xã/phường</option>
+                      <option value="">Chọn người chủ trì</option>
                       <option value="Phường Bến Nghé">Phường Bến Nghé</option>
                       <option value="Phường Bến Thành">Phường Bến Thành</option>
                       <option value="Phường Cô Giang">Phường Cô Giang</option>
@@ -629,7 +648,7 @@ export default function InspectionRoundCreate() {
                 {userRole === 'ward' && (
                   <>
                     <div className={styles.formGroup}>
-                      <label className={styles.label}>Đơn vị chủ trì</label>
+                      <label className={styles.label}>Người chủ trì</label>
                       <div className={styles.readOnlyField}>{userWard}</div>
                     </div>
                     <div className={styles.formGroup}>
@@ -647,11 +666,11 @@ export default function InspectionRoundCreate() {
                       <label className={styles.label}>
                         Quyết định kiểm tra việc chấp hành pháp luật trong sản xuất, kinh doanh hàng hóa, dịch vụ
                       </label>
-                      <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center' }}>
+                      <div className={styles.decisionContainer}>
                         {inspectionDecision ? (
                           <>
                             <div className={styles.selectedDecisionBox}>
-                              <CheckCircle2 size={16} style={{ color: 'var(--primary)' }} />
+                              <CheckCircle2 size={16} color="var(--primary)" />
                               <div>
                                 <div className={styles.selectedDecisionCode}>{inspectionDecision.code}</div>
                                 <div className={styles.selectedDecisionTitle}>{inspectionDecision.title}</div>
@@ -683,11 +702,11 @@ export default function InspectionRoundCreate() {
                       <label className={styles.label}>
                         Quyết định phân công công chức thực hiện biện pháp nghiệp vụ
                       </label>
-                      <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center' }}>
+                      <div className={styles.decisionContainer}>
                         {assignmentDecision ? (
                           <>
                             <div className={styles.selectedDecisionBox}>
-                              <CheckCircle2 size={16} style={{ color: 'var(--primary)' }} />
+                              <CheckCircle2 size={16} color="var(--primary)" />
                               <div>
                                 <div className={styles.selectedDecisionCode}>{assignmentDecision.code}</div>
                                 <div className={styles.selectedDecisionTitle}>{assignmentDecision.title}</div>
@@ -724,11 +743,11 @@ export default function InspectionRoundCreate() {
                       <label className={styles.label}>
                         Quyết định sửa đổi, bổ sung Quyết định kiểm tra việc chấp hành pháp luật
                       </label>
-                      <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center' }}>
+                      <div className={styles.decisionContainer}>
                         {amendmentDecision ? (
                           <>
                             <div className={styles.selectedDecisionBox}>
-                              <CheckCircle2 size={16} style={{ color: 'var(--primary)' }} />
+                              <CheckCircle2 size={16} color="var(--primary)" />
                               <div>
                                 <div className={styles.selectedDecisionCode}>{amendmentDecision.code}</div>
                                 <div className={styles.selectedDecisionTitle}>{amendmentDecision.title}</div>
@@ -760,11 +779,11 @@ export default function InspectionRoundCreate() {
                       <label className={styles.label}>
                         Quyết định kéo dài/Gia hạn thời hạn thẩm tra, xác minh
                       </label>
-                      <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center' }}>
+                      <div className={styles.decisionContainer}>
                         {extensionDecision ? (
                           <>
                             <div className={styles.selectedDecisionBox}>
-                              <CheckCircle2 size={16} style={{ color: 'var(--primary)' }} />
+                              <CheckCircle2 size={16} color="var(--primary)" />
                               <div>
                                 <div className={styles.selectedDecisionCode}>{extensionDecision.code}</div>
                                 <div className={styles.selectedDecisionTitle}>{extensionDecision.title}</div>
@@ -809,25 +828,47 @@ export default function InspectionRoundCreate() {
 
               <div className={styles.formsGrid}>
                 {mockForms.map(form => (
-                  <div key={form.id} className={styles.formCard}>
-                    <div className={styles.formCardHeader}>
-                      <input
-                        type="checkbox"
-                        className={styles.checkbox}
-                        checked={formData.selectedForms.includes(form.id)}
-                        onChange={() => toggleForm(form.id)}
-                      />
-                      <div className={styles.formCardTitle}>
-                        <strong>{form.id}</strong> - {form.name}
+                  <div 
+                    key={form.id} 
+                    className={`${styles.formCard} ${formData.selectedForms.includes(form.id) ? styles.formCardSelected : ''}`}
+                    onClick={() => toggleForm(form.id)}
+                  >
+                    <div className={styles.formCardMain}>
+                      <div className={styles.formCardHeader}>
+                        <div className={styles.formCheckboxContainer}>
+                          <input
+                            type="checkbox"
+                            className={styles.checkbox}
+                            checked={formData.selectedForms.includes(form.id)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              toggleForm(form.id);
+                            }}
+                          />
+                        </div>
+                        <div className={styles.formCardIcon}>
+                          <FileText size={24} />
+                        </div>
+                        <div className={styles.formCardTitle}>
+                          <span className={styles.formId}>{form.id}</span>
+                          <span className={styles.formName}>{form.name}</span>
+                        </div>
                       </div>
-                      <button
-                        type="button"
-                        className={styles.viewButton}
-                        onClick={() => setShowFormDetailModal(form.id)}
-                      >
-                        <Eye size={16} />
-                      </button>
+                      <div className={styles.formCardDescription}>
+                        {form.criteria.length} tiêu chí kiểm tra trong biểu mẫu này
+                      </div>
                     </div>
+                    <button
+                      type="button"
+                      className={styles.viewButton}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowFormDetailModal(form.id);
+                      }}
+                    >
+                      <Eye size={18} />
+                      Chi tiết
+                    </button>
                   </div>
                 ))}
               </div>
@@ -884,29 +925,40 @@ export default function InspectionRoundCreate() {
               </div>
 
               {/* Store Multi-Select */}
-              <div className={styles.storeMultiSelect}>
+              <div className={styles.storesGridContainer}>
                 {filteredStores.slice(0, 100).map(store => (
                   <div
                     key={store.id}
-                    className={`${styles.storeOption} ${formData.selectedStores.includes(store.id) ? styles.storeOptionSelected : ''}`}
+                    className={`${styles.storeCard} ${formData.selectedStores.includes(store.id) ? styles.storeCardSelected : ''}`}
                     onClick={() => toggleStore(store.id)}
                   >
-                    <input
-                      type="checkbox"
-                      className={styles.checkbox}
-                      checked={formData.selectedStores.includes(store.id)}
-                      onChange={() => {}}
-                    />
-                    <div className={styles.storeOptionInfo}>
-                      <div className={styles.storeOptionName}>{store.name}</div>
-                      <div className={styles.storeOptionMeta}>
-                        {store.address} • {store.type}
-                        {store.riskLevel === 'high' && (
-                          <span className={styles.riskBadge}>Rủi ro cao</span>
-                        )}
-                        {store.hasComplaints && (
-                          <span className={styles.complaintBadge}>Nhiều khiếu nại</span>
-                        )}
+                    <div className={styles.storeCardCheckbox}>
+                      <input
+                        type="checkbox"
+                        className={styles.checkbox}
+                        checked={formData.selectedStores.includes(store.id)}
+                        onChange={() => {}} // Controlled by parent div
+                      />
+                    </div>
+                    <div className={styles.storeCardIcon}>
+                      <Store size={22} />
+                    </div>
+                    <div className={styles.storeCardContent}>
+                      <div className={styles.storeCardHeader}>
+                        <div className={styles.storeCardName}>{store.name}</div>
+                        <div className={styles.storeCardBadges}>
+                          {store.riskLevel === 'high' && (
+                            <span className={`${styles.badge} ${styles.badgeHigh}`}>Rủi ro cao</span>
+                          )}
+                          {store.hasComplaints && (
+                            <span className={`${styles.badge} ${styles.badgeWarning}`}>Nhiều khiếu nại</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className={styles.storeCardMeta}>
+                        <span className={styles.storeCardType}>{store.type}</span>
+                        <span className={styles.metaDivider}>•</span>
+                        <span className={styles.storeCardAddress}>{store.address}</span>
                       </div>
                     </div>
                   </div>

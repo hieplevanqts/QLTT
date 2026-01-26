@@ -359,30 +359,95 @@
 }
 
 /* Round Table Styles */
-.roundCode {
+.timeRange {
   font-family: "Inter", sans-serif;
   font-size: var(--font-size-sm);
+  color: var(--foreground);
+  white-space: nowrap;
+}
+
+.roundCode {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
-  color: var(--primary);
+  color: var(--foreground);
+  line-height: 1.5;
 }
 
 .roundName {
-  font-family: "Inter", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   color: var(--foreground);
-  margin-bottom: 4px;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .roundType {
   margin-top: 4px;
 }
 
-.timeRange {
-  font-family: "Inter", sans-serif;
+.summaryContainer {
+  margin-bottom: var(--spacing-6);
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.roundCodeBadgeRow {
+  margin-bottom: 4px;
+}
+
+.roundPlan {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--font-size-xs);
+  color: var(--muted-foreground);
+  line-height: 1.5;
+  margin-top: 2px;
+}
+
+.leadUnit {
+  font-family: 'Inter', sans-serif;
   font-size: var(--font-size-sm);
   color: var(--foreground);
+  line-height: 1.5;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.teamSize {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--font-size-sm);
+  color: var(--foreground);
+  line-height: 1.5;
+}
+
+.targetsInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.targetsCount {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+  line-height: 1.5;
+}
+
+.targetsProgress {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--font-size-xs);
+  color: var(--muted-foreground);
+  line-height: 1.5;
 }
 
 /* History Table Styles */
