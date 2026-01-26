@@ -203,44 +203,79 @@ export const rolesService = {
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
-    let query = supabase
+    const { data: roleUsers, error: roleUsersError } = await supabase
       .from("user_roles")
-      .select(
-        'user_id, users:users(id, username, full_name, email, status, "lastLoginAt")',
-        { count: "exact" },
-      )
-      .eq("role_id", roleId)
-      .range(from, to)
-      .order("full_name", { foreignTable: "users", ascending: true });
+      .select("user_id")
+      .eq("role_id", roleId);
 
-    const search = params.q?.trim();
-    if (search) {
-      query = query.or(
-        `users.username.ilike.%${search}%,users.full_name.ilike.%${search}%,users.email.ilike.%${search}%`,
-      );
+    if (roleUsersError) {
+      throw new Error(`role users select failed: ${roleUsersError.message}`);
     }
 
-    if (params.status && params.status !== "all") {
-      const statusValue = params.status === "active" ? 1 : params.status === "inactive" ? 0 : 2;
-      query = query.eq("users.status", statusValue);
+    const userIds = (roleUsers || []).map((row: any) => row.user_id).filter(Boolean);
+    if (userIds.length === 0) {
+      return { data: [], total: 0 };
     }
 
-    const { data, error, count } = await query;
-    if (error) {
-      throw new Error(`role users select failed: ${error.message}`);
+    const runUsersQuery = async (lastLoginColumn: string | null) => {
+      const selectFields = [
+        "_id",
+        "username",
+        "full_name",
+        "email",
+        "status",
+        lastLoginColumn,
+      ]
+        .filter(Boolean)
+        .join(", ");
+
+      let usersQuery = supabase
+        .from("users")
+        .select(selectFields, { count: "exact" })
+        .in("_id", userIds)
+        .order("full_name", { ascending: true })
+        .order("username", { ascending: true })
+        .range(from, to);
+
+      const search = params.q?.trim();
+      if (search) {
+        usersQuery = usersQuery.or(
+          `username.ilike.%${search}%,full_name.ilike.%${search}%,email.ilike.%${search}%`,
+        );
+      }
+
+      if (params.status && params.status !== "all") {
+        const statusValue = params.status === "active" ? 1 : params.status === "inactive" ? 0 : 2;
+        usersQuery = usersQuery.eq("status", statusValue);
+      }
+
+      return usersQuery;
+    };
+
+    let usersResponse = await runUsersQuery("last_login_at");
+    if (usersResponse.error && usersResponse.error.message.includes("last_login_at")) {
+      usersResponse = await runUsersQuery('"lastLoginAt"');
     }
 
-    const mapped = (data || []).map((row: any) => {
-      const user = row.users ?? {};
-      return {
-        id: user.id ?? row.user_id,
-        username: user.username ?? null,
-        full_name: user.full_name ?? null,
-        email: user.email ?? null,
-        status: user.status ?? null,
-        lastLoginAt: user.lastLoginAt ?? user.last_login_at ?? null,
-      } as RoleUserRecord;
-    });
+    if (usersResponse.error) {
+      usersResponse = await runUsersQuery(null);
+    }
+
+    if (usersResponse.error) {
+      throw new Error(`role users select failed: ${usersResponse.error.message}`);
+    }
+
+    const users = usersResponse.data;
+    const count = usersResponse.count;
+
+    const mapped = (users || []).map((user: any) => ({
+      id: user._id,
+      username: user.username ?? null,
+      full_name: user.full_name ?? null,
+      email: user.email ?? null,
+      status: user.status ?? null,
+      lastLoginAt: user.last_login_at ?? user.lastLoginAt ?? null,
+    }));
 
     return { data: mapped, total: count ?? 0 };
   },
