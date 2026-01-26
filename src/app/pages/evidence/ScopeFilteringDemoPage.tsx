@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAppSelector } from '../../../app/hooks';
+import { RootState } from '../../../store/rootReducer';
 import PageHeader from '../../../layouts/PageHeader';
 import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -64,7 +65,8 @@ function generateDiverseMockEvidence(): EvidenceItem[] {
 }
 
 export default function ScopeFilteringDemoPage() {
-  const { user } = useAuth();
+  // Get user from Redux instead of AuthContext
+  const { user } = useAppSelector((state: RootState) => state.auth);
   const allEvidence = useMemo(() => generateDiverseMockEvidence(), []);
 
   if (!user) {

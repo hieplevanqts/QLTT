@@ -5,6 +5,7 @@ import { QLTTScopeProvider } from '../contexts/QLTTScopeContext';
 
 export default function RootLayout() {
   return (
+    // 🔥 FIX: Added AuthProvider back - some components still use useAuth() hook
     <AuthProvider>
       <QLTTScopeProvider>
         <LayoutProvider>

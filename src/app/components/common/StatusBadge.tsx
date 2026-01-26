@@ -133,7 +133,3 @@ export function StatusBadge({
     </span>
   );
 }
-
-// Export with original name for backward compatibility
-export { StatusBadge as KeHoachTacNghiepStatusBadge };
-export { StatusBadge as InspectionRoundStatusBadge };

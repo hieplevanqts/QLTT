@@ -13,7 +13,8 @@ export interface InspectionRoundResponse {
   campaign_name: string;
   campaign_code: string;
   plan_id: string;
-  campaign_status: number;
+  campaign_status: string | number;
+  status?: number;
   start_time: string;
   end_time: string;
   lead_unit: string;
@@ -24,39 +25,43 @@ export interface InspectionRoundResponse {
   created_by_name: string;
   user_id: string;
   created_at: string;
-  description: string;
   priority: number;
   [key: string]: any;
 }
 
 // --- Helpers ---
 function mapRoundStatus(status: string | number | null): InspectionRound['status'] {
-  if (typeof status === 'number') {
+  // Handle numeric status codes (prefer types from DB)
+  const statusCode = typeof status === 'string' ? parseInt(status, 10) : status;
+
+  if (typeof statusCode === 'number' && !isNaN(statusCode)) {
     const mapping: Record<number, InspectionRound['status']> = {
-      0: 'draft',
-      1: 'pending_approval',
-      2: 'approved',
-      3: 'active',
-      4: 'completed',
-      5: 'paused',
-      6: 'cancelled',
-      7: 'rejected'
+      1: 'draft',
+      2: 'pending_approval',
+      3: 'approved',
+      4: 'active',
+      5: 'completed',
+      6: 'rejected',
+      7: 'paused',     // Keep these if they exist in DB, or map to closest
+      8: 'cancelled'
     };
-    return mapping[status] || 'draft';
+    return mapping[statusCode] || 'draft';
   }
 
+  // Handle string status labels (similar to Plans)
+  const statusStr = String(status || '').toLowerCase().replace(/\s/g, '_');
   const statusMap: Record<string, InspectionRound['status']> = {
-    'draft': 'draft', 'nhap': 'draft',
-    'pending_approval': 'pending_approval', 'cho_duyet': 'pending_approval',
-    'approved': 'approved', 'da_duyet': 'approved',
-    'active': 'active', 'dang_trien_khai': 'active',
-    'paused': 'paused', 'tam_dung': 'paused',
-    'in_progress': 'in_progress', 'dang_kiem_tra': 'in_progress',
-    'completed': 'completed', 'hoan_thanh': 'completed',
-    'cancelled': 'cancelled', 'huy': 'cancelled',
-    'rejected': 'rejected', 'tu_choi': 'rejected',
+    'draft': 'draft', 'nhap': 'draft', 'nháp': 'draft',
+    'pending_approval': 'pending_approval', 'cho_duyet': 'pending_approval', 'chờ_duyệt': 'pending_approval',
+    'approved': 'approved', 'da_duyet': 'approved', 'đã_duyệt': 'approved',
+    'active': 'active', 'dang_trien_khai': 'active', 'đang_triển_khai': 'active', 'dang_thuc_hien': 'active', 'đang_thực_hiện': 'active',
+    'paused': 'paused', 'tam_dung': 'paused', 'tạm_dừng': 'paused',
+    'in_progress': 'in_progress', 'dang_kiem_tra': 'in_progress', 'đang_kiểm_tra': 'in_progress',
+    'completed': 'completed', 'hoan_thanh': 'completed', 'hoàn_thành': 'completed', 'reporting': 'completed',
+    'cancelled': 'cancelled', 'huy': 'cancelled', 'hủy': 'cancelled',
+    'rejected': 'rejected', 'tu_choi': 'rejected', 'từ_chối': 'rejected',
   };
-  return statusMap[status?.toLowerCase() || ''] || 'draft';
+  return statusMap[statusStr] || 'draft';
 }
 
 function mapRowToRound(row: InspectionRoundResponse): InspectionRound {
@@ -70,9 +75,10 @@ function mapRowToRound(row: InspectionRoundResponse): InspectionRound {
   const start = row.start_time || row.start_date || new Date().toISOString();
 
   return {
-    id: row._id,
+    id: row._id || (row as any).id || '',
     name: row.campaign_name || '',
     code: row.campaign_code || (row._id ? row._id.substring(0, 8).toUpperCase() : ''),
+    campaign_code: row.campaign_code,
     planId: row.plan_id,
     planCode: decisionMeta.planCode || '',
     planName: decisionMeta.planName || '', 
@@ -94,7 +100,7 @@ function mapRowToRound(row: InspectionRoundResponse): InspectionRound {
     createdBy: row.created_by_name || '',
     createdById: row.user_id,
     createdAt: row.created_at || new Date().toISOString(),
-    notes: row.description || '',
+    notes: '',
     formTemplate: decisionMeta.formTemplate || '',
     scope: decisionMeta.scope || '',
     scopeDetails: decisionMeta.scopeDetails || { provinces: [], districts: [], wards: [] },
@@ -154,12 +160,12 @@ export async function createInspectionRoundApi(round: Partial<InspectionRound>):
     const payload = {
       campaign_name: round.name,
       plan_id: round.planId || undefined,
-      campaign_status: 0, 
+      campaign_status: 1, // Default state is Nháp (1)
+      status: 1, 
       department_id: round.leadUnitId || undefined, 
       owner_dept: round.leadUnit || '',
       start_time: round.startDate,
       end_time: round.endDate,
-      description: round.notes || '',
       priority: 0, 
       campaign_code: round.code,
       partner: '',
@@ -196,29 +202,36 @@ export async function updateInspectionRoundApi(id: string, updates: Partial<Insp
     
     const payload: any = {};
     if (updates.status) {
-      const statusMapReverse: Record<string, number> = {
-        'draft': 0,
-        'pending_approval': 1,
-        'approved': 2,
-        'active': 3,
-        'completed': 4,
-        'paused': 5,
-        'cancelled': 6,
-        'rejected': 7,
-        'in_progress': 3
+      const reverseStatusMap: Record<string, number> = {
+        'draft': 1,
+        'pending_approval': 2,
+        'approved': 3,
+        'active': 4,
+        'in_progress': 4,
+        'completed': 5,
+        'rejected': 6,
+        'paused': 7,
+        'cancelled': 8,
+        'reporting': 5
       };
-      if (updates.status in statusMapReverse) {
-        payload.campaign_status = statusMapReverse[updates.status];
-      }
+      payload.campaign_status = reverseStatusMap[updates.status] || updates.status;
     }
 
     if (updates.name) payload.campaign_name = updates.name;
-    if (updates.notes) payload.description = updates.notes;
+    if (updates.code) payload.campaign_code = updates.code;
     if (updates.startDate) payload.start_time = updates.startDate;
     if (updates.endDate) payload.end_time = updates.endDate;
     if (updates.planId) payload.plan_id = updates.planId;
     if (updates.leadUnitId) payload.department_id = updates.leadUnitId;
-    if (updates.leadUnit) payload.owner_dept = updates.leadUnit;
+    if (updates.leadUnit) {
+      payload.owner_dept = updates.leadUnit;
+      payload.lead_unit = updates.leadUnit;
+    }
+    
+    // Removal of notes mapping as column doesn't exist in map_inspection_campaigns
+    
+    // Some tables might not have updated_at, removing for maximum compatibility 
+    // unless explicitly needed. payload.updated_at = new Date().toISOString();
 
     const response = await fetch(url, {
       method: 'PATCH',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { 
   Filter, 
@@ -14,7 +14,6 @@ import {
   XCircle,
   Info,
   Edit,
-  Search as SearchIcon,
   Table,
   BookOpen
 } from 'lucide-react';
@@ -27,18 +26,19 @@ import FilterActionBar from '../../../patterns/FilterActionBar';
 import SearchInput from '../../../ui-kit/SearchInput';
 import EmptyState from '../../../ui-kit/EmptyState';
 import { Button } from '../../components/ui/button';
-import { mockInspectionTasks, type InspectionTask, type TaskStatus } from '../../data/inspection-tasks-mock-data';
+import { type InspectionTask, type TaskStatus } from '../../data/inspection-tasks-mock-data';
 import { mockPlans } from '../../data/kehoach-mock-data';
 import { mockInspectionRounds } from '../../data/inspection-rounds-mock-data';
+import { fetchInspectionSessionsApi } from '../../../utils/api/inspectionSessionsApi';
 import { TaskCard } from '../../components/tasks/TaskCard';
 import { InspectionTaskStatusBadge } from '../../components/tasks/InspectionTaskStatusBadge';
 import DataTable, { type Column } from '../../../ui-kit/DataTable';
-import AdvancedFilterModal, { type FilterConfig, type InfiniteScrollSelectOption } from '../../../ui-kit/AdvancedFilterModal';
+import AdvancedFilterModal, { type FilterConfig } from '../../../ui-kit/AdvancedFilterModal';
+import { type InfiniteScrollSelectOption } from '../../../ui-kit/InfiniteScrollSelect';
 import { type DateRange } from '../../../ui-kit/DateRangePicker';
 import { toast } from 'sonner';
 import CreateTaskModal, { type CreateTaskFormData } from '../../components/tasks/CreateTaskModal';
 import { EditTaskModal, type EditTaskFormData } from '../../components/tasks/EditTaskModal';
-import { InspectionTaskFilterModal, type InspectionTaskFilters } from '../../components/tasks/InspectionTaskFilterModal';
 import { TaskDetailModal } from '../../components/tasks/TaskDetailModal';
 import InspectionResultModal, { type InspectionResultData } from '../../components/sessions/InspectionResultModal';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../../components/ui/select';
@@ -58,9 +58,11 @@ type ViewMode = 'kanban' | 'list';
 // Valid status transitions based on workflow rules - v2
 const VALID_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
   not_started: ['in_progress'], // Chỉ có thể bắt đầu
-  in_progress: ['not_started', 'completed'], // Có thể quay lại hoặc hoàn thành
+  in_progress: ['not_started', 'completed', 'pending_approval'], // Có thể quay lại hoặc hoàn thành/chờ duyệt
+  pending_approval: ['completed', 'in_progress'], // Có thể duyệt xong hoặc yêu cầu sửa
   completed: ['in_progress', 'closed'], // Có thể reopen hoặc đóng
   closed: ['completed'], // Chỉ có thể reopen về hoàn thành
+  cancelled: [], // Không thể chuyển đi đâu
 };
 
 // Check if a status transition is valid - v2
@@ -94,7 +96,7 @@ function DraggableTask({ task, onClick, actions }: DraggableTaskProps) {
 
   return (
     <div
-      ref={drag}
+      ref={drag as any}
       style={{ 
         opacity: isDragging ? 0.5 : 1,
         cursor: 'move',
@@ -144,16 +146,13 @@ function KanbanColumn({ column, tasks, onTaskClick, onDropTask, getTaskActions }
     }),
   });
 
-  const wipLimit = 5;
-  const isOverLimit = tasks.length > wipLimit;
-  
   // Determine column visual state
   const isValidDropZone = isOver && canDrop;
   const isInvalidDropZone = isOver && !canDrop;
 
   return (
     <div 
-      ref={drop}
+      ref={drop as any}
       className={`${styles.kanbanColumn} ${isValidDropZone ? styles.columnDragOver : ''} ${isInvalidDropZone ? styles.columnDragInvalid : ''}`}
     >
       {/* Column Header */}
@@ -191,15 +190,16 @@ function KanbanColumn({ column, tasks, onTaskClick, onDropTask, getTaskActions }
 }
 
 export function TaskBoard() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
   // Debug: verify component is loading
 
   // View mode
-  const [viewMode, setViewMode] = useState<ViewMode>('kanban');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
   
-  // Tasks state - use state instead of direct mock data
-  const [tasks, setTasks] = useState<InspectionTask[]>(mockInspectionTasks);
+  // Tasks state
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Modal state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -231,48 +231,62 @@ export function TaskBoard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
 
-  // Infinite scroll state for plan and round selects
+  // Infinite scroll state for plan selects
   const [planPage, setPlanPage] = useState(1);
-  const [roundPage, setRoundPage] = useState(1);
   const [planLoading, setPlanLoading] = useState(false);
-  const [roundLoading, setRoundLoading] = useState(false);
   const ITEMS_PER_PAGE = 20;
+
+  // Fetch sessions from API
+  const loadSessions = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchInspectionSessionsApi();
+      
+      // Map InspectionSession to the expected UI format (InspectionTask compatible)
+      const mappedTasks = data.map(session => ({
+        id: session.id,
+        code: session.id.substring(0, 8).toUpperCase(),
+        roundId: session.campaignId,
+        roundName: session.campaignName,
+        planId: session.departmentId, // Using dept id as fallback if needed
+        planName: '--',
+        title: session.name,
+        description: session.description || '',
+        targetName: session.merchantName,
+        targetAddress: session.merchantAddress,
+        assignee: { id: session.userId || '', name: session.userName },
+        assignedBy: { id: '', name: '--' },
+        assignedDate: session.createdAt,
+        status: session.status,
+        priority: session.priority === 3 ? 'urgent' : session.priority === 2 ? 'high' : 'medium',
+        dueDate: session.deadlineTime,
+        progress: session.status === 'completed' || session.status === 'closed' ? 100 : 
+                  session.status === 'in_progress' ? 50 : 0,
+        checklistTotal: 0,
+        checklistCompleted: 0,
+        createdAt: session.createdAt
+      }));
+      
+      setTasks(mappedTasks);
+    } catch (error) {
+      console.error('TaskBoard loadSessions Error:', error);
+      toast.error('Không thể tải danh sách phiên kiểm tra');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSessions();
+  }, []);
 
   // Initialize filter from URL query params
   useEffect(() => {
     const planParam = searchParams.get('planId') || searchParams.get('plan');
     if (planParam) {
       setPlanFilter(decodeURIComponent(planParam));
-    } else {
-      // Auto-select the latest plan if no plan is selected
-      const latestPlan = findLatestPlan();
-      if (latestPlan) {
-        setPlanFilter(latestPlan.id);
-      }
     }
   }, [searchParams]);
-
-  // Find the latest plan based on startDate (closest to today) and status
-  const findLatestPlan = () => {
-    const today = new Date();
-    
-    // Priority order: active plans first, then by start date closest to today
-    const sortedPlans = [...mockPlans].sort((a, b) => {
-      // Prioritize active plans
-      if (a.status === 'active' && b.status !== 'active') return -1;
-      if (b.status === 'active' && a.status !== 'active') return 1;
-      
-      // Then sort by start date (closest to today)
-      const dateA = new Date(a.startDate);
-      const dateB = new Date(b.startDate);
-      const diffA = Math.abs(today.getTime() - dateA.getTime());
-      const diffB = Math.abs(today.getTime() - dateB.getTime());
-      
-      return diffA - diffB;
-    });
-    
-    return sortedPlans[0] || null;
-  };
 
   // Prepare plan options with pagination
   const planOptions: InfiniteScrollSelectOption[] = useMemo(() => {
@@ -286,17 +300,14 @@ export function TaskBoard() {
 
   const hasMorePlans = planPage * ITEMS_PER_PAGE < mockPlans.length;
 
-  // Prepare round options with pagination
-  const roundOptions: InfiniteScrollSelectOption[] = useMemo(() => {
-    const rounds = mockInspectionRounds.slice(0, roundPage * ITEMS_PER_PAGE);
-    return rounds.map(round => ({
+  // Prepare round options
+  const roundOptions = useMemo(() => {
+    return mockInspectionRounds.map(round => ({
       value: round.id,
       label: round.name,
       subtitle: `${round.code} - ${round.leadUnit}`,
     }));
-  }, [roundPage]);
-
-  const hasMoreRounds = roundPage * ITEMS_PER_PAGE < mockInspectionRounds.length;
+  }, []);
 
   // Handle load more for plans
   const handleLoadMorePlans = () => {
@@ -306,18 +317,6 @@ export function TaskBoard() {
       setTimeout(() => {
         setPlanPage(prev => prev + 1);
         setPlanLoading(false);
-      }, 500);
-    }
-  };
-
-  // Handle load more for rounds
-  const handleLoadMoreRounds = () => {
-    if (!roundLoading && hasMoreRounds) {
-      setRoundLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        setRoundPage(prev => prev + 1);
-        setRoundLoading(false);
       }, 500);
     }
   };
@@ -356,7 +355,7 @@ export function TaskBoard() {
       if (dateRangeFilter.startDate || dateRangeFilter.endDate) {
         const taskDate = task.assignedDate ? new Date(task.assignedDate) : null;
         if (taskDate) {
-          if (dateRangeFilter.startDate && taskDate < dateRangeFilter.startDate) {
+          if (dateRangeFilter.startDate && taskDate < new Date(dateRangeFilter.startDate)) {
             matchesDateRange = false;
           }
           if (dateRangeFilter.endDate) {
@@ -373,34 +372,22 @@ export function TaskBoard() {
     });
   }, [tasks, searchValue, statusFilter, priorityFilter, roundFilter, planFilter, assigneeFilter, dateRangeFilter]);
 
-  // Count tasks for summary cards
-  const getSummaryCounts = () => {
-    const notStarted = filteredTasks.filter(t => t.status === 'not_started').length;
-    const inProgress = filteredTasks.filter(t => t.status === 'in_progress').length;
-    const pendingApproval = filteredTasks.filter(t => t.status === 'pending_approval').length;
-    const completed = filteredTasks.filter(t => t.status === 'completed').length;
-    
-    // Calculate overdue
-    const today = new Date();
-    const overdue = filteredTasks.filter(t => {
-      if (t.status === 'completed' || t.status === 'closed') return false;
-      return new Date(t.dueDate) < today;
-    }).length;
-
-    return { notStarted, inProgress, pendingApproval, completed, overdue };
-  };
-
   // Group tasks by status for Kanban
   const tasksByStatus = useMemo(() => {
     const grouped: Record<TaskStatus, InspectionTask[]> = {
       not_started: [],
       in_progress: [],
+      pending_approval: [],
       completed: [],
       closed: [],
+      cancelled: [],
     };
 
     filteredTasks.forEach(task => {
-      grouped[task.status].push(task);
+      const status = task.status as TaskStatus;
+      if (grouped[status]) {
+        grouped[status].push(task);
+      }
     });
 
     return grouped;
@@ -627,7 +614,7 @@ export function TaskBoard() {
       title: formData.title,
       description: formData.description,
       targetName: formData.targetName,
-      targetAddress: formData.targetAddress,
+      targetAddress: 'Địa chỉ mẫu', // formData doesn't have targetAddress in its type currently
       targetCode: `CS-${String(Math.floor(Math.random() * 1000)).padStart(4, '0')}`,
       assignee,
       assignedBy: {
@@ -977,27 +964,26 @@ export function TaskBoard() {
     <div className={styles.container}>
       <PageHeader
         title="Phiên làm việc"
-        description="Quản lý phiên làm việc từ các đợt kiểm tra và kế hoạch"
         breadcrumbs={[
-          { label: 'Trang chủ', path: '/' },
+          { label: 'Trang chủ', href: '/' },
           { label: 'Phiên làm việc' },
         ]}
         actions={
           <>
             <div className={styles.viewToggle}>
               <Button
-                variant={viewMode === 'kanban' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('kanban')}
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-              <Button
                 variant={viewMode === 'list' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setViewMode('list')}
               >
                 <List className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'kanban' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('kanban')}
+              >
+                <LayoutGrid className="h-4 w-4" />
               </Button>
             </div>
 
@@ -1078,10 +1064,18 @@ export function TaskBoard() {
         />
       </div>
 
-      {/* Kanban View */}
-      {viewMode === 'kanban' && (
+      {/* Loading state */}
+      {loading ? (
+        <div className={styles.loadingContainer} style={{ padding: '60px', textAlign: 'center' }}>
+          <RefreshCw className="animate-spin h-8 w-8 mx-auto mb-4" style={{ color: 'var(--primary)' }} />
+          <p>Đang tải dữ liệu từ hệ thống...</p>
+        </div>
+      ) : (
         <>
-          {filteredTasks.length === 0 ? (
+          {/* Kanban View */}
+          {viewMode === 'kanban' && (
+            <>
+              {filteredTasks.length === 0 ? (
             <div className={styles.emptyStateContainer}>
               <EmptyState
                 type="empty"
@@ -1109,8 +1103,6 @@ export function TaskBoard() {
               <div className={styles.kanbanContainer}>
                 {STATUS_COLUMNS.map(column => {
                   const tasks = tasksByStatus[column.key];
-                  const wipLimit = 5; // Example WIP limit
-                  const isOverLimit = tasks.length > wipLimit;
 
                   return (
                     <KanbanColumn
@@ -1287,8 +1279,10 @@ export function TaskBoard() {
       <Form11Modal
         open={isForm11ModalOpen}
         onOpenChange={setIsForm11ModalOpen}
-        task={actionTask}
+        task={actionTask || undefined}
       />
+        </>
+      )}
     </div>
   );
 }

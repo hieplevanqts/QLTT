@@ -25,6 +25,8 @@ import styles from './InspectionRoundDetail.module.css';
 import { InspectionRoundStatusBadge } from '../../components/inspections/InspectionRoundStatusBadge';
 import { CreateSessionDialog } from '../../components/inspections/CreateSessionDialog';
 import { InsFormDetailDialog } from '../../components/inspections/InsFormDetailDialog';
+import TaskDetailModal from '../../components/tasks/TaskDetailModal';
+import { type InspectionTask } from '../../data/inspection-tasks-mock-data';
 
 import { useSupabaseInspectionRound } from '@/hooks/useSupabaseInspectionRound';
 import { toast } from 'sonner';
@@ -298,6 +300,8 @@ export default function InspectionRoundDetail() {
   const [sessions, setSessions] = useState(mockSessions);
   const [showInsFormDetail, setShowInsFormDetail] = useState(false);
   const [selectedInsForm, setSelectedInsForm] = useState<{ code: string; type: string; name: string } | null>(null);
+  const [selectedTask, setSelectedTask] = useState<InspectionTask | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
 
   const handleCreateSession = (sessionData: {
@@ -377,6 +381,24 @@ export default function InspectionRoundDetail() {
   const handleInsFormClick = (insForm: { code: string; type: string; name: string }) => {
     setSelectedInsForm(insForm);
     setShowInsFormDetail(true);
+  };
+
+  const handleViewDetail = (session: any) => {
+    // Adapter to convert local session data to InspectionTask format for modal
+    const task: any = {
+      id: session.id,
+      code: session.id,
+      title: `Kiểm tra ${session.storeName}`,
+      roundName: data?.name || 'Đợt kiểm tra',
+      status: session.status === 'scheduled' ? 'not_started' : session.status,
+      targetName: session.storeName,
+      targetAddress: session.address,
+      dueDate: session.date,
+      assignee: { name: session.inspector },
+      description: `Phiên làm việc tại ${session.storeName} (${session.storeCode})`,
+    };
+    setSelectedTask(task);
+    setIsDetailModalOpen(true);
   };
 
   return (
@@ -701,7 +723,11 @@ export default function InspectionRoundDetail() {
                       </td>
                       <td>
                         <div className={styles.actionCell}>
-                          <button className={styles.iconButton} title="Xem chi tiết">
+                          <button 
+                            className={styles.iconButton} 
+                            title="Xem chi tiết"
+                            onClick={() => handleViewDetail(session)}
+                          >
                             <Eye size={16} />
                           </button>
                           <button className={styles.iconButton} title="Sửa">
@@ -850,7 +876,6 @@ export default function InspectionRoundDetail() {
       <CreateSessionDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
-        roundId={data.id}
         roundName={data.name}
         onCreateSession={handleCreateSession}
       />
@@ -876,6 +901,13 @@ export default function InspectionRoundDetail() {
           content: {},
         } : null}
       />
+      {isDetailModalOpen && (
+        <TaskDetailModal
+          task={selectedTask}
+          isOpen={isDetailModalOpen}
+          onClose={() => setIsDetailModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

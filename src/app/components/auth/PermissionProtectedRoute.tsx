@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAppSelector } from '../../../app/hooks';
+import { RootState } from '../../../store/rootReducer';
 import { Error403 } from '../error-states/Error403';
 
 interface PermissionProtectedRouteProps {
@@ -101,7 +102,8 @@ export function PermissionProtectedRoute({
   children, 
   requiredPermission 
 }: PermissionProtectedRouteProps) {
-  const { user } = useAuth();
+  // Get user from Redux instead of AuthContext
+  const { user } = useAppSelector((state: RootState) => state.auth);
   const location = useLocation();
 
   // Get permission code for current route

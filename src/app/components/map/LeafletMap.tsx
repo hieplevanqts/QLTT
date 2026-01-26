@@ -12,6 +12,8 @@ import { generateMarkerIconHtml, hasAlertStyling } from './utils/markerRenderer'
 import { useDepartmentAreas } from './hooks/useDepartmentAreas';
 import { transformDepartmentAreasToMapData, calculateAverageCenter, getValidCenters } from './utils/departmentAreasUtils';
 import { useAppSelector } from '../../../app/hooks';
+// Import layers
+import { DepartmentMarkersLayer } from './layers/DepartmentMarkersLayer';
 
 type CategoryFilter = {
   [key: string]: boolean;  // Dynamic keys from point_status table
@@ -38,7 +40,8 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const leafletRef = useRef<any>(null);
-  const markersRef = useRef<any[]>([]);
+  const markersRef = useRef<any[]>([]); // Merchant markers
+  const departmentMarkersRef = useRef<any[]>([]); // 🔥 NEW: Department markers (separate from merchant markers)
   const selectedMarkerRef = useRef<any>(null);
   const boundaryLayerRef = useRef<any>(null); // Track boundary layer
   const boundaryHighlightRef = useRef<any>(null); // Track highlight boundary
@@ -62,15 +65,18 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
   // 🔥 Fetch department areas from API (priority: selectedTeamId > teamId > divisionId)
   // 🔥 FIX: Always fetch when we have divisionId/teamId, not just when showWardBoundaries is true
   // This ensures data is available when user switches to officers layer
+  // 🔥 NEW: If no divisionId, fetch all departments' areas
   const targetDepartmentId = selectedTeamId || teamId || divisionId;
   const { departmentAreas, isLoading: isLoadingDepartmentAreas, error: departmentAreasError, currentDepartmentId } = useDepartmentAreas(
     targetDepartmentId || null,
-    true // Always enabled - fetch data whenever we have a department ID
+    true // Always enabled - fetch data whenever we have a department ID or when no divisionId (to fetch all)
   );
   
   // 🔥 Transform department areas data to map-friendly format
   const departmentMapData = useMemo(() => {
-    if (!targetDepartmentId) {
+    // 🔥 NEW: Allow rendering even when no targetDepartmentId (if we fetched all departments)
+    // Only skip if we're still loading and have no data
+    if (isLoadingDepartmentAreas && !departmentAreas) {
       return null;
     }
     
@@ -86,7 +92,10 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       return null;
     }
     
-    const transformed = transformDepartmentAreasToMapData(departmentAreas, targetDepartmentId);
+    // 🔥 NEW: Extract departments info from data if available
+    const departments = (departmentAreas as any)?.departments || null;
+    
+    const transformed = transformDepartmentAreasToMapData(departmentAreas, targetDepartmentId || 'all', departments);
     return transformed;
   }, [departmentAreas, targetDepartmentId, currentDepartmentId, isLoadingDepartmentAreas, departmentAreasError]);
 
@@ -114,7 +123,20 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
     const markerSize = getMarkerSize(currentZoom);
     const iconSize = getIconSize(currentZoom);
 
-    // Remove old markers
+    // 🔥 FIX: When switching to department layer, remove all merchant markers first
+    // Department markers are managed by DepartmentMarkersLayer component and use separate ref
+    if (showWardBoundaries && !showMerchants) {
+      // Remove all merchant markers before showing department markers
+      // Note: departmentMarkersRef is managed by DepartmentMarkersLayer, don't touch it here
+      markersRef.current.forEach(marker => marker.remove());
+      markersRef.current = [];
+      selectedMarkerRef.current = null;
+      // Don't render merchant markers - DepartmentMarkersLayer will handle department markers
+      return;
+    }
+
+    // Remove old markers (only restaurant/merchant markers)
+    // Note: Don't remove departmentMarkersRef - it's managed by DepartmentMarkersLayer
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
     selectedMarkerRef.current = null;
@@ -129,120 +151,8 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
 
     // 🔥 FIX: Render department markers ONLY when showWardBoundaries is true AND showMerchants is false
     // Department markers should NOT appear on merchants layer
+    // Department markers are now handled by DepartmentMarkersLayer component
     if (showWardBoundaries && !showMerchants) {
-      
-      // Remove old ward boundaries (polygons)
-      wardBoundariesLayerRef.current.forEach(polygon => polygon.remove());
-      wardBoundariesLayerRef.current = [];
-      
-      if (isLoadingDepartmentAreas) {
-        // Show loading state (optional - can add loading indicator)
-      } else if (departmentAreasError) {
-        // Show error message
-      } else if (departmentMapData && departmentMapData.areas.length > 0) {
-        // 🔥 Render department markers from API data
-        const validCenters = getValidCenters(departmentMapData);
-        
-        if (validCenters.length > 0) {
-          // Calculate average center for the department
-          const departmentCenter = calculateAverageCenter(validCenters);
-          
-          if (departmentCenter) {
-            // Create department icon (SVG - person/group icon)
-            const departmentIconSvg = `
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#005cb6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-              </svg>
-            `;
-            
-            // Create custom icon for department
-            const departmentIcon = L.divIcon({
-              html: `
-                <div style="
-                  background: white;
-                  border-radius: 50%;
-                  width: 28px;
-                  height: 28px;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-                  border: 2px solid #005cb6;
-                ">
-                  ${departmentIconSvg}
-                </div>
-              `,
-              className: 'department-marker',
-              iconSize: [28, 28],
-              iconAnchor: [14, 14],
-            });
-            
-            // Create marker for department
-            const departmentMarker = L.marker(departmentCenter, { icon: departmentIcon });
-            
-            // Create tooltip content with department information
-            const areaCount = departmentMapData.areas.length;
-            const officers = departmentMapData.areas
-              .map(area => area.coordinates.officer)
-              .filter((officer): officer is string => officer !== null && officer !== '');
-            const uniqueOfficers = Array.from(new Set(officers));
-            
-            const tooltipContent = `
-              <div style="
-                font-family: 'Inter', sans-serif;
-                max-width: 300px;
-                padding: 8px;
-              ">
-                <div style="
-                  font-weight: 600;
-                  font-size: 14px;
-                  color: #005cb6;
-                  margin-bottom: 8px;
-                  border-bottom: 2px solid #005cb6;
-                  padding-bottom: 4px;
-                ">
-                  Phòng ban
-                </div>
-                <div style="font-size: 12px; margin-bottom: 6px;">
-                  <strong>Địa bàn phụ trách:</strong> ${areaCount} khu vực
-                </div>
-                ${uniqueOfficers.length > 0 ? `
-                  <div style="font-size: 12px; margin-bottom: 6px;">
-                    <strong>Cán bộ phụ trách:</strong> ${uniqueOfficers.length} người
-                  </div>
-                  <div style="font-size: 11px; color: #666; margin-top: 8px; max-height: 120px; overflow-y: auto;">
-                    <strong>Danh sách cán bộ:</strong><br/>
-                    ${uniqueOfficers.map(officer => `• ${officer}`).join('<br/>')}
-                  </div>
-                ` : ''}
-              </div>
-            `;
-            
-            // Add tooltip on hover
-            departmentMarker.bindTooltip(tooltipContent, {
-              permanent: false,
-              direction: 'top',
-              className: 'department-tooltip',
-              offset: [0, -10],
-            });
-            
-            // Add click handler to open department detail modal
-            departmentMarker.on('click', () => {
-              // Call window function to open department detail (similar to openPointDetail)
-              if (typeof (window as any).openDepartmentDetail === 'function') {
-                (window as any).openDepartmentDetail(departmentMapData.departmentId, departmentMapData);
-              }
-            });
-            
-            departmentMarker.addTo(mapInstanceRef.current);
-            markersRef.current.push(departmentMarker);
-          }
-        }
-      }
-      
       // 🔥 FIX: Exit early - don't render restaurant markers when showing department markers
       // Department markers should ONLY appear when showWardBoundaries = true AND showMerchants = false
       return;
@@ -251,7 +161,18 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
     // 🔥 FIX: Only render merchant markers when showMerchants is true
     // This ensures department markers don't appear on merchants layer
     if (!showMerchants) {
+      // If we're not showing merchants and not showing departments, remove department markers too
+      if (!showWardBoundaries) {
+        departmentMarkersRef.current.forEach(marker => marker.remove());
+        departmentMarkersRef.current = [];
+      }
       return; // Exit early - don't render restaurant markers
+    }
+    
+    // 🔥 FIX: When switching to merchant layer, remove department markers first
+    if (showMerchants && !showWardBoundaries) {
+      departmentMarkersRef.current.forEach(marker => marker.remove());
+      departmentMarkersRef.current = [];
     }
     
    
@@ -850,6 +771,18 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
   return (
     <>
       <div ref={mapRef} className={styles.map} />
+      {/* Department Markers Layer - Only render when showWardBoundaries is true and showMerchants is false */}
+      {showWardBoundaries && !showMerchants && (
+        <DepartmentMarkersLayer
+          mapInstance={mapInstanceRef.current}
+          leafletRef={leafletRef.current}
+          departmentMapData={departmentMapData}
+          isLoading={isLoadingDepartmentAreas}
+          error={departmentAreasError}
+          markersRef={departmentMarkersRef}
+          wardBoundariesLayerRef={wardBoundariesLayerRef}
+        />
+      )}
       {onFullscreenClick && (
         <button 
           onClick={onFullscreenClick}

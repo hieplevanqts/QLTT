@@ -42,7 +42,7 @@ import BulkActionBar, { BulkAction } from '../../../patterns/BulkActionBar';
 import FilterActionBar from '../../../patterns/FilterActionBar';
 import ActionColumn, { Action } from '../../../patterns/ActionColumn';
 import TableFooter from '../../../ui-kit/TableFooter';
-import { KeHoachTacNghiepStatusBadge } from '../../components/plans/KeHoachTacNghiepStatusBadge';
+import { StatusBadge } from '../../components/common/StatusBadge';
 import { type Plan, type PlanType } from '../../data/kehoach-mock-data';
 import styles from './PlansList.module.css';
 import {
@@ -347,9 +347,9 @@ export function PlansList() {
       render: (plan) => (
         <div>
           <div className={styles.planIdBadgeRow}>
-            <KeHoachTacNghiepStatusBadge type="planType" value={plan.planType} size="sm" />
+            <StatusBadge type="planType" value={plan.planType} size="sm" />
           </div>
-          <div className={styles.planId}>{plan.code}</div>
+          <div className={styles.planId}>{plan.code || '--'}</div>
         </div>
       ),
     },
@@ -360,8 +360,8 @@ export function PlansList() {
       width: '300px',
       render: (plan) => (
         <div>
-          <div className={styles.planName}>{plan.name}</div>
-          <div className={styles.planTopic}>{plan.topic}</div>
+          <div className={styles.planName}>{plan.name || '--'}</div>
+          <div className={styles.planTopic}>{plan.topic || '--'}</div>
         </div>
       ),
     },
@@ -371,7 +371,7 @@ export function PlansList() {
       sortable: true,
       width: '220px',
       render: (plan) => (
-        <span className={styles.planScope}>{plan.scopeLocation}</span>
+        <span className={styles.planScope}>{plan.scopeLocation || '--'}</span>
       ),
     },
     {
@@ -380,7 +380,7 @@ export function PlansList() {
       sortable: true,
       width: '180px',
       render: (plan) => (
-        <span className={styles.planLeadUnit}>{plan.responsibleUnit}</span>
+        <span className={styles.planLeadUnit}>{plan.responsibleUnit || '--'}</span>
       ),
     },
     {
@@ -389,6 +389,7 @@ export function PlansList() {
       sortable: true,
       width: '180px',
       render: (plan) => {
+        if (!plan.startDate || !plan.endDate) return <span className={styles.timeRange}>--</span>;
         const startDate = new Date(plan.startDate);
         const endDate = new Date(plan.endDate);
         return (
@@ -405,20 +406,20 @@ export function PlansList() {
       label: 'Ưu tiên',
       sortable: true,
       width: '130px',
-      render: (plan) => <KeHoachTacNghiepStatusBadge type="priority" value={plan.priority} size="sm" />,
+      render: (plan) => <StatusBadge type="priority" value={plan.priority} size="sm" />,
     },
     {
       key: 'status',
       label: 'Trạng thái',
       width: '150px',
-      render: (plan) => <KeHoachTacNghiepStatusBadge type="plan" value={plan.status} size="sm" />,
+      render: (plan) => <StatusBadge type="plan" value={plan.status} size="sm" />,
     },
     {
       key: 'creator',
       label: 'Người lập',
       sortable: true,
       width: '160px',
-      render: (plan) => <span className={styles.creator}>{plan.createdBy}</span>,
+      render: (plan) => <span className={styles.creator}>{plan.createdBy || '--'}</span>,
     },
     {
       key: 'actions',

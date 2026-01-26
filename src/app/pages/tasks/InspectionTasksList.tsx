@@ -1,20 +1,16 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams, useParams } from 'react-router-dom';
 import { 
   Plus, 
   Download, 
   RefreshCw, 
   FileText,
-  Clock,
-  CheckCircle2,
-  XCircle,
   Eye,
   Edit,
-  PlayCircle,
-  PauseCircle,
-  Trash2,
-  AlertCircle,
-  Filter
+  Filter,
+  Calendar,
+  User,
+  MapPin
 } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '../../../layouts/PageHeader';
@@ -23,64 +19,74 @@ import DataTable, { Column } from '../../../ui-kit/DataTable';
 import { SearchInput } from '../../../ui-kit/SearchInput';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../components/ui/select';
-import SummaryCard from '../../../patterns/SummaryCard';
 import FilterActionBar from '../../../patterns/FilterActionBar';
 import ActionColumn, { Action } from '../../../patterns/ActionColumn';
 import TableFooter from '../../../ui-kit/TableFooter';
 import { InspectionTaskStatusBadge } from '../../components/tasks/InspectionTaskStatusBadge';
-import { mockInspectionTasks, type InspectionTask } from '../../data/inspection-tasks-mock-data';
+import TaskDetailModal from '../../components/tasks/TaskDetailModal';
+import { type InspectionTask } from '../../data/inspection-tasks-mock-data';
+import { fetchInspectionSessionsApi, type InspectionSession } from '../../../utils/api/inspectionSessionsApi';
 import styles from './InspectionTasksList.module.css';
 
 export function InspectionTasksList() {
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
+  const { roundId } = useParams<{ roundId: string }>();
   
   // State management
+  const [sessions, setSessions] = useState<InspectionSession[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchValue, setSearchValue] = useState('');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   
-  // Filter states
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [priorityFilter, setPriorityFilter] = useState<string>('all');
-  const [roundFilter, setRoundFilter] = useState<string>('all');
-  
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  
+  // Modal states
+  const [selectedTask, setSelectedTask] = useState<InspectionTask | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
-  // Calculate summary stats from mock data
-  const stats = {
-    total: mockInspectionTasks.length,
-    notStarted: mockInspectionTasks.filter(t => t.status === 'not_started').length,
-    inProgress: mockInspectionTasks.filter(t => t.status === 'in_progress').length,
-    pendingApproval: mockInspectionTasks.filter(t => t.status === 'pending_approval').length,
-    completed: mockInspectionTasks.filter(t => t.status === 'completed').length,
-    urgent: mockInspectionTasks.filter(t => t.priority === 'urgent').length,
+  const campaignId = roundId || searchParams.get('campaignId') || undefined;
+
+  const loadSessions = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchInspectionSessionsApi(campaignId);
+      setSessions(data);
+    } catch (error) {
+      toast.error('Không thể tải danh sách phiên làm việc');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    loadSessions();
+  }, [campaignId]);
 
   // Apply filters
   const filteredData = useMemo(() => {
-    return mockInspectionTasks.filter(task => {
-      const matchesSearch = task.title.toLowerCase().includes(searchValue.toLowerCase()) ||
-                           task.code.toLowerCase().includes(searchValue.toLowerCase()) ||
-                           task.targetName.toLowerCase().includes(searchValue.toLowerCase()) ||
-                           task.assignee.name.toLowerCase().includes(searchValue.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
-      const matchesPriority = priorityFilter === 'all' || task.priority === priorityFilter;
-      const matchesRound = roundFilter === 'all' || task.roundId === roundFilter;
-      const matchesActiveFilter = activeFilter === null || task.status === activeFilter;
+    return sessions.filter(session => {
+      const matchesSearch = 
+        (session.name?.toLowerCase().includes(searchValue.toLowerCase()) || '') ||
+        (session.merchantName?.toLowerCase().includes(searchValue.toLowerCase()) || '') ||
+        (session.userName?.toLowerCase().includes(searchValue.toLowerCase()) || '');
       
-      return matchesSearch && matchesStatus && matchesPriority && matchesRound && matchesActiveFilter;
+      const matchesActiveFilter = activeFilter === null || session.status === activeFilter;
+      
+      return matchesSearch && matchesActiveFilter;
     });
-  }, [searchValue, statusFilter, priorityFilter, roundFilter, activeFilter]);
+  }, [sessions, searchValue, activeFilter]);
+
+  // Stats calculation
+  const stats = useMemo(() => ({
+    total: sessions.length,
+    notStarted: sessions.filter(s => s.status === 'not_started').length,
+    inProgress: sessions.filter(s => s.status === 'in_progress').length,
+    completed: sessions.filter(s => s.status === 'completed').length,
+    closed: sessions.filter(s => s.status === 'closed').length,
+  }), [sessions]);
 
   // Pagination
   const totalPages = Math.ceil(filteredData.length / pageSize);
@@ -89,333 +95,148 @@ export function InspectionTasksList() {
     return filteredData.slice(startIndex, startIndex + pageSize);
   }, [filteredData, currentPage, pageSize]);
 
-  // Get unique rounds for filter
-  const uniqueRounds = useMemo(() => {
-    const rounds = Array.from(new Set(mockInspectionTasks.map(t => t.roundId)));
-    return rounds.map(roundId => {
-      const task = mockInspectionTasks.find(t => t.roundId === roundId);
-      return { id: roundId, name: task?.roundName || roundId };
-    });
-  }, []);
-
-  // Get actions for each task
-  const getTaskActions = (task: InspectionTask): Action[] => {
-    const actions: Action[] = [];
-
-    switch (task.status) {
-      case 'not_started':
-        // Chưa bắt đầu: Chỉnh sửa, Bắt đầu, Xóa
-        actions.push(
-          {
-            label: 'Chỉnh sửa',
-            icon: <Edit size={16} />,
-            onClick: () => {
-              toast.info('Mở form chỉnh sửa nhiệm vụ');
-            },
-            priority: 10,
-          },
-          {
-            label: 'Bắt đầu nhiệm vụ',
-            icon: <PlayCircle size={16} />,
-            onClick: () => {
-              toast.success('Đã chuyển sang trạng thái Đang thực hiện');
-            },
-            priority: 9,
-          },
-          {
-            label: 'Xóa',
-            icon: <Trash2 size={16} />,
-            onClick: () => {
-              if (confirm('Bạn có chắc chắn muốn xóa nhiệm vụ này?')) {
-                toast.success('Đã xóa nhiệm vụ');
-              }
-            },
-            variant: 'destructive' as const,
-            separator: true,
-            priority: 1,
-          }
-        );
-        break;
-
-      case 'in_progress':
-        // Đang thực hiện: Xem chi tiết, Cập nhật tiến độ, Tạm dừng, Hoàn thành
-        actions.push(
-          {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => navigate(`/tasks/${encodeURIComponent(task.id)}`),
-            priority: 10,
-          },
-          {
-            label: 'Cập nhật tiến độ',
-            icon: <FileText size={16} />,
-            onClick: () => {
-              toast.info('Mở form cập nhật tiến độ');
-            },
-            priority: 9,
-          },
-          {
-            label: 'Tạm dừng',
-            icon: <PauseCircle size={16} />,
-            onClick: () => {
-              toast.warning('Đã tạm dừng nhiệm vụ');
-            },
-            priority: 8,
-          },
-          {
-            label: 'Hoàn thành',
-            icon: <CheckCircle2 size={16} />,
-            onClick: () => {
-              toast.success('Đã chuyển sang trạng thái Chờ duyệt');
-            },
-            priority: 7,
-          }
-        );
-        break;
-
-      case 'pending_approval':
-        // Chờ duyệt: Xem chi tiết, Phê duyệt, Yêu cầu chỉnh sửa
-        actions.push(
-          {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => navigate(`/tasks/${encodeURIComponent(task.id)}`),
-            priority: 10,
-          },
-          {
-            label: 'Phê duyệt',
-            icon: <CheckCircle2 size={16} />,
-            onClick: () => {
-              toast.success('Đã phê duyệt nhiệm vụ');
-            },
-            priority: 9,
-          },
-          {
-            label: 'Yêu cầu chỉnh sửa',
-            icon: <AlertCircle size={16} />,
-            onClick: () => {
-              toast.warning('Đã gửi yêu cầu chỉnh sửa');
-            },
-            priority: 8,
-          }
-        );
-        break;
-
-      case 'completed':
-        // Hoàn thành: Xem chi tiết, Tải báo cáo
-        actions.push(
-          {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => navigate(`/tasks/${encodeURIComponent(task.id)}`),
-            priority: 10,
-          },
-          {
-            label: 'Tải báo cáo',
-            icon: <Download size={16} />,
-            onClick: () => {
-              toast.success('Đang tải báo cáo...');
-            },
-            priority: 9,
-          }
-        );
-        break;
-
-      case 'cancelled':
-        // Đã hủy: Xem chi tiết
-        actions.push(
-          {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => navigate(`/tasks/${encodeURIComponent(task.id)}`),
-            priority: 10,
-          }
-        );
-        break;
-
-      default:
-        actions.push(
-          {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => navigate(`/tasks/${encodeURIComponent(task.id)}`),
-            priority: 10,
-          }
-        );
-    }
-
-    return actions;
+  // Get actions for each session
+  const getSessionActions = (session: InspectionSession): Action[] => {
+    return [
+      {
+        label: 'Xem chi tiết',
+        icon: <Eye size={16} />,
+        onClick: () => {
+          // Adapter to convert InspectionSession to InspectionTask format
+          const task: any = {
+            id: session.id,
+            code: session.id,
+            title: session.name,
+            roundName: session.campaignName || 'Đợt kiểm tra',
+            status: session.status,
+            targetName: session.merchantName,
+            targetAddress: session.merchantAddress,
+            dueDate: session.deadlineTime,
+            assignee: { name: session.userName },
+            description: session.description || session.note,
+          };
+          setSelectedTask(task);
+          setIsDetailModalOpen(true);
+        },
+        priority: 10,
+      },
+      {
+        label: 'Chỉnh sửa',
+        icon: <Edit size={16} />,
+        onClick: () => toast.info('Chức năng đang phát triển'),
+        priority: 9,
+      }
+    ];
   };
 
-  // Define table columns
-  const columns: Column<InspectionTask>[] = [
+  // Define table columns based on the public.map_inspection_sessions structure
+  const columns: Column<InspectionSession>[] = [
     {
-      key: 'code',
-      label: 'Mã nhiệm vụ',
+      key: 'name',
+      label: 'Phiên làm việc',
       sortable: true,
-      render: (task) => (
-        <div className={styles.taskCodeColumn}>
-          <div className={styles.taskCode}>{task.code}</div>
-          {task.priority === 'urgent' && (
-            <span className={styles.urgentBadge}>⚡ Khẩn cấp</span>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'title',
-      label: 'Tên nhiệm vụ',
-      sortable: true,
-      render: (task) => (
+      render: (session) => (
         <div className={styles.taskTitleColumn}>
-          <div className={styles.taskTitle}>{task.title}</div>
-          <div className={styles.taskTarget}>{task.targetName}</div>
+          <div className={styles.taskTitle}>{session.name || '--'}</div>
+          <div className={styles.planName}>Đợt: {session.campaignName || '--'}</div>
         </div>
       ),
     },
     {
-      key: 'round',
-      label: 'Đợt kiểm tra',
+      key: 'merchant',
+      label: 'Cơ sở / Đối tượng',
       sortable: true,
-      render: (task) => (
-        <div className={styles.roundColumn}>
-          <div className={styles.roundName}>{task.roundName}</div>
-          {task.planName && (
-            <div className={styles.planName}>KH: {task.planName}</div>
-          )}
+      render: (session) => (
+        <div className={styles.taskTitleColumn}>
+          <div className={styles.taskTitle}>{session.merchantName || '--'}</div>
+          <div className={styles.taskTarget}>
+            <MapPin size={12} /> {session.merchantAddress || '--'}
+          </div>
         </div>
       ),
     },
     {
-      key: 'assignee',
+      key: 'user',
       label: 'Người thực hiện',
       sortable: true,
-      render: (task) => {
-        const initials = task.assignee.name
-          .split(' ')
-          .map(n => n[0])
-          .join('')
-          .substring(0, 2)
-          .toUpperCase();
-        
-        return (
-          <div className={styles.assigneeColumn}>
-            <div className={styles.assigneeAvatar}>{initials}</div>
-            <span className={styles.assignee}>{task.assignee.name}</span>
+      render: (session) => (
+        <div className={styles.assigneeColumn}>
+          <div className={styles.assigneeAvatar}>
+            <User size={14} />
           </div>
-        );
-      },
+          <span className={styles.assignee}>{session.userName || '--'}</span>
+        </div>
+      ),
     },
     {
-      key: 'dueDate',
-      label: 'Hạn hoàn thành',
+      key: 'time',
+      label: 'Thời gian',
       sortable: true,
-      render: (task) => {
-        const dueDate = new Date(task.dueDate);
-        const isOverdue = dueDate < new Date() && task.status !== 'completed' && task.status !== 'cancelled';
-        return (
-          <div className={styles.dueDateContainer}>
-            <span className={isOverdue ? styles.dueDateOverdue : styles.dueDate}>
-              {dueDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-            </span>
-            {isOverdue && <span className={styles.overdueLabel}>Quá hạn</span>}
+      render: (session) => (
+        <div className={styles.dueDateContainer}>
+          <div className={styles.dueDate}>
+            <Calendar size={12} style={{ display: 'inline', marginRight: 4 }} />
+            {session.startTime ? new Date(session.startTime).toLocaleDateString('vi-VN') : '--'}
           </div>
-        );
-      },
+          <div className={styles.planName}>Hạn: {session.deadlineTime ? new Date(session.deadlineTime).toLocaleDateString('vi-VN') : '--'}</div>
+        </div>
+      ),
     },
     {
-      key: 'progress',
-      label: 'Tiến độ',
-      sortable: true,
-      render: (task) => (
-        <div className={styles.progressContainer}>
-          <div className={styles.progressBar}>
-            <div 
-              className={styles.progressFill} 
-              style={{ width: `${task.progress}%` }}
-            />
-          </div>
-          <span className={styles.progressText}>{task.progress}%</span>
+      key: 'result',
+      label: 'Kết quả',
+      render: (session) => (
+        <div className={styles.taskTarget}>
+          {session.resultText || '--'}
         </div>
       ),
     },
     {
       key: 'status',
       label: 'Trạng thái',
-      render: (task) => <InspectionTaskStatusBadge type="status" value={task.status} size="sm" />,
+      render: (session) => <InspectionTaskStatusBadge type="status" value={session.status} size="sm" />,
     },
     {
       key: 'actions',
       label: 'Thao tác',
       sticky: 'right',
-      render: (task) => (
-        <ActionColumn actions={getTaskActions(task)} />
+      render: (session) => (
+        <ActionColumn actions={getSessionActions(session)} />
       ),
     },
   ];
 
-  // Handle row selection
   const handleSelectRow = (id: string) => {
     const newSelected = new Set(selectedRows);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
+    if (newSelected.has(id)) newSelected.delete(id);
+    else newSelected.add(id);
     setSelectedRows(newSelected);
   };
 
   const handleSelectAll = (selected: boolean) => {
-    if (selected) {
-      setSelectedRows(new Set(paginatedData.map(t => t.id)));
-    } else {
-      setSelectedRows(new Set());
-    }
+    if (selected) setSelectedRows(new Set(paginatedData.map(s => s.id)));
+    else setSelectedRows(new Set());
   };
-
-  // Reset to page 1 when filters change
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [statusFilter, priorityFilter, roundFilter, searchValue, activeFilter]);
-
-  // Auto-filter by inspectionRound query parameter
-  useEffect(() => {
-    const inspectionRoundParam = searchParams.get('inspectionRound');
-    if (inspectionRoundParam) {
-      const decodedRound = decodeURIComponent(inspectionRoundParam);
-      setRoundFilter(decodedRound);
-      toast.info(`Đã lọc nhiệm vụ theo đợt kiểm tra: ${decodedRound}`);
-    }
-  }, [searchParams]);
 
   return (
     <div className={styles.pageContainer}>
       <PageHeader
         breadcrumbs={[
           { label: 'Trang chủ', href: '/' },
-          { label: 'Nhiệm vụ' }
+          { label: 'Phiên kiểm tra' }
         ]}
-        title="Quản lý nhiệm vụ"
+        title="Danh sách phiên kiểm tra"
         actions={
           <>
-            <Button variant="outline" size="sm" onClick={() => {
-              setSearchValue('');
-              setStatusFilter('all');
-              setPriorityFilter('all');
-              setRoundFilter('all');
-              setActiveFilter(null);
-              toast.success('Đã tải lại dữ liệu');
-            }}>
-              <RefreshCw size={16} />
+            <Button variant="outline" size="sm" onClick={loadSessions} disabled={loading}>
+              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
               Tải lại
             </Button>
-            <Button variant="outline" size="sm" onClick={() => {
-              toast.success('Xuất dữ liệu Excel thành công');
-            }}>
+            <Button variant="outline" size="sm">
               <Download size={16} />
               Xuất dữ liệu
             </Button>
-            <Button size="sm" onClick={() => navigate('/tasks/create')}>
+            <Button size="sm">
               <Plus size={16} />
               Thêm mới
             </Button>
@@ -423,68 +244,47 @@ export function InspectionTasksList() {
         }
       />
 
-      {/* Summary Cards */}
       <div className={styles.summaryContainer}>
         <div className={styles.summaryGrid}>
-          <SummaryCard
-            label="Tổng số nhiệm vụ"
-            value={stats.total}
-            icon={FileText}
-            variant="info"
-            active={activeFilter === null}
+          <div 
+            className={`${styles.summaryCard} ${activeFilter === null ? styles.active : ''}`}
             onClick={() => setActiveFilter(null)}
-          />
-          <SummaryCard
-            label="Chưa bắt đầu"
-            value={stats.notStarted}
-            icon={Clock}
-            variant="neutral"
-            active={activeFilter === 'not_started'}
+          >
+            <div className={styles.cardHeader}>Tổng số</div>
+            <div className={styles.cardValue}>{stats.total}</div>
+          </div>
+          <div 
+            className={`${styles.summaryCard} ${activeFilter === 'not_started' ? styles.active : ''}`}
             onClick={() => setActiveFilter('not_started')}
-          />
-          <SummaryCard
-            label="Đang thực hiện"
-            value={stats.inProgress}
-            icon={PlayCircle}
-            variant="info"
-            active={activeFilter === 'in_progress'}
+          >
+            <div className={styles.cardHeader}>Chưa bắt đầu</div>
+            <div className={styles.cardValue}>{stats.notStarted}</div>
+          </div>
+          <div 
+            className={`${styles.summaryCard} ${activeFilter === 'in_progress' ? styles.active : ''}`}
             onClick={() => setActiveFilter('in_progress')}
-          />
-          <SummaryCard
-            label="Chờ duyệt"
-            value={stats.pendingApproval}
-            icon={AlertCircle}
-            variant="warning"
-            active={activeFilter === 'pending_approval'}
-            onClick={() => setActiveFilter('pending_approval')}
-          />
-          <SummaryCard
-            label="Hoàn thành"
-            value={stats.completed}
-            icon={CheckCircle2}
-            variant="success"
-            active={activeFilter === 'completed'}
+          >
+            <div className={styles.cardHeader}>Đang thực hiện</div>
+            <div className={styles.cardValue}>{stats.inProgress}</div>
+          </div>
+          <div 
+            className={`${styles.summaryCard} ${activeFilter === 'completed' ? styles.active : ''}`}
             onClick={() => setActiveFilter('completed')}
-          />
+          >
+            <div className={styles.cardHeader}>Hoàn thành</div>
+            <div className={styles.cardValue}>{stats.completed}</div>
+          </div>
         </div>
 
-        {/* QLTT Standard: Filters and Search on SAME ROW */}
         <FilterActionBar
           filters={
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => {
-                toast.info('Mở bộ lọc nâng cao');
-              }}
-            >
-              <Filter size={16} />
-              Bộ lọc
+            <Button variant="outline" size="sm">
+              <Filter size={16} /> Bộ lọc
             </Button>
           }
           searchInput={
             <SearchInput
-              placeholder="Tìm theo mã, tên nhiệm vụ, cơ sở hoặc người thực hiện"
+              placeholder="Tìm theo tên phiên, cơ sở hoặc người thực hiện..."
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
               style={{ width: '450px' }}
@@ -493,15 +293,19 @@ export function InspectionTasksList() {
         />
       </div>
 
-      {/* Data Table */}
       <div className={styles.tableContainer}>
         <Card>
           <CardContent className={styles.tableCard}>
-            {filteredData.length === 0 ? (
+            {loading ? (
+              <div style={{ padding: '40px', textAlign: 'center' }}>
+                <RefreshCw className="animate-spin" size={32} style={{ margin: '0 auto 16px', color: 'var(--primary)' }} />
+                <p>Đang tải dữ liệu...</p>
+              </div>
+            ) : filteredData.length === 0 ? (
               <EmptyState
                 icon={FileText}
-                title="Không tìm thấy nhiệm vụ"
-                description="Không có nhiệm vụ nào phù hợp với bộ lọc hiện tại"
+                title="Không tìm thấy phiên làm việc"
+                description="Không có phiên làm việc nào phù hợp với bộ lọc hiện tại"
               />
             ) : (
               <>
@@ -512,10 +316,9 @@ export function InspectionTasksList() {
                   selectedRows={selectedRows}
                   onSelectRow={handleSelectRow}
                   onSelectAll={handleSelectAll}
-                  getRowId={(task) => task.id}
+                  getRowId={(s) => s.id}
                 />
                 
-                {/* QLTT Standard: Footer with Pagination */}
                 <TableFooter
                   currentPage={currentPage}
                   totalPages={totalPages}
@@ -532,6 +335,14 @@ export function InspectionTasksList() {
           </CardContent>
         </Card>
       </div>
+
+      {isDetailModalOpen && (
+        <TaskDetailModal
+          task={selectedTask}
+          isOpen={isDetailModalOpen}
+          onClose={() => setIsDetailModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
