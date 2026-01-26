@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { usePermissions } from './usePermissions';
 import styles from './PermissionGate.module.css';
 
@@ -20,7 +21,17 @@ export function PermissionGate({
   children,
   requireAll = false
 }: PermissionGateProps) {
+  const location = useLocation();
   const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+
+  // 🔥 FIX: Skip permission check for system-admin routes (children of "Quản trị" menu)
+  // All routes under /system-admin/* don't need permission check
+  const isSystemAdminRoute = location.pathname.startsWith('/system-admin') || location.pathname.startsWith('/system/');
+  
+  // If it's a system-admin route, always allow access
+  if (isSystemAdminRoute) {
+    return children as React.ReactElement;
+  }
 
   let hasAccess = false;
 

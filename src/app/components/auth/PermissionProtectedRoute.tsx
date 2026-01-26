@@ -106,6 +106,12 @@ export function PermissionProtectedRoute({
   const { user } = useAppSelector((state: RootState) => state.auth);
   const location = useLocation();
 
+  // 🔥 FIX: Skip permission check for system-admin routes (children of "Quản trị" menu)
+  // All routes under /system-admin/* don't need permission check
+  if (location.pathname.startsWith('/system-admin') || location.pathname.startsWith('/system/')) {
+    return <>{children}</>;
+  }
+
   // Get permission code for current route
   const routePermission = requiredPermission || getPermissionForRoute(location.pathname);
 
