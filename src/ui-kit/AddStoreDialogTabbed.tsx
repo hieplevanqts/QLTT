@@ -59,7 +59,7 @@ import {
   provinces,
   getWardsByProvince
 } from '../data/vietnamLocations';
-import { fetchProvinces, fetchAllWards, type ProvinceApiData, type WardApiData } from '../utils/api/locationsApi';
+import { fetchProvinces, fetchWardsByProvince, type ProvinceApiData, type WardApiData } from '../utils/api/locationsApi';
 import { INDUSTRIES, searchIndustries } from '../data/industries';
 import { toast } from 'sonner';
 import styles from './AddStoreDialogTabbed.module.css';
@@ -156,13 +156,15 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
 
   // API Data
   const [apiProvinces, setApiProvinces] = useState<ProvinceApiData[]>([]);
-  const [allWards, setAllWards] = useState<WardApiData[]>([]);
+  const [apiWards, setApiWards] = useState<WardApiData[]>([]);
   const [loadingProvinces, setLoadingProvinces] = useState(false);
   const [loadingWards, setLoadingWards] = useState(false);
 
   // Province/Ward state (NO District)
   const [selectedProvince, setSelectedProvince] = useState('');
   const [selectedWard, setSelectedWard] = useState('');
+  const [selectedProvinceName, setSelectedProvinceName] = useState('');
+  const [selectedWardName, setSelectedWardName] = useState('');
 
   // Fetch location data on mount
   useEffect(() => {
@@ -180,11 +182,19 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
     } finally {
       setLoadingProvinces(false);
     }
+  };
+
+  // Fetch wards when province changes
+  const loadWardsByProvince = async (provinceId: string) => {
+    if (!provinceId) {
+      setApiWards([]);
+      return;
+    }
 
     try {
       setLoadingWards(true);
-      const w = await fetchAllWards();
-      setAllWards(w);
+      const w = await fetchWardsByProvince(provinceId);
+      setApiWards(w);
     } catch (error) {
       console.error('Error fetching wards:', error);
       toast.error('Không thể tải danh sách phường/xã');
@@ -193,27 +203,24 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
     }
   };
 
-  // Get wards directly from province (no district)
+  // Get wards from API (already filtered by province)
   const wards = useMemo(() => {
-    if (!selectedProvince || !allWards.length) {
-      console.log('⚠️ Skipping filter - province:', selectedProvince, 'allWards.length:', allWards.length);
-      return [];
-    }
+    console.log('📊 Wards state updated:', apiWards.length, 'wards');
+    return apiWards;
+  }, [apiWards]);
+
+  // Build full address for map search (hidden logic)
+  const buildFullAddress = (): string => {
+    const parts = [
+      formData.registeredAddress || '',
+      selectedWardName || '',
+      selectedProvinceName || ''
+    ].filter(part => part.trim());
     
-    const provinceData = apiProvinces.find(p => p.name === selectedProvince);
-    if (!provinceData) {
-      console.warn('⚠️ Province not found:', selectedProvince, 'Available:', apiProvinces.map(p => p.name));
-      return [];
-    }
-    
-    console.log('🔍 Filtering wards for province:', provinceData.name, 'ID:', provinceData._id);
-    console.log('   Total wards:', allWards.length);
-    console.log('   Sample wards:', allWards.slice(0, 5).map(w => ({ name: w.name, province_id: w.province_id })));
-    
-    const filtered = allWards.filter(w => w.province_id === provinceData._id);
-    console.log('✅ Found wards:', filtered.length, filtered.map(w => w.name).slice(0, 5));
-    return filtered;
-  }, [selectedProvince, allWards, apiProvinces]);
+    return parts.join(', ');
+  };
+
+  const fullAddressForMap = buildFullAddress();
 
   // Mock OCR extraction
   const mockExtractData = async (file: File): Promise<ExtractedData> => {
@@ -489,7 +496,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
       latitude: formData.latitude,
       longitude: formData.longitude,
       status: 'pending',
-      managementUnit: selectedProvince ? `Chi cục QLTT ${selectedProvince}` : undefined,
+      managementUnit: selectedProvince ? `Chi cục QLTT ${apiProvinces.find(p => p._id === selectedProvince)?.name || ''}` : undefined,
     };
 
     onSubmit?.(submissionData);
@@ -979,8 +986,12 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                   <Select
                     value={selectedProvince}
                     onValueChange={(value) => {
+                      const provData = apiProvinces.find(p => p._id === value);
                       setSelectedProvince(value);
+                      setSelectedProvinceName(provData?.name || '');
                       setSelectedWard('');
+                      setSelectedWardName('');
+                      loadWardsByProvince(value);
                       if (errors.province) {
                         setErrors(prev => {
                           const newErrors = { ...prev };
@@ -995,7 +1006,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                     </SelectTrigger>
                     <SelectContent>
                       {apiProvinces.map((prov) => (
-                        <SelectItem key={prov._id} value={prov.name}>
+                        <SelectItem key={prov._id} value={prov._id}>
                           {prov.name}
                         </SelectItem>
                       ))}
@@ -1014,7 +1025,9 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                   <Select
                     value={selectedWard}
                     onValueChange={(value) => {
+                      const wardData = wards.find(w => w._id === value);
                       setSelectedWard(value);
+                      setSelectedWardName(wardData?.name || '');
                       if (errors.ward) {
                         setErrors(prev => {
                           const newErrors = { ...prev };
@@ -1030,7 +1043,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                     </SelectTrigger>
                     <SelectContent>
                       {wards.map((ward) => (
-                        <SelectItem key={ward._id} value={ward.name}>
+                        <SelectItem key={ward._id} value={ward._id}>
                           {ward.name}
                         </SelectItem>
                       ))}
@@ -1082,8 +1095,12 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                   <MapPin className="w-4 h-4 flex-shrink-0" style={{ flexShrink: 0 }} />
                   <span style={{ lineHeight: '1' }}>Định vị trên bản đồ</span>
                 </Label>
+                
+                {/* Hidden input for full address (for map search) */}
+                <input type="hidden" value={fullAddressForMap} />
+                
                 <MapLocationPicker
-                  address={formData.registeredAddress || ''}
+                  address={fullAddressForMap || formData.registeredAddress || ''}
                   latitude={formData.latitude}
                   longitude={formData.longitude}
                   onLocationChange={(location) => {
@@ -1095,6 +1112,45 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                     }));
                   }}
                 />
+              </div>
+
+              {/* Latitude / Longitude Display */}
+              <div className="mt-6 grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="latitude">Vĩ độ</Label>
+                  <Input
+                    id="latitude"
+                    type="number"
+                    step="0.000001"
+                    value={formData.latitude || ''}
+                    onChange={(e) => handleFieldChange('latitude', e.target.value ? parseFloat(e.target.value) : undefined)}
+                    placeholder="Vĩ độ (từ bản đồ)"
+                    disabled={false}
+                  />
+                  {formData.latitude && (
+                    <p className="text-xs text-gray-500">
+                      {formData.latitude.toFixed(6)}°
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="longitude">Kinh độ</Label>
+                  <Input
+                    id="longitude"
+                    type="number"
+                    step="0.000001"
+                    value={formData.longitude || ''}
+                    onChange={(e) => handleFieldChange('longitude', e.target.value ? parseFloat(e.target.value) : undefined)}
+                    placeholder="Kinh độ (từ bản đồ)"
+                    disabled={false}
+                  />
+                  {formData.longitude && (
+                    <p className="text-xs text-gray-500">
+                      {formData.longitude.toFixed(6)}°
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           )}

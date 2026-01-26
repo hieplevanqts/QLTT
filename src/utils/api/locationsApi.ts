@@ -139,6 +139,48 @@ export async function fetchAllWards(): Promise<WardApiData[]> {
 }
 
 /**
+ * Fetch wards by province ID from Supabase wards table via REST API
+ */
+export async function fetchWardsByProvince(provinceId: string): Promise<WardApiData[]> {
+  try {
+    if (!provinceId || provinceId.trim() === '') {
+      console.warn('⚠️ Province ID is empty');
+      return [];
+    }
+
+    console.log('📡 Fetching wards for province ID:', provinceId);
+    
+    const response = await fetch(
+      `${baseUrl}/wards?select=_id,code,name,province_id&province_id=eq.${provinceId.trim()}&order=code.asc&limit=1000`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${publicAnonKey}`,
+          'apikey': publicAnonKey,
+        },
+      }
+    );
+
+    console.log('📡 Wards response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Error fetching wards:', response.status, errorText);
+      throw new Error(`Failed to fetch wards: ${response.statusText}`);
+    }
+
+    const wards = await response.json();
+    console.log('✅ Wards fetched for province ID:', provinceId, '-', wards?.length || 0, 'wards');
+    
+    return wards || [];
+  } catch (error: any) {
+    console.error(`❌ Error fetching wards for province ${provinceId}:`, error.message);
+    return [];
+  }
+}
+
+/**
  * Fetch wards by province code from Supabase areas table via REST API
  */
 export async function fetchWardsByProvinceCode(provinceCode: string): Promise<WardApiData[]> {
@@ -204,3 +246,94 @@ export async function fetchWardsByProvinceCode(provinceCode: string): Promise<Wa
   }
 }
 
+/**
+ * Fetch province by ID from Supabase provinces table via REST API
+ */
+export async function fetchProvinceById(provinceId: string): Promise<ProvinceApiData | null> {
+  try {
+    if (!provinceId || provinceId.trim() === '') {
+      console.warn('⚠️ Province ID is empty');
+      return null;
+    }
+
+    console.log('📡 Fetching province by ID:', provinceId);
+    
+    const response = await fetch(
+      `${baseUrl}/provinces?_id=eq.${provinceId.trim()}&select=_id,code,name&limit=1`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${publicAnonKey}`,
+          'apikey': publicAnonKey,
+        },
+      }
+    );
+
+    console.log('📡 Province response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Error fetching province:', response.status, errorText);
+      return null;
+    }
+
+    const data = await response.json();
+    if (data && data.length > 0) {
+      console.log('✅ Province found:', data[0].name);
+      return data[0];
+    }
+    
+    console.warn('⚠️ Province not found with ID:', provinceId);
+    return null;
+  } catch (error: any) {
+    console.error(`❌ Error fetching province ${provinceId}:`, error.message);
+    return null;
+  }
+}
+
+/**
+ * Fetch ward by ID from Supabase wards table via REST API
+ */
+export async function fetchWardById(wardId: string): Promise<WardApiData | null> {
+  try {
+    if (!wardId || wardId.trim() === '') {
+      console.warn('⚠️ Ward ID is empty');
+      return null;
+    }
+
+    console.log('📡 Fetching ward by ID:', wardId);
+    
+    const response = await fetch(
+      `${baseUrl}/wards?_id=eq.${wardId.trim()}&select=_id,code,name,province_id&limit=1`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${publicAnonKey}`,
+          'apikey': publicAnonKey,
+        },
+      }
+    );
+
+    console.log('📡 Ward response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Error fetching ward:', response.status, errorText);
+      return null;
+    }
+
+    const data = await response.json();
+    if (data && data.length > 0) {
+      console.log('✅ Ward found:', data[0].name);
+      return data[0];
+    }
+    
+    console.warn('⚠️ Ward not found with ID:', wardId);
+    return null;
+  } catch (error: any) {
+    console.error(`❌ Error fetching ward ${wardId}:`, error.message);
+    return null;
+  }
+}

@@ -1,9 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { MapPin, Navigation, ZoomIn, ZoomOut, Locate, AlertCircle, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import L from 'leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
+import { MapPin, Navigation, Locate, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '../app/components/ui/button';
 import { Input } from '../app/components/ui/input';
 import { Label } from '../app/components/ui/label';
 import styles from './MapLocationPicker.module.css';
+
+// Fix Leaflet marker icons
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
 
 interface MapLocationPickerProps {
   address: string;
@@ -24,6 +34,40 @@ interface GeocodeSuggestion {
   type: 'street' | 'district' | 'city';
 }
 
+// Map click handler component
+function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click: (e) => {
+      onMapClick(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
+
+// Reverse geocoding using Nominatim API (free, no key required)
+async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=vi`,
+      {
+        headers: {
+          'User-Agent': 'MAPPA-StoreLocator/1.0',
+        },
+      }
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.address?.road
+        ? `${data.address.road}${data.address.house_number ? ' ' + data.address.house_number : ''}, ${data.address.ward || data.address.village || ''}, ${data.address.city || data.address.town || 'TP.HCM'}`
+        : data.address_line1 || null;
+    }
+  } catch (error) {
+    console.error('Reverse geocoding error:', error);
+  }
+  return null;
+}
+
 export function MapLocationPicker({
   address,
   latitude,
@@ -31,88 +75,43 @@ export function MapLocationPicker({
   onLocationChange,
   disabled = false,
 }: MapLocationPickerProps) {
-  const [mapCenter, setMapCenter] = useState({ lat: latitude || 10.8231, lng: longitude || 106.6297 }); // Default: TP.HCM
   const [markerPosition, setMarkerPosition] = useState({ lat: latitude || 10.8231, lng: longitude || 106.6297 });
-  const [zoomLevel, setZoomLevel] = useState(15);
   const [searchQuery, setSearchQuery] = useState(address || '');
   const [geocodeSuggestions, setGeocodeSuggestions] = useState<GeocodeSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [isPinConfirmed, setIsPinConfirmed] = useState(false);
+  const [isPinConfirmed, setIsPinConfirmed] = useState(!!latitude && !!longitude);
   const [validationMessage, setValidationMessage] = useState<string>('');
+  const [isLoadingAddress, setIsLoadingAddress] = useState(false);
+  const mapRef = useRef(null);
 
-  // Mock geocoding function
-  const mockGeocode = (query: string): GeocodeSuggestion[] => {
-    if (!query || query.length < 3) return [];
-
-    const lowerQuery = query.toLowerCase();
-    const suggestions: GeocodeSuggestion[] = [];
-
-    // Mock data for Vietnam addresses
-    if (lowerQuery.includes('nguyễn') || lowerQuery.includes('nguyen')) {
-      suggestions.push({
-        address: '123 Nguyễn Huệ, Quận 1, TP.HCM',
-        latitude: 10.7745,
-        longitude: 106.7008,
-        type: 'street',
-      });
-    }
-
-    if (lowerQuery.includes('quận 1') || lowerQuery.includes('q1')) {
-      suggestions.push({
-        address: 'Quận 1, TP. Hồ Chí Minh',
-        latitude: 10.7756,
-        longitude: 106.7019,
-        type: 'district',
-      });
-    }
-
-    if (lowerQuery.includes('lê lợi') || lowerQuery.includes('le loi')) {
-      suggestions.push({
-        address: '45 Lê Lợi, Quận 1, TP.HCM',
-        latitude: 10.7734,
-        longitude: 106.6986,
-        type: 'street',
-      });
-    }
-
-    if (lowerQuery.includes('bến thành') || lowerQuery.includes('ben thanh')) {
-      suggestions.push({
-        address: 'Chợ Bến Thành, Quận 1, TP.HCM',
-        latitude: 10.7723,
-        longitude: 106.6980,
-        type: 'street',
-      });
-    }
-
-    if (lowerQuery.includes('thủ đức') || lowerQuery.includes('thu duc')) {
-      suggestions.push({
-        address: 'Thành phố Thủ Đức, TP.HCM',
-        latitude: 10.8509,
-        longitude: 106.7717,
-        type: 'city',
-      });
-    }
-
-    // Default suggestion based on input
-    if (suggestions.length === 0 && query.length >= 3) {
-      suggestions.push({
-        address: `${query}, TP. Hồ Chí Minh`,
-        latitude: 10.8231 + (Math.random() - 0.5) * 0.1,
-        longitude: 106.6297 + (Math.random() - 0.5) * 0.1,
-        type: 'street',
-      });
-    }
-
-    return suggestions;
-  };
-
-  // Handle search input change
+  // Forward geocoding using Nominatim API
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     if (value.length >= 3) {
-      const suggestions = mockGeocode(value);
-      setGeocodeSuggestions(suggestions);
-      setShowSuggestions(suggestions.length > 0);
+      const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+        value + ', Vietnam'
+      )}&viewbox=102,8,110,24&bounded=1&limit=5&accept-language=vi`;
+
+      fetch(searchUrl, {
+        headers: {
+          'User-Agent': 'MAPPA-StoreLocator/1.0',
+        },
+      })
+        .then((res) => res.json())
+        .then((results) => {
+          const suggestions: GeocodeSuggestion[] = results.map((result: any) => ({
+            address: result.display_name || result.name,
+            latitude: parseFloat(result.lat),
+            longitude: parseFloat(result.lon),
+            type: result.type === 'street' || result.type === 'house' ? 'street' : 'district',
+          }));
+          setGeocodeSuggestions(suggestions);
+          setShowSuggestions(suggestions.length > 0);
+        })
+        .catch((error) => {
+          console.error('Search error:', error);
+          setShowSuggestions(false);
+        });
     } else {
       setShowSuggestions(false);
     }
@@ -122,7 +121,6 @@ export function MapLocationPicker({
   const handleSuggestionSelect = (suggestion: GeocodeSuggestion) => {
     setSearchQuery(suggestion.address);
     setMarkerPosition({ lat: suggestion.latitude, lng: suggestion.longitude });
-    setMapCenter({ lat: suggestion.latitude, lng: suggestion.longitude });
     setShowSuggestions(false);
     setIsPinConfirmed(true);
     setValidationMessage('');
@@ -135,64 +133,53 @@ export function MapLocationPicker({
   };
 
   // Handle map click to place marker
-  const handleMapClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMapClick = async (lat: number, lng: number) => {
     if (disabled) return;
 
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    // Convert pixel coordinates to lat/lng (simplified)
-    // In real implementation, use proper map projection math
-    const mapWidth = rect.width;
-    const mapHeight = rect.height;
-
-    const latOffset = ((y / mapHeight) - 0.5) * 0.01; // Adjust based on zoom
-    const lngOffset = ((x / mapWidth) - 0.5) * 0.01;
-
-    const newLat = mapCenter.lat - latOffset;
-    const newLng = mapCenter.lng + lngOffset;
-
-    setMarkerPosition({ lat: newLat, lng: newLng });
+    setMarkerPosition({ lat, lng });
     setIsPinConfirmed(true);
     setValidationMessage('');
+    setIsLoadingAddress(true);
 
+    // Get address from coordinates
+    const addressText = await reverseGeocode(lat, lng);
+    setIsLoadingAddress(false);
+    
     onLocationChange({
-      latitude: newLat,
-      longitude: newLng,
+      latitude: lat,
+      longitude: lng,
+      address: addressText || undefined,
     });
-  };
 
-  // Zoom controls
-  const handleZoomIn = () => {
-    setZoomLevel(prev => Math.min(prev + 1, 20));
-  };
-
-  const handleZoomOut = () => {
-    setZoomLevel(prev => Math.max(prev - 1, 5));
-  };
-
-  // Recenter to marker
-  const handleRecenter = () => {
-    setMapCenter({ ...markerPosition });
+    if (addressText) {
+      setSearchQuery(addressText);
+    }
   };
 
   // Get current location
   const handleGetCurrentLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        async (position) => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
           setMarkerPosition({ lat, lng });
-          setMapCenter({ lat, lng });
           setIsPinConfirmed(true);
           setValidationMessage('');
+          setIsLoadingAddress(true);
+
+          const addressText = await reverseGeocode(lat, lng);
+          setIsLoadingAddress(false);
           
           onLocationChange({
             latitude: lat,
             longitude: lng,
+            address: addressText || undefined,
           });
+
+          if (addressText) {
+            setSearchQuery(addressText);
+          }
         },
         (error) => {
           setValidationMessage('Không thể xác định vị trí hiện tại');
@@ -215,7 +202,6 @@ export function MapLocationPicker({
     if (latitude !== undefined && longitude !== undefined) {
       if (isValidCoordinate(latitude, longitude)) {
         setMarkerPosition({ lat: latitude, lng: longitude });
-        setMapCenter({ lat: latitude, lng: longitude });
         setIsPinConfirmed(true);
         setValidationMessage('');
       } else {
@@ -223,6 +209,48 @@ export function MapLocationPicker({
       }
     }
   }, [latitude, longitude]);
+
+  // Auto-search address when address prop changes (from form selections)
+  useEffect(() => {
+    if (address && address.length >= 3 && address !== searchQuery) {
+      console.log('🔍 Auto-searching address:', address);
+      setSearchQuery(address);
+      
+      const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+        address + ', Vietnam'
+      )}&viewbox=102,8,110,24&bounded=1&limit=5&accept-language=vi`;
+
+      fetch(searchUrl, {
+        headers: {
+          'User-Agent': 'MAPPA-StoreLocator/1.0',
+        },
+      })
+        .then((res) => res.json())
+        .then((results) => {
+          if (results && results.length > 0) {
+            // Auto-select the first result
+            const firstResult = results[0];
+            const lat = parseFloat(firstResult.lat);
+            const lng = parseFloat(firstResult.lon);
+            
+            console.log('✅ Auto-found address:', firstResult.display_name);
+            setMarkerPosition({ lat, lng });
+            setIsPinConfirmed(true);
+            setValidationMessage('');
+            
+            // Optionally auto-update coordinates
+            onLocationChange({
+              latitude: lat,
+              longitude: lng,
+              address: firstResult.display_name || address,
+            });
+          }
+        })
+        .catch((error) => {
+          console.error('Auto-search error:', error);
+        });
+    }
+  }, [address]);
 
   return (
     <div className={styles.container}>
@@ -269,81 +297,38 @@ export function MapLocationPicker({
           variant="outline"
           size="sm"
           onClick={handleGetCurrentLocation}
-          disabled={disabled}
+          disabled={disabled || isLoadingAddress}
           type="button"
           className={styles.currentLocationButton}
         >
           <Locate size={16} />
-          Vị trí hiện tại
+          {isLoadingAddress ? 'Đang xác định...' : 'Vị trí hiện tại'}
         </Button>
       </div>
 
       {/* Map Container */}
       <div className={styles.mapSection}>
         <div className={styles.mapContainer}>
-          {/* Map */}
-          <div 
-            className={styles.mapCanvas} 
-            onClick={handleMapClick}
-            style={{ cursor: disabled ? 'default' : 'crosshair' }}
+          {/* Leaflet Map */}
+          <MapContainer
+            center={[markerPosition.lat, markerPosition.lng]}
+            zoom={15}
+            style={{ height: '100%', width: '100%', borderRadius: '0.5rem' }}
+            ref={mapRef}
           >
-            {/* Map Grid Background */}
-            <div className={styles.mapGrid}></div>
-
-            {/* Marker */}
-            <div
-              className={styles.marker}
-              style={{
-                left: '50%',
-                top: '50%',
-                transform: 'translate(-50%, -100%)',
-              }}
-            >
-              <MapPin 
-                size={32} 
-                className={isPinConfirmed ? styles.markerConfirmed : styles.markerUnconfirmed} 
-                fill={isPinConfirmed ? 'var(--color-primary)' : 'var(--color-warning)'}
-              />
-            </div>
-
-            {/* Coordinates Overlay */}
-            <div className={styles.coordsOverlay}>
-              <span className={styles.coordsText}>
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            <Marker position={[markerPosition.lat, markerPosition.lng]}>
+              <Popup>
                 {markerPosition.lat.toFixed(6)}, {markerPosition.lng.toFixed(6)}
-              </span>
-            </div>
-          </div>
-
-          {/* Map Controls */}
-          <div className={styles.mapControls}>
-            <button
-              className={styles.mapControlButton}
-              onClick={handleZoomIn}
-              disabled={disabled || zoomLevel >= 20}
-              type="button"
-              title="Phóng to"
-            >
-              <ZoomIn size={18} />
-            </button>
-            <button
-              className={styles.mapControlButton}
-              onClick={handleZoomOut}
-              disabled={disabled || zoomLevel <= 5}
-              type="button"
-              title="Thu nhỏ"
-            >
-              <ZoomOut size={18} />
-            </button>
-            <button
-              className={styles.mapControlButton}
-              onClick={handleRecenter}
-              disabled={disabled}
-              type="button"
-              title="Về giữa"
-            >
-              <Navigation size={18} />
-            </button>
-          </div>
+                {searchQuery && <br />}
+                {searchQuery}
+              </Popup>
+            </Marker>
+            <MapClickHandler onMapClick={handleMapClick} />
+          </MapContainer>
 
           {/* Status Indicator */}
           <div className={styles.statusIndicator}>
@@ -372,7 +357,7 @@ export function MapLocationPicker({
         {/* Help Text */}
         <p className={styles.helpText}>
           Bạn có thể tìm kiếm địa chỉ, nhập tọa độ, hoặc click trực tiếp trên bản đồ để chọn vị trí.
-          Marker sẽ được đặt tại vị trí bạn chọn.
+          {isLoadingAddress && ' Đang lấy địa chỉ...'}
         </p>
       </div>
 

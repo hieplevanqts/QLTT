@@ -32,6 +32,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../app/components/ui/t
 import FacilityStatusBadge from '../ui-kit/FacilityStatusBadge';
 import { mockStores } from '../data/mockStores';
 import { getProvinceByCode, getDistrictByName, getWardByCode } from '../data/vietnamLocations';
+import { fetchProvinceById, fetchWardById } from '../utils/api/locationsApi';
 import { generateLegalDocuments, LegalDocumentData } from '../data/mockLegalDocuments';
 import { LegalDocumentItem } from '../ui-kit/LegalDocumentItem';
 import { LegalDocumentDialog } from '../ui-kit/LegalDocumentDialog';
@@ -69,6 +70,11 @@ export default function StoreDetailPage() {
   // Approval Dialog states
   const [approveDialog, setApproveDialog] = useState(false);
   const [rejectDialog, setRejectDialog] = useState(false);
+
+  // Location data from API
+  const [provinceName, setProvinceName] = useState<string | null>(null);
+  const [wardName, setWardName] = useState<string | null>(null);
+  const [loadingLocation, setLoadingLocation] = useState(false);
 
   // Read tab from query param on mount and when searchParams change
   useEffect(() => {
@@ -134,17 +140,47 @@ export default function StoreDetailPage() {
     );
   }
 
+  // Fetch province and ward names from API (by ID)
+  useEffect(() => {
+    const loadLocationNames = async () => {
+      setLoadingLocation(true);
+      try {
+        // Fetch province by ID if store has province_id or province (UUID)
+        if (store.province && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(store.province)) {
+          const prov = await fetchProvinceById(store.province);
+          if (prov) {
+            setProvinceName(prov.name);
+          }
+        }
+
+        // Fetch ward by ID if store has ward_id or ward (UUID)
+        if (store.ward && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(store.ward)) {
+          const w = await fetchWardById(store.ward);
+          if (w) {
+            setWardName(w.name);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading location names:', error);
+      } finally {
+        setLoadingLocation(false);
+      }
+    };
+
+    loadLocationNames();
+  }, [store.province, store.ward]);
+
   // Get location data
   const province = getProvinceByCode(store.province);
   const district = getDistrictByName(province?.name || '', store.district);
-  const ward = getWardByCode(district?.code || '', store.ward);
+  const ward = store.wardCode ? getWardByCode(store.wardCode) : undefined;
   
   // Build clean address without undefined values
   const addressParts = [
     store.address,
-    ward?.name || store.ward,
+    wardName || ward?.name || store.ward,
     district?.name || store.district,
-    province?.name || store.province
+    provinceName || province?.name || store.province
   ].filter(part => part && part !== 'undefined' && part !== 'none');
   const fullAddress = addressParts.join(', ');
 
@@ -911,7 +947,10 @@ export default function StoreDetailPage() {
                   <div className={styles.infoRowInline}>
                     <MapPin size={14} />
                     <span className={styles.infoLabel}>Tỉnh / Thành phố :</span>
-                    <span className={styles.infoValue}>{store.province || province?.name || 'TP. Hồ Chí Minh'}</span>
+                    <span className={styles.infoValue}>
+                      {provinceName || store.province || province?.name || 'TP. Hồ Chí Minh'}
+                      {loadingLocation && provinceName === null && ' (đang tải...)'}
+                    </span>
                   </div>
 
                   {store.gpsCoordinates && (
