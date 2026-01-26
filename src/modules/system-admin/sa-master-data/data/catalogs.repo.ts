@@ -32,6 +32,7 @@ export type CatalogPayload = {
 };
 
 export type CatalogListParams = {
+  group: "COMMON" | "DMS" | "SYSTEM" | string;
   search?: string;
   status?: "all" | "active" | "inactive";
 };
@@ -50,7 +51,7 @@ const mapRow = (row: any): CatalogRecord => ({
   created_at: row.created_at ?? null,
   updated_at: row.updated_at ?? null,
   deleted_at: row.deleted_at ?? null,
-  item_count: row.item_count ?? undefined,
+  item_count: row.item_count == null ? undefined : Number(row.item_count),
 });
 
 const normalizeStatusFilter = (value: "all" | "active" | "inactive") => {
@@ -59,11 +60,11 @@ const normalizeStatusFilter = (value: "all" | "active" | "inactive") => {
 };
 
 export const catalogsRepo = {
-  async listCommonCatalogs(params: CatalogListParams): Promise<CatalogRecord[]> {
+  async listCatalogsByGroup(params: CatalogListParams): Promise<CatalogRecord[]> {
     let query = supabase
-      .from("catalogs")
+      .from("v_catalogs_with_item_count")
       .select("*")
-      .eq("group", "COMMON")
+      .eq("group", params.group)
       .is("deleted_at", null)
       .order("sort_order", { ascending: true })
       .order("name", { ascending: true });

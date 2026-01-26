@@ -88,7 +88,15 @@ const parseMetaText = (metaText?: string) => {
   }
 };
 
-export default function CommonCatalogsPage() {
+type CatalogGroup = "COMMON" | "DMS" | "SYSTEM";
+
+type CatalogsManagerPageProps = {
+  group: CatalogGroup;
+  title: string;
+  description: string;
+};
+
+export function CatalogsManagerPage({ group, title, description }: CatalogsManagerPageProps) {
   const { hasPermission } = usePermissions();
   const [searchParams, setSearchParams] = useSearchParams();
   const urlCatalogId = searchParams.get("catalogId");
@@ -131,7 +139,8 @@ export default function CommonCatalogsPage() {
   const loadCatalogs = React.useCallback(async () => {
     setCatalogsLoading(true);
     try {
-      const data = await catalogsRepo.listCommonCatalogs({
+      const data = await catalogsRepo.listCatalogsByGroup({
+        group,
         search: catalogSearch,
         status: catalogStatusFilter,
       });
@@ -142,7 +151,7 @@ export default function CommonCatalogsPage() {
     } finally {
       setCatalogsLoading(false);
     }
-  }, [catalogSearch, catalogStatusFilter]);
+  }, [catalogSearch, catalogStatusFilter, group]);
 
   React.useEffect(() => {
     void loadCatalogs();
@@ -159,12 +168,20 @@ export default function CommonCatalogsPage() {
     }
     try {
       const data = await catalogsRepo.getCatalogById(selectedCatalogId);
+      if (data && String(data.group || "").toUpperCase() !== group) {
+        const nextParams = new URLSearchParams(searchParams);
+        nextParams.delete("catalogId");
+        setSearchParams(nextParams);
+        setSelectedCatalog(null);
+        message.warning("Danh mục không thuộc nhóm hiện tại.");
+        return;
+      }
       setSelectedCatalog(data);
     } catch (err) {
       const messageText = err instanceof Error ? err.message : "Không thể tải danh mục đã chọn.";
       message.error(messageText);
     }
-  }, [catalogs, selectedCatalogId]);
+  }, [catalogs, selectedCatalogId, group, searchParams, setSearchParams]);
 
   React.useEffect(() => {
     void loadSelectedCatalog();
@@ -254,11 +271,11 @@ export default function CommonCatalogsPage() {
           key: values.key.trim(),
           name: values.name.trim(),
           description: values.description?.trim() || null,
-          group: "COMMON",
+          group,
           status: values.status ?? "ACTIVE",
           sort_order: values.sort_order ?? 0,
           is_hierarchical: false,
-          editable_scope: "common",
+          editable_scope: group.toLowerCase(),
         });
         message.success("Đã tạo danh mục.");
       } else if (editingCatalog) {
@@ -268,7 +285,7 @@ export default function CommonCatalogsPage() {
           status: values.status ?? editingCatalog.status ?? "ACTIVE",
           sort_order: values.sort_order ?? editingCatalog.sort_order ?? 0,
           is_hierarchical: editingCatalog.is_hierarchical ?? false,
-          editable_scope: "common",
+          editable_scope: group.toLowerCase(),
         });
         message.success("Đã cập nhật danh mục.");
       }
@@ -429,10 +446,10 @@ export default function CommonCatalogsPage() {
             { label: "Trang chủ", href: "/" },
             { label: "Quản trị hệ thống", href: "/system-admin" },
             { label: "Dữ liệu nền" },
-            { label: "Danh mục dùng chung" },
+            { label: title },
           ]}
-          title="Danh mục dùng chung"
-          subtitle="Quản lý danh mục và mục dùng chung trong hệ thống"
+          title={title}
+          subtitle={description}
         />
 
         <div className="px-6 pb-8">
@@ -508,6 +525,13 @@ export default function CommonCatalogsPage() {
                         render: (value?: string) => value || "-",
                         width: 220,
                         ellipsis: true,
+                      },
+                      {
+                        title: "Số mục",
+                        dataIndex: "item_count",
+                        key: "item_count",
+                        width: 90,
+                        render: (value?: number) => (value == null ? "—" : value),
                       },
                       {
                         title: "Trạng thái",
@@ -807,5 +831,15 @@ export default function CommonCatalogsPage() {
         </Form>
       </Drawer>
     </PermissionGate>
+  );
+}
+
+export default function CommonCatalogsPage() {
+  return (
+    <CatalogsManagerPage
+      group="COMMON"
+      title="Danh mục dùng chung"
+      description="Quản lý danh mục và mục dùng chung trong hệ thống"
+    />
   );
 }

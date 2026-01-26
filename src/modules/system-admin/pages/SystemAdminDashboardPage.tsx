@@ -91,14 +91,14 @@ const quickSections = [
       {
         label: "Danh mục nghiệp vụ QLTT",
         description: "Catalogs nghiệp vụ chuyên môn",
-        path: "/system-admin/master-data/catalogs?group=DMS",
+        path: "/system-admin/master-data/dms-catalogs",
         icon: Layers,
         tone: "bg-rose-50 text-rose-600",
       },
       {
         label: "Danh mục kỹ thuật",
         description: "Catalogs hệ thống và technical",
-        path: "/system-admin/master-data/catalogs?group=SYSTEM",
+        path: "/system-admin/master-data/system-catalogs",
         icon: GitBranch,
         tone: "bg-emerald-50 text-emerald-600",
       },

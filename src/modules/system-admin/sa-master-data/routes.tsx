@@ -10,6 +10,8 @@ const OrgUnitsPage = React.lazy(() => import('./pages/OrgUnitsPage'));
 const DepartmentsPage = React.lazy(() => import('./pages/DepartmentsPage'));
 const AdminAreasPage = React.lazy(() => import('./pages/AdminAreasPage'));
 const CommonCatalogsPage = React.lazy(() => import('./pages/CommonCatalogsPage'));
+const DmsCatalogsPage = React.lazy(() => import('./pages/DmsCatalogsPage'));
+const SystemCatalogsPage = React.lazy(() => import('./pages/SystemCatalogsPage'));
 const CommonCatalogDetailPage = React.lazy(() => import('./pages/CommonCatalogDetailPage'));
 const JurisdictionsPage = React.lazy(() => import('./pages/JurisdictionsPage'));
 const JurisdictionMapPage = React.lazy(() => import('./pages/JurisdictionMapPage'));
@@ -49,6 +51,16 @@ export const saMasterDataRoutes: RouteObject = {
     {
       path: 'common-catalogs',
       element: <CommonCatalogsPage />
+      // Permission: sa.masterdata.catalog.read (checked in component)
+    },
+    {
+      path: 'dms-catalogs',
+      element: <DmsCatalogsPage />
+      // Permission: sa.masterdata.catalog.read (checked in component)
+    },
+    {
+      path: 'system-catalogs',
+      element: <SystemCatalogsPage />
       // Permission: sa.masterdata.catalog.read (checked in component)
     },
     {
