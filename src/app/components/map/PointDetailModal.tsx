@@ -3,12 +3,76 @@ import { X, MapPin, Building2, Calendar, Shield, Clock, Users, Phone, Mail, User
 import styles from './PointDetailModal.module.css';
 import { Restaurant } from '../../../data/restaurantData';
 import { ImageLightbox } from './ImageLightbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { fetchMerchantInspectionResults, updateInspectionChecklistResultStatus } from '../../../utils/api/merchantsApi';
+import { SUPABASE_REST_URL } from '../../../utils/api/config';
+import { toast } from 'sonner';
+import { ConfirmDialog } from '../../../ui-kit/ConfirmDialog';
 
 interface PointDetailModalProps {
   point: Restaurant | null;
   isOpen: boolean;
   onClose: () => void;
 }
+
+// 🔥 Tối ưu: Định nghĩa types và config cho các loại giấy tờ
+type DocumentStatus = 'passed' | 'failed' | 'pending';
+
+type DocumentTypeId = 've-sinh' | 'giay-phep-kd' | 'an-toan-thuc-pham' | 'dao-tao-nv';
+
+interface DocumentType {
+  id: DocumentTypeId;
+  label: string;
+  defaultStatus: DocumentStatus;
+  options: {
+    value: DocumentStatus;
+    label: string;
+  }[];
+}
+
+// 🔥 Tối ưu: Config các loại giấy tờ (dễ mở rộng)
+const DOCUMENT_TYPES: DocumentType[] = [
+  {
+    id: 've-sinh',
+    label: 'Vệ sinh cơ sở',
+    defaultStatus: 'pending',
+    options: [
+      { value: 'passed', label: 'Đạt' },
+      { value: 'failed', label: 'Chưa đạt' },
+      { value: 'pending', label: 'Chưa kiểm tra' },
+    ],
+  },
+  {
+    id: 'giay-phep-kd',
+    label: 'Giấy phép KD',
+    defaultStatus: 'passed',
+    options: [
+      { value: 'passed', label: 'Hợp lệ' },
+      { value: 'failed', label: 'Không hợp lệ' },
+      { value: 'pending', label: 'Chưa kiểm tra' },
+    ],
+  },
+  {
+    id: 'an-toan-thuc-pham',
+    label: 'An toàn thực phẩm',
+    defaultStatus: 'passed',
+    options: [
+      { value: 'passed', label: 'Tốt' },
+      { value: 'failed', label: 'Cảnh báo' },
+      { value: 'pending', label: 'Chưa kiểm tra' },
+    ],
+  },
+  {
+    id: 'dao-tao-nv',
+    label: 'Đào tạo NV',
+    defaultStatus: 'passed',
+    options: [
+      { value: 'passed', label: 'Đầy đủ' },
+      { value: 'failed', label: 'Thiếu' },
+      { value: 'pending', label: 'Chưa kiểm tra' },
+    ],
+  },
+];
 
 // Get color by category
 function getCategoryColor(category: Restaurant['category']): string {
@@ -50,7 +114,7 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
   // 🔥 FIX: Prevent immediate close after opening (click event from popup button may bubble up)
   const justOpenedRef = useRef(false);
   const openTimeRef = useRef(0);
-  
+
   useEffect(() => {
     if (isOpen) {
       justOpenedRef.current = true;
@@ -65,7 +129,7 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
       openTimeRef.current = 0;
     }
   }, [isOpen]);
-  
+
   // Collapsible sections state
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
     business: false,
@@ -82,6 +146,284 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+  // 🔥 Lưu data từ API - key là document_type_id từ Backend (không map)
+  interface DocumentResult {
+    _id: string; // ID của record để update
+    document_type_id: string; // ID từ Backend (giữ nguyên)
+    document_type_name: string; // Tên để hiển thị
+    status: DocumentStatus; // Status hiện tại
+  }
+
+  const [documentResults, setDocumentResults] = useState<Record<string, DocumentResult>>({});
+  const [isLoadingDocuments, setIsLoadingDocuments] = useState(false);
+  
+  // 🔥 State cho confirm dialog - dùng document_type_id từ Backend
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    documentTypeId: string | null; // document_type_id từ Backend
+    newStatus: DocumentStatus | null;
+    docTypeLabel: string;
+  }>({
+    open: false,
+    documentTypeId: null,
+    newStatus: null,
+    docTypeLabel: '',
+  });
+
+  // 🔥 Mapping giữa document_type_id từ API và id trong DOCUMENT_TYPES
+  // Có thể cần điều chỉnh mapping này dựa trên response thực tế từ API
+  const mapDocumentTypeId = (apiDocumentTypeId: string, apiDocumentTypeName: string): DocumentTypeId | null => {
+    console.log('🔍 mapDocumentTypeId called', { apiDocumentTypeId, apiDocumentTypeName });
+    
+    // Map bằng tên (case-insensitive) - ưu tiên cao nhất
+    if (apiDocumentTypeName) {
+      const nameLower = apiDocumentTypeName.toLowerCase().trim();
+      if (nameLower.includes('vệ sinh') || nameLower.includes('ve sinh') || nameLower.includes('vesinh')) {
+        console.log('✅ Mapped by name: ve-sinh');
+        return 've-sinh';
+      }
+      if (nameLower.includes('giấy phép') || nameLower.includes('kinh doanh') || nameLower.includes('giayphep')) {
+        console.log('✅ Mapped by name: giay-phep-kd');
+        return 'giay-phep-kd';
+      }
+      if (nameLower.includes('an toàn thực phẩm') || nameLower.includes('atp') || nameLower.includes('antoan')) {
+        console.log('✅ Mapped by name: an-toan-thuc-pham');
+        return 'an-toan-thuc-pham';
+      }
+      if (nameLower.includes('đào tạo') || nameLower.includes('nhân viên') || nameLower.includes('daotao')) {
+        console.log('✅ Mapped by name: dao-tao-nv');
+        return 'dao-tao-nv';
+      }
+    }
+    
+    // Map bằng ID nếu có pattern
+    if (apiDocumentTypeId) {
+      const idLower = apiDocumentTypeId.toLowerCase().trim();
+      if (idLower.includes('ve-sinh') || idLower.includes('vesinh') || idLower === 've-sinh') {
+        console.log('✅ Mapped by ID: ve-sinh');
+        return 've-sinh';
+      }
+      if (idLower.includes('giay-phep') || idLower.includes('giayphep') || idLower === 'giay-phep-kd') {
+        console.log('✅ Mapped by ID: giay-phep-kd');
+        return 'giay-phep-kd';
+      }
+      if (idLower.includes('an-toan') || idLower.includes('antoan') || idLower === 'an-toan-thuc-pham') {
+        console.log('✅ Mapped by ID: an-toan-thuc-pham');
+        return 'an-toan-thuc-pham';
+      }
+      if (idLower.includes('dao-tao') || idLower.includes('daotao') || idLower === 'dao-tao-nv') {
+        console.log('✅ Mapped by ID: dao-tao-nv');
+        return 'dao-tao-nv';
+      }
+    }
+    
+    console.warn('⚠️ Could not map document type', { apiDocumentTypeId, apiDocumentTypeName });
+    return null;
+  };
+
+  // 🔥 Load inspection results từ API khi modal mở - giữ nguyên document_type_id từ Backend
+  useEffect(() => {
+    if (!isOpen || !point?.id) {
+      // Reset về empty khi đóng modal
+      setDocumentResults({});
+      return;
+    }
+
+    const loadInspectionResults = async () => {
+      setIsLoadingDocuments(true);
+      console.log('🔄 Loading inspection results for merchant:', point.id);
+      
+      try {
+        const results = await fetchMerchantInspectionResults(point.id);
+        console.log('📥 Received results from API:', { count: results.length, results });
+        
+        if (results && results.length > 0) {
+          console.log('📥 PointDetailModal: Received results from API', { 
+            count: results.length, 
+            results 
+          });
+          
+          const newResults: Record<string, DocumentResult> = {};
+          
+          results.forEach((result, index) => {
+            console.log(`🔍 Processing result ${index + 1}/${results.length}:`, { 
+              result, 
+              document_type_id: result.document_type_id,
+              document_type_name: result.document_type_name,
+              _id: result._id,
+              status: result.status,
+              hasDocumentTypeId: !!result.document_type_id,
+              hasId: !!result._id,
+              hasStatus: !!result.status
+            });
+            
+            // 🔥 Kiểm tra và lưu result - document_type_id là inspection_item từ API
+            if (result.document_type_id && result._id && result.status) {
+              newResults[result.document_type_id] = {
+                _id: result._id,
+                document_type_id: result.document_type_id,
+                document_type_name: result.document_type_name || result.document_type_id,
+                status: result.status,
+              };
+              console.log('✅ Loaded result into state', { 
+                document_type_id: result.document_type_id, 
+                _id: result._id, 
+                document_type_name: result.document_type_name,
+                status: result.status
+              });
+            } else {
+              console.warn('⚠️ Result missing required fields - SKIPPED', { 
+                result,
+                missing: {
+                  document_type_id: !result.document_type_id,
+                  _id: !result._id,
+                  status: !result.status
+                }
+              });
+            }
+          });
+          
+          console.log('📋 Final document results state:', { 
+            count: Object.keys(newResults).length,
+            keys: Object.keys(newResults),
+            results: newResults
+          });
+          setDocumentResults(newResults);
+        } else {
+          console.warn('⚠️ No results returned from API', { results });
+          setDocumentResults({});
+        }
+      } catch (error) {
+        console.error('❌ Failed to load inspection results:', error);
+        setDocumentResults({});
+      } finally {
+        setIsLoadingDocuments(false);
+      }
+    };
+
+    loadInspectionResults();
+  }, [isOpen, point?.id]);
+
+  // 🔥 Map status từ UI sang API format: passed=1, failed=0, pending=2
+  const mapStatusToApi = (status: DocumentStatus): 0 | 1 | 2 => {
+    switch (status) {
+      case 'passed': return 1;
+      case 'failed': return 0;
+      case 'pending': return 2;
+      default: return 2;
+    }
+  };
+
+  // 🔥 Map status từ API format sang UI: 1=passed, 0=failed, 2=pending
+  const mapStatusFromApi = (status: number): DocumentStatus => {
+    switch (status) {
+      case 1: return 'passed';
+      case 0: return 'failed';
+      case 2: return 'pending';
+      default: return 'pending';
+    }
+  };
+
+  // 🔥 Handler khi user chọn status mới - hiển thị confirm dialog
+  const handleStatusChange = (documentTypeId: string, newStatus: DocumentStatus) => {
+    const currentResult = documentResults[documentTypeId];
+    const currentStatus = currentResult?.status;
+    
+    // Nếu status không đổi thì không làm gì
+    if (currentStatus === newStatus) {
+      return;
+    }
+
+    // Hiển thị confirm dialog
+    setConfirmDialog({
+      open: true,
+      documentTypeId, // Giữ nguyên document_type_id từ Backend
+      newStatus,
+      docTypeLabel: currentResult?.document_type_name || 'Giấy tờ',
+    });
+  };
+
+  // 🔥 Xác nhận và update status - tìm bản ghi theo document_type_id từ Backend
+  const handleConfirmStatusUpdate = async () => {
+    console.log('🔵 handleConfirmStatusUpdate called', { confirmDialog, documentResults });
+    
+    if (!confirmDialog.documentTypeId || !confirmDialog.newStatus) {
+      console.warn('⚠️ Missing documentTypeId or newStatus', { 
+        documentTypeId: confirmDialog.documentTypeId, 
+        newStatus: confirmDialog.newStatus 
+      });
+      return;
+    }
+
+    const { documentTypeId, newStatus } = confirmDialog;
+    const currentResult = documentResults[documentTypeId];
+
+    console.log('🔵 Preparing to update', { 
+      documentTypeId, 
+      newStatus, 
+      currentResult,
+      allResults: documentResults 
+    });
+
+    // Tìm _id của record theo document_type_id
+    if (!currentResult || !currentResult._id) {
+      console.warn('⚠️ No result found for documentTypeId:', documentTypeId);
+      toast.error('Không tìm thấy bản ghi để cập nhật. Vui lòng thử lại.');
+      setConfirmDialog({ open: false, documentTypeId: null, newStatus: null, docTypeLabel: '' });
+      return;
+    }
+
+    try {
+      // 🔥 Map từ text (string) sang int: 'passed'=1, 'failed'=0, 'pending'=2
+      const statusNumber = mapStatusToApi(newStatus);
+      console.log('🔵 Status mapping (text to int)', { 
+        newStatus, 
+        statusNumber, 
+        statusType: typeof statusNumber,
+        resultId: currentResult._id,
+        url: `${SUPABASE_REST_URL}/map_inspection_checklist_results?_id=eq.${currentResult._id}` 
+      });
+      
+      const result = await updateInspectionChecklistResultStatus(currentResult._id, statusNumber);
+
+      console.log('🔵 API response', result);
+
+      if (result.success) {
+        // Update local state - giữ nguyên document_type_id từ Backend
+        setDocumentResults(prev => ({
+          ...prev,
+          [documentTypeId]: {
+            ...prev[documentTypeId],
+            status: newStatus,
+          }
+        }));
+        toast.success(`Đã cập nhật trạng thái ${confirmDialog.docTypeLabel} thành công`);
+      } else {
+        toast.error(result.error || 'Cập nhật thất bại');
+      }
+    } catch (error) {
+      console.error('❌ Failed to update status:', error);
+      toast.error('Có lỗi xảy ra khi cập nhật trạng thái');
+    } finally {
+      setConfirmDialog({ open: false, documentTypeId: null, newStatus: null, docTypeLabel: '' });
+    }
+  };
+
+  // 🔥 Helper function để render icon dựa trên status
+  const getStatusIcon = (status: DocumentStatus, documentTypeId?: string) => {
+    // Có thể thêm logic đặc biệt dựa trên documentTypeId nếu cần
+    switch (status) {
+      case 'passed':
+        return <CheckCircle2 size={14} style={{ color: '#16a34a' }} />;
+      case 'failed':
+        return <X size={14} style={{ color: '#dc2626' }} />;
+      case 'pending':
+        return <AlertCircle size={14} style={{ color: '#eab308' }} />;
+      default:
+        return <CheckCircle2 size={14} style={{ color: '#16a34a' }} />;
+    }
+  };
 
   const openLightbox = (images: string[], index: number) => {
     setLightboxImages(images);
@@ -143,13 +485,13 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
     const random2 = ((seed * 9301 + 49297) * 9301 + 49297) % 233280 / 233280;
     const random3 = (((seed * 9301 + 49297) * 9301 + 49297) * 9301 + 49297) % 233280 / 233280;
     const random4 = ((((seed * 9301 + 49297) * 9301 + 49297) * 9301 + 49297) * 9301 + 49297) % 233280 / 233280;
-    
+
     return {
       businessLicense: `GP${Math.floor(random1 * 9000 + 1000)}-${new Date().getFullYear()}`,
       attpCertificateNumber: `CN-ATTP ${Math.floor(random1 * 9000 + 1000)}/${new Date().getFullYear()}`, // 🔥 FIX: Add certificate number to mockData
       establishedDate: new Date(Date.now() - random1 * 5 * 365 * 24 * 60 * 60 * 1000),
       lastInspection: new Date(Date.now() - random2 * 60 * 24 * 60 * 60 * 1000),
-      nextInspection: point.category === 'scheduled' 
+      nextInspection: point.category === 'scheduled'
         ? new Date(Date.now() + random3 * 30 * 24 * 60 * 60 * 1000)
         : null,
       ownerName: `Nguyễn Văn ${String.fromCharCode(65 + Math.floor(random1 * 26))}`,
@@ -167,7 +509,7 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
 
   const categoryColor = getCategoryColor(point.category);
   const statusBadge = getStatusBadge(point.category);
-  
+
   const { businessLicense, attpCertificateNumber, establishedDate, lastInspection, nextInspection, ownerName, phone, email, employees, capacity, inspectionCount, rating, violationCount } = mockData || {};
 
   // 🔥 FIX: Handle overlay click - only close if clicking directly on overlay, not from event bubbling
@@ -177,32 +519,32 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
     if (justOpenedRef.current || timeSinceOpen < 500) { // 🔥 FIX: Increased to 500ms
       return;
     }
-    
+
     // Only close if clicking directly on the overlay (not on a child element)
     // Also check if click came from a button or interactive element
     const target = e.target as HTMLElement;
     if (
-      target.tagName === 'BUTTON' || 
-      target.closest('button') || 
+      target.tagName === 'BUTTON' ||
+      target.closest('button') ||
       target.closest('a') ||
       target.closest('[role="button"]')
     ) {
       return; // Don't close if clicking on buttons
     }
-    
+
     if (e.target === e.currentTarget) {
       onClose();
     }
   };
 
   // 🔥 FIX: Temporarily disable overlay click during initial opening period
-  const overlayClassName = justOpenedRef.current 
-    ? `${styles.overlay} ${styles.overlayDisabled}` 
+  const overlayClassName = justOpenedRef.current
+    ? `${styles.overlay} ${styles.overlayDisabled}`
     : styles.overlay;
 
   return (
-    <div 
-      className={overlayClassName} 
+    <div
+      className={overlayClassName}
       onClick={handleOverlayClick}
       style={justOpenedRef.current ? { pointerEvents: 'auto' } : undefined} // Allow modal content to be clickable
     >
@@ -262,8 +604,8 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
               <div className={styles.alertContent}>
                 <div className={styles.alertTitle}>Cảnh báo điểm nóng ATTP</div>
                 <div className={styles.alertText}>
-                  Cơ sở này đã được xác định là điểm nóng về an toàn thực phẩm. 
-                  Phát hiện {violationCount} vi phạm trong lần kiểm tra gần nhất. 
+                  Cơ sở này đã được xác định là điểm nóng về an toàn thực phẩm.
+                  Phát hiện {violationCount} vi phạm trong lần kiểm tra gần nhất.
                   Cần tiến hành kiểm tra và giám sát chặt chẽ.
                 </div>
               </div>
@@ -276,17 +618,17 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
             <div className={styles.leftColumn}>
               {/* Business Info */}
               <div className={styles.card}>
-                <div 
-                  className={styles.cardHeader} 
+                <div
+                  className={styles.cardHeader}
                   onClick={() => toggleSection('business')}
                   style={{ cursor: 'pointer' }}
                 >
                   <Building2 size={16} />
                   <h3 className={styles.cardTitle}>Thông tin cơ sở</h3>
-                  <ChevronDown 
-                    size={16} 
+                  <ChevronDown
+                    size={16}
                     className={styles.chevron}
-                    style={{ 
+                    style={{
                       transform: collapsedSections.business ? 'rotate(-90deg)' : 'rotate(0deg)',
                       transition: 'transform 0.2s'
                     }}
@@ -299,7 +641,7 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                         <div className={styles.infoLabel}>Loại hình</div>
                         <div className={styles.infoValue}>{point.type}</div>
                       </div>
-                      
+
                       <div className={styles.infoItem}>
                         <div className={styles.infoLabel}>Giấy phép</div>
                         <div className={styles.infoValue}>{businessLicense}</div>
@@ -334,17 +676,17 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
 
               {/* Address Info - Compact */}
               <div className={styles.card}>
-                <div 
+                <div
                   className={styles.cardHeader}
                   onClick={() => toggleSection('address')}
                   style={{ cursor: 'pointer' }}
                 >
                   <MapPin size={16} />
                   <h3 className={styles.cardTitle}>Địa chỉ</h3>
-                  <ChevronDown 
-                    size={16} 
+                  <ChevronDown
+                    size={16}
                     className={styles.chevron}
-                    style={{ 
+                    style={{
                       transform: collapsedSections.address ? 'rotate(-90deg)' : 'rotate(0deg)',
                       transition: 'transform 0.2s'
                     }}
@@ -369,17 +711,17 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
 
               {/* Contact Info - Compact */}
               <div className={styles.card}>
-                <div 
+                <div
                   className={styles.cardHeader}
                   onClick={() => toggleSection('contact')}
                   style={{ cursor: 'pointer' }}
                 >
                   <Phone size={16} />
                   <h3 className={styles.cardTitle}>Liên hệ</h3>
-                  <ChevronDown 
-                    size={16} 
+                  <ChevronDown
+                    size={16}
                     className={styles.chevron}
-                    style={{ 
+                    style={{
                       transform: collapsedSections.contact ? 'rotate(-90deg)' : 'rotate(0deg)',
                       transition: 'transform 0.2s'
                     }}
@@ -410,17 +752,17 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
 
               {/* Inspection Results - Compact */}
               <div className={styles.card}>
-                <div 
+                <div
                   className={styles.cardHeader}
                   onClick={() => toggleSection('results')}
                   style={{ cursor: 'pointer' }}
                 >
                   <FileText size={16} />
                   <h3 className={styles.cardTitle}>Kết quả kiểm tra</h3>
-                  <ChevronDown 
-                    size={16} 
+                  <ChevronDown
+                    size={16}
                     className={styles.chevron}
-                    style={{ 
+                    style={{
                       transform: collapsedSections.results ? 'rotate(-90deg)' : 'rotate(0deg)',
                       transition: 'transform 0.2s'
                     }}
@@ -429,54 +771,62 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                 {!collapsedSections.results && (
                   <div className={styles.cardBody}>
                     <div className={styles.resultCompact}>
-                      <div className={styles.resultRow}>
-                        {point.category === 'hotspot' ? (
-                          <X size={14} style={{ color: '#dc2626' }} />
-                        ) : (
-                          <CheckCircle2 size={14} style={{ color: '#16a34a' }} />
-                        )}
-                        <span>Vệ sinh cơ sở</span>
-                        <span className={styles.resultBadge} style={{
-                          background: point.category === 'hotspot' ? '#fee2e2' : '#dcfce7',
-                          color: point.category === 'hotspot' ? '#991b1b' : '#166534'
-                        }}>
-                          {point.category === 'hotspot' ? 'Chưa đạt' : 'Đạt'}
-                        </span>
-                      </div>
-                      <div className={styles.resultRow}>
-                        <CheckCircle2 size={14} style={{ color: '#16a34a' }} />
-                        <span>Giấy phép KD</span>
-                        <span className={styles.resultBadge} style={{
-                          background: '#dcfce7',
-                          color: '#166534'
-                        }}>
-                          Hợp lệ
-                        </span>
-                      </div>
-                      <div className={styles.resultRow}>
-                        {violationCount > 0 ? (
-                          <AlertCircle size={14} style={{ color: '#eab308' }} />
-                        ) : (
-                          <CheckCircle2 size={14} style={{ color: '#16a34a' }} />
-                        )}
-                        <span>An toàn thực phẩm</span>
-                        <span className={styles.resultBadge} style={{
-                          background: violationCount > 0 ? '#fef3c7' : '#dcfce7',
-                          color: violationCount > 0 ? '#92400e' : '#166534'
-                        }}>
-                          {violationCount > 0 ? 'Cảnh báo' : 'Tốt'}
-                        </span>
-                      </div>
-                      <div className={styles.resultRow}>
-                        <CheckCircle2 size={14} style={{ color: '#16a34a' }} />
-                        <span>Đào tạo NV</span>
-                        <span className={styles.resultBadge} style={{
-                          background: '#dcfce7',
-                          color: '#166534'
-                        }}>
-                          Đầy đủ
-                        </span>
-                      </div>
+                      {isLoadingDocuments ? (
+                        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--muted-foreground)' }}>
+                          Đang tải dữ liệu...
+                        </div>
+                      ) : Object.keys(documentResults).length === 0 ? (
+                        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--muted-foreground)' }}>
+                          Chưa có dữ liệu kết quả kiểm tra
+                        </div>
+                      ) : (
+                        // 🔥 Render từ data thực tế từ API - giữ nguyên document_type_id từ Backend
+                        Object.values(documentResults).map((result) => {
+                          const status = result.status;
+                          // Tìm options từ DOCUMENT_TYPES dựa trên document_type_name hoặc dùng default
+                          const docType = DOCUMENT_TYPES.find(dt => 
+                            dt.label.toLowerCase().includes(result.document_type_name.toLowerCase()) ||
+                            result.document_type_name.toLowerCase().includes(dt.label.toLowerCase())
+                          );
+                          const options = docType?.options || [
+                            { value: 'passed', label: 'Đạt' },
+                            { value: 'failed', label: 'Chưa đạt' },
+                            { value: 'pending', label: 'Chưa kiểm tra' },
+                          ];
+                          
+                          return (
+                            <div key={result.document_type_id} className={styles.resultRow}>
+                              {getStatusIcon(status, result.document_type_id as any)}
+                              <span>{result.document_type_name}</span>
+                              <Select
+                                value={status}
+                                onValueChange={(value) => {
+                                  handleStatusChange(result.document_type_id, value as DocumentStatus);
+                                }}
+                              >
+                                <SelectTrigger 
+                                  className={styles.selectTrigger}
+                                  size="sm"
+                                  style={{ width: 120, marginLeft: 'auto' }}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <SelectValue placeholder="Chọn trạng thái" />
+                                </SelectTrigger>
+                                <SelectContent 
+                                  className={styles.selectContent}
+                                  onPointerDownOutside={(e) => e.preventDefault()}
+                                >
+                                  {options.map((option) => (
+                                    <SelectItem key={option.value} value={option.value}>
+                                      {option.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
                   </div>
                 )}
@@ -487,17 +837,17 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
             <div className={styles.rightColumn}>
               {/* Inspection Timeline */}
               <div className={styles.card}>
-                <div 
+                <div
                   className={styles.cardHeader}
                   onClick={() => toggleSection('timeline')}
                   style={{ cursor: 'pointer' }}
                 >
                   <Calendar size={16} />
                   <h3 className={styles.cardTitle}>Lịch sử kiểm tra</h3>
-                  <ChevronDown 
-                    size={16} 
+                  <ChevronDown
+                    size={16}
                     className={styles.chevron}
-                    style={{ 
+                    style={{
                       transform: collapsedSections.timeline ? 'rotate(-90deg)' : 'rotate(0deg)',
                       transition: 'transform 0.2s'
                     }}
@@ -566,17 +916,17 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
 
               {/* Certificates - Compact */}
               <div className={styles.card}>
-                <div 
+                <div
                   className={styles.cardHeader}
                   onClick={() => toggleSection('certificates')}
                   style={{ cursor: 'pointer' }}
                 >
                   <Award size={16} />
                   <h3 className={styles.cardTitle}>Giấy chứng nhận</h3>
-                  <ChevronDown 
-                    size={16} 
+                  <ChevronDown
+                    size={16}
                     className={styles.chevron}
-                    style={{ 
+                    style={{
                       transform: collapsedSections.certificates ? 'rotate(-90deg)' : 'rotate(0deg)',
                       transition: 'transform 0.2s'
                     }}
@@ -600,8 +950,8 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                           </span>
                         </div>
                         <div className={styles.certMeta}>
-                          Cấp bởi: Sở Y tế {point.province} • 
-                          Cấp: {establishedDate.toLocaleDateString('vi-VN')} • 
+                          Cấp bởi: Sở Y tế {point.province} •
+                          Cấp: {establishedDate.toLocaleDateString('vi-VN')} •
                           HH: {new Date(establishedDate.getTime() + 3 * 365 * 24 * 60 * 60 * 1000).toLocaleDateString('vi-VN')}
                         </div>
                       </div>
@@ -652,17 +1002,17 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
 
               {/* Legal Documents - Simplified */}
               <div className={styles.card}>
-                <div 
+                <div
                   className={styles.cardHeader}
                   onClick={() => toggleSection('legal')}
                   style={{ cursor: 'pointer' }}
                 >
                   <Scale size={16} />
                   <h3 className={styles.cardTitle}>Văn bản pháp lý</h3>
-                  <ChevronDown 
-                    size={16} 
+                  <ChevronDown
+                    size={16}
                     className={styles.chevron}
-                    style={{ 
+                    style={{
                       transform: collapsedSections.legal ? 'rotate(-90deg)' : 'rotate(0deg)',
                       transition: 'transform 0.2s'
                     }}
@@ -707,7 +1057,7 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
               {/* Citizen Reports - Only for hotspots */}
               {point.category === 'hotspot' && point.citizenReports && point.citizenReports.length > 0 && (
                 <div className={styles.card}>
-                  <div 
+                  <div
                     className={styles.cardHeader}
                     onClick={() => toggleSection('citizenReports')}
                     style={{ cursor: 'pointer' }}
@@ -715,10 +1065,10 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                     <MessageSquare size={16} />
                     <h3 className={styles.cardTitle}>Phản ánh của người dân</h3>
                     <span className={styles.reportCount}>{point.citizenReports.length}</span>
-                    <ChevronDown 
-                      size={16} 
+                    <ChevronDown
+                      size={16}
                       className={styles.chevron}
-                      style={{ 
+                      style={{
                         transform: collapsedSections.citizenReports ? 'rotate(-90deg)' : 'rotate(0deg)',
                         transition: 'transform 0.2s'
                       }}
@@ -730,7 +1080,7 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                         {point.citizenReports.map((report) => {
                           const reportDate = new Date(report.reportDate);
                           const daysAgo = Math.floor((Date.now() - reportDate.getTime()) / (1000 * 60 * 60 * 24));
-                          
+
                           return (
                             <div key={report.id} className={styles.reportItem}>
                               <div className={styles.reportHeader}>
@@ -747,7 +1097,7 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                                   <span>{report.violationType}</span>
                                 </div>
                               </div>
-                              
+
                               <div className={styles.reportContent}>
                                 {report.content}
                               </div>
@@ -760,15 +1110,15 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                                   </div>
                                   <div className={styles.reportImageGrid}>
                                     {report.images.map((image, idx) => (
-                                      <div 
-                                        key={idx} 
+                                      <div
+                                        key={idx}
                                         className={styles.reportImageWrapper}
                                         onClick={() => {
                                           openLightbox(report.images, idx);
                                         }}
                                       >
-                                        <img 
-                                          src={image} 
+                                        <img
+                                          src={image}
                                           alt={`Phản ánh ${idx + 1}`}
                                           className={styles.reportImage}
                                         />
@@ -789,6 +1139,22 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
           </div>
         </div>
       </div>
+      {/* Confirm Dialog for Status Update */}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open: boolean) => {
+          if (!open) {
+            setConfirmDialog({ open: false, documentTypeId: null, newStatus: null, docTypeLabel: '' });
+          }
+        }}
+        title="Xác nhận thay đổi trạng thái"
+        description={`Bạn có chắc chắn muốn thay đổi trạng thái "${confirmDialog.docTypeLabel}" thành "${confirmDialog.newStatus === 'passed' ? 'Đạt' : confirmDialog.newStatus === 'failed' ? 'Chưa đạt' : 'Chưa kiểm tra'}"?`}
+        confirmLabel="Xác nhận"
+        cancelLabel="Hủy"
+        variant="default"
+        onConfirm={handleConfirmStatusUpdate}
+      />
+
       {isLightboxOpen && (
         <ImageLightbox
           images={lightboxImages}

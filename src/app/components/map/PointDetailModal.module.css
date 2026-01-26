@@ -1124,6 +1124,28 @@
   flex: 1;
 }
 
+.resultRow .selectTrigger {
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.selectContent {
+  z-index: 10001 !important;
+  position: relative;
+  cursor: pointer;
+  option {
+    cursor: pointer;
+  }
+  option:hover {
+    background-color: var(--muted);
+  }
+}
+
+/* Ensure SelectContent portal is above modal */
+:global([data-radix-portal]) {
+  z-index: 10001 !important;
+}
+
 .resultBadge {
   padding: 4px 10px;
   border-radius: 0;
