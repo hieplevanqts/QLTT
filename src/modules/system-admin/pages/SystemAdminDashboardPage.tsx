@@ -132,7 +132,7 @@ const quickSections = [
       {
         label: "Phân quyền",
         description: "Gán quyền theo người dùng/role",
-        path: "/system-admin/iam/assignments",
+        path: "/system-admin/iam/role-permissions",
         icon: UserCheck,
         tone: "bg-emerald-50 text-emerald-600",
       },

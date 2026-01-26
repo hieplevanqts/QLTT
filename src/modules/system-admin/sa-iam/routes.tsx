@@ -10,6 +10,7 @@ const UsersPage = React.lazy(() => import('./pages/UsersPage'));
 const UserDetailPage = React.lazy(() => import('./pages/UserDetailPage'));
 const RolesPage = React.lazy(() => import('./pages/RolesPage'));
 const PermissionsPage = React.lazy(() => import('./pages/PermissionsPage'));
+const RolePermissionsPage = React.lazy(() => import('./pages/RolePermissionsPage'));
 const AssignmentsPage = React.lazy(() => import('./pages/AssignmentsPage'));
 const UserAssignmentsPage = React.lazy(() => import('./pages/UserAssignmentsPage'));
 const RoleAssignmentsPage = React.lazy(() => import('./pages/RoleAssignmentsPage'));
@@ -47,6 +48,18 @@ export const saIamRoutes: RouteObject = {
       path: 'permissions',
       element: <PermissionsPage />
       // Permission: sa.iam.permission.read (checked in component)
+    },
+
+    // Role Permissions Matrix - Phân quyền theo vai trò
+    {
+      path: 'role-permissions',
+      element: <RolePermissionsPage />
+      // Permission: sa.iam.assignment.read (checked in component)
+    },
+    {
+      path: 'role-permissions/:roleId',
+      element: <RolePermissionsPage />
+      // Permission: sa.iam.assignment.read (checked in component)
     },
     
     // Assignments - Phân quyền

@@ -70,7 +70,7 @@ export default function PermissionRolesModal({
 
   const handleViewRole = (roleId?: string | null) => {
     if (!roleId) return;
-    navigate(`/system-admin/iam/assignments/roles/${roleId}`);
+    navigate(`/system-admin/iam/role-permissions/${roleId}`);
   };
 
   return (
