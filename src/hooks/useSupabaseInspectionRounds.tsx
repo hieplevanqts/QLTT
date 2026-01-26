@@ -14,7 +14,7 @@ interface UseSupabaseInspectionRoundsReturn {
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
-  updateRoundStatus: (id: string, status: string, notes?: string) => Promise<void>;
+  updateRoundStatus: (id: string, status: string) => Promise<void>;
   deleteRound: (id: string) => Promise<void>;
   getRoundById: (id: string) => Promise<InspectionRound | null>;
   createRound: (round: Partial<InspectionRound>) => Promise<InspectionRound | null>;
@@ -53,9 +53,9 @@ export function useSupabaseInspectionRounds(planId?: string, enabled: boolean = 
     }
   }, [planId, enabled]);
 
-  const updateRoundStatus = async (id: string, status: string, notes?: string) => {
+  const updateRoundStatus = async (id: string, status: string) => {
     try {
-      await updateInspectionRoundApi(id, { status: status as InspectionRoundStatus, notes });
+      await updateInspectionRoundApi(id, { status: status as InspectionRoundStatus });
       await fetchRounds();
     } catch (err: any) {
       console.error('Error updating round status:', err);

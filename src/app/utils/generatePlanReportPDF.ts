@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
-import type { KeHoachTacNghiep } from '@/app/data/kehoach-mock-data';
+import type { Plan } from '@/app/data/kehoach-mock-data';
 
 export interface PlanReportData {
   planCode: string;
@@ -233,9 +233,9 @@ export function generatePlanReportPDF(data: PlanReportData): jsPDF {
 }
 
 // Helper function to create PlanReportData from KeHoachTacNghiep
-export function createPlanReportDataFromPlan(plan: KeHoachTacNghiep): PlanReportData {
+export function createPlanReportDataFromPlan(plan: Plan): PlanReportData {
   return {
-    planCode: plan.code,
+    planCode: plan.code || '',
     planName: plan.name,
     period: `${new Date(plan.startDate).toLocaleDateString('vi-VN')} - ${new Date(plan.endDate).toLocaleDateString('vi-VN')}`,
     issueDate: new Date().toLocaleDateString('vi-VN'),

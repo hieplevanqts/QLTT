@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { X, Send, CheckCircle2, XCircle, PlayCircle, AlertTriangle, Trash2, PauseCircle } from 'lucide-react';
 import styles from './InspectionRoundActionModals.module.css';
 import type { InspectionRound } from '../../data/inspection-rounds-mock-data';
@@ -27,17 +27,14 @@ interface SendForApprovalModalProps {
   isOpen: boolean;
   onClose: () => void;
   round: InspectionRound | null;
-  onConfirm: (note: string) => void;
+  onConfirm: () => void;
 }
 
 export function SendForApprovalModal({ isOpen, onClose, round, onConfirm }: SendForApprovalModalProps) {
   if (!round) return null;
   
-  const [note, setNote] = useState('');
-
   const handleSubmit = () => {
-    onConfirm(note);
-    setNote('');
+    onConfirm();
     onClose();
   };
 
@@ -58,19 +55,8 @@ export function SendForApprovalModal({ isOpen, onClose, round, onConfirm }: Send
 
       <div className={styles.modalBody}>
         <p className={styles.modalDescription}>
-          Đợt kiểm tra sẽ được gửi đến người phê duyệt. Bạn có thể thêm ghi chú để giải thích chi tiết.
+          Đợt kiểm tra sẽ được gửi đến người phê duyệt. Bạn có chắc chắn muốn thực hiện hành động này?
         </p>
-
-        <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Ghi chú (không bắt buộc)</label>
-          <textarea
-            className={styles.textarea}
-            placeholder="Nhập ghi chú cho người phê duyệt..."
-            rows={4}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-          />
-        </div>
       </div>
 
       <div className={styles.modalFooter}>
@@ -91,13 +77,11 @@ interface StartInspectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   round: InspectionRound | null;
-  onConfirm: (note: string) => void;
+  onConfirm: () => void;
 }
 
 export function StartInspectionModal({ isOpen, onClose, round, onConfirm }: StartInspectionModalProps) {
   if (!round) return null;
-  
-  const [note, setNote] = useState('');
   
   // Determine if this is approval or start action based on current status
   const isApprovalAction = round.status === 'pending_approval';
@@ -105,14 +89,13 @@ export function StartInspectionModal({ isOpen, onClose, round, onConfirm }: Star
   const statusText = isApprovalAction ? 'Đã duyệt' : 'Đang kiểm tra';
   const description = isApprovalAction 
     ? 'Xác nhận phê duyệt đợt kiểm tra này? Sau khi được duyệt, có thể bắt đầu thực hiện kiểm tra.'
-    : 'Xác nhận bắt đầu đợt kiểm tra này? Lực lượng kiểm tra sẽ được thông báo và có thể bắt đầu thực hiện nhiệm vụ.';
+    : 'Xác nhận bắt đầu đợt kiểm tra này? Lực lượng kiểm tra sẽ được thông báo và có thể bắt đầu thực hiện phiên làm việc.';
   const buttonText = isApprovalAction ? 'Phê duyệt' : 'Bắt đầu kiểm tra';
   const iconComponent = isApprovalAction ? <CheckCircle2 size={24} color="white" /> : <PlayCircle size={24} color="white" />;
   const buttonIcon = isApprovalAction ? <CheckCircle2 size={18} /> : <PlayCircle size={18} />;
 
   const handleSubmit = () => {
-    onConfirm(note);
-    setNote('');
+    onConfirm();
     onClose();
   };
 
@@ -140,17 +123,6 @@ export function StartInspectionModal({ isOpen, onClose, round, onConfirm }: Star
         <p className={styles.modalDescription}>
           {description}
         </p>
-
-        <div className={styles.formGroup}>
-          <label className={styles.formLabel}>Ghi chú (không bắt buộc)</label>
-          <textarea
-            className={styles.textarea}
-            placeholder={isApprovalAction ? 'Nhập ghi chú về quyết định phê duyệt...' : 'Nhập ghi chú về việc bắt đầu kiểm tra...'}
-            rows={3}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-          />
-        </div>
       </div>
 
       <div className={styles.modalFooter}>
@@ -171,17 +143,14 @@ interface CompleteInspectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   round: InspectionRound | null;
-  onConfirm: (summary: string) => void;
+  onConfirm: () => void;
 }
 
 export function CompleteInspectionModal({ isOpen, onClose, round, onConfirm }: CompleteInspectionModalProps) {
   if (!round) return null;
   
-  const [summary, setSummary] = useState('');
-
   const handleSubmit = () => {
-    onConfirm(summary);
-    setSummary('');
+    onConfirm();
     onClose();
   };
 
@@ -207,21 +176,8 @@ export function CompleteInspectionModal({ isOpen, onClose, round, onConfirm }: C
         </div>
 
         <p className={styles.modalDescription}>
-          Công tác kiểm tra thực địa đã hoàn tất. Tiếp theo cần hoàn thiện báo cáo kết quả kiểm tra.
+          Công tác kiểm tra thực địa đã hoàn tất. Bạn có chắc chắn muốn hoàn thành đợt kiểm tra này không?
         </p>
-
-        <div className={styles.formGroup}>
-          <label className={styles.formLabel}>
-            Tóm tắt kết quả <span className={styles.required}>*</span>
-          </label>
-          <textarea
-            className={styles.textarea}
-            placeholder="Nhập tóm tắt kết quả kiểm tra..."
-            rows={4}
-            value={summary}
-            onChange={(e) => setSummary(e.target.value)}
-          />
-        </div>
       </div>
 
       <div className={styles.modalFooter}>
@@ -231,7 +187,6 @@ export function CompleteInspectionModal({ isOpen, onClose, round, onConfirm }: C
         <button 
           className={styles.successButton} 
           onClick={handleSubmit}
-          disabled={!summary.trim()}
         >
           <CheckCircle2 size={18} />
           Hoàn thành kiểm tra
@@ -301,17 +256,14 @@ interface CancelRoundModalProps {
   isOpen: boolean;
   onClose: () => void;
   round: InspectionRound | null;
-  onConfirm: (reason: string) => void;
+  onConfirm: () => void;
 }
 
 export function CancelRoundModal({ isOpen, onClose, round, onConfirm }: CancelRoundModalProps) {
   if (!round) return null;
   
-  const [reason, setReason] = useState('');
-
   const handleSubmit = () => {
-    onConfirm(reason);
-    setReason('');
+    onConfirm();
     onClose();
   };
 
@@ -337,21 +289,8 @@ export function CancelRoundModal({ isOpen, onClose, round, onConfirm }: CancelRo
         </div>
 
         <p className={styles.modalDescription}>
-          Bạn có chắc chắn muốn hủy đợt kiểm tra này? Vui lòng cung cấp lý do hủy.
+          Bạn có chắc chắn muốn hủy đợt kiểm tra này không?
         </p>
-
-        <div className={styles.formGroup}>
-          <label className={styles.formLabel}>
-            Lý do hủy <span className={styles.required}>*</span>
-          </label>
-          <textarea
-            className={styles.textarea}
-            placeholder="Nhập lý do hủy đợt kiểm tra..."
-            rows={4}
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-          />
-        </div>
       </div>
 
       <div className={styles.modalFooter}>
@@ -361,7 +300,6 @@ export function CancelRoundModal({ isOpen, onClose, round, onConfirm }: CancelRo
         <button 
           className={styles.warningButton} 
           onClick={handleSubmit}
-          disabled={!reason.trim()}
         >
           <XCircle size={18} />
           Hủy đợt kiểm tra
@@ -376,17 +314,14 @@ interface RejectRoundModalProps {
   isOpen: boolean;
   onClose: () => void;
   round: InspectionRound | null;
-  onConfirm: (reason: string) => void;
+  onConfirm: () => void;
 }
 
 export function RejectRoundModal({ isOpen, onClose, round, onConfirm }: RejectRoundModalProps) {
   if (!round) return null;
   
-  const [reason, setReason] = useState('');
-
   const handleSubmit = () => {
-    onConfirm(reason);
-    setReason('');
+    onConfirm();
     onClose();
   };
 
@@ -412,21 +347,8 @@ export function RejectRoundModal({ isOpen, onClose, round, onConfirm }: RejectRo
         </div>
 
         <p className={styles.modalDescription}>
-          Vui lòng cung cấp lý do từ chối để người tạo đợt kiểm tra có thể chỉnh sửa và gửi lại.
+          Bạn có chắc chắn muốn từ chối phê duyệt đợt kiểm tra này không?
         </p>
-
-        <div className={styles.formGroup}>
-          <label className={styles.formLabel}>
-            Lý do từ chối <span className={styles.required}>*</span>
-          </label>
-          <textarea
-            className={styles.textarea}
-            placeholder="Nhập lý do từ chối phê duyệt..."
-            rows={4}
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-          />
-        </div>
       </div>
 
       <div className={styles.modalFooter}>
@@ -436,7 +358,6 @@ export function RejectRoundModal({ isOpen, onClose, round, onConfirm }: RejectRo
         <button 
           className={styles.destructiveButton} 
           onClick={handleSubmit}
-          disabled={!reason.trim()}
         >
           <XCircle size={18} />
           Từ chối duyệt
