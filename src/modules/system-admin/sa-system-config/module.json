@@ -1,0 +1,42 @@
+{
+  "id": "system-admin-config",
+  "name": "Cấu hình hệ thống",
+  "version": "0.2.0",
+  "basePath": "/system-admin/system-config",
+  "entry": "src/modules/system-admin/sa-system-config/index.ts",
+  "routes": "src/modules/system-admin/sa-system-config/routes.tsx",
+  "permissions": [
+    "system_config:read",
+    "system_config:write",
+    "sa.sysconfig.param:read",
+    "sa.sysconfig.param:update",
+    "sa.sysconfig.orginfo:read",
+    "sa.sysconfig.orginfo:update",
+    "sa.sysconfig.ops:read",
+    "sa.sysconfig.ops:update",
+    "sa.sysconfig.notify:read",
+    "sa.sysconfig.notify:create",
+    "sa.sysconfig.notify:update",
+    "sa.sysconfig.security:read",
+    "sa.sysconfig.security:update",
+    "sa.sysconfig.db.log:read",
+    "sa.sysconfig.db.log:export",
+    "sa.sysconfig.db.backup:read",
+    "sa.sysconfig.db.backup:create",
+    "sa.sysconfig.db.backup:restore"
+  ],
+  "ui": {
+    "menuLabel": "Cấu hình hệ thống",
+    "menuPath": "/system-admin/system-config"
+  },
+  "routeExport": "saSystemConfigRoutes",
+  "release": {
+    "type": "minor",
+    "notes": "Module cấu hình: Thông số, Thông tin tổ chức, Vận hành, Mẫu thông báo, Bảo mật, Database logs & backups",
+    "breaking": []
+  },
+  "compat": {
+    "minAppVersion": "0.1.0",
+    "maxAppVersion": "0.9.0"
+  }
+}

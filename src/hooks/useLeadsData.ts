@@ -42,7 +42,7 @@ export function useLeadsData(tenantId?: string) {
         // Build query
         let query = supabase
           .from('leads')
-          .select('*')
+          .select('*, id:_id')
           .order('created_at', { ascending: false })
           .limit(20);
         

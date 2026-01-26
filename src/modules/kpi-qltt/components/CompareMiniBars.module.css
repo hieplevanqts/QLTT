@@ -1,0 +1,41 @@
+.container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.barWrapper {
+  flex: 1;
+  height: 20px;
+  background: var(--muted);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  position: relative;
+}
+
+.bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary) 0%, #0074d9 100%);
+  border-radius: var(--radius-sm);
+  transition: width 0.3s ease;
+  min-width: 2px;
+}
+
+.trend {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.trend.positive {
+  color: #22c55e;
+}
+
+.trend.negative {
+  color: var(--destructive);
+}

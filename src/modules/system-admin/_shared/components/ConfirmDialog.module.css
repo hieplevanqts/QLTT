@@ -1,0 +1,146 @@
+/**
+ * CONFIRM DIALOG - Alert dialog for confirmations
+ */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
+}
+
+.dialog {
+  background-color: var(--card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--elevation-sm);
+  max-width: 480px;
+  width: 100%;
+  padding: 24px;
+  animation: scaleIn 0.2s ease;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.iconWrapper {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconDanger {
+  composes: iconWrapper;
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--destructive);
+}
+
+.iconWarning {
+  composes: iconWrapper;
+  background-color: rgba(251, 191, 36, 0.1);
+  color: rgba(217, 119, 6, 1);
+}
+
+.iconInfo {
+  composes: iconWrapper;
+  background-color: rgba(59, 130, 246, 0.1);
+  color: rgba(37, 99, 235, 1);
+}
+
+.headerContent {
+  flex: 1;
+}
+
+.title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+  margin: 0 0 8px 0;
+}
+
+.description {
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.button {
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  outline: none;
+}
+
+.buttonCancel {
+  composes: button;
+  background-color: var(--muted);
+  color: var(--foreground);
+}
+
+.buttonCancel:hover {
+  background-color: rgba(107, 114, 128, 0.2);
+}
+
+.buttonConfirm {
+  composes: button;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.buttonConfirm:hover {
+  background-color: rgba(0, 92, 182, 0.9);
+}
+
+.buttonDanger {
+  composes: button;
+  background-color: var(--destructive);
+  color: var(--destructive-foreground);
+}
+
+.buttonDanger:hover {
+  background-color: rgba(217, 45, 32, 0.9);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

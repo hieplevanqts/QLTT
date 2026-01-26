@@ -1,0 +1,57 @@
+.reportsListPage {
+  padding: 24px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.title {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-page-title);
+  font-weight: var(--font-weight-bold);
+  color: var(--foreground);
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  margin: 0;
+}
+
+.createButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 20px;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0px 1px 2px 0px rgba(16,24,40,0.05);
+}
+
+.createButton:hover {
+  background: rgba(0, 72, 142, 1);
+  border-color: rgba(0, 72, 142, 1);
+  box-shadow: 0px 4px 8px 0px rgba(0,92,182,0.2);
+}
+
+.createButton:active {
+  transform: scale(0.98);
+}

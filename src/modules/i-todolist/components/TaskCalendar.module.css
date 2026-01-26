@@ -1,0 +1,170 @@
+/* ========== Task Calendar ========== */
+.container {
+  background: var(--card);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--spacing-6);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-4);
+}
+
+.title {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+  margin: 0;
+}
+
+.nav {
+  display: flex;
+  gap: var(--spacing-2);
+  align-items: center;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.dayHeader {
+  text-align: center;
+  padding: var(--spacing-2);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  background: var(--muted);
+}
+
+.dayCell {
+  min-height: 100px;
+  padding: var(--spacing-2);
+  background: var(--background);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.dayCell:hover {
+  background: var(--muted);
+}
+
+.dayCell.today {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.dayCell.otherMonth {
+  opacity: 0.3;
+}
+
+.dayNumber {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+  margin-bottom: var(--spacing-2);
+}
+
+.dayCell.today .dayNumber {
+  color: var(--primary-foreground);
+  font-weight: var(--font-weight-bold);
+}
+
+.dayCell.otherMonth .dayNumber {
+  color: var(--muted-foreground);
+}
+
+.tasksContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  flex: 1;
+}
+
+.taskItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-1) var(--spacing-1-5);
+  background: var(--card);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-xs);
+  color: var(--foreground);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  width: 100%;
+}
+
+.taskItem:hover {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+
+.dayCell.today .taskItem {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.dayCell.today .taskItem:hover {
+  background: var(--primary-foreground);
+  color: var(--primary);
+}
+
+.taskText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.more {
+  padding: var(--spacing-1);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-xs);
+  color: var(--muted-foreground);
+  text-align: center;
+}
+
+.dayCell.today .more {
+  color: var(--primary-foreground);
+  opacity: 0.8;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: var(--spacing-4);
+  }
+
+  .dayCell {
+    min-height: 80px;
+    padding: var(--spacing-1);
+  }
+
+  .taskItem {
+    font-size: 10px;
+    padding: 2px 4px;
+  }
+}

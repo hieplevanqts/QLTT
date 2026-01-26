@@ -48,6 +48,10 @@ const ROUTE_PERMISSION_MAP: { [path: string]: string | undefined } = {
   '/evidence': 'EVIDENCE_VIEW',
   '/reports': undefined, // No permission required
   '/admin': 'ADMIN_VIEW',
+  '/system/modules': 'ADMIN_VIEW',
+  '/system/modules/import': 'ADMIN_VIEW',
+  '/system/modules/history': 'ADMIN_VIEW',
+  '/system/modules/:id': 'ADMIN_VIEW',
   '/system/users': 'ADMIN_VIEW',
   '/system/roles': 'ADMIN_VIEW',
   '/system/settings': 'ADMIN_VIEW',

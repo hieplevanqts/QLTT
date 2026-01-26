@@ -58,7 +58,7 @@ export const CategoriesTab: React.FC = () => {
 
       const { data, error } = await supabase
         .from('categories')
-        .select('*')
+        .select('*, id:_id')
         .order('name', { ascending: true });
 
       if (error) {
@@ -126,7 +126,7 @@ export const CategoriesTab: React.FC = () => {
       const { error } = await supabase
         .from('categories')
         .delete()
-        .eq('id', category.id);
+        .eq('_id', category.id);
 
       if (error) {
         console.error('❌ Error deleting category:', error);

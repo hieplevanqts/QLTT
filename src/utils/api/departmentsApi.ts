@@ -40,7 +40,7 @@ export async function fetchMarketManagementTeams(options?: {
    
     let query = supabase
       .from('departments')
-      .select('_id, name, code, level, path, parent_id')
+      .select('id, name, code, level, path, parent_id')
       .is('deleted_at', null);
     
     // 🔥 CHANGED: Priority: teamId > divisionId

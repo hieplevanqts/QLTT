@@ -79,7 +79,7 @@ export const WardModal: React.FC<WardModalProps> = ({
       setLoading(true);
       const { data, error } = await supabase
         .from('provinces')
-        .select('id, code, name')
+        .select('id:_id, code, name')
         .order('name');
 
       if (error) {
@@ -126,7 +126,7 @@ export const WardModal: React.FC<WardModalProps> = ({
         const { error } = await supabase
           .from('wards')
           .update(wardData)
-          .eq('id', ward.id);
+          .eq('_id', ward.id);
 
         if (error) {
           console.error('❌ Error updating ward:', error);

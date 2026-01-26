@@ -1,0 +1,157 @@
+/* Panel */
+.panel {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-4) var(--spacing-5);
+  background-color: var(--color-muted);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* Status */
+.status {
+  padding: var(--spacing-4) var(--spacing-5);
+}
+
+.statusSuccess,
+.statusError {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3) var(--spacing-4);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+}
+
+.statusSuccess {
+  background-color: var(--color-success-subtle);
+  color: var(--color-success);
+  border: 1px solid var(--color-success-border);
+}
+
+.statusError {
+  background-color: var(--color-danger-subtle);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger-border);
+}
+
+/* Section */
+.section {
+  padding: var(--spacing-4) var(--spacing-5);
+  border-top: 1px solid var(--color-border);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-3);
+}
+
+.sectionTitle {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* Items */
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.errorItem,
+.warningItem {
+  padding: var(--spacing-3);
+  border-radius: var(--radius-md);
+  border: 1px solid;
+}
+
+.errorItem {
+  background-color: var(--color-danger-subtle);
+  border-color: var(--color-danger-border);
+}
+
+.warningItem {
+  background-color: var(--color-warning-subtle);
+  border-color: var(--color-warning-border);
+}
+
+.itemHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-2);
+}
+
+.itemField {
+  font-family: 'Courier New', monospace;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  padding: 2px var(--spacing-2);
+  border-radius: var(--radius-sm);
+}
+
+.errorItem .itemField {
+  background-color: var(--color-danger);
+  color: white;
+}
+
+.warningItem .itemField {
+  background-color: var(--color-warning);
+  color: white;
+}
+
+.itemCode {
+  font-family: 'Courier New', monospace;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  opacity: 0.8;
+}
+
+.itemMessage {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.errorItem .itemMessage {
+  color: var(--color-danger);
+}
+
+.warningItem .itemMessage {
+  color: var(--color-warning);
+}
+
+/* No Issues */
+.noIssues {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-8) var(--spacing-5);
+  color: var(--color-success);
+  text-align: center;
+}
+
+.noIssues p {
+  margin: var(--spacing-2) 0 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}

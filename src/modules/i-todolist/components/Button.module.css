@@ -1,0 +1,91 @@
+/* ========== Button Component ========== */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  white-space: nowrap;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Button Sizes */
+.size-sm {
+  padding: var(--spacing-1-5) var(--spacing-3);
+  font-size: var(--font-size-sm);
+  height: 32px;
+  min-width: 100px; /* Ensure consistent button width */
+}
+
+.size-icon-sm {
+  padding: var(--spacing-1-5);
+  font-size: var(--font-size-sm);
+  width: 32px;
+  height: 32px;
+  min-width: 32px; /* Override min-width for icon buttons */
+}
+
+.size-md {
+  padding: var(--spacing-2) var(--spacing-4);
+  font-size: var(--font-size-sm);
+  height: 40px;
+}
+
+.size-lg {
+  padding: var(--spacing-2-5) var(--spacing-6);
+  font-size: var(--font-size-base);
+  height: 48px;
+}
+
+/* Button Variants */
+.variant-default {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.variant-default:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.variant-default:active:not(:disabled) {
+  background: var(--primary-active);
+}
+
+.variant-outline {
+  background: transparent;
+  color: var(--foreground);
+  border: var(--border-width) solid var(--border);
+}
+
+.variant-outline:hover:not(:disabled) {
+  background: var(--muted);
+  border-color: var(--primary);
+}
+
+.variant-ghost {
+  background: transparent;
+  color: var(--foreground);
+}
+
+.variant-ghost:hover:not(:disabled) {
+  background: var(--muted);
+}
+
+.variant-destructive {
+  background: var(--destructive);
+  color: var(--destructive-foreground);
+}
+
+.variant-destructive:hover:not(:disabled) {
+  background: var(--destructive-hover);
+}

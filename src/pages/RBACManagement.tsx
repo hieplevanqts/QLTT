@@ -124,12 +124,12 @@ export const RBACManagement: React.FC = () => {
         rolePermsRes,
         userRolesRes,
       ] = await Promise.all([
-        supabase.from('users').select('*').order('created_at', { ascending: false }),
-        supabase.from('roles').select('*').order('name', { ascending: true }),
-        supabase.from('permissions').select('*').order('module_id', { ascending: true }),
-        supabase.from('modules').select('*').order('order_index', { ascending: true }),
-        supabase.from('role_permissions').select('*'),
-        supabase.from('user_roles').select('*'),
+        supabase.from('users').select('*, id:_id').order('created_at', { ascending: false }),
+        supabase.from('roles').select('*, id:_id').order('name', { ascending: true }),
+        supabase.from('permissions').select('*, id:_id').order('module_id', { ascending: true }),
+        supabase.from('modules').select('*, id:_id').order('order_index', { ascending: true }),
+        supabase.from('role_permissions').select('*, id:_id'),
+        supabase.from('user_roles').select('*, id:_id'),
       ]);
 
       if (usersRes.error) throw usersRes.error;

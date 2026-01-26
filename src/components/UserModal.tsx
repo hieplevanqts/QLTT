@@ -201,7 +201,7 @@ const checkUsernameExists = async (username: string, excludeUserId?: string): Pr
   try {
     const query = supabase
       .from('users')
-      .select('id, username')
+      .select('id:_id, username')
       .eq('username', username);
     
     // Exclude current user when editing
@@ -473,7 +473,7 @@ export const UserModal: React.FC<UserModalProps> = ({
             const { error: updateError } = await supabase
               .from('users')
               .update(userData)
-              .eq('id', userId);
+              .eq('_id', userId);
 
             if (updateError) {
               console.error('❌ Error updating user:', updateError);

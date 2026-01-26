@@ -71,7 +71,7 @@ export const DataChangesTab: React.FC = () => {
 
       const { data, error } = await supabase
         .from('data_changes')
-        .select('*')
+        .select('*, id:_id')
         .order('data_change_timestamp', { ascending: false })
         .limit(500);
 

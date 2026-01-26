@@ -173,7 +173,7 @@ export const AuditLogTab: React.FC = () => {
 
       const { data, error } = await supabase
         .from('audit_events')
-        .select('*')
+        .select('*, id:_id')
         .order('audit_events_timestamp', { ascending: false });
 
       if (error) {

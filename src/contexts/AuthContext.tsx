@@ -14,6 +14,7 @@ export interface UserInfo {
   level: UserLevel;
   role: UserRole;
   roleDisplay: string; // "Quản lý cục", "Quản lý chi cục Hồ Chí Minh", etc.
+  roleCode?: string;
   provinceCode?: string; // "01", "24", etc.
   provinceName?: string; // "Hà Nội", "Hồ Chí Minh", etc.
   teamCode?: string; // "01", "02", etc.
@@ -155,6 +156,37 @@ async function fetchUserRoleName(userId: string): Promise<string | null> {
     return roleName;
   } catch (error: any) {
     console.error('❌ Error fetching user role name:', error);
+    return null;
+  }
+}
+
+async function fetchUserRoleCode(userId: string): Promise<string | null> {
+  try {
+    const { data: userRoles, error: userRolesError } = await supabase
+      .from('user_roles')
+      .select('role_id')
+      .eq('user_id', userId)
+      .limit(1);
+
+    if (userRolesError || !userRoles || userRoles.length === 0) {
+      return null;
+    }
+
+    const roleId = userRoles[0].role_id;
+    const { data: role, error: roleError } = await supabase
+      .from('roles')
+      .select('code')
+      .eq('_id', roleId)
+      .single();
+
+    if (roleError) {
+      console.error('❌ Error fetching role code:', roleError);
+      return null;
+    }
+
+    return role?.code || null;
+  } catch (error: any) {
+    console.error('❌ Error fetching user role code:', error);
     return null;
   }
 }

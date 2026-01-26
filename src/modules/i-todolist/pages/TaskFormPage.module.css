@@ -1,0 +1,125 @@
+/* ========== Task Form Page ========== */
+.page {
+  padding: var(--spacing-6);
+  background: var(--background);
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: var(--spacing-6);
+}
+
+.backButton {
+  margin-bottom: var(--spacing-3);
+}
+
+.title {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--foreground);
+  margin: 0;
+}
+
+.card {
+  background: var(--card);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--spacing-6);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-4);
+}
+
+.label {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+}
+
+.required {
+  color: var(--destructive);
+}
+
+.input,
+.textarea,
+.select {
+  padding: var(--spacing-2-5) var(--spacing-3);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  color: var(--foreground);
+  background: var(--background);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.input:focus,
+.textarea:focus,
+.select:focus {
+  border-color: var(--primary);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.hint {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-xs);
+  color: var(--muted-foreground);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-3);
+  padding-top: var(--spacing-4);
+  border-top: var(--border-width) solid var(--border);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page {
+    padding: var(--spacing-4);
+  }
+
+  .card {
+    padding: var(--spacing-4);
+  }
+
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+  }
+
+  .actions button {
+    width: 100%;
+  }
+}

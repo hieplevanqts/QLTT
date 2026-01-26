@@ -1,0 +1,32 @@
+.exportButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0px 1px 2px 0px rgba(16,24,40,0.05);
+}
+
+.exportButton:hover:not(:disabled) {
+  background: rgba(0, 72, 142, 1);
+  border-color: rgba(0, 72, 142, 1);
+  box-shadow: 0px 4px 8px 0px rgba(0,92,182,0.2);
+}
+
+.exportButton:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.exportButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

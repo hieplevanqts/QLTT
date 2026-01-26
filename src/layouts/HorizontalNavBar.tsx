@@ -2,14 +2,28 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
-  Map,
+  Map as MapIcon,
   Building2,
   TriangleAlert,
   ClipboardList,
   MapPin,
   FileBox,
   BarChart3,
+  Boxes,
+  Folder,
+  HardDrive,
+  KeyRound,
+  Landmark,
+  Layers,
+  GitBranch,
+  Bell,
+  Menu,
   Settings,
+  Shield,
+  ShieldCheck,
+  Sliders,
+  UserCheck,
+  Users,
   ChevronDown,
   X,
   Plus,
@@ -23,11 +37,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../app/components/ui/dropdown-menu';
 import { cn } from '../app/components/ui/utils';
 import { useLayout } from '../contexts/LayoutContext';
 import { useAuth } from '../contexts/AuthContext'; // 🔥 NEW: Import useAuth for permissions
+import { useMenuRegistry } from '../hooks/useMenuRegistry';
+import { buildMenuTree, filterMenuTree, type MenuNode } from '../utils/menuRegistry';
 
 interface HorizontalNavBarProps {
   mobileMenuOpen: boolean;
@@ -50,7 +68,7 @@ const PERMISSION_MAP: { [path: string]: string } = {
 // MAPPA Main Modules
 const mappaModules = [
   { path: '/overview', label: 'Tổng quan', icon: LayoutDashboard, permissionCode: '' },
-  { path: '/map', label: 'Bản đồ điều hành', icon: Map, permissionCode: 'MAP_VIEW' },
+  { path: '/map', label: 'Bản đồ điều hành', icon: MapIcon, permissionCode: 'MAP_VIEW' },
   { path: '/stores', label: 'Cơ sở quản lý', icon: Building2, permissionCode: 'STORES_VIEW' },
   {
     path: '/leads',
@@ -81,14 +99,169 @@ const mappaModules = [
       { path: '/reports', label: 'Báo cáo' },
     ],
   },
-  { path: '/admin', label: 'Quản trị', icon: Settings, permissionCode: 'ADMIN_VIEW' },
+  {
+    path: '/admin',
+    label: 'Quản trị',
+    icon: Settings,
+    permissionCode: 'ADMIN_VIEW',
+    hasSubmenu: true,
+    submenu: [
+      { type: 'item', path: '/system-admin', label: 'Dashboard Quản trị', icon: LayoutDashboard },
+      { type: 'separator' },
+      { type: 'item', path: '/system-admin/master-data/org-units', label: 'Đơn vị tổ chức', icon: Building2 },
+      { type: 'item', path: '/system-admin/master-data/departments', label: 'Phòng ban', icon: Users },
+      { type: 'item', path: '/system-admin/master-data/admin-areas', label: 'Danh mục hành chính', icon: MapPin },
+      { type: 'item', path: '/system-admin/master-data/common-catalogs', label: 'Danh mục dùng chung', icon: Folder },
+      { type: 'item', path: '/system-admin/master-data/dms-catalogs', label: 'Danh mục nghiệp vụ QLTT', icon: Layers },
+      { type: 'item', path: '/system-admin/master-data/system-catalogs', label: 'Danh mục kỹ thuật', icon: GitBranch },
+      { type: 'separator' },
+      { type: 'item', path: '/system-admin/iam/users', label: 'Người dùng', icon: Users },
+      { type: 'item', path: '/system-admin/iam/roles', label: 'Vai trò', icon: Shield },
+      { type: 'item', path: '/system-admin/iam/permissions', label: 'Permissions', icon: KeyRound },
+      { type: 'item', path: '/system-admin/iam/assignments', label: 'Phân quyền', icon: UserCheck },
+      { type: 'item', path: '/system-admin/iam/modules', label: 'Phân hệ', icon: Boxes },
+      { type: 'item', path: '/system-admin/iam/menus', label: 'Menu', icon: Menu },
+      { type: 'separator' },
+      { type: 'item', path: '/system-admin/system-config/parameters', label: 'Thông số hệ thống', icon: Sliders },
+      { type: 'item', path: '/system-admin/system-config/organization-info', label: 'Thông tin tổ chức', icon: Landmark },
+      { type: 'item', path: '/system-admin/system-config/operations', label: 'Cài đặt vận hành', icon: Settings },
+      { type: 'item', path: '/system-admin/system-config/notifications', label: 'Mẫu thông báo', icon: Bell },
+      { type: 'item', path: '/system-admin/system-config/security', label: 'Cài đặt bảo mật', icon: ShieldCheck },
+      { type: 'item', path: '/system-admin/system-config/database/logs', label: 'Database Logs', icon: FileBox },
+      { type: 'item', path: '/system-admin/system-config/database/backups', label: 'Database Backups', icon: HardDrive },
+      { type: 'separator' },
+      { type: 'item', path: '/system/modules', label: 'Quản trị Module' },
+      { type: 'item', path: '/system/menus', label: 'Quản trị Menu' },
+      { type: 'item', path: '/system/users', label: 'Người dùng (cũ)' },
+      { type: 'item', path: '/system/roles', label: 'Vai trò (cũ)' },
+      { type: 'item', path: '/system/settings', label: 'Cấu hình hệ thống' },
+    ],
+  },
 ];
+
+const menuIconMap = {
+  LayoutDashboard,
+  Map: MapIcon,
+  Building2,
+  TriangleAlert,
+  ClipboardList,
+  MapPin,
+  FileBox,
+  BarChart3,
+  Boxes,
+  Folder,
+  HardDrive,
+  KeyRound,
+  Landmark,
+  Layers,
+  GitBranch,
+  Menu,
+  Settings,
+  Shield,
+  ShieldCheck,
+  Sliders,
+  UserCheck,
+  Users,
+  Bell,
+} as const;
+
+const resolveMenuIcon = (icon?: string | null) => {
+  if (!icon) return LayoutDashboard;
+  return (menuIconMap as Record<string, any>)[icon] || LayoutDashboard;
+};
+
+type SubmenuItem =
+  | { type?: 'item'; path: string; label: string; icon?: any }
+  | { type: 'separator' }
+  | { type: 'label'; label: string };
+
+const ADMIN_HIDDEN_PATHS = new Set([
+  '/system-admin/master-data',
+  '/system-admin/iam',
+  '/system-admin/system-config',
+]);
+
+const ADMIN_GROUP_ORDER = [
+  'dashboard',
+  'master-data',
+  'iam',
+  'system-config',
+  'tools',
+];
+
+const sortByOrderThenLabel = (left: MenuNode, right: MenuNode) => {
+  const order = (left.order ?? 0) - (right.order ?? 0);
+  if (order !== 0) return order;
+  return left.label.localeCompare(right.label);
+};
+
+const toSubmenuItem = (node: MenuNode): SubmenuItem => {
+  if (!node.path) {
+    return { type: 'label', label: node.label };
+  }
+  return {
+    path: node.path,
+    label: node.label,
+    ...(node.icon ? { icon: resolveMenuIcon(node.icon) } : {}),
+  };
+};
+
+const buildAdminSubmenu = (children: MenuNode[]): SubmenuItem[] => {
+  const groups = new Map<string, MenuNode[]>();
+  const filtered = children.filter((child) => child.path && !ADMIN_HIDDEN_PATHS.has(child.path));
+
+  filtered.forEach((child) => {
+    const path = child.path ?? '';
+    let key = 'tools';
+    if (path === '/system-admin') key = 'dashboard';
+    else if (path.startsWith('/system-admin/master-data')) key = 'master-data';
+    else if (path.startsWith('/system-admin/iam')) key = 'iam';
+    else if (path.startsWith('/system-admin/system-config')) key = 'system-config';
+    else if (path.startsWith('/system/modules') || path.startsWith('/system/menus')) key = 'tools';
+    const bucket = groups.get(key) ?? [];
+    bucket.push(child);
+    groups.set(key, bucket);
+  });
+
+  const orderedKeys = ADMIN_GROUP_ORDER.filter((key) => (groups.get(key) ?? []).length > 0);
+  const items: SubmenuItem[] = [];
+
+  orderedKeys.forEach((key, index) => {
+    const groupItems = groups.get(key) ?? [];
+    groupItems.sort(sortByOrderThenLabel).forEach((child) => items.push(toSubmenuItem(child)));
+    if (index < orderedKeys.length - 1) {
+      items.push({ type: 'separator' });
+    }
+  });
+
+  return items;
+};
+
+const menuTreeToModules = (nodes: MenuNode[]) => {
+  return nodes.map((node) => {
+    const submenuItems =
+      node.children.length > 0
+        ? (node.path === '/admin' || node.label === 'Quản trị'
+            ? buildAdminSubmenu(node.children)
+            : node.children.map((child) => toSubmenuItem(child)))
+        : [];
+    return {
+      path: node.path || '',
+      label: node.label,
+      icon: node.path === '/admin' ? Settings : resolveMenuIcon(node.icon),
+      permissionCode: '',
+      hasSubmenu: submenuItems.length > 0,
+      submenu: submenuItems,
+    };
+  });
+};
 
 export default function HorizontalNavBar({ mobileMenuOpen, onClose }: HorizontalNavBarProps) {
   const location = useLocation();
   const { setLayoutMode } = useLayout();
   const { user } = useAuth(); // 🔥 NEW: Get user with permissions
   const [mobileSubmenuOpen, setMobileSubmenuOpen] = React.useState<string | null>(null);
+  const { menus } = useMenuRegistry();
 
   // 🔥 NEW: Get user permission codes
   const userPermissionCodes = user?.permissions || [];
@@ -98,9 +271,32 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
     if (!permissionCode || permissionCode === '') return true; // No permission required = always visible
     return userPermissionCodes.includes(permissionCode);
   };
+  const isPathActive = React.useCallback(
+    (path?: string | null) => {
+      if (!path) return false;
+      const [pathname, search] = path.split('?');
+      const matchesPath = location.pathname === pathname || location.pathname.startsWith(pathname + '/');
+      if (!matchesPath) return false;
+      if (!search) return true;
+      const currentParams = new URLSearchParams(location.search);
+      const targetParams = new URLSearchParams(search);
+      for (const [key, value] of targetParams.entries()) {
+        if (currentParams.get(key) !== value) return false;
+      }
+      return true;
+    },
+    [location.pathname, location.search],
+  );
 
-  // 🔥 NEW: Filter menu modules based on user permissions
-  const visibleModules = mappaModules.filter(module => hasPermission(module.permissionCode));
+  const registryTree = React.useMemo(() => (menus ? buildMenuTree(menus) : []), [menus]);
+  const filteredRegistryTree = React.useMemo(
+    () => filterMenuTree(registryTree, userPermissionCodes, user?.roleCode),
+    [registryTree, userPermissionCodes, user?.roleCode],
+  );
+  const registryModules = React.useMemo(() => menuTreeToModules(filteredRegistryTree), [filteredRegistryTree]);
+  const visibleModules = registryModules.length > 0
+    ? registryModules
+    : mappaModules.filter(module => hasPermission(module.permissionCode));
 
   // Mock permissions - In real app, this would come from user context/auth
   const userPermissions = {
@@ -120,6 +316,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
         {/* Main MAPPA Modules */}
         {visibleModules.map((module) => { // 🔥 FIX: Use filtered modules instead of all modules
           const Icon = module.icon;
+          const isAdminMenu = module.path === '/admin';
           
           // Special logic for active state
           let isActive = false;
@@ -132,8 +329,13 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
             // "Phiên kiểm tra" KHÔNG active khi ở /plans/inspection-session
             isActive = location.pathname === '/tasks' && location.pathname !== '/plans/inspection-session';
           } else if ((module as any).hasSubmenu && (module as any).submenu) {
-            // Lead-risk submenu
-            isActive = location.pathname.startsWith('/lead-risk') || location.pathname === '/leads';
+            if (module.path === '/leads') {
+              isActive = location.pathname.startsWith('/lead-risk') || location.pathname === '/leads';
+            } else if (module.path === '/admin') {
+              isActive = location.pathname.startsWith('/system') || location.pathname.startsWith('/system-admin') || location.pathname === '/admin';
+            } else {
+              isActive = location.pathname === module.path || location.pathname.startsWith(module.path + '/');
+            }
           } else {
             // Normal modules - active when path matches
             isActive = location.pathname === module.path || location.pathname.startsWith(module.path + '/');
@@ -183,7 +385,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
             );
           }
           
-          // If module has submenu (for lead-risk), render dropdown
+          // If module has submenu, render dropdown
           if ((module as any).hasSubmenu && (module as any).submenu) {
             return (
               <DropdownMenu key={module.path}>
@@ -200,20 +402,42 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                 <ChevronDown className="h-3 w-3 ml-1" />
               </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  {(module as any).submenu.map((item: any) => (
-                    <DropdownMenuItem key={item.path} asChild>
-                      <Link 
-                        to={item.path}
-                        className={cn(
-                          "cursor-pointer",
-                          location.pathname === item.path && "bg-primary/10 text-primary"
-                        )}
-                      >
-                        {item.label}
-                      </Link>
-                    </DropdownMenuItem>
-                  ))}
+                <DropdownMenuContent align="start" className={cn("w-64", isAdminMenu && "w-72 p-2")}>
+                  {(module as any).submenu.map((item: any, index: number) => {
+                    if (item.type === 'separator') {
+                      return <DropdownMenuSeparator key={`sep-${index}`} className={cn(isAdminMenu && "my-2")} />;
+                    }
+                    if (item.type === 'label') {
+                      return (
+                        <DropdownMenuLabel
+                          key={`label-${index}`}
+                          className="text-xs uppercase text-muted-foreground"
+                        >
+                          {item.label}
+                        </DropdownMenuLabel>
+                      );
+                    }
+                    if (!item.path) return null;
+                    const ItemIcon = item.icon;
+                    const isItemActive = isPathActive(item.path);
+                    return (
+                      <DropdownMenuItem key={item.path} asChild>
+                        <Link
+                          to={item.path}
+                          className={cn(
+                            isAdminMenu
+                              ? "flex items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
+                              : "cursor-pointer",
+                            isItemActive &&
+                              (isAdminMenu ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary")
+                          )}
+                        >
+                          {ItemIcon && <ItemIcon className="h-4 w-4" />}
+                          {item.label}
+                        </Link>
+                      </DropdownMenuItem>
+                    );
+                  })}
                 </DropdownMenuContent>
               </DropdownMenu>
             );
@@ -340,6 +564,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
             <nav className="p-2 overflow-y-auto">
               {visibleModules.map((module) => { // 🔥 FIX: Use filtered modules instead of all modules
                 const Icon = module.icon;
+                const isAdminMenu = module.path === '/admin';
                 
                 // Special logic for active state
                 let isModuleActive = false;
@@ -351,8 +576,13 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                   // "Phiên kiểm tra" KHÔNG active khi ở /plans/inspection-session
                   isModuleActive = location.pathname === '/tasks' && location.pathname !== '/plans/inspection-session';
                 } else if ((module as any).hasSubmenu && (module as any).submenu) {
-                  // Lead-risk submenu
-                  isModuleActive = location.pathname.startsWith('/lead-risk') || location.pathname === '/leads';
+                  if (module.path === '/leads') {
+                    isModuleActive = location.pathname.startsWith('/lead-risk') || location.pathname === '/leads';
+                  } else if (module.path === '/admin') {
+                    isModuleActive = location.pathname.startsWith('/system') || location.pathname.startsWith('/system-admin') || location.pathname === '/admin';
+                  } else {
+                    isModuleActive = location.pathname === module.path || location.pathname.startsWith(module.path + '/');
+                  }
                 } else {
                   // Normal modules - active when path matches
                   isModuleActive = location.pathname === module.path || location.pathname.startsWith(module.path + '/');
@@ -434,7 +664,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                   );
                 }
                 
-                // If module has submenu (for lead-risk)
+                // If module has submenu
                 if ((module as any).hasSubmenu && (module as any).submenu) {
                   const isOpen = mobileSubmenuOpen === module.path;
                   
@@ -463,21 +693,42 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                       
                       {isOpen && (
                         <div className="ml-4 mb-2 space-y-1">
-                          {(module as any).submenu.map((item: any) => (
-                            <Link
-                              key={item.path}
-                              to={item.path}
-                              onClick={onClose}
-                              className={cn(
-                                'flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition-colors cursor-pointer',
-                                location.pathname === item.path
-                                  ? 'text-primary bg-primary/10 font-medium'
-                                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                              )}
-                            >
-                              {item.label}
-                            </Link>
-                          ))}
+                          {(module as any).submenu.map((item: any, index: number) => {
+                            if (item.type === 'separator') {
+                              return <div key={`sep-${index}`} className={cn("my-2 h-px bg-border", isAdminMenu && "mx-2")} />;
+                            }
+                            if (item.type === 'label') {
+                              return (
+                                <div
+                                  key={`label-${index}`}
+                                  className="px-4 py-1 text-xs font-semibold uppercase text-muted-foreground"
+                                >
+                                  {item.label}
+                                </div>
+                              );
+                            }
+                            if (!item.path) return null;
+                            const ItemIcon = item.icon;
+                            const isItemActive = isPathActive(item.path);
+                            return (
+                              <Link
+                                key={item.path}
+                                to={item.path}
+                                onClick={onClose}
+                                className={cn(
+                                  isAdminMenu
+                                    ? 'flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors cursor-pointer'
+                                    : 'flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition-colors cursor-pointer',
+                                  isItemActive
+                                    ? (isAdminMenu ? 'bg-primary text-primary-foreground' : 'text-primary bg-primary/10 font-medium')
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                                )}
+                              >
+                                {ItemIcon && <ItemIcon className="h-4 w-4" />}
+                                {item.label}
+                              </Link>
+                            );
+                          })}
                         </div>
                       )}
                     </div>

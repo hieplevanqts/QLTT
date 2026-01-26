@@ -1,0 +1,31 @@
+{
+  "id": "i-todolist",
+  "name": "Nhật ký công việc",
+  "version": "1.2.0",
+  "basePath": "/todolist",
+  "entry": "src/modules/i-todolist/index.ts",
+  "routes": "src/modules/i-todolist/routes.tsx",
+  "routeExport": "iTodolistRoute",
+  "permissions": [
+    "todolist:read",
+    "todolist:write"
+  ],
+  "dependencies": {
+    "react": "^18.0.0",
+    "react-router-dom": "^6.0.0",
+    "lucide-react": "^0.263.0"
+  },
+  "ui": {
+    "menuLabel": "Nhiệm vụ",
+    "menuPath": "/todolist"
+  },
+  "release": {
+    "type": "minor",
+    "notes": "Cập nhật giao diện theo design system chuẩn MAPPA với layout mới - Sidebar chủ đề bên trái, Calendar với grid styling cải thiện, Notification banner với icon và layout rõ ràng hơn. Tất cả components sử dụng 100% CSS Modules và design tokens.",
+    "breaking": []
+  },
+  "compat": {
+    "minAppVersion": "0.1.0",
+    "maxAppVersion": "0.9.0"
+  }
+}

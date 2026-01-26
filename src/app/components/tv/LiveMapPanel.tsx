@@ -1,26 +1,10 @@
-import React, { useEffect, useState, useRef } from 'react';
-import L from 'leaflet';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import type { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import { AlertTriangle, MapPin, Clipboard } from 'lucide-react';
 import { useTvData } from '@/contexts/TvDataContext';
 import { LOCATION_BOUNDS } from '@/constants/locationBounds';
 
-// Fix Leaflet default marker icon issue
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-});
-
-// Custom marker icons
-const createCustomIcon = (color: string, size: number) => {
-  return L.divIcon({
-    className: 'custom-marker',
-    html: `<div style="width: ${size}px; height: ${size}px; background: ${color}; border-radius: 50%; opacity: 0.8; box-shadow: 0 0 10px ${color};"></div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-  });
-};
+type LeafletModule = typeof import('leaflet');
 
 interface LiveMapPanelProps {
   scene: number;
@@ -29,9 +13,10 @@ interface LiveMapPanelProps {
 export default function LiveMapPanel({ scene }: LiveMapPanelProps) {
   const { filteredHotspots, filteredLeads, filteredTasks, filteredEvidences, layers, setLayers, filters } = useTvData();
   const [lastUpdate, setLastUpdate] = useState(new Date());
-  const mapRef = useRef<L.Map | null>(null);
+  const [leaflet, setLeaflet] = useState<LeafletModule | null>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
-  const markersRef = useRef<L.Marker[]>([]);
+  const markersRef = useRef<LeafletMarker[]>([]);
 
   // Update last update time every second
   useEffect(() => {
@@ -41,9 +26,45 @@ export default function LiveMapPanel({ scene }: LiveMapPanelProps) {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    const loadLeaflet = async () => {
+      const L = await import('leaflet');
+      if (!active) return;
+
+      delete (L.Icon.Default.prototype as any)._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+      });
+
+      setLeaflet(L);
+    };
+
+    void loadLeaflet();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const createCustomIcon = useCallback(
+    (color: string, size: number) => {
+      if (!leaflet) return null;
+      return leaflet.divIcon({
+        className: 'custom-marker',
+        html: `<div style="width: ${size}px; height: ${size}px; background: ${color}; border-radius: 50%; opacity: 0.8; box-shadow: 0 0 10px ${color};"></div>`,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
+      });
+    },
+    [leaflet]
+  );
+
   // Initialize map
   useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) return;
+    if (!leaflet || !mapContainerRef.current || mapRef.current) return;
+    const L = leaflet;
 
     const map = L.map(mapContainerRef.current, {
       center: [16.0, 106.0],
@@ -64,7 +85,7 @@ export default function LiveMapPanel({ scene }: LiveMapPanelProps) {
         mapRef.current = null;
       }
     };
-  }, []);
+  }, [leaflet]);
 
   // Update map view when province filter changes
   useEffect(() => {
@@ -112,9 +133,10 @@ export default function LiveMapPanel({ scene }: LiveMapPanelProps) {
 
   // Update markers when data or layers change
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || !leaflet) return;
 
     const map = mapRef.current;
+    const L = leaflet;
 
     // Clear existing markers
     markersRef.current.forEach(marker => marker.remove());
@@ -124,9 +146,9 @@ export default function LiveMapPanel({ scene }: LiveMapPanelProps) {
     if (layers.hotspots) {
       filteredHotspots.forEach((hotspot: any) => {
         const size = hotspot.severity === 'P1' ? 16 : hotspot.severity === 'P2' ? 12 : 8;
-        const marker = L.marker([hotspot.lat, hotspot.lng], {
-          icon: createCustomIcon('#ef4444', size)
-        }).addTo(map);
+        const icon = createCustomIcon('#ef4444', size);
+        if (!icon) return;
+        const marker = L.marker([hotspot.lat, hotspot.lng], { icon }).addTo(map);
 
         marker.bindPopup(`
           <div style="font-size: 11px;">
@@ -144,9 +166,9 @@ export default function LiveMapPanel({ scene }: LiveMapPanelProps) {
     if (layers.leads) {
       filteredLeads.forEach((lead: any) => {
         const size = lead.risk_score > 70 ? 12 : 8;
-        const marker = L.marker([lead.lat, lead.lng], {
-          icon: createCustomIcon('#3b82f6', size)
-        }).addTo(map);
+        const icon = createCustomIcon('#3b82f6', size);
+        if (!icon) return;
+        const marker = L.marker([lead.lat, lead.lng], { icon }).addTo(map);
 
         marker.bindPopup(`
           <div style="font-size: 11px;">
@@ -164,9 +186,9 @@ export default function LiveMapPanel({ scene }: LiveMapPanelProps) {
     if (layers.tasks) {
       filteredTasks.filter((t: any) => t.is_overdue).forEach((task: any) => {
         const size = task.priority === 'P1' ? 14 : 10;
-        const marker = L.marker([task.lat, task.lng], {
-          icon: createCustomIcon('#f97316', size)
-        }).addTo(map);
+        const icon = createCustomIcon('#f97316', size);
+        if (!icon) return;
+        const marker = L.marker([task.lat, task.lng], { icon }).addTo(map);
 
         marker.bindPopup(`
           <div style="font-size: 11px;">
@@ -183,9 +205,9 @@ export default function LiveMapPanel({ scene }: LiveMapPanelProps) {
     // Add evidence markers
     if (layers.evidences) {
       filteredEvidences.forEach((evidence: any) => {
-        const marker = L.marker([evidence.lat, evidence.lng], {
-          icon: createCustomIcon('#8b5cf6', 8)
-        }).addTo(map);
+        const icon = createCustomIcon('#8b5cf6', 8);
+        if (!icon) return;
+        const marker = L.marker([evidence.lat, evidence.lng], { icon }).addTo(map);
 
         marker.bindPopup(`
           <div style="font-size: 11px;">
@@ -198,7 +220,7 @@ export default function LiveMapPanel({ scene }: LiveMapPanelProps) {
         markersRef.current.push(marker);
       });
     }
-  }, [filteredHotspots, filteredLeads, filteredTasks, filteredEvidences, layers]);
+  }, [filteredHotspots, filteredLeads, filteredTasks, filteredEvidences, layers, createCustomIcon, leaflet]);
 
   const formatLastUpdate = (date: Date) => {
     return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });

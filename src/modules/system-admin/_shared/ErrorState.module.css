@@ -1,0 +1,41 @@
+/**
+ * ERROR STATE - Error placeholder
+ */
+
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  background: rgba(217, 45, 32, 0.05);
+  border: 1px solid rgba(217, 45, 32, 0.2);
+  border-radius: var(--radius-card);
+  text-align: center;
+}
+
+.icon {
+  color: var(--destructive);
+  margin-bottom: 16px;
+}
+
+.title {
+  margin: 0 0 8px 0;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--destructive);
+}
+
+.message {
+  margin: 0 0 24px 0;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  max-width: 400px;
+  line-height: 1.5;
+}
+
+.retry {
+  /* Optional retry button slot */
+}

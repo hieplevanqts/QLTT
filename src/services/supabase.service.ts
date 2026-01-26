@@ -79,7 +79,7 @@ export const TenantService = {
   async getByCode(code: string): Promise<Tenant | null> {
     const { data, error } = await getSupabase()
       .from('tenants')
-      .select('*')
+      .select('*, id:_id')
       .eq('code', code)
       .is('deleted_at', null)
       .single();
@@ -110,7 +110,7 @@ export const TenantService = {
   async list(filter?: BaseFilter): Promise<PaginatedResponse<Tenant>> {
     let query = getSupabase()
       .from('tenants')
-      .select('*', { count: 'exact' })
+      .select('*, id:_id', { count: 'exact' })
       .is('deleted_at', null);
 
     // Search
@@ -211,7 +211,7 @@ export const UserService = {
   async getByEmail(email: string): Promise<User | null> {
     const { data, error } = await getSupabase()
       .from('users')
-      .select('*')
+      .select('*, id:_id')
       .eq('email', email)
       .is('deleted_at', null)
       .single();
@@ -226,7 +226,7 @@ export const UserService = {
   async getById(id: string): Promise<User | null> {
     const { data, error } = await getSupabase()
       .from('users')
-      .select('*')
+      .select('*, id:_id')
       .eq('_id', id)
       .is('deleted_at', null)
       .single();
@@ -293,7 +293,7 @@ export const MemberService = {
   async getByTenantAndUser(tenantId: string, userId: string): Promise<TenantMember | null> {
     const { data, error } = await getSupabase()
       .from('tenant_members')
-      .select('*')
+      .select('*, id:_id')
       .eq('tenant_id', tenantId)
       .eq('user_id', userId)
       .is('deleted_at', null)
@@ -310,7 +310,7 @@ export const MemberService = {
   async listByTenant(tenantId: string, filter?: BaseFilter): Promise<PaginatedResponse<TenantMember>> {
     let query = getSupabase()
       .from('tenant_members')
-      .select('*, users(*), departments(*)', { count: 'exact' })
+      .select('*, users(*, id:_id), departments(*, id:_id)', { count: 'exact' })
       .eq('tenant_id', tenantId)
       .is('deleted_at', null);
 
@@ -350,7 +350,7 @@ export const MemberService = {
   async listByUser(userId: string): Promise<TenantMember[]> {
     const { data, error } = await getSupabase()
       .from('tenant_members')
-      .select('*, tenants(*)')
+      .select('*, tenants(*, id:_id)')
       .eq('user_id', userId)
       .is('deleted_at', null)
       .order('joined_at', { ascending: false });
@@ -415,7 +415,7 @@ export const DepartmentService = {
   async getById(id: string): Promise<Department | null> {
     const { data, error } = await getSupabase()
       .from('departments')
-      .select('*')
+      .select('*, id:_id')
       .eq('_id', id)
       .is('deleted_at', null)
       .single();
@@ -431,7 +431,7 @@ export const DepartmentService = {
   async listByTenant(tenantId: string): Promise<Department[]> {
     const { data, error } = await getSupabase()
       .from('departments')
-      .select('*')
+      .select('*, id:_id')
       .eq('tenant_id', tenantId)
       .is('deleted_at', null)
       .order('path', { ascending: true });
@@ -521,7 +521,7 @@ export const RoleService = {
   async getById(id: string): Promise<Role | null> {
     const { data, error } = await getSupabase()
       .from('roles')
-      .select('*')
+      .select('*, id:_id')
       .eq('_id', id)
       .single();
 
@@ -535,7 +535,7 @@ export const RoleService = {
   async listByTenant(tenantId: string): Promise<Role[]> {
     const { data, error } = await getSupabase()
       .from('roles')
-      .select('*')
+      .select('*, id:_id')
       .eq('tenant_id', tenantId)
       .order('name', { ascending: true });
 
@@ -549,7 +549,7 @@ export const RoleService = {
   async getByMember(memberId: string): Promise<Role[]> {
     const { data, error } = await getSupabase()
       .from('member_roles')
-      .select('roles(*)')
+      .select('roles(*, id:_id)')
       .eq('member_id', memberId);
 
     if (error) handleError(error);
@@ -587,7 +587,7 @@ export const AuditService = {
   async getByResource(resourceType: string, resourceId: string, limit = 50): Promise<AuditLog[]> {
     const { data, error } = await getSupabase()
       .from('audit_logs')
-      .select('*, users(full_name)')
+      .select('*, users(full_name, id:_id)')
       .eq('resource_type', resourceType)
       .eq('resource_id', resourceId)
       .order('created_at', { ascending: false })

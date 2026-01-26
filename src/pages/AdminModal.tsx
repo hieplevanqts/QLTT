@@ -78,7 +78,7 @@ export const UniversalModal: React.FC<UniversalModalProps> = ({
       // Fetch provinces from provinces table
       const { data: provincesData, error: provincesError } = await supabase
         .from('provinces')
-        .select('id, code, name')
+        .select('id:_id, code, name')
         .order('name');
       
       if (provincesError) {
@@ -90,7 +90,7 @@ export const UniversalModal: React.FC<UniversalModalProps> = ({
       // Fetch wards from wards table
       const { data: wardsData, error: wardsError } = await supabase
         .from('wards')
-        .select('id, code, name')
+        .select('id:_id, code, name')
         .order('name');
       
       if (wardsError) {
@@ -112,7 +112,7 @@ export const UniversalModal: React.FC<UniversalModalProps> = ({
       // Fetch users from users table
       const { data: usersData, error: usersError } = await supabase
         .from('users')
-        .select('*')
+        .select('*, id:_id')
         .order('full_name');
       
       if (usersError) {
