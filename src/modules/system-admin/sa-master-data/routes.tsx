@@ -9,6 +9,8 @@ import { RouteObject } from 'react-router-dom';
 const OrgUnitsPage = React.lazy(() => import('./pages/OrgUnitsPage'));
 const DepartmentsPage = React.lazy(() => import('./pages/DepartmentsPage'));
 const AdminAreasPage = React.lazy(() => import('./pages/AdminAreasPage'));
+const CommonCatalogsPage = React.lazy(() => import('./pages/CommonCatalogsPage'));
+const CommonCatalogDetailPage = React.lazy(() => import('./pages/CommonCatalogDetailPage'));
 const JurisdictionsPage = React.lazy(() => import('./pages/JurisdictionsPage'));
 const JurisdictionMapPage = React.lazy(() => import('./pages/JurisdictionMapPage'));
 const CatalogsPage = React.lazy(() => import('./pages/CatalogsPage'));
@@ -41,6 +43,18 @@ export const saMasterDataRoutes: RouteObject = {
       path: 'admin-areas',
       element: <AdminAreasPage />
       // Permission: sa.masterdata.jurisdiction.read (checked in component)
+    },
+
+    // Common Catalogs - Danh mục dùng chung
+    {
+      path: 'common-catalogs',
+      element: <CommonCatalogsPage />
+      // Permission: sa.masterdata.catalog.read (checked in component)
+    },
+    {
+      path: 'common-catalogs/:catalogId',
+      element: <CommonCatalogDetailPage />
+      // Permission: sa.masterdata.catalog.read (checked in component)
     },
     
     // Jurisdictions - Địa bàn

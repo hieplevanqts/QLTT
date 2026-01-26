@@ -33,13 +33,13 @@ import {
 } from '../../mocks/masterData.service';
 
 type FormMode = 'create' | 'edit' | null;
-type GroupFilter = 'ALL' | 'COMMON' | 'DOMAIN' | 'SYSTEM';
+type GroupFilter = 'ALL' | 'COMMON' | 'DMS' | 'SYSTEM';
 
 interface FormData {
   key: string;
   name: string;
   description: string;
-  group: 'COMMON' | 'DOMAIN' | 'SYSTEM';
+  group: 'COMMON' | 'DMS' | 'SYSTEM';
   status: 'active' | 'inactive';
 }
 
@@ -57,9 +57,12 @@ export default function CatalogsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   
   // Get initial group filter from URL query params
-  const urlGroup = searchParams.get('group') as GroupFilter | null;
+  const urlGroup = searchParams.get('group');
+  const normalizedGroup = urlGroup === 'DOMAIN' ? 'DMS' : urlGroup;
   const [activeTab, setActiveTab] = useState<GroupFilter>(
-    urlGroup && ['COMMON', 'DOMAIN', 'SYSTEM'].includes(urlGroup) ? urlGroup : 'ALL'
+    normalizedGroup && ['COMMON', 'DMS', 'SYSTEM'].includes(normalizedGroup)
+      ? (normalizedGroup as GroupFilter)
+      : 'ALL'
   );
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -136,7 +139,7 @@ export default function CatalogsPage() {
   const getGroupBadgeVariant = (group: Catalog['group']): 'active' | 'pending' | 'inactive' => {
     switch (group) {
       case 'COMMON': return 'active';
-      case 'DOMAIN': return 'pending';
+      case 'DMS': return 'pending';
       case 'SYSTEM': return 'inactive';
       default: return 'inactive';
     }
@@ -145,7 +148,7 @@ export default function CatalogsPage() {
   const getGroupLabel = (group: Catalog['group']): string => {
     switch (group) {
       case 'COMMON': return 'Dùng chung';
-      case 'DOMAIN': return 'Nghiệp vụ';
+      case 'DMS': return 'Nghiệp vụ';
       case 'SYSTEM': return 'Kỹ thuật';
       default: return group;
     }
@@ -357,7 +360,7 @@ export default function CatalogsPage() {
               {[
                 { key: 'ALL', label: 'Tất cả', icon: List },
                 { key: 'COMMON', label: 'Dùng chung', icon: FolderOpen },
-                { key: 'DOMAIN', label: 'Nghiệp vụ', icon: Layers },
+                { key: 'DMS', label: 'Nghiệp vụ', icon: Layers },
                 { key: 'SYSTEM', label: 'Kỹ thuật', icon: GitBranch }
               ].map((tab) => {
                 const Icon = tab.icon;
@@ -463,11 +466,11 @@ export default function CatalogsPage() {
             <select
               className={formStyles.select}
               value={formData.group}
-              onChange={(e) => setFormData({ ...formData, group: e.target.value as 'COMMON' | 'DOMAIN' | 'SYSTEM' })}
+              onChange={(e) => setFormData({ ...formData, group: e.target.value as 'COMMON' | 'DMS' | 'SYSTEM' })}
               disabled={submitting}
             >
               <option value="COMMON">Dùng chung</option>
-              <option value="DOMAIN">Nghiệp vụ</option>
+              <option value="DMS">Nghiệp vụ</option>
               <option value="SYSTEM">Kỹ thuật</option>
             </select>
           </FormGroup>

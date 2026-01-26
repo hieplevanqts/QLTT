@@ -50,7 +50,7 @@ export interface Catalog {
   key: string;
   name: string;
   description: string;
-  group: 'COMMON' | 'DOMAIN' | 'SYSTEM'; // Phân loại danh mục
+  group: 'COMMON' | 'DMS' | 'SYSTEM'; // Phân loại danh mục
   itemCount: number;
   hasSchema: boolean;
   isLocked?: boolean; // Danh mục core không cho xóa

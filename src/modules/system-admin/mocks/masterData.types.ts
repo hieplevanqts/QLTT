@@ -90,7 +90,7 @@ export interface CreateCatalogPayload {
   key: string;
   name: string;
   description: string;
-  group: 'COMMON' | 'DOMAIN' | 'SYSTEM';
+  group: 'COMMON' | 'DMS' | 'SYSTEM';
   status?: Status;
 }
 

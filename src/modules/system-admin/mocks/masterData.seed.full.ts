@@ -1,6 +1,6 @@
 /**
  * MASTER DATA - FULL SEED DATA (30 Catalogs)
- * COMMON=10, DOMAIN=12, SYSTEM=8
+ * COMMON=10, DMS=12, SYSTEM=8
  * Includes items with parent-child relationships for TreeTable demo
  */
 
@@ -126,12 +126,12 @@ export const seedCatalogs: Catalog[] = [
     updatedAt: '2024-01-05T00:00:00Z'
   },
 
-  // ===== GROUP: DOMAIN (12) =====
+  // ===== GROUP: DMS (12) =====
   {
     key: 'task-status',
     name: 'Trạng thái nhiệm vụ',
     description: 'Trạng thái xử lý nhiệm vụ kiểm tra',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 7,
     hasSchema: false,
     isLocked: true,
@@ -143,7 +143,7 @@ export const seedCatalogs: Catalog[] = [
     key: 'task-type',
     name: 'Loại nhiệm vụ',
     description: 'Phân loại nhiệm vụ kiểm tra, thanh tra',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 9,
     hasSchema: false,
     status: 'active',
@@ -154,7 +154,7 @@ export const seedCatalogs: Catalog[] = [
     key: 'lead-status',
     name: 'Trạng thái nguồn tin',
     description: 'Trạng thái xử lý nguồn tin tố giác',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 6,
     hasSchema: false,
     isLocked: true,
@@ -166,7 +166,7 @@ export const seedCatalogs: Catalog[] = [
     key: 'lead-type',
     name: 'Loại nguồn tin',
     description: 'Phân loại nguồn tin theo tính chất, mức độ',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 8,
     hasSchema: false,
     status: 'active',
@@ -177,7 +177,7 @@ export const seedCatalogs: Catalog[] = [
     key: 'inspection-theme',
     name: 'Chuyên đề kiểm tra',
     description: 'Các chuyên đề, chiến dịch kiểm tra đặc biệt',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 12,
     hasSchema: false,
     status: 'active',
@@ -188,7 +188,7 @@ export const seedCatalogs: Catalog[] = [
     key: 'violation-types',
     name: 'Loại vi phạm',
     description: 'Danh mục các loại vi phạm hành chính (có cấu trúc cha-con)',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 20,
     hasSchema: true,
     isLocked: true,
@@ -200,7 +200,7 @@ export const seedCatalogs: Catalog[] = [
     key: 'violation-groups',
     name: 'Nhóm hành vi vi phạm',
     description: 'Phân nhóm hành vi vi phạm theo lĩnh vực',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 10,
     hasSchema: false,
     status: 'active',
@@ -211,7 +211,7 @@ export const seedCatalogs: Catalog[] = [
     key: 'result-type',
     name: 'Kết quả xử lý',
     description: 'Kết quả xử lý sau kiểm tra',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 8,
     hasSchema: false,
     status: 'active',
@@ -222,7 +222,7 @@ export const seedCatalogs: Catalog[] = [
     key: 'evidence-type',
     name: 'Loại chứng cứ/tài liệu',
     description: 'Phân loại bằng chứng, tài liệu vi phạm',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 9,
     hasSchema: false,
     status: 'active',
@@ -233,7 +233,7 @@ export const seedCatalogs: Catalog[] = [
     key: 'coordination-agency',
     name: 'Đơn vị phối hợp',
     description: 'Danh sách các đơn vị liên quan phối hợp',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 15,
     hasSchema: false,
     status: 'active',
@@ -244,7 +244,7 @@ export const seedCatalogs: Catalog[] = [
     key: 'recurrence-level',
     name: 'Tình trạng tái phạm',
     description: 'Phân loại mức độ tái phạm của cơ sở',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 5,
     hasSchema: false,
     status: 'active',
@@ -255,7 +255,7 @@ export const seedCatalogs: Catalog[] = [
     key: 'case-priority',
     name: 'Ưu tiên xử lý hồ sơ',
     description: 'Mức độ ưu tiên xử lý hồ sơ vi phạm',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 4,
     hasSchema: false,
     status: 'active',
@@ -1486,7 +1486,7 @@ export const seedCatalogItems: CatalogItem[] = [
     updatedAt: '2024-01-01T00:00:00Z'
   },
 
-  // ===== TASK STATUS (7 items) - DOMAIN =====
+  // ===== TASK STATUS (7 items) - DMS =====
   {
     id: 'item-task-status-1',
     catalogKey: 'task-status',
@@ -1580,7 +1580,7 @@ export const seedCatalogItems: CatalogItem[] = [
     updatedAt: '2024-01-01T00:00:00Z'
   },
 
-  // ===== TASK TYPE (9 items) - DOMAIN =====
+  // ===== TASK TYPE (9 items) - DMS =====
   {
     id: 'item-task-type-1',
     catalogKey: 'task-type',
@@ -1681,7 +1681,7 @@ export const seedCatalogItems: CatalogItem[] = [
     updatedAt: '2024-01-01T00:00:00Z'
   },
 
-  // ===== LEAD STATUS (6 items) - DOMAIN =====
+  // ===== LEAD STATUS (6 items) - DMS =====
   {
     id: 'item-lead-status-1',
     catalogKey: 'lead-status',
@@ -1762,7 +1762,7 @@ export const seedCatalogItems: CatalogItem[] = [
     updatedAt: '2024-01-01T00:00:00Z'
   },
 
-  // ===== LEAD TYPE (8 items) - DOMAIN =====
+  // ===== LEAD TYPE (8 items) - DMS =====
   {
     id: 'item-lead-type-1',
     catalogKey: 'lead-type',
@@ -1852,7 +1852,7 @@ export const seedCatalogItems: CatalogItem[] = [
     updatedAt: '2024-01-01T00:00:00Z'
   },
 
-  // ===== INSPECTION THEME (12 items) - DOMAIN =====
+  // ===== INSPECTION THEME (12 items) - DMS =====
   {
     id: 'item-theme-1',
     catalogKey: 'inspection-theme',
@@ -1986,7 +1986,7 @@ export const seedCatalogItems: CatalogItem[] = [
     updatedAt: '2024-01-01T00:00:00Z'
   },
 
-  // ===== VIOLATION TYPES (20 items with TREE STRUCTURE) - DOMAIN =====
+  // ===== VIOLATION TYPES (20 items with TREE STRUCTURE) - DMS =====
   // Root nodes
   {
     id: 'item-violation-1',
@@ -2219,7 +2219,7 @@ export const seedCatalogItems: CatalogItem[] = [
     updatedAt: '2024-01-01T00:00:00Z'
   },
 
-  // ===== VIOLATION GROUPS (10 items) - DOMAIN =====
+  // ===== VIOLATION GROUPS (10 items) - DMS =====
   {
     id: 'item-viol-group-1',
     catalogKey: 'violation-groups',
@@ -2334,7 +2334,7 @@ export const seedCatalogItems: CatalogItem[] = [
   // Add remaining catalogs' items to complete the seed... 
   // Due to character limits, I'll add essential items for remaining catalogs
 
-  // ===== RESULT TYPE (8 items) - DOMAIN =====
+  // ===== RESULT TYPE (8 items) - DMS =====
   {
     id: 'item-result-1',
     catalogKey: 'result-type',

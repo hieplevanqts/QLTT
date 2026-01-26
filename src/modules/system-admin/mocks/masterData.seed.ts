@@ -113,12 +113,12 @@ export const seedCatalogs: Catalog[] = [
     updatedAt: '2024-01-05T00:00:00Z'
   },
 
-  // ===== GROUP: DOMAIN (Nghiệp vụ QLTT) =====
+  // ===== GROUP: DMS (Nghiệp vụ QLTT) =====
   {
     key: 'task-status',
     name: 'Trạng thái nhiệm vụ',
     description: 'Trạng thái xử lý nhiệm vụ kiểm tra',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 7,
     hasSchema: false,
     isLocked: true,
@@ -130,7 +130,7 @@ export const seedCatalogs: Catalog[] = [
     key: 'task-type',
     name: 'Loại nhiệm vụ',
     description: 'Phân loại nhiệm vụ kiểm tra, thanh tra',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 9,
     hasSchema: false,
     status: 'active',
@@ -141,7 +141,7 @@ export const seedCatalogs: Catalog[] = [
     key: 'lead-status',
     name: 'Trạng thái đầu mối',
     description: 'Trạng thái xử lý nguồn tin tố giác',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 6,
     hasSchema: false,
     isLocked: true,
@@ -153,7 +153,7 @@ export const seedCatalogs: Catalog[] = [
     key: 'lead-source',
     name: 'Nguồn tin báo',
     description: 'Nguồn gốc tin báo, tố giác vi phạm',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 10,
     hasSchema: false,
     status: 'active',
@@ -164,7 +164,7 @@ export const seedCatalogs: Catalog[] = [
     key: 'violation-types',
     name: 'Loại vi phạm',
     description: 'Danh mục các loại vi phạm hành chính',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 20,
     hasSchema: true,
     isLocked: true,
@@ -176,7 +176,7 @@ export const seedCatalogs: Catalog[] = [
     key: 'inspection-theme',
     name: 'Chuyên đề kiểm tra',
     description: 'Các chuyên đề, chiến dịch kiểm tra đặc biệt',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 12,
     hasSchema: false,
     status: 'active',
@@ -187,7 +187,7 @@ export const seedCatalogs: Catalog[] = [
     key: 'result-type',
     name: 'Kết quả xử lý',
     description: 'Kết quả xử lý sau kiểm tra',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 8,
     hasSchema: false,
     status: 'active',
@@ -198,7 +198,7 @@ export const seedCatalogs: Catalog[] = [
     key: 'penalty-level',
     name: 'Mức xử phạt',
     description: 'Phân loại mức độ xử phạt vi phạm',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 5,
     hasSchema: false,
     status: 'active',
@@ -209,7 +209,7 @@ export const seedCatalogs: Catalog[] = [
     key: 'merchant-category',
     name: 'Phân loại thương nhân',
     description: 'Phân loại doanh nghiệp, hộ kinh doanh',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 8,
     hasSchema: false,
     status: 'active',
@@ -220,7 +220,7 @@ export const seedCatalogs: Catalog[] = [
     key: 'evidence-type',
     name: 'Loại bằng chứng',
     description: 'Phân loại bằng chứng vi phạm',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 9,
     hasSchema: false,
     status: 'active',
@@ -851,7 +851,7 @@ export const seedCatalogItems: CatalogItem[] = [
     updatedAt: '2024-01-01T00:00:00Z'
   },
 
-  // ===== TASK STATUS (DOMAIN) =====
+  // ===== TASK STATUS (DMS) =====
   {
     id: 'item-task-status-1',
     catalogKey: 'task-status',

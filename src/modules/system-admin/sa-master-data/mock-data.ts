@@ -170,12 +170,12 @@ export const MOCK_CATALOGS: Catalog[] = [
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-01T00:00:00Z'
   },
-  // DOMAIN - Danh mục nghiệp vụ QLTT
+  // DMS - Danh mục nghiệp vụ QLTT
   {
     key: 'violation-types',
     name: 'Loại vi phạm',
     description: 'Danh mục các loại vi phạm hành chính',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 45,
     hasSchema: true,
     status: 'active',
@@ -186,7 +186,7 @@ export const MOCK_CATALOGS: Catalog[] = [
     key: 'product-categories',
     name: 'Nhóm sản phẩm',
     description: 'Phân loại sản phẩm hàng hóa',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 120,
     hasSchema: true,
     status: 'active',
@@ -197,7 +197,7 @@ export const MOCK_CATALOGS: Catalog[] = [
     key: 'inspection-types',
     name: 'Loại thanh tra',
     description: 'Phân loại hình thức thanh tra kiểm tra',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 15,
     hasSchema: true,
     status: 'active',
@@ -208,7 +208,7 @@ export const MOCK_CATALOGS: Catalog[] = [
     key: 'evidence-types',
     name: 'Loại chứng cứ',
     description: 'Phân loại chứng cứ vi phạm',
-    group: 'DOMAIN',
+    group: 'DMS',
     itemCount: 22,
     hasSchema: false,
     status: 'active',

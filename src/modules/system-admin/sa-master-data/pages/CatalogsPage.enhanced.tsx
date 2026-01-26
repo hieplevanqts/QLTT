@@ -33,14 +33,14 @@ import {
 } from '../../mocks/masterData.service';
 
 type FormMode = 'create' | 'edit' | null;
-type GroupFilter = 'ALL' | 'COMMON' | 'DOMAIN' | 'SYSTEM';
+type GroupFilter = 'ALL' | 'COMMON' | 'DMS' | 'SYSTEM';
 type ViewMode = 'table' | 'grid';
 
 interface FormData {
   key: string;
   name: string;
   description: string;
-  group: 'COMMON' | 'DOMAIN' | 'SYSTEM';
+  group: 'COMMON' | 'DMS' | 'SYSTEM';
   status: 'active' | 'inactive';
 }
 
@@ -58,9 +58,12 @@ export default function CatalogsPageEnhanced() {
   const [searchParams, setSearchParams] = useSearchParams();
   
   // Get initial group filter from URL query params
-  const urlGroup = searchParams.get('group') as GroupFilter | null;
+  const urlGroup = searchParams.get('group');
+  const normalizedGroup = urlGroup === 'DOMAIN' ? 'DMS' : urlGroup;
   const [activeTab, setActiveTab] = useState<GroupFilter>(
-    urlGroup && ['COMMON', 'DOMAIN', 'SYSTEM'].includes(urlGroup) ? urlGroup : 'ALL'
+    normalizedGroup && ['COMMON', 'DMS', 'SYSTEM'].includes(normalizedGroup)
+      ? (normalizedGroup as GroupFilter)
+      : 'ALL'
   );
   
   const [viewMode, setViewMode] = useState<ViewMode>('table');
@@ -140,7 +143,7 @@ export default function CatalogsPageEnhanced() {
   const getGroupBadgeVariant = (group: Catalog['group']): 'active' | 'pending' | 'inactive' => {
     switch (group) {
       case 'COMMON': return 'active';
-      case 'DOMAIN': return 'pending';
+      case 'DMS': return 'pending';
       case 'SYSTEM': return 'inactive';
       default: return 'inactive';
     }
@@ -149,7 +152,7 @@ export default function CatalogsPageEnhanced() {
   const getGroupLabel = (group: Catalog['group']): string => {
     switch (group) {
       case 'COMMON': return 'Dùng chung';
-      case 'DOMAIN': return 'Nghiệp vụ';
+      case 'DMS': return 'Nghiệp vụ';
       case 'SYSTEM': return 'Kỹ thuật';
       default: return group;
     }
@@ -359,14 +362,14 @@ export default function CatalogsPageEnhanced() {
     const groups = activeTab === 'ALL' 
       ? [
           { key: 'COMMON', label: 'Dùng chung', icon: FolderOpen, color: '#28C76F' },
-          { key: 'DOMAIN', label: 'Nghiệp vụ', icon: Layers, color: '#FF9F43' },
+          { key: 'DMS', label: 'Nghiệp vụ', icon: Layers, color: '#FF9F43' },
           { key: 'SYSTEM', label: 'Kỹ thuật', icon: GitBranch, color: '#9E9E9E' }
         ]
       : [{ 
           key: activeTab, 
           label: getGroupLabel(activeTab as any),
-          icon: activeTab === 'COMMON' ? FolderOpen : activeTab === 'DOMAIN' ? Layers : GitBranch,
-          color: activeTab === 'COMMON' ? '#28C76F' : activeTab === 'DOMAIN' ? '#FF9F43' : '#9E9E9E'
+          icon: activeTab === 'COMMON' ? FolderOpen : activeTab === 'DMS' ? Layers : GitBranch,
+          color: activeTab === 'COMMON' ? '#28C76F' : activeTab === 'DMS' ? '#FF9F43' : '#9E9E9E'
         }];
 
     return (
@@ -546,7 +549,7 @@ export default function CatalogsPageEnhanced() {
               {[
                 { key: 'ALL', label: 'Tất cả', icon: List },
                 { key: 'COMMON', label: 'Dùng chung', icon: FolderOpen },
-                { key: 'DOMAIN', label: 'Nghiệp vụ', icon: Layers },
+                { key: 'DMS', label: 'Nghiệp vụ', icon: Layers },
                 { key: 'SYSTEM', label: 'Kỹ thuật', icon: GitBranch }
               ].map((tab) => {
                 const Icon = tab.icon;
@@ -705,11 +708,11 @@ export default function CatalogsPageEnhanced() {
             <select
               className={formStyles.select}
               value={formData.group}
-              onChange={(e) => handleFormChange({ group: e.target.value as 'COMMON' | 'DOMAIN' | 'SYSTEM' })}
+              onChange={(e) => handleFormChange({ group: e.target.value as 'COMMON' | 'DMS' | 'SYSTEM' })}
               disabled={submitting}
             >
               <option value="COMMON">Dùng chung</option>
-              <option value="DOMAIN">Nghiệp vụ</option>
+              <option value="DMS">Nghiệp vụ</option>
               <option value="SYSTEM">Kỹ thuật</option>
             </select>
           </FormGroup>

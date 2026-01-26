@@ -84,14 +84,14 @@ const quickSections = [
       {
         label: "Danh mục dùng chung",
         description: "Catalogs & items dùng chung",
-        path: "/system-admin/master-data/catalogs?group=COMMON",
+        path: "/system-admin/master-data/common-catalogs",
         icon: Folder,
         tone: "bg-amber-50 text-amber-700",
       },
       {
         label: "Danh mục nghiệp vụ QLTT",
         description: "Catalogs nghiệp vụ chuyên môn",
-        path: "/system-admin/master-data/catalogs?group=DOMAIN",
+        path: "/system-admin/master-data/catalogs?group=DMS",
         icon: Layers,
         tone: "bg-rose-50 text-rose-600",
       },
