@@ -114,7 +114,7 @@ const mappaModules = [
       { type: 'separator' },
       { type: 'item', path: '/system-admin/iam/users', label: 'Người dùng', icon: Users },
       { type: 'item', path: '/system-admin/iam/roles', label: 'Vai trò', icon: Shield },
-      { type: 'item', path: '/system-admin/iam/permissions', label: 'Permissions', icon: KeyRound },
+      { type: 'item', path: '/system-admin/iam/permissions', label: 'Danh mục quyền', icon: KeyRound },
       { type: 'item', path: '/system-admin/iam/assignments', label: 'Phân quyền', icon: UserCheck },
       { type: 'item', path: '/system-admin/iam/modules', label: 'Phân hệ', icon: Boxes },
       { type: 'item', path: '/system-admin/iam/menus', label: 'Menu', icon: Menu },

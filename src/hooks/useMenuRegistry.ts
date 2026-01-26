@@ -15,7 +15,7 @@ const ADMIN_MENU_SEED: Array<Omit<MenuItem, "parentId">> = [
   { id: "admin-catalogs-system", label: "Danh mục kỹ thuật", path: "/system-admin/master-data/system-catalogs", order: 26, moduleId: "system-admin-master-data", icon: "GitBranch" },
   { id: "admin-users", label: "Người dùng", path: "/system-admin/iam/users", order: 31, moduleId: "system-admin-iam", icon: "Users" },
   { id: "admin-roles", label: "Vai trò", path: "/system-admin/iam/roles", order: 32, moduleId: "system-admin-iam", icon: "Shield" },
-  { id: "admin-permissions", label: "Permissions", path: "/system-admin/iam/permissions", order: 33, moduleId: "system-admin-iam", icon: "KeyRound" },
+  { id: "admin-permissions", label: "Danh mục quyền", path: "/system-admin/iam/permissions", order: 33, moduleId: "system-admin-iam", icon: "KeyRound" },
   { id: "admin-assignments", label: "Phân quyền", path: "/system-admin/iam/assignments", order: 34, moduleId: "system-admin-iam", icon: "UserCheck" },
   { id: "admin-modules", label: "Phân hệ", path: "/system-admin/iam/modules", order: 35, moduleId: "system-admin-iam", icon: "Boxes" },
   { id: "admin-menus", label: "Menu", path: "/system-admin/iam/menus", order: 36, moduleId: "system-admin-iam", icon: "Menu" },

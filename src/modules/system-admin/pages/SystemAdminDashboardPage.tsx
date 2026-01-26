@@ -123,7 +123,7 @@ const quickSections = [
         tone: "bg-rose-50 text-rose-600",
       },
       {
-        label: "Permissions",
+        label: "Danh mục quyền",
         description: "Danh sách quyền hạn",
         path: "/system-admin/iam/permissions",
         icon: KeyRound,
