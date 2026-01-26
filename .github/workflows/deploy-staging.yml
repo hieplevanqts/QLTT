@@ -3,7 +3,7 @@ name: Build and Deploy Pipeline
 on:
   push:
     branches:
-      - QA-main
+      - main
   workflow_call:
     secrets:
       REGISTRY_URL:
