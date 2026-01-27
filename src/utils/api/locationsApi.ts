@@ -104,7 +104,7 @@ export async function fetchProvinces(): Promise<ProvinceApiData[]> {
 }
 
 /**
- * Fetch all wards from Supabase areas table using axios via REST API with pagination
+ * Fetch all wards from Supabase areas table using REST API with pagination
  */
 export async function fetchAllWards(): Promise<WardApiData[]> {
   try {
@@ -116,22 +116,6 @@ export async function fetchAllWards(): Promise<WardApiData[]> {
     let hasMore = true;
 
     while (hasMore) {
-      const start = page * pageSize;
-
-      const response = await axios.get<WardApiData[]>(
-        `${SUPABASE_REST_URL}/wards`,
-        {
-          params: {
-            select: '_id,code,name,province_id',
-            order: 'code.asc',
-            limit: pageSize,
-            offset: start
-          },
-          headers: getHeaders()
-        }
-      );
-
-      const data = response.data || [];
       console.log(`📄 Fetching page - offset: ${offset}, limit: ${pageSize}`);
       
       const response = await fetch(
@@ -154,15 +138,15 @@ export async function fetchAllWards(): Promise<WardApiData[]> {
         throw new Error(`Failed to fetch wards: ${response.statusText}`);
       }
 
-      const data = await response.json();
-      console.log(`✅ Page fetched: ${data?.length || 0} wards`);
+      const pageData = await response.json();
+      console.log(`✅ Page fetched: ${pageData?.length || 0} wards`);
 
-      if (!data || data.length === 0) {
+      if (!pageData || pageData.length === 0) {
         hasMore = false;
         console.log('✅ All pages fetched!');
       } else {
-        allWards = [...allWards, ...data];
-        if (data.length < pageSize) {
+        allWards = [...allWards, ...pageData];
+        if (pageData.length < pageSize) {
           hasMore = false;
           console.log('✅ Final page reached!');
         }
