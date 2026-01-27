@@ -56,6 +56,7 @@ export type UserPayload = {
   phone?: string | null;
   status?: UserStatusValue;
   note?: string | null;
+  default_password?: string | null;
 };
 
 const mapStatusFilter = (value: UserListParams["status"]) => {
@@ -128,13 +129,16 @@ export const usersService = {
   },
 
   async createUser(payload: UserPayload): Promise<UserRecord> {
+    const { default_password, ...rest } = payload;
     const { data, error } = await supabase
       .from("users")
       .insert([
         {
-          ...payload,
-          status: payload.status ?? 1,
-          updated_at: new Date().toISOString(),
+          ...rest,
+          status: rest.status ?? 1,
+          metadata: default_password
+            ? { defaultPassword: default_password }
+            : undefined,
         },
       ])
       .select("*")
@@ -148,10 +152,14 @@ export const usersService = {
   },
 
   async updateUser(id: string, payload: UserPayload): Promise<UserRecord> {
+    const { default_password, ...rest } = payload;
     const { data, error } = await supabase
       .from("users")
       .update({
-        ...payload,
+        ...rest,
+        metadata: default_password
+          ? { defaultPassword: default_password }
+          : undefined,
         updated_at: new Date().toISOString(),
       })
       .eq("_id", id)

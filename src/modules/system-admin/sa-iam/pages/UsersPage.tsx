@@ -534,6 +534,13 @@ export default function UsersPage() {
                 ]}
               />
             </Form.Item>
+            <Form.Item
+              label="Mật khẩu mặc định"
+              name="default_password"
+              tooltip="Dùng để gửi cho người dùng sau khi tạo tài khoản."
+            >
+              <Input.Password placeholder="Nhập mật khẩu mặc định" />
+            </Form.Item>
             <Form.Item label="Ghi chú" name="note">
               <Input.TextArea rows={3} />
             </Form.Item>
