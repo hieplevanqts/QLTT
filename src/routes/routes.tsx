@@ -57,8 +57,8 @@ const PlanCreate = React.lazy(() =>
 const PlanDetail = React.lazy(() =>
   import('../app/pages/plans/PlanDetail').then((module) => ({ default: module.PlanDetail })),
 );
-const PlanTaskBoard = React.lazy(() =>
-  import('../app/pages/plans/PlanTaskBoard').then((module) => ({ default: module.PlanTaskBoard })),
+const TaskBoard = React.lazy(() =>
+  import('../app/pages/tasks/TaskBoard').then((module) => ({ default: module.TaskBoard })),
 );
 const InspectionRoundsList = React.lazy(() =>
   import('../app/pages/inspections/InspectionRoundsList').then((module) => ({
@@ -69,9 +69,6 @@ const InspectionRoundDetail = React.lazy(() => import('../app/pages/inspections/
 const InspectionRoundCreate = React.lazy(() => import('../app/pages/inspections/InspectionRoundCreate'));
 const InspectionRoundStatistics = React.lazy(
   () => import('../app/pages/inspections/InspectionRoundStatistics'),
-);
-const TaskBoard = React.lazy(() =>
-  import('../app/pages/tasks/TaskBoard').then((module) => ({ default: module.TaskBoard })),
 );
 
 const LeadInbox = React.lazy(() => import('../pages/lead-risk/LeadInbox'));
@@ -214,7 +211,7 @@ export const router = createBrowserRouter([
             path: 'plans/:planId/inspection-session-board',
             element: (
               <PermissionProtectedRoute>
-                <PlanTaskBoard />
+                <TaskBoard />
               </PermissionProtectedRoute>
             ),
           },
@@ -223,14 +220,6 @@ export const router = createBrowserRouter([
             element: (
               <PermissionProtectedRoute>
                 <TaskBoard />
-              </PermissionProtectedRoute>
-            ),
-          },
-          {
-            path: 'plans/task-board',
-            element: (
-              <PermissionProtectedRoute>
-                <PlanTaskBoard />
               </PermissionProtectedRoute>
             ),
           },

@@ -160,6 +160,12 @@
   gap: var(--spacing-6);
 }
 
+.formRow {
+  display: flex;
+  gap: var(--spacing-4);
+  width: 100%;
+}
+
 .label {
   font-family: 'Inter', sans-serif;
   font-size: 14px;
@@ -254,7 +260,6 @@
 }
 
 .cancelButton,
-.draftButton,
 .submitButton,
 .nextButton,
 .backAction,
@@ -296,15 +301,7 @@
   background: #eff6ff;
 }
 
-.draftButton {
-  background: #f3f4f6;
-  color: #4b5563;
-  border: 1px solid #d1d5db;
-}
 
-.draftButton:hover {
-  background: #e5e7eb;
-}
 
 .submitButton {
   background: linear-gradient(135deg, #005cb6 0%, #004a92 100%);

@@ -14,7 +14,6 @@ export interface InspectionRoundResponse {
   campaign_code: string;
   plan_id: string;
   campaign_status: string | number;
-  status?: number;
   start_time: string;
   end_time: string;
   lead_unit: string;
@@ -24,6 +23,8 @@ export interface InspectionRoundResponse {
   stats_meta: any;
   created_by_name: string;
   user_id: string;
+  province_id?: string;
+  ward_id?: string;
   created_at: string;
   priority: number;
   [key: string]: any;
@@ -99,6 +100,8 @@ function mapRowToRound(row: InspectionRoundResponse): InspectionRound {
     violationCount: statsMeta.violationCount || 0,
     createdBy: row.created_by_name || '',
     createdById: row.user_id,
+    provinceId: row.province_id,
+    wardId: row.ward_id,
     createdAt: row.created_at || new Date().toISOString(),
     notes: '',
     formTemplate: decisionMeta.formTemplate || '',
@@ -161,13 +164,14 @@ export async function createInspectionRoundApi(round: Partial<InspectionRound>):
       campaign_name: round.name,
       plan_id: round.planId || undefined,
       campaign_status: 1, // Default state is Nháp (1)
-      status: 1, 
       department_id: round.leadUnitId || undefined, 
       owner_dept: round.leadUnit || '',
       start_time: round.startDate,
       end_time: round.endDate,
       priority: 0, 
       campaign_code: round.code,
+      province_id: round.provinceId || undefined,
+      ward_id: round.wardId || undefined,
       partner: '',
     };
 
@@ -227,6 +231,9 @@ export async function updateInspectionRoundApi(id: string, updates: Partial<Insp
       payload.owner_dept = updates.leadUnit;
       payload.lead_unit = updates.leadUnit;
     }
+    
+    if (updates.provinceId) payload.province_id = updates.provinceId;
+    if (updates.wardId) payload.ward_id = updates.wardId;
     
     // Removal of notes mapping as column doesn't exist in map_inspection_campaigns
     

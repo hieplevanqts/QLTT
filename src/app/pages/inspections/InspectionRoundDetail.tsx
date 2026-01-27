@@ -29,8 +29,10 @@ import { InsFormDetailDialog } from '../../components/inspections/InsFormDetailD
 import TaskDetailModal from '../../components/tasks/TaskDetailModal';
 import { type InspectionTask } from '../../data/inspection-tasks-mock-data';
 
+import { fetchInspectionSessionsApi, createInspectionSessionApi } from '@/utils/api/inspectionSessionsApi';
 import { useSupabaseInspectionRound } from '@/hooks/useSupabaseInspectionRound';
 import { toast } from 'sonner';
+import { useEffect } from 'react';
 
 type TabType = 'overview' | 'sessions' | 'team' | 'scope' | 'history';
 
@@ -298,40 +300,87 @@ export default function InspectionRoundDetail() {
   const { round: data, loading, error, updateStatus } = useSupabaseInspectionRound(roundId);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [sessions, setSessions] = useState(mockSessions);
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [loadingSessions, setLoadingSessions] = useState(false);
   const [showInsFormDetail, setShowInsFormDetail] = useState(false);
   const [selectedInsForm, setSelectedInsForm] = useState<{ code: string; type: string; name: string } | null>(null);
   const [selectedTask, setSelectedTask] = useState<InspectionTask | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
 
-  const handleCreateSession = (sessionData: {
+  useEffect(() => {
+    const loadSessions = async () => {
+      if (!roundId) return;
+      try {
+        setLoadingSessions(true);
+        const data = await fetchInspectionSessionsApi(roundId);
+        // Map API sessions to match the UI format if needed
+        const mapped = data.map(s => ({
+          id: s.id,
+          storeCode: s.id.substring(0, 6).toUpperCase(),
+          storeName: s.merchantName,
+          address: s.merchantAddress,
+          inspector: s.userName,
+          date: s.startTime ? s.startTime.split('T')[0] : s.deadlineTime.split('T')[0],
+          time: s.startTime ? s.startTime.split('T')[1]?.substring(0, 5) : '09:00',
+          status: s.status === 'not_started' ? 'scheduled' : s.status,
+          violationCount: 0, // Need to fetch from somewhere else if available
+        }));
+        setSessions(mapped);
+      } catch (err) {
+        console.error('Error fetching sessions:', err);
+      } finally {
+        setLoadingSessions(false);
+      }
+    };
+    loadSessions();
+  }, [roundId]);
+
+  const handleCreateSession = async (sessionData: {
     storeId: string;
     storeName: string;
     storeAddress: string;
-    inspectorId: string;
-    inspectorName: string;
+    inspectorId: string | null;
+    inspectorName: string | null;
     startDate: string;
     endDate: string;
     notes: string;
   }) => {
-    // Generate new session ID
-    const newId = `PS-${String(sessions.length + 1).padStart(3, '0')}`;
-    const storeCodeNum = String(sessions.length + 1).padStart(3, '0');
-    
-    const newSession = {
-      id: newId,
-      storeCode: `CH-${storeCodeNum}`,
-      storeName: sessionData.storeName,
-      address: sessionData.storeAddress,
-      inspector: sessionData.inspectorName,
-      date: sessionData.startDate,
-      time: '09:00',
-      status: 'scheduled' as const,
-      violationCount: 0,
-    };
+    try {
+      const newSession = await createInspectionSessionApi({
+        campaign_id: roundId,
+        merchant_id: sessionData.storeId,
+        user_id: sessionData.inspectorId || null,
+        start_time: sessionData.startDate,
+        deadline_time: sessionData.endDate,
+        note: sessionData.notes,
+        name: `Kiểm tra ${sessionData.storeName}`,
+        type: 'passive',
+        status: 1, // not_started
+      });
 
-    setSessions([...sessions, newSession]);
+      if (newSession) {
+        toast.success('Đã tạo phiên làm việc thành công');
+        // Refresh session list
+        const updatedSessions = await fetchInspectionSessionsApi(roundId!);
+        const mapped = updatedSessions.map(s => ({
+          id: s.id,
+          storeCode: s.id.substring(0, 6).toUpperCase(),
+          storeName: s.merchantName,
+          address: s.merchantAddress,
+          inspector: s.userName,
+          date: s.startTime ? s.startTime.split('T')[0] : s.deadlineTime.split('T')[0],
+          time: s.startTime ? s.startTime.split('T')[1]?.substring(0, 5) : '09:00',
+          status: s.status === 'not_started' ? 'scheduled' : s.status,
+          violationCount: 0,
+        }));
+        setSessions(mapped);
+        setShowCreateDialog(false);
+      }
+    } catch (err) {
+      console.error('Error creating session:', err);
+      toast.error('Không thể tạo phiên làm việc');
+    }
   };
 
   if (loading) {
@@ -878,6 +927,9 @@ export default function InspectionRoundDetail() {
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
         roundName={data.name}
+        leadUnitId={data.leadUnitId}
+        provinceId={data.provinceId}
+        wardId={data.wardId}
         onCreateSession={handleCreateSession}
       />
 
