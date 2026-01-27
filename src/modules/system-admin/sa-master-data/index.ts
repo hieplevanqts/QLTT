@@ -1,6 +1,7 @@
 /**
  * SA MASTER DATA MODULE
  * Module quản lý dữ liệu nền hệ thống
+ * cd
  */
 
 export * from './types';
