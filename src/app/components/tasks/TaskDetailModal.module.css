@@ -536,6 +536,19 @@
   box-shadow: 0 8px 16px rgba(0, 92, 182, 0.3);
 }
 
+.completeBtn {
+  background: var(--success, #10B981);
+  border: none;
+  color: white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+.completeBtn:hover {
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
+}
+
 /* Responsive fixes */
 @media (max-width: 640px) {
   .infoGrid {

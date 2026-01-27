@@ -6,9 +6,9 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit, Lock, Unlock, UserX, Shield } from 'lucide-react';
+import { message } from 'antd';
 import { PermissionGate, ModuleShell, usePermissions } from '../../_shared';
-import { MOCK_USERS, MOCK_USER_ROLE_ASSIGNMENTS, MOCK_ROLES } from '../mock-data';
-import type { User } from '../types';
+import { usersService, type UserRecord } from '../services/users.service';
 import styles from './UserDetailPage.module.css';
 
 export default function UserDetailPage() {
@@ -20,11 +20,32 @@ export default function UserDetailPage() {
   const canDelete = hasPermission('sa.iam.user.delete');
   const canAssign = hasPermission('sa.iam.assignment.assign');
 
-  const user = MOCK_USERS.find(u => u.id === id);
-  const userAssignments = MOCK_USER_ROLE_ASSIGNMENTS.filter(a => a.userId === id && a.status === 'active');
-  const userRoles = userAssignments.map(a => MOCK_ROLES.find(r => r.id === a.roleId)).filter(Boolean);
+  const [loading, setLoading] = React.useState(true);
+  const [user, setUser] = React.useState<UserRecord | null>(null);
+  const [userRoles, setUserRoles] = React.useState<Array<{ code: string; name: string }>>([]);
 
-  if (!user) {
+  React.useEffect(() => {
+    if (!id) return;
+    const loadUser = async () => {
+      setLoading(true);
+      try {
+        const data = await usersService.getUserById(id);
+        setUser(data);
+        if (data) {
+          const roles = await usersService.listUserRoles(id);
+          setUserRoles(roles.map((role) => ({ code: role.code, name: role.name })));
+        }
+      } catch (err) {
+        const messageText = err instanceof Error ? err.message : 'Không thể tải người dùng.';
+        message.error(messageText);
+      } finally {
+        setLoading(false);
+      }
+    };
+    void loadUser();
+  }, [id]);
+
+  if (!user && !loading) {
     return (
       <ModuleShell title="Không tìm thấy người dùng">
         <p>Người dùng không tồn tại.</p>
@@ -32,28 +53,30 @@ export default function UserDetailPage() {
     );
   }
 
-  const getStatusBadge = (status: User['status']) => {
+  const getStatusBadge = (status: number) => {
     switch (status) {
-      case 'active':
+      case 1:
         return <span className={styles.statusActive}>Hoạt động</span>;
-      case 'inactive':
+      case 0:
         return <span className={styles.statusInactive}>Tạm dừng</span>;
-      case 'locked':
+      case 2:
         return <span className={styles.statusLocked}>Khóa</span>;
+      default:
+        return <span className={styles.statusInactive}>Không rõ</span>;
     }
   };
 
   return (
     <PermissionGate permission="sa.iam.user.read">
       <ModuleShell
-        title={user.fullName}
-        subtitle={`@${user.username}`}
+        title={user?.full_name || 'Người dùng'}
+        subtitle={user?.username ? `@${user.username}` : undefined}
         breadcrumbs={[
           { label: 'Trang chủ', path: '/' },
           { label: 'Quản trị hệ thống', path: '/system-admin' },
           { label: 'IAM', path: '/system-admin/iam' },
           { label: 'Người dùng', path: '/system-admin/iam/users' },
-          { label: user.fullName }
+          { label: user?.full_name || 'Chi tiết' }
         ]}
         actions={
           <>
@@ -67,10 +90,21 @@ export default function UserDetailPage() {
             <button
               className={styles.buttonSecondary}
               disabled={!canUpdate}
-              title={user.status === 'locked' ? 'Mở khóa' : 'Khóa tài khoản'}
+              title={user?.status === 2 ? 'Mở khóa' : 'Khóa tài khoản'}
+              onClick={async () => {
+                if (!user) return;
+                const nextStatus = user.status === 2 ? 1 : 2;
+                try {
+                  await usersService.setUserStatus(user.id, nextStatus);
+                  setUser({ ...user, status: nextStatus });
+                } catch (err) {
+                  const messageText = err instanceof Error ? err.message : 'Không thể cập nhật trạng thái.';
+                  message.error(messageText);
+                }
+              }}
             >
-              {user.status === 'locked' ? <Unlock size={18} /> : <Lock size={18} />}
-              {user.status === 'locked' ? 'Mở khóa' : 'Khóa'}
+              {user?.status === 2 ? <Unlock size={18} /> : <Lock size={18} />}
+              {user?.status === 2 ? 'Mở khóa' : 'Khóa'}
             </button>
             <button className={styles.buttonPrimary} disabled={!canUpdate}>
               <Edit size={18} />
@@ -84,34 +118,30 @@ export default function UserDetailPage() {
           <div className={styles.infoCard}>
             <div className={styles.cardHeader}>
               <h3>Thông tin cơ bản</h3>
-              {getStatusBadge(user.status)}
+              {user ? getStatusBadge(user.status) : null}
             </div>
             <div className={styles.infoGrid}>
               <div className={styles.infoRow}>
                 <span className={styles.label}>Username:</span>
-                <span className={styles.value}>{user.username}</span>
+                <span className={styles.value}>{user?.username || '-'}</span>
               </div>
               <div className={styles.infoRow}>
                 <span className={styles.label}>Họ và tên:</span>
-                <span className={styles.value}>{user.fullName}</span>
+                <span className={styles.value}>{user?.full_name || '-'}</span>
               </div>
               <div className={styles.infoRow}>
                 <span className={styles.label}>Email:</span>
-                <span className={styles.value}>{user.email}</span>
+                <span className={styles.value}>{user?.email || '-'}</span>
               </div>
               <div className={styles.infoRow}>
                 <span className={styles.label}>Điện thoại:</span>
-                <span className={styles.value}>{user.phone}</span>
-              </div>
-              <div className={styles.infoRow}>
-                <span className={styles.label}>Chức vụ:</span>
-                <span className={styles.value}>{user.position}</span>
+                <span className={styles.value}>{user?.phone || '-'}</span>
               </div>
               <div className={styles.infoRow}>
                 <span className={styles.label}>Đăng nhập lần cuối:</span>
                 <span className={styles.value}>
-                  {user.lastLoginAt ? (
-                    new Date(user.lastLoginAt).toLocaleString('vi-VN', {
+                  {user?.last_login_at ? (
+                    new Date(user.last_login_at).toLocaleString('vi-VN', {
                       day: '2-digit',
                       month: '2-digit',
                       year: 'numeric',
@@ -126,13 +156,13 @@ export default function UserDetailPage() {
               <div className={styles.infoRow}>
                 <span className={styles.label}>Ngày tạo:</span>
                 <span className={styles.value}>
-                  {new Date(user.createdAt).toLocaleDateString('vi-VN')}
+                  {user?.created_at ? new Date(user.created_at).toLocaleDateString('vi-VN') : '-'}
                 </span>
               </div>
               <div className={styles.infoRow}>
                 <span className={styles.label}>Cập nhật:</span>
                 <span className={styles.value}>
-                  {new Date(user.updatedAt).toLocaleDateString('vi-VN')}
+                  {user?.updated_at ? new Date(user.updated_at).toLocaleDateString('vi-VN') : '-'}
                 </span>
               </div>
             </div>
@@ -145,7 +175,7 @@ export default function UserDetailPage() {
               <button
                 className={styles.buttonSecondary}
                 disabled={!canAssign}
-                onClick={() => navigate(`/system-admin/iam/assignments/users/${user.id}`)}
+                onClick={() => navigate(`/system-admin/iam/assignments/users/${user?.id}`)}
               >
                 <Shield size={16} />
                 Quản lý phân quyền
@@ -158,17 +188,13 @@ export default function UserDetailPage() {
             ) : (
               <div className={styles.rolesList}>
                 {userRoles.map((role) => (
-                  <div key={role?.id} className={styles.roleCard}>
+                  <div key={role.code} className={styles.roleCard}>
                     <div className={styles.roleInfo}>
-                      <div className={styles.roleName}>{role?.name}</div>
-                      <div className={styles.roleCode}>{role?.code}</div>
+                      <div className={styles.roleName}>{role.name}</div>
+                      <div className={styles.roleCode}>{role.code}</div>
                     </div>
                     <div className={styles.roleType}>
-                      {role?.type === 'system' ? (
-                        <span className={styles.typeSystem}>System</span>
-                      ) : (
-                        <span className={styles.typeCustom}>Custom</span>
-                      )}
+                      <span className={styles.typeCustom}>Vai trò</span>
                     </div>
                   </div>
                 ))}

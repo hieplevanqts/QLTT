@@ -24,7 +24,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import { mockLeads } from '../../data/lead-risk/mockLeads';
-import { StatusBadge } from '../../app/components/lead-risk/StatusBadge';
+import { StatusBadge } from '../../app/components/common/StatusBadge';
+import { getStatusProps } from '../../app/utils/status-badge-helper';
 import { UrgencyBadge } from '../../app/components/lead-risk/UrgencyBadge';
 import { SLATimer } from '../../app/components/lead-risk/SLATimer';
 import { OutcomeModal } from '../../app/components/OutcomeModal';
@@ -194,12 +195,12 @@ export default function LeadDetail() {
               deadline={lead.sla.deadline}
               remainingHours={lead.sla.remainingHours}
               isOverdue={lead.sla.isOverdue}
-              size="lg"
+              size="md"
             />
           </div>
           
           <div className={styles.metadata}>
-            <StatusBadge status={lead.status} />
+            <StatusBadge {...getStatusProps('lead', lead.status)} />
             <UrgencyBadge urgency={lead.urgency} />
             <div className={styles.metaItem}>
               <MapPin size={14} />

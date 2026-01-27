@@ -64,8 +64,8 @@ interface Lead {
 }
 
 interface Props {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 // Mock data with CSS positions
@@ -236,7 +236,7 @@ const mockLeads: Lead[] = [
   },
 ];
 
-export default function SLAOperationMap({ isOpen, onClose }: Props) {
+export default function SLAOperationMap({ isOpen = true, onClose = () => {} }: Props) {
   const [filters, setFilters] = useState<MapFilters>({
     slaStatus: ['atRisk', 'overdue'],
     organizations: [],

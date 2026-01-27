@@ -12,9 +12,11 @@ import {
   Check,
   Download,
   Plus,
+  CheckCircle,
 } from 'lucide-react';
 import { type InspectionTask, type TaskStatus } from '../../data/inspection-tasks-mock-data';
-import { InspectionTaskStatusBadge } from './InspectionTaskStatusBadge';
+import { StatusBadge } from '../common/StatusBadge';
+import { getStatusProps } from '../../utils/status-badge-helper';
 import { toast } from 'sonner';
 import styles from './TaskDetailModal.module.css';
 import ViolationDetailModal, { type Violation } from './ViolationDetailModal';
@@ -29,6 +31,7 @@ interface TaskDetailModalProps {
   onClose: () => void;
   onEdit?: (task: InspectionTask) => void;
   onStatusChange?: (taskId: string, newStatus: TaskStatus) => void;
+  onCompleteTask?: (task: InspectionTask) => void;
 }
 
 // Mock checklist forms data
@@ -111,7 +114,7 @@ const MOCK_VIOLATION: Violation | null = {
   ],
 };
 
-export function TaskDetailModal({ task, isOpen, onClose, onEdit }: TaskDetailModalProps) {
+export function TaskDetailModal({ task, isOpen, onClose, onEdit, onCompleteTask }: TaskDetailModalProps) {
   const [activeTab, setActiveTab] = useState<'info' | 'checklist' | 'evidence' | 'violations'>('info');
   const [isViolationDetailOpen, setIsViolationDetailOpen] = useState(false);
   const [isChecklistItemModalOpen, setIsChecklistItemModalOpen] = useState(false);
@@ -251,7 +254,7 @@ export function TaskDetailModal({ task, isOpen, onClose, onEdit }: TaskDetailMod
                     <div className={styles.infoRow}>
                       <div className={styles.infoLabel}>Trạng thái hiện tại</div>
                       <div className={styles.infoValue}>
-                        <InspectionTaskStatusBadge type="status" value={task.status} />
+                        <StatusBadge {...getStatusProps('task', task.status)} size="sm" />
                       </div>
                     </div>
                     <div className={styles.infoRow}>
@@ -424,6 +427,18 @@ export function TaskDetailModal({ task, isOpen, onClose, onEdit }: TaskDetailMod
               <Edit2 size={18} />
               Cập nhật dữ liệu
             </button>
+            { task.status === 'in_progress' && onCompleteTask && (
+              <button 
+                className={`${styles.footerButton} ${styles.completeBtn}`} 
+                onClick={() => {
+                  onCompleteTask(task);
+                  onClose();
+                }}
+              >
+                <CheckCircle size={18} />
+                Hoàn thành phiên
+              </button>
+            )}
           </div>
         </div>
       </div>

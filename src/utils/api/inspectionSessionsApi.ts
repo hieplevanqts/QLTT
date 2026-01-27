@@ -105,3 +105,32 @@ export async function fetchInspectionSessionsApi(campaignId?: string): Promise<I
     throw error;
   }
 }
+
+export async function updateInspectionSessionApi(id: string, updates: Partial<InspectionSessionResponse>): Promise<InspectionSession | null> {
+  try {
+    const url = `${SUPABASE_REST_URL}/map_inspection_sessions?_id=eq.${id}`;
+    
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        ...getHeaders(),
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify(updates)
+    });
+    
+    if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status} - ${errText}`);
+    }
+    
+    const data: InspectionSessionResponse[] = await response.json();
+    if (!data || data.length === 0) return null;
+    
+    return mapRowToSession(data[0]);
+  } catch (error) {
+    console.error('updateInspectionSessionApi Error:', error);
+    throw error;
+  }
+}

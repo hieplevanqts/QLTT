@@ -3,226 +3,601 @@
  * Permission: sa.iam.user.read
  */
 
-import React, { useState, useMemo } from 'react';
-import { Plus, Search, Eye, Lock, Unlock, Users as UsersIcon } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { PermissionGate, EmptyState, usePermissions } from '../../_shared';
-import PageHeader from '@/layouts/PageHeader';
-import { Button } from '@/app/components/ui/button';
-import { Card, CardContent } from '@/app/components/ui/card';
-import { MOCK_USERS } from '../mock-data';
-import type { User } from '../types';
-import styles from './UsersPage.module.css';
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Button,
+  Card,
+  Checkbox,
+  Form,
+  Dropdown,
+  Input,
+  Modal,
+  Radio,
+  Select,
+  Space,
+  Tag,
+  Tooltip,
+  Typography,
+  type InputRef,
+  type MenuProps,
+} from "antd";
+import {
+  PlusOutlined,
+  EyeOutlined,
+  EditOutlined,
+  LockOutlined,
+  UnlockOutlined,
+  TeamOutlined,
+  MoreOutlined,
+} from "@ant-design/icons";
+
+import { PermissionGate, EmptyState, usePermissions } from "../../_shared";
+import PageHeader from "@/layouts/PageHeader";
+import AppTable from "@/components/data-table/AppTable";
+import { getColumnSearchProps } from "@/components/data-table/columnSearch";
+import { usersService, type UserRecord, type UserStatusValue, type RoleOption } from "../services/users.service";
+
+const formatDateTime = (value?: string | null) => {
+  if (!value) return "Chưa đăng nhập";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const statusColor = (status: UserStatusValue) => {
+  if (status === 1) return "green";
+  if (status === 0) return "orange";
+  return "red";
+};
+
+const statusLabel = (status: UserStatusValue) => {
+  if (status === 1) return "Hoạt động";
+  if (status === 0) return "Tạm dừng";
+  return "Khóa";
+};
 
 export default function UsersPage() {
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | User['status']>('all');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const searchInput = React.useRef<InputRef>(null);
+  const [columnSearchText, setColumnSearchText] = React.useState("");
+  const [searchedColumn, setSearchedColumn] = React.useState("");
 
-  const canCreate = hasPermission('sa.iam.user.create');
-  const canUpdate = hasPermission('sa.iam.user.update');
-  const canDelete = hasPermission('sa.iam.user.delete');
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [debouncedSearch, setDebouncedSearch] = React.useState("");
+  const [statusFilter, setStatusFilter] = React.useState<"all" | "active" | "inactive" | "locked">("all");
+  const [roleFilter, setRoleFilter] = React.useState<string>("all");
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(10);
+  const [sortField, setSortField] = React.useState<string | null>(null);
+  const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("desc");
 
-  const filteredData = useMemo(() => {
-    return MOCK_USERS.filter(user => {
-      // Status filter
-      if (statusFilter !== 'all' && user.status !== statusFilter) {
-        return false;
-      }
-      
-      // Search filter
-      if (!searchQuery) return true;
-      const query = searchQuery.toLowerCase();
-      return (
-        user.username.toLowerCase().includes(query) ||
-        user.fullName.toLowerCase().includes(query) ||
-        user.email.toLowerCase().includes(query)
-      );
+  const canCreate = hasPermission("sa.iam.user.create");
+  const canUpdate = hasPermission("sa.iam.user.update");
+
+  const [loading, setLoading] = React.useState(false);
+  const [users, setUsers] = React.useState<UserRecord[]>([]);
+  const [total, setTotal] = React.useState(0);
+  const [roles, setRoles] = React.useState<RoleOption[]>([]);
+
+  const [formOpen, setFormOpen] = React.useState(false);
+  const [editingUser, setEditingUser] = React.useState<UserRecord | null>(null);
+  const [rolesModalOpen, setRolesModalOpen] = React.useState(false);
+  const [rolesTarget, setRolesTarget] = React.useState<UserRecord | null>(null);
+
+  const [form] = Form.useForm();
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, statusFilter, roleFilter]);
+
+  const getMoreActions = (record: UserRecord): MenuProps => ({
+    items: [
+      {
+        key: "view",
+        label: "Xem chi tiết",
+        onClick: () => navigate(`/system-admin/iam/users/${record.id}`),
+      },
+    ],
+  });
+
+  const loadRoles = React.useCallback(async () => {
+    try {
+      const result = await usersService.listRoles();
+      setRoles(result);
+    } catch (err) {
+      const messageText = err instanceof Error ? err.message : "Không thể tải danh sách vai trò.";
+      Modal.error({ title: "Lỗi tải vai trò", content: messageText });
+    }
+  }, []);
+
+  const loadUsers = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await usersService.listUsers({
+        q: debouncedSearch || undefined,
+        status: statusFilter,
+        roleId: roleFilter === "all" ? null : roleFilter,
+        page,
+        pageSize,
+        sortBy: sortField || undefined,
+        sortDir: sortOrder,
+      });
+      setUsers(result.data);
+      setTotal(result.total);
+    } catch (err) {
+      const messageText = err instanceof Error ? err.message : "Không thể tải danh sách người dùng.";
+      Modal.error({ title: "Lỗi tải dữ liệu", content: messageText });
+    } finally {
+      setLoading(false);
+    }
+  }, [debouncedSearch, page, pageSize, roleFilter, sortField, sortOrder, statusFilter]);
+
+  React.useEffect(() => {
+    void loadRoles();
+  }, [loadRoles]);
+
+  React.useEffect(() => {
+    void loadUsers();
+  }, [loadUsers]);
+
+  const openCreateModal = () => {
+    setEditingUser(null);
+    form.resetFields();
+    form.setFieldsValue({ status: 1 });
+    setFormOpen(true);
+  };
+
+  const openEditModal = (record: UserRecord) => {
+    setEditingUser(record);
+    form.setFieldsValue({
+      username: record.username,
+      full_name: record.full_name,
+      email: record.email,
+      phone: record.phone,
+      status: record.status,
+      note: record.note,
     });
-  }, [searchQuery, statusFilter]);
+    setFormOpen(true);
+  };
 
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const paginatedData = filteredData.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+      if (editingUser) {
+        await usersService.updateUser(editingUser.id, values);
+      } else {
+        await usersService.createUser(values);
+      }
+      setFormOpen(false);
+      void loadUsers();
+    } catch (err) {
+      if (err && typeof err === "object" && "errorFields" in err) return;
+      const messageText = err instanceof Error ? err.message : "Không thể lưu người dùng.";
+      Modal.error({ title: "Lỗi lưu dữ liệu", content: messageText });
+    }
+  };
 
-  const getStatusBadge = (status: User['status']) => {
-    switch (status) {
-      case 'active':
-        return <span className={styles.statusActive}>Hoạt động</span>;
-      case 'inactive':
-        return <span className={styles.statusInactive}>Tạm dừng</span>;
-      case 'locked':
-        return <span className={styles.statusLocked}>Khóa</span>;
+  const handleToggleStatus = async (record: UserRecord) => {
+    const nextStatus = record.status === 2 ? 1 : 2;
+    try {
+      await usersService.setUserStatus(record.id, nextStatus);
+      void loadUsers();
+    } catch (err) {
+      const messageText = err instanceof Error ? err.message : "Không thể cập nhật trạng thái.";
+      Modal.error({ title: "Lỗi cập nhật", content: messageText });
+    }
+  };
+
+  const openRolesModal = (record: UserRecord) => {
+    setRolesTarget(record);
+    setRolesModalOpen(true);
+  };
+
+  const handleSaveRoles = async (roleIds: string[], primaryRoleId?: string | null) => {
+    if (!rolesTarget) return;
+    try {
+      await usersService.setUserRoles(rolesTarget.id, roleIds, primaryRoleId ?? null);
+      setRolesModalOpen(false);
+      setRolesTarget(null);
+      void loadUsers();
+    } catch (err) {
+      const messageText = err instanceof Error ? err.message : "Không thể cập nhật vai trò.";
+      Modal.error({ title: "Lỗi cập nhật", content: messageText });
     }
   };
 
   return (
     <PermissionGate permission="sa.iam.user.read">
-      <div className={styles.pageContainer}>
-        {/* Page Header */}
+      <div className="flex flex-col gap-6">
         <PageHeader
           breadcrumbs={[
-            { label: 'Trang chủ', href: '/' },
-            { label: 'Quản trị hệ thống', href: '/system-admin' },
-            { label: 'IAM' },
-            { label: 'Người dùng' }
+            { label: "Trang chủ", href: "/" },
+            { label: "Quản trị hệ thống", href: "/system-admin" },
+            { label: "IAM" },
+            { label: "Người dùng" },
           ]}
           title="Quản lý Người dùng"
           subtitle="Quản lý tài khoản và thông tin người dùng hệ thống"
           actions={
-            <Button size="sm" disabled={!canCreate}>
-              <Plus size={18} />
+            <Button type="primary" icon={<PlusOutlined />} disabled={!canCreate} onClick={openCreateModal}>
               Thêm người dùng
             </Button>
           }
         />
 
-        {/* Main Card */}
-        <Card>
-          <CardContent>
-            {/* Toolbar */}
-            <div className={styles.toolbar}>
-              <div className={styles.searchBox}>
-                <Search size={18} className={styles.searchIcon} />
-                <input
-                  type="text"
-                  placeholder="Tìm theo username, họ tên, email..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className={styles.searchInput}
-                />
-              </div>
-              
-              <div className={styles.filters}>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as any)}
-                  className={styles.filterSelect}
-                >
-                  <option value="all">Tất cả trạng thái</option>
-                  <option value="active">Hoạt động</option>
-                  <option value="inactive">Tạm dừng</option>
-                  <option value="locked">Khóa</option>
-                </select>
-              </div>
+        <div className="px-6 pb-8">
+          <Card>
+            <AppTable<UserRecord>
+              rowKey="id"
+              loading={loading}
+              dataSource={users}
+              locale={{ emptyText: <EmptyState title="Không có dữ liệu" message="Chưa có người dùng nào." /> }}
+              toolbar={
+                <Space wrap style={{ width: "100%", justifyContent: "space-between" }}>
+                  <Space wrap>
+                    <Input
+                      placeholder="Tìm theo username, họ tên, email..."
+                      value={searchQuery}
+                      onChange={(event) => setSearchQuery(event.target.value)}
+                      allowClear
+                      style={{ width: 280 }}
+                    />
+                    <Select
+                      value={statusFilter}
+                      onChange={(value) => setStatusFilter(value)}
+                      style={{ width: 160 }}
+                      options={[
+                        { value: "all", label: "Tất cả trạng thái" },
+                        { value: "active", label: "Hoạt động" },
+                        { value: "inactive", label: "Tạm dừng" },
+                        { value: "locked", label: "Khóa" },
+                      ]}
+                    />
+                    <Select
+                      value={roleFilter}
+                      onChange={(value) => setRoleFilter(value)}
+                      style={{ width: 220 }}
+                      options={[
+                        { value: "all", label: "Tất cả vai trò" },
+                        ...roles.map((role) => ({
+                          value: role.id,
+                          label: `${role.code} - ${role.name}`,
+                        })),
+                      ]}
+                    />
+                  </Space>
+                  <Typography.Text type="secondary">
+                    Tổng: <strong>{total}</strong> người dùng
+                  </Typography.Text>
+                </Space>
+              }
+              pagination={{
+                current: page,
+                pageSize,
+                total,
+                onChange: (nextPage, nextPageSize) => {
+                  setPage(nextPage);
+                  setPageSize(nextPageSize);
+                },
+              }}
+              onChange={(pagination, _filters, sorter) => {
+                const nextPage = pagination.current ?? 1;
+                const nextPageSize = pagination.pageSize ?? pageSize;
+                setPage(nextPage);
+                setPageSize(nextPageSize);
+                if (!Array.isArray(sorter) && sorter.field) {
+                  setSortField(String(sorter.field));
+                  if (sorter.order) {
+                    setSortOrder(sorter.order === "ascend" ? "asc" : "desc");
+                  }
+                }
+              }}
+              columns={[
+                {
+                  title: "Username",
+                  dataIndex: "username",
+                  key: "username",
+                  width: 160,
+                  ellipsis: true,
+                  sorter: true,
+                  ...getColumnSearchProps<UserRecord>(
+                    "username",
+                    {
+                      searchText: columnSearchText,
+                      searchedColumn,
+                      setSearchText: setColumnSearchText,
+                      setSearchedColumn: setSearchedColumn,
+                      inputRef: searchInput,
+                    },
+                    { placeholder: "Tìm username" },
+                  ),
+                },
+                {
+                  title: "Họ và tên",
+                  dataIndex: "full_name",
+                  key: "full_name",
+                  width: 200,
+                  ellipsis: true,
+                  sorter: true,
+                  ...getColumnSearchProps<UserRecord>(
+                    "full_name",
+                    {
+                      searchText: columnSearchText,
+                      searchedColumn,
+                      setSearchText: setColumnSearchText,
+                      setSearchedColumn: setSearchedColumn,
+                      inputRef: searchInput,
+                    },
+                    { placeholder: "Tìm họ tên" },
+                  ),
+                },
+                {
+                  title: "Email",
+                  dataIndex: "email",
+                  key: "email",
+                  width: 220,
+                  ellipsis: true,
+                  sorter: true,
+                  ...getColumnSearchProps<UserRecord>(
+                    "email",
+                    {
+                      searchText: columnSearchText,
+                      searchedColumn,
+                      setSearchText: setColumnSearchText,
+                      setSearchedColumn: setSearchedColumn,
+                      inputRef: searchInput,
+                    },
+                    { placeholder: "Tìm email" },
+                  ),
+                },
+                {
+                  title: "Điện thoại",
+                  dataIndex: "phone",
+                  key: "phone",
+                  width: 140,
+                  ellipsis: true,
+                },
+                {
+                  title: "Vai trò",
+                  dataIndex: "roles",
+                  key: "roles",
+                  width: 220,
+                  render: (value: UserRecord["roles"]) => {
+                    if (!value || value.length === 0) return "-";
+                    const sorted = [...value].sort((a, b) => {
+                      if (a.is_primary && !b.is_primary) return -1;
+                      if (!a.is_primary && b.is_primary) return 1;
+                      return (a.code || "").localeCompare(b.code || "", "vi");
+                    });
+                    return (
+                      <Space wrap>
+                        {sorted.map((role) => (
+                          <Tag key={role.role_id} color={role.is_primary ? "blue" : "default"}>
+                            {role.code}
+                          </Tag>
+                        ))}
+                      </Space>
+                    );
+                  },
+                },
+                {
+                  title: "Đăng nhập lần cuối",
+                  dataIndex: "last_login_at",
+                  key: "last_login_at",
+                  width: 170,
+                  render: (value: string | null) => formatDateTime(value),
+                  sorter: true,
+                },
+                {
+                  title: "Trạng thái",
+                  dataIndex: "status",
+                  key: "status",
+                  width: 120,
+                  align: "center",
+                  render: (value: UserStatusValue) => (
+                    <Tag color={statusColor(value)}>{statusLabel(value)}</Tag>
+                  ),
+                },
+                {
+                  title: "Thao tác",
+                  key: "actions",
+                  width: 180,
+                  fixed: "right",
+                  render: (_: unknown, record: UserRecord) => (
+                    <Space>
+                      <Tooltip title="Xem chi tiết">
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<EyeOutlined />}
+                          onClick={() => navigate(`/system-admin/iam/users/${record.id}`)}
+                        />
+                      </Tooltip>
+                      <Tooltip title="Gán vai trò">
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<TeamOutlined />}
+                          disabled={!canUpdate}
+                          onClick={() => openRolesModal(record)}
+                        />
+                      </Tooltip>
+                      <Tooltip title="Chỉnh sửa">
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<EditOutlined />}
+                          disabled={!canUpdate}
+                          onClick={() => openEditModal(record)}
+                        />
+                      </Tooltip>
+                      <Tooltip title={record.status === "locked" ? "Mở khóa" : "Khóa tài khoản"}>
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={record.status === "locked" ? <UnlockOutlined /> : <LockOutlined />}
+                          disabled={!canUpdate}
+                          onClick={() => handleToggleStatus(record)}
+                        />
+                      </Tooltip>
+                      <Dropdown menu={getMoreActions(record)}>
+                        <Button type="text" size="small" icon={<MoreOutlined />} />
+                      </Dropdown>
+                    </Space>
+                  ),
+                },
+              ]}
+              scroll={{ x: "max-content" }}
+            />
+          </Card>
+        </div>
 
-              <div className={styles.stats}>
-                <span className={styles.statsText}>
-                  Tổng: <strong>{filteredData.length}</strong> người dùng
-                </span>
-              </div>
-            </div>
-
-            {/* Table */}
-            {paginatedData.length === 0 ? (
-              <EmptyState
-                icon={<Search size={48} />}
-                title="Không tìm thấy người dùng"
-                message="Không có người dùng nào phù hợp với tiêu chí tìm kiếm."
+        <Modal
+          open={formOpen}
+          title={editingUser ? "Cập nhật người dùng" : "Thêm người dùng"}
+          onCancel={() => setFormOpen(false)}
+          onOk={handleSubmit}
+          okText="Lưu"
+          cancelText="Hủy"
+        >
+          <Form form={form} layout="vertical">
+            <Form.Item
+              label="Username"
+              name="username"
+              rules={[{ required: true, message: "Vui lòng nhập username." }]}
+            >
+              <Input disabled={!!editingUser} />
+            </Form.Item>
+            <Form.Item
+              label="Họ và tên"
+              name="full_name"
+              rules={[{ required: true, message: "Vui lòng nhập họ và tên." }]}
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item label="Email" name="email">
+              <Input />
+            </Form.Item>
+            <Form.Item label="Số điện thoại" name="phone">
+              <Input />
+            </Form.Item>
+            <Form.Item label="Trạng thái" name="status">
+              <Select
+                options={[
+                  { value: 1, label: "Hoạt động" },
+                  { value: 0, label: "Tạm dừng" },
+                  { value: 2, label: "Khóa" },
+                ]}
               />
-            ) : (
-              <>
-                <div className={styles.tableContainer}>
-                  <table className={styles.table}>
-                    <thead>
-                      <tr>
-                        <th>Username</th>
-                        <th>Họ và tên</th>
-                        <th>Email</th>
-                        <th>Chức vụ</th>
-                        <th>Đăng nhập lần cuối</th>
-                        <th>Trạng thái</th>
-                        <th>Thao tác</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedData.map((user) => (
-                        <tr key={user.id}>
-                          <td>
-                            <span className={styles.username}>{user.username}</span>
-                          </td>
-                          <td>
-                            <span className={styles.fullName}>{user.fullName}</span>
-                          </td>
-                          <td>
-                            <span className={styles.email}>{user.email}</span>
-                          </td>
-                          <td>{user.position}</td>
-                          <td>
-                            {user.lastLoginAt ? (
-                              <span className={styles.dateText}>
-                                {new Date(user.lastLoginAt).toLocaleString('vi-VN', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </span>
-                            ) : (
-                              <span className={styles.neverLogin}>Chưa đăng nhập</span>
-                            )}
-                          </td>
-                          <td>{getStatusBadge(user.status)}</td>
-                          <td>
-                            <div className={styles.actionButtons}>
-                              <button
-                                className={styles.buttonSecondary}
-                                onClick={() => navigate(`/system-admin/iam/users/${user.id}`)}
-                                title="Xem chi tiết"
-                              >
-                                <Eye size={14} />
-                              </button>
-                              <button
-                                className={styles.buttonSecondary}
-                                disabled={!canUpdate}
-                                title={user.status === 'locked' ? 'Mở khóa' : 'Khóa tài khoản'}
-                              >
-                                {user.status === 'locked' ? (
-                                  <Unlock size={14} />
-                                ) : (
-                                  <Lock size={14} />
-                                )}
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+            </Form.Item>
+            <Form.Item label="Ghi chú" name="note">
+              <Input.TextArea rows={3} />
+            </Form.Item>
+          </Form>
+        </Modal>
 
-                {/* Pagination */}
-                <div className={styles.pagination}>
-                  <button
-                    className={styles.paginationButton}
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    Trước
-                  </button>
-                  <span className={styles.paginationInfo}>
-                    Trang {currentPage} / {totalPages}
-                  </span>
-                  <button
-                    className={styles.paginationButton}
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                  >
-                    Sau
-                  </button>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+        <UserRolesModal
+          open={rolesModalOpen}
+          user={rolesTarget}
+          roles={roles}
+          onClose={() => {
+            setRolesModalOpen(false);
+            setRolesTarget(null);
+          }}
+          onSave={handleSaveRoles}
+        />
       </div>
     </PermissionGate>
   );
 }
 
+type UserRolesModalProps = {
+  open: boolean;
+  user: UserRecord | null;
+  roles: RoleOption[];
+  onClose: () => void;
+  onSave: (roleIds: string[], primaryRoleId?: string | null) => void;
+};
+
+function UserRolesModal({ open, user, roles, onClose, onSave }: UserRolesModalProps) {
+  const [selectedRoles, setSelectedRoles] = React.useState<string[]>([]);
+  const [primaryRoleId, setPrimaryRoleId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!open || !user) return;
+    const roleIds = user.roles?.map((role) => role.role_id) ?? [];
+    const primary = user.roles?.find((role) => role.is_primary)?.role_id ?? null;
+    setSelectedRoles(roleIds);
+    setPrimaryRoleId(primary);
+  }, [open, user]);
+
+  React.useEffect(() => {
+    if (open) return;
+    setSelectedRoles([]);
+    setPrimaryRoleId(null);
+  }, [open]);
+
+  const roleOptions = roles.map((role) => ({
+    label: `${role.code} - ${role.name}`,
+    value: role.id,
+  }));
+
+  const handleSave = () => {
+    onSave(selectedRoles, primaryRoleId);
+  };
+
+  return (
+    <Modal
+      open={open}
+      title={user ? `Gán vai trò cho ${user.full_name || user.username || ""}` : "Gán vai trò"}
+      onCancel={onClose}
+      onOk={handleSave}
+      okText="Lưu"
+      cancelText="Hủy"
+      width={680}
+    >
+      <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+        <div>
+          <Typography.Text strong>Vai trò</Typography.Text>
+          <Checkbox.Group
+            value={selectedRoles}
+            options={roleOptions}
+            onChange={(values) => setSelectedRoles(values as string[])}
+            style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}
+          />
+        </div>
+        <div>
+          <Typography.Text strong>Vai trò chính</Typography.Text>
+          <Radio.Group
+            value={primaryRoleId}
+            onChange={(event) => setPrimaryRoleId(event.target.value)}
+          >
+            <Space direction="vertical">
+              {selectedRoles.map((roleId) => {
+                const role = roles.find((item) => item.id === roleId);
+                return (
+                  <Radio key={roleId} value={roleId}>
+                    {role ? `${role.code} - ${role.name}` : roleId}
+                  </Radio>
+                );
+              })}
+            </Space>
+          </Radio.Group>
+        </div>
+      </Space>
+    </Modal>
+  );
+}

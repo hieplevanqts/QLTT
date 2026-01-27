@@ -1,6 +1,6 @@
-import React from 'react';
-import { Clock, MapPin, User, AlertCircle, MoreVertical } from 'lucide-react';
-import { InspectionTaskStatusBadge } from './InspectionTaskStatusBadge';
+import { MapPin, AlertCircle, Clock } from 'lucide-react';
+import { StatusBadge } from '../common/StatusBadge';
+import { getStatusProps } from '../../utils/status-badge-helper';
 import { InspectionTask } from '../../data/inspection-tasks-mock-data';
 import ActionColumn, { type Action } from '../../../patterns/ActionColumn';
 import styles from './TaskCard.module.css';
@@ -29,18 +29,6 @@ export function TaskCard({ task, onClick, actions }: TaskCardProps) {
       .slice(0, 2);
   };
 
-  // Priority badge mapping
-  const getPriorityConfig = () => {
-    const configs = {
-      urgent: { label: 'KHẨN CẤP', color: '#ef4444' },
-      high: { label: 'CAO', color: '#f59e0b' },
-      medium: { label: 'TRUNG BÌNH', color: '#3b82f6' },
-      low: { label: 'THẤP', color: '#6b7280' },
-    };
-    return configs[task.priority] || configs.medium;
-  };
-
-  const priorityConfig = getPriorityConfig();
   const overdue = isOverdue();
 
   return (
@@ -50,23 +38,14 @@ export function TaskCard({ task, onClick, actions }: TaskCardProps) {
         <h4 className={styles.taskTitle}>{task.title}</h4>
         {actions && actions.length > 0 && (
           <div className={styles.actionsMenu} onClick={(e) => e.stopPropagation()}>
-            <ActionColumn actions={actions} variant="dots" />
+            <ActionColumn actions={actions} />
           </div>
         )}
       </div>
 
       {/* Tags/Badges Row */}
       <div className={styles.tagsRow}>
-        <span 
-          className={styles.priorityTag}
-          style={{ 
-            backgroundColor: `${priorityConfig.color}15`,
-            color: priorityConfig.color,
-            borderColor: `${priorityConfig.color}30`
-          }}
-        >
-          {priorityConfig.label}
-        </span>
+        <StatusBadge {...getStatusProps('priority', task.priority)} size="sm" />
         {task.roundId && (
           <span className={styles.roundTag}>
             {task.roundId}

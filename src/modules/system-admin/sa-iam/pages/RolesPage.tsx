@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   Drawer,
+  Dropdown,
   Form,
   Input,
   InputNumber,
@@ -15,24 +16,30 @@ import {
   Popconfirm,
   Select,
   Space,
-  Table,
   Tag,
   Tooltip,
   Typography,
   message,
+  type InputRef,
+  type MenuProps,
 } from "antd";
 import {
   EyeOutlined,
   EditOutlined,
   TeamOutlined,
+  KeyOutlined,
   StopOutlined,
   CheckCircleOutlined,
   PlusOutlined,
   ReloadOutlined,
   DeleteOutlined,
+  MoreOutlined,
 } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 
 import PageHeader from "@/layouts/PageHeader";
+import AppTable from "@/components/data-table/AppTable";
+import { getColumnSearchProps } from "@/components/data-table/columnSearch";
 import { PermissionGate } from "../../_shared";
 import { rolesService, type RoleRecord, type RoleStatusValue } from "../services/roles.service";
 import RoleUsersModal from "./RoleUsersModal";
@@ -52,6 +59,10 @@ const statusColor = (status?: RoleStatusValue | null) => (status === 1 ? "green"
 const nextStatus = (status?: RoleStatusValue | null) => (status === 1 ? 0 : 1);
 
 export default function RolesPage() {
+  const navigate = useNavigate();
+  const searchInput = React.useRef<InputRef>(null);
+  const [columnSearchText, setColumnSearchText] = React.useState("");
+  const [searchedColumn, setSearchedColumn] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [roles, setRoles] = React.useState<RoleRecord[]>([]);
   const [total, setTotal] = React.useState(0);
@@ -198,6 +209,21 @@ export default function RolesPage() {
     setUsersModalOpen(true);
   };
 
+  const getMoreActions = (record: RoleRecord): MenuProps => ({
+    items: [
+      {
+        key: "view",
+        label: "Xem chi tiết",
+        onClick: () => openView(record),
+      },
+      {
+        key: "assign",
+        label: "Phân quyền",
+        onClick: () => navigate(`/system-admin/iam/role-permissions/${record.id}`),
+      },
+    ],
+  });
+
   return (
     <PermissionGate permission="sa.iam.role.read">
       <div className="flex flex-col gap-6">
@@ -250,7 +276,7 @@ export default function RolesPage() {
                 </Typography.Text>
               </Space>
 
-              <Table
+              <AppTable
                 rowKey="id"
                 loading={loading}
                 dataSource={roles}
@@ -258,8 +284,6 @@ export default function RolesPage() {
                   current: page,
                   pageSize,
                   total,
-                  showSizeChanger: true,
-                  pageSizeOptions: [10, 20, 50],
                   onChange: (nextPage, nextPageSize) => {
                     setPage(nextPage);
                     setPageSize(nextPageSize);
@@ -272,11 +296,37 @@ export default function RolesPage() {
                     key: "code",
                     width: 160,
                     render: (value: string) => <span style={{ fontWeight: 600 }}>{value}</span>,
+                    sorter: (a: RoleRecord, b: RoleRecord) => a.code.localeCompare(b.code, "vi"),
+                    ellipsis: true,
+                    ...getColumnSearchProps<RoleRecord>(
+                      "code",
+                      {
+                        searchText: columnSearchText,
+                        searchedColumn,
+                        setSearchText: setColumnSearchText,
+                        setSearchedColumn,
+                        inputRef: searchInput,
+                      },
+                      { placeholder: "Tìm mã vai trò" },
+                    ),
                   },
                   {
                     title: "Tên vai trò",
                     dataIndex: "name",
                     key: "name",
+                    sorter: (a: RoleRecord, b: RoleRecord) => a.name.localeCompare(b.name, "vi"),
+                    ellipsis: true,
+                    ...getColumnSearchProps<RoleRecord>(
+                      "name",
+                      {
+                        searchText: columnSearchText,
+                        searchedColumn,
+                        setSearchText: setColumnSearchText,
+                        setSearchedColumn,
+                        inputRef: searchInput,
+                      },
+                      { placeholder: "Tìm tên vai trò" },
+                    ),
                   },
                   {
                     title: "Mô tả",
@@ -284,6 +334,17 @@ export default function RolesPage() {
                     key: "description",
                     render: (value?: string) => value || "-",
                     ellipsis: true,
+                    ...getColumnSearchProps<RoleRecord>(
+                      "description",
+                      {
+                        searchText: columnSearchText,
+                        searchedColumn,
+                        setSearchText: setColumnSearchText,
+                        setSearchedColumn,
+                        inputRef: searchInput,
+                      },
+                      { placeholder: "Tìm mô tả" },
+                    ),
                   },
                   {
                     title: "Số người dùng",
@@ -291,6 +352,9 @@ export default function RolesPage() {
                     key: "user_count",
                     width: 130,
                     render: (value: number | null | undefined) => value ?? 0,
+                    sorter: (a: RoleRecord, b: RoleRecord) =>
+                      (a.user_count ?? 0) - (b.user_count ?? 0),
+                    align: "center",
                   },
                   {
                     title: "Trạng thái",
@@ -300,11 +364,15 @@ export default function RolesPage() {
                     render: (value: RoleStatusValue) => (
                       <Tag color={statusColor(value)}>{statusLabel(value)}</Tag>
                     ),
+                    sorter: (a: RoleRecord, b: RoleRecord) =>
+                      (a.status ?? 0) - (b.status ?? 0),
+                    align: "center",
                   },
                   {
                     title: "Thao tác",
                     key: "actions",
-                    width: 240,
+                    width: 280,
+                    fixed: "right",
                     render: (_: unknown, record: RoleRecord) => (
                       <Space>
                         <Tooltip title="Xem">
@@ -325,6 +393,14 @@ export default function RolesPage() {
                             size="small"
                             icon={<TeamOutlined />}
                             onClick={() => openUsersModal(record)}
+                          />
+                        </Tooltip>
+                        <Tooltip title="Phân quyền">
+                          <Button
+                            type="text"
+                            size="small"
+                            icon={<KeyOutlined />}
+                            onClick={() => navigate(`/system-admin/iam/role-permissions/${record.id}`)}
                           />
                         </Tooltip>
                         <Tooltip
@@ -369,6 +445,9 @@ export default function RolesPage() {
                             />
                           </Popconfirm>
                         </Tooltip>
+                        <Dropdown menu={getMoreActions(record)}>
+                          <Button type="text" size="small" icon={<MoreOutlined />} />
+                        </Dropdown>
                       </Space>
                     ),
                   },

@@ -200,50 +200,24 @@ export const rolesService = {
   async listRoleUsers(roleId: string, params: RoleUserListParams): Promise<RoleUserListResult> {
     const page = params.page ?? 1;
     const pageSize = params.pageSize ?? 10;
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize - 1;
+    const search = params.q?.trim() || null;
+    const statusValue =
+      params.status === "active" ? 1 : params.status === "inactive" ? 0 : params.status === "locked" ? 2 : null;
 
-    const { data: roleUsers, error: roleUsersError } = await supabase
-      .from("user_roles")
-      .select("user_id")
-      .eq("role_id", roleId);
+    const { data, error } = await supabase.rpc("rpc_users_by_role", {
+      p_role_id: roleId,
+      p_q: search,
+      p_status: statusValue,
+      p_page: page,
+      p_page_size: pageSize,
+    });
 
-    if (roleUsersError) {
-      throw new Error(`role users select failed: ${roleUsersError.message}`);
+    if (error) {
+      throw new Error(`role users select failed: ${error.message}`);
     }
 
-    const userIds = (roleUsers || []).map((row: any) => row.user_id).filter(Boolean);
-    if (userIds.length === 0) {
-      return { data: [], total: 0 };
-    }
-
-    let usersQuery = supabase
-      .from("users")
-      .select("*", { count: "exact" })
-      .in("_id", userIds)
-      .order("full_name", { ascending: true })
-      .order("username", { ascending: true })
-      .range(from, to);
-
-    const search = params.q?.trim();
-    if (search) {
-      usersQuery = usersQuery.or(
-        `username.ilike.%${search}%,full_name.ilike.%${search}%,email.ilike.%${search}%`,
-      );
-    }
-
-    if (params.status && params.status !== "all") {
-      const statusValue = params.status === "active" ? 1 : params.status === "inactive" ? 0 : 2;
-      usersQuery = usersQuery.eq("status", statusValue);
-    }
-
-    const { data: users, error: usersError, count } = await usersQuery;
-    if (usersError) {
-      throw new Error(`role users select failed: ${usersError.message}`);
-    }
-
-    const mapped = (users || []).map((user: any) => ({
-      id: user._id,
+    const mapped = (data || []).map((user: any) => ({
+      id: user._id ?? user.id,
       username: user.username ?? null,
       full_name: user.full_name ?? null,
       email: user.email ?? null,
@@ -251,6 +225,8 @@ export const rolesService = {
       lastLoginAt: user.last_login_at ?? user.lastLoginAt ?? null,
     }));
 
-    return { data: mapped, total: count ?? 0 };
+    const total = data && data.length > 0 ? Number(data[0].total_count) : 0;
+
+    return { data: mapped, total };
   },
 };

@@ -16,7 +16,6 @@ import {
   Trash2,
   PauseCircle,
   Calendar,
-  Filter,
   Send,
   BarChart3
 } from 'lucide-react';
@@ -32,10 +31,18 @@ import FilterActionBar from '@/patterns/FilterActionBar';
 import ActionColumn, { Action } from '@/patterns/ActionColumn';
 import TableFooter from '@/ui-kit/TableFooter';
 import { StatusBadge } from '@/app/components/common/StatusBadge';
+import { getStatusProps } from '@/app/utils/status-badge-helper';
 import { useSupabaseInspectionRounds, type InspectionRound } from '@/hooks/useSupabaseInspectionRounds';
 import styles from './InspectionRoundsList.module.css';
-import AdvancedFilterModal, { FilterConfig } from '@/ui-kit/AdvancedFilterModal';
 import { DateRange } from '@/ui-kit/DateRangePicker';
+import DateRangePicker from '@/ui-kit/DateRangePicker';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/app/components/ui/select';
 
 import { 
   SendForApprovalModal,
@@ -63,16 +70,12 @@ export function InspectionRoundsList() {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   
   // Filter states
-  const [typeFilter, setTypeFilter] = useState<string>('all');
   const [planFilter, setPlanFilter] = useState<string>('all');
   const [dateRange, setDateRange] = useState<DateRange>({ startDate: null, endDate: null });
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-
-  // Advanced Filter Modal state
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
   // Modal states
   const [modalState, setModalState] = useState<{
@@ -276,7 +279,7 @@ export function InspectionRoundsList() {
       const matchesSearch = round.name.toLowerCase().includes(searchValue.toLowerCase()) ||
                            round.code.toLowerCase().includes(searchValue.toLowerCase()) ||
                            round.leadUnit.toLowerCase().includes(searchValue.toLowerCase());
-      const matchesType = typeFilter === 'all' || round.type === typeFilter;
+                            round.leadUnit.toLowerCase().includes(searchValue.toLowerCase());
       const matchesPlan = planFilter === 'all' || 
                          (planFilter === 'with_plan' && round.planId) ||
                          (planFilter === 'no_plan' && !round.planId);
@@ -297,9 +300,9 @@ export function InspectionRoundsList() {
         matchesDateRange = roundStart <= filterEnd && roundEnd >= filterStart;
       }
       
-      return matchesSearch && matchesType && matchesPlan && matchesActiveFilter && matchesDateRange;
+      return matchesSearch && matchesPlan && matchesActiveFilter && matchesDateRange;
     });
-  }, [rounds, searchValue, typeFilter, planFilter, activeFilter, dateRange]);
+  }, [rounds, searchValue, planFilter, activeFilter, dateRange]);
 
   // Pagination
   const totalPages = Math.ceil(filteredData.length / pageSize);
@@ -578,7 +581,7 @@ export function InspectionRoundsList() {
       key: 'status',
       label: 'Trạng thái',
       width: '140px',
-      render: (round) => <StatusBadge type="round" value={round.status} size="sm" />,
+      render: (round) => <StatusBadge {...getStatusProps('round', round.status)} size="sm" />,
     },
     {
       key: 'creator',
@@ -622,58 +625,8 @@ export function InspectionRoundsList() {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [typeFilter, planFilter, searchValue, activeFilter]);
+  }, [planFilter, searchValue, activeFilter]);
 
-
-  // Advanced Filter configuration
-  const filterConfigs: FilterConfig[] = [
-    {
-      key: 'type',
-      label: 'Loại đợt kiểm tra',
-      type: 'select',
-      options: [
-        { value: 'all', label: 'Tất cả loại' },
-        { value: 'routine', label: 'Định kỳ' },
-        { value: 'targeted', label: 'Chuyên đề' },
-        { value: 'sudden', label: 'Đột xuất' },
-        { value: 'followup', label: 'Tái kiểm tra' },
-      ],
-    },
-    {
-      key: 'plan',
-      label: 'Kế hoạch',
-      type: 'select',
-      options: [
-        { value: 'all', label: 'Tất cả' },
-        { value: 'with_plan', label: 'Thuộc kế hoạch' },
-        { value: 'no_plan', label: 'Không thuộc KH' },
-      ],
-    },
-    {
-      key: 'dateRange',
-      label: 'Thời gian kiểm tra',
-      type: 'daterange',
-    },
-  ];
-
-  const filterValues = {
-    type: typeFilter,
-    plan: planFilter,
-    dateRange: dateRange,
-  };
-
-  // Handle filter change
-  const handleFilterChange = (values: Record<string, any>) => {
-    setTypeFilter(values.type || 'all');
-    setPlanFilter(values.plan || 'all');
-    setDateRange(values.dateRange || { startDate: null, endDate: null });
-  };
-
-  // Handle apply filters
-  const handleApplyFilters = () => {
-    setIsFilterModalOpen(false);
-    toast.success('Đã áp dụng bộ lọc');
-  };
 
   const handleRefresh = async () => {
     await refetch();
@@ -688,22 +641,6 @@ export function InspectionRoundsList() {
           { label: 'Đợt kiểm tra' }
         ]}
         title="Quản lý đợt kiểm tra"
-        actions={
-          <>
-            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={loading}>
-              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-              Tải lại
-            </Button>
-            <Button variant="outline" size="sm">
-              <Download size={16} />
-              Xuất dữ liệu
-            </Button>
-            <Button size="sm" onClick={() => navigate('/plans/inspection-rounds/create-new')}>
-              <Plus size={16} />
-              Thêm mới
-            </Button>
-          </>
-        }
       />
 
       {/* Summary Cards */}
@@ -761,23 +698,50 @@ export function InspectionRoundsList() {
 
         {/* QLTT Standard: Filters and Search on SAME ROW */}
         <FilterActionBar
+          filters={
+            <>
+              <Select value={planFilter} onValueChange={setPlanFilter}>
+                <SelectTrigger style={{ width: '160px' }}>
+                  <SelectValue placeholder="Kế hoạch" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả kế hoạch</SelectItem>
+                  <SelectItem value="with_plan">Thuộc kế hoạch</SelectItem>
+                  <SelectItem value="no_plan">Không thuộc KH</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <DateRangePicker 
+                value={dateRange}
+                onChange={setDateRange}
+                placeholder="Thời gian kiểm tra"
+                className={styles.filterDateRange}
+              />
+            </>
+          }
           searchInput={
             <SearchInput
               placeholder="Tìm theo mã, tên đợt hoặc đơn vị"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              style={{ width: '400px' }}
+              style={{ width: '300px' }}
             />
           }
-          filters={
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setIsFilterModalOpen(true)}
-            >
-              <Filter size={16} />
-              Bộ lọc
-            </Button>
+          actions={
+            <>
+              <Button variant="outline" size="sm" onClick={handleRefresh} disabled={loading}>
+                <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                Tải lại
+              </Button>
+              <Button variant="outline" size="sm">
+                <Download size={16} />
+                Xuất dữ liệu
+              </Button>
+              <Button size="sm" onClick={() => navigate('/plans/inspection-rounds/create-new')}>
+                <Plus size={16} />
+                Thêm mới
+              </Button>
+            </>
           }
         />
       </div>
@@ -833,17 +797,6 @@ export function InspectionRoundsList() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Advanced Filter Modal */}
-      <AdvancedFilterModal
-        isOpen={isFilterModalOpen}
-        onClose={() => setIsFilterModalOpen(false)}
-        onApply={handleApplyFilters}
-        onClear={() => {}}
-        filters={filterConfigs}
-        values={filterValues}
-        onChange={handleFilterChange}
-      />
 
       {/* Action Modals */}
       <SendForApprovalModal
@@ -907,11 +860,13 @@ export function InspectionRoundsList() {
         onConfirm={handleDeployRound}
       />
 
-      {/* Create Session Dialog */}
       <CreateSessionDialog
-        isOpen={createSessionDialog.open}
-        onClose={() => setCreateSessionDialog({ open: false, roundId: '', roundName: '' })}
-        roundId={createSessionDialog.roundId}
+        open={createSessionDialog.open}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCreateSessionDialog(prev => ({ ...prev, open: false }));
+          }
+        }}
         roundName={createSessionDialog.roundName}
       />
     </div>

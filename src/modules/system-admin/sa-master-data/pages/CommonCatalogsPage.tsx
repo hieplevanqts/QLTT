@@ -3,6 +3,7 @@ import {
   Button,
   Card,
   Drawer,
+  Dropdown,
   Empty,
   Form,
   Input,
@@ -13,15 +14,27 @@ import {
   Col,
   Select,
   Space,
-  Table,
   Tag,
   Typography,
   message,
+  Tooltip,
+  type InputRef,
+  type MenuProps,
 } from "antd";
-import { PlusOutlined, ReloadOutlined } from "@ant-design/icons";
+import {
+  PlusOutlined,
+  ReloadOutlined,
+  EditOutlined,
+  StopOutlined,
+  CheckCircleOutlined,
+  DeleteOutlined,
+  MoreOutlined,
+} from "@ant-design/icons";
 import { useSearchParams } from "react-router-dom";
 
 import PageHeader from "@/layouts/PageHeader";
+import AppTable from "@/components/data-table/AppTable";
+import { getColumnSearchProps } from "@/components/data-table/columnSearch";
 import { PermissionGate, usePermissions } from "../../_shared";
 import { catalogsRepo, type CatalogRecord, type CatalogStatus } from "../data/catalogs.repo";
 import {
@@ -103,6 +116,9 @@ export function CatalogsManagerPage({ group, title, description }: CatalogsManag
 
   const [catalogsLoading, setCatalogsLoading] = React.useState(false);
   const [catalogs, setCatalogs] = React.useState<CatalogRecord[]>([]);
+  const catalogSearchInput = React.useRef<InputRef>(null);
+  const [catalogColumnSearchText, setCatalogColumnSearchText] = React.useState("");
+  const [catalogSearchedColumn, setCatalogSearchedColumn] = React.useState("");
   const [catalogSearch, setCatalogSearch] = React.useState("");
   const [catalogStatusFilter, setCatalogStatusFilter] = React.useState<"all" | "active" | "inactive">("all");
   const [selectedCatalogId, setSelectedCatalogId] = React.useState<string | null>(urlCatalogId);
@@ -117,6 +133,9 @@ export function CatalogsManagerPage({ group, title, description }: CatalogsManag
   const [itemsLoading, setItemsLoading] = React.useState(false);
   const [items, setItems] = React.useState<CatalogItemRecord[]>([]);
   const [itemsTotal, setItemsTotal] = React.useState(0);
+  const itemSearchInput = React.useRef<InputRef>(null);
+  const [itemColumnSearchText, setItemColumnSearchText] = React.useState("");
+  const [itemSearchedColumn, setItemSearchedColumn] = React.useState("");
   const [itemsSearch, setItemsSearch] = React.useState("");
   const [itemsStatusFilter, setItemsStatusFilter] = React.useState<"all" | "active" | "inactive">("all");
   const [itemsPage, setItemsPage] = React.useState(1);
@@ -313,6 +332,16 @@ export function CatalogsManagerPage({ group, title, description }: CatalogsManag
     }
   };
 
+  const getCatalogMoreActions = (record: CatalogRecord): MenuProps => ({
+    items: [
+      {
+        key: "edit",
+        label: "Sửa danh mục",
+        onClick: () => openEditCatalog(record),
+      },
+    ],
+  });
+
   const openCreateItem = () => {
     setItemFormMode("create");
     setEditingItem(null);
@@ -424,6 +453,16 @@ export function CatalogsManagerPage({ group, title, description }: CatalogsManag
     }
   };
 
+  const getItemMoreActions = (record: CatalogItemRecord): MenuProps => ({
+    items: [
+      {
+        key: "edit",
+        label: "Sửa mục",
+        onClick: () => openEditItem(record),
+      },
+    ],
+  });
+
   const renderBadgePreview = (record: CatalogItemRecord) => {
     const meta = record.meta ?? {};
     const color =
@@ -489,12 +528,13 @@ export function CatalogsManagerPage({ group, title, description }: CatalogsManag
                     />
                   </Space>
 
-                  <Table
+                  <AppTable
                     rowKey="id"
                     loading={catalogsLoading}
                     dataSource={catalogs}
                     pagination={false}
                     size="small"
+                    tableLayout="fixed"
                     scroll={{ x: 900, y: 520 }}
                     rowClassName={(record) =>
                       record.id === selectedCatalogId ? "ant-table-row-selected" : ""
@@ -510,6 +550,20 @@ export function CatalogsManagerPage({ group, title, description }: CatalogsManag
                         key: "key",
                         width: 160,
                         render: (value: string) => <span style={{ fontWeight: 600 }}>{value}</span>,
+                        sorter: (a: CatalogRecord, b: CatalogRecord) =>
+                          a.key.localeCompare(b.key, "vi"),
+                        ellipsis: true,
+                        ...getColumnSearchProps<CatalogRecord>(
+                          "key",
+                          {
+                            searchText: catalogColumnSearchText,
+                            searchedColumn: catalogSearchedColumn,
+                            setSearchText: setCatalogColumnSearchText,
+                            setSearchedColumn: setCatalogSearchedColumn,
+                            inputRef: catalogSearchInput,
+                          },
+                          { placeholder: "Tìm khóa" },
+                        ),
                       },
                       {
                         title: "Tên danh mục",
@@ -517,6 +571,19 @@ export function CatalogsManagerPage({ group, title, description }: CatalogsManag
                         key: "name",
                         width: 200,
                         ellipsis: true,
+                        sorter: (a: CatalogRecord, b: CatalogRecord) =>
+                          a.name.localeCompare(b.name, "vi"),
+                        ...getColumnSearchProps<CatalogRecord>(
+                          "name",
+                          {
+                            searchText: catalogColumnSearchText,
+                            searchedColumn: catalogSearchedColumn,
+                            setSearchText: setCatalogColumnSearchText,
+                            setSearchedColumn: setCatalogSearchedColumn,
+                            inputRef: catalogSearchInput,
+                          },
+                          { placeholder: "Tìm tên danh mục" },
+                        ),
                       },
                       {
                         title: "Mô tả",
@@ -525,6 +592,17 @@ export function CatalogsManagerPage({ group, title, description }: CatalogsManag
                         render: (value?: string) => value || "-",
                         width: 220,
                         ellipsis: true,
+                        ...getColumnSearchProps<CatalogRecord>(
+                          "description",
+                          {
+                            searchText: catalogColumnSearchText,
+                            searchedColumn: catalogSearchedColumn,
+                            setSearchText: setCatalogColumnSearchText,
+                            setSearchedColumn: setCatalogSearchedColumn,
+                            inputRef: catalogSearchInput,
+                          },
+                          { placeholder: "Tìm mô tả" },
+                        ),
                       },
                       {
                         title: "Số mục",
@@ -532,6 +610,9 @@ export function CatalogsManagerPage({ group, title, description }: CatalogsManag
                         key: "item_count",
                         width: 90,
                         render: (value?: number) => (value == null ? "—" : value),
+                        sorter: (a: CatalogRecord, b: CatalogRecord) =>
+                          (a.item_count ?? 0) - (b.item_count ?? 0),
+                        align: "center",
                       },
                       {
                         title: "Trạng thái",
@@ -541,27 +622,56 @@ export function CatalogsManagerPage({ group, title, description }: CatalogsManag
                         render: (value: CatalogStatus) => (
                           <Tag color={statusColor(value)}>{statusLabel(value)}</Tag>
                         ),
+                        align: "center",
                       },
                       {
                         title: "Thao tác",
                         key: "actions",
                         width: 150,
+                        fixed: "right",
                         render: (_: unknown, record: CatalogRecord) => (
                           <Space>
-                            <Button type="link" onClick={() => openEditCatalog(record)} disabled={!canUpdate}>
-                              Sửa
-                            </Button>
-                            <Popconfirm
-                              title={statusLabel(record.status) === "Hoạt động" ? "Ngừng danh mục này?" : "Kích hoạt danh mục này?"}
-                              okText="Xác nhận"
-                              cancelText="Hủy"
-                              onConfirm={() => handleToggleCatalogStatus(record)}
-                              disabled={!canDelete}
+                            <Tooltip title="Sửa">
+                              <Button
+                                type="text"
+                                size="small"
+                                icon={<EditOutlined />}
+                                onClick={() => openEditCatalog(record)}
+                                disabled={!canUpdate}
+                              />
+                            </Tooltip>
+                            <Tooltip
+                              title={statusLabel(record.status) === "Hoạt động" ? "Ngừng" : "Kích hoạt"}
                             >
-                              <Button type="link" danger disabled={!canDelete}>
-                                {statusLabel(record.status) === "Hoạt động" ? "Ngừng" : "Kích hoạt"}
-                              </Button>
-                            </Popconfirm>
+                              <Popconfirm
+                                title={
+                                  statusLabel(record.status) === "Hoạt động"
+                                    ? "Ngừng danh mục này?"
+                                    : "Kích hoạt danh mục này?"
+                                }
+                                okText="Xác nhận"
+                                cancelText="Hủy"
+                                onConfirm={() => handleToggleCatalogStatus(record)}
+                                disabled={!canDelete}
+                              >
+                                <Button
+                                  type="text"
+                                  size="small"
+                                  danger={statusLabel(record.status) === "Hoạt động"}
+                                  icon={
+                                    statusLabel(record.status) === "Hoạt động" ? (
+                                      <StopOutlined />
+                                    ) : (
+                                      <CheckCircleOutlined />
+                                    )
+                                  }
+                                  disabled={!canDelete}
+                                />
+                              </Popconfirm>
+                            </Tooltip>
+                            <Dropdown menu={getCatalogMoreActions(record)}>
+                              <Button type="text" size="small" icon={<MoreOutlined />} />
+                            </Dropdown>
                           </Space>
                         ),
                       },
@@ -633,7 +743,7 @@ export function CatalogsManagerPage({ group, title, description }: CatalogsManag
                       />
                     </Space>
 
-                    <Table
+                    <AppTable
                       rowKey="id"
                       loading={itemsLoading}
                       dataSource={items}
@@ -641,28 +751,56 @@ export function CatalogsManagerPage({ group, title, description }: CatalogsManag
                         current: itemsPage,
                         pageSize: itemsPageSize,
                         total: itemsTotal,
-                        showSizeChanger: true,
-                        pageSizeOptions: [10, 20, 50],
                         onChange: (page, pageSize) => {
                           setItemsPage(page);
                           setItemsPageSize(pageSize);
                         },
                       }}
+                      tableLayout="fixed"
                       columns={[
                         {
                           title: "Mã",
                           dataIndex: "code",
                           key: "code",
                           width: 140,
+                          sorter: (a: CatalogItemRecord, b: CatalogItemRecord) =>
+                            a.code.localeCompare(b.code, "vi"),
+                          ellipsis: true,
+                          ...getColumnSearchProps<CatalogItemRecord>(
+                            "code",
+                            {
+                              searchText: itemColumnSearchText,
+                              searchedColumn: itemSearchedColumn,
+                              setSearchText: setItemColumnSearchText,
+                              setSearchedColumn: setItemSearchedColumn,
+                              inputRef: itemSearchInput,
+                            },
+                            { placeholder: "Tìm mã mục" },
+                          ),
                         },
                         {
                           title: "Tên mục",
                           dataIndex: "name",
                           key: "name",
+                          ellipsis: true,
+                          sorter: (a: CatalogItemRecord, b: CatalogItemRecord) =>
+                            a.name.localeCompare(b.name, "vi"),
+                          ...getColumnSearchProps<CatalogItemRecord>(
+                            "name",
+                            {
+                              searchText: itemColumnSearchText,
+                              searchedColumn: itemSearchedColumn,
+                              setSearchText: setItemColumnSearchText,
+                              setSearchedColumn: setItemSearchedColumn,
+                              inputRef: itemSearchInput,
+                            },
+                            { placeholder: "Tìm tên mục" },
+                          ),
                         },
                         {
                           title: "Giá trị",
                           key: "value",
+                          ellipsis: true,
                           render: (_: unknown, record: CatalogItemRecord) =>
                             typeof record.meta?.value === "string" ? record.meta.value : "-",
                         },
@@ -671,6 +809,9 @@ export function CatalogsManagerPage({ group, title, description }: CatalogsManag
                           dataIndex: "sort_order",
                           key: "sort_order",
                           width: 90,
+                          sorter: (a: CatalogItemRecord, b: CatalogItemRecord) =>
+                            (a.sort_order ?? 0) - (b.sort_order ?? 0),
+                          align: "center",
                         },
                         {
                           title: "Badge",
@@ -686,42 +827,75 @@ export function CatalogsManagerPage({ group, title, description }: CatalogsManag
                           render: (value: CatalogItemStatus) => (
                             <Tag color={statusColor(value)}>{statusLabel(value)}</Tag>
                           ),
+                          align: "center",
                         },
                         {
                           title: "Thao tác",
                           key: "actions",
                           width: 200,
+                          fixed: "right",
                           render: (_: unknown, record: CatalogItemRecord) => (
                             <Space>
-                              <Button type="link" onClick={() => openEditItem(record)} disabled={!canUpdate}>
-                                Sửa
-                              </Button>
-                              <Popconfirm
+                              <Tooltip title="Sửa">
+                                <Button
+                                  type="text"
+                                  size="small"
+                                  icon={<EditOutlined />}
+                                  onClick={() => openEditItem(record)}
+                                  disabled={!canUpdate}
+                                />
+                              </Tooltip>
+                              <Tooltip
                                 title={
-                                  statusLabel(record.status) === "Hoạt động"
-                                    ? "Ngừng mục này?"
-                                    : "Kích hoạt mục này?"
+                                  statusLabel(record.status) === "Hoạt động" ? "Ngừng" : "Kích hoạt"
                                 }
-                                okText="Xác nhận"
-                                cancelText="Hủy"
-                                onConfirm={() => handleToggleItemStatus(record)}
-                                disabled={!canUpdate}
                               >
-                                <Button type="link" danger disabled={!canUpdate}>
-                                  {statusLabel(record.status) === "Hoạt động" ? "Ngừng" : "Kích hoạt"}
-                                </Button>
-                              </Popconfirm>
-                              <Popconfirm
-                                title="Xóa mục này?"
-                                okText="Xác nhận"
-                                cancelText="Hủy"
-                                onConfirm={() => handleDeleteItem(record)}
-                                disabled={!canDelete}
-                              >
-                                <Button type="link" danger disabled={!canDelete}>
-                                  Xóa
-                                </Button>
-                              </Popconfirm>
+                                <Popconfirm
+                                  title={
+                                    statusLabel(record.status) === "Hoạt động"
+                                      ? "Ngừng mục này?"
+                                      : "Kích hoạt mục này?"
+                                  }
+                                  okText="Xác nhận"
+                                  cancelText="Hủy"
+                                  onConfirm={() => handleToggleItemStatus(record)}
+                                  disabled={!canUpdate}
+                                >
+                                  <Button
+                                    type="text"
+                                    size="small"
+                                    danger={statusLabel(record.status) === "Hoạt động"}
+                                    icon={
+                                      statusLabel(record.status) === "Hoạt động" ? (
+                                        <StopOutlined />
+                                      ) : (
+                                        <CheckCircleOutlined />
+                                      )
+                                    }
+                                    disabled={!canUpdate}
+                                  />
+                                </Popconfirm>
+                              </Tooltip>
+                              <Tooltip title="Xóa">
+                                <Popconfirm
+                                  title="Xóa mục này?"
+                                  okText="Xác nhận"
+                                  cancelText="Hủy"
+                                  onConfirm={() => handleDeleteItem(record)}
+                                  disabled={!canDelete}
+                                >
+                                  <Button
+                                    type="text"
+                                    size="small"
+                                    danger
+                                    icon={<DeleteOutlined />}
+                                    disabled={!canDelete}
+                                  />
+                                </Popconfirm>
+                              </Tooltip>
+                              <Dropdown menu={getItemMoreActions(record)}>
+                                <Button type="text" size="small" icon={<MoreOutlined />} />
+                              </Dropdown>
                             </Space>
                           ),
                         },

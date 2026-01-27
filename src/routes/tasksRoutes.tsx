@@ -1,6 +1,5 @@
 import { RouteObject } from 'react-router-dom';
 import { PermissionProtectedRoute } from '../app/components/auth/PermissionProtectedRoute';
-import { InspectionTasksList } from '../app/pages/tasks/InspectionTasksList';
 import { TaskBoard } from '../app/pages/tasks/TaskBoard';
 
 /**
@@ -11,7 +10,7 @@ export const tasksRoutes: RouteObject[] = [
     path: 'tasks',
     element: (
       <PermissionProtectedRoute>
-        <InspectionTasksList />
+        <TaskBoard />
       </PermissionProtectedRoute>
     ),
   },
