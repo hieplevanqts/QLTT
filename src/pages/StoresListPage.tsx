@@ -1356,7 +1356,7 @@ export default function StoresListPage() {
               p_business_phone: data.businessPhone || null,
               p_business_email: data.email || null,
               p_website: data.website || null,
-              p_store_area: data.businessArea ? parseFloat(data.businessArea) : null,
+              p_store_area: data.area_name || null,  // Will use area_name from API response
               p_owner_phone_2: data.ownerPhone2 || null,
               p_owner_birth_year: data.ownerBirthYear ? parseInt(data.ownerBirthYear) : null,
               p_owner_identity_no: data.ownerIdNumber || null,
@@ -1397,7 +1397,7 @@ export default function StoresListPage() {
               industryName: data.industryName,
               establishedDate: data.establishedDate,
               operationStatus: data.operationStatus,
-              businessArea: data.businessArea,
+              businessArea: result?.area_name || data.businessArea || null,  // Use area_name from API response
               businessPhone: data.businessPhone,
               email: data.email,
               website: data.website,
