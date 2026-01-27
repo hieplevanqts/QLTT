@@ -106,11 +106,11 @@ export async function fetchMapPoints(statusIds?: string[], categoryIds?: string[
     }
     
     // Fetch from Supabase using PostgREST syntax
-    // Limit to 1000 points, order by creation time
+    // No limit on records, order by creation time
     // 🔥 FILTER: Only fetch points with non-null location (to skip invalid coordinates)
     // 🔥 Include category_map_points (LEFT JOIN) to get category names
     // 🔥 Include map_point_status to get status code and name
-    const url = `${baseUrl}${endpoint}?location=not.is.null&limit=1000&order=createdtime.desc&select=*,category_map_points(categories:category_id(name)),map_point_status(point_status(code,name))`;
+    const url = `${baseUrl}${endpoint}?location=not.is.null&limit=10000&order=createdtime.desc&select=*,category_map_points(categories:category_id(name)),map_point_status(point_status(code,name))`;
     
     const response = await fetch(url, {
       method: 'GET',
@@ -196,7 +196,7 @@ export async function fetchMapPointsFromSupabase(): Promise<Restaurant[]> {
       apiKeyPreview: getHeaders()['apikey']?.substring(0, 30) + '...',
     });
     
-    const url = `${baseUrl}${endpoint}?limit=1000&order=createdtime.desc`;
+    const url = `${baseUrl}${endpoint}?limit=10000&order=createdtime.desc`;
 
     const response = await fetch(url, {
       method: 'GET',
@@ -334,7 +334,7 @@ async function fetchMapPointsWithFilters(statusIds?: string[], categoryIds?: str
         : `category_map_points.category_id=in.(${categoryIds.join(',')})`;
       
       select = '*,category_map_points!inner(categories:category_id(name)),map_point_status!inner(point_status(*))';
-      url = `${baseUrl}/map_points?${categoryFilter}&select=${select}&limit=1000`;
+      url = `${baseUrl}/map_points?${categoryFilter}&select=${select}&limit=10000`;
       
     }
     // If ONLY status filter (no category filter)
@@ -361,7 +361,7 @@ async function fetchMapPointsWithFilters(statusIds?: string[], categoryIds?: str
         : `map_point_status.point_status_id=in.(${statusIds.join(',')})`;
       
       select = '*,category_map_points!inner(*),map_point_status!inner(point_status(*))';
-      url = `${baseUrl}/map_points?${categoryFilter}&${statusFilter}&select=${select}&limit=1000`;
+      url = `${baseUrl}/map_points?${categoryFilter}&${statusFilter}&select=${select}&limit=10000`;
       
     }
     
@@ -442,7 +442,7 @@ async function fetchMapPointsWithFilters(statusIds?: string[], categoryIds?: str
  */
 async function fetchAllMapPointsDirect(): Promise<Restaurant[]> {
   try {
-    const url = `${baseUrl}${endpoint}?limit=1000&order=createdtime.desc`;
+    const url = `${baseUrl}${endpoint}?limit=10000&order=createdtime.desc`;
     const response = await fetch(url, {
       method: 'GET',
       headers: getHeaders()

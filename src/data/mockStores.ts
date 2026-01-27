@@ -171,7 +171,7 @@ function generateInspectionDate(index: number): string {
   return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
 }
 
-export const mockStores: Store[] = Array.from({ length: 100 }, (_, index) => {
+export const mockStores: Store[] = Array.from({ length: 10000 }, (_, index) => {
   const id = index + 1;
   const jurisdictionIndex = index % jurisdictions.length;
   const jurisdiction = jurisdictions[jurisdictionIndex];

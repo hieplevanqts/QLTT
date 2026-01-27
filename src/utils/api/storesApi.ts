@@ -43,8 +43,8 @@ function mapStatus(status: string | null | undefined) {
  * @returns Array of stores mapped from merchants data
  */
 export async function fetchStores(
-  limit: number = 1000,
-  offset: number = 1000,
+  limit: number = 10000,
+  offset: number = 0,
   filters?: {
     status?: string;
     district?: string;
@@ -55,7 +55,7 @@ export async function fetchStores(
   }
 ): Promise<Store[]> {
   try {
-    // Build base URL with pagination
+    // Build base URL with pagination (supports unlimited records)
     let url = `${SUPABASE_REST_URL}/merchants?limit=${limit}&offset=${offset}&order=created_at.desc&select=*`;
 
     // Apply filters if provided
