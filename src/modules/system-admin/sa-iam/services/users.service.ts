@@ -59,11 +59,23 @@ export type UserPayload = {
   default_password?: string | null;
 };
 
+const API_BASE = import.meta.env.VITE_SYSTEM_ADMIN_API ?? "http://localhost:7788";
+
 const mapStatusFilter = (value: UserListParams["status"]) => {
   if (!value || value === "all") return null;
   if (value === "active") return 1;
   if (value === "inactive") return 0;
   return 2;
+};
+
+const requestAdmin = async <T>(path: string, options?: RequestInit): Promise<T> => {
+  const response = await fetch(`${API_BASE}${path}`, options);
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    const message = payload?.message || `Request failed: ${response.status}`;
+    throw new Error(message);
+  }
+  return (await response.json()) as T;
 };
 
 const mapRow = (row: any): UserRecord => ({
@@ -130,24 +142,18 @@ export const usersService = {
 
   async createUser(payload: UserPayload): Promise<UserRecord> {
     const { default_password, ...rest } = payload;
-    const { data, error } = await supabase
-      .from("users")
-      .insert([
-        {
-          ...rest,
-          status: rest.status ?? 1,
-          metadata: default_password
-            ? { defaultPassword: default_password }
-            : undefined,
-        },
-      ])
-      .select("*")
-      .single();
-
-    if (error) {
-      throw new Error(`user insert failed: ${error.message}`);
+    if (!default_password || !default_password.trim()) {
+      throw new Error("Vui lòng nhập mật khẩu mặc định để tạo tài khoản đăng nhập.");
     }
-
+    const data = await requestAdmin<any>("/system-admin/admin/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...rest,
+        status: rest.status ?? 1,
+        default_password: default_password.trim(),
+      }),
+    });
     return mapRow(data);
   },
 

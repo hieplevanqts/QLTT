@@ -3,9 +3,11 @@ import cors from 'cors';
 import multer from 'multer';
 import path from 'node:path';
 import fs from 'node:fs/promises';
+import { existsSync, readFileSync } from 'node:fs';
 import crypto from 'node:crypto';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import {
   addMenuItem,
   deleteMenuItem,
@@ -20,6 +22,55 @@ import {
 } from './importer/storage';
 import { deleteStoredZip, importModuleZip, inspectModuleUpdate, rollbackModule, rollbackModuleFromZip, updateModuleZip } from './importer/moduleImporter';
 import type { MenuItem, ModuleManifest, ReleaseType } from './importer/types';
+
+const loadEnvFile = () => {
+  try {
+    const envPath = path.join(getRepoRoot(), '.env');
+    if (!existsSync(envPath)) return;
+    const content = readFileSync(envPath, 'utf8');
+    const lines = content.split(/\r?\n/);
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (!line || line.startsWith('#')) continue;
+      const eqIndex = line.indexOf('=');
+      if (eqIndex <= 0) continue;
+      const key = line.slice(0, eqIndex).trim();
+      if (!key || process.env[key]) continue;
+      let value = line.slice(eqIndex + 1).trim();
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
+        value = value.slice(1, -1);
+      }
+      process.env[key] = value;
+    }
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.warn('Failed to load .env file for server:', (error as Error).message);
+  }
+};
+
+loadEnvFile();
+
+const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+let supabaseAdmin: SupabaseClient | null = null;
+
+const getSupabaseAdmin = () => {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error(
+      'Missing SUPABASE_URL/VITE_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY for admin operations.'
+    );
+  }
+  if (!supabaseAdmin) {
+    supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+  }
+  return supabaseAdmin;
+};
 
 const PORT = Number(process.env.SYSTEM_ADMIN_PORT || 7788);
 const app = express();
@@ -119,6 +170,13 @@ swaggerSpec.paths = {
     delete: {
       summary: 'Delete menu',
       parameters: [{ name: 'id', in: 'path', required: true }],
+      responses: { 200: { description: 'OK' } },
+    },
+  },
+  '/system-admin/admin/users': {
+    post: {
+      summary: 'Create auth user and public user profile',
+      requestBody: { required: true },
       responses: { 200: { description: 'OK' } },
     },
   },
@@ -710,6 +768,88 @@ app.delete('/system-admin/menus/:id', async (req, res) => {
     res.json({ ok: true });
   } catch (error: any) {
     res.status(500).json({ code: 'MENU_DELETE_FAILED', message: error.message });
+  }
+});
+
+app.post('/system-admin/admin/users', async (req, res) => {
+  try {
+    const email = (req.body?.email as string | undefined)?.trim();
+    const username = (req.body?.username as string | undefined)?.trim();
+    const fullName = (req.body?.full_name as string | undefined)?.trim();
+    const phone = (req.body?.phone as string | undefined)?.trim();
+    const statusRaw = req.body?.status;
+    const defaultPassword = (req.body?.default_password as string | undefined)?.trim();
+    const password = (req.body?.password as string | undefined)?.trim() || defaultPassword;
+    const note = (req.body?.note as string | undefined)?.trim();
+
+    if (!email || !password) {
+      res.status(400).json({
+        code: 'INVALID_PAYLOAD',
+        message: 'email and password/default_password are required.',
+      });
+      return;
+    }
+    if (!username) {
+      res.status(400).json({ code: 'INVALID_PAYLOAD', message: 'username is required.' });
+      return;
+    }
+
+    const adminClient = getSupabaseAdmin();
+
+    const authResult = await adminClient.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        username,
+        full_name: fullName ?? username,
+      },
+    });
+
+    if (authResult.error || !authResult.data.user?.id) {
+      const message = authResult.error?.message || 'Failed to create auth user.';
+      res.status(400).json({ code: 'AUTH_CREATE_FAILED', message });
+      return;
+    }
+
+    const authUserId = authResult.data.user.id;
+    const nowIso = new Date().toISOString();
+    const metadata: Record<string, unknown> = {};
+    if (defaultPassword) metadata.defaultPassword = defaultPassword;
+    if (note) metadata.note = note;
+
+    const { data, error } = await adminClient
+      .from('users')
+      .insert([
+        {
+          _id: authUserId,
+          username,
+          full_name: fullName ?? username,
+          email,
+          phone: phone || null,
+          status: typeof statusRaw === 'number' ? statusRaw : 1,
+          created_at: nowIso,
+          updated_at: nowIso,
+          metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+        },
+      ])
+      .select('*')
+      .single();
+
+    if (error) {
+      // Best-effort cleanup to avoid orphan auth user when profile insert fails.
+      try {
+        await adminClient.auth.admin.deleteUser(authUserId);
+      } catch {
+        // ignore cleanup failure
+      }
+      res.status(400).json({ code: 'PROFILE_CREATE_FAILED', message: error.message });
+      return;
+    }
+
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ code: 'ADMIN_USER_CREATE_FAILED', message: error.message });
   }
 });
 

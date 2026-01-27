@@ -538,6 +538,11 @@ export default function UsersPage() {
               label="Mật khẩu mặc định"
               name="default_password"
               tooltip="Dùng để gửi cho người dùng sau khi tạo tài khoản."
+              rules={
+                editingUser
+                  ? []
+                  : [{ required: true, message: "Vui lòng nhập mật khẩu mặc định." }]
+              }
             >
               <Input.Password placeholder="Nhập mật khẩu mặc định" />
             </Form.Item>
