@@ -55,17 +55,60 @@ export function usePermissions() {
         'sa.config.backup.restore',
         'sa.config.backup.delete'
       ]
-    : (user?.permissions || [
-        // Default permissions cho testing (limited access)
+    : (user?.permissions || 
+      // [
+      //   // Default permissions cho testing (limited access)
+      //   'sa.masterdata.orgunit.read',
+      //   'sa.masterdata.orgunit.create',
+      //   'sa.masterdata.orgunit.update',
+      //   'sa.masterdata.department.read',
+      //   'sa.masterdata.department.create',
+      //   'sa.masterdata.jurisdiction.read',
+      //   'sa.masterdata.catalog.read',
+      //   'sa.masterdata.catalog.update',
+      // ]
+      [
+        // qt_admin has ALL permissions - full CRUD on all modules
         'sa.masterdata.orgunit.read',
         'sa.masterdata.orgunit.create',
         'sa.masterdata.orgunit.update',
+        'sa.masterdata.orgunit.delete',
         'sa.masterdata.department.read',
         'sa.masterdata.department.create',
+        'sa.masterdata.department.update',
+        'sa.masterdata.department.delete',
         'sa.masterdata.jurisdiction.read',
+        'sa.masterdata.jurisdiction.create',
+        'sa.masterdata.jurisdiction.update',
+        'sa.masterdata.jurisdiction.delete',
         'sa.masterdata.catalog.read',
+        'sa.masterdata.catalog.create',
         'sa.masterdata.catalog.update',
-      ]);
+        'sa.masterdata.catalog.delete',
+        'sa.iam.user.read',
+        'sa.iam.user.create',
+        'sa.iam.user.update',
+        'sa.iam.user.delete',
+        'sa.iam.role.read',
+        'sa.iam.role.create',
+        'sa.iam.role.update',
+        'sa.iam.role.delete',
+        'sa.iam.permission.read',
+        'sa.iam.assignment.read',
+        'sa.iam.assignment.create',
+        'sa.iam.assignment.delete',
+        'sa.config.parameter.read',
+        'sa.config.parameter.update',
+        'sa.config.organization.read',
+        'sa.config.organization.update',
+        'sa.config.security.read',
+        'sa.config.security.update',
+        'sa.config.backup.read',
+        'sa.config.backup.create',
+        'sa.config.backup.restore',
+        'sa.config.backup.delete'
+      ]
+    );
 
   const hasAdminAccess =
     userPermissions.includes('admin:access') || userPermissions.includes('ADMIN_VIEW');

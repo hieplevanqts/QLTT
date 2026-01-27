@@ -10,54 +10,38 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  // Use Redux auth state - session is restored by rootSaga on app startup
   const { isAuthenticated, isLoading, isRestoring, token } = useAppSelector((state: RootState) => state.auth);
   const dispatch = useAppDispatch();
   const location = useLocation();
+
   const [hasCheckedStorage, setHasCheckedStorage] = useState(false);
   const [hasDoneFinalCheck, setHasDoneFinalCheck] = useState(false);
   const [restoreTimeout, setRestoreTimeout] = useState(false);
 
-  // Check if token exists in storage on mount (fallback if Redux restore hasn't run yet)
-  // 🔥 FIX: Always check storage on mount, even if restore is in progress
+  // 1. Kiểm tra storage khi mount
   useEffect(() => {
     const checkStorage = async () => {
-      // If already authenticated, mark as checked
       if (isAuthenticated) {
-        if (!hasCheckedStorage) {
-          console.log('🔒 ProtectedRoute: Already authenticated, marking as checked');
-          setHasCheckedStorage(true);
-        }
+        setHasCheckedStorage(true);
         return;
       }
 
-      // 🔥 FIX: Check storage even if restore is in progress (as a fallback)
-      // This ensures we trigger restore if rootSaga hasn't run yet
-      if (!hasCheckedStorage) {
-        try {
-          const storedToken = await getStoredToken();
-          if (storedToken) {
-            // Only trigger restore if not already restoring
-            if (!isRestoring) {
-              dispatch(restoreSessionRequest());
-            }
-          }
-          setHasCheckedStorage(true);
-        } catch (error) {
-          console.error('❌ ProtectedRoute: Error checking storage:', error);
-          setHasCheckedStorage(true);
+      try {
+        const storedToken = await getStoredToken();
+        if (storedToken && !isRestoring) {
+          dispatch(restoreSessionRequest());
         }
+      } catch {
+        // Error silently handled for production
+      } finally {
+        setHasCheckedStorage(true);
       }
     };
-    
-    // Run check immediately on mount
     checkStorage();
-  }, [dispatch]); // Only run once on mount
+  }, [dispatch, isAuthenticated, isRestoring]);
 
-  // 🔥 FIX: Check token expiry periodically and redirect if expired
-  // Only check after session is fully restored to avoid premature logout on reload
+  // 2. Kiểm tra hết hạn Token định kỳ
   useEffect(() => {
-    // Don't check if still restoring or loading - wait for restore to complete
     if (isRestoring || isLoading || !isAuthenticated || !token) return;
 
     const checkTokenExpiry = async () => {
@@ -65,21 +49,14 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         const expired = await isTokenExpired(0);
         if (expired) {
           await logout();
-          // Redirect to login
           window.location.replace('/auth/login');
         }
-      } catch (error) {
-        console.error('Error checking token expiry:', error);
+      } catch {
+        // Error silently handled
       }
     };
 
-    // Don't check immediately on mount - wait a bit for session to stabilize
-    // This prevents premature logout when reloading page
-    const timeout = setTimeout(() => {
-      checkTokenExpiry();
-    }, 2000); // Wait 2 seconds after mount before first check
-
-    // Check every 30 seconds after initial delay
+    const timeout = setTimeout(checkTokenExpiry, 2000);
     const interval = setInterval(checkTokenExpiry, 30000);
 
     return () => {
@@ -88,202 +65,62 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     };
   }, [isAuthenticated, token, isRestoring, isLoading]);
 
-  // 🔥 FIX: Add timeout to wait for restore to complete
-  // Give restore up to 5 seconds to complete before giving up
+  // 3. Xử lý Timeout khi khôi phục session
   useEffect(() => {
     if (isRestoring && !restoreTimeout) {
-      const timeout = setTimeout(() => {
-        console.warn('⚠️ ProtectedRoute: Restore timeout after 5 seconds');
+      const timer = setTimeout(() => {
         setRestoreTimeout(true);
       }, 5000);
-      
-      return () => clearTimeout(timeout);
+      return () => clearTimeout(timer);
     }
   }, [isRestoring, restoreTimeout]);
 
-  // 🔥 FIX: Final check before redirecting - use useEffect to handle async properly
-  // MUST be called before any early returns to follow Rules of Hooks
+  // 4. Kiểm tra cuối cùng trước khi redirect
   useEffect(() => {
-    // Only run final check if we're not authenticated, not loading/restoring, and haven't done final check yet
     if (!isLoading && !isRestoring && !isAuthenticated && hasCheckedStorage && !hasDoneFinalCheck) {
       const finalCheck = async () => {
         try {
           const storedToken = await getStoredToken();
           if (storedToken) {
             dispatch(restoreSessionRequest());
-            setHasDoneFinalCheck(true);
-            // Reset hasCheckedStorage to allow restore to complete
             setHasCheckedStorage(false);
-          } else {
-            setHasDoneFinalCheck(true);
           }
-        } catch (error) {
-          console.error('Error in final check:', error);
+        } finally {
           setHasDoneFinalCheck(true);
         }
       };
-      
-      // Run final check
       finalCheck();
     }
   }, [isLoading, isRestoring, isAuthenticated, hasCheckedStorage, hasDoneFinalCheck, dispatch]);
 
-  // Debug logging (remove in production)
-  if (typeof window !== 'undefined' && import.meta.env.DEV) {
-    console.log('🔒 ProtectedRoute:', {
-      isAuthenticated,
-      isLoading,
-      isRestoring,
-      hasToken: !!token,
-      hasCheckedStorage,
-      path: location.pathname,
-    });
-  }
-
-  // Show loading state while checking authentication or restoring session
-  // 🔥 FIX: Always wait for restore to complete before redirecting
-  // Wait if:
-  // 1. Still loading/restoring (and not timed out)
-  // 2. Not authenticated AND haven't checked storage yet
-  // 3. Not authenticated AND restore just started (give it time)
-  const shouldWaitForRestore = (isLoading || (isRestoring && !restoreTimeout)) || (!isAuthenticated && !hasCheckedStorage);
-  
-  if (shouldWaitForRestore) {
-    return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-        background: 'var(--background)',
-        fontFamily: 'Inter, sans-serif'
-      }}>
+  // Loading UI Component
+  const LoadingScreen = ({ message }: { message: string }) => (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      height: '100vh', background: 'var(--background)', fontFamily: 'Inter, sans-serif'
+    }}>
+      <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
         <div style={{
-          textAlign: 'center',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '16px'
-        }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            border: '4px solid var(--border)',
-            borderTop: '4px solid var(--primary)',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }} />
-          <div style={{
-            fontSize: '14px',
-            color: 'var(--muted-foreground)',
-            fontWeight: 500
-          }}>Đang tải...</div>
-        </div>
-        <style>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
+          width: '48px', height: '48px', border: '4px solid var(--border)',
+          borderTop: '4px solid var(--primary)', borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }} />
+        <div style={{ fontSize: '14px', color: 'var(--muted-foreground)', fontWeight: 500 }}>{message}</div>
       </div>
-    );
-  }
+      <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
 
-  // If not authenticated and not loading/restoring, check storage one more time before redirecting
-  // 🔥 FIX: Give more time for restore to complete, especially on page reload
-  if (!isLoading && !isRestoring && !isAuthenticated && hasCheckedStorage) {
-    // Double-check: if we have a token in Redux state, don't redirect yet
-    // This handles the case where restore might be in progress but state hasn't updated
-    if (token) {
-      // Show loading for a bit more to allow restore to complete
-      // On reload, Redux state resets, so we need to wait for restoreSession to complete
-      return (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100vh',
-          background: 'var(--background)',
-          fontFamily: 'Inter, sans-serif'
-        }}>
-          <div style={{
-            textAlign: 'center',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '16px'
-          }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              border: '4px solid var(--border)',
-              borderTop: '4px solid var(--primary)',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite'
-            }} />
-            <div style={{
-              fontSize: '14px',
-              color: 'var(--muted-foreground)',
-              fontWeight: 500
-            }}>Đang khôi phục phiên đăng nhập...</div>
-          </div>
-          <style>{`
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          `}</style>
-        </div>
-      );
-    }
-    
-    // Only redirect if final check is done and no token found
+  const shouldWait = (isLoading || (isRestoring && !restoreTimeout)) || (!isAuthenticated && !hasCheckedStorage);
+  
+  if (shouldWait) return <LoadingScreen message="Đang tải..." />;
+
+  if (!isAuthenticated && !isRestoring && !isLoading) {
+    if (token) return <LoadingScreen message="Đang khôi phục phiên đăng nhập..." />;
     if (hasDoneFinalCheck) {
-        hasDoneFinalCheck
-      });
       return <Navigate to="/auth/login" state={{ from: location }} replace />;
     }
-    
-    // Still waiting for final check, show loading
-    // This gives restore more time to complete
-    return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-        background: 'var(--background)',
-        fontFamily: 'Inter, sans-serif'
-      }}>
-        <div style={{
-          textAlign: 'center',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '16px'
-        }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            border: '4px solid var(--border)',
-            borderTop: '4px solid var(--primary)',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }} />
-          <div style={{
-            fontSize: '14px',
-            color: 'var(--muted-foreground)',
-            fontWeight: 500
-          }}>Đang kiểm tra phiên đăng nhập...</div>
-        </div>
-        <style>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
-      </div>
-    );
+    return <LoadingScreen message="Đang kiểm tra phiên đăng nhập..." />;
   }
 
   return <>{children}</>;
