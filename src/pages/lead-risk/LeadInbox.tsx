@@ -16,7 +16,8 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { useSupabaseLeads, useLeadStats } from '../../hooks/useSupabaseLeads';
-import { StatusBadge } from '../../app/components/lead-risk/StatusBadge';
+import { StatusBadge } from '../../app/components/common/StatusBadge';
+import { getStatusProps } from '../../app/utils/status-badge-helper';
 import { SLATimer } from '../../app/components/lead-risk/SLATimer';
 import { LeadFormModal } from '../../app/components/lead-risk/LeadFormModal';
 import { DeleteConfirmModal } from '../../app/components/lead-risk/DeleteConfirmModal';
@@ -759,7 +760,7 @@ export default function LeadInbox() {
                     </div>
                   </td>
                   <td onClick={() => navigate(`/lead-risk/lead/${lead.id}`)} style={{ cursor: 'pointer' }}>
-                    <StatusBadge status={lead.status} size="sm" />
+                    <StatusBadge {...getStatusProps('lead', lead.status)} size="sm" />
                   </td>
                   <td onClick={() => navigate(`/lead-risk/lead/${lead.id}`)} style={{ cursor: 'pointer' }}>
                     <SLATimer

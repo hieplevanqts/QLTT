@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import PageHeader from '../../../layouts/PageHeader';
 import styles from './PlanTaskBoard.module.css';
 import { StatusBadge } from '../../components/common/StatusBadge';
+import { getStatusProps } from '../../utils/status-badge-helper';
 import { mockPlans, mockTasks, type Task, type TaskStatus } from '../../data/kehoach-mock-data';
 
 const TASK_COLUMNS: { id: TaskStatus; label: string; color: string; enabled: boolean; dropEnabled: boolean }[] = [
@@ -49,7 +50,7 @@ function DraggableTaskCard({ task, onTaskClick }: DraggableTaskCardProps) {
       onClick={() => onTaskClick(task.id)}
     >
       <div className={styles.taskCardHeader}>
-        <StatusBadge type="priority" value={task.priority} size="sm" />
+        <StatusBadge {...getStatusProps('priority', task.priority)} size="sm" />
         <button className={styles.taskMenu} onClick={(e) => e.stopPropagation()}>
           <MoreVertical size={16} />
         </button>
@@ -85,7 +86,7 @@ function DraggableTaskCard({ task, onTaskClick }: DraggableTaskCardProps) {
       </div>
 
       <div className={styles.taskCardFooter}>
-        <StatusBadge type="sla" value={task.sla.status} size="sm" />
+        <StatusBadge {...getStatusProps('sla', task.sla.status)} size="sm" />
         {task.sla.status === 'overdue' && (
           <span className={styles.overdueLabel}>
             <Clock size={12} />

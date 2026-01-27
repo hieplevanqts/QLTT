@@ -31,7 +31,8 @@ import {
   CheckSquare,
 } from 'lucide-react';
 import { mockRiskProfiles, mockLeads } from '../../data/lead-risk/mockLeads';
-import { StatusBadge } from '../../app/components/lead-risk/StatusBadge';
+import { StatusBadge } from '../../app/components/common/StatusBadge';
+import { getStatusProps } from '../../app/utils/status-badge-helper';
 import { UrgencyBadge } from '../../app/components/lead-risk/UrgencyBadge';
 import { Breadcrumb } from '../../app/components/Breadcrumb';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
@@ -492,7 +493,7 @@ export default function RiskDetail() {
                         <div className={styles.leadHeader}>
                           <div className={styles.leadCode}>{lead.code}</div>
                           <div className={styles.leadBadges}>
-                            <StatusBadge status={lead.status} size="sm" />
+                            <StatusBadge {...getStatusProps('lead', lead.status)} size="sm" />
                             <UrgencyBadge urgency={lead.urgency} size="sm" />
                           </div>
                         </div>

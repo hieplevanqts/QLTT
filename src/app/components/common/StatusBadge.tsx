@@ -1,135 +1,61 @@
+import React from 'react';
 import styles from './StatusBadge.module.css';
-import type { PlanStatus, TaskStatus, SLAStatus, Priority } from '@/app/types/plans';
-import type { InspectionRoundStatus, InspectionType } from '@/app/types/inspections';
 
-type BadgeType = 
-  | 'plan' 
-  | 'task' 
-  | 'target' 
-  | 'sla' 
-  | 'priority' 
-  | 'planType'
-  | 'round'
-  | 'inspectionType';
+export type StatusBadgeSize = 'sm' | 'md' | 'lg';
 
-type BadgeSize = 'sm' | 'md' | 'lg';
-
-interface StatusBadgeProps {
-  type: BadgeType;
-  value: string;
-  size?: BadgeSize;
+export interface StatusBadgeProps {
+  /** The text to display inside the badge */
+  label: string;
+  /** Optional theme variant that matches a class in StatusBadge.module.css (e.g. 'draft', 'active', 'completed') */
+  variant?: string;
+  /** Optional hex, rgb, or css color for the background. Overrides variable-based styles. */
+  backgroundColor?: string;
+  /** Optional hex, rgb, or css color for the text. Overrides variable-based styles. */
+  color?: string;
+  /** Size of the badge */
+  size?: StatusBadgeSize;
+  /** Additional CSS class names */
+  className?: string;
+  /** Additional inline styles */
+  style?: React.CSSProperties;
 }
 
-// Plan Status Labels
-const planStatusLabels: Record<PlanStatus, string> = {
-  draft: 'Nháp',
-  pending_approval: 'Chờ duyệt',
-  approved: 'Đã duyệt',
-  active: 'Đang thực hiện',
-  completed: 'Hoàn thành',
-  paused: 'Tạm dừng',
-  rejected: 'Đã từ chối',
-  cancelled: 'Đã hủy'
-};
-
-// Inspection Round Status Labels
-const roundStatusLabels: Record<InspectionRoundStatus, string> = {
-  draft: 'Nháp',
-  pending_approval: 'Chờ duyệt',
-  approved: 'Đã duyệt',
-  rejected: 'Từ chối duyệt',
-  active: 'Đang triển khai',
-  paused: 'Tạm dừng',
-  in_progress: 'Đang kiểm tra',
-  completed: 'Hoàn thành',
-  cancelled: 'Đã hủy',
-};
-
-// Task Status Labels
-const taskStatusLabels: Record<TaskStatus, string> = {
-  not_started: 'Chưa bắt đầu',
-  in_progress: 'Đang thực hiện',
-  completed: 'Hoàn thành',
-  closed: 'Đã đóng'
-};
-
-// SLA Status Labels
-const slaStatusLabels: Record<SLAStatus, string> = {
-  on_track: 'Đúng tiến độ',
-  at_risk: 'Có rủi ro',
-  overdue: 'Quá hạn'
-};
-
-// Priority Labels
-const priorityLabels: Record<Priority, string> = {
-  low: 'Thấp',
-  medium: 'Trung bình',
-  high: 'Cao',
-  critical: 'Khẩn cấp'
-};
-
-// Plan Type Labels
-const planTypeLabels: Record<string, string> = {
-  periodic: 'Định kỳ (Năm)',
-  thematic: 'Chuyên đề',
-  urgent: 'Đột xuất'
-};
-
-// Inspection Type Labels
-const inspectionTypeLabels: Record<InspectionType, string> = {
-  routine: 'Định kỳ',
-  targeted: 'Chuyên đề',
-  sudden: 'Đột xuất',
-  followup: 'Tái kiểm tra',
-};
-
+/**
+ * A generic, independent Status Badge component.
+ * It is not tied to any domain logic and simply renders the provided label and styles.
+ */
 export function StatusBadge({ 
-  type, 
-  value,
-  size = 'md' 
+  label, 
+  variant, 
+  backgroundColor, 
+  color, 
+  size = 'md', 
+  className,
+  style
 }: StatusBadgeProps) {
-  let label = '';
-  let variant = '';
+  const combinedStyle: React.CSSProperties = {
+    backgroundColor,
+    color,
+    ...style
+  };
 
-  switch (type) {
-    case 'plan':
-      label = planStatusLabels[value as PlanStatus] || '';
-      variant = value;
-      break;
-    case 'round':
-      label = roundStatusLabels[value as InspectionRoundStatus] || '';
-      variant = value;
-      break;
-    case 'task':
-      label = taskStatusLabels[value as TaskStatus] || '';
-      variant = value;
-      break;
-    case 'sla':
-      label = slaStatusLabels[value as SLAStatus] || '';
-      variant = value;
-      break;
-    case 'priority':
-      label = priorityLabels[value as Priority] || '';
-      variant = value;
-      break;
-    case 'planType':
-      label = planTypeLabels[value] || '';
-      variant = value;
-      break;
-    case 'inspectionType':
-      label = inspectionTypeLabels[value as InspectionType] || '';
-      variant = value;
-      break;
-  }
+  // Resolve variant class from CSS Modules
+  // If variant is provided and exists in styles, use it. 
+  // Otherwise, use variant string as is (for global classes)
+  const variantClass = variant && styles[variant] ? styles[variant] : (variant || '');
 
-  // Safety check - if no label found, return null to avoid rendering issues
-  if (!label) {
-    return null;
-  }
+  const badgeClass = [
+    styles.badge,
+    variantClass,
+    styles[size],
+    className
+  ].filter(Boolean).join(' ');
 
   return (
-    <span className={`${styles.badge} ${styles[variant]} ${styles[size]}`}>
+    <span className={badgeClass} style={combinedStyle}>
       {label}
     </span>
   );
 }
+
+export default StatusBadge;

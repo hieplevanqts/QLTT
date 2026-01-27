@@ -8,7 +8,6 @@ import { InspectionRoundsList } from '../app/pages/inspections/InspectionRoundsL
 import InspectionRoundDetail from '../app/pages/inspections/InspectionRoundDetail';
 import InspectionRoundCreate from '../app/pages/inspections/InspectionRoundCreate';
 import InspectionRoundStatistics from '../app/pages/inspections/InspectionRoundStatistics';
-import { InspectionTasksList } from '../app/pages/tasks/InspectionTasksList';
 import { TaskBoard } from '../app/pages/tasks/TaskBoard';
 
 /**
@@ -113,7 +112,7 @@ export const plansRoutes: RouteObject[] = [
     path: 'plans/inspection-rounds/:roundId/tasks',
     element: (
       <PermissionProtectedRoute>
-        <InspectionTasksList />
+        <TaskBoard />
       </PermissionProtectedRoute>
     ),
   },

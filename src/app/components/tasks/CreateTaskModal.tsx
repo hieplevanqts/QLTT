@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Calendar, User, AlertCircle, Plus, MapPin, Clock, Flag } from 'lucide-react';
 import styles from './CreateTaskModal.module.css';
 import { TaskPriority, TaskStatus } from '../../data/inspection-tasks-mock-data';
 import DateRangePicker from '../../../ui-kit/DateRangePicker';
+import { fetchPlansApi } from '../../../utils/api/plansApi';
+import { fetchInspectionRoundsApi } from '../../../utils/api/inspectionRoundsApi';
+import type { Plan } from '@/app/types/plans';
+import type { InspectionRound } from '@/app/types/inspections';
 
 interface CreateTaskModalProps {
   isOpen: boolean;
@@ -35,19 +39,6 @@ const STATUS_OPTIONS = [
   { value: 'in_progress', label: 'Đang thực hiện', emoji: '🔵' },
   { value: 'completed', label: 'Hoàn thành', emoji: '🟢' },
   { value: 'closed', label: 'Đã đóng', emoji: '⚫' },
-];
-
-// Mock data - In production, fetch from API
-const MOCK_PLANS = [
-  { value: 'KH-2024-001', label: 'Kế hoạch kiểm tra ATTP Q1/2024' },
-  { value: 'KH-2024-002', label: 'Kế hoạch giám sát ATTP Q2/2024' },
-  { value: 'KH-2024-003', label: 'Kế hoạch thanh tra ATTP Q3/2024' },
-];
-
-const MOCK_ROUNDS = [
-  { value: 'DKT-2024-001', label: 'Đợt kiểm tra Q1/2024 - Hà Nội' },
-  { value: 'DKT-2024-002', label: 'Đợt kiểm tra Q1/2024 - TP.HCM' },
-  { value: 'DKT-2024-003', label: 'Đợt kiểm tra Q2/2024 - Đà Nẵng' },
 ];
 
 // Mock danh sách cửa hàng
@@ -94,6 +85,70 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalPr
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof CreateTaskFormData, string>>>({});
+  
+  // API data states
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [rounds, setRounds] = useState<InspectionRound[]>([]);
+  const [loadingPlans, setLoadingPlans] = useState(false);
+  const [loadingRounds, setLoadingRounds] = useState(false);
+
+  // Fetch approved plans when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchApprovedPlans();
+    }
+  }, [isOpen]);
+
+  // Fetch rounds when plan selection changes
+  useEffect(() => {
+    if (isOpen) {
+      fetchRoundsByPlan(formData.planId);
+    }
+  }, [isOpen, formData.planId]);
+
+  const fetchApprovedPlans = async () => {
+    try {
+      setLoadingPlans(true);
+      const allPlans = await fetchPlansApi();
+      // Filter only approved plans
+      const approvedPlans = allPlans.filter(plan => plan.status === 'approved');
+      setPlans(approvedPlans);
+    } catch (error) {
+      console.error('Error fetching plans:', error);
+      setPlans([]);
+    } finally {
+      setLoadingPlans(false);
+    }
+  };
+
+  const fetchRoundsByPlan = async (planId?: string) => {
+    try {
+      setLoadingRounds(true);
+      let allRounds: InspectionRound[];
+      
+      if (planId) {
+        // Fetch rounds for specific plan
+        allRounds = await fetchInspectionRoundsApi(planId);
+      } else {
+        // Fetch all rounds
+        allRounds = await fetchInspectionRoundsApi();
+      }
+      
+      // Filter only approved rounds
+      const approvedRounds = allRounds.filter(round => round.status === 'approved');
+      setRounds(approvedRounds);
+      
+      // Reset roundId if current selection is not in the new list
+      if (formData.roundId && !approvedRounds.find(r => r.id === formData.roundId)) {
+        setFormData(prev => ({ ...prev, roundId: '' }));
+      }
+    } catch (error) {
+      console.error('Error fetching rounds:', error);
+      setRounds([]);
+    } finally {
+      setLoadingRounds(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -251,14 +306,16 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalPr
                   value={formData.planId || ''}
                   onChange={(e) => handleChange('planId', e.target.value)}
                   className={`${styles.select} ${errors.planId ? styles.inputError : ''}`}
+                  disabled={loadingPlans}
                 >
                   <option value="">-- Chọn kế hoạch (tùy chọn) --</option>
-                  {MOCK_PLANS.map(plan => (
-                    <option key={plan.value} value={plan.value}>
-                      {plan.label}
+                  {plans.map((plan) => (
+                    <option key={plan.id} value={plan.id}>
+                      {plan.name} ({plan.code})
                     </option>
                   ))}
                 </select>
+                {loadingPlans && <span className={styles.hint}>Đang tải...</span>}
               </div>
 
               <div className={styles.field}>
@@ -270,14 +327,16 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalPr
                   value={formData.roundId}
                   onChange={(e) => handleChange('roundId', e.target.value)}
                   className={`${styles.select} ${errors.roundId ? styles.inputError : ''}`}
+                  disabled={loadingRounds}
                 >
                   <option value="">-- Chọn đợt kiểm tra --</option>
-                  {MOCK_ROUNDS.map(round => (
-                    <option key={round.value} value={round.value}>
-                      {round.label}
+                  {rounds.map((round) => (
+                    <option key={round.id} value={round.id}>
+                      {round.name} ({round.code})
                     </option>
                   ))}
                 </select>
+                {loadingRounds && <span className={styles.hint}>Đang tải...</span>}
                 {errors.roundId && (
                   <span className={styles.errorText}>
                     <AlertCircle size={14} /> {errors.roundId}

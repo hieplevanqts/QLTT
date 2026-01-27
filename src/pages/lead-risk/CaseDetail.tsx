@@ -27,7 +27,8 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import { Breadcrumb } from '../../app/components/Breadcrumb';
-import { StatusBadge } from '../../app/components/lead-risk/StatusBadge';
+import { StatusBadge } from '../../app/components/common/StatusBadge';
+import { getStatusProps } from '../../app/utils/status-badge-helper';
 import { UrgencyBadge } from '../../app/components/lead-risk/UrgencyBadge';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
 import styles from './CaseDetail.module.css';
@@ -233,7 +234,7 @@ export default function CaseDetail() {
           </div>
 
           <div className={styles.badges}>
-            <StatusBadge status={caseData.status} />
+            <StatusBadge {...getStatusProps('lead', caseData.status)} />
             <UrgencyBadge urgency={urgency} />
           </div>
         </div>
