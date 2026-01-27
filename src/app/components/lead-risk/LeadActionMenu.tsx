@@ -22,11 +22,15 @@ import {
 import type { LeadStatus } from '../../../data/lead-risk/types';
 import styles from './LeadActionMenu.module.css';
 
-type LeadAction = 
+export type LeadAction = 
   | 'view'
   | 'edit'
   | 'delete'
   | 'start_verification'
+  | 'pause_verification'
+  | 'resume_verification'
+  | 'pause_processing'
+  | 'resume_processing'
   | 'assign'
   | 'reject'
   | 'hold'
@@ -48,17 +52,21 @@ interface LeadActionMenuProps {
 const getAllowedActions = (status: LeadStatus): LeadAction[] => {
   switch (status) {
     case 'new':
-      return ['view', 'note', 'start_verification'];
-    case 'in_verification':
-      return ['view', 'note', 'assign', 'reject', 'hold', 'cancel'];
-    case 'in_progress':
-      return ['view', 'note', 'add_evidence', 'update_sla', 'complete', 'hold', 'cancel'];
+      return ['view', 'start_verification'];
+    case 'verifying':
+      return ['view', 'assign', 'pause_verification'];
+    case 'verify_paused':
+      return ['view', 'resume_verification'];
+    case 'processing':
+      return ['view', 'add_evidence', 'pause_processing'];
+    case 'process_paused':
+      return ['view', 'add_evidence', 'resume_processing'];
     case 'resolved':
-      return ['view', 'note', 'export', 'reopen_to_progress', 'reopen_to_verification'];
+      return ['view'];
     case 'rejected':
-      return ['view', 'export'];
+      return ['view', 'add_evidence'];
     case 'cancelled':
-      return ['view', 'export'];
+      return ['view'];
     default:
       return ['view'];
   }
@@ -70,7 +78,11 @@ const actionConfig: Record<LeadAction, { label: string; icon: any; variant?: 'de
   edit: { label: 'Chỉnh sửa', icon: Edit2 },
   delete: { label: 'Xóa', icon: Trash2, variant: 'danger' },
   start_verification: { label: 'Bắt đầu xác minh', icon: Play, variant: 'primary' },
-  assign: { label: 'Giao xử lý', icon: UserPlus, variant: 'primary' },
+  pause_verification: { label: 'Tạm dừng xác minh', icon: Pause },
+  resume_verification: { label: 'Tiếp tục xác minh', icon: Play, variant: 'primary' },
+  pause_processing: { label: 'Tạm dừng xử lý', icon: Pause },
+  resume_processing: { label: 'Tiếp tục xử lý', icon: Play, variant: 'primary' },
+  assign: { label: 'Giao việc', icon: UserPlus },
   reject: { label: 'Từ chối', icon: XCircle, variant: 'danger' },
   hold: { label: 'Tạm dừng', icon: Pause },
   cancel: { label: 'Hủy bỏ', icon: XCircle, variant: 'danger' },
@@ -90,6 +102,9 @@ export function LeadActionMenu({ status, onAction }: LeadActionMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const allowedActions = getAllowedActions(status);
+
+  // Debug log to see what actions are available
+  console.log(`🎯 [LeadActionMenu] Status: "${status}" → Allowed actions:`, allowedActions);
 
   // Always show first 3 actions as quick buttons
   const quickActions = allowedActions.slice(0, 3);
@@ -144,8 +159,7 @@ export function LeadActionMenu({ status, onAction }: LeadActionMenuProps) {
         setShowAbove(shouldShowAbove);
         setMenuPosition({ top, left });
         
-        // Debug log for menu positioning
-        console.log({
+        console.log('🎯 Fixed Dropdown Position:', {
           buttonRect: { top: buttonRect.top, bottom: buttonRect.bottom, left: buttonRect.left, right: buttonRect.right },
           viewportHeight,
           spaceBelow: Math.round(spaceBelow),
