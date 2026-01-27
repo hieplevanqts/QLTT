@@ -75,11 +75,15 @@ const TaskBoard = React.lazy(() =>
 );
 
 const LeadInbox = React.lazy(() => import('../pages/lead-risk/LeadInbox'));
+const LeadInboxAIDemo = React.lazy(() => import('../pages/lead-risk/LeadInboxAIDemo'));
+const LeadDetailAIDemo = React.lazy(() => import('../pages/lead-risk/LeadDetailAIDemo'));
+const LeadDuplicateDemo = React.lazy(() => import('../pages/lead-risk/LeadDuplicateDemo'));
 const LeadRiskHome = React.lazy(() => import('../pages/lead-risk/LeadRiskHome'));
 const LeadList = React.lazy(() => import('../pages/lead-risk/LeadList'));
 const LeadMapView = React.lazy(() => import('../pages/lead-risk/LeadMapView'));
 const CreateLeadQuick = React.lazy(() => import('../pages/lead-risk/CreateLeadQuick'));
 const CreateLeadFull = React.lazy(() => import('../pages/lead-risk/CreateLeadFull'));
+const CreateLeadSource = React.lazy(() => import('../pages/lead-risk/CreateLeadSource'));
 const RiskDashboard = React.lazy(() => import('../pages/lead-risk/RiskDashboard'));
 const LeadDetail = React.lazy(() => import('../pages/lead-risk/LeadDetail'));
 const RiskDetail = React.lazy(() => import('../pages/lead-risk/RiskDetail'));
@@ -487,6 +491,38 @@ export const router = createBrowserRouter([
             element: (
               <PermissionProtectedRoute>
                 <CreateLeadFull />
+              </PermissionProtectedRoute>
+            ),
+          },
+          {
+            path: 'lead-risk/create-lead-source',
+            element: (
+              <PermissionProtectedRoute>
+                <CreateLeadSource />
+              </PermissionProtectedRoute>
+            ),
+          },
+          {
+            path: 'lead-risk/inbox-ai-demo',
+            element: (
+              <PermissionProtectedRoute>
+                <LeadInboxAIDemo />
+              </PermissionProtectedRoute>
+            ),
+          },
+          {
+            path: 'lead-risk/lead-detail-ai-demo',
+            element: (
+              <PermissionProtectedRoute>
+                <LeadDetailAIDemo />
+              </PermissionProtectedRoute>
+            ),
+          },
+          {
+            path: 'lead-risk/duplicate-demo',
+            element: (
+              <PermissionProtectedRoute>
+                <LeadDuplicateDemo />
               </PermissionProtectedRoute>
             ),
           },
