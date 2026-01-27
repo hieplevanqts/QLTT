@@ -1,0 +1,45 @@
+# ==========================
+# STAGE 1: BUILDER
+# ==========================
+FROM node:20-slim AS builder
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+
+# Build backend (TypeScript → ESM)
+RUN npx esbuild server/index.ts \
+    --bundle \
+    --platform=node \
+    --target=node20 \
+    --format=esm \
+    --packages=external \
+    --outfile=server/index.mjs
+
+# ==========================
+# STAGE 2: RUNTIME
+# ==========================
+FROM node:20-alpine
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV SYSTEM_ADMIN_PORT=7788
+ENV PUBLIC_URL=http://localhost
+
+# Install runtime dependencies
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+# Copy compiled backend
+COPY --from=builder /app/server/index.mjs ./server/index.mjs
+
+# Create data directories for persistence
+RUN mkdir -p /app/data/uploads /app/data/backups /app/data/modules
+
+EXPOSE 7788
+
+CMD ["node", "server/index.mjs"]

@@ -131,12 +131,6 @@ export async function logout(): Promise<void> {
  * Store access token and refresh token using professional storage
  */
 export async function storeToken(token: string, expiresIn?: number, refreshToken?: string): Promise<void> {
-  console.log('💾 StoreToken: Storing token...', { 
-    hasToken: !!token, 
-    expiresIn: expiresIn ? `${expiresIn}s (${Math.round(expiresIn / 60)} minutes)` : 'not provided',
-    hasRefreshToken: !!refreshToken 
-  });
-  
   // Validate expiresIn
   if (expiresIn && expiresIn < 60) {
     console.warn('⚠️ StoreToken: expiresIn is very short:', expiresIn, 'seconds. This might cause premature logout.');
@@ -148,25 +142,6 @@ export async function storeToken(token: string, expiresIn?: number, refreshToken
   if (refreshToken) {
     await tokenStorage.setRefreshToken(refreshToken);
   }
-  
-  const stored = await tokenStorage.getToken();
-  console.log('✅ StoreToken: Token stored successfully', { hasStoredToken: !!stored });
-  
-  // Verify expiry was stored correctly
-  if (expiresIn) {
-    const expiresAt = await tokenStorage.getTokenExpiry();
-    if (expiresAt) {
-      const now = Date.now();
-      const timeUntilExpiry = expiresAt - now;
-      const minutesUntilExpiry = Math.round(timeUntilExpiry / 1000 / 60);
-      console.log('✅ StoreToken: Expiry verified', {
-        expiresAt: new Date(expiresAt).toISOString(),
-        now: new Date(now).toISOString(),
-        minutesUntilExpiry: `${minutesUntilExpiry} minutes`,
-        hoursUntilExpiry: `${(minutesUntilExpiry / 60).toFixed(2)} hours`
-      });
-    }
-  }
 }
 
 /**
@@ -177,7 +152,6 @@ export async function refreshAccessToken(): Promise<LoginResponse | null> {
     const refreshToken = await tokenStorage.getRefreshToken();
     
     if (!refreshToken) {
-      console.log('❌ RefreshToken: No refresh token found');
       return null;
     }
 
@@ -224,11 +198,6 @@ export async function refreshAccessToken(): Promise<LoginResponse | null> {
  */
 export async function getStoredToken(): Promise<string | null> {
   const token = await tokenStorage.getToken();
-  console.log('🔍 getStoredToken:', { 
-    hasToken: !!token,
-    tokenLength: token?.length || 0,
-    tokenPreview: token ? token.substring(0, 20) + '...' : 'null'
-  });
   return token;
 }
 
@@ -292,11 +261,7 @@ export async function fetchUserInfo(token: string): Promise<User | null> {
       // Check if token is actually expired before logging out
       const expired = await isTokenExpired(0);
       if (expired) {
-        console.log('⚠️ FetchUserInfo: Token is expired, logging out...');
         await logout();
-      } else {
-        console.warn('⚠️ FetchUserInfo: Got 401 but token is not expired, might be temporary API issue');
-        // Don't logout - token might still be valid, just API issue
       }
     }
     return null;
@@ -415,25 +380,18 @@ export async function restoreSession(): Promise<{ token: string; user: User | nu
     let token = await getStoredToken();
     
     if (!token) {
-      console.log('❌ RestoreSession: No token found in storage');
       return null;
     }
-
-    console.log('✅ RestoreSession: Token found in storage', { tokenLength: token.length });
 
     // Check if token is actually expired (no buffer - only check if truly expired)
     // Buffer time is handled by auto-refresh service, not here
     const expired = await isTokenExpired(0);
     if (expired) {
-      console.log('⚠️ RestoreSession: Token is expired, attempting to refresh...');
-      
       // Try to refresh token
       const refreshResponse = await refreshAccessToken();
       if (refreshResponse && refreshResponse.access_token) {
-        console.log('✅ RestoreSession: Token refreshed successfully');
         token = refreshResponse.access_token;
       } else {
-        console.log('❌ RestoreSession: Failed to refresh token');
         // Don't logout here - let ProtectedRoute handle it
         // This allows user to continue using the app if refresh fails but token is still valid
         // The auto-refresh service will handle refresh before expiry
@@ -441,13 +399,10 @@ export async function restoreSession(): Promise<{ token: string; user: User | nu
       }
     }
 
-    console.log('✅ RestoreSession: Token is valid, fetching user info...');
-
     // Fetch user info - if it fails, still return token (user can be fetched later)
     let user: User | null = null;
     try {
       user = await fetchUserInfo(token);
-      console.log('✅ RestoreSession: User info fetched successfully', user ? { id: user.id, email: user.email } : 'null');
     } catch (error: any) {
       console.warn('⚠️ RestoreSession: Failed to fetch user info, but token is valid. Will fetch later.', error?.response?.status, error?.message);
       // Don't fail restore if user info fetch fails - token is still valid
@@ -455,7 +410,6 @@ export async function restoreSession(): Promise<{ token: string; user: User | nu
       // Return token anyway so user can stay authenticated
     }
     
-    console.log('✅ RestoreSession: Session restored successfully', { hasToken: !!token, hasUser: !!user });
     return { token, user };
   } catch (error: any) {
     console.error('❌ RestoreSession: Error restoring session:', error?.message || error);
@@ -463,7 +417,6 @@ export async function restoreSession(): Promise<{ token: string; user: User | nu
     try {
       const token = await getStoredToken();
       if (token) {
-        console.log('⚠️ RestoreSession: Error occurred but token exists, returning token anyway');
         return { token, user: null };
       }
     } catch (e) {

@@ -476,7 +476,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // If token exists, let Redux handle restore, don't interfere
     const token = localStorage.getItem('mappa_auth_access_token');
     if (token) {
-      console.log('⚠️ AuthContext: Token exists, Redux auth is active. Skipping AuthContext restore session.');
       setIsLoading(false);
       return; // Early return - don't run AuthContext restore
     }
@@ -499,7 +498,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // 🔥 FIX: Check if token exists in storage before clearing
             const hasTokenInStorage = localStorage.getItem('mappa_auth_access_token');
             if (hasTokenInStorage) {
-              console.log('⚠️ AuthContext: Token exists in storage, letting Redux handle restore');
               setUser(null);
               setIsAuthenticated(false);
               setIsLoading(false);
@@ -523,7 +521,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // 🔥 FIX: Check if token exists in storage before clearing
           const hasTokenInStorage = localStorage.getItem('mappa_auth_access_token');
           if (hasTokenInStorage) {
-            console.log('⚠️ AuthContext: Token exists in storage despite error, letting Redux handle restore');
             setUser(null);
             setIsAuthenticated(false);
             setIsLoading(false);
@@ -552,7 +549,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               // 🔥 FIX: Don't clear localStorage if token exists - let Redux auth system handle it
               const hasTokenInStorage = localStorage.getItem('mappa_auth_access_token');
               if (hasTokenInStorage) {
-                console.log('⚠️ AuthContext: Supabase session expired but token exists in storage, letting Redux handle restore');
                 setUser(null);
                 setIsAuthenticated(false);
                 setIsLoading(false);
@@ -624,7 +620,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // 🔥 FIX: Don't clear localStorage if token exists - let Redux auth system handle it
           const hasTokenInStorage = localStorage.getItem('mappa_auth_access_token');
           if (hasTokenInStorage) {
-            console.log('⚠️ AuthContext: No Supabase session but token exists in storage, letting Redux handle restore');
             // Don't clear localStorage - Redux auth system will restore from token
             setUser(null);
             setIsAuthenticated(false);
@@ -634,7 +629,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           // No session and no token, user is not authenticated
           // Don't trigger logout redirect if already on login page
-          console.log('⚠️ AuthContext: No session and no token, user not authenticated');
           setUser(null);
           setIsAuthenticated(false);
         }
@@ -643,7 +637,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // 🔥 FIX: Check if token exists in storage before clearing
         const hasTokenInStorage = localStorage.getItem('mappa_auth_access_token');
         if (hasTokenInStorage) {
-          console.log('⚠️ AuthContext: Token exists in storage despite error, letting Redux handle restore');
           setUser(null);
           setIsAuthenticated(false);
           setIsLoading(false);
@@ -672,7 +665,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check if we're using Redux auth (token exists in localStorage)
     const token = localStorage.getItem('mappa_auth_access_token');
     if (token) {
-      console.log('⚠️ AuthContext: Redux auth active, skipping Supabase auth state listener');
       return; // Early return - don't set up Supabase listeners
     }
 
@@ -684,7 +676,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // 🔥 FIX: Check if token exists in storage before clearing
         const hasTokenInStorage = localStorage.getItem('mappa_auth_access_token');
         if (hasTokenInStorage) {
-          console.log('⚠️ AuthContext: Supabase event SIGNED_OUT/TOKEN_REFRESHED but token exists, letting Redux handle');
           setUser(null);
           setIsAuthenticated(false);
           return;
@@ -707,7 +698,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               // 🔥 FIX: Check if token exists in storage before clearing
               const hasTokenInStorage = localStorage.getItem('mappa_auth_access_token');
               if (hasTokenInStorage) {
-                console.log('⚠️ AuthContext: Supabase session expired after refresh but token exists, letting Redux handle');
                 setUser(null);
                 setIsAuthenticated(false);
                 return;

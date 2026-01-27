@@ -57,8 +57,8 @@ import {
   DeployRoundModal
 } from '@/app/components/inspections/InspectionRoundActionModals';
 
+import { createInspectionSessionApi } from '@/utils/api/inspectionSessionsApi';
 import { CreateSessionDialog } from '@/app/components/inspections/CreateSessionDialog';
-import { exportToCSV, formatDateForExport, type ExportColumn } from '@/utils/exportToExcel';
 
 export function InspectionRoundsList() {
   const navigate = useNavigate();
@@ -88,6 +88,9 @@ export function InspectionRoundsList() {
     open: boolean;
     roundId: string;
     roundName: string;
+    leadUnitId?: string;
+    provinceId?: string;
+    wardId?: string;
   }>({ open: false, roundId: '', roundName: '' });
 
   const closeModal = () => setModalState({ type: null, round: null });
@@ -196,6 +199,38 @@ export function InspectionRoundsList() {
     } catch (error) {
       toast.error('Có lỗi xảy ra khi xóa đợt kiểm tra');
       console.error('Delete round error:', error);
+    }
+  };
+
+  const handleCreateSession = async (sessionData: {
+    storeId: string;
+    storeName: string;
+    storeAddress: string;
+    inspectorId: string | null;
+    inspectorName: string | null;
+    startDate: string;
+    endDate: string;
+    notes: string;
+  }) => {
+    try {
+      await createInspectionSessionApi({
+        campaign_id: createSessionDialog.roundId,
+        merchant_id: sessionData.storeId,
+        user_id: sessionData.inspectorId || null,
+        start_time: sessionData.startDate,
+        deadline_time: sessionData.endDate,
+        note: sessionData.notes,
+        name: `Kiểm tra ${sessionData.storeName}`,
+        type: 'passive',
+        status: 1, // not_started
+      });
+
+      toast.success(`Đã tạo phiên làm việc tại ${sessionData.storeName} thành công`);
+      setCreateSessionDialog(prev => ({ ...prev, open: false }));
+      await refetch();
+    } catch (error) {
+      console.error('Error creating session:', error);
+      toast.error('Có lỗi xảy ra khi tạo phiên làm việc');
     }
   };
 
@@ -404,6 +439,9 @@ export function InspectionRoundsList() {
                 open: true,
                 roundId: round.id,
                 roundName: round.name,
+                leadUnitId: round.leadUnitId,
+                provinceId: round.provinceId,
+                wardId: round.wardId,
               });
             },
             priority: 9,
@@ -868,6 +906,11 @@ export function InspectionRoundsList() {
           }
         }}
         roundName={createSessionDialog.roundName}
+        roundId={createSessionDialog.roundId}
+        leadUnitId={createSessionDialog.leadUnitId}
+        provinceId={createSessionDialog.provinceId}
+        wardId={createSessionDialog.wardId}
+        onCreateSession={handleCreateSession}
       />
     </div>
   );

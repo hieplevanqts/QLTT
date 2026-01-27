@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, User, AlertCircle, Plus, MapPin, Clock, Flag } from 'lucide-react';
+import { X, Calendar, User, AlertCircle, Plus, MapPin, Clock, Flag, Loader2, Edit, FileText } from 'lucide-react';
 import styles from './CreateTaskModal.module.css';
 import { TaskPriority, TaskStatus } from '../../data/inspection-tasks-mock-data';
 import DateRangePicker from '../../../ui-kit/DateRangePicker';
@@ -7,17 +7,23 @@ import { fetchPlansApi } from '../../../utils/api/plansApi';
 import { fetchInspectionRoundsApi } from '../../../utils/api/inspectionRoundsApi';
 import type { Plan } from '@/app/types/plans';
 import type { InspectionRound } from '@/app/types/inspections';
+import { fetchMerchants } from '@/utils/api/merchantsApi';
+import { fetchDepartmentUsers } from '@/utils/api/departmentUsersApi';
+import { Restaurant } from '@/data/restaurantData';
 
 interface CreateTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (taskData: CreateTaskFormData) => void;
+  onSubmit: (taskData: CreateTaskFormData, taskId?: string) => void;
+  task?: any | null; // Data of the task to edit
+  taskId?: string; // ID of the task to edit
 }
 
 export interface CreateTaskFormData {
   title: string;
   description: string;
   targetName: string; // Tên cửa hàng
+  merchantId: string;
   roundId: string;
   planId?: string;
   assigneeId: string;
@@ -41,25 +47,6 @@ const STATUS_OPTIONS = [
   { value: 'closed', label: 'Đã đóng', emoji: '⚫' },
 ];
 
-// Mock danh sách cửa hàng
-const MOCK_STORES = [
-  { value: 'CH-001', label: 'Siêu thị CoopMart Quận 1' },
-  { value: 'CH-002', label: 'Cửa hàng thực phẩm Bách Hóa Xanh Lê Lợi' },
-  { value: 'CH-003', label: 'Nhà hàng Phở 24 Nguyễn Huệ' },
-  { value: 'CH-004', label: 'Quán café Highlands Coffee Đồng Khởi' },
-  { value: 'CH-005', label: 'Siêu thị Mini Big C Quận 3' },
-  { value: 'CH-006', label: 'Cửa hàng thực phẩm sạch Organica' },
-  { value: 'CH-007', label: 'Nhà hàng lẩu Haidilao Vincom' },
-  { value: 'CH-008', label: 'Cửa hàng bánh ngọt ABC Bakery' },
-];
-
-const MOCK_ASSIGNEES = [
-  { value: 'user-1', label: 'Nguyễn Văn A' },
-  { value: 'user-2', label: 'Trần Thị B' },
-  { value: 'user-3', label: 'Lê Văn C' },
-  { value: 'user-4', label: 'Phạm Thị D' },
-];
-
 // Helper to get today's date in YYYY-MM-DD format
 const getTodayDate = () => {
   const today = new Date();
@@ -69,12 +56,13 @@ const getTodayDate = () => {
   return `${year}-${month}-${day}`;
 };
 
-export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalProps) {
+export function CreateTaskModal({ isOpen, onClose, onSubmit, task, taskId }: CreateTaskModalProps) {
   // Set giá trị mặc định ngay từ đầu
   const [formData, setFormData] = useState<CreateTaskFormData>({
     title: '',
     description: '',
     targetName: '',
+    merchantId: '',
     roundId: '',
     planId: '',
     assigneeId: '',
@@ -84,6 +72,8 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalPr
     startDate: getTodayDate(), // Mặc định ngày hiện tại
   });
 
+  const isEditMode = !!task;
+
   const [errors, setErrors] = useState<Partial<Record<keyof CreateTaskFormData, string>>>({});
   
   // API data states
@@ -91,6 +81,10 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalPr
   const [rounds, setRounds] = useState<InspectionRound[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(false);
   const [loadingRounds, setLoadingRounds] = useState(false);
+  const [merchants, setMerchants] = useState<Restaurant[]>([]);
+  const [loadingMerchants, setLoadingMerchants] = useState(false);
+  const [assignees, setAssignees] = useState<{ value: string; label: string }[]>([]);
+  const [loadingAssignees, setLoadingAssignees] = useState(false);
 
   // Fetch approved plans when modal opens
   useEffect(() => {
@@ -105,6 +99,70 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalPr
       fetchRoundsByPlan(formData.planId);
     }
   }, [isOpen, formData.planId]);
+
+  // Fetch merchants and assignees when round selection changes
+  useEffect(() => {
+    if (isOpen && formData.roundId) {
+      const selectedRound = rounds.find(r => r.id === formData.roundId);
+      if (selectedRound) {
+        fetchMerchantsByLocation(selectedRound.provinceId, selectedRound.wardId);
+        fetchAssignees(selectedRound.leadUnitId);
+      }
+    } else if (isOpen && !formData.roundId) {
+      setMerchants([]);
+      setAssignees([]);
+    }
+  }, [isOpen, formData.roundId, rounds]);
+
+  // Populate data when in edit mode
+  useEffect(() => {
+    if (isOpen && task) {
+      setFormData({
+        title: task.title || '',
+        description: task.description || '',
+        targetName: task.targetName || task.merchantName || '',
+        merchantId: task.merchantId || task.merchant_id || '',
+        roundId: task.roundId || '',
+        planId: task.planId || '',
+        assigneeId: task.userId || task.assignee?.id || '',
+        priority: task.priority || 'medium',
+        status: task.status || 'not_started',
+        dueDate: task.dueDate || task.deadlineTime || '',
+        startDate: task.startDate || task.startTime || getTodayDate(),
+      });
+      setErrors({});
+    }
+  }, [isOpen, task]);
+
+  const fetchAssignees = async (departmentId?: string) => {
+    if (!departmentId) return;
+    try {
+      setLoadingAssignees(true);
+      const data = await fetchDepartmentUsers(departmentId);
+      const mapped = data.map(item => ({
+        value: item.user_id,
+        label: item.users?.full_name || 'Không xác định'
+      }));
+      setAssignees(mapped);
+    } catch (error) {
+      console.error('Error fetching assignees:', error);
+    } finally {
+      setLoadingAssignees(false);
+    }
+  };
+
+  const fetchMerchantsByLocation = async (provinceId?: string, wardId?: string) => {
+    try {
+      setLoadingMerchants(true);
+      const data = await fetchMerchants(undefined, undefined, undefined, provinceId, wardId);
+      setMerchants(data);
+    } catch (error) {
+      console.error('Error fetching merchants:', error);
+      setMerchants([]);
+    } finally {
+      setLoadingMerchants(false);
+    }
+  };
 
   const fetchApprovedPlans = async () => {
     try {
@@ -153,10 +211,23 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalPr
   if (!isOpen) return null;
 
   const handleChange = (field: keyof CreateTaskFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
+    if (field === 'merchantId') {
+      const selectedMerchant = merchants.find(m => m.id === value);
+      setFormData(prev => ({ 
+        ...prev, 
+        merchantId: value,
+        targetName: selectedMerchant ? selectedMerchant.name : '' 
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    }
+    // Clear error when field is changed
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
     }
   };
 
@@ -171,8 +242,8 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalPr
     }
 
     // Tên cửa hàng - bắt buộc
-    if (!formData.targetName.trim()) {
-      newErrors.targetName = 'Vui lòng nhập tên cửa hàng';
+    if (!formData.merchantId) {
+      newErrors.merchantId = 'Vui lòng chọn cơ sở/đối tượng kiểm tra';
     }
 
     // Kế hoạch kiểm tra - KHÔNG bắt buộc (removed validation)
@@ -182,10 +253,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalPr
       newErrors.roundId = 'Vui lòng chọn đợt kiểm tra';
     }
 
-    // Người thực hiện - bắt buộc
-    if (!formData.assigneeId) {
-      newErrors.assigneeId = 'Vui lòng chọn người thực hiện';
-    }
+    // Người thực hiện - KHÔNG bắt buộc
 
     // Hạn hoàn thành - bắt buộc
     if (!formData.dueDate) {
@@ -209,7 +277,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalPr
     e.preventDefault();
     
     if (validateForm()) {
-      onSubmit(formData);
+      onSubmit(formData, taskId);
       handleClose();
     }
   };
@@ -219,6 +287,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalPr
       title: '',
       description: '',
       targetName: '',
+      merchantId: '',
       roundId: '',
       planId: '',
       assigneeId: '',
@@ -238,9 +307,9 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalPr
         <div className={styles.header}>
           <div className={styles.headerContent}>
             <div className={styles.headerIcon}>
-              <Plus size={24} />
+              {isEditMode ? <Edit size={20} /> : <Plus size={24} />}
             </div>
-            <h2 className={styles.title}>Thiết lập phiên làm việc mới</h2>
+            <h2 className={styles.title}>{isEditMode ? 'Chỉnh sửa phiên làm việc' : 'Thiết lập phiên làm việc mới'}</h2>
           </div>
           <button className={styles.closeButton} onClick={handleClose} title="Đóng">
             <X size={20} />
@@ -354,20 +423,32 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalPr
                 </label>
                 <select
                   id="targetName"
-                  value={formData.targetName}
-                  onChange={(e) => handleChange('targetName', e.target.value)}
-                  className={`${styles.select} ${errors.targetName ? styles.inputError : ''}`}
+                  value={formData.merchantId}
+                  onChange={(e) => handleChange('merchantId', e.target.value)}
+                  className={`${styles.select} ${errors.merchantId ? styles.inputError : ''}`}
+                  disabled={loadingMerchants || !formData.roundId}
                 >
-                  <option value="">-- Chọn cơ sở / đối tượng --</option>
-                  {MOCK_STORES.map(store => (
-                    <option key={store.value} value={store.value}>
-                      {store.label}
+                  <option value="">
+                    {loadingMerchants 
+                      ? 'Đang tải danh sách...' 
+                      : !formData.roundId 
+                        ? '-- Vui lòng chọn đợt kiểm tra trước --' 
+                        : '-- Chọn cơ sở / đối tượng --'}
+                  </option>
+                  {merchants.map(store => (
+                    <option key={store.id} value={store.id}>
+                      {store.name}
                     </option>
                   ))}
                 </select>
-                {errors.targetName && (
+                {loadingMerchants && (
+                  <div className={styles.loadingOverlay}>
+                    <Loader2 size={14} className="animate-spin" />
+                  </div>
+                )}
+                {errors.merchantId && (
                   <span className={styles.errorText}>
-                    <AlertCircle size={14} /> {errors.targetName}
+                    <AlertCircle size={14} /> {errors.merchantId}
                   </span>
                 )}
               </div>
@@ -375,16 +456,23 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalPr
               <div className={styles.field}>
                 <label className={styles.label} htmlFor="assigneeId">
                   <User size={14} />
-                  Người chủ trì <span className={styles.required}>*</span>
+                  Người chủ trì
                 </label>
                 <select
                   id="assigneeId"
                   value={formData.assigneeId}
                   onChange={(e) => handleChange('assigneeId', e.target.value)}
                   className={`${styles.select} ${errors.assigneeId ? styles.inputError : ''}`}
+                  disabled={loadingAssignees || !formData.roundId}
                 >
-                  <option value="">-- Chọn thanh tra viên --</option>
-                  {MOCK_ASSIGNEES.map(assignee => (
+                  <option value="">
+                    {loadingAssignees 
+                      ? 'Đang tải...' 
+                      : !formData.roundId 
+                        ? '-- Vui lòng chọn đợt kiểm tra trước --' 
+                        : '-- Chọn người thực hiện --'}
+                  </option>
+                  {assignees.map(assignee => (
                     <option key={assignee.value} value={assignee.value}>
                       {assignee.label}
                     </option>
@@ -501,8 +589,8 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit }: CreateTaskModalPr
               Hủy bỏ
             </button>
             <button type="submit" className={styles.submitButton}>
-              <Plus size={18} />
-              Khởi tạo phiên làm việc
+              {isEditMode ? <FileText size={18} /> : <Plus size={18} />}
+              {isEditMode ? 'Cập nhật phiên làm việc' : 'Khởi tạo phiên làm việc'}
             </button>
           </div>
         </form>

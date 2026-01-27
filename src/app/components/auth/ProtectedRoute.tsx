@@ -35,25 +35,12 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       // This ensures we trigger restore if rootSaga hasn't run yet
       if (!hasCheckedStorage) {
         try {
-          console.log('🔒 ProtectedRoute: Checking storage for token...', {
-            isRestoring,
-            isLoading,
-            isAuthenticated
-          });
           const storedToken = await getStoredToken();
           if (storedToken) {
-            console.log('🔒 ProtectedRoute: Found token in storage, triggering restore...', {
-              tokenLength: storedToken.length,
-              tokenPreview: storedToken.substring(0, 20) + '...'
-            });
             // Only trigger restore if not already restoring
             if (!isRestoring) {
               dispatch(restoreSessionRequest());
-            } else {
-              console.log('🔒 ProtectedRoute: Restore already in progress, waiting...');
             }
-          } else {
-            console.log('🔒 ProtectedRoute: No token found in storage');
           }
           setHasCheckedStorage(true);
         } catch (error) {
@@ -77,7 +64,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       try {
         const expired = await isTokenExpired(0);
         if (expired) {
-          console.log('🔒 ProtectedRoute: Token expired, logging out and redirecting...');
           await logout();
           // Redirect to login
           window.location.replace('/auth/login');
@@ -124,13 +110,11 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         try {
           const storedToken = await getStoredToken();
           if (storedToken) {
-            console.log('🔒 ProtectedRoute: Found token in final check, triggering restore...');
             dispatch(restoreSessionRequest());
             setHasDoneFinalCheck(true);
             // Reset hasCheckedStorage to allow restore to complete
             setHasCheckedStorage(false);
           } else {
-            console.log('🔒 ProtectedRoute: No token in final check');
             setHasDoneFinalCheck(true);
           }
         } catch (error) {
@@ -211,7 +195,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     // Double-check: if we have a token in Redux state, don't redirect yet
     // This handles the case where restore might be in progress but state hasn't updated
     if (token) {
-      console.log('🔒 ProtectedRoute: Has token in Redux but not authenticated, waiting for restore to complete...');
       // Show loading for a bit more to allow restore to complete
       // On reload, Redux state resets, so we need to wait for restoreSession to complete
       return (
@@ -256,10 +239,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     
     // Only redirect if final check is done and no token found
     if (hasDoneFinalCheck) {
-      console.log('🔒 ProtectedRoute: No token found after all checks, redirecting to login', {
-        hasToken: !!token,
-        isAuthenticated,
-        hasCheckedStorage,
         hasDoneFinalCheck
       });
       return <Navigate to="/auth/login" state={{ from: location }} replace />;

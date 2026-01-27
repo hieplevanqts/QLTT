@@ -27,7 +27,6 @@ export function startTokenRefreshService(onRefresh?: (token: string) => void): v
       const token = await getStoredToken();
       
       if (!token) {
-        console.log('🔄 TokenRefreshService: No token found, stopping service');
         stopTokenRefreshService();
         return;
       }
@@ -38,14 +37,12 @@ export function startTokenRefreshService(onRefresh?: (token: string) => void): v
       const expired = await isTokenExpired(5);
       
       if (expired && !isRefreshing) {
-        console.log('🔄 TokenRefreshService: Token expired or expiring soon, refreshing...');
         isRefreshing = true;
         
         try {
           const refreshResponse = await refreshAccessToken();
           
           if (refreshResponse && refreshResponse.access_token) {
-            console.log('✅ TokenRefreshService: Token refreshed successfully');
             
             // Call callback to update Redux state if provided
             if (dispatchCallback && refreshResponse.access_token) {
@@ -64,8 +61,6 @@ export function startTokenRefreshService(onRefresh?: (token: string) => void): v
       console.error('❌ TokenRefreshService: Error checking token:', error);
     }
   }, 60000); // Check every 1 minute
-
-  console.log('✅ TokenRefreshService: Started auto-refresh service (checks every 1 minute)');
 }
 
 /**
@@ -76,7 +71,6 @@ export function stopTokenRefreshService(): void {
     clearInterval(refreshInterval);
     refreshInterval = null;
     dispatchCallback = null;
-    console.log('🛑 TokenRefreshService: Stopped auto-refresh service');
   }
 }
 

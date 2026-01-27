@@ -18,9 +18,10 @@ import styles from './InspectionRoundCreate.module.css';
 import DateRangePicker, { DateRange } from '@/ui-kit/DateRangePicker';
 import { mockStores } from '@/data/mockStores';
 import { useSupabaseInspectionRounds } from '@/hooks/useSupabaseInspectionRounds';
-import type { InspectionRound } from '@/app/data/inspection-rounds-mock-data';
+import type { InspectionRound } from '@/app/types/inspections';
 import type { Plan } from '@/app/types/plans';
 import { fetchPlansApi } from '@/utils/api/plansApi';
+import { supabase } from '@/lib/supabase';
 import {
   InspectionDecisionModal,
   AssignmentDecisionModal,
@@ -40,7 +41,8 @@ interface FormData {
   startDate: string | null;
   endDate: string | null;
   leadUnit: string;
-  scopeArea: string;
+  provinceId: string;
+  wardId: string;
   priority: PriorityLevel;
   
   // Step 2: Tiêu chí kiểm tra
@@ -163,6 +165,8 @@ export default function InspectionRoundCreate() {
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [realPlans, setRealPlans] = useState<Plan[]>([]);
+  const [provinces, setProvinces] = useState<{_id: string, name: string}[]>([]);
+  const [wards, setWards] = useState<{_id: string, name: string}[]>([]);
 
   // Fetch plans on mount
   useEffect(() => {
@@ -176,7 +180,31 @@ export default function InspectionRoundCreate() {
     };
     loadPlans();
   }, []);
-  
+
+  // Fetch provinces
+  useEffect(() => {
+    async function fetchProvinces() {
+      try {
+        const { data, error } = await supabase
+          .from('provinces')
+          .select('_id, name')
+          .order('name');
+        
+        if (error) {
+          console.error('Error fetching provinces:', error);
+          return;
+        }
+
+        if (data) {
+          setProvinces(data);
+        }
+      } catch (err) {
+        console.error('Error fetching provinces:', err);
+      }
+    }
+    fetchProvinces();
+  }, []);
+
   // Generate code first
   const generatedCode = `DKT-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
   
@@ -187,11 +215,43 @@ export default function InspectionRoundCreate() {
     startDate: null,
     endDate: null,
     leadUnit: '',
-    scopeArea: '',
     priority: 'medium',
     selectedForms: [],
     selectedStores: [],
+    provinceId: '',
+    wardId: '',
   });
+
+  // Fetch wards when province changes
+  useEffect(() => {
+    async function fetchWards() {
+      if (!formData.provinceId) {
+        setWards([]);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('wards')
+          .select('_id, name')
+          .eq('province_id', formData.provinceId)
+          .order('name');
+        
+        if (error) {
+          console.error('Error fetching wards:', error);
+          return;
+        }
+
+        if (data) {
+          setWards(data);
+        }
+      } catch (err) {
+        console.error('Error fetching wards:', err);
+      }
+    }
+    fetchWards();
+  }, [formData.provinceId]);
+
 
   // Check if round is approved (for edit mode) - now handled via state since fetch is async
   const [isApproved, setIsApproved] = useState(false);
@@ -211,10 +271,11 @@ export default function InspectionRoundCreate() {
             startDate: existingRound.startDate,
             endDate: existingRound.endDate,
             leadUnit: existingRound.leadUnit, // owner_dept
-            scopeArea: existingRound.leadUnit, // Using leadUnit as scopeArea for now
             priority: 'medium', // Default since we don't have this in InspectionRound type yet perfectly mapped
             selectedForms: [], // Would need to be stored in InspectionRound type in backend
             selectedStores: [], // Would need to map from targets/stats
+            provinceId: (existingRound as any).provinceId || '',
+            wardId: (existingRound as any).wardId || '',
             });
         } else {
             toast.error('Không tìm thấy đợt kiểm tra');
@@ -268,7 +329,27 @@ export default function InspectionRoundCreate() {
   });
 
   const handleChange = (field: keyof FormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    if (field === 'relatedPlanId') {
+      const selectedPlan = realPlans.find(p => p.id === value);
+      if (selectedPlan) {
+        setFormData(prev => ({
+          ...prev,
+          relatedPlanId: value,
+          provinceId: selectedPlan.provinceId || '',
+          wardId: selectedPlan.wardId || '',
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          relatedPlanId: value,
+          provinceId: '',
+          wardId: '',
+        }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    }
+    
     // Clear error when user types
     if (errors[field]) {
       setErrors(prev => {
@@ -313,8 +394,12 @@ export default function InspectionRoundCreate() {
       newErrors.leadUnit = 'Vui lòng chọn đơn vị chủ trì';
     }
 
-    if (userRole !== 'ward' && !formData.scopeArea.trim()) {
-      newErrors.scopeArea = 'Vui lòng chọn phạm vi kiểm tra';
+    if (!formData.relatedPlanId) {
+      newErrors.relatedPlanId = 'Vui lòng chọn kế hoạch liên quan';
+    }
+
+    if (!formData.provinceId || !formData.wardId) {
+      newErrors.location = 'Khu vực kiểm tra chưa được xác định từ kế hoạch';
     }
 
     if (shouldUpdateErrors) {
@@ -366,6 +451,8 @@ export default function InspectionRoundCreate() {
                 endDate: formData.endDate!,
                 leadUnit: formData.leadUnit || userWard,
                 totalTargets: formData.selectedStores.length,
+                provinceId: formData.provinceId,
+                wardId: formData.wardId,
             });
             toast.success('Đã cập nhật đợt kiểm tra thành công');
         } else {
@@ -385,6 +472,8 @@ export default function InspectionRoundCreate() {
                 teamSize: 0,
                 totalTargets: formData.selectedStores.length,
                 inspectedTargets: 0,
+                provinceId: formData.provinceId,
+                wardId: formData.wardId,
                 createdBy: 'Người dùng hiện tại',
                 createdAt: currentDate.toISOString().split('T')[0],
             };
@@ -399,10 +488,7 @@ export default function InspectionRoundCreate() {
     }
   };
 
-  const handleSaveDraft = () => {
-    toast.success('Đã lưu nháp đợt kiểm tra');
-    navigate('/plans/inspection-rounds');
-  };
+
 
   const toggleStore = (storeId: number) => {
     setFormData(prev => ({
@@ -542,20 +628,28 @@ export default function InspectionRoundCreate() {
 
                 {/* Kế hoạch liên quan - Optional */}
                 <div className={styles.formGroupFull}>
-                  <label className={styles.label}>Kế hoạch liên quan</label>
+                  <label className={styles.label}>
+                    Kế hoạch liên quan <span className={styles.required}>*</span>
+                  </label>
                   <select
-                    className={styles.select}
+                    className={`${styles.select} ${errors.relatedPlanId ? styles.inputError : ''}`}
                     value={formData.relatedPlanId}
                     onChange={(e) => handleChange('relatedPlanId', e.target.value)}
                     disabled={!!planIdFromUrl}
                   >
-                    <option value="">Không liên kết với kế hoạch</option>
+                    <option value="">Chọn kế hoạch kiểm tra</option>
                     {approvedPlans.map(plan => (
                       <option key={plan.id} value={plan.id}>
                         {plan.id} - {plan.name}
                       </option>
                     ))}
                   </select>
+                  {errors.relatedPlanId && (
+                    <div className={styles.errorMessage}>
+                      <AlertCircle size={14} />
+                      <span>{errors.relatedPlanId}</span>
+                    </div>
+                  )}
                   {planIdFromUrl && (
                     <span className={styles.helpText}>Tự động liên kết từ kế hoạch</span>
                   )}
@@ -613,37 +707,34 @@ export default function InspectionRoundCreate() {
                   </div>
                 )}
 
-                {/* Phạm vi kiểm tra - Conditional based on user role */}
-                {userRole !== 'ward' && (
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>
-                      Phạm vi kiểm tra <span className={styles.required}>*</span>
-                    </label>
+                {/* Khu vực kiểm tra - Disabled and auto-filled */}
+                <div className={styles.formGroupFull}>
+                  <label className={styles.label}>
+                    Khu vực kiểm tra <span className={styles.required}>*</span>
+                  </label>
+                  <div className={styles.formRow}>
                     <select
-                      className={`${styles.select} ${errors.scopeArea ? styles.inputError : ''}`}
-                      value={formData.scopeArea}
-                      onChange={(e) => handleChange('scopeArea', e.target.value)}
+                      className={styles.select}
+                      value={formData.provinceId}
+                      disabled={true}
                     >
-                      <option value="">Chọn xã/phường</option>
-                      <option value="Phường Bến Nghé">Phường Bến Nghé</option>
-                      <option value="Phường Bến Thành">Phường Bến Thành</option>
-                      <option value="Phường Cô Giang">Phường Cô Giang</option>
-                      <option value="Phường Nguyễn Cư Trinh">Phường Nguyễn Cư Trinh</option>
-                      <option value="Phường Cầu Kho">Phường Cầu Kho</option>
-                      <option value="Phường Đa Kao">Phường Đa Kao</option>
-                      <option value="Phường Nguyễn Thái Bình">Phường Nguyễn Thái Bình</option>
-                      <option value="Phường Phạm Ngũ Lão">Phường Phạm Ngũ Lão</option>
-                      <option value="Phường Cầu Ông Lãnh">Phường Cầu Ông Lãnh</option>
-                      <option value="Phường Tân Định">Phường Tân Định</option>
+                      <option value="">Tỉnh/Thành phố</option>
+                      {provinces.map(p => (
+                        <option key={p._id} value={p._id}>{p.name}</option>
+                      ))}
                     </select>
-                    {errors.scopeArea && (
-                      <div className={styles.errorMessage}>
-                        <AlertCircle size={14} />
-                        <span>{errors.scopeArea}</span>
-                      </div>
-                    )}
+                    <select
+                      className={styles.select}
+                      value={formData.wardId}
+                      disabled={true}
+                    >
+                      <option value="">Xã/Phường</option>
+                      {wards.map(w => (
+                        <option key={w._id} value={w._id}>{w.name}</option>
+                      ))}
+                    </select>
                   </div>
-                )}
+                </div>
 
                 {/* Display values for ward users */}
                 {userRole === 'ward' && (
@@ -989,9 +1080,7 @@ export default function InspectionRoundCreate() {
               Quay lại
             </button>
           )}
-          <button className={styles.draftButton} onClick={handleSaveDraft}>
-            Lưu nháp
-          </button>
+
           {currentStep < 3 ? (
             <button className={styles.nextButton} onClick={handleNext}>
               Tiếp theo

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { useQLTTScope } from '../../../contexts/QLTTScopeContext';
-import { useAppDispatch, useQLTTScope as useReduxQLTTScope } from '../../hooks';
+import { useAppDispatch } from '../../hooks';
 import { setScope } from '../../../store/slices/qlttScopeSlice';
 import styles from './ScopeSelector.module.css';
 
@@ -17,7 +17,6 @@ export function ScopeSelector() {
   
   // Redux dispatch and selector for Redux store
   const dispatch = useAppDispatch();
-  const reduxScope = useReduxQLTTScope();
   
   const [selectedDivision, setSelectedDivision] = useState<string>('');
   const [selectedTeam, setSelectedTeam] = useState<string>('');
@@ -148,8 +147,8 @@ export function ScopeSelector() {
           onMouseDown={(e) => e.stopPropagation()}
         >
           <option value="">Tất cả chi cục</option>
-          {availableDivisions.map((division) => (
-            <option key={division.id} value={division.id}>
+          {availableDivisions.map((division, index) => (
+            <option key={`${division.id || 'div'}-${index}`} value={division.id}>
               {division.name}
             </option>
           ))}
@@ -164,8 +163,8 @@ export function ScopeSelector() {
           onMouseDown={(e) => e.stopPropagation()}
         >
           <option value="">Tất cả đội</option>
-          {availableTeams.map((team) => (
-            <option key={team.id} value={team.id}>
+          {availableTeams.map((team, index) => (
+            <option key={`${team.id || 'team'}-${index}`} value={team.id}>
               {team.name}
             </option>
           ))}
@@ -180,8 +179,8 @@ export function ScopeSelector() {
           onMouseDown={(e) => e.stopPropagation()}
         >
           <option value="">Tất cả địa bàn</option>
-          {availableAreas.map((area) => (
-            <option key={area.id} value={area.id}>
+          {availableAreas.map((area, index) => (
+            <option key={`${area.id || 'area'}-${index}`} value={area.id}>
               {area.name}
             </option>
           ))}
