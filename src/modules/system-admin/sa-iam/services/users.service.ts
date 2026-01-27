@@ -183,6 +183,21 @@ export const usersService = {
     }
   },
 
+  async softDeleteUser(id: string): Promise<void> {
+    const { error } = await supabase
+      .from("users")
+      .update({
+        deleted_at: new Date().toISOString(),
+        status: 0,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("_id", id);
+
+    if (error) {
+      throw new Error(`user delete failed: ${error.message}`);
+    }
+  },
+
   async listRoles(): Promise<RoleOption[]> {
     const { data, error } = await supabase
       .from("roles")
