@@ -56,7 +56,7 @@ interface HorizontalNavBarProps {
 const PERMISSION_MAP: { [path: string]: string } = {
   '/overview': '', // No permission required (always visible)
   '/map': 'MAP_VIEW',
-  '/stores': 'STORES_VIEW',
+  '/registry/stores': 'STORES_VIEW',
   '/leads': 'LEAD_RISK',
   '/plans': 'PLAN_VIEW',
   '/tasks': 'TASKS_VIEW', // or FIELD_TASKS_VIEW
@@ -69,7 +69,7 @@ const PERMISSION_MAP: { [path: string]: string } = {
 const mappaModules = [
   { path: '/overview', label: 'Tổng quan', icon: LayoutDashboard, permissionCode: '' },
   { path: '/map', label: 'Bản đồ điều hành', icon: MapIcon, permissionCode: 'MAP_VIEW' },
-  { path: '/stores', label: 'Cơ sở quản lý', icon: Building2, permissionCode: 'STORES_VIEW' },
+  { path: '/registry/stores', label: 'Cơ sở quản lý', icon: Building2, permissionCode: 'STORES_VIEW' },
   {
     path: '/leads',
     label: 'Nguồn tin',
@@ -372,6 +372,9 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
           } else if ((module as any).hasSubmenu && (module as any).submenu) {
             if (module.path === '/leads') {
               isActive = location.pathname.startsWith('/lead-risk') || location.pathname === '/leads';
+          } else if (module.path === '/registry/stores') {
+            // Registry - include full-edit paths
+            isActive = location.pathname === module.path || location.pathname.startsWith(module.path + '/') || location.pathname.startsWith('/registry/full-edit');
             } else if (module.path === '/admin') {
               isActive = location.pathname.startsWith('/system') || location.pathname.startsWith('/system-admin') || location.pathname === '/admin';
             } else {
@@ -619,6 +622,9 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                 } else if ((module as any).hasSubmenu && (module as any).submenu) {
                   if (module.path === '/leads') {
                     isModuleActive = location.pathname.startsWith('/lead-risk') || location.pathname === '/leads';
+                } else if (module.path === '/registry/stores') {
+                  // Registry - include full-edit paths
+                  isModuleActive = location.pathname === module.path || location.pathname.startsWith(module.path + '/') || location.pathname.startsWith('/registry/full-edit');
                   } else if (module.path === '/admin') {
                     isModuleActive = location.pathname.startsWith('/system') || location.pathname.startsWith('/system-admin') || location.pathname === '/admin';
                   } else {

@@ -66,6 +66,7 @@ import { getViolationsByStoreId } from '../data/mockViolations';
 import { getComplaintsByStoreId } from '../data/mockComplaints';
 import { PendingUpdatesDialog } from '../ui-kit/PendingUpdatesDialog';
 import { getTotalPendingCount } from '../data/mockPendingUpdates';
+import { fetchStores, fetchStoresStats, createMerchant } from '../utils/api/storesApi';
 import styles from './StoresListPage.module.css';
 
 export default function StoresListPage() {
@@ -155,31 +156,59 @@ export default function StoresListPage() {
   // LocalStorage key
   const STORES_STORAGE_KEY = 'mappa_stores';
 
-  // Data state - Load from localStorage or use mock data
-  const [stores, setStores] = useState<Store[]>(() => {
-    try {
-      const savedStores = localStorage.getItem(STORES_STORAGE_KEY);
-      if (savedStores) {
-        const parsedStores = JSON.parse(savedStores);
-        
-        // ✅ Auto-migrate legacy 'underInspection' status to 'pending'
-        const migratedStores = parsedStores.map((store: any) => {
-          if (store.status === 'underInspection') {
-            console.warn(`⚠️ Migrating store ${store.id} from 'underInspection' to 'pending'`);
-            return { ...store, status: 'pending' as FacilityStatus };
-          }
-          return store;
-        });
-        
-        return migratedStores;
-      }
-    } catch (error) {
-      console.error('Error loading stores from localStorage:', error);
-    }
-    return mockStores;
-  });
+  // Data state - Fetch from API
+  const [stores, setStores] = useState<Store[]>([]);
+  const [isLoadingStores, setIsLoadingStores] = useState(true);
+  const [storeError, setStoreError] = useState<string | null>(null);
 
-  // Save stores to localStorage whenever they change
+  // Load stores from API on component mount
+  useEffect(() => {
+    const loadStores = async () => {
+      try {
+        setIsLoadingStores(true);
+        setStoreError(null);
+        console.log('📥 Fetching stores from API...');
+        
+        const data = await fetchStores();
+        console.log('Successfully loaded', data.length, 'stores from API');
+        
+        setStores(data);
+        
+        // Save to localStorage for offline backup
+        try {
+          localStorage.setItem(STORES_STORAGE_KEY, JSON.stringify(data));
+        } catch (e) {
+          console.warn('Could not save to localStorage:', e);
+        }
+      } catch (error: any) {
+        console.error('Error loading stores:', error);
+        setStoreError(error.message || 'Failed to load stores');
+        
+        // Try to load from localStorage as fallback
+        try {
+          const savedStores = localStorage.getItem(STORES_STORAGE_KEY);
+          if (savedStores) {
+            const parsedStores = JSON.parse(savedStores);
+            console.warn('⚠️ Loaded stores from localStorage fallback');
+            setStores(parsedStores);
+          } else {
+            // Use mock data as last resort
+            console.warn('⚠️ Using mock data as last resort');
+            setStores(mockStores);
+          }
+        } catch (fallbackError) {
+          console.error('Fallback error:', fallbackError);
+          setStores(mockStores);
+        }
+      } finally {
+        setIsLoadingStores(false);
+      }
+    };
+
+    loadStores();
+  }, []);
+
+  // Save stores to localStorage whenever they change (for local updates)
   useEffect(() => {
     try {
       localStorage.setItem(STORES_STORAGE_KEY, JSON.stringify(stores));
@@ -734,9 +763,11 @@ export default function StoresListPage() {
       label: 'STT',
       width: '60px',
       align: 'center',
-      render: (store, index) => {
+      render: (store: Store) => {
+        // Find index from paginatedData
+        const index = paginatedData.findIndex(s => s.id === store.id);
         // Calculate STT based on pagination
-        const stt = (currentPage - 1) * pageSize + (index || 0) + 1;
+        const stt = (currentPage - 1) * pageSize + (index >= 0 ? index : 0) + 1;
         return <div style={{ fontWeight: 'var(--font-weight-medium)' }}>{stt}</div>;
       },
     },
@@ -815,12 +846,13 @@ export default function StoresListPage() {
   ];
 
   // Handle row selection
-  const handleSelectRow = (id: number) => {
+  const handleSelectRow = (id: string | number) => {
+    const numId = typeof id === 'string' ? parseInt(id) : id;
     const newSelected = new Set(selectedRows);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
+    if (newSelected.has(numId)) {
+      newSelected.delete(numId);
     } else {
-      newSelected.add(id);
+      newSelected.add(numId);
     }
     setSelectedRows(newSelected);
   };
@@ -863,16 +895,16 @@ export default function StoresListPage() {
     }
     
     // Add advanced filters
-    if (advancedFilter.hasViolations !== 'all') {
+    if (advancedFilter.hasViolations && advancedFilter.hasViolations !== 'all') {
       mapFilters.hasViolations = advancedFilter.hasViolations;
     }
-    if (advancedFilter.hasComplaints !== 'all') {
+    if (advancedFilter.hasComplaints && advancedFilter.hasComplaints !== 'all') {
       mapFilters.hasComplaints = advancedFilter.hasComplaints;
     }
-    if (advancedFilter.riskLevel !== 'all') {
+    if (advancedFilter.riskLevel && advancedFilter.riskLevel !== 'all') {
       mapFilters.riskLevel = advancedFilter.riskLevel;
     }
-    if (advancedFilter.businessType !== 'all') {
+    if (advancedFilter.businessType && advancedFilter.businessType !== 'all') {
       mapFilters.businessType = advancedFilter.businessType;
     }
     
@@ -1142,41 +1174,64 @@ export default function StoresListPage() {
 
       {/* Data Table */}
       <div className={styles.tableContainer}>
-        <Card>
-          <CardContent className={styles.tableCard}>
-            {/* Bulk Action Bar - inline in table */}
-            {selectedRows.size > 0 && (
-              <BulkActionBar
-                selectedCount={selectedRows.size}
-                actions={bulkActions}
-                onClear={() => setSelectedRows(new Set())}
+        {isLoadingStores ? (
+          <Card>
+            <CardContent style={{ padding: '40px', textAlign: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                <RefreshCw size={32} style={{ animation: 'spin 1s linear infinite' }} />
+                <p style={{ fontSize: '16px', color: '#666' }}>Đang tải dữ liệu cơ sở...</p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : storeError ? (
+          <Card>
+            <CardContent style={{ padding: '40px', textAlign: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', color: '#d32f2f' }}>
+                <AlertTriangle size={32} />
+                <p style={{ fontSize: '16px' }}>Lỗi khi tải dữ liệu: {storeError}</p>
+                <Button size="sm" onClick={() => window.location.reload()}>
+                  Tải lại trang
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardContent className={styles.tableCard}>
+              {/* Bulk Action Bar - inline in table */}
+              {selectedRows.size > 0 && (
+                <BulkActionBar
+                  selectedCount={selectedRows.size}
+                  actions={bulkActions}
+                  onClear={() => setSelectedRows(new Set())}
+                />
+              )}
+              
+              <DataTable
+                columns={columns}
+                data={paginatedData}
+                selectable={true}
+                selectedRows={selectedRows}
+                onSelectRow={handleSelectRow}
+                onSelectAll={handleSelectAll}
+                getRowId={(store) => store.id}
               />
-            )}
-            
-            <DataTable
-              columns={columns}
-              data={paginatedData}
-              selectable={true}
-              selectedRows={selectedRows}
-              onSelectRow={handleSelectRow}
-              onSelectAll={handleSelectAll}
-              getRowId={(store) => store.id}
-            />
-            
-            {/* QLTT Standard: Footer with Pagination */}
-            <TableFooter
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalRecords={filteredData.length}
-              pageSize={pageSize}
+              
+              {/* QLTT Standard: Footer with Pagination */}
+              <TableFooter
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalRecords={filteredData.length}
+                pageSize={pageSize}
               onPageChange={setCurrentPage}
               onPageSizeChange={(size) => {
                 setPageSize(size);
                 setCurrentPage(1);
               }}
             />
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Dialogs */}
@@ -1246,74 +1301,145 @@ export default function StoresListPage() {
       <AddStoreDialogTabbed
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
-        onSubmit={(data: NewStoreDataTabbed) => {
-          console.log('📝 AddStoreDialogTabbed submitted data:', data);
-          
-          // Get district name from code
-          const districtName = getDistrictByName(data.jurisdiction)?.name || data.jurisdiction;
-          
-          // Generate new ID (highest existing ID + 1)
-          const maxId = Math.max(...stores.map(s => s.id), 0);
-          const newId = maxId + 1;
-          
-          const newStore: Store = {
-            id: newId,
-            name: data.name,
-            type: data.industryName || 'Chưa xác định',
-            address: data.registeredAddress,
-            province: data.province,
-            provinceCode: data.province,
-            jurisdiction: districtName,
-            jurisdictionCode: data.jurisdiction,
-            ward: data.ward,
-            wardCode: data.ward,
-            managementUnit: data.managementUnit || `Chi cục QLTT ${districtName}`,
-            status: (data.status || 'pending') as FacilityStatus,
-            riskLevel: 'none',
-            lastInspection: 'Chưa kiểm tra',
-            latitude: data.latitude,
-            longitude: data.longitude,
-            gpsCoordinates: data.latitude && data.longitude 
-              ? `${data.latitude.toFixed(6)}, ${data.longitude.toFixed(6)}` 
-              : undefined,
-            // Tab 1: Thông tin HKD
-            taxCode: data.taxCode,
-            industryName: data.industryName,
-            establishedDate: data.establishedDate,
-            operationStatus: data.operationStatus,
-            businessArea: data.businessArea,
-            businessPhone: data.businessPhone,
-            email: data.email,
-            website: data.website,
-            fax: data.fax,
-            notes: data.notes,
-            // Tab 2: Thông tin chủ hộ
-            ownerName: data.ownerName,
-            ownerBirthYear: data.ownerBirthYear,
-            ownerIdNumber: data.ownerIdNumber,
-            ownerPhone: data.ownerPhone,
-            // Tab 3: Địa chỉ
-            registeredAddress: data.registeredAddress,
-            headquarterAddress: data.headquarterAddress,
-            productionAddress: data.productionAddress,
-            // Compatibility fields
-            phone: data.ownerPhone,
-            businessType: data.industryName,
-            isVerified: false,
-          };
-          
-          console.log('✅ New store object:', newStore);
-          
-          // Add to global store registry
-          addStore(newStore);
-          
-          // Thêm vào đầu danh sách (prepend)
-          setStores(prev => [newStore, ...prev]);
-          // Chuyển về trang 1 để thấy dữ liệu mới
-          setCurrentPage(1);
-          toast.success('Thêm cửa hàng thành công', {
-            description: 'Cửa hàng mới đã được thêm và đang chờ phê duyệt',
-          });
+        onSubmit={async (data: NewStoreDataTabbed) => {
+          try {
+            console.log('📝 AddStoreDialogTabbed submitted data:', data);
+            
+            // Validate required fields
+            if (!data.business_name) {
+              toast.error('Vui lòng nhập tên cơ sở');
+              return;
+            }
+            if (!data.taxCode) {
+              toast.error('Vui lòng nhập mã số thuế');
+              return;
+            }
+            if (!data.registeredAddress) {
+              toast.error('Vui lòng nhập địa chỉ');
+              return;
+            }
+            if (!data.province) {
+              toast.error('Vui lòng chọn tỉnh/thành phố');
+              return;
+            }
+            if (!data.ward) {
+              toast.error('Vui lòng chọn phường/xã');
+              return;
+            }
+            if (!data.latitude || !data.longitude) {
+              toast.error('Vui lòng chọn vị trí trên bản đồ');
+              return;
+            }
+            
+            // Get district name from code - districtName is already provided in data
+            const districtName = data.jurisdiction || 'Quận 1';
+            
+            // Prepare API payload matching create_merchant_full RPC parameters
+            // IMPORTANT: Send ALL parameters with null for empty optional fields
+            const apiPayload = {
+              p_business_name: data.business_name,
+              p_owner_name: data.ownerName || '',
+              p_owner_phone: data.ownerPhone || '',
+              p_license_status: 'valid',
+              p_tax_code: data.taxCode || '',
+              p_business_type: data.industryName || 'retail',
+              p_province_id: data.province || null,  // UUID field - use null not ""
+              p_ward_id: data.ward || null,          // UUID field - use null not ""
+              p_address: data.registeredAddress || '',
+              p_latitude: data.latitude || 0,
+              p_longitude: data.longitude || 0,
+              p_status: data.status || 'pending',
+              p_established_date: data.establishedDate || null,
+              p_fax: data.fax || null,
+              p_department_id: '0c081448-e64b-4d8e-a332-b79f743823c7',
+              p_note: data.notes || null,
+              p_business_phone: data.businessPhone || null,
+              p_business_email: data.email || null,
+              p_website: data.website || null,
+              p_store_area: data.businessArea ? parseFloat(data.businessArea) : null,
+              p_owner_phone_2: data.ownerPhone2 || null,
+              p_owner_birth_year: data.ownerBirthYear ? parseInt(data.ownerBirthYear) : null,
+              p_owner_identity_no: data.ownerIdNumber || null,
+              p_owner_email: null,
+            };
+
+            console.log('📤 Sending API payload:', apiPayload);
+            
+            // Call API to create merchant
+            const result = await createMerchant(apiPayload);
+            
+            console.log('✅ Merchant created via API:', result);
+            
+            // Create local Store object for display
+            const numericId = Math.random() * 1000000 | 0;
+            const newStore: Store = {
+              id: numericId,
+              name: data.business_name,
+              type: data.industryName || 'Chưa xác định',
+              address: data.registeredAddress || '',
+              province: data.province,
+              provinceCode: data.province,
+              jurisdiction: districtName,
+              jurisdictionCode: data.jurisdiction,
+              ward: data.ward,
+              wardCode: data.ward,
+              managementUnit: data.managementUnit || `Chi cục QLTT ${districtName}`,
+              status: (data.status || 'pending') as FacilityStatus,
+              riskLevel: 'none',
+              lastInspection: 'Chưa kiểm tra',
+              latitude: data.latitude,
+              longitude: data.longitude,
+              gpsCoordinates: data.latitude && data.longitude 
+                ? `${data.latitude.toFixed(6)}, ${data.longitude.toFixed(6)}` 
+                : undefined,
+              // Tab 1: Thông tin HKD
+              taxCode: data.taxCode,
+              industryName: data.industryName,
+              establishedDate: data.establishedDate,
+              operationStatus: data.operationStatus,
+              businessArea: data.businessArea,
+              businessPhone: data.businessPhone,
+              email: data.email,
+              website: data.website,
+              fax: data.fax,
+              notes: data.notes,
+              // Tab 2: Thông tin chủ hộ
+              ownerName: data.ownerName,
+              ownerBirthYear: data.ownerBirthYear,
+              ownerIdNumber: data.ownerIdNumber,
+              ownerPhone: data.ownerPhone,
+              // Tab 3: Địa chỉ
+              registeredAddress: data.registeredAddress || '',
+              headquarterAddress: data.headquarterAddress,
+              productionAddress: data.productionAddress,
+              // Compatibility fields
+              phone: data.ownerPhone,
+              businessType: data.industryName,
+              isVerified: false,
+            };
+            
+            console.log('✅ New store object:', newStore);
+            
+            // Add to global store registry
+            addStore(newStore);
+            
+            // Thêm vào đầu danh sách (prepend)
+            setStores(prev => [newStore, ...prev]);
+            // Chuyển về trang 1 để thấy dữ liệu mới
+            setCurrentPage(1);
+            
+            // Close dialog
+            setAddDialogOpen(false);
+            
+            toast.success('Thêm cửa hàng thành công', {
+              description: 'Cửa hàng mới đã được thêm vào hệ thống',
+            });
+          } catch (error: any) {
+            console.error('❌ Error creating merchant:', error);
+            toast.error('Lỗi khi thêm cửa hàng', {
+              description: error.message || 'Vui lòng thử lại',
+            });
+          }
         }}
       />
 

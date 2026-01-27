@@ -4,6 +4,10 @@
   margin: 0 auto;
 }
 
+._pageContainer_cjm9k_1 {
+  margin-bottom: var(--spacing-6);
+}
+
 @media (max-width: 768px) {
   .pageContainer {
     padding: var(--spacing-4);

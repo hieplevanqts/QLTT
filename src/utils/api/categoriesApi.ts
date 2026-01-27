@@ -15,12 +15,12 @@ export interface Category {
 
 /**
  * Fetch all categories from Supabase
- * GET /categories?limit=1000
+ * GET /categories?limit=10000
  */
 export async function fetchCategories(): Promise<Category[]> {
   
   try {
-    const url = `${SUPABASE_REST_URL}/categories?limit=1000`;
+    const url = `${SUPABASE_REST_URL}/categories?limit=10000`;
     
     const response = await fetch(url, {
       method: 'GET',
