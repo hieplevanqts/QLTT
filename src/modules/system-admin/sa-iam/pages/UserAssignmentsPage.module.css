@@ -1,0 +1,245 @@
+/**
+ * USER ASSIGNMENTS PAGE - Using design tokens
+ */
+
+/* ============================================
+   ASSIGNMENT SECTIONS
+   ============================================ */
+.assignmentSection {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: var(--elevation-sm);
+}
+
+.assignmentSection h3 {
+  margin: 0 0 16px 0;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+}
+
+.assignmentList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.assignmentItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: all 150ms ease;
+}
+
+.assignmentItem:hover {
+  background: var(--card);
+  border-color: var(--primary);
+}
+
+.assignmentItemInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.assignmentItemLabel {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+}
+
+.assignmentItemMeta {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}
+
+.assignmentActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+.buttonPrimary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--primary-foreground);
+  background: var(--primary);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+
+.buttonPrimary:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 92, 182, 0.25);
+}
+
+.buttonPrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.buttonSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+
+.buttonSecondary:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: var(--muted);
+}
+
+.buttonSecondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   TOOLBAR & SEARCH
+   ============================================ */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.searchBox {
+  position: relative;
+  flex: 1;
+  min-width: 300px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted-foreground);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 10px 16px 10px 42px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  background: var(--input-background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: all 150ms ease;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px rgba(0, 92, 182, 0.1);
+}
+
+/* ============================================
+   TABLE
+   ============================================ */
+.tableContainer {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  margin-bottom: 24px;
+  box-shadow: var(--elevation-sm);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead {
+  background: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.table th {
+  padding: 12px 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground);
+}
+
+.table tbody tr {
+  transition: background 150ms ease;
+  border-bottom: 1px solid var(--border);
+}
+
+.table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.table tbody tr:hover {
+  background: var(--muted);
+}
+
+.table td {
+  padding: 16px 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  vertical-align: middle;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+  .assignmentItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .assignmentActions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+﻿import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import PageHeader from '../layouts/PageHeader';
 import { Button } from '../app/components/ui/button';
 import { MapPin, SlidersHorizontal, BarChart3 } from 'lucide-react';
@@ -13,27 +13,74 @@ import { OfficerStatsOverlay } from '../app/components/map/OfficerStatsOverlay';
 import { LocationStatsCard } from '../app/components/map/LocationStatsCard';
 import { MapLegend } from '../app/components/map/MapLegend';
 import { OfficerInfoModal } from '../app/components/map/OfficerInfoModal';
+import { DepartmentDetailModal } from '../app/components/map/DepartmentDetailModal';
 import { DateRangePicker } from '../app/components/map/DateRangePicker';
 import { UploadExcelModal } from '../app/components/map/UploadExcelModal';
 import { Toaster } from 'sonner';
 import styles from './MapPage.module.css';
 import { Restaurant } from '../data/restaurantData';
-import { getProvinceNames, getDistrictsByProvince, getWardsByDistrict } from '../data/vietnamLocations';
-import { fetchMapPoints } from '../utils/api/mapPointsApi';
+// Import utility functions
+import { formatTime, formatDate } from './utils/dateUtils';
+import {
+  mapStatusCodesToMerchantStatus,
+  calculateBusinessTypes,
+  calculateDepartmentIdsToFilter,
+  calculateBusinessTypeFiltersArray,
+  filterRestaurantsBySearch,
+} from './utils/filterUtils';
+import { useMapFilters } from './hooks/useMapFilters';
+import { getProvinceNames } from '../data/vietnamLocations';
 import { fetchPointStatuses, PointStatus, buildFilterObjectFromStatuses } from '../utils/api/pointStatusApi';
 import { fetchCategories, Category } from '../utils/api/categoriesApi';
 import { fetchMerchants, fetchMerchantStats, MerchantStats } from '../utils/api/merchantsApi';
 import { fetchMarketManagementTeams, Department } from '../utils/api/departmentsApi';
-import { officersData, Officer, teamsData, departmentData } from '../data/officerTeamData';
-import { useQLTTScope } from '../contexts/QLTTScopeContext';
+import { officersData, Officer, teamsData } from '../data/officerTeamData';
+import { useAppSelector, useAppDispatch } from '../app/hooks';
+import {
+  setFilters,
+  setBusinessTypeFilters,
+  setDepartmentFilters,
+  setPendingFilters,
+  setPendingBusinessTypeFilters,
+  setPendingDepartmentFilters,
+  applyPendingFilters,
+  resetFilters,
+  setSelectedProvince,
+  setSelectedDistrict,
+  setSelectedWard,
+  setFilterPanelOpen,
+  setLimit,
+} from '../store/slices/mapFiltersSlice';
 
 type CategoryFilter = {
   [key: string]: boolean;  // Dynamic keys from point_status table
 };
 
 export default function MapPage() {
-  // 🔥 NEW: Get scope from QLTTScopeContext to filter departments by teamId
-  const { scope, setScope, isLoading: isScopeLoading, hasInitialized: isScopeInitialized } = useQLTTScope();
+  // 🔥 Redux Store - Logging dữ liệu từ store
+  const reduxAuth = useAppSelector((state) => state.auth);
+  const reduxQLTTScope = useAppSelector((state) => state.qlttScope);
+  const mapFilters = useAppSelector((state) => state.mapFilters);
+  const dispatch = useAppDispatch();
+  
+  // 🔥 NEW: Get scope from Redux store (not from context anymore)
+  const divisionId = reduxQLTTScope?.scope?.divisionId;
+  const teamId = reduxQLTTScope?.scope?.teamId;
+  const isScopeLoading = reduxQLTTScope?.isLoading || false;
+  const isScopeInitialized = reduxQLTTScope?.hasInitialized || false;
+  
+  // 🔥 Get filters from Redux store
+  const filters = mapFilters.filters;
+  const businessTypeFilters = mapFilters.businessTypeFilters;
+  const departmentFilters = mapFilters.departmentFilters;
+  const pendingFilters = mapFilters.pendingFilters;
+  const pendingBusinessTypeFilters = mapFilters.pendingBusinessTypeFilters;
+  const pendingDepartmentFilters = mapFilters.pendingDepartmentFilters;
+  const selectedProvince = mapFilters.selectedProvince;
+  const selectedDistrict = mapFilters.selectedDistrict;
+  const selectedWard = mapFilters.selectedWard;
+  const isFilterPanelOpen = mapFilters.isFilterPanelOpen;
+  const limit = mapFilters.limit;
   
   // Point statuses from point_status table
   const [pointStatuses, setPointStatuses] = useState<PointStatus[]>([]);
@@ -53,8 +100,7 @@ export default function MapPage() {
   const [dataError, setDataError] = useState<string | null>(null);
   const [hasInitialDataLoaded, setHasInitialDataLoaded] = useState(false);  // 🔥 Track if initial data has loaded
   
-  // 🔥 NEW: Store ALL restaurants (unfiltered) - fetch once, never refetch
-  const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
+  // 🔥 REMOVED: allRestaurants - all data now comes from fetchMerchants (already filtered)
   
   // 🔥 NEW: Flag to prevent auto-save during initial load
   const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
@@ -62,22 +108,15 @@ export default function MapPage() {
   // 🔥 FIX: Use refs to track if filters are being initialized (prevent API calls during init)
   const isInitializingFiltersRef = useRef(false);
   
-  const [filters, setFilters] = useState<CategoryFilter>({});
-  
-  const [businessTypeFilters, setBusinessTypeFilters] = useState<{ [key: string]: boolean }>({});
-  
-  // 🔥 NEW: Department filters
-  const [departmentFilters, setDepartmentFilters] = useState<{ [key: string]: boolean }>({});
-  
-  // 🔥 NEW: Pending filters - chỉ apply khi user bấm nút "Áp dụng"
-  const [pendingFilters, setPendingFilters] = useState<CategoryFilter>({});
-  const [pendingBusinessTypeFilters, setPendingBusinessTypeFilters] = useState<{ [key: string]: boolean }>({});
-  const [pendingDepartmentFilters, setPendingDepartmentFilters] = useState<{ [key: string]: boolean }>({});
-  
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<keyof CategoryFilter | 'all'>('all');
+  
+  // 🔥 NEW: Department detail modal state
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string | null>(null);
+  const [selectedDepartmentData, setSelectedDepartmentData] = useState<any>(null);
+  const [isDepartmentModalOpen, setIsDepartmentModalOpen] = useState(false);
   
   // 🔥 NEW: Realtime clock for header
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -91,22 +130,6 @@ export default function MapPage() {
     return () => clearInterval(timer);
   }, []);
   
-  // Format time display
-  const formatTime = (date: Date) => {
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    const seconds = date.getSeconds().toString().padStart(2, '0');
-    return `${hours}:${minutes}:${seconds}`;
-  };
-  
-  const formatDate = (date: Date) => {
-    const days = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
-    const dayName = days[date.getDay()];
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${dayName}, ${day}/${month}/${year}`;
-  };
   
   // 🔥 DISABLED: Auto-save search query (causes localStorage stale closure issues)
   // Users must click "Reset" or change filters to trigger save
@@ -131,8 +154,7 @@ export default function MapPage() {
   // 🔥 NEW: Upload Excel modal state
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   
-  // Map UI state (similar to FullscreenMapModal)
-  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  // Map UI state (similar to FullscreenMapModal) - isFilterPanelOpen now from Redux store
   const [isLegendVisible, setIsLegendVisible] = useState(false);  // 🔥 Hidden by default, show on icon click
   const [isStatsCardVisible, setIsStatsCardVisible] = useState(true);
   const [isOfficerStatsVisible, setIsOfficerStatsVisible] = useState(true); // 🔥 NEW: Officer stats overlay visibility
@@ -140,6 +162,7 @@ export default function MapPage() {
   // 🔥 NEW: Map layer toggles
   const [showMapPoints, setShowMapPoints] = useState(false);  // MapPoint layer (tạm ẩn)
   const [showMerchants, setShowMerchants] = useState(true);  // Merchant layer (hiển thị với tên "Chủ Hộ Kinh Doanh")
+  // 🔥 FIX: Default to false on initial load - Merchants layer is the default, Officers layer can be enabled manually
   const [showOfficers, setShowOfficers] = useState(false);  // Officers layer (Cán bộ quản lý)
   
   // 🔥 NEW: Selected team for officers layer filter
@@ -148,6 +171,8 @@ export default function MapPage() {
   // 🔥 NEW: Statistics from API (background fetch)
   const [merchantStats, setMerchantStats] = useState<MerchantStats | null>(null);
   const [hasFetchedStats, setHasFetchedStats] = useState(false);
+  
+  // Location filters - now from Redux store
   
   // Refs for click outside logic
   const filterPanelRef = useRef<HTMLDivElement>(null);
@@ -166,8 +191,8 @@ export default function MapPage() {
         
         // Build initial filters from statuses (all enabled by default)
         const initialFilters = buildFilterObjectFromStatuses(statuses);
-        setFilters(initialFilters);
-        setPendingFilters(initialFilters);  // 🔥 Sync pending filters
+        dispatch(setFilters(initialFilters));
+        dispatch(setPendingFilters(initialFilters));  // 🔥 Sync pending filters
         
         setIsLoadingStatuses(false);
       } catch (error: any) {
@@ -194,8 +219,8 @@ export default function MapPage() {
           cats.forEach((cat) => {
             initialBusinessTypeFilters[cat.id] = true;  // 🔥 ALL categories enabled by default
           });
-          setBusinessTypeFilters(initialBusinessTypeFilters);
-          setPendingBusinessTypeFilters(initialBusinessTypeFilters);  // 🔥 Sync pending
+          dispatch(setBusinessTypeFilters(initialBusinessTypeFilters));
+          dispatch(setPendingBusinessTypeFilters(initialBusinessTypeFilters));  // 🔥 Sync pending
           // Reset flag after state update
           setTimeout(() => {
             isInitializingFiltersRef.current = false;
@@ -214,15 +239,10 @@ export default function MapPage() {
   
   // 🔥 CHANGED: Fetch departments from departments table on mount and when teamId or divisionId changes
   useEffect(() => {
-    // 🔥 FIX: Wait for scope to be loaded from localStorage/context before fetching
+    // 🔥 FIX: Wait for scope to be loaded from Redux store before fetching
     if (isScopeLoading || !isScopeInitialized) {
-      console.log('⏳ MapPage: Waiting for scope to load...', { isScopeLoading, isScopeInitialized });
       return;
     }
-    
-    console.log('🔄 MapPage: scope.teamId changed:', scope.teamId);
-    console.log('🔄 MapPage: scope.divisionId changed:', scope.divisionId);
-    console.log('🔄 MapPage: Full scope object:', JSON.stringify(scope, null, 2));
     
     async function loadDepartments() {
       try {
@@ -230,16 +250,12 @@ export default function MapPage() {
         
         // 🔥 CHANGED: Priority: teamId > divisionId
         // Handle null, undefined, and empty string properly
-        const teamIdToPass = scope.teamId && typeof scope.teamId === 'string' && scope.teamId.trim() !== '' 
-          ? scope.teamId 
+        const teamIdToPass = teamId && typeof teamId === 'string' && teamId.trim() !== '' 
+          ? teamId 
           : undefined;
-        const divisionIdToPass = scope.divisionId && typeof scope.divisionId === 'string' && scope.divisionId.trim() !== '' 
-          ? scope.divisionId 
+        const divisionIdToPass = divisionId && typeof divisionId === 'string' && divisionId.trim() !== '' 
+          ? divisionId 
           : undefined;
-        
-        console.log('📡 MapPage: Calling fetchMarketManagementTeams');
-        console.log('📡 MapPage: teamIdToPass:', teamIdToPass);
-        console.log('📡 MapPage: divisionIdToPass:', divisionIdToPass);
         
         // 🔥 CHANGED: Filter by teamId (priority) or divisionId from scope if available
         const options: { teamId?: string; divisionId?: string } = {};
@@ -253,8 +269,6 @@ export default function MapPage() {
           Object.keys(options).length > 0 ? options : undefined
         );
         
-        console.log('✅ MapPage: Fetched departments:', depts.length, depts.map(d => d.name));
-        
         setDepartments(depts);
         
         // 🔥 Initialize departmentFilters with ALL departments enabled (= "Tất cả")
@@ -264,8 +278,8 @@ export default function MapPage() {
           depts.forEach((dept) => {
             initialDepartmentFilters[dept.id] = true;  // 🔥 ALL departments enabled by default
           });
-          setDepartmentFilters(initialDepartmentFilters);
-          setPendingDepartmentFilters(initialDepartmentFilters);  // 🔥 Sync pending
+          dispatch(setDepartmentFilters(initialDepartmentFilters));
+          dispatch(setPendingDepartmentFilters(initialDepartmentFilters));  // 🔥 Sync pending
           // Reset flag after state update
           setTimeout(() => {
             isInitializingFiltersRef.current = false;
@@ -277,15 +291,12 @@ export default function MapPage() {
         // 🔥 FIX: Reset lastFiltersKeyRef to force merchants reload when departments are loaded
         // This ensures merchants are fetched with the correct department filter
         if (depts.length > 0 && (teamIdToPass || divisionIdToPass)) {
-          console.log('🔄 MapPage: Resetting lastFiltersKeyRef to trigger merchants reload');
-          console.log('🔄 MapPage: teamIdToPass:', teamIdToPass);
-          console.log('🔄 MapPage: divisionIdToPass:', divisionIdToPass);
-          console.log('🔄 MapPage: Departments loaded:', depts.length);
+          
           lastFiltersKeyRef.current = '';
           
           // 🔥 FIX: Also reset hasFetchedMerchantsRef to force reload on initial load
           if (!hasFetchedMerchantsRef.current) {
-            console.log('🔄 MapPage: Resetting hasFetchedMerchantsRef to force initial merchants fetch');
+            
             hasFetchedMerchantsRef.current = false;
           }
         }
@@ -296,124 +307,30 @@ export default function MapPage() {
     }
     
     loadDepartments();
-  }, [scope.teamId, scope.divisionId, scope, isScopeLoading, isScopeInitialized]); // 🔥 FIX: Wait for scope to load before fetching
+  }, [teamId, divisionId, isScopeLoading, isScopeInitialized]); // 🔥 FIX: Use Redux scope values from divisionId and teamId
   
-  // 🔥 NEW: Load saved filters from localStorage on mount
+  // 🔥 NEW: Initialize limit from URL params on mount
   useEffect(() => {
-    // Only load saved filters after statuses and categories are loaded
-    if (pointStatuses.length === 0 || categories.length === 0) {
-      return;
-    }
-    
-    try {
-      const savedFiltersStr = localStorage.getItem('mappa_map_filters');
-      if (savedFiltersStr) {
-        const savedFilters = JSON.parse(savedFiltersStr);
-        
-        // 🔥 VALIDATE: Check if saved filters match current point statuses
-        if (savedFilters.filters) {
-          const savedFilterKeys = Object.keys(savedFilters.filters);
-          const validStatusCodes = pointStatuses.map(s => s.code);
-          const isValidFilter = savedFilterKeys.every(key => validStatusCodes.includes(key));
-          
-          if (isValidFilter) {
-            isInitializingFiltersRef.current = true; // 🔥 FIX: Mark as initializing
-            setFilters(savedFilters.filters);
-            setPendingFilters(savedFilters.filters);
-            setTimeout(() => {
-              isInitializingFiltersRef.current = false;
-            }, 0);
-          } else {
-          }
-        }
-        
-        // 🔥 VALIDATE: Check if saved business type filters match current categories
-        if (savedFilters.businessTypeFilters) {
-          const savedBusinessTypeKeys = Object.keys(savedFilters.businessTypeFilters);
-          const validCategoryIds = categories.map(c => c.id);
-          const isValidBusinessTypeFilter = savedBusinessTypeKeys.every(key => validCategoryIds.includes(key));
-          
-          if (isValidBusinessTypeFilter) {
-            isInitializingFiltersRef.current = true; // 🔥 FIX: Mark as initializing
-            setBusinessTypeFilters(savedFilters.businessTypeFilters);
-            setPendingBusinessTypeFilters(savedFilters.businessTypeFilters);
-            setTimeout(() => {
-              isInitializingFiltersRef.current = false;
-            }, 0);
-          } else {
-          }
-        }
-        
-        if (savedFilters.selectedProvince) {
-          setSelectedProvince(savedFilters.selectedProvince);
-        } else {
-          // Default to Hà Nội if no saved province
-          setSelectedProvince('Hà Nội');
-        }
-        
-        if (savedFilters.selectedDistrict) {
-          setSelectedDistrict(savedFilters.selectedDistrict);
-        }
-        
-        if (savedFilters.selectedWard) {
-          setSelectedWard(savedFilters.selectedWard);
-        }
-        
-        // 🔥 NEW: Apply saved date range
-        if (savedFilters.startDate) {
-          setCustomStartDate(savedFilters.startDate);
-        }
-        
-        if (savedFilters.endDate) {
-          setCustomEndDate(savedFilters.endDate);
-        }
-        
-        // 🔥 NEW: Apply saved search query
-        if (savedFilters.searchQuery) {
-          setSearchQuery(savedFilters.searchQuery);
-        }
-        
-      } else {
-        // Default to Hà Nội when no saved filters
-        setSelectedProvince('Hà Nội');
-      }
-    } catch (error) {
-      console.error('❌ Failed to load saved filters:', error);
-    }
-    
-    // 🔥 CRITICAL: Mark initial load complete AFTER loading saved filters
-    // This prevents auto-save from overwriting the saved filters during load
-    setTimeout(() => {
-      setIsInitialLoadComplete(true);
-    }, 100);
-  }, [pointStatuses, categories]); // Run after statuses and categories are loaded
-  
-  // 🔥 Fetch map points from map_points table on mount AND when filters change
-  useEffect(() => {
-    async function loadMapPoints() {
-      setIsLoadingData(true);
-      setDataError(null);
-      
-      try {
-        // 🔥 NEW: Fetch ALL points without filters (one-time fetch)
-        const points = await fetchMapPoints();  // No statusIds, no categoryIds = get ALL
-        
-        
-        setAllRestaurants(points);  // 🔥 Store ALL points
-        setIsLoadingData(false);
-        setHasInitialDataLoaded(true);  // 🔥 Mark initial data as loaded
-      } catch (error: any) {
-        console.error('❌ MapPage: Failed to load map points:', error);
-        setDataError(error.message || 'Khng thể tải dữ liệu điểm kinh doanh');
-        setIsLoadingData(false);
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlLimit = urlParams.get('limit');
+    if (urlLimit) {
+      const parsedLimit = parseInt(urlLimit, 10);
+      if (!isNaN(parsedLimit) && parsedLimit > 0) {
+        dispatch(setLimit(parsedLimit));
       }
     }
-    
-    // Only fetch ONCE if pointStatuses is loaded and showMapPoints is true
-    if (pointStatuses.length > 0 && showMapPoints && !showMerchants && !showOfficers && allRestaurants.length === 0) {
-      loadMapPoints();
-    }
-  }, [pointStatuses, showMapPoints, showMerchants, showOfficers, allRestaurants.length]); // 🔥 REMOVED: filters, businessTypeFilters, categories
+    // If no limit in URL, Redux store already has default value (100)
+  }, [dispatch]);
+  
+  // 🔥 REMOVED: Load saved filters from localStorage - now using Redux store only
+  // Filters are already in Redux store, no need to load from localStorage
+  // Mark initial load complete immediately
+  useEffect(() => {
+    setIsInitialLoadComplete(true);
+  }, []);
+  
+  // 🔥 REMOVED: Separate fetchMapPoints - now all points come from fetchMerchants
+  // Both showMapPoints and showMerchants use fetchMerchants with filters
   
   // 🔥 FIX: Use ref to track if initial fetch has been done (prevent infinite loop)
   const hasFetchedMerchantsRef = useRef(false);
@@ -424,9 +341,6 @@ export default function MapPage() {
   useEffect(() => {
     // Trigger when departments array changes (not just length, but actual content)
     if (departments.length > 0 && !isScopeLoading && isScopeInitialized) {
-      console.log('🔄 MapPage: Departments array changed, resetting refs to force merchants reload');
-      console.log('🔄 MapPage: departments.length:', departments.length);
-      console.log('🔄 MapPage: departments IDs:', departments.map((d: Department) => d.id));
       
       // Reset refs to force merchants reload when departments change
       // This ensures API is called again when departments list changes
@@ -450,138 +364,107 @@ export default function MapPage() {
       showMerchants,
       showMapPoints,
       showOfficers,
-      departmentsIds: JSON.stringify(departments.map((d: Department) => d.id).sort())  // 🔥 FIX: Include departments IDs array to trigger when departments list changes
+      departmentsIds: JSON.stringify(departments.map((d: Department) => d.id).sort()),  // 🔥 FIX: Include departments IDs array to trigger when departments list changes
+      divisionId: divisionId || '',  // 🔥 NEW: Include divisionId to trigger when scope division changes
+      teamId: teamId || '',  // 🔥 NEW: Include teamId to trigger when scope team changes
+      selectedProvince: selectedProvince || '',  // 🔥 NEW: Include selectedProvince to trigger when location changes
+      selectedWard: selectedWard || ''  // 🔥 NEW: Include selectedWard to trigger when location changes
     });
-  }, [filters, businessTypeFilters, departmentFilters, categories.length, showMerchants, showMapPoints, showOfficers, departments]);
+  }, [filters, businessTypeFilters, departmentFilters, categories.length, showMerchants, showMapPoints, showOfficers, departments, divisionId, teamId, selectedProvince, selectedWard]);
+  
+  // 🔥 FIX: Auto-enable showOfficers when divisionId or teamId is available (on initial load)
+  // This ensures department points are visible when user first loads the page
+  useEffect(() => {
+      if ((divisionId || teamId) && !showOfficers && !showMerchants && !showMapPoints) {
+        // Only auto-enable if no other layers are active
+        setShowOfficers(true);
+      }
+  }, [divisionId, teamId, showOfficers, showMerchants, showMapPoints]);
   
   // 🔥 FIX: Use ref to track last filters key (prevent duplicate API calls)
   const lastFiltersKeyRef = useRef<string>('');
   
-  // 🔥 NEW: Fetch merchants from merchants table when Merchants layer is selected
+  // 🔥 NEW: Reset merchants refs when divisionId or teamId changes (scope change)
+  // This ensures merchants are refetched when user changes department
   useEffect(() => {
-    // 🔥 FIX: Skip API call if filters are being initialized (prevent unnecessary calls)
-    if (isInitializingFiltersRef.current) {
-      console.log('⏸️ MapPage: Skipping merchants fetch - filters are being initialized');
+    lastFiltersKeyRef.current = '';
+    hasFetchedMerchantsRef.current = false;
+  }, [divisionId, teamId]);
+  
+  // 🔥 NEW: Fetch merchants from merchants table when any layer is active (Merchants or MapPoints)
+  useEffect(() => {
+    // Fetch if Merchants OR MapPoints layer is active
+    if (!showMerchants && !showMapPoints) {
       return;
     }
     
-    // 🔥 FIX: Skip API call if filters haven't actually changed
-    if (filtersKey === lastFiltersKeyRef.current) {
-      console.log('⏸️ MapPage: Skipping merchants fetch - filtersKey unchanged:', filtersKey.substring(0, 100));
+    // 🔥 FIX: Wait for essential data to be loaded before fetching merchants
+    if (isScopeLoading || !isScopeInitialized) {
       return;
     }
     
-    // 🔥 FIX: Only fetch if Merchants layer is selected
-    if (!showMerchants || showMapPoints || showOfficers || pointStatuses.length === 0) {
-      console.log('⏸️ MapPage: Skipping merchants fetch - wrong layer or no statuses');
+    // 🔥 FIX: Wait for pointStatuses and categories to be loaded (needed for filters)
+    if (pointStatuses.length === 0 || categories.length === 0) {
       return;
     }
     
-    // 🔥 FIX: Wait for departments to be loaded
-    // This prevents race condition where merchants are fetched before departments are loaded
-    if (departments.length === 0 && !isScopeLoading && isScopeInitialized) {
-      console.log('⏸️ MapPage: Skipping merchants fetch - waiting for departments to load');
-      console.log('⏸️ MapPage: departments.length:', departments.length);
-      return;
+    // 🔥 FIX: Wait for departments to be loaded if we need them for filtering
+    // Only wait if we don't have departmentIds in filters yet and we have teamId/divisionId
+    if (Object.keys(departmentFilters).length === 0 && departments.length === 0 && (teamId || divisionId)) {
+      return; // Wait for departments to load when we have teamId/divisionId
     }
     
-    console.log('✅ MapPage: Conditions met, proceeding with merchants fetch');
-    console.log('✅ MapPage: filtersKey changed from:', lastFiltersKeyRef.current.substring(0, 100));
-    console.log('✅ MapPage: filtersKey changed to:', filtersKey.substring(0, 100));
+    // 🔥 FIX: Check if filters key has changed or if this is the first fetch
+    // Allow first fetch even if filtersKey hasn't changed yet
+    if (lastFiltersKeyRef.current === filtersKey && hasFetchedMerchantsRef.current) {
+      return; // Skip if filters haven't changed and we've already fetched
+    }
     
     async function loadMerchants() {
-      
-      // 🔥 Only show loading if initial data hasn't loaded yet (first time)
-      // When filters change, don't show loading - just update data silently
       if (!hasFetchedMerchantsRef.current) {
         setIsLoadingData(true);
       }
       setDataError(null);
       
       try {
-        // 🔥 Map point_status codes to merchant status codes
-        // point_status: certified, hotspot, scheduled, inspected
-        // merchant status: active, pending, suspended, rejected
+        // Map point_status codes to merchant status codes
         const activeFilterCodes = Object.keys(filters).filter(key => filters[key] === true);
+        const merchantStatusCodes = mapStatusCodesToMerchantStatus(activeFilterCodes);
         
-        // Map to merchant status codes
-        const merchantStatusCodes = activeFilterCodes.map(code => {
-          switch (code) {
-            case 'certified': return 'active';
-            case 'scheduled': return 'pending';
-            case 'hotspot': return 'suspended';
-            case 'inspected': return 'rejected';
-            default: return code;
-          }
-        });
-        
-        
-        // 🔥 Get business types from categories
-        // For merchants, we filter by business_type field (text) instead of category IDs
+        // Calculate business types filter
         const activeBusinessTypes = Object.keys(businessTypeFilters).filter(key => businessTypeFilters[key] === true);
+        const businessTypes = calculateBusinessTypes(activeBusinessTypes, categories);
         
-        // Map category IDs to category names
-        const businessTypeNames = activeBusinessTypes
-          .map(categoryId => {
-            const category = categories.find(c => c.id === categoryId);
-            return category?.name;
-          })
-          .filter((name): name is string => name !== undefined);
+        // Calculate department IDs to filter
+        const departmentIdsToFilter = calculateDepartmentIdsToFilter(
+          departmentFilters,
+          departments,
+          teamId,
+          divisionId
+        );
         
-        // 🔥 NEW LOGIC: Check if ALL categories are selected (= "Tất cả")
-        const totalCategories = categories.length;
-        const allCategoriesSelected = activeBusinessTypes.length === totalCategories && totalCategories > 0;
+        // Calculate business type filters array for category_merchants join
+        const businessTypeFiltersArray = calculateBusinessTypeFiltersArray(businessTypeFilters, categories);
         
-        // 🔥 FIX: Smart category filtering logic:
-        // - If ALL categories selected → undefined (no filter, get ALL merchants)
-        // - If SOME categories selected → array of names (filter by selected)
-        // - If NO categories selected → undefined (no filter)
-        const businessTypes = allCategoriesSelected
-          ? undefined  // 🔥 ALL selected = no filter (get all merchants)
-          : businessTypeNames.length > 0 
-            ? businessTypeNames  // 🔥 SOME selected = filter by names
-            : undefined;  // 🔥 NONE selected = no filter
-        
-        
-        // 🔥 FIX: Get enabled department IDs from departmentFilters (UI checkboxes)
-        const enabledDepartmentIds = Object.keys(departmentFilters).filter(id => departmentFilters[id] === true);
-        const totalDepartmentFilters = Object.keys(departmentFilters).length;
-        
-        // 🔥 FIX: Always filter by department IDs if there are filters set
-        // If all enabled (= "Tất cả") → use all department IDs from departments list
-        // If some enabled → use only enabled IDs
-        let departmentIdsToFilter: string[] | undefined = undefined;
-        
-        if (totalDepartmentFilters > 0) {
-          if (enabledDepartmentIds.length === totalDepartmentFilters) {
-            // All departments selected (= "Tất cả") → filter by all department IDs from departments list
-            departmentIdsToFilter = departments.map((d: Department) => d.id);
-            console.log('🔍 MapPage: All departments selected, using all department IDs:', departmentIdsToFilter);
-          } else if (enabledDepartmentIds.length > 0) {
-            // Some departments selected → filter by enabled IDs only
-            departmentIdsToFilter = enabledDepartmentIds;
-            console.log('🔍 MapPage: Some departments selected, using enabled IDs:', departmentIdsToFilter);
-          } else {
-            // No departments selected → no merchants (empty array)
-            departmentIdsToFilter = [];
-            console.log('🔍 MapPage: No departments selected, returning empty array');
-          }
-        }
-        
-        console.log('🔍 MapPage: departmentFilters from UI:', departmentFilters);
-        console.log('🔍 MapPage: enabledDepartmentIds:', enabledDepartmentIds);
-        console.log('🔍 MapPage: totalDepartmentFilters:', totalDepartmentFilters);
-        console.log('🔍 MapPage: departments list:', departments.map((d: Department) => ({ id: d.id, name: d.name })));
-        console.log('🔍 MapPage: Final departmentIdsToFilter for fetchMerchants:', departmentIdsToFilter);
-        
-        // 🔥 FIX: Always call fetchMerchants, pass departmentIdsToFilter (can be undefined, array, or empty array)
         const merchants = await fetchMerchants(
           merchantStatusCodes.length > 0 ? merchantStatusCodes : undefined,
           businessTypes,
-          departmentIdsToFilter
+          departmentIdsToFilter,
+          teamId,
+          divisionId || '',
+          departments.map(d => d.id), // departmentIds: string[]
+          businessTypeFiltersArray,
+          {
+            statusCodes: merchantStatusCodes.length > 0 ? merchantStatusCodes : undefined, // 🔥 FIX: Pass statusCodes to options
+            businessTypes: businessTypes,
+            departmentIds: departmentIdsToFilter,
+            categoryIds: businessTypeFiltersArray && businessTypeFiltersArray.length > 0 ? businessTypeFiltersArray : undefined, // 🔥 NEW: Pass category IDs to options
+            province: selectedProvince || undefined,
+            ward: selectedWard || undefined,
+            limit: limit // 🔥 NEW: Pass limit from Redux store
+          }
         );
         
-        console.log('🔍 MapPage: Fetched merchants:', merchants.length, merchants.map(m => m.name));
         setRestaurants(merchants);
         setIsLoadingData(false);
         hasFetchedMerchantsRef.current = true;  // 🔥 FIX: Use ref instead of state to prevent infinite loop
@@ -597,15 +480,44 @@ export default function MapPage() {
     
     // Don't update lastFiltersKeyRef here - only update after successful API call
     loadMerchants();
-  }, [filtersKey, pointStatuses.length, showMerchants, showMapPoints, showOfficers, departments.length, isScopeLoading, isScopeInitialized]); // 🔥 FIX: Include departments.length to trigger when departments change
+  }, [filtersKey, pointStatuses.length, showMerchants, showMapPoints, departments.length, isScopeLoading, isScopeInitialized, divisionId, teamId, filters, businessTypeFilters, departmentFilters, categories.length, selectedProvince, selectedWard]); // 🔥 Include all filter dependencies
   
   // 🔥 NEW: Clear restaurants when Officers layer is selected (ward boundaries don't need points)
+  // Only clear if Officers layer is active AND merchants/mappoints layers are not active
   useEffect(() => {
-    if (showOfficers) {
+    if (showOfficers && !showMerchants && !showMapPoints) {
       setRestaurants([]);
       setIsLoadingData(false);
     }
-  }, [showOfficers]);
+  }, [showOfficers, showMerchants, showMapPoints]);
+  
+  // 🔥 FIX: Track previous layer state to detect actual layer changes
+  const previousShowOfficersRef = useRef<boolean>(false);
+  const previousShowMerchantsRef = useRef<boolean>(true);
+  
+  // 🔥 FIX: Reset UI states when switching between layers (only on actual change, not initial load)
+  useEffect(() => {
+    const officersChanged = previousShowOfficersRef.current !== showOfficers;
+    const merchantsChanged = previousShowMerchantsRef.current !== showMerchants;
+    
+    // Only reset if there was an actual layer change
+    if (officersChanged || merchantsChanged) {
+      if (showOfficers && !showMerchants) {
+        // When switching TO Officers layer (and Merchants is off), hide merchants layer UI components
+        setIsLegendVisible(false);
+        setIsStatsCardVisible(false);
+        dispatch(setFilterPanelOpen(false)); // Close filter panel when switching layers
+      } else if (showMerchants && !showOfficers) {
+        // When switching TO Merchants layer (and Officers is off), hide officers layer UI components
+        setIsOfficerStatsVisible(false);
+        dispatch(setFilterPanelOpen(false)); // Close filter panel when switching layers
+      }
+      
+      // Update refs
+      previousShowOfficersRef.current = showOfficers;
+      previousShowMerchantsRef.current = showMerchants;
+    }
+  }, [showOfficers, showMerchants, dispatch]);
   
   // Setup global function for popup button click
   useEffect(() => {
@@ -617,9 +529,8 @@ export default function MapPage() {
       }
       
       
-      // 🔥 FIX: Search in allRestaurants (unfiltered) instead of restaurants (filtered)
-      // This ensures popup buttons work even when point is filtered out from map
-      const point = allRestaurants.find(r => r.id === pointId) || restaurants.find(r => r.id === pointId);
+      // Search in restaurants (from fetchMerchants)
+      const point = restaurants.find(r => r.id === pointId);
       
       if (point) {
         // 🔥 FIX: Use setTimeout with delay to ensure modal opens after all click events complete
@@ -634,8 +545,8 @@ export default function MapPage() {
     
     (window as any).openPointReview = (pointId: string) => {
       
-      // 🔥 FIX: Search in allRestaurants (unfiltered) instead of restaurants (filtered)
-      const point = allRestaurants.find(r => r.id === pointId) || restaurants.find(r => r.id === pointId);
+      // Search in restaurants (from fetchMerchants)
+      const point = restaurants.find(r => r.id === pointId);
       
       if (point) {
         setReviewModalPoint(point);
@@ -644,16 +555,20 @@ export default function MapPage() {
       }
     };
     
+    // 🔥 NEW: Setup global function for department detail modal
+    (window as any).openDepartmentDetail = (departmentId: string, departmentData?: any) => {
+      setSelectedDepartmentId(departmentId);
+      setSelectedDepartmentData(departmentData);
+      setIsDepartmentModalOpen(true);
+    };
+    
     return () => {
       delete (window as any).openPointDetail;
       delete (window as any).openPointReview;
+      delete (window as any).openDepartmentDetail;
     };
-  }, [restaurants, allRestaurants]); // ✅ Add both dependencies
+  }, [restaurants]);
   
-  // Location filters
-  const [selectedProvince, setSelectedProvince] = useState<string>('Hà Nội');
-  const [selectedDistrict, setSelectedDistrict] = useState<string>('');
-  const [selectedWard, setSelectedWard] = useState<string>('');
   const [showProvinceDropdown, setShowProvinceDropdown] = useState(false);
   const [showDistrictDropdown, setShowDistrictDropdown] = useState(false);
   const [showWardDropdown, setShowWardDropdown] = useState(false);
@@ -686,14 +601,14 @@ export default function MapPage() {
   const provinces = getProvinceNames();
   
   // Get districts for selected province
-  const availableDistricts = selectedProvince 
-    ? getDistrictsByProvince(selectedProvince).map(d => d.name)
-    : [];
+  // const availableDistricts = selectedProvince 
+  //   ? getDistrictsByProvince(selectedProvince).map(d => d.name)
+  //   : [];
   
   // Get wards for selected district
-  const availableWards = selectedDistrict 
-    ? getWardsByDistrict(selectedDistrict).map(w => w.name)
-    : [];
+  // const availableWards = selectedDistrict 
+  //   ? getWardsByDistrict(selectedDistrict).map(w => w.name)
+  //   : [];
   
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -763,7 +678,7 @@ export default function MapPage() {
         // Check if it's a direct click on the map canvas (not on other elements inside map container)
         const isMapClick = targetElement.closest('.leaflet-container') !== null;
         if (isMapClick) {
-          setIsFilterPanelOpen(false);
+          dispatch(setFilterPanelOpen(false));
         }
       }
       // If click is outside map container entirely, do nothing (don't close)
@@ -823,433 +738,80 @@ export default function MapPage() {
     }
   };
 
-  const handleFilterChange = (category: keyof CategoryFilter) => {
-    const newFilters = {
-      ...filters,
-      [category]: !filters[category]
-    };
-    
-    setFilters(newFilters);
-    setPendingFilters(newFilters);  // Keep pending in sync
-  };
-
-  const handleBusinessTypeFilterChange = (type: string) => {
-    const newFilters = {
-      ...businessTypeFilters,
-      [type]: !businessTypeFilters[type]
-    };
-    
-    setBusinessTypeFilters(newFilters);
-    setPendingBusinessTypeFilters(newFilters);  // Keep pending in sync
-  };
-  
-  // 🔥 NEW: Handle "Tất cả" checkbox for business types
-  const handleBusinessTypeToggleAll = (checked: boolean) => {
-    const newFilters: { [key: string]: boolean } = {};
-    Object.keys(businessTypeFilters).forEach(key => {
-      newFilters[key] = checked;
-    });
-    
-    setBusinessTypeFilters(newFilters);
-    setPendingBusinessTypeFilters(newFilters);  // Keep pending in sync
-  };
-  
-  // 🔥 NEW: Handle department filter change
-  const handleDepartmentFilterChange = (departmentId: string) => {
-    const newFilters = {
-      ...departmentFilters,
-      [departmentId]: !departmentFilters[departmentId]
-    };
-    
-    setDepartmentFilters(newFilters);
-    setPendingDepartmentFilters(newFilters);  // Keep pending in sync
-  };
-  
-  // 🔥 NEW: Handle "Tất cả" checkbox for departments
-  const handleDepartmentToggleAll = (checked: boolean) => {
-    const newFilters: { [key: string]: boolean } = {};
-    Object.keys(departmentFilters).forEach(key => {
-      newFilters[key] = checked;
-    });
-    
-    setDepartmentFilters(newFilters);
-    setPendingDepartmentFilters(newFilters);  // Keep pending in sync
-  };
-  
-  // 🔥 NEW: Apply pending filters to actual filters
-  const handleApplyFilters = () => {
-    
-    setFilters(pendingFilters);
-    setBusinessTypeFilters(pendingBusinessTypeFilters);
-    setDepartmentFilters(pendingDepartmentFilters);  // 🔥 NEW: Apply department filters
-    
-  };
-  
-  // 🔥 NEW: Save filters to localStorage
-  const handleSaveFilters = () => {
-    try {
-      const filterState = {
-        filters: pendingFilters,
-        businessTypeFilters: pendingBusinessTypeFilters,
-        selectedProvince,
-        selectedDistrict,
-        selectedWard,
-        startDate: customStartDate,  // 🔥 NEW: Save date range
-        endDate: customEndDate,      // 🔥 NEW: Save date range
-        searchQuery,                 // 🔥 NEW: Save search query
-        timestamp: new Date().toISOString()
-      };
-      
-      localStorage.setItem('mappa_map_filters', JSON.stringify(filterState));
-    } catch (error) {
-      console.error('❌ Failed to save filters:', error);
-    }
-  };
-  
-  // 🔥 NEW: Auto-save filters when they change (debounced)
-  useEffect(() => {
-    // 🔥 CRITICAL: Skip auto-save during initial load to prevent race condition
-    if (!isInitialLoadComplete) {
-      return;
-    }
-    
-    // Only auto-save if filters are fully loaded (to avoid saving empty state)
-    if (pointStatuses.length > 0 && categories.length > 0 && 
-        Object.keys(filters).length > 0 && Object.keys(businessTypeFilters).length > 0) {
-      const timer = setTimeout(() => {
-        handleSaveFilters();
-      }, 500); // Debounce 500ms
-      
-      return () => clearTimeout(timer);
-    }
-  }, [filters, businessTypeFilters, selectedProvince, selectedDistrict, selectedWard, customStartDate, customEndDate, pointStatuses.length, categories.length, isInitialLoadComplete]);
-  
-  // 🔥 NEW: Reset all filters to default
-  const handleResetAllFilters = () => {
-    
-    // Reset status filters - enable all
-    const defaultFilters = buildFilterObjectFromStatuses(pointStatuses);
-    setFilters(defaultFilters);
-    setPendingFilters(defaultFilters);
-    
-    // Reset business type filters - enable all
-    const defaultBusinessTypeFilters: { [key: string]: boolean } = {};
-    categories.forEach((cat) => {
-      defaultBusinessTypeFilters[cat.id] = true;
-    });
-    setBusinessTypeFilters(defaultBusinessTypeFilters);
-    setPendingBusinessTypeFilters(defaultBusinessTypeFilters);
-    
-    // Reset location filters
-    setSelectedProvince('');
-    setSelectedDistrict('');
-    setSelectedWard('');
-    
-    // Reset date range
-    setCustomStartDate('');
-    setCustomEndDate('');
-    
-    // Reset search query
-    setSearchQuery('');
-    
-    // Clear localStorage
-    localStorage.removeItem('mappa_map_filters');
-    
-  };
+  // Use filter handlers hook
+  const {
+    handleFilterChange,
+    handleBusinessTypeFilterChange,
+    handleBusinessTypeToggleAll,
+    handleDepartmentFilterChange,
+    handleDepartmentToggleAll,
+    handleApplyFilters,
+    handleSaveFilters,
+    handleResetAllFilters,
+  } = useMapFilters({
+    filters,
+    businessTypeFilters,
+    departmentFilters,
+    pendingFilters,
+    pendingBusinessTypeFilters,
+    pendingDepartmentFilters,
+    pointStatuses,
+    categories,
+    setCustomStartDate,
+    setCustomEndDate,
+    setSearchQuery,
+  });
   
   // Handle stat card click to filter by category
   const handleStatCardClick = (category: keyof CategoryFilter | 'all') => {
     if (selectedCategory === category) {
       // Deselect - show all
       setSelectedCategory('all');
-      setFilters({
+      const allFilters = {
         certified: true,
         hotspot: true,
         scheduled: true,
         inspected: true,
-      });
+      };
+      dispatch(setFilters(allFilters));
+      dispatch(setPendingFilters(allFilters));
     } else {
       // Select category - filter to only that category
       setSelectedCategory(category);
       if (category === 'all') {
-        setFilters({
+        const allFilters = {
           certified: true,
           hotspot: true,
           scheduled: true,
           inspected: true,
-        });
+        };
+        dispatch(setFilters(allFilters));
+        dispatch(setPendingFilters(allFilters));
       } else {
-        setFilters({
+        const categoryFilters = {
           certified: category === 'certified',
           hotspot: category === 'hotspot',
           scheduled: category === 'scheduled',
           inspected: category === 'inspected',
-        });
+        };
+        dispatch(setFilters(categoryFilters));
+        dispatch(setPendingFilters(categoryFilters));
       }
     }
   };
   
-  // 🔥 NEW LOGIC: Frontend filtering from allRestaurants (no API calls)
-  // Filter by: status filters + business type filters
-  const filteredByFilters = useMemo(() => {
-    
-    // 🔥 NEW: Determine data source based on active layer
-    let dataSource: Restaurant[] = [];
-    
-    if (showMapPoints) {
-      dataSource = allRestaurants;  // MapPoint layer uses allRestaurants
-    } else if (showMerchants) {
-      dataSource = restaurants;     // Merchant layer uses restaurants (from fetchMerchants)
-    } else if (showOfficers) {
-      dataSource = [];               // Officers layer has no points
-    }
-    
-    
-    if (!dataSource || dataSource.length === 0) {
-      return [];
-    }
-    
-    // 🔥 DEBUG: Check first item's structure
-    
-    // 🔥 Count how many business type filters are enabled
-    const enabledBusinessTypes = Object.keys(businessTypeFilters).filter(key => businessTypeFilters[key] === true);
-    const totalBusinessTypes = Object.keys(businessTypeFilters).length;
-    if (totalBusinessTypes === 0) {
-    }
-    
-    const filtered = dataSource.filter((restaurant) => {
-      // 🔥 Filter by status (category field)
-      if (!filters[restaurant.category]) {
-        return false;
-      }
-      
-      // 🔥 SKIP business type filtering if no filters are set (initial load)
-      if (!businessTypeFilters || Object.keys(businessTypeFilters).length === 0) {
-        return true; // Show all when no business type filters loaded yet
-      }
-      
-      // 🔥 Filter by business type
-      // Check if restaurant has categoryIds (Supabase data) or categoryId (mock data)
-      const hasBusinessTypeData = Array.isArray((restaurant as any).categoryIds) || restaurant.categoryId;
-      
-      // Get enabled business type filter IDs
-      const enabledFilterIds = Object.keys(businessTypeFilters).filter(id => businessTypeFilters[id] === true);
-      const totalFilterIds = Object.keys(businessTypeFilters).length;
-      
-      // 🔥 FIX: Only hide all if user has explicitly disabled all business types
-      // If categories haven't loaded yet (totalFilterIds === 0), show all
-      // If some are enabled, filter normally
-      // If all are disabled (enabledFilterIds === 0 && totalFilterIds > 0), hide all
-      if (totalFilterIds > 0 && enabledFilterIds.length === 0) {
-        return false;  // Hide all when user explicitly disabled all business types
-      }
-      
-      // If no filters are set yet (initial state), show all
-      if (totalFilterIds === 0) {
-        return true; // Show all when filters haven't been initialized
-      }
-      
-      // 🔥 NEW: Check if categoryId is a mock ID (not a UUID)
-      // Mock IDs: 'mock-cat-1', 'mock-cat-2', etc.
-      // Real UUIDs: '6e6c5511-6809-44f5-98bc-6e1a9c334278', etc.
-      const categoryId = restaurant.categoryId;
-      const isMockData = categoryId && typeof categoryId === 'string' && categoryId.startsWith('mock-');
-      
-      if (isMockData) {
-        // 🔥 For mock data: Filter by TYPE field (name) instead of categoryId (UUID)
-        // Map enabled category IDs → category names
-        const enabledCategoryNames = enabledFilterIds
-          .map(filterId => {
-            const category = categories.find(c => c.id === filterId);
-            return category?.name;
-          })
-          .filter((name): name is string => name !== undefined);
-        
-        // Check if restaurant.type matches any enabled category name
-        const typeMatches = enabledCategoryNames.some(categoryName => 
-          restaurant.type === categoryName
-        );
-        
-        return typeMatches;
-      }
-      
-      // 🔥 For Supabase data: Filter by categoryIds (UUIDs)
-      if (!hasBusinessTypeData) {
-        return true; // Don't filter out data without categoryIds
-      }
-      
-      // Check if restaurant matches any enabled business type
-      const restaurantCategoryIds = (restaurant as any).categoryIds || (restaurant.categoryId ? [restaurant.categoryId] : []);
-      const hasActiveBusinessType = enabledFilterIds.some(filterId => 
-        restaurantCategoryIds.includes(filterId)
-      );
-      
-      if (!hasActiveBusinessType) {
-        return false;
-      }
-      
-      // 🔥 NEW: Filter by department
-      if (!departmentFilters || Object.keys(departmentFilters).length === 0) {
-        return true; // Show all when no department filters loaded yet
-      }
-      
-      // Get enabled department filter IDs
-      const enabledDepartmentIds = Object.keys(departmentFilters).filter(id => departmentFilters[id] === true);
-      const totalDepartmentFilters = Object.keys(departmentFilters).length;
-      
-      // If all departments are disabled (explicitly), hide all
-      if (totalDepartmentFilters > 0 && enabledDepartmentIds.length === 0) {
-        return false;
-      }
-      
-      // If no filters are set yet (initial state), show all
-      if (totalDepartmentFilters === 0) {
-        return true;
-      }
-      
-      // 🔥 Check if restaurant has department_id field
-      const restaurantDepartmentId = (restaurant as any).department_id || (restaurant as any).departmentId;
-      if (!restaurantDepartmentId) {
-        return true; // Don't filter out data without department_id
-      }
-      
-      // Check if restaurant matches any enabled department
-      const hasActiveDepartment = enabledDepartmentIds.some(deptId => 
-        restaurantDepartmentId === deptId
-      );
-      
-      return hasActiveDepartment;
-    });
-    
-    return filtered;
-  }, [allRestaurants, restaurants, showMapPoints, showMerchants, showOfficers, filters, businessTypeFilters, departmentFilters, categories]);
+  // 🔥 REMOVED: Frontend filtering - all filtering is now done by fetchMerchants API
   
-  // 🔥 NEW: Calculate statistics data - filter by location ONLY (not by status or businessType)
-  // This ensures stats show total businesses on the selected area, regardless of filters
+  // 🔥 NEW: Calculate statistics data - use restaurants from fetchMerchants
+  // Stats will show businesses based on current filters (including location)
   const restaurantsForStats = useMemo(() => {
-    
-    // Determine data source based on active layer
-    let dataSource: Restaurant[] = [];
-    if (showMapPoints) {
-      dataSource = allRestaurants;
-    } else if (showMerchants) {
-      dataSource = restaurants;
-    } else {
-      return [];
-    }
-    
-    if (!dataSource || dataSource.length === 0) {
-      return [];
-    }
-    
-    // Filter by location ONLY (province, district, ward)
-    // Do NOT filter by status or businessType - stats should show ALL businesses in the area
-    if (selectedProvince || selectedDistrict || selectedWard) {
-      const filteredByLocation = dataSource.filter((restaurant) => {
-        if (selectedProvince && restaurant.province !== selectedProvince) return false;
-        if (selectedDistrict && restaurant.district !== selectedDistrict) return false;
-        if (selectedWard && restaurant.ward !== selectedWard) return false;
-        return true;
-      });
-      
-      return filteredByLocation;
-    }
-    
-    // No location filter - return all data
-    return dataSource;
-  }, [allRestaurants, restaurants, showMapPoints, showMerchants, selectedProvince, selectedDistrict, selectedWard]);
+    return restaurants; // Use restaurants from fetchMerchants (already filtered by backend)
+  }, [restaurants]);
   
-  // Apply location and search filters on top of filter results
+  // Apply search filter only (location filtering is done by backend via fetchMerchants)
   const filteredRestaurants = useMemo(() => {
-    
-    if (!filteredByFilters || filteredByFilters.length === 0) {
-      return [];
-    }
-    
-    // 🐛 DEBUG: Log sample restaurant location data
-    if (filteredByFilters.length > 0) {
-      const sample = filteredByFilters[0];
-      console.log({
-        province: sample.province,
-        district: sample.district,
-        ward: sample.ward,
-        name: sample.name
-      });
-    }
-    
-    // 🐛 DEBUG: Log all restaurant names to check data
-    if (searchQuery.trim() !== '') {
-    }
-    
-    let filteredByLocation = filteredByFilters;
-    let locationFilterCount = 0;
-    
-    // Filter by location
-    if (selectedProvince || selectedDistrict || selectedWard) {
-      filteredByLocation = filteredByFilters.filter((restaurant) => {
-        // Filter by province
-        if (selectedProvince && restaurant.province !== selectedProvince) {
-          locationFilterCount++;
-          return false;
-        }
-        
-        // Filter by district
-        if (selectedDistrict && restaurant.district !== selectedDistrict) {
-          locationFilterCount++;
-          return false;
-        }
-        
-        // Filter by ward
-        if (selectedWard && restaurant.ward !== selectedWard) {
-          locationFilterCount++;
-          return false;
-        }
-        
-        return true;
-      });
-      
-      if (filteredByLocation.length === 0 && filteredByFilters.length > 0) {
-        if (filteredByFilters.length > 0) {
-          const uniqueProvinces = [...new Set(filteredByFilters.map(r => r.province))];
-          const uniqueDistricts = [...new Set(filteredByFilters.map(r => r.district))];
-          const uniqueWards = [...new Set(filteredByFilters.map(r => r.ward))];
-        }
-      }
-    }
-    
-    // Apply search filter
-    const finalFiltered = filteredByLocation.filter((restaurant) => {
-      // Filter by search query (name or address or type)
-      if (searchQuery.trim() === '') return true;
-      
-      const searchLower = searchQuery.toLowerCase();
-      const nameLower = restaurant.name.toLowerCase();
-      const addressLower = restaurant.address.toLowerCase();
-      const typeLower = restaurant.type.toLowerCase();
-      
-      const searchMatch = 
-        nameLower.includes(searchLower) ||
-        addressLower.includes(searchLower) ||
-        typeLower.includes(searchLower);
-      
-      // 🐛 DEBUG: Log each match attempt
-      if (searchQuery.trim() !== '') {
-        console.log({
-          name: nameLower,
-          searchQuery: searchLower,
-          nameMatch: nameLower.includes(searchLower),
-          addressMatch: addressLower.includes(searchLower),
-          typeMatch: typeLower.includes(searchLower),
-          finalMatch: searchMatch
-        });
-      }
-      
-      return searchMatch;
-    });
-    
-    
-    return finalFiltered;
-  }, [filteredByFilters, searchQuery, selectedProvince, selectedDistrict, selectedWard]);
+    return filterRestaurantsBySearch(restaurants, searchQuery);
+  }, [restaurants, searchQuery]);
   
   // 🔥 NEW: Log final search results
   useEffect(() => {
@@ -1260,7 +822,7 @@ export default function MapPage() {
   // 🔥 NEW: Check if there are unapplied changes
   const hasUnappliedChanges = useMemo(() => {
     // 🔥 DISABLED: Real-time filtering - no need for "Apply" button
-    return false;
+    // return false;
     
     // Check if filters differ
     const filtersDiffer = Object.keys(filters).some(key => {
@@ -1275,7 +837,6 @@ export default function MapPage() {
     return filtersDiffer || businessTypeFiltersDiffer;
   }, [filters, pendingFilters, businessTypeFilters, pendingBusinessTypeFilters]);
 
-  // Get autocomplete suggestions (limit to 8 results)
   const autocompleteSuggestions = searchQuery.trim() 
     ? filteredRestaurants.slice(0, 8)
     : [];
@@ -1294,62 +855,23 @@ export default function MapPage() {
   };
   
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100vh - 7.5rem)' }}>
+    <div className={`flex flex-col ${styles.pageContainer}`}>
       <PageHeader
         breadcrumbs={[{ label: 'Trang chủ', href: '/' }, { label: 'Bản đồ điều hành' }]}
         title={
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)' }}>
+          <div className={styles.headerTitleContainer}>
             <span>Bản đồ điều hành</span>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--spacing-3)',
-              paddingLeft: 'var(--spacing-4)',
-              borderLeft: '1px solid var(--color-border)',
-              fontSize: 'var(--font-size-sm)',
-              color: 'var(--color-text-secondary)',
-              fontFamily: 'var(--font-family-mono)',
-              fontWeight: '500'
-            }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                <div style={{
-                  fontSize: 'var(--font-size-base)',
-                  color: 'var(--color-text)',
-                  fontWeight: '600',
-                  lineHeight: 1.2
-                }}>
+            <div className={styles.headerClockContainer}>
+              <div className={styles.headerClockTime}>
+                <div className={styles.headerClockTimeValue}>
                   {formatTime(currentTime)}
                 </div>
-                <div style={{
-                  fontSize: 'var(--font-size-xs)',
-                  color: 'var(--color-text-secondary)',
-                  lineHeight: 1.2
-                }}>
+                <div className={styles.headerClockDateValue}>
                   {formatDate(currentTime)}
                 </div>
               </div>
-              <div style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: '#22c55e',
-                animation: 'pulse-dot 2s ease-in-out infinite',
-                boxShadow: '0 0 0 0 rgba(34, 197, 94, 0.7)'
-              }}></div>
+              <div className={styles.headerClockDot}></div>
             </div>
-            <style>{`
-              @keyframes pulse-dot {
-                0% {
-                  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
-                }
-                70% {
-                  box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
-                }
-                100% {
-                  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
-                }
-              }
-            `}</style>
           </div>
         }
         actions={
@@ -1363,15 +885,15 @@ export default function MapPage() {
               onClear={() => {
                 setCustomStartDate('');
                 setCustomEndDate('');
-                // 🔥 NEW: Auto-save when clearing date range
-                setTimeout(() => handleSaveFilters(), 100);
+                // 🔥 REMOVED: Auto-save - filters are in Redux store
               }}
-              onApply={handleSaveFilters}  // 🔥 NEW: Auto-save when applying date range
+              onApply={() => {}}  // 🔥 REMOVED: Auto-save - filters are in Redux store
             />
             
             {/* Map Layer Select */}
-            <div style={{ position: 'relative' }}>
+            <div className={styles.mapLayerSelectWrapper}>
               <select
+                className={styles.mapLayerSelect}
                 value={
                   showMapPoints ? 'mappoint' : 
                   showMerchants ? 'merchant' : 
@@ -1394,34 +916,6 @@ export default function MapPage() {
                     setSelectedTeamId(''); // Reset team selection when switching to officers layer
                   }
                 }}
-                style={{
-                  fontFamily: 'var(--font-family-base)',
-                  fontSize: 'var(--font-size-sm)',
-                  fontWeight: '500',
-                  padding: '0 var(--spacing-4) 0 var(--spacing-3)',
-                  height: '36px',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--color-border)',
-                  backgroundColor: 'var(--color-surface)',
-                  color: 'var(--color-text)',
-                  cursor: 'pointer',
-                  outline: 'none',
-                  appearance: 'none',
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right var(--spacing-2) center',
-                  backgroundSize: '16px',
-                  minWidth: '160px',
-                  transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--color-primary)';
-                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0, 92, 182, 0.1)';
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--color-border)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
               >
                 {/* Tạm ẩn map_points layer */}
                 {/* <option value="mappoint">📍 Chủ hộ kinh doanh</option> */}
@@ -1436,67 +930,15 @@ export default function MapPage() {
         }
       />
 
-      {/* Loading State */}
-      {isLoadingData && (
-        <div style={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: 'var(--color-background)',
-          color: 'var(--color-text-secondary)',
-          fontFamily: 'var(--font-family-base)',
-          fontSize: 'var(--font-size-base)'
-        }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              border: '4px solid var(--color-border)',
-              borderTop: '4px solid var(--color-primary)',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-              margin: '0 auto var(--spacing-4)'
-            }} />
-            <div>Đang tải dữ liệu bản đồ...</div>
-          </div>
-        </div>
-      )}
-
       {/* Error State */}
       {dataError && !isLoadingData && (
-        <div style={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: 'var(--color-background)',
-          padding: 'var(--spacing-6)'
-        }}>
-          <div style={{
-            maxWidth: '500px',
-            padding: 'var(--spacing-6)',
-            backgroundColor: 'var(--color-surface)',
-            borderRadius: 'var(--radius-lg)',
-            border: '1px solid var(--color-border)',
-            textAlign: 'center',
-            fontFamily: 'var(--font-family-base)'
-          }}>
-            <div style={{ fontSize: '48px', marginBottom: 'var(--spacing-4)' }}>⚠️</div>
-            <h3 style={{
-              fontSize: 'var(--font-size-lg)',
-              fontWeight: '600',
-              marginBottom: 'var(--spacing-3)',
-              color: 'var(--color-text)'
-            }}>
+        <div className={styles.errorContainer}>
+          <div className={styles.errorContent}>
+            <div className={styles.errorIcon}>⚠️</div>
+            <h3 className={styles.errorTitle}>
               Không thể tải dữ liệu
             </h3>
-            <p style={{
-              fontSize: 'var(--font-size-sm)',
-              color: 'var(--color-text-secondary)',
-              marginBottom: 'var(--spacing-5)',
-              lineHeight: 1.6
-            }}>
+            <p className={styles.errorMessage}>
               {dataError}
             </p>
             <Button onClick={() => window.location.reload()}>
@@ -1508,11 +950,22 @@ export default function MapPage() {
 
       {/* Map Content - Show after initial load (don't hide when filters change) */}
       {(hasInitialDataLoaded || !isLoadingData) && !dataError && (
-        <div style={{ flex: 1, display: 'flex', padding: 'var(--spacing-6) var(--spacing-6) var(--spacing-6) var(--spacing-6)' }}>
+        <div className={styles.mapContentContainer}>
           {/* Map Canvas - Now takes full width */}
-          <div className={styles.mapContainer} style={{ position: 'relative', width: '100%', height: '100%' }} ref={mapContainerRef}>
-            {/* Map Legend - Horizontal at Top */}
-            {!showOfficers && isLegendVisible && (() => {
+          <div className={`${styles.mapContainer} ${styles.mapWrapper}`} ref={mapContainerRef}>
+            {/* Loading Overlay - Centered on map with opacity 0.5, no background */}
+            {isLoadingData && (
+              <div className={styles.loadingOverlay}>
+                <div className={styles.loadingContent}>
+                  <div className={styles.loadingSpinner} />
+                  <div className={styles.loadingText}>
+                    Đang tải dữ liệu bản đồ...
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Map Legend - Horizontal at Top - Only show on Merchants layer */}
+            {showMerchants && !showOfficers && isLegendVisible && (() => {
               // 🔥 Color mapping - HARDCODED (giữ nguyên theo design system)
               const colorMap: { [key: string]: string } = {
                 'certified': '#22c55e',   // Green
@@ -1542,8 +995,8 @@ export default function MapPage() {
               );
             })()}
 
-            {/* 🔥 Only show Location Stats Card when NOT on Officers layer */}
-            {!showOfficers && (
+            {/* 🔥 Only show Location Stats Card when Merchants layer is active AND Officers layer is NOT active */}
+            {showMerchants && !showOfficers && (
               <LocationStatsCard
                 selectedProvince={selectedProvince}
                 selectedDistrict={selectedDistrict}
@@ -1552,10 +1005,12 @@ export default function MapPage() {
                 businessTypeFilters={businessTypeFilters}
                 categories={categories}
                 merchantStats={merchantStats}
+                divisionId={divisionId}
+                teamId={teamId}
                 onClose={() => {
-                  setSelectedProvince('');
-                  setSelectedDistrict('');
-                  setSelectedWard('');
+                  dispatch(setSelectedProvince(''));
+                  dispatch(setSelectedDistrict(''));
+                  dispatch(setSelectedWard(''));
                 }}
                 isVisible={isStatsCardVisible}
                 onVisibilityChange={setIsStatsCardVisible}
@@ -1586,8 +1041,8 @@ export default function MapPage() {
               }}
             />
 
-            {/* Officer Stats Overlay - Only show when Officers layer is active */}
-            {showOfficers && (
+            {/* Officer Stats Overlay - Only show when Officers layer is active AND Merchants layer is NOT active */}
+            {showOfficers && !showMerchants && (
               <OfficerStatsOverlay
                 selectedTeamId={selectedTeamId}
                 isVisible={isOfficerStatsVisible}
@@ -1596,157 +1051,69 @@ export default function MapPage() {
             )}
 
             {/* Filter Panel with Toggle Buttons */}
-            <div style={{
-              position: 'absolute',
-              top: '80px', // Below zoom controls (+ and - buttons)
-              left: '10px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
-              zIndex: 500 // Above all map overlays
-            }}>
-              {/* Legend Toggle Button - Only show when NOT on Officers layer */}
-              {!showOfficers && (
+            <div className={styles.mapControls}>
+              {/* Legend Toggle Button - Only show on Merchants layer */}
+              {showMerchants && !showOfficers && (
                 <button
-                  style={{
-                    width: '34px',
-                    height: '34px',
-                    borderRadius: '4px',
-                    border: '2px solid rgba(0,0,0,0.2)',
-                    background: 'white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    boxShadow: 'none',
-                    transition: 'background 0.2s'
-                  }}
+                  className={styles.mapControlButton}
                   onClick={() => setIsLegendVisible(!isLegendVisible)}
                   aria-label="Mở/Đóng chú giải"
                   title="Chú giải bản đồ"
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#f4f4f4';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'white';
-                  }}
                 >
                   <MapPin size={18} strokeWidth={2.5} />
                 </button>
               )}
 
-              {/* Stats Toggle Button - Only show when NOT on Officers layer */}
-              {!showOfficers && (
+              {/* Stats Toggle Button - Only show on Merchants layer */}
+              {showMerchants && !showOfficers && (
                 <button
-                  style={{
-                    width: '34px',
-                    height: '34px',
-                    borderRadius: '4px',
-                    border: '2px solid rgba(0,0,0,0.2)',
-                    background: 'white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    boxShadow: 'none',
-                    transition: 'background 0.2s'
-                  }}
+                  className={styles.mapControlButton}
                   onClick={() => setIsStatsCardVisible(!isStatsCardVisible)}
                   aria-label="Mở/Đóng thống kê"
                   title="Thống kê địa bàn"
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#f4f4f4';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'white';
-                  }}
                 >
                   <BarChart3 size={18} strokeWidth={2.5} />
                 </button>
               )}
 
-              {/* Filter Toggle Button */}
-              <button
-                ref={filterToggleBtnRef}
-                style={{
-                  width: '34px',
-                  height: '34px',
-                  borderRadius: '4px',
-                  border: '2px solid rgba(0,0,0,0.2)',
-                  background: isFilterPanelOpen ? 'var(--primary)' : 'white',
-                  color: isFilterPanelOpen ? 'white' : 'inherit',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  boxShadow: 'none',
-                  transition: 'background 0.2s'
-                }}
-                onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
-                aria-label="Mở/Đóng bộ lọc"
-                title="Bộ lọc nâng cao"
-                onMouseEnter={(e) => {
-                  if (!isFilterPanelOpen) {
-                    e.currentTarget.style.background = '#f4f4f4';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isFilterPanelOpen) {
-                    e.currentTarget.style.background = 'white';
-                  }
-                }}
-              >
-                <SlidersHorizontal size={18} strokeWidth={2.5} />
-              </button>
-
-              {/* Officer Stats Toggle Button - Only show when Officers layer is active */}
-              {showOfficers && (
+              {/* Filter Toggle Button - Show on both layers but different panels */}
+              {(showMerchants || showOfficers) && (
                 <button
-                  style={{
-                    width: '34px',
-                    height: '34px',
-                    borderRadius: '4px',
-                    border: '2px solid rgba(0,0,0,0.2)',
-                    background: isOfficerStatsVisible ? 'var(--primary)' : 'white',
-                    color: isOfficerStatsVisible ? 'white' : 'inherit',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    boxShadow: 'none',
-                    transition: 'background 0.2s'
-                  }}
+                  ref={filterToggleBtnRef}
+                  className={`${styles.mapControlButton} ${isFilterPanelOpen ? styles.mapControlButtonActive : ''}`}
+                  onClick={() => dispatch(setFilterPanelOpen(!isFilterPanelOpen))}
+                  aria-label="Mở/Đóng bộ lọc"
+                  title={showOfficers ? "Bộ lọc cán bộ" : "Bộ lọc nâng cao"}
+                >
+                  <SlidersHorizontal size={18} strokeWidth={2.5} />
+                </button>
+              )}
+
+              {/* Officer Stats Toggle Button - Only show when Officers layer is active AND Merchants layer is NOT active */}
+              {showOfficers && !showMerchants && (
+                <button
+                  className={`${styles.mapControlButton} ${isOfficerStatsVisible ? styles.mapControlButtonActive : ''}`}
                   onClick={() => setIsOfficerStatsVisible(!isOfficerStatsVisible)}
                   aria-label="Mở/Đóng thống kê cán bộ"
                   title="Thống kê cán bộ quản lý"
-                  onMouseEnter={(e) => {
-                    if (!isOfficerStatsVisible) {
-                      e.currentTarget.style.background = '#f4f4f4';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isOfficerStatsVisible) {
-                      e.currentTarget.style.background = 'white';
-                    }
-                  }}
                 >
                   <BarChart3 size={18} strokeWidth={2.5} />
                 </button>
               )}
             </div>
 
-            {/* Filter Panel - Different panel for Officers layer */}
-            {showOfficers ? (
+            {/* Filter Panel - Different panel for each layer */}
+            {showOfficers && !showMerchants ? (
               <OfficerFilterPanel
                 isOpen={isFilterPanelOpen}
                 selectedTeamId={selectedTeamId}
-                onClose={() => setIsFilterPanelOpen(false)}
+                onClose={() => dispatch(setFilterPanelOpen(false))}
                 onTeamChange={(teamId) => {
                   setSelectedTeamId(teamId);
                 }}
                 ref={filterPanelRef}
               />
-            ) : (
+            ) : showMerchants && !showOfficers ? (
               <MapFilterPanel
                 isOpen={isFilterPanelOpen}
                 filters={pendingFilters}  // 🔥 CHANGED: Use pending filters for UI
@@ -1759,8 +1126,6 @@ export default function MapPage() {
                 selectedProvince={selectedProvince}
                 selectedDistrict={selectedDistrict}
                 selectedWard={selectedWard}
-                startDate={customStartDate}    //  NEW: Pass date range
-                endDate={customEndDate}        // 🔥 NEW: Pass date range
                 filteredCount={filteredRestaurants.length}
                 onFilterChange={handleFilterChange}  // 🔥 Updates pending filters
                 onBusinessTypeFilterChange={handleBusinessTypeFilterChange}  // 🔥 Updates pending filters
@@ -1768,24 +1133,24 @@ export default function MapPage() {
                 onDepartmentFilterChange={handleDepartmentFilterChange}  // 🔥 NEW: Department filter change
                 onDepartmentToggleAll={handleDepartmentToggleAll}  // 🔥 NEW: Toggle all departments
                 onProvinceChange={(province) => {
-                  setSelectedProvince(province);
-                  setSelectedDistrict(''); // Reset district when province changes
-                  setSelectedWard(''); // Reset ward when province changes
+                  dispatch(setSelectedProvince(province));
+                  dispatch(setSelectedDistrict('')); // Reset district when province changes
+                  dispatch(setSelectedWard('')); // Reset ward when province changes
                 }}
                 onDistrictChange={(district) => {
                   setSelectedDistrict(district);
-                  setSelectedWard(''); // Reset ward when district changes
+                  dispatch(setSelectedWard('')); // Reset ward when district changes
                 }}
                 onWardChange={(ward) => {
-                  setSelectedWard(ward);
+                  dispatch(setSelectedWard(ward));
                 }}
-                onClose={() => setIsFilterPanelOpen(false)}
+                onClose={() => dispatch(setFilterPanelOpen(false))}
                 onApplyFilters={handleApplyFilters}  // 🔥 NEW: Apply button callback
                 onSaveFilters={handleSaveFilters}  // 🔥 NEW: Save button callback
                 hasUnappliedChanges={hasUnappliedChanges}  // 🔥 NEW: Show button when changes exist
                 ref={filterPanelRef}
               />
-            )}
+            ) : null}
           </div>
         </div>
       )}
@@ -1812,6 +1177,14 @@ export default function MapPage() {
         wardName={selectedWardName}
       />
       
+      {/* 🔥 NEW: Department Detail Modal */}
+      <DepartmentDetailModal
+        isOpen={isDepartmentModalOpen}
+        onClose={() => setIsDepartmentModalOpen(false)}
+        departmentId={selectedDepartmentId || ''}
+        departmentData={selectedDepartmentData}
+      />
+      
       {/* Fullscreen Map Modal */}
       <FullscreenMapModal 
         isOpen={isFullscreenMapOpen}
@@ -1824,25 +1197,27 @@ export default function MapPage() {
         selectedDistrict={selectedDistrict}
         selectedWard={selectedWard}
         restaurants={filteredRestaurants}  // 🔥 FIX: Pass filtered restaurants for map display
-        allRestaurants={allRestaurants}  // 🔥 NEW: Pass all restaurants for filter panel counts
+        allRestaurants={restaurants}  // 🔥 Pass restaurants from fetchMerchants (already filtered)
         pointStatuses={pointStatuses}  // 🔥 PASS: Dynamic statuses to fullscreen modal
         categories={categories}  // 🔥 NEW: Pass categories for mapping ID to name
         merchantStats={merchantStats}  // 🔥 NEW: Pass merchant statistics to fullscreen modal
+        divisionId={divisionId}
+        teamId={teamId}
         onPointClick={handlePointClick}
         onFilterChange={handleFilterChange}
         onBusinessTypeFilterChange={handleBusinessTypeFilterChange}
         onBusinessTypeToggleAll={handleBusinessTypeToggleAll}
         onProvinceChange={(province) => {
-          setSelectedProvince(province);
-          setSelectedDistrict(''); // Reset district when province changes
-          setSelectedWard(''); // Reset ward when province changes
+          dispatch(setSelectedProvince(province));
+          dispatch(setSelectedDistrict('')); // Reset district when province changes
+          dispatch(setSelectedWard('')); // Reset ward when province changes
         }}
         onDistrictChange={(district) => {
           setSelectedDistrict(district);
-          setSelectedWard(''); // Reset ward when district changes
+          dispatch(setSelectedWard('')); // Reset ward when district changes
         }}
         onWardChange={(ward) => {
-          setSelectedWard(ward);
+          dispatch(setSelectedWard(ward));
         }}
       />
       
@@ -1853,11 +1228,7 @@ export default function MapPage() {
         selectedTeamId={selectedTeamId}
         onTeamChange={(teamId) => {
           setSelectedTeamId(teamId);
-          // 🔥 NEW: Also update scope.teamId when team is selected from fullscreen modal
-          setScope({
-            ...scope,
-            teamId: teamId || null,
-          });
+          // Scope is managed by Redux store (qlttScope), no need to update here
         }}
         onWardClick={handleWardClick}
       />

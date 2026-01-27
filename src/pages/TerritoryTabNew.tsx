@@ -111,7 +111,7 @@ export const TerritoryTabNew: React.FC<TerritoryTabProps> = ({
     try {
       const { data, error } = await supabase
         .from('provinces')
-        .select('*')
+        .select('*, id:_id')
         .order('name', { ascending: true });
 
       if (error) {
@@ -130,7 +130,7 @@ export const TerritoryTabNew: React.FC<TerritoryTabProps> = ({
     try {
       const { data, error } = await supabase
         .from('wards')
-        .select('*')
+        .select('*, id:_id')
         .order('name', { ascending: true });
 
       if (error) {

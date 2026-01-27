@@ -43,7 +43,7 @@ export default function QuickSupabaseTest() {
       // Test 3: Actual data fetch
       const { data: leadsData, error: leadsError } = await supabase
         .from('leads')
-        .select('*')
+        .select('*, id:_id')
         .limit(5);
       
       if (leadsError) {

@@ -1,0 +1,67 @@
+/* ========== Dropdown Menu Component ========== */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.trigger {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.content {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: var(--spacing-1);
+  min-width: 200px;
+  background: var(--card);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-1);
+  z-index: 1000;
+  animation: slideIn 0.15s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  width: 100%;
+  padding: var(--spacing-2) var(--spacing-3);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  color: var(--foreground);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.item:hover {
+  background: var(--muted);
+}
+
+.item-destructive {
+  color: var(--destructive);
+}
+
+.item-destructive:hover {
+  background: rgba(217, 45, 32, 0.1);
+}

@@ -45,7 +45,7 @@ export function useSupabaseQuery<T>(
       setLoading(true);
       setError(null);
 
-      let query = supabase.from(table).select(options.select || '*');
+      let query = supabase.from(table).select(options.select || '*, id:_id');
 
       // Apply filters
       if (options.filter) {
@@ -96,7 +96,7 @@ export function useSupabaseMutation<T>(table: string) {
       setLoading(true);
       setError(null);
       try {
-        const result = await supabase.from(table).insert(data).select();
+        const result = await supabase.from(table).insert(data).select('*, id:_id');
         if (result.error) throw result.error;
         return result;
       } catch (err) {
@@ -118,8 +118,8 @@ export function useSupabaseMutation<T>(table: string) {
         const result = await supabase
           .from(table)
           .update(data)
-          .eq('id', id)
-          .select();
+          .eq('_id', id)
+          .select('*, id:_id');
         if (result.error) throw result.error;
         return result;
       } catch (err) {
@@ -138,7 +138,7 @@ export function useSupabaseMutation<T>(table: string) {
       setLoading(true);
       setError(null);
       try {
-        const result = await supabase.from(table).delete().eq('id', id);
+        const result = await supabase.from(table).delete().eq('_id', id);
         if (result.error) throw result.error;
         return result;
       } catch (err) {

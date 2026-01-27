@@ -1,0 +1,34 @@
+{
+  "id": "system-admin-master-data",
+  "name": "Dữ liệu nền",
+  "version": "0.2.0",
+  "basePath": "/system-admin/master-data",
+  "entry": "src/modules/system-admin/sa-master-data/index.ts",
+  "routes": "src/modules/system-admin/sa-master-data/routes.tsx",
+  "permissions": [
+    "master_data:read",
+    "master_data:write",
+    "sa.masterdata.orgunit:read",
+    "sa.masterdata.orgunit:write",
+    "sa.masterdata.department:read",
+    "sa.masterdata.department:write",
+    "sa.masterdata.jurisdiction:read",
+    "sa.masterdata.jurisdiction:write",
+    "sa.masterdata.catalog:read",
+    "sa.masterdata.catalog:write"
+  ],
+  "ui": {
+    "menuLabel": "Dữ liệu nền",
+    "menuPath": "/system-admin/master-data"
+  },
+  "routeExport": "saMasterDataRoutes",
+  "release": {
+    "type": "minor",
+    "notes": "Module quản lý dữ liệu nền: Đơn vị tổ chức, Phòng ban, Địa bàn, Danh mục hệ thống với đầy đủ CRUD và TreeTable cho catalogs",
+    "breaking": []
+  },
+  "compat": {
+    "minAppVersion": "0.1.0",
+    "maxAppVersion": "0.9.0"
+  }
+}

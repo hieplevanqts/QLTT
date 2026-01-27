@@ -1,17 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { useQLTTScope } from '../../../contexts/QLTTScopeContext';
+import { useAppDispatch, useQLTTScope as useReduxQLTTScope } from '../../hooks';
+import { setScope } from '../../../store/slices/qlttScopeSlice';
 import styles from './ScopeSelector.module.css';
 
 export function ScopeSelector() {
   const {
     scope,
-    setScope,
+    setScope: setContextScope,
     availableDivisions,
     availableTeams,
     availableAreas,
     isLoading,
   } = useQLTTScope();
+  
+  // Redux dispatch and selector for Redux store
+  const dispatch = useAppDispatch();
+  const reduxScope = useReduxQLTTScope();
+  
   const [selectedDivision, setSelectedDivision] = useState<string>('');
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [selectedArea, setSelectedArea] = useState<string>('');
@@ -30,17 +37,21 @@ export function ScopeSelector() {
         if (savedDivisionId) {
             const divisionExists = availableDivisions.some((d: any) => d.id === savedDivisionId);
             if (divisionExists) {
-                setScope({
+                const newScope = {
                     divisionId: savedDivisionId,
                     teamId: null,
                     areaId: null,
                     province: null,
                     ward: null,
-                });
+                };
+                setContextScope(newScope);
+                // 🔥 NEW: Also save to Redux store
+                dispatch(setScope(newScope));
+                
             }
         }
     }
-  }, [availableDivisions, isLoading, scope.divisionId, setScope]);
+  }, [availableDivisions, isLoading, scope.divisionId, setContextScope, dispatch]);
 
   const handleDivisionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation();
@@ -55,33 +66,30 @@ export function ScopeSelector() {
         localStorage.removeItem('division_id');
     }
 
-    setScope({
+    const newScope = {
       divisionId,
       teamId: null,
       areaId: null,
       province: null,
       ward: null,
-    });
+    };
+    
+    setContextScope(newScope);
+    // 🔥 NEW: Save to Redux store
+    dispatch(setScope(newScope));
+    
   };
 
   const handleTeamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation();
     const rawValue = e.target.value;
-    console.log('🔄 ScopeSelector: handleTeamChange - e.target.value:', rawValue);
-    console.log('🔄 ScopeSelector: handleTeamChange - typeof e.target.value:', typeof rawValue);
-    console.log('🔄 ScopeSelector: handleTeamChange - e.target.value === "":', rawValue === '');
     
     // 🔥 FIX: Convert empty string to null, but keep valid teamId strings
     const teamId = rawValue && rawValue.trim() !== '' ? rawValue : null;
-    console.log('🔄 ScopeSelector: handleTeamChange - teamId after processing:', teamId);
     
     setSelectedTeam(teamId || '');
     setSelectedArea('');
 
-    // 🔥 FIX: Use scope.divisionId from context instead of selectedDivision from local state
-    // to ensure we have the latest value
-    console.log('🔄 ScopeSelector: Current scope.divisionId:', scope.divisionId);
-    
     const newScope = {
       divisionId: scope.divisionId || null,  // 🔥 FIX: Use scope.divisionId instead of selectedDivision
       teamId,
@@ -90,8 +98,10 @@ export function ScopeSelector() {
       ward: null,
     };
     
-    console.log('🔄 ScopeSelector: setScope called with:', newScope);
-    setScope(newScope);
+    setContextScope(newScope);
+    // 🔥 NEW: Save to Redux store
+    dispatch(setScope(newScope));
+    
   };
 
   const handleAreaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -101,26 +111,24 @@ export function ScopeSelector() {
 
     const area = availableAreas.find((item) => item.id === areaId);
     // 🔥 FIX: Use scope values from context instead of local state
-    setScope({
+    const newScope = {
       divisionId: scope.divisionId || null,  // 🔥 FIX: Use scope.divisionId
       teamId: scope.teamId || null,            // 🔥 FIX: Use scope.teamId
       areaId,
       province: area?.provinceCode || null,
       ward: area?.wardCode || null,
-    });
+    };
+    
+    setContextScope(newScope);
+    // 🔥 NEW: Save to Redux store
+    dispatch(setScope(newScope));
+   
   };
 
   const isDivisionDisabled = isLoading;
   const isTeamDisabled = isLoading || !selectedDivision;
   const isAreaDisabled = isLoading || !selectedTeam;
   
-  // 🔥 DEBUG: Log availableTeams
-  useEffect(() => {
-    console.log('🔄 ScopeSelector: availableTeams:', availableTeams.length, availableTeams.map(t => ({ id: t.id, name: t.name })));
-    console.log('🔄 ScopeSelector: scope.divisionId:', scope.divisionId);
-    console.log('🔄 ScopeSelector: selectedDivision:', selectedDivision);
-    console.log('🔄 ScopeSelector: selectedTeam:', selectedTeam);
-  }, [availableTeams, scope.divisionId, selectedDivision, selectedTeam]);
 
   return (
     <div 

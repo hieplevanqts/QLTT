@@ -28,7 +28,7 @@ export default function TestSupabaseConnection() {
         // Try to fetch data from leads table
         const { data: leadsData, error: leadsError } = await supabase
           .from('leads')
-          .select('*')
+          .select('*, id:_id')
           .limit(5);
         
         if (leadsError) {

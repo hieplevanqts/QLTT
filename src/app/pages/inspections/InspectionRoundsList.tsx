@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, 
@@ -8,18 +9,16 @@ import {
   FileEdit,
   Clock,
   PlayCircle,
-  FileText,
   CheckCircle2,
   XCircle,
   Eye,
   Edit,
-  Users,
-  BarChart3,
-  Send,
   Trash2,
   PauseCircle,
   Calendar,
-  Filter
+  Filter,
+  Send,
+  BarChart3
 } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '@/layouts/PageHeader';
@@ -28,24 +27,16 @@ import DataTable, { Column } from '@/ui-kit/DataTable';
 import { SearchInput } from '@/ui-kit/SearchInput';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent } from '@/app/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/app/components/ui/select';
-import SummaryCard from '@/patterns/SummaryCard';
 import ModernSummaryCard from '@/patterns/ModernSummaryCard';
-import BulkActionBar, { BulkAction } from '@/patterns/BulkActionBar';
 import FilterActionBar from '@/patterns/FilterActionBar';
 import ActionColumn, { Action } from '@/patterns/ActionColumn';
 import TableFooter from '@/ui-kit/TableFooter';
-import { InspectionRoundStatusBadge } from '@/app/components/inspections/InspectionRoundStatusBadge';
+import { StatusBadge } from '@/app/components/common/StatusBadge';
 import { useSupabaseInspectionRounds, type InspectionRound } from '@/hooks/useSupabaseInspectionRounds';
 import styles from './InspectionRoundsList.module.css';
 import AdvancedFilterModal, { FilterConfig } from '@/ui-kit/AdvancedFilterModal';
-import DateRangePicker, { DateRange } from '@/ui-kit/DateRangePicker';
+import { DateRange } from '@/ui-kit/DateRangePicker';
+
 import { 
   SendForApprovalModal,
   StartInspectionModal,
@@ -58,12 +49,13 @@ import {
   ResumeRoundModal,
   DeployRoundModal
 } from '@/app/components/inspections/InspectionRoundActionModals';
+
 import { CreateSessionDialog } from '@/app/components/inspections/CreateSessionDialog';
 import { exportToCSV, formatDateForExport, type ExportColumn } from '@/utils/exportToExcel';
 
 export function InspectionRoundsList() {
   const navigate = useNavigate();
-  const { rounds, loading, error, refetch, updateRoundStatus } = useSupabaseInspectionRounds();
+  const { rounds, loading, error, refetch, updateRoundStatus, deleteRound } = useSupabaseInspectionRounds();
   
   // State management
   const [searchValue, setSearchValue] = useState('');
@@ -99,13 +91,12 @@ export function InspectionRoundsList() {
   const openModal = (type: typeof modalState.type, round: InspectionRound) => setModalState({ type, round });
 
   // Modal action handlers
-  const handleSendForApproval = async (note: string) => {
+  const handleSendForApproval = async () => {
     if (!modalState.round) return;
-    
     
     try {
       // Update status from 'draft' to 'pending_approval'
-      await updateRoundStatus(modalState.round.id, 'pending_approval', note);
+      await updateRoundStatus(modalState.round.id, 'pending_approval');
       
       // Close modal first
       closeModal();
@@ -122,7 +113,7 @@ export function InspectionRoundsList() {
     }
   };
 
-  const handleStartInspection = async (note: string) => {
+  const handleStartInspection = async () => {
     if (!modalState.round) return;
     
     try {
@@ -130,13 +121,13 @@ export function InspectionRoundsList() {
       
       if (isApproval) {
         // Phê duyệt: Update status from 'pending_approval' to 'approved'
-        await updateRoundStatus(modalState.round.id, 'approved', note);
+        await updateRoundStatus(modalState.round.id, 'approved');
         closeModal();
         toast.success(`Đã phê duyệt đợt kiểm tra "${modalState.round.name}"`);
         await refetch();
       } else {
         // Bắt đầu kiểm tra: Update status from 'approved' to 'in_progress'
-        await updateRoundStatus(modalState.round.id, 'in_progress', note);
+        await updateRoundStatus(modalState.round.id, 'in_progress');
         closeModal();
         toast.success(`Đã bắt đầu kiểm tra "${modalState.round.name}"`);
         await refetch();
@@ -147,12 +138,12 @@ export function InspectionRoundsList() {
     }
   };
 
-  const handleCompleteInspection = async (summary: string) => {
+  const handleCompleteInspection = async () => {
     if (!modalState.round) return;
     
     try {
       // Update status from 'in_progress' to 'completed'
-      await updateRoundStatus(modalState.round.id, 'completed', summary);
+      await updateRoundStatus(modalState.round.id, 'completed');
       closeModal();
       toast.success(`Đã hoàn thành kiểm tra "${modalState.round.name}"`);
       await refetch();
@@ -177,11 +168,12 @@ export function InspectionRoundsList() {
     }
   };
 
-  const handleCancelRound = async (reason: string) => {
+  const handleCancelRound = async () => {
     if (!modalState.round) return;
     
     try {
-      // TODO: Update via Supabase
+      await updateRoundStatus(modalState.round.id, 'cancelled');
+      closeModal();
       toast.success(`Đã hủy đợt kiểm tra "${modalState.round.name}"`);
       await refetch();
     } catch (error) {
@@ -194,7 +186,8 @@ export function InspectionRoundsList() {
     if (!modalState.round) return;
     
     try {
-      // TODO: Delete via Supabase
+      await deleteRound(modalState.round.id);
+      closeModal();
       toast.success(`Đã xóa đợt kiểm tra "${modalState.round.name}"`);
       await refetch();
     } catch (error) {
@@ -203,12 +196,12 @@ export function InspectionRoundsList() {
     }
   };
 
-  const handleRejectRound = async (reason: string) => {
+  const handleRejectRound = async () => {
     if (!modalState.round) return;
     
     try {
       // Update status from 'pending_approval' to 'rejected'
-      await updateRoundStatus(modalState.round.id, 'rejected', reason);
+      await updateRoundStatus(modalState.round.id, 'rejected');
       closeModal();
       toast.success(`Đã từ chối duyệt đợt kiểm tra "${modalState.round.name}"`);
       await refetch();
@@ -267,19 +260,19 @@ export function InspectionRoundsList() {
   const stats = useMemo(() => {
     return {
       total: rounds.length,
-      draft: rounds.filter(r => r.status === 'draft').length,
-      pending_approval: rounds.filter(r => r.status === 'pending_approval').length,
-      approved: rounds.filter(r => r.status === 'approved').length,
-      paused: rounds.filter(r => r.status === 'paused').length,
-      in_progress: rounds.filter(r => r.status === 'in_progress').length,
-      completed: rounds.filter(r => r.status === 'completed').length,
-      cancelled: rounds.filter(r => r.status === 'cancelled').length,
+      draft: rounds.filter((r: InspectionRound) => r.status === 'draft').length,
+      pending_approval: rounds.filter((r: InspectionRound) => r.status === 'pending_approval').length,
+      approved: rounds.filter((r: InspectionRound) => r.status === 'approved').length,
+      active: rounds.filter((r: InspectionRound) => r.status === 'active' || r.status === 'in_progress').length,
+      paused: rounds.filter((r: InspectionRound) => r.status === 'paused').length,
+      completed: rounds.filter((r: InspectionRound) => r.status === 'completed').length,
+      cancelled: rounds.filter((r: InspectionRound) => r.status === 'cancelled').length,
     };
   }, [rounds]);
 
   // Apply filters
   const filteredData = useMemo(() => {
-    return rounds.filter(round => {
+    return rounds.filter((round: InspectionRound) => {
       const matchesSearch = round.name.toLowerCase().includes(searchValue.toLowerCase()) ||
                            round.code.toLowerCase().includes(searchValue.toLowerCase()) ||
                            round.leadUnit.toLowerCase().includes(searchValue.toLowerCase());
@@ -287,7 +280,10 @@ export function InspectionRoundsList() {
       const matchesPlan = planFilter === 'all' || 
                          (planFilter === 'with_plan' && round.planId) ||
                          (planFilter === 'no_plan' && !round.planId);
-      const matchesActiveFilter = activeFilter === null || round.status === activeFilter;
+      const matchesActiveFilter = activeFilter === null || 
+                                 (activeFilter === 'active' 
+                                   ? (round.status === 'active' || round.status === 'in_progress')
+                                   : round.status === (activeFilter as any));
       
       // Date range filter
       let matchesDateRange = true;
@@ -314,31 +310,33 @@ export function InspectionRoundsList() {
 
   // Get actions for each round
   const getRoundActions = (round: InspectionRound): Action[] => {
-    const actions: Action[] = [];
+    // Default action available for all statuses
+    const actions: Action[] = [
+      {
+        label: 'Xem chi tiết',
+        icon: <Eye size={16} />,
+        onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}`),
+        priority: 10,
+      }
+    ];
 
     switch (round.status) {
       case 'draft':
-        // Nháp: Xem, Chỉnh sửa, Gửi duyệt, Xóa
+        // Nháp: Chỉnh sửa, Gửi duyệt, Xóa
         actions.push(
-          {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}`),
-            priority: 11,
-          },
           {
             label: 'Chỉnh sửa',
             icon: <Edit size={16} />,
             onClick: () => {
               navigate(`/plans/inspection-rounds/create-new?mode=edit&id=${encodeURIComponent(round.id)}`);
             },
-            priority: 10,
+            priority: 8,
           },
           {
             label: 'Gửi duyệt',
             icon: <Send size={16} />,
             onClick: () => openModal('sendApproval', round),
-            priority: 8,
+            priority: 9,
           },
           {
             label: 'Xóa',
@@ -352,22 +350,8 @@ export function InspectionRoundsList() {
         break;
 
       case 'pending_approval':
-        // Chờ duyệt: Xem, Chỉnh sửa, Phê duyệt, Từ chối
+        // Chờ duyệt: Phê duyệt, Từ chối
         actions.push(
-          {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}`),
-            priority: 11,
-          },
-          {
-            label: 'Chỉnh sửa',
-            icon: <Edit size={16} />,
-            onClick: () => {
-              navigate(`/plans/inspection-rounds/create-new?mode=edit&id=${encodeURIComponent(round.id)}`);
-            },
-            priority: 10,
-          },
           {
             label: 'Phê duyệt',
             icon: <CheckCircle2 size={16} />,
@@ -380,19 +364,19 @@ export function InspectionRoundsList() {
             onClick: () => openModal('reject', round),
             variant: 'destructive' as const,
             separator: true,
-            priority: 8,
+            priority: 5,
           }
         );
         break;
 
       case 'approved':
-        // Đã duyệt: Xem, Chỉnh sửa, Tạo phiên làm việc, Bắt đầu kiểm tra, Hủy
+        // Đã duyệt: Triển khai, Chỉnh sửa
         actions.push(
           {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}`),
-            priority: 11,
+            label: 'Triển khai',
+            icon: <PlayCircle size={16} />,
+            onClick: () => openModal('deploy', round),
+            priority: 9,
           },
           {
             label: 'Chỉnh sửa',
@@ -400,56 +384,17 @@ export function InspectionRoundsList() {
             onClick: () => {
               navigate(`/plans/inspection-rounds/create-new?mode=edit&id=${encodeURIComponent(round.id)}`);
             },
-            priority: 10,
-          },
-          {
-            label: 'Tạo phiên làm việc',
-            icon: <Calendar size={16} />,
-            onClick: () => {
-              setCreateSessionDialog({
-                open: true,
-                roundId: round.id,
-                roundName: round.name,
-              });
-            },
-            priority: 9,
-          },
-          {
-            label: 'Bắt đầu kiểm tra',
-            icon: <PlayCircle size={16} />,
-            onClick: () => openModal('startInspection', round),
             priority: 8,
-          },
-          {
-            label: 'Hủy đợt kiểm tra',
-            icon: <XCircle size={16} />,
-            onClick: () => openModal('cancel', round),
-            variant: 'destructive' as const,
-            separator: true,
-            priority: 2,
           }
         );
         break;
 
       case 'active':
-        // Đang triển khai: Xem, Chỉnh sửa, Tạo phiên làm việc, Tạm dừng, Hoàn thành, Hủy
+      case 'in_progress':
+        // Đang triển khai/Đang kiểm tra: Phiên làm việc, Hoàn thành, Tạm dừng
         actions.push(
           {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}`),
-            priority: 11,
-          },
-          {
-            label: 'Chỉnh sửa',
-            icon: <Edit size={16} />,
-            onClick: () => {
-              navigate(`/plans/inspection-rounds/create-new?mode=edit&id=${encodeURIComponent(round.id)}`);
-            },
-            priority: 10,
-          },
-          {
-            label: 'Tạo phiên làm việc',
+            label: 'Phiên làm việc',
             icon: <Calendar size={16} />,
             onClick: () => {
               setCreateSessionDialog({
@@ -459,136 +404,58 @@ export function InspectionRoundsList() {
               });
             },
             priority: 9,
+          },
+          {
+            label: 'Hoàn thành',
+            icon: <ClipboardCheck size={16} />,
+            onClick: () => openModal('completeInspection', round),
+            priority: 10,
           },
           {
             label: 'Tạm dừng',
             icon: <PauseCircle size={16} />,
             onClick: () => openModal('pause', round),
-            priority: 8,
-          },
-          {
-            label: 'Hoàn thành',
-            icon: <CheckCircle2 size={16} />,
-            onClick: () => openModal('completeInspection', round),
-            priority: 7,
-          },
-          {
-            label: 'Hủy đợt kiểm tra',
-            icon: <XCircle size={16} />,
-            onClick: () => openModal('cancel', round),
             variant: 'destructive' as const,
             separator: true,
-            priority: 2,
+            priority: 3,
           }
         );
         break;
 
       case 'paused':
-        // Tạm dừng: Xem chi tiết, Tiếp tục, Hủy
+        // Tạm dừng: Tiếp tục
         actions.push(
-          {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}`),
-            priority: 11,
-          },
           {
             label: 'Tiếp tục',
             icon: <PlayCircle size={16} />,
             onClick: () => openModal('resume', round),
             priority: 9,
-          },
-          {
-            label: 'Hủy đợt kiểm tra',
-            icon: <XCircle size={16} />,
-            onClick: () => openModal('cancel', round),
-            variant: 'destructive' as const,
-            separator: true,
-            priority: 2,
-          }
-        );
-        break;
-
-      case 'in_progress':
-        // Đang kiểm tra: Xem, Chỉnh sửa, Tạo phiên làm việc, Hoàn thành, Hủy
-        actions.push(
-          {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}`),
-            priority: 11,
-          },
-          {
-            label: 'Chỉnh sửa',
-            icon: <Edit size={16} />,
-            onClick: () => {
-              navigate(`/plans/inspection-rounds/create-new?mode=edit&id=${encodeURIComponent(round.id)}`);
-            },
-            priority: 10,
-          },
-          {
-            label: 'Tạo phiên làm việc',
-            icon: <Calendar size={16} />,
-            onClick: () => {
-              setCreateSessionDialog({
-                open: true,
-                roundId: round.id,
-                roundName: round.name,
-              });
-            },
-            priority: 9,
-          },
-          {
-            label: 'Hoàn thành',
-            icon: <CheckCircle2 size={16} />,
-            onClick: () => openModal('completeInspection', round),
-            priority: 7,
-          },
-          {
-            label: 'Hủy đợt kiểm tra',
-            icon: <XCircle size={16} />,
-            onClick: () => openModal('cancel', round),
-            variant: 'destructive' as const,
-            separator: true,
-            priority: 2,
           }
         );
         break;
 
       case 'completed':
-        // Hoàn thành: Xem chi tiết, Thống kê
+        // Hoàn thành: Thống kê
         actions.push(
-          {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}`),
-            priority: 11,
-          },
           {
             label: 'Thống kê',
             icon: <BarChart3 size={16} />,
             onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}/statistics`),
-            priority: 8,
+            priority: 9,
           }
         );
         break;
 
       case 'rejected':
-        // Từ chối duyệt: Xem, Chỉnh sửa, Gửi lại, Xóa
+        // Từ chối duyệt: Chỉnh sửa, Gửi lại, Xóa
         actions.push(
-          {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}`),
-            priority: 11,
-          },
           {
             label: 'Chỉnh sửa',
             icon: <Edit size={16} />,
             onClick: () => {
               navigate(`/plans/inspection-rounds/create-new?mode=edit&id=${encodeURIComponent(round.id)}`);
             },
-            priority: 10,
+            priority: 8,
           },
           {
             label: 'Gửi lại duyệt',
@@ -608,14 +475,8 @@ export function InspectionRoundsList() {
         break;
 
       case 'cancelled':
-        // Đã hủy: Xem chi tiết, Xóa
+        // Đã hủy: Xóa
         actions.push(
-          {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}`),
-            priority: 11,
-          },
           {
             label: 'Xóa',
             icon: <Trash2 size={16} />,
@@ -625,16 +486,6 @@ export function InspectionRoundsList() {
           }
         );
         break;
-
-      default:
-        actions.push(
-          {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => navigate(`/plans/inspection-rounds/${encodeURIComponent(round.id)}`),
-            priority: 11,
-          }
-        );
     }
 
     return actions;
@@ -648,12 +499,7 @@ export function InspectionRoundsList() {
       sortable: true,
       width: '140px',
       render: (round) => (
-        <div>
-          <div className={styles.roundCodeBadgeRow}>
-            <InspectionRoundStatusBadge type="inspectionType" value={round.type} size="sm" />
-          </div>
-          <div className={styles.roundCode}>{round.code}</div>
-        </div>
+        <div className={styles.roundCode}>{round.campaign_code || '--'}</div>
       ),
     },
     {
@@ -662,7 +508,7 @@ export function InspectionRoundsList() {
       sortable: true,
       render: (round) => (
         <div>
-          <div className={styles.roundName}>{round.name || 'Chưa đặt tên'}</div>
+          <div className={styles.roundName}>{round.name || '--'}</div>
           {round.planName && (
             <div className={styles.roundPlan}>KH: {round.planName}</div>
           )}
@@ -673,7 +519,7 @@ export function InspectionRoundsList() {
       key: 'time',
       label: 'Thời gian',
       sortable: true,
-      width: '180px',
+      width: '220px',
       render: (round) => {
         if (!round.startDate || !round.endDate) {
           return <span className={styles.timeRange}>Chưa xác định</span>;
@@ -693,8 +539,10 @@ export function InspectionRoundsList() {
       key: 'leadUnit',
       label: 'Đơn vị chủ trì',
       sortable: true,
+      width: '250px',
+      truncate: true,
       render: (round) => (
-        <span className={styles.leadUnit}>{round.leadUnit || 'Chưa xác định'}</span>
+        <span className={styles.leadUnit}>{round.leadUnit || '--'}</span>
       ),
     },
     {
@@ -704,7 +552,7 @@ export function InspectionRoundsList() {
       width: '120px',
       render: (round) => (
         <span className={styles.teamSize}>
-          {round.teamSize > 0 ? `${round.teamSize} người` : 'Chưa phân công'}
+          {round.teamSize > 0 ? `${round.teamSize} người` : '--'}
         </span>
       ),
     },
@@ -716,7 +564,7 @@ export function InspectionRoundsList() {
       render: (round) => (
         <div className={styles.targetsInfo}>
           <div className={styles.targetsCount}>
-            {round.totalTargets > 0 ? `${round.inspectedTargets}/${round.totalTargets}` : 'Chưa xác định'}
+            {round.totalTargets > 0 ? `${round.inspectedTargets}/${round.totalTargets}` : '--'}
           </div>
           {round.totalTargets > 0 && (
             <div className={styles.targetsProgress}>
@@ -730,20 +578,21 @@ export function InspectionRoundsList() {
       key: 'status',
       label: 'Trạng thái',
       width: '140px',
-      render: (round) => <InspectionRoundStatusBadge type="round" value={round.status} size="sm" />,
+      render: (round) => <StatusBadge type="round" value={round.status} size="sm" />,
     },
     {
       key: 'creator',
       label: 'Người tạo',
       sortable: true,
-      width: '120px',
-      render: (round) => <span className={styles.creator}>{round.createdBy}</span>,
+      width: '140px',
+      truncate: true,
+      render: (round) => <span className={styles.creator}>{round.createdBy || '--'}</span>,
     },
     {
       key: 'actions',
       label: 'Thao tác',
       sticky: 'right',
-      width: '100px',
+      width: '180px',
       render: (round) => (
         <ActionColumn actions={getRoundActions(round)} />
       ),
@@ -751,28 +600,30 @@ export function InspectionRoundsList() {
   ];
 
   // Handle row selection
-  const handleSelectRow = (id: string) => {
+  const handleSelectRow = (id: string | number) => {
+    const stringId = String(id);
     const newSelected = new Set(selectedRows);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
+    if (newSelected.has(stringId)) {
+      newSelected.delete(stringId);
     } else {
-      newSelected.add(id);
+      newSelected.add(stringId);
     }
     setSelectedRows(newSelected);
   };
 
   const handleSelectAll = (selected: boolean) => {
     if (selected) {
-      setSelectedRows(new Set(paginatedData.map(r => r.id)));
+      setSelectedRows(new Set(paginatedData.map((r: InspectionRound) => r.id)));
     } else {
       setSelectedRows(new Set());
     }
   };
 
   // Reset to page 1 when filters change
-  React.useEffect(() => {
+  useEffect(() => {
     setCurrentPage(1);
   }, [typeFilter, planFilter, searchValue, activeFilter]);
+
 
   // Advanced Filter configuration
   const filterConfigs: FilterConfig[] = [
@@ -891,6 +742,14 @@ export function InspectionRoundsList() {
             onClick={() => setActiveFilter('approved')}
           />
           <ModernSummaryCard
+            label="Đang triển khai"
+            value={stats.active.toString()}
+            icon={PlayCircle}
+            variant="primary"
+            active={activeFilter === 'active'}
+            onClick={() => setActiveFilter('active')}
+          />
+          <ModernSummaryCard
             label="Tạm dừng"
             value={stats.paused.toString()}
             icon={PauseCircle}
@@ -981,9 +840,9 @@ export function InspectionRoundsList() {
         onClose={() => setIsFilterModalOpen(false)}
         onApply={handleApplyFilters}
         onClear={() => {}}
-        filterConfigs={filterConfigs}
-        filterValues={filterValues}
-        onFilterChange={handleFilterChange}
+        filters={filterConfigs}
+        values={filterValues}
+        onChange={handleFilterChange}
       />
 
       {/* Action Modals */}

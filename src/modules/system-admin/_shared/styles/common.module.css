@@ -1,0 +1,425 @@
+/**
+ * COMMON STYLES - System Admin Module
+ * Shared styles using design tokens from /src/styles/theme.css
+ */
+
+/* ============================================
+   TOOLBAR & SEARCH
+   ============================================ */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.searchBox {
+  position: relative;
+  flex: 1;
+  min-width: 300px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted-foreground);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 10px 16px 10px 42px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  background: var(--input-background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: all 150ms ease;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px rgba(0, 92, 182, 0.1);
+}
+
+.searchInput::placeholder {
+  color: var(--muted-foreground);
+}
+
+.stats {
+  padding: 10px 16px;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  white-space: nowrap;
+}
+
+.statsText {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+}
+
+.statsText strong {
+  color: var(--foreground);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ============================================
+   TABLE STYLES
+   ============================================ */
+.tableContainer {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  margin-bottom: 24px;
+  box-shadow: var(--elevation-sm);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead {
+  background: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.table th {
+  padding: 12px 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground);
+}
+
+.table tbody tr {
+  transition: background 150ms ease;
+  border-bottom: 1px solid var(--border);
+}
+
+.table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.table tbody tr:hover {
+  background: var(--muted);
+}
+
+.table td {
+  padding: 16px 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  vertical-align: middle;
+}
+
+/* ============================================
+   BADGES & LABELS
+   ============================================ */
+.code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--primary);
+}
+
+.name {
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  border-radius: calc(var(--radius) - 2px);
+  white-space: nowrap;
+}
+
+.badgePrimary {
+  composes: badge;
+  color: var(--primary);
+  background: rgba(0, 92, 182, 0.1);
+}
+
+.badgeSuccess {
+  composes: badge;
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.1);
+}
+
+.badgeWarning {
+  composes: badge;
+  color: #ea580c;
+  background: rgba(234, 88, 12, 0.1);
+}
+
+.badgeDanger {
+  composes: badge;
+  color: var(--destructive);
+  background: rgba(217, 45, 32, 0.1);
+}
+
+.badgeInfo {
+  composes: badge;
+  color: #7c3aed;
+  background: rgba(124, 58, 237, 0.1);
+}
+
+.statusActive {
+  color: #16a34a;
+  font-weight: var(--font-weight-medium);
+}
+
+.statusInactive {
+  color: var(--destructive);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+.buttonPrimary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--primary-foreground);
+  background: var(--primary);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+
+.buttonPrimary:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 92, 182, 0.25);
+}
+
+.buttonPrimary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.buttonPrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.buttonSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+
+.buttonSecondary:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: var(--muted);
+}
+
+.buttonSecondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.buttonDanger {
+  composes: buttonSecondary;
+  color: var(--destructive);
+  border-color: var(--destructive);
+}
+
+.buttonDanger:hover:not(:disabled) {
+  background: rgba(217, 45, 32, 0.1);
+  border-color: var(--destructive);
+}
+
+/* ============================================
+   PAGINATION
+   ============================================ */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+}
+
+.paginationButton {
+  padding: 8px 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.paginationButton:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: var(--muted);
+}
+
+.paginationButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.paginationInfo {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+}
+
+/* ============================================
+   FORM ELEMENTS
+   ============================================ */
+.formGroup {
+  margin-bottom: 20px;
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  background: var(--input-background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: all 150ms ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px rgba(0, 92, 182, 0.1);
+}
+
+.select {
+  composes: input;
+  cursor: pointer;
+}
+
+.textarea {
+  composes: input;
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* ============================================
+   FILTERS
+   ============================================ */
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filterLabel {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+  white-space: nowrap;
+}
+
+.filterSelect {
+  min-width: 150px;
+  padding: 8px 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 1024px) {
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .searchBox {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .table {
+    font-size: var(--text-xs);
+  }
+
+  .table th,
+  .table td {
+    padding: 12px;
+  }
+
+  .buttonPrimary,
+  .buttonSecondary {
+    font-size: var(--text-xs);
+    padding: 8px 12px;
+  }
+}

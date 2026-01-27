@@ -1,0 +1,265 @@
+[
+  {
+    "id": "menu_overview",
+    "label": "Tong quan",
+    "path": "/overview",
+    "icon": "LayoutDashboard",
+    "order": 10,
+    "isEnabled": true
+  },
+  {
+    "id": "menu_map",
+    "label": "Ban do dieu hanh",
+    "path": "/map",
+    "icon": "Map",
+    "order": 20,
+    "permissionsAny": [
+      "MAP_VIEW"
+    ],
+    "isEnabled": true
+  },
+  {
+    "id": "menu_stores",
+    "label": "Co so quan ly",
+    "path": "/stores",
+    "icon": "Building2",
+    "order": 30,
+    "permissionsAny": [
+      "STORES_VIEW"
+    ],
+    "isEnabled": true
+  },
+  {
+    "id": "menu_leads",
+    "label": "Nguon tin",
+    "path": "/leads",
+    "icon": "TriangleAlert",
+    "order": 40,
+    "permissionsAny": [
+      "LEAD_RISK"
+    ],
+    "isEnabled": true
+  },
+  {
+    "id": "menu_leads_inbox",
+    "label": "Xu ly nguon tin hang ngay",
+    "path": "/lead-risk/inbox",
+    "parentId": "menu_leads",
+    "order": 10,
+    "permissionsAny": [
+      "LEAD_RISK"
+    ],
+    "isEnabled": true
+  },
+  {
+    "id": "menu_leads_dashboard",
+    "label": "Tong quan rui ro",
+    "path": "/lead-risk/dashboard",
+    "parentId": "menu_leads",
+    "order": 20,
+    "permissionsAny": [
+      "LEAD_RISK"
+    ],
+    "isEnabled": true
+  },
+  {
+    "id": "menu_leads_hotspots",
+    "label": "Phan tich diem nong",
+    "path": "/lead-risk/hotspots",
+    "parentId": "menu_leads",
+    "order": 30,
+    "permissionsAny": [
+      "LEAD_RISK"
+    ],
+    "isEnabled": true
+  },
+  {
+    "id": "menu_leads_quality",
+    "label": "Phan tich chat luong",
+    "path": "/lead-risk/quality-metrics",
+    "parentId": "menu_leads",
+    "order": 40,
+    "permissionsAny": [
+      "LEAD_RISK"
+    ],
+    "isEnabled": true
+  },
+  {
+    "id": "menu_leads_workload",
+    "label": "Quan ly cong viec",
+    "path": "/lead-risk/workload-dashboard",
+    "parentId": "menu_leads",
+    "order": 50,
+    "permissionsAny": [
+      "LEAD_RISK"
+    ],
+    "isEnabled": true
+  },
+  {
+    "id": "menu_leads_sla",
+    "label": "Giam sat SLA",
+    "path": "/lead-risk/sla-dashboard",
+    "parentId": "menu_leads",
+    "order": 60,
+    "permissionsAny": [
+      "LEAD_RISK"
+    ],
+    "isEnabled": true
+  },
+  {
+    "id": "menu_plans",
+    "label": "Ke hoach tac nghiep",
+    "path": "/plans",
+    "icon": "ClipboardList",
+    "order": 50,
+    "permissionsAny": [
+      "PLAN_VIEW"
+    ],
+    "isEnabled": true
+  },
+  {
+    "id": "menu_plans_list",
+    "label": "Danh sach ke hoach",
+    "path": "/plans/list",
+    "parentId": "menu_plans",
+    "order": 10,
+    "permissionsAny": [
+      "PLAN_VIEW"
+    ],
+    "isEnabled": true
+  },
+  {
+    "id": "menu_plans_rounds",
+    "label": "Dot kiem tra",
+    "path": "/plans/inspection-rounds",
+    "parentId": "menu_plans",
+    "order": 20,
+    "permissionsAny": [
+      "PLAN_VIEW"
+    ],
+    "isEnabled": true
+  },
+  {
+    "id": "menu_plans_session",
+    "label": "Phien lam viec",
+    "path": "/plans/inspection-session",
+    "parentId": "menu_plans",
+    "order": 30,
+    "permissionsAny": [
+      "PLAN_VIEW"
+    ],
+    "isEnabled": true
+  },
+  {
+    "id": "menu_tasks",
+    "label": "Nhiem vu hien truong",
+    "path": "/tasks",
+    "icon": "MapPin",
+    "order": 60,
+    "permissionsAny": [
+      "TASKS_VIEW"
+    ],
+    "isEnabled": true
+  },
+  {
+    "id": "menu_evidence",
+    "label": "Kho chung cu",
+    "path": "/evidence",
+    "icon": "FileBox",
+    "order": 70,
+    "permissionsAny": [
+      "EVIDENCE_VIEW"
+    ],
+    "isEnabled": true
+  },
+  {
+    "id": "menu_reports",
+    "label": "Bao cao & Thong ke",
+    "path": "/reports",
+    "icon": "BarChart3",
+    "order": 80,
+    "isEnabled": true
+  },
+  {
+    "id": "menu_reports_dashboard",
+    "label": "Dashboard",
+    "path": "/dashboard",
+    "parentId": "menu_reports",
+    "order": 10,
+    "isEnabled": true
+  },
+  {
+    "id": "menu_reports_reports",
+    "label": "Bao cao",
+    "path": "/reports",
+    "parentId": "menu_reports",
+    "order": 20,
+    "isEnabled": true
+  },
+  {
+    "id": "menu_admin",
+    "label": "Quan tri",
+    "path": "/admin",
+    "icon": "Settings",
+    "order": 90,
+    "permissionsAny": [
+      "ADMIN_VIEW"
+    ],
+    "isEnabled": true
+  },
+  {
+    "id": "menu_admin_modules",
+    "label": "Quan tri Module",
+    "path": "/system/modules",
+    "parentId": "menu_admin",
+    "order": 10,
+    "permissionsAny": [
+      "ADMIN_VIEW"
+    ],
+    "isEnabled": true
+  },
+  {
+    "id": "menu_admin_menus",
+    "label": "Quan tri Menu",
+    "path": "/system/menus",
+    "parentId": "menu_admin",
+    "order": 20,
+    "permissionsAny": [
+      "ADMIN_VIEW"
+    ],
+    "isEnabled": true
+  },
+  {
+    "id": "menu_admin_users",
+    "label": "Nguoi dung",
+    "path": "/system/users",
+    "parentId": "menu_admin",
+    "order": 30,
+    "permissionsAny": [
+      "ADMIN_VIEW"
+    ],
+    "isEnabled": true
+  },
+  {
+    "id": "menu_admin_roles",
+    "label": "Vai tro",
+    "path": "/system/roles",
+    "parentId": "menu_admin",
+    "order": 40,
+    "permissionsAny": [
+      "ADMIN_VIEW"
+    ],
+    "isEnabled": true
+  },
+  {
+    "id": "menu_admin_settings",
+    "label": "Cau hinh",
+    "path": "/system/settings",
+    "parentId": "menu_admin",
+    "order": 50,
+    "permissionsAny": [
+      "ADMIN_VIEW"
+    ],
+    "isEnabled": true
+  }
+]

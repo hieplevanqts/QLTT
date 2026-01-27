@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAppSelector } from '../../../app/hooks';
+import { RootState } from '../../../store/rootReducer';
 import { Error403 } from '../error-states/Error403';
 
 interface PermissionProtectedRouteProps {
@@ -48,6 +49,10 @@ const ROUTE_PERMISSION_MAP: { [path: string]: string | undefined } = {
   '/evidence': 'EVIDENCE_VIEW',
   '/reports': undefined, // No permission required
   '/admin': 'ADMIN_VIEW',
+  '/system/modules': 'ADMIN_VIEW',
+  '/system/modules/import': 'ADMIN_VIEW',
+  '/system/modules/history': 'ADMIN_VIEW',
+  '/system/modules/:id': 'ADMIN_VIEW',
   '/system/users': 'ADMIN_VIEW',
   '/system/roles': 'ADMIN_VIEW',
   '/system/settings': 'ADMIN_VIEW',
@@ -97,8 +102,15 @@ export function PermissionProtectedRoute({
   children, 
   requiredPermission 
 }: PermissionProtectedRouteProps) {
-  const { user } = useAuth();
+  // Get user from Redux instead of AuthContext
+  const { user } = useAppSelector((state: RootState) => state.auth);
   const location = useLocation();
+
+  // 🔥 FIX: Skip permission check for system-admin routes (children of "Quản trị" menu)
+  // All routes under /system-admin/* don't need permission check
+  if (location.pathname.startsWith('/system-admin') || location.pathname.startsWith('/system/')) {
+    return <>{children}</>;
+  }
 
   // Get permission code for current route
   const routePermission = requiredPermission || getPermissionForRoute(location.pathname);

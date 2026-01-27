@@ -76,7 +76,7 @@ export const RolesManagementTab: React.FC = () => {
       // Fetch roles
       const { data: rolesData, error: rolesError } = await supabase
         .from('roles')
-        .select('*')
+        .select('*, id:_id')
         .order('created_at', { ascending: false });
 
       if (rolesError) {
@@ -90,7 +90,7 @@ export const RolesManagementTab: React.FC = () => {
           (rolesData || []).map(async (role) => {
             const { count, error } = await supabase
               .from('user_roles')
-              .select('*', { count: 'exact', head: true })
+              .select('*, id:_id', { count: 'exact', head: true })
               .eq('role_id', role.id);
             
             return {
@@ -182,7 +182,7 @@ export const RolesManagementTab: React.FC = () => {
       // Check if role has users
       const { count, error: countError } = await supabase
         .from('user_roles')
-        .select('*', { count: 'exact', head: true })
+        .select('*, id:_id', { count: 'exact', head: true })
         .eq('role_id', role.id);
 
       if (countError) {
@@ -212,7 +212,7 @@ export const RolesManagementTab: React.FC = () => {
       const { error } = await supabase
         .from('roles')
         .delete()
-        .eq('id', role.id);
+        .eq('_id', role.id);
 
       if (error) {
         console.error('❌ Error deleting role:', error);
@@ -233,7 +233,7 @@ export const RolesManagementTab: React.FC = () => {
       const { error } = await supabase
         .from('roles')
         .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq('id', role.id);
+        .eq('_id', role.id);
 
       if (error) {
         console.error('❌ Error updating role status:', error);

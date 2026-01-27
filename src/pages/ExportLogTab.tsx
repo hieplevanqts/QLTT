@@ -91,7 +91,7 @@ export const ExportLogTab: React.FC = () => {
 
       const { data, error } = await supabase
         .from('export_jobs')
-        .select('*')
+        .select('*, id:_id')
         .order('export_job_created_at', { ascending: false })
         .limit(500);
 
@@ -115,7 +115,7 @@ export const ExportLogTab: React.FC = () => {
 
       const { data, error } = await supabase
         .from('download_history')
-        .select('*')
+        .select('*, id:_id')
         .eq('export_job_id', jobId)
         .order('download_timestamp', { ascending: false });
 

@@ -1,0 +1,181 @@
+.group {
+  padding: var(--spacing-4);
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  position: relative;
+}
+
+.groupNested {
+  background: var(--color-bg-secondary);
+  border-color: var(--color-primary);
+  border-width: 2px;
+  margin-left: var(--spacing-6);
+  position: relative;
+}
+
+/* Nested level indicators */
+.group[data-level="0"] {
+  border-color: var(--color-primary);
+}
+
+.group[data-level="1"] {
+  border-color: var(--color-success);
+}
+
+.group[data-level="2"] {
+  border-color: var(--color-warning);
+}
+
+/* Group Header */
+.groupHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-4);
+  padding-bottom: var(--spacing-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.groupHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.logicSelect {
+  min-width: 140px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.logicPlaceholder {
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.logicText {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+}
+
+.removeGroupButton {
+  color: var(--color-danger);
+  gap: var(--spacing-2);
+}
+
+.removeGroupButton:hover {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+/* Conditions List */
+.conditionsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.conditionItem {
+  position: relative;
+}
+
+.nestedGroupItem {
+  position: relative;
+}
+
+/* Logic Label (AND/OR between items) */
+.logicLabel {
+  display: flex;
+  align-items: center;
+  margin: var(--spacing-2) 0;
+  margin-left: var(--spacing-4);
+}
+
+.logicLabelText {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-1) var(--spacing-3);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.group[data-level="1"] .logicLabelText {
+  color: var(--color-success);
+  background: var(--color-success-light);
+  border-color: var(--color-success);
+}
+
+.group[data-level="2"] .logicLabelText {
+  color: var(--color-warning);
+  background: var(--color-warning-light);
+  border-color: var(--color-warning);
+}
+
+/* Group Actions */
+.groupActions {
+  display: flex;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-4);
+  padding-top: var(--spacing-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.addButton {
+  gap: var(--spacing-2);
+}
+
+/* Visual connectors for nested groups */
+.groupNested::before {
+  content: '';
+  position: absolute;
+  left: calc(-1 * var(--spacing-6));
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-border);
+}
+
+.groupNested::after {
+  content: '';
+  position: absolute;
+  left: calc(-1 * var(--spacing-6));
+  top: 50%;
+  width: var(--spacing-6);
+  height: 2px;
+  background: var(--color-border);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .group {
+    padding: var(--spacing-3);
+  }
+
+  .groupNested {
+    margin-left: var(--spacing-4);
+  }
+
+  .groupActions {
+    flex-direction: column;
+  }
+
+  .addButton {
+    width: 100%;
+  }
+
+  .logicSelect {
+    min-width: 120px;
+  }
+}

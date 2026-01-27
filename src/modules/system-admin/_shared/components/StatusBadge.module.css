@@ -1,0 +1,38 @@
+/**
+ * STATUS BADGE - Pill badge for status display
+ */
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: calc(var(--radius) * 2);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.statusActive {
+  composes: statusBadge;
+  background-color: rgba(16, 185, 129, 0.1);
+  color: rgba(5, 150, 105, 1);
+}
+
+.statusInactive {
+  composes: statusBadge;
+  background-color: rgba(107, 114, 128, 0.1);
+  color: rgba(75, 85, 99, 1);
+}
+
+.statusPending {
+  composes: statusBadge;
+  background-color: rgba(251, 191, 36, 0.1);
+  color: rgba(217, 119, 6, 1);
+}
+
+.statusError {
+  composes: statusBadge;
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--destructive);
+}

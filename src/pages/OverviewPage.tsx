@@ -16,10 +16,12 @@ import PageHeader from '../layouts/PageHeader';
 import { Button } from '../app/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../app/components/ui/card';
 import { Badge } from '../app/components/ui/badge';
-import { useAuth } from '../contexts/AuthContext';
+import { useAppSelector } from '../app/hooks';
+import { RootState } from '../store/rootReducer';
 
 export default function OverviewPage() {
-  const { user } = useAuth(); // Get user with department info
+  // Get user from Redux instead of AuthContext
+  const { user } = useAppSelector((state: RootState) => state.auth);
   
   // Get department name and address from user.departmentInfo
   const departmentName = user?.departmentInfo?.name || '';

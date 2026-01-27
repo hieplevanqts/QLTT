@@ -29,7 +29,7 @@ export const RolesTabWrapper: React.FC<RolesTabWrapperProps> = ({ onOpenModal })
       // Fetch roles from Supabase
       const { data: rolesData, error: rolesError } = await supabase
         .from(Tables.ROLES)
-        .select('*')
+        .select('*, id:_id')
         .order('created_at', { ascending: false });
 
 

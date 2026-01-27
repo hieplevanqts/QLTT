@@ -31,7 +31,7 @@ export function SupabaseConnectionTest() {
       setTestResult((prev) => prev + 'Testing query to "leads" table...\n');
       const { data, error, count } = await supabase
         .from('leads')
-        .select('*', { count: 'exact' })
+        .select('*, id:_id', { count: 'exact' })
         .limit(5);
 
       if (error) {

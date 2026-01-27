@@ -111,7 +111,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
       // Fetch modules
       const { data: modulesData, error: modulesError } = await supabase
         .from('modules')
-        .select('*')
+        .select('*, id:_id')
         .eq('status', 1)
         .order('order_index', { ascending: true });
 
@@ -126,7 +126,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
       // Fetch permissions (only active)
       const { data: permissionsData, error: permissionsError } = await supabase
         .from('permissions')
-        .select('*')
+        .select('*, id:_id')
         .eq('status', 1)
         .order('module_id', { ascending: true })
         .order('code', { ascending: true });
@@ -246,7 +246,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
             status: formData.status,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', role.id);
+          .eq('_id', role.id);
 
         if (roleError) {
           console.error('❌ Error updating role:', roleError);

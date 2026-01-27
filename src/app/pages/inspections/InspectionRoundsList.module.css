@@ -46,6 +46,9 @@
   font-weight: var(--font-weight-medium);
   color: var(--foreground);
   line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .roundPlan {
@@ -69,6 +72,10 @@
   font-size: var(--text-sm);
   color: var(--foreground);
   line-height: 1.5;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .teamSize {
@@ -104,6 +111,10 @@
   font-size: var(--text-sm);
   color: var(--foreground);
   line-height: 1.5;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Responsive - QLTT Standard */

@@ -1,0 +1,183 @@
+.tableContainer {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.searchBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+}
+
+.searchInput {
+  flex: 1;
+  max-width: 400px;
+  padding: 8px 12px;
+  background: var(--input-background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--foreground);
+  transition: all 0.15s ease;
+}
+
+.searchInput::placeholder {
+  color: var(--muted-foreground);
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0, 92, 182, 0.1);
+}
+
+.resultCount {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--muted-foreground);
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 12px 16px;
+  background: var(--muted);
+  border-bottom: 1px solid var(--border);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.table th.sortable:hover {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.sortIcon {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-left: 4px;
+  vertical-align: middle;
+  opacity: 0.6;
+}
+
+.table th.sortable:hover .sortIcon {
+  opacity: 1;
+}
+
+.table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--foreground);
+  vertical-align: middle;
+}
+
+.table tbody tr {
+  transition: background 0.1s ease;
+}
+
+.table tbody tr:hover {
+  background: var(--muted);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.nameCell {
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.numberCell {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  min-width: 80px;
+}
+
+.numberCell strong {
+  font-weight: var(--font-weight-semibold);
+}
+
+.trendCell {
+  min-width: 200px;
+  padding-right: 20px;
+}
+
+.numberCell.positive {
+  color: #22c55e;
+  font-weight: var(--font-weight-semibold);
+}
+
+.numberCell.negative {
+  color: var(--destructive);
+  font-weight: var(--font-weight-semibold);
+}
+
+.emptyState {
+  padding: 80px 24px;
+  text-align: center;
+  color: var(--muted-foreground);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.emptyState p {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-normal);
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .searchBar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .searchInput {
+    max-width: 100%;
+  }
+
+  .resultCount {
+    text-align: center;
+  }
+}

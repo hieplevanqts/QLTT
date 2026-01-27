@@ -79,7 +79,7 @@ export const SystemAuditLogTab: React.FC = () => {
 
       const { data, error } = await supabase
         .from('audit_events')
-        .select('*')
+        .select('*, id:_id')
         .order('audit_events_timestamp', { ascending: false })
         .limit(10000); // Support up to 10000 audit events
 

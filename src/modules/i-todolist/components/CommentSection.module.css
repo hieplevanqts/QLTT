@@ -1,0 +1,142 @@
+/* ========== Comment Section ========== */
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.title {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+  margin: 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.textarea {
+  padding: var(--spacing-3);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  color: var(--foreground);
+  background: var(--background);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.textarea:focus {
+  border-color: var(--primary);
+}
+
+.textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.commentsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.comment {
+  display: flex;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3);
+  background: var(--background);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  position: relative;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  flex-shrink: 0;
+}
+
+.commentContent {
+  flex: 1;
+}
+
+.commentHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-1);
+}
+
+.author {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+}
+
+.time {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-xs);
+  color: var(--muted-foreground);
+}
+
+.text {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  color: var(--foreground);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.deleteButton {
+  position: absolute;
+  top: var(--spacing-3);
+  right: var(--spacing-3);
+  background: transparent;
+  border: none;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  padding: var(--spacing-1);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.deleteButton:hover {
+  background: var(--muted);
+  color: var(--destructive);
+}
+
+.empty {
+  padding: var(--spacing-6);
+  text-align: center;
+  color: var(--muted-foreground);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  background: var(--muted);
+  border-radius: var(--radius);
+}

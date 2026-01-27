@@ -55,12 +55,24 @@
   justify-content: space-between;
 }
 
+.titleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .title {
   font-family: 'Inter', sans-serif;
   font-size: var(--text-page-title);
   font-weight: var(--font-weight-semibold);
   color: var(--foreground);
   margin: 0;
+}
+
+.subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
 }
 
 .actions {

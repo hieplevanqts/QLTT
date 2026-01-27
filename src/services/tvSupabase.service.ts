@@ -75,7 +75,7 @@ export async function fetchTvData(filters: TvFilters) {
 
   let complaintsQuery = supabase
     .from('tv_complaints_enriched')
-    .select('*')
+    .select('*, id:_id')
     .gte('created_at', since)
     .order('created_at', { ascending: false });
   complaintsQuery = applyLocationFilter(complaintsQuery, filters, 'province_name', 'ward_name');
@@ -83,21 +83,21 @@ export async function fetchTvData(filters: TvFilters) {
 
   let hotspotQuery = supabase
     .from('tv_hotspots')
-    .select('*')
+    .select('*, id:_id')
     .order('last_complaint_at', { ascending: false });
   hotspotQuery = applyLocationFilter(hotspotQuery, filters, 'province', 'ward');
   hotspotQuery = applyTopicFilter(hotspotQuery, filters, 'category_name');
 
   let tasksQuery = supabase
     .from('tv_risk_cases')
-    .select('*')
+    .select('*, id:_id')
     .order('created_at', { ascending: false });
   tasksQuery = applyLocationFilter(tasksQuery, filters, 'province', 'ward');
   tasksQuery = applyTopicFilter(tasksQuery, filters, 'category');
 
   let evidencesQuery = supabase
     .from('tv_evidence_reviews')
-    .select('*')
+    .select('*, id:_id')
     .eq('status', 'pending')
     .order('created_at', { ascending: false });
   evidencesQuery = applyLocationFilter(evidencesQuery, filters, 'province', 'ward');

@@ -94,7 +94,7 @@ export const SystemHealthTab: React.FC = () => {
       // Fetch main metrics
       const { data: metricsData, error: metricsError } = await supabase
         .from('system_metrics')
-        .select('*')
+        .select('*, id:_id')
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
@@ -108,7 +108,7 @@ export const SystemHealthTab: React.FC = () => {
       // Fetch service health
       const { data: servicesData, error: servicesError } = await supabase
         .from('service_health')
-        .select('*')
+        .select('*, id:_id')
         .order('service_name', { ascending: true });
 
       if (servicesError && servicesError.code !== 'PGRST116') {
@@ -120,7 +120,7 @@ export const SystemHealthTab: React.FC = () => {
       // Fetch recent incidents
       const { data: incidentsData, error: incidentsError } = await supabase
         .from('system_incidents')
-        .select('*')
+        .select('*, id:_id')
         .order('incident_timestamp', { ascending: false })
         .limit(5);
 
@@ -133,7 +133,7 @@ export const SystemHealthTab: React.FC = () => {
       // Fetch metric history (last 24 hours)
       const { data: historyData, error: historyError } = await supabase
         .from('system_metrics_history')
-        .select('*')
+        .select('*, id:_id')
         .gte('timestamp', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
         .order('timestamp', { ascending: true });
 

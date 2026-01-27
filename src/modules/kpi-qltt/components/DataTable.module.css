@@ -1,0 +1,214 @@
+.tableContainer {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  box-shadow: var(--elevation-sm);
+}
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead {
+  background: var(--muted);
+  border-bottom: 2px solid var(--border);
+}
+
+.table th {
+  padding: 14px 16px;
+  text-align: left;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+  white-space: nowrap;
+}
+
+.table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.15s ease;
+}
+
+.table tbody tr:hover {
+  background: var(--muted);
+}
+
+.table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.table td {
+  padding: 14px 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  vertical-align: middle;
+}
+
+.titleCell {
+  font-weight: var(--font-weight-medium);
+  max-width: 300px;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: var(--radius);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+.statusDraft {
+  background: rgba(102, 112, 133, 0.1);
+  color: rgba(102, 112, 133, 1);
+}
+
+.statusCompleted {
+  background: rgba(15, 202, 122, 0.1);
+  color: rgba(15, 202, 122, 1);
+}
+
+.statusArchived {
+  background: rgba(208, 213, 221, 0.5);
+  color: rgba(52, 64, 84, 1);
+}
+
+.emptyState {
+  text-align: center;
+  padding: 48px 16px !important;
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.actionButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.actionButton:hover {
+  background: var(--muted);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.actionButton:active {
+  transform: scale(0.95);
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.paginationInfo {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+}
+
+.paginationControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.paginationButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--foreground);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.paginationButton:hover:not(:disabled) {
+  background: var(--muted);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.paginationButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pageNumbers {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.pageButton {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--foreground);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pageButton:hover {
+  background: var(--muted);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.pageButtonActive {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.pageButtonActive:hover {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.ellipsis {
+  padding: 0 4px;
+  color: var(--muted-foreground);
+  font-family: 'Inter', sans-serif;
+  user-select: none;
+}
