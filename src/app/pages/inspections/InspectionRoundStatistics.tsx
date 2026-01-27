@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   TrendingUp,
-  TrendingDown,
   AlertCircle,
   CheckCircle2,
   Store,
@@ -16,9 +14,10 @@ import {
   FileText,
   Target,
 } from 'lucide-react';
-import { BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { PieChart as RechartsPieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import styles from './InspectionRoundStatistics.module.css';
-import { InspectionRoundStatusBadge } from '../../components/inspections/InspectionRoundStatusBadge';
+import { StatusBadge } from '@/app/components/common/StatusBadge';
+import { getStatusProps } from '@/app/utils/status-badge-helper';
 import { toast } from 'sonner';
 
 // Mock data cho thống kê
@@ -114,10 +113,9 @@ const mockStatisticsData = {
   ],
 };
 
-const COLORS = ['#DC2626', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6'];
+
 
 export default function InspectionRoundStatistics() {
-  const { roundId } = useParams();
   const navigate = useNavigate();
   const data = mockStatisticsData;
 
@@ -162,8 +160,7 @@ export default function InspectionRoundStatistics() {
           <div className={styles.headerTitle}>
             <div className={styles.headerTitleRow}>
               <span className={styles.roundCode}>{data.roundInfo.code}</span>
-              <InspectionRoundStatusBadge type="round" value={data.roundInfo.status} size="sm" />
-              <InspectionRoundStatusBadge type="inspectionType" value={data.roundInfo.type} size="sm" />
+              <StatusBadge {...getStatusProps('round', data.roundInfo.status)} size="sm" />
             </div>
             <h1 className={styles.pageTitle}>Thống kê đợt kiểm tra</h1>
             <p className={styles.pageSubtitle}>{data.roundInfo.name}</p>

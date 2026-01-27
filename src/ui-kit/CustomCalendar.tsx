@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import styles from './CustomCalendar.module.css';
 
@@ -14,8 +14,8 @@ interface CustomCalendarProps {
   mode?: 'range' | 'single'; // New prop for selection mode
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+const MONTHS = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
+const WEEKDAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
 export default function CustomCalendar({ value, onChange, onApply, mode = 'range' }: CustomCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
@@ -170,21 +170,7 @@ export default function CustomCalendar({ value, onChange, onApply, mode = 'range
     return value.endDate === dateString;
   };
 
-  const formatDateRange = () => {
-    if (!value.startDate && !value.endDate) return '';
-    
-    const formatDate = (dateStr: string) => {
-      const date = new Date(dateStr);
-      return `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}/${date.getFullYear()}`;
-    };
 
-    if (value.startDate && value.endDate) {
-      return `${formatDate(value.startDate)} - ${formatDate(value.endDate)}`;
-    } else if (value.startDate) {
-      return formatDate(value.startDate);
-    }
-    return '';
-  };
 
   const month1Days = useMemo(() => generateCalendarDays(currentMonth, currentYear), [currentMonth, currentYear]);
   const month2Days = useMemo(() => {

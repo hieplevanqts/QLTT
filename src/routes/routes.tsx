@@ -70,12 +70,9 @@ const InspectionRoundCreate = React.lazy(() => import('../app/pages/inspections/
 const InspectionRoundStatistics = React.lazy(
   () => import('../app/pages/inspections/InspectionRoundStatistics'),
 );
-const InspectionTasksList = React.lazy(() =>
-  import('../app/pages/tasks/InspectionTasksList').then((module) => ({
-    default: module.InspectionTasksList,
-  })),
+const TaskBoard = React.lazy(() =>
+  import('../app/pages/tasks/TaskBoard').then((module) => ({ default: module.TaskBoard })),
 );
-const TaskBoard = React.lazy(() => import('../app/pages/tasks/TaskBoard'));
 
 const LeadInbox = React.lazy(() => import('../pages/lead-risk/LeadInbox'));
 const LeadRiskHome = React.lazy(() => import('../pages/lead-risk/LeadRiskHome'));
@@ -274,7 +271,7 @@ export const router = createBrowserRouter([
             path: 'plans/inspection-rounds/:roundId/tasks',
             element: (
               <PermissionProtectedRoute>
-                <InspectionTasksList />
+                <TaskBoard />
               </PermissionProtectedRoute>
             ),
           },
@@ -282,7 +279,7 @@ export const router = createBrowserRouter([
             path: 'tasks',
             element: (
               <PermissionProtectedRoute>
-                <InspectionTasksList />
+                <TaskBoard />
               </PermissionProtectedRoute>
             ),
           },

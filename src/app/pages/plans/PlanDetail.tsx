@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import styles from './PlanDetail.module.css';
 import { StatusBadge } from '@/app/components/common/StatusBadge';
+import { getStatusProps } from '@/app/utils/status-badge-helper';
 import { 
   type Plan,
 } from '@/app/data/kehoach-mock-data';
@@ -301,7 +302,7 @@ export function PlanDetail() {
       render: (round) => (
         <div>
           <div className={styles.roundCodeBadgeRow}>
-            <StatusBadge type="inspectionType" value={round.type} size="sm" />
+            <StatusBadge {...getStatusProps('inspectionType', round.type)} size="sm" />
           </div>
           <div className={styles.roundCode}>{round.code}</div>
         </div>
@@ -372,7 +373,7 @@ export function PlanDetail() {
       key: 'status',
       label: 'Trạng thái',
       width: '140px',
-      render: (round) => <StatusBadge type="round" value={round.status} size="sm" />,
+      render: (round) => <StatusBadge {...getStatusProps('round', round.status)} size="sm" />,
     },
     {
       key: 'actions',
@@ -537,7 +538,7 @@ export function PlanDetail() {
           <div className={styles.headerTitle}>
             <div className={styles.headerTitleRow}>
               <span className={styles.planId}>{plan.id}</span>
-              <StatusBadge type="plan" value={plan.status} size="sm" />
+              <StatusBadge {...getStatusProps('plan', plan.status)} size="sm" />
             </div>
             <h1 className={styles.pageTitle}>{plan.name}</h1>
           </div>
@@ -730,7 +731,7 @@ export function PlanDetail() {
                   <div className={styles.infoField}>
                     <div className={styles.infoLabel}>Ưu tiên</div>
                     <div className={styles.infoValue}>
-                      <StatusBadge type="priority" value={plan.priority} size="sm" />
+                      <StatusBadge {...getStatusProps('priority', plan.priority)} size="sm" />
                     </div>
                   </div>
 
@@ -979,7 +980,7 @@ export function PlanDetail() {
             isOpen={modalState.type === 'reject'} 
             onClose={closeModal}
             plan={modalState.plan}
-            onConfirm={async (reason: string) => {
+            onConfirm={async (_reason: string) => {
               if (modalState.plan) {
                 try {
                   await updatePlanApi(modalState.plan.id, { status: 'rejected' });
@@ -1030,7 +1031,7 @@ export function PlanDetail() {
             isOpen={modalState.type === 'pause'} 
             onClose={closeModal}
             plan={modalState.plan}
-            onConfirm={async (reason: string) => {
+            onConfirm={async (_reason: string) => {
               if (modalState.plan) {
                 try {
                   await updatePlanApi(modalState.plan.id, { status: 'paused' });
@@ -1081,7 +1082,7 @@ export function PlanDetail() {
             isOpen={modalState.type === 'resume'}
             onClose={closeModal}
             plan={modalState.plan}
-            onConfirm={async (note: string) => {
+            onConfirm={async (_note: string) => {
               if (modalState.plan) {
                 try {
                   await updatePlanApi(modalState.plan.id, { status: 'active' });
@@ -1098,7 +1099,7 @@ export function PlanDetail() {
             isOpen={modalState.type === 'cancel'}
             onClose={closeModal}
             plan={modalState.plan}
-            onConfirm={async (reason: string) => {
+            onConfirm={async (_reason: string) => {
               if (modalState.plan) {
                 try {
                   await updatePlanApi(modalState.plan.id, { status: 'cancelled' });
@@ -1121,10 +1122,10 @@ export function PlanDetail() {
             isOpen={roundModalState.type === 'sendRoundApproval'}
             onClose={closeRoundModal}
             round={roundModalState.round}
-            onConfirm={async (note: string) => {
+            onConfirm={async () => {
               if (roundModalState.round) {
                 try {
-                  await updatePlanRoundStatus(roundModalState.round.id, 'pending_approval', note);
+                  await updatePlanRoundStatus(roundModalState.round.id, 'pending_approval');
                   toast.success(`Đã gửi duyệt đợt kiểm tra "${roundModalState.round.name}"`);
                   closeRoundModal();
                 } catch (err) {
@@ -1137,11 +1138,11 @@ export function PlanDetail() {
             isOpen={roundModalState.type === 'startRoundInspection'}
             onClose={closeRoundModal}
             round={roundModalState.round}
-            onConfirm={async (note: string) => {
+            onConfirm={async () => {
               if (roundModalState.round) {
                 try {
                   const newStatus = roundModalState.round.status === 'pending_approval' ? 'approved' : 'in_progress';
-                  await updatePlanRoundStatus(roundModalState.round.id, newStatus, note);
+                  await updatePlanRoundStatus(roundModalState.round.id, newStatus);
                   toast.success(`Thêm tác thành công cho "${roundModalState.round.name}"`);
                   closeRoundModal();
                 } catch (err) {
@@ -1170,10 +1171,10 @@ export function PlanDetail() {
             isOpen={roundModalState.type === 'cancelRound'}
             onClose={closeRoundModal}
             round={roundModalState.round}
-            onConfirm={async (reason: string) => {
+            onConfirm={async () => {
               if (roundModalState.round) {
                 try {
-                  await updatePlanRoundStatus(roundModalState.round.id, 'cancelled', reason);
+                  await updatePlanRoundStatus(roundModalState.round.id, 'cancelled');
                   toast.success(`Đã hủy đợt kiểm tra "${roundModalState.round.name}"`);
                   closeRoundModal();
                 } catch (err) {
@@ -1201,10 +1202,10 @@ export function PlanDetail() {
             isOpen={roundModalState.type === 'rejectRound'}
             onClose={closeRoundModal}
             round={roundModalState.round}
-            onConfirm={async (reason: string) => {
+            onConfirm={async () => {
               if (roundModalState.round) {
                 try {
-                  await updatePlanRoundStatus(roundModalState.round.id, 'rejected', reason);
+                  await updatePlanRoundStatus(roundModalState.round.id, 'rejected');
                   toast.success(`Đã từ chối duyệt đợt kiểm tra "${roundModalState.round.name}"`);
                   closeRoundModal();
                 } catch (err) {

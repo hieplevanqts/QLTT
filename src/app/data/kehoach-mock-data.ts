@@ -3,7 +3,7 @@
 export type PlanStatus = 'draft' | 'pending_approval' | 'approved' | 'rejected' | 'active' | 'paused' | 'completed' | 'cancelled';
 export type PlanType = 'periodic' | 'thematic' | 'urgent';
 export type TargetType = 'STORE' | 'LEAD' | 'RISK_ZONE' | 'POINT';
-export type Priority = 'low' | 'medium' | 'high' | 'critical';
+export type Priority = 'low' | 'medium' | 'high' | 'critical' | 'urgent';
 export type TaskStatus = 'not_started' | 'in_progress' | 'completed' | 'closed';
 export type SLAStatus = 'on_track' | 'at_risk' | 'overdue';
 

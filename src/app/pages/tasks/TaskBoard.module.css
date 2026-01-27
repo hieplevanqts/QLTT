@@ -347,36 +347,7 @@
   line-height: 1.5;
 }
 
-.priorityCell {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: var(--radius);
-  font-family: 'Inter', sans-serif;
-  font-size: var(--text-xs);
-  font-weight: var(--font-weight-medium);
-}
 
-.priority-urgent {
-  background: rgba(239, 68, 68, 0.1);
-  color: var(--destructive);
-}
-
-.priority-high {
-  background: rgba(251, 146, 60, 0.1);
-  color: rgba(251, 146, 60, 1);
-}
-
-.priority-medium {
-  background: rgba(59, 130, 246, 0.1);
-  color: rgba(59, 130, 246, 1);
-}
-
-.priority-low {
-  background: var(--muted);
-  color: var(--muted-foreground);
-}
 
 .overdueDateCell {
   color: var(--destructive);

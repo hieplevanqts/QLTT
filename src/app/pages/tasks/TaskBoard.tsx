@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useParams } from 'react-router-dom';
 import { 
   Filter, 
   LayoutGrid, 
@@ -12,10 +12,11 @@ import {
   Paperclip,
   RotateCcw,
   XCircle,
-  Info,
   Edit,
   Table,
-  BookOpen
+  BookOpen,
+  Eye,
+  CheckCircle
 } from 'lucide-react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -29,9 +30,10 @@ import { Button } from '../../components/ui/button';
 import { type InspectionTask, type TaskStatus } from '../../data/inspection-tasks-mock-data';
 import { mockPlans } from '../../data/kehoach-mock-data';
 import { mockInspectionRounds } from '../../data/inspection-rounds-mock-data';
-import { fetchInspectionSessionsApi } from '../../../utils/api/inspectionSessionsApi';
+import { fetchInspectionSessionsApi, updateInspectionSessionApi } from '../../../utils/api/inspectionSessionsApi';
 import { TaskCard } from '../../components/tasks/TaskCard';
-import { InspectionTaskStatusBadge } from '../../components/tasks/InspectionTaskStatusBadge';
+import { StatusBadge } from '../../components/common/StatusBadge';
+import { getStatusProps } from '../../utils/status-badge-helper';
 import DataTable, { type Column } from '../../../ui-kit/DataTable';
 import AdvancedFilterModal, { type FilterConfig } from '../../../ui-kit/AdvancedFilterModal';
 import { type InfiniteScrollSelectOption } from '../../../ui-kit/InfiniteScrollSelect';
@@ -47,11 +49,11 @@ import { Card, CardContent } from '../../components/ui/card';
 import TableFooter from '../../../ui-kit/TableFooter';
 import ReopenTaskModal from '../../components/tasks/ReopenTaskModal';
 import AttachEvidenceModal from '../../components/tasks/AttachEvidenceModal';
-import { generateForm06PDF, createForm06DataFromTask } from '@/app/utils/generateForm06PDF';
 import { Form06Modal } from '@/app/components/tasks/Form06Modal';
 import { Form10Modal } from '@/app/components/tasks/Form10Modal';
 import { Form12Modal } from '@/app/components/tasks/Form12Modal';
 import { Form11Modal } from '@/app/components/tasks/Form11Modal';
+import { DeployTaskModal } from '../../components/tasks/TaskActionModals';
 
 type ViewMode = 'kanban' | 'list';
 
@@ -191,6 +193,7 @@ function KanbanColumn({ column, tasks, onTaskClick, onDropTask, getTaskActions }
 
 export function TaskBoard() {
   const [searchParams] = useSearchParams();
+  const { roundId } = useParams<{ roundId: string }>();
 
   // Debug: verify component is loading
 
@@ -217,6 +220,7 @@ export function TaskBoard() {
   const [isForm10ModalOpen, setIsForm10ModalOpen] = useState(false);
   const [isForm12ModalOpen, setIsForm12ModalOpen] = useState(false);
   const [isForm11ModalOpen, setIsForm11ModalOpen] = useState(false);
+  const [isDeployModalOpen, setIsDeployModalOpen] = useState(false);
 
   // Filters
   const [searchValue, setSearchValue] = useState('');
@@ -225,6 +229,7 @@ export function TaskBoard() {
   const [roundFilter, setRoundFilter] = useState<string>('all');
   const [planFilter, setPlanFilter] = useState<string>('all');
   const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
   const [dateRangeFilter, setDateRangeFilter] = useState<DateRange>({ startDate: null, endDate: null });
 
   // Pagination for list view
@@ -240,7 +245,8 @@ export function TaskBoard() {
   const loadSessions = async () => {
     try {
       setLoading(true);
-      const data = await fetchInspectionSessionsApi();
+      const campaignId = roundId || searchParams.get('campaignId') || undefined;
+      const data = await fetchInspectionSessionsApi(campaignId);
       
       // Map InspectionSession to the expected UI format (InspectionTask compatible)
       const mappedTasks = data.map(session => ({
@@ -250,6 +256,7 @@ export function TaskBoard() {
         roundName: session.campaignName,
         planId: session.departmentId, // Using dept id as fallback if needed
         planName: '--',
+        type: session.type, // Use type directly from API
         title: session.name,
         description: session.description || '',
         targetName: session.merchantName,
@@ -278,7 +285,7 @@ export function TaskBoard() {
 
   useEffect(() => {
     loadSessions();
-  }, []);
+  }, [roundId, searchParams.get('campaignId')]);
 
   // Initialize filter from URL query params
   useEffect(() => {
@@ -349,6 +356,7 @@ export function TaskBoard() {
       const matchesRound = roundFilter === 'all' || task.roundId === roundFilter;
       const matchesPlan = planFilter === 'all' || task.planId === planFilter;
       const matchesAssignee = assigneeFilter === 'all' || task.assignee?.name === assigneeFilter;
+      const matchesType = typeFilter === 'all' || task.type === typeFilter;
 
       // Date range filter
       let matchesDateRange = true;
@@ -368,9 +376,9 @@ export function TaskBoard() {
         }
       }
 
-      return matchesSearch && matchesStatus && matchesPriority && matchesRound && matchesPlan && matchesAssignee && matchesDateRange;
+      return matchesSearch && matchesStatus && matchesPriority && matchesRound && matchesPlan && matchesAssignee && matchesType && matchesDateRange;
     });
-  }, [tasks, searchValue, statusFilter, priorityFilter, roundFilter, planFilter, assigneeFilter, dateRangeFilter]);
+  }, [tasks, searchValue, statusFilter, priorityFilter, roundFilter, planFilter, assigneeFilter, typeFilter, dateRangeFilter]);
 
   // Group tasks by status for Kanban
   const tasksByStatus = useMemo(() => {
@@ -413,7 +421,8 @@ export function TaskBoard() {
     toast.success('Đang xuất dữ liệu...');
   };
 
-  const handleStatusChange = (taskId: string, newStatus: TaskStatus) => {
+  const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
+    // Optimistic update
     setTasks(prevTasks => 
       prevTasks.map(task => 
         task.id === taskId 
@@ -421,15 +430,32 @@ export function TaskBoard() {
           : task
       )
     );
-    
+
     // Update selected task to trigger re-render in modal
     setSelectedTask(prevTask => 
       prevTask && prevTask.id === taskId 
         ? { ...prevTask, status: newStatus }
         : prevTask
     );
-    
-    toast.success(`Đã cập nhật trạng thái phiên làm việc thành công`);
+
+    try {
+      // Convert string status to numeric code for database
+      const statusMap: Record<string, number> = {
+        'not_started': 1,
+        'in_progress': 2,
+        'completed': 3,
+        'closed': 4,
+        'cancelled': 5
+      };
+
+      const numericStatus = statusMap[newStatus] || 1;
+      
+      await updateInspectionSessionApi(taskId, { status: numericStatus });
+      toast.success(`Đã cập nhật trạng thái phiên làm việc thành công`);
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      toast.error('Không thể cập nhật trạng thái vào cơ sở dữ liệu');
+    }
   };
 
   const clearFilters = () => {
@@ -439,6 +465,7 @@ export function TaskBoard() {
     setRoundFilter('all');
     setPlanFilter('all');
     setAssigneeFilter('all');
+    setTypeFilter('all');
     setDateRangeFilter({ startDate: null, endDate: null });
   };
 
@@ -450,13 +477,24 @@ export function TaskBoard() {
       roundFilter !== 'all' || 
       planFilter !== 'all' || 
       assigneeFilter !== 'all' || 
+      typeFilter !== 'all' ||
       dateRangeFilter.startDate || 
       dateRangeFilter.endDate
     );
-  }, [searchValue, statusFilter, priorityFilter, roundFilter, planFilter, assigneeFilter, dateRangeFilter]);
+  }, [searchValue, statusFilter, priorityFilter, roundFilter, planFilter, assigneeFilter, typeFilter, dateRangeFilter]);
 
   // Advanced filter configuration - using correct AdvancedFilterModal format
   const filterConfigs: FilterConfig[] = [
+    {
+      key: 'type',
+      label: 'Loại phiên',
+      type: 'select',
+      options: [
+        { value: 'all', label: 'Tất cả loại' },
+        { value: 'passive', label: 'Nguồn tin (Passive)' },
+        { value: 'proactive', label: 'Kế hoạch (Proactive)' },
+      ],
+    },
     {
       key: 'status',
       label: 'Trạng thái',
@@ -521,6 +559,7 @@ export function TaskBoard() {
     round: roundFilter,
     plan: planFilter,
     assignee: assigneeFilter,
+    type: typeFilter,
     dateRange: dateRangeFilter,
   };
 
@@ -531,6 +570,7 @@ export function TaskBoard() {
     setRoundFilter(values.round || 'all');
     setPlanFilter(values.plan || 'all');
     setAssigneeFilter(values.assignee || 'all');
+    setTypeFilter(values.type || 'all');
     setDateRangeFilter(values.dateRange || { startDate: null, endDate: null });
   };
 
@@ -570,16 +610,12 @@ export function TaskBoard() {
     
     const statusLabel = STATUS_COLUMNS.find(c => c.key === newStatus)?.label || newStatus;
     
-    // Update task status
-    const taskIndex = tasks.findIndex(t => t.id === taskId);
-    if (taskIndex !== -1) {
-      const updatedTasks = [...tasks];
-      updatedTasks[taskIndex].status = newStatus;
-      setTasks(updatedTasks);
-      toast.success(`Đã chuyển \"${task?.title}\" sang \"${statusLabel}\"`, {
-        duration: 2000,
-      });
-    }
+    // Call centralized handler to update both state and database
+    handleStatusChange(taskId, newStatus);
+    
+    toast.success(`Đã chuyển "${task?.title}" sang "${statusLabel}"`, {
+      duration: 2000,
+    });
   };
 
   // Auto-filter by inspectionRound query parameter
@@ -611,6 +647,7 @@ export function TaskBoard() {
       roundName: 'Tên đợt kiểm tra', // In production, look up from round list
       planId: formData.planId,
       planName: formData.planId ? 'Tên kế hoạch' : undefined,
+      type: formData.planId ? 'passive' : 'proactive',
       title: formData.title,
       description: formData.description,
       targetName: formData.targetName,
@@ -656,7 +693,6 @@ export function TaskBoard() {
       status: formData.status,
       priority: formData.priority,
       dueDate: formData.dueDate,
-      startDate: formData.startDate || new Date().toISOString(),
     };
 
     const updatedTasks = [...tasks];
@@ -667,8 +703,17 @@ export function TaskBoard() {
 
   // Action handlers for task actions
   const handleStartTask = (task: InspectionTask) => {
-    handleStatusChange(task.id, 'in_progress');
-    toast.success(`Đã bắt đầu phiên làm việc "${task.title}"`);
+    setActionTask(task);
+    setIsDeployModalOpen(true);
+  };
+
+  const handleConfirmStartTask = (startDate: string) => {
+    if (actionTask) {
+      handleStatusChange(actionTask.id, 'in_progress');
+      // In a real app, we would also update the startDate of the task here
+      setIsDeployModalOpen(false);
+      setActionTask(null);
+    }
   };
 
   const handleEnterResults = (task: InspectionTask) => {
@@ -691,6 +736,11 @@ export function TaskBoard() {
     toast.success(`Đã đóng phiên làm việc \"${task.title}\"`);
   };
 
+  const handleCompleteTask = (task: InspectionTask) => {
+    handleStatusChange(task.id, 'completed');
+    toast.success(`Đã hoàn thành phiên làm việc \"${task.title}\"`);
+  };
+
   // Handle edit task button click
   const handleEditTaskClick = (task: InspectionTask) => {
     setSelectedTask(task);
@@ -708,7 +758,7 @@ export function TaskBoard() {
         actions.push(
           {
             label: 'Xem chi tiết',
-            icon: <Info size={16} />,
+            icon: <Eye size={16} />,
             onClick: () => handleTaskClick(task),
             priority: 10,
           },
@@ -732,9 +782,9 @@ export function TaskBoard() {
         actions.push(
           {
             label: 'Xem chi tiết',
-            icon: <Info size={16} />,
+            icon: <Eye size={16} />,
             onClick: () => handleTaskClick(task),
-            priority: 10,
+            priority: 11,
           },
           {
             label: 'Chỉnh sửa',
@@ -753,6 +803,12 @@ export function TaskBoard() {
             icon: <Paperclip size={16} />,
             onClick: () => handleAttachEvidence(task),
             priority: 7,
+          },
+          {
+            label: 'Hoàn thành',
+            icon: <CheckCircle size={16} />,
+            onClick: () => handleCompleteTask(task),
+            priority: 10,
           }
         );
         break;
@@ -762,7 +818,7 @@ export function TaskBoard() {
         actions.push(
           {
             label: 'Xem chi tiết',
-            icon: <Info size={16} />,
+            icon: <Eye size={16} />,
             onClick: () => handleTaskClick(task),
             priority: 10,
           },
@@ -819,7 +875,7 @@ export function TaskBoard() {
         actions.push(
           {
             label: 'Xem chi tiết',
-            icon: <Info size={16} />,
+            icon: <Eye size={16} />,
             onClick: () => handleTaskClick(task),
             priority: 10,
           },
@@ -857,7 +913,7 @@ export function TaskBoard() {
         actions.push(
           {
             label: 'Xem chi tiết',
-            icon: <Info size={16} />,
+            icon: <Eye size={16} />,
             onClick: () => handleTaskClick(task),
             priority: 10,
           }
@@ -903,27 +959,19 @@ export function TaskBoard() {
       key: 'status',
       label: 'Trạng thái',
       sortable: true,
-      render: (task) => task?.status ? <InspectionTaskStatusBadge type="status" value={task.status} /> : <span>-</span>,
+      render: (task) => task?.status ? <StatusBadge {...getStatusProps('task', task.status)} size="sm" /> : <span>-</span>,
+    },
+    {
+      key: 'type',
+      label: 'Loại',
+      sortable: true,
+      render: (task) => task?.type ? <StatusBadge {...getStatusProps('sessionType', task.type)} size="sm" /> : <span>--</span>,
     },
     {
       key: 'priority',
       label: 'Ưu tiên',
       sortable: true,
-      render: (task) => {
-        if (!task?.priority) return <span>-</span>;
-        const priorityMap = {
-          urgent: { icon: '🔴', label: 'Khẩn cấp', class: 'urgent' },
-          high: { icon: '🟠', label: 'Cao', class: 'high' },
-          medium: { icon: '🟡', label: 'Trung bình', class: 'medium' },
-          low: { icon: '⚪', label: 'Thấp', class: 'low' },
-        };
-        const p = priorityMap[task.priority];
-        return (
-          <span className={`${styles.priorityCell} ${styles[`priority-${p.class}`]}`}>
-            {p.icon} {p.label}
-          </span>
-        );
-      },
+      render: (task) => task?.priority ? <StatusBadge {...getStatusProps('priority', task.priority)} size="sm" /> : <span>-</span>,
     },
     {
       key: 'assignee',
@@ -953,7 +1001,7 @@ export function TaskBoard() {
       label: 'Thao tác',
       sortable: false,
       sticky: 'right',
-      width: '120px',
+      width: '170px',
       render: (task) => (
         <ActionColumn actions={getTaskActions(task)} />
       ),
@@ -1014,13 +1062,15 @@ export function TaskBoard() {
         <FilterActionBar
           filters={
             <>
-              <SearchInput
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                placeholder="Tìm kiếm phiên làm việc..."
-                style={{ width: '280px' }}
-              />
-              
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setIsFilterModalOpen(true)}
+              >
+                <Filter size={16} />
+                Bộ lọc
+              </Button>
+
               {/* Kế hoạch kiểm tra filter */}
               <Select value={planFilter} onValueChange={setPlanFilter}>
                 <SelectTrigger style={{ width: '240px' }}>
@@ -1051,14 +1101,12 @@ export function TaskBoard() {
                 </SelectContent>
               </Select>
 
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setIsFilterModalOpen(true)}
-              >
-                <Filter size={16} />
-                Bộ lọc khác
-              </Button>
+              <SearchInput
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                placeholder="Tìm kiếm phiên làm việc..."
+                style={{ width: '280px' }}
+              />
             </>
           }
         />
@@ -1196,6 +1244,7 @@ export function TaskBoard() {
         onClose={() => setIsDetailModalOpen(false)}
         onStatusChange={handleStatusChange}
         onEdit={handleEditTaskClick}
+        onCompleteTask={handleCompleteTask}
       />
 
       {/* Advanced Filter Modal */}
@@ -1234,11 +1283,10 @@ export function TaskBoard() {
         onClose={() => setIsReopenModalOpen(false)}
         taskTitle={actionTask?.title || ''}
         taskId={actionTask?.id || ''}
-        onReopen={(reason) => {
+        onReopen={() => {
           if (actionTask) {
             const updatedTask = {
               ...actionTask,
-              reopenReason: reason,
               reopenedAt: new Date().toISOString(),
               reopenedBy: { id: 'current-user', name: 'Người dùng hiện tại' },
             };
@@ -1254,8 +1302,8 @@ export function TaskBoard() {
         onClose={() => setIsAttachEvidenceModalOpen(false)}
         taskTitle={actionTask?.title || ''}
         taskId={actionTask?.id || ''}
-        onSubmit={(files) => {
-          toast.success(`Đã đính kèm ${files.length} file chứng cứ`);
+        onSubmit={() => {
+          toast.success(`Đã đính kèm file chứng cứ`);
         }}
       />
 
@@ -1280,6 +1328,16 @@ export function TaskBoard() {
         open={isForm11ModalOpen}
         onOpenChange={setIsForm11ModalOpen}
         task={actionTask || undefined}
+      />
+
+      <DeployTaskModal
+        isOpen={isDeployModalOpen}
+        onClose={() => {
+          setIsDeployModalOpen(false);
+          setActionTask(null);
+        }}
+        task={actionTask}
+        onConfirm={handleConfirmStartTask}
       />
         </>
       )}

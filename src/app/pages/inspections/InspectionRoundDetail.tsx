@@ -22,7 +22,8 @@ import {
 } from 'lucide-react';
 
 import styles from './InspectionRoundDetail.module.css';
-import { InspectionRoundStatusBadge } from '../../components/inspections/InspectionRoundStatusBadge';
+import { StatusBadge } from '../../components/common/StatusBadge';
+import { getStatusProps } from '../../utils/status-badge-helper';
 import { CreateSessionDialog } from '../../components/inspections/CreateSessionDialog';
 import { InsFormDetailDialog } from '../../components/inspections/InsFormDetailDialog';
 import TaskDetailModal from '../../components/tasks/TaskDetailModal';
@@ -413,8 +414,8 @@ export default function InspectionRoundDetail() {
           <div className={styles.headerTitle}>
             <div className={styles.headerTitleRow}>
               <span className={styles.roundId}>{data.code}</span>
-              <InspectionRoundStatusBadge type="round" value={data.status} size="sm" />
-              <InspectionRoundStatusBadge type="inspectionType" value={data.type} size="sm" />
+              <StatusBadge {...getStatusProps('round', data.status)} />
+            <StatusBadge {...getStatusProps('inspectionType', data.type)} />
             </div>
             <h1 className={styles.pageTitle}>{data.name}</h1>
             <p className={styles.pageSubtitle}>
@@ -537,7 +538,7 @@ export default function InspectionRoundDetail() {
                   <div className={styles.infoLabel}>Loại kiểm tra</div>
                   <div className={styles.infoValue}>
                     <ClipboardCheck size={16} className={styles.infoIcon} />
-                    <InspectionRoundStatusBadge type="inspectionType" value={data.type} size="sm" />
+                    <StatusBadge {...getStatusProps('inspectionType', data.type)} size="sm" />
                   </div>
                 </div>
 
@@ -710,7 +711,7 @@ export default function InspectionRoundDetail() {
                         </div>
                       </td>
                       <td>
-                        <InspectionRoundStatusBadge type="round" value={session.status as any} size="sm" />
+                        <StatusBadge {...getStatusProps('round', session.status as any)} size="sm" />
                       </td>
                       <td className={styles.textCenter}>
                         {session.violationCount > 0 ? (

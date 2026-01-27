@@ -43,6 +43,7 @@ import FilterActionBar from '../../../patterns/FilterActionBar';
 import ActionColumn, { Action } from '../../../patterns/ActionColumn';
 import TableFooter from '../../../ui-kit/TableFooter';
 import { StatusBadge } from '../../components/common/StatusBadge';
+import { getStatusProps } from '../../utils/status-badge-helper';
 import { type Plan, type PlanType } from '../../data/kehoach-mock-data';
 import styles from './PlansList.module.css';
 import {
@@ -347,7 +348,7 @@ export function PlansList() {
       render: (plan) => (
         <div>
           <div className={styles.planIdBadgeRow}>
-            <StatusBadge type="planType" value={plan.planType} size="sm" />
+            <StatusBadge {...getStatusProps('planType', plan.planType)} size="sm" />
           </div>
           <div className={styles.planId}>{plan.code || '--'}</div>
         </div>
@@ -406,13 +407,13 @@ export function PlansList() {
       label: 'Ưu tiên',
       sortable: true,
       width: '130px',
-      render: (plan) => <StatusBadge type="priority" value={plan.priority} size="sm" />,
+      render: (plan) => <StatusBadge {...getStatusProps('priority', plan.priority)} size="sm" />,
     },
     {
       key: 'status',
       label: 'Trạng thái',
       width: '150px',
-      render: (plan) => <StatusBadge type="plan" value={plan.status} size="sm" />,
+      render: (plan) => <StatusBadge {...getStatusProps('plan', plan.status)} size="sm" />,
     },
     {
       key: 'creator',
