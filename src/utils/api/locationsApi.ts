@@ -167,6 +167,46 @@ export async function fetchWardsByProvinceId(provinceId: string): Promise<WardAp
 }
 
 /**
+ * Fetch wards by province ID from Supabase wards table using axios
+ * This is a simpler version without pagination for backward compatibility
+ * For large datasets, use fetchWardsByProvinceId instead
+ */
+export async function fetchWardsByProvince(provinceId: string): Promise<WardApiData[]> {
+  try {
+    if (!provinceId || provinceId.trim() === '') {
+      console.warn('⚠️ Province ID is empty');
+      return [];
+    }
+
+    console.log('📡 Fetching wards for province ID:', provinceId);
+    
+    const response = await axios.get<WardApiData[]>(
+      `${SUPABASE_REST_URL}/wards`,
+      {
+        params: {
+          select: '_id,code,name,province_id',
+          province_id: `eq.${provinceId.trim()}`,
+          order: 'code.asc',
+          limit: 10000
+        },
+        headers: getHeaders()
+      }
+    );
+
+    const data = response.data || [];
+    console.log('✅ Wards fetched for province ID:', provinceId, '-', data.length, 'wards');
+    
+    return data || [];
+  } catch (error: any) {
+    console.error(`❌ Error fetching wards for province ${provinceId}:`, error);
+    if (error.response) {
+      console.error(`Failed to fetch wards: ${error.response.status} - ${error.response.data?.message || error.response.statusText}`);
+    }
+    return [];
+  }
+}
+
+/**
  * Fetch wards by province code from Supabase wards table using axios
  */
 export async function fetchWardsByProvinceCode(provinceCode: string): Promise<WardApiData[]> {
@@ -200,6 +240,88 @@ export async function fetchWardsByProvinceCode(provinceCode: string): Promise<Wa
       throw new Error(`Failed to fetch wards: ${error.response.status} - ${error.response.data?.message || error.response.statusText}`);
     }
     throw new Error(`Failed to fetch wards: ${error.message}`);
+  }
+}
+
+/**
+ * Fetch province by ID from Supabase provinces table using axios
+ */
+export async function fetchProvinceById(provinceId: string): Promise<ProvinceApiData | null> {
+  try {
+    if (!provinceId || provinceId.trim() === '') {
+      console.warn('⚠️ Province ID is empty');
+      return null;
+    }
+
+    console.log('📡 Fetching province by ID:', provinceId);
+    
+    const response = await axios.get<ProvinceApiData[]>(
+      `${SUPABASE_REST_URL}/provinces`,
+      {
+        params: {
+          select: '_id,code,name',
+          _id: `eq.${provinceId.trim()}`,
+          limit: 1
+        },
+        headers: getHeaders()
+      }
+    );
+
+    const data = response.data || [];
+    if (data && data.length > 0) {
+      console.log('✅ Province found:', data[0].name);
+      return data[0];
+    }
+    
+    console.warn('⚠️ Province not found with ID:', provinceId);
+    return null;
+  } catch (error: any) {
+    console.error(`❌ Error fetching province ${provinceId}:`, error);
+    if (error.response) {
+      console.error(`Failed to fetch province: ${error.response.status} - ${error.response.data?.message || error.response.statusText}`);
+    }
+    return null;
+  }
+}
+
+/**
+ * Fetch ward by ID from Supabase wards table using axios
+ */
+export async function fetchWardById(wardId: string): Promise<WardApiData | null> {
+  try {
+    if (!wardId || wardId.trim() === '') {
+      console.warn('⚠️ Ward ID is empty');
+      return null;
+    }
+
+    console.log('📡 Fetching ward by ID:', wardId);
+    
+    const response = await axios.get<WardApiData[]>(
+      `${SUPABASE_REST_URL}/wards`,
+      {
+        params: {
+          select: '_id,code,name,province_id',
+          _id: `eq.${wardId.trim()}`,
+          limit: 1
+        },
+        headers: getHeaders()
+      }
+    );
+
+    const data = response.data || [];
+    if (data && data.length > 0) {
+      console.log('✅ Ward found:', data[0].name);
+      return data[0];
+    }
+    
+    console.warn('⚠️ Ward not found with ID:', wardId);
+    return null;
+  } catch (error: any) {
+    console.error(`❌ Error fetching ward ${wardId}:`, error);
+    if (error.response) {
+      console.error(`Failed to fetch ward: ${error.response.status} - ${error.response.data?.message || error.response.statusText}`);
+    }
+    return null;
   }
 }
 
