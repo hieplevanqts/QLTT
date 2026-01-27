@@ -53,8 +53,6 @@ axiosInstance.interceptors.response.use(
         const expired = await isTokenExpired(0);
         
         if (expired) {
-          console.log('🔒 AxiosInterceptor: Token expired, logging out and redirecting...');
-          
           // Prevent multiple logout calls
           if (!originalRequest._retry) {
             originalRequest._retry = true;
