@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - QA-main
   workflow_call:
     secrets:
       REGISTRY_URL:
