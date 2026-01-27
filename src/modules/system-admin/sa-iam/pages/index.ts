@@ -9,5 +9,6 @@ export { default as PermissionsPage } from './PermissionsPage';
 export { default as AssignmentsPage } from './AssignmentsPage';
 export { default as UserAssignmentsPage } from './UserAssignmentsPage';
 export { default as RoleAssignmentsPage } from './RoleAssignmentsPage';
+export { default as RolePermissionsPage } from './RolePermissionsPage';
 export { default as ModulesPage } from './ModulesPage';
 export { default as MenusPage } from './MenusPage';
