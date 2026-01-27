@@ -505,7 +505,7 @@ export const UserModal: React.FC<UserModalProps> = ({
           const { error: updateError } = await supabase
             .from('users')
             .update(userData)
-            .eq('_id', user._id);
+            .eq('_id', user.id);
 
           if (updateError) {
             console.error('❌ Error updating user:', updateError);

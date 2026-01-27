@@ -266,9 +266,25 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
   // 🔥 NEW: Get user permission codes
   const userPermissionCodes = user?.permissions || [];
   
+  // 🔥 DEBUG: Log permissions and menu data
+  React.useEffect(() => {
+    console.log('🔍 HorizontalNavBar - Debug Menu & Permissions:', {
+      userPermissions: userPermissionCodes,
+      userRoleCode: user?.roleCode,
+      menusCount: menus?.length || 0,
+    });
+  }, [userPermissionCodes, user?.roleCode, menus]);
+  
   // 🔥 NEW: Helper function to check if user has permission for a menu item
   const hasPermission = (permissionCode: string | undefined): boolean => {
     if (!permissionCode || permissionCode === '') return true; // No permission required = always visible
+    
+    // 🔥 FIX: If user has no permissions at all, show all menus (fallback for development/testing)
+    if (userPermissionCodes.length === 0) {
+      console.warn('⚠️ User has no permissions - showing all menus (fallback mode)');
+      return true; // Show all menus if user has no permissions
+    }
+    
     return userPermissionCodes.includes(permissionCode);
   };
   const isPathActive = React.useCallback(
@@ -290,13 +306,38 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
 
   const registryTree = React.useMemo(() => (menus ? buildMenuTree(menus) : []), [menus]);
   const filteredRegistryTree = React.useMemo(
-    () => filterMenuTree(registryTree, userPermissionCodes, user?.roleCode),
+    () => {
+      const filtered = filterMenuTree(registryTree, userPermissionCodes, user?.roleCode);
+      console.log('🔍 HorizontalNavBar - Filtered Registry Tree:', {
+        originalCount: registryTree.length,
+        filteredCount: filtered.length,
+        userPermissions: userPermissionCodes,
+        userRoleCode: user?.roleCode,
+      });
+      return filtered;
+    },
     [registryTree, userPermissionCodes, user?.roleCode],
   );
   const registryModules = React.useMemo(() => menuTreeToModules(filteredRegistryTree), [filteredRegistryTree]);
-  const visibleModules = registryModules.length > 0
-    ? registryModules
-    : mappaModules.filter(module => hasPermission(module.permissionCode));
+  
+  // 🔥 FIX: Merge registry modules with mappa modules to ensure all menus are displayed
+  const mappaModulesFiltered = mappaModules.filter(module => hasPermission(module.permissionCode));
+  const registryPaths = new Set(registryModules.map(m => m.path));
+  const additionalMappaModules = mappaModulesFiltered.filter(m => !registryPaths.has(m.path));
+  const visibleModules = React.useMemo(() => {
+    const merged = [...registryModules, ...additionalMappaModules].sort((a, b) => {
+      const aOrder = mappaModules.find(m => m.path === a.path)?.order ?? 999;
+      const bOrder = mappaModules.find(m => m.path === b.path)?.order ?? 999;
+      return aOrder - bOrder;
+    });
+    console.log('🔍 HorizontalNavBar - Visible Modules:', {
+      registryModulesCount: registryModules.length,
+      additionalMappaModulesCount: additionalMappaModules.length,
+      totalVisible: merged.length,
+      visiblePaths: merged.map(m => m.path),
+    });
+    return merged;
+  }, [registryModules, additionalMappaModules]);
 
   // Mock permissions - In real app, this would come from user context/auth
   const userPermissions = {

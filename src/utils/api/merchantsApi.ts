@@ -3,6 +3,7 @@
 
 import { Restaurant } from '../../data/restaurantData';
 import { SUPABASE_REST_URL, getHeaders } from './config';
+import axios from 'axios';
 
 
 /**
@@ -241,5 +242,177 @@ export async function fetchMerchantStats(
     console.error('❌ Error fetching merchant stats (background):', error);
     // Return default stats on error (don't throw - background call)
     return { total: 0, certified: 0, hotspot: 0 };
+  }
+}
+
+/**
+ * 📋 Fetch merchant inspection results (giấy tờ kiểm tra)
+ * Calls RPC function: get_merchant_inspection_results
+ * 
+ * @param merchantId - Merchant ID (UUID)
+ * @returns Array of inspection results with document statuses
+ */
+export interface MerchantInspectionResult {
+  _id: string; // result_id từ API
+  document_type_id: string; // inspection_item (dùng làm key)
+  document_type_name: string; // inspection_item
+  status: 'passed' | 'failed' | 'pending';
+  inspection_date?: string;
+  notes?: string;
+}
+
+export async function fetchMerchantInspectionResults(
+  merchantId: string
+): Promise<MerchantInspectionResult[]> {
+  try {
+    if (!merchantId) {
+      console.warn('⚠️ MerchantsAPI: Invalid merchantId for RPC call');
+      return [];
+    }
+
+    const rpcUrl = `${SUPABASE_REST_URL}/rpc/get_merchant_inspection_results`;
+    const requestBody = { merchant_id: merchantId };
+
+    console.log('📤 MerchantsAPI: Calling RPC', { rpcUrl, requestBody });
+
+    const response = await axios.post(rpcUrl, requestBody, {
+      headers: getHeaders()
+    });
+
+    console.log('📥 MerchantsAPI: Response received', { 
+      status: response.status, 
+      statusText: response.statusText,
+      hasData: !!response.data 
+    });
+
+    const data = response.data;
+
+    console.log('📦 MerchantsAPI: Raw RPC response data:', {
+      isArray: Array.isArray(data),
+      length: Array.isArray(data) ? data.length : 'N/A',
+      firstItem: Array.isArray(data) && data.length > 0 ? data[0] : null,
+      fullData: data
+    });
+
+    if (!data || !Array.isArray(data)) {
+      console.warn('⚠️ MerchantsAPI: RPC returned invalid data:', data);
+      return [];
+    }
+
+    const mapped = data.map((item: any) => {
+      // 🔥 Map check_status từ string ("0"/"1"/"2") sang DocumentStatus
+      let status: 'passed' | 'failed' | 'pending' = 'pending';
+      const statusValue = item.check_status || item.status || item.document_status;
+      
+      if (typeof statusValue === 'string') {
+        // API trả về string: "0" = failed, "1" = passed, "2" = pending
+        const statusNum = parseInt(statusValue, 10);
+        if (statusNum === 0) status = 'failed';
+        else if (statusNum === 1) status = 'passed';
+        else if (statusNum === 2) status = 'pending';
+      } else if (typeof statusValue === 'number') {
+        // API trả về số: 0 = failed, 1 = passed, 2 = pending
+        if (statusValue === 0) status = 'failed';
+        else if (statusValue === 1) status = 'passed';
+        else if (statusValue === 2) status = 'pending';
+      }
+
+      // 🔥 Map từ API response format thực tế:
+      // - result_id → _id
+      // - inspection_item → document_type_id và document_type_name (dùng làm key)
+      // - check_status → status
+      const inspectionItem = item.inspection_item || '';
+      const mappedItem = {
+        _id: item.result_id || item._id || item.id || '',
+        document_type_id: inspectionItem, // Dùng inspection_item làm key
+        document_type_name: inspectionItem, // Dùng inspection_item làm tên hiển thị
+        status: status,
+        inspection_date: item.inspection_date || item.inspectionDate,
+        notes: item.note || item.notes || item.notes_text || '',
+      };
+      console.log('🔍 Mapping item:', { 
+        original: item, 
+        mapped: mappedItem,
+        statusValue,
+        statusType: typeof statusValue,
+        check_status: item.check_status
+      });
+      return mappedItem;
+    });
+
+    console.log('✅ MerchantsAPI: Mapped results:', mapped);
+    return mapped;
+
+  } catch (error: any) {
+    console.error('❌ MerchantsAPI: Failed to fetch merchant inspection results:', error);
+    if (error.response) {
+      console.error('Response status:', error.response.status);
+      console.error('Response data:', error.response.data);
+    }
+    return [];
+  }
+}
+
+/**
+ * 📝 Update inspection checklist result status
+ * Updates status in map_inspection_checklist_results table
+ * 
+ * @param resultId - _id of the checklist result record
+ * @param status - Status value: 0 (failed), 1 (passed), 2 (pending)
+ * @returns Success status
+ */
+export async function updateInspectionChecklistResultStatus(
+  resultId: string,
+  status: 0 | 1 | 2
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (!resultId) {
+      console.warn('⚠️ MerchantsAPI: Invalid result ID');
+      return { success: false, error: 'Invalid result ID' };
+    }
+
+    const url = `${SUPABASE_REST_URL}/map_inspection_checklist_results?_id=eq.${resultId}`;
+    
+    // 🔥 Đảm bảo status là số (int), không phải string
+    const statusNumber = typeof status === 'string' 
+      ? (status === 'passed' ? 1 : status === 'failed' ? 0 : 2)
+      : Number(status);
+    
+    const requestBody = { status: statusNumber };
+
+    console.log('📤 MerchantsAPI: Sending PATCH request', { 
+      url, 
+      requestBody, 
+      resultId, 
+      status,
+      statusType: typeof statusNumber,
+      statusNumber 
+    });
+
+    const response = await axios.patch(url, requestBody, {
+      headers: getHeaders()
+    });
+
+    console.log('📦 MerchantsAPI: Response received', { 
+      status: response.status, 
+      statusText: response.statusText,
+      data: response.data 
+    });
+
+    if (response.status === 200 || response.status === 204) {
+      console.log('✅ MerchantsAPI: Update successful');
+      return { success: true };
+    }
+
+    console.warn('⚠️ MerchantsAPI: Unexpected status', response.status);
+    return { success: false, error: `Unexpected status: ${response.status}` };
+  } catch (error: any) {
+    console.error('❌ MerchantsAPI: Failed to update inspection result status:', error);
+    if (error.response) {
+      console.error('Response status:', error.response.status);
+      console.error('Response data:', error.response.data);
+      return { success: false, error: error.response.data?.message || 'Update failed' };
+    }
+    return { success: false, error: error.message || 'Unknown error' };
   }
 }

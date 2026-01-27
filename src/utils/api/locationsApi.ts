@@ -92,17 +92,6 @@ export async function fetchAllWards(): Promise<WardApiData[]> {
 
       const data = response.data || [];
 
-      // 🔥 DEBUG: Log field names in first ward
-      if (data && data.length > 0 && page === 0) {
-        console.log({
-          keys: Object.keys(data[0]),
-          provinceId: (data[0] as any).provinceId,
-          province_id: (data[0] as any).province_id,
-          provinceid: (data[0] as any).provinceid,
-          fullObject: data[0],
-        });
-      }
-
       if (!data || data.length === 0) {
         hasMore = false;
       } else {
@@ -127,10 +116,9 @@ export async function fetchAllWards(): Promise<WardApiData[]> {
 
 /**
  * Fetch wards by province ID from Supabase wards table using axios
+ * Supports pagination for large datasets
  */
 export async function fetchWardsByProvinceId(provinceId: string): Promise<WardApiData[]> {
-  if (!provinceId) return [];
-  
   try {
     let allWards: WardApiData[] = [];
     let page = 0;
