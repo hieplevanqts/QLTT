@@ -43,6 +43,8 @@ export interface InspectionRound {
   quarter?: string;
   type: InspectionType;
   status: InspectionRoundStatus;
+  provinceId?: string;
+  wardId?: string;
   
   // Time
   startDate: string;
@@ -52,6 +54,7 @@ export interface InspectionRound {
   
   // Team
   leadUnit: string; // Đơn vị chủ trì
+  leadUnitId?: string;
   teamLeader?: string;
   team: InspectionTeamMember[];
   teamSize: number;

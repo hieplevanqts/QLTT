@@ -23,12 +23,22 @@ import axios from 'axios';
 export async function fetchMerchants(
   statusCodes?: string[],
   businessTypes?: string[],
-  departmentIds?: string[]  // 🔥 NEW: Filter by department_id
+  departmentIds?: string[],
+  provinceId?: string,
+  wardId?: string
 ): Promise<Restaurant[]> {
 
   try {
     // Build query - simple select without nested joins
     let url = `${SUPABASE_REST_URL}/merchants?limit=1000&order=created_at.desc&select=*`;
+    
+    if (provinceId) {
+      url += `&province_id=eq.${provinceId}`;
+    }
+    
+    if (wardId) {
+      url += `&ward_id=eq.${wardId}`;
+    }
     
     // 🔥 Filter by status if provided (direct field filter)
     // status field: 'active', 'pending', 'suspended', 'rejected'
@@ -50,6 +60,8 @@ export async function fetchMerchants(
     }
     
 
+    console.log('🔍 fetchMerchants API call:', url);
+
     const response = await fetch(url, {
       method: 'GET',
       headers: getHeaders()
@@ -66,13 +78,6 @@ export async function fetchMerchants(
 
     // Transform Supabase data to Restaurant interface
     const merchants = data
-      .filter((merchant: any) => {
-        // Filter out merchants without coordinates
-        const hasCoords = typeof merchant.latitude === 'number' && typeof merchant.longitude === 'number';
-        if (!hasCoords) {
-        }
-        return hasCoords;
-      })
       .map((merchant: any, index: number): Restaurant => {
         const lat = parseFloat(merchant.latitude);
         const lng = parseFloat(merchant.longitude);

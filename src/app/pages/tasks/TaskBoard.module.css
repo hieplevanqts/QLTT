@@ -286,6 +286,17 @@
   background: var(--muted-foreground);
 }
 
+.loadingMoreItems {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  color: var(--muted-foreground);
+  font-size: var(--text-xs);
+  font-family: 'Inter', sans-serif;
+}
+
 /* Empty Column State - Modern Design */
 .emptyColumn {
   display: flex;

@@ -34,6 +34,7 @@ export interface InspectionTask {
   targetName: string; // Tên cơ sở/đối tượng kiểm tra
   targetCode?: string; // Mã cơ sở
   targetAddress: string;
+  merchantId?: string; // 🔥 NEW: Link to merchant ID
   
   // Assignment
   assignee: TaskAssignee;
