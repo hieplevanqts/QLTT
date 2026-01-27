@@ -151,7 +151,7 @@ export async function fetchWardsByProvince(provinceId: string): Promise<WardApiD
     console.log('📡 Fetching wards for province ID:', provinceId);
     
     const response = await fetch(
-      `${baseUrl}/wards?select=_id,code,name,province_id&province_id=eq.${provinceId.trim()}&order=code.asc&limit=1000`,
+      `${baseUrl}/wards?select=_id,code,name,province_id&province_id=eq.${provinceId.trim()}&order=code.asc&limit=10000`,
       {
         method: 'GET',
         headers: {

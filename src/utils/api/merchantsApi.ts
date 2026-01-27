@@ -20,7 +20,7 @@ export async function fetchMerchants(
 
   try {
     // Build query - simple select without nested joins
-    let url = `${SUPABASE_REST_URL}/merchants?&order=created_at.desc&select=*`;
+    let url = `${SUPABASE_REST_URL}/merchants?limit=10000&order=created_at.desc&select=*`;
     
     // 🔥 Filter by status if provided (direct field filter)
     // status field: 'active', 'pending', 'suspended', 'rejected'

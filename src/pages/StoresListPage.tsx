@@ -169,7 +169,7 @@ export default function StoresListPage() {
         setStoreError(null);
         console.log('📥 Fetching stores from API...');
         
-        const data = await fetchStores(9999, 0);
+        const data = await fetchStores();
         console.log('Successfully loaded', data.length, 'stores from API');
         
         setStores(data);

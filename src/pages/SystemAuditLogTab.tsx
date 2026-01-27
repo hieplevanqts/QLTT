@@ -81,7 +81,7 @@ export const SystemAuditLogTab: React.FC = () => {
         .from('audit_events')
         .select('*')
         .order('audit_events_timestamp', { ascending: false })
-        .limit(1000); // Limit to recent 1000 events
+        .limit(10000); // Support up to 10000 audit events
 
       if (error) {
         console.error('❌ Error fetching audit events:', error);
