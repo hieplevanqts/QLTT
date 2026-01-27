@@ -50,13 +50,13 @@ export function UserRolesPanel({ onClose }: UserRolesPanelProps) {
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select(`
-            id,
+            id:_id,
             email,
             full_name,
             username,
             user_roles (
               roles (
-                id,
+                id:_id,
                 code,
                 name,
                 description
@@ -64,7 +64,7 @@ export function UserRolesPanel({ onClose }: UserRolesPanelProps) {
             ),
             department_users (
               departments (
-                id,
+                id:_id,
                 name,
                 code,
                 level

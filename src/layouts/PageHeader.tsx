@@ -6,10 +6,11 @@ import styles from './PageHeader.module.css';
 interface PageHeaderProps {
   breadcrumbs?: { label: string; href?: string }[];
   title: string | ReactNode;
+  subtitle?: string | ReactNode;
   actions?: ReactNode;
 }
 
-export default function PageHeader({ breadcrumbs, title, actions }: PageHeaderProps) {
+export default function PageHeader({ breadcrumbs, title, subtitle, actions }: PageHeaderProps) {
   return (
     <div className={styles.header}>
       <div className={styles.container}>
@@ -33,7 +34,10 @@ export default function PageHeader({ breadcrumbs, title, actions }: PageHeaderPr
 
         {/* Title and Actions */}
         <div className={styles.titleRow}>
-          <h1 className={styles.title}>{title}</h1>
+          <div className={styles.titleGroup}>
+            <h1 className={styles.title}>{title}</h1>
+            {subtitle && <div className={styles.subtitle}>{subtitle}</div>}
+          </div>
           {actions && <div className={styles.actions}>{actions}</div>}
         </div>
       </div>

@@ -2,14 +2,28 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
-  Map,
+  Map as MapIcon,
   Building2,
   TriangleAlert,
   ClipboardList,
   MapPin,
   FileBox,
   BarChart3,
+  Boxes,
+  Folder,
+  HardDrive,
+  KeyRound,
+  Landmark,
+  Layers,
+  GitBranch,
+  Bell,
+  Menu,
   Settings,
+  Shield,
+  ShieldCheck,
+  Sliders,
+  UserCheck,
+  Users,
   ChevronDown,
   Plus,
   ChevronLeft,
@@ -24,12 +38,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../app/components/ui/dropdown-menu';
 import { cn } from '../app/components/ui/utils';
 import { useLayout } from '../contexts/LayoutContext';
-import { useAppSelector } from '../app/hooks';
-import { RootState } from '../store/rootReducer';
+import { useAuth } from '../contexts/AuthContext'; // 🔥 NEW: Import useAuth for permissions
+import { useMenuRegistry } from '../hooks/useMenuRegistry';
+import { buildMenuTree, filterMenuTree, type MenuNode } from '../utils/menuRegistry';
 import mappaLogo from '../assets/79505e63e97894ec2d06837c57cf53a19680f611.png';
 
 // 🔥 NEW: Permission code mapping (from Insert.sql lines 39-46)
@@ -48,7 +65,7 @@ const PERMISSION_MAP: { [path: string]: string } = {
 // MAPPA Main Modules
 const mappaModules = [
   { path: '/overview', label: 'Tổng quan', icon: LayoutDashboard, permissionCode: '' },
-  { path: '/map', label: 'Bản đồ điều hành', icon: Map, permissionCode: 'MAP_VIEW' },
+  { path: '/map', label: 'Bản đồ điều hành', icon: MapIcon, permissionCode: 'MAP_VIEW' },
   { path: '/stores', label: 'Cơ sở quản lý', icon: Building2, permissionCode: 'STORES_VIEW' },
   {
     path: '/leads',
@@ -79,8 +96,162 @@ const mappaModules = [
       { path: '/reports', label: 'Báo cáo' },
     ],
   },
-  { path: '/admin', label: 'Quản trị', icon: Settings, permissionCode: 'ADMIN_VIEW' },
+  {
+    path: '/admin',
+    label: 'Quản trị',
+    icon: Settings,
+    permissionCode: 'ADMIN_VIEW',
+    hasSubmenu: true,
+    submenu: [
+      { type: 'item', path: '/system-admin', label: 'Dashboard Quản trị', icon: LayoutDashboard },
+      { type: 'separator' },
+      { type: 'item', path: '/system-admin/master-data/org-units', label: 'Đơn vị tổ chức', icon: Building2 },
+      { type: 'item', path: '/system-admin/master-data/departments', label: 'Phòng ban', icon: Users },
+      { type: 'item', path: '/system-admin/master-data/admin-areas', label: 'Danh mục hành chính', icon: MapPin },
+      { type: 'item', path: '/system-admin/master-data/common-catalogs', label: 'Danh mục dùng chung', icon: Folder },
+      { type: 'item', path: '/system-admin/master-data/dms-catalogs', label: 'Danh mục nghiệp vụ QLTT', icon: Layers },
+      { type: 'item', path: '/system-admin/master-data/system-catalogs', label: 'Danh mục kỹ thuật', icon: GitBranch },
+      { type: 'separator' },
+      { type: 'item', path: '/system-admin/iam/users', label: 'Người dùng', icon: Users },
+      { type: 'item', path: '/system-admin/iam/roles', label: 'Vai trò', icon: Shield },
+      { type: 'item', path: '/system-admin/iam/permissions', label: 'Danh mục quyền', icon: KeyRound },
+      { type: 'item', path: '/system-admin/iam/assignments', label: 'Phân quyền', icon: UserCheck },
+      { type: 'item', path: '/system-admin/iam/modules', label: 'Phân hệ', icon: Boxes },
+      { type: 'item', path: '/system-admin/iam/menus', label: 'Menu', icon: Menu },
+      { type: 'separator' },
+      { type: 'item', path: '/system-admin/system-config/parameters', label: 'Thông số hệ thống', icon: Sliders },
+      { type: 'item', path: '/system-admin/system-config/organization-info', label: 'Thông tin tổ chức', icon: Landmark },
+      { type: 'item', path: '/system-admin/system-config/operations', label: 'Cài đặt vận hành', icon: Settings },
+      { type: 'item', path: '/system-admin/system-config/notifications', label: 'Mẫu thông báo', icon: Bell },
+      { type: 'item', path: '/system-admin/system-config/security', label: 'Cài đặt bảo mật', icon: ShieldCheck },
+      { type: 'item', path: '/system-admin/system-config/database/logs', label: 'Database Logs', icon: FileBox },
+      { type: 'item', path: '/system-admin/system-config/database/backups', label: 'Database Backups', icon: HardDrive },
+      { type: 'separator' },
+      { type: 'item', path: '/system/modules', label: 'Quản trị Module' },
+      { type: 'item', path: '/system/menus', label: 'Quản trị Menu' },
+      { type: 'item', path: '/system/users', label: 'Người dùng (cũ)' },
+      { type: 'item', path: '/system/roles', label: 'Vai trò (cũ)' },
+      { type: 'item', path: '/system/settings', label: 'Cấu hình hệ thống' },
+    ],
+  },
 ];
+
+const menuIconMap = {
+  LayoutDashboard,
+  Map: MapIcon,
+  Building2,
+  TriangleAlert,
+  ClipboardList,
+  MapPin,
+  FileBox,
+  BarChart3,
+  Boxes,
+  Folder,
+  HardDrive,
+  KeyRound,
+  Landmark,
+  Layers,
+  GitBranch,
+  Menu,
+  Settings,
+  Shield,
+  ShieldCheck,
+  Sliders,
+  UserCheck,
+  Users,
+  Bell,
+} as const;
+
+const resolveMenuIcon = (icon?: string | null) => {
+  if (!icon) return LayoutDashboard;
+  return (menuIconMap as Record<string, any>)[icon] || LayoutDashboard;
+};
+
+type SubmenuItem =
+  | { type?: 'item'; path: string; label: string; icon?: any }
+  | { type: 'separator' }
+  | { type: 'label'; label: string };
+
+const ADMIN_HIDDEN_PATHS = new Set([
+  '/system-admin/master-data',
+  '/system-admin/iam',
+  '/system-admin/system-config',
+]);
+
+const ADMIN_GROUP_ORDER = [
+  'dashboard',
+  'master-data',
+  'iam',
+  'system-config',
+  'tools',
+];
+
+const sortByOrderThenLabel = (left: MenuNode, right: MenuNode) => {
+  const order = (left.order ?? 0) - (right.order ?? 0);
+  if (order !== 0) return order;
+  return left.label.localeCompare(right.label);
+};
+
+const toSubmenuItem = (node: MenuNode): SubmenuItem => {
+  if (!node.path) {
+    return { type: 'label', label: node.label };
+  }
+  return {
+    path: node.path,
+    label: node.label,
+    ...(node.icon ? { icon: resolveMenuIcon(node.icon) } : {}),
+  };
+};
+
+const buildAdminSubmenu = (children: MenuNode[]): SubmenuItem[] => {
+  const groups = new Map<string, MenuNode[]>();
+  const filtered = children.filter((child) => child.path && !ADMIN_HIDDEN_PATHS.has(child.path));
+
+  filtered.forEach((child) => {
+    const path = child.path ?? '';
+    let key = 'tools';
+    if (path === '/system-admin') key = 'dashboard';
+    else if (path.startsWith('/system-admin/master-data')) key = 'master-data';
+    else if (path.startsWith('/system-admin/iam')) key = 'iam';
+    else if (path.startsWith('/system-admin/system-config')) key = 'system-config';
+    else if (path.startsWith('/system/modules') || path.startsWith('/system/menus')) key = 'tools';
+    const bucket = groups.get(key) ?? [];
+    bucket.push(child);
+    groups.set(key, bucket);
+  });
+
+  const orderedKeys = ADMIN_GROUP_ORDER.filter((key) => (groups.get(key) ?? []).length > 0);
+  const items: SubmenuItem[] = [];
+
+  orderedKeys.forEach((key, index) => {
+    const groupItems = groups.get(key) ?? [];
+    groupItems.sort(sortByOrderThenLabel).forEach((child) => items.push(toSubmenuItem(child)));
+    if (index < orderedKeys.length - 1) {
+      items.push({ type: 'separator' });
+    }
+  });
+
+  return items;
+};
+
+const menuTreeToModules = (nodes: MenuNode[]) => {
+  return nodes.map((node) => {
+    const submenuItems =
+      node.children.length > 0
+        ? (node.path === '/admin' || node.label === 'Quản trị'
+            ? buildAdminSubmenu(node.children)
+            : node.children.map((child) => toSubmenuItem(child)))
+        : [];
+    return {
+      path: node.path || '',
+      label: node.label,
+      icon: node.path === '/admin' ? Settings : resolveMenuIcon(node.icon),
+      permissionCode: '',
+      hasSubmenu: submenuItems.length > 0,
+      submenu: submenuItems,
+    };
+  });
+};
 
 interface VerticalSidebarProps {
   collapsed?: boolean;
@@ -98,20 +269,88 @@ export default function VerticalSidebar({
     location.pathname.startsWith('/plans') || location.pathname.startsWith('/inspections')
   );
   const { setLayoutMode } = useLayout();
-  // Get user from Redux instead of AuthContext
-  const { user } = useAppSelector((state: RootState) => state.auth);
+  const { user } = useAuth(); // 🔥 NEW: Get user with permissions
+  const { menus } = useMenuRegistry();
 
-  // Get user permission codes
+  // 🔥 NEW: Get user permission codes
   const userPermissionCodes = user?.permissions || [];
+  
+  // 🔥 DEBUG: Log permissions and menu data
+  React.useEffect(() => {
+    console.log('🔍 VerticalSidebar - Debug Menu & Permissions:', {
+      userPermissions: userPermissionCodes,
+      userRoleCode: user?.roleCode,
+      menusCount: menus?.length || 0,
+      menus: menus,
+    });
+  }, [userPermissionCodes, user?.roleCode, menus]);
   
   // 🔥 NEW: Helper function to check if user has permission for a menu item
   const hasPermission = (permissionCode: string | undefined): boolean => {
     if (!permissionCode || permissionCode === '') return true; // No permission required = always visible
+    
+    // 🔥 FIX: If user has no permissions at all, show all menus (fallback for development/testing)
+    // In production, you might want to be more strict
+    if (userPermissionCodes.length === 0) {
+      console.warn('⚠️ User has no permissions - showing all menus (fallback mode)');
+      return true; // Show all menus if user has no permissions
+    }
+    
     return userPermissionCodes.includes(permissionCode);
   };
+  const isPathActive = React.useCallback(
+    (path?: string | null) => {
+      if (!path) return false;
+      const [pathname, search] = path.split('?');
+      const matchesPath = location.pathname === pathname || location.pathname.startsWith(pathname + '/');
+      if (!matchesPath) return false;
+      if (!search) return true;
+      const currentParams = new URLSearchParams(location.search);
+      const targetParams = new URLSearchParams(search);
+      for (const [key, value] of targetParams.entries()) {
+        if (currentParams.get(key) !== value) return false;
+      }
+      return true;
+    },
+    [location.pathname, location.search],
+  );
 
-  // 🔥 NEW: Filter menu modules based on user permissions
-  const visibleModules = mappaModules.filter(module => hasPermission(module.permissionCode));
+  const registryTree = React.useMemo(() => (menus ? buildMenuTree(menus) : []), [menus]);
+  const filteredRegistryTree = React.useMemo(
+    () => {
+      const filtered = filterMenuTree(registryTree, userPermissionCodes, user?.roleCode);
+      console.log('🔍 VerticalSidebar - Filtered Registry Tree:', {
+        originalCount: registryTree.length,
+        filteredCount: filtered.length,
+        userPermissions: userPermissionCodes,
+        userRoleCode: user?.roleCode,
+      });
+      return filtered;
+    },
+    [registryTree, userPermissionCodes, user?.roleCode],
+  );
+  const registryModules = React.useMemo(() => menuTreeToModules(filteredRegistryTree), [filteredRegistryTree]);
+  
+  // 🔥 FIX: Merge registry modules with mappa modules to ensure all menus are displayed
+  // Registry modules take priority, but we also include mappa modules that aren't in registry
+  const mappaModulesFiltered = mappaModules.filter(module => hasPermission(module.permissionCode));
+  const registryPaths = new Set(registryModules.map(m => m.path));
+  const additionalMappaModules = mappaModulesFiltered.filter(m => !registryPaths.has(m.path));
+  const visibleModules = React.useMemo(() => {
+    const merged = [...registryModules, ...additionalMappaModules].sort((a, b) => {
+      // Sort by order if available, otherwise maintain original order
+      const aOrder = mappaModules.find(m => m.path === a.path)?.order ?? 999;
+      const bOrder = mappaModules.find(m => m.path === b.path)?.order ?? 999;
+      return aOrder - bOrder;
+    });
+    console.log('🔍 VerticalSidebar - Visible Modules:', {
+      registryModulesCount: registryModules.length,
+      additionalMappaModulesCount: additionalMappaModules.length,
+      totalVisible: merged.length,
+      visiblePaths: merged.map(m => m.path),
+    });
+    return merged;
+  }, [registryModules, additionalMappaModules]);
 
   // Mock permissions - In real app, this would come from user context/auth
   const userPermissions = {
@@ -225,6 +464,7 @@ export default function VerticalSidebar({
       <nav className="flex-1 p-2 overflow-y-auto">
         {visibleModules.map((module) => { // 🔥 FIX: Use filtered modules instead of all modules
           const Icon = module.icon;
+          const isAdminMenu = module.path === '/admin';
           
           // Special logic for active state
           let isActive = false;
@@ -236,12 +476,12 @@ export default function VerticalSidebar({
             // "Phiên kiểm tra" KHÔNG active khi ở /plans/inspection-session
             isActive = location.pathname === '/tasks' && location.pathname !== '/plans/inspection-session';
           } else if ((module as any).hasSubmenu && (module as any).submenu) {
-            // Submenu modules (lead-risk, reports)
+            // Submenu modules (lead-risk, reports, admin)
             if (module.path === '/reports') {
-              // Báo cáo & Thống kê submenu
               isActive = location.pathname === '/dashboard' || location.pathname === '/reports';
+            } else if (module.path === '/admin') {
+              isActive = location.pathname.startsWith('/system') || location.pathname.startsWith('/system-admin') || location.pathname === '/admin';
             } else {
-              // Lead-risk submenu
               isActive = location.pathname.startsWith('/lead-risk') || location.pathname === '/leads';
             }
           } else {
@@ -388,23 +628,47 @@ export default function VerticalSidebar({
                       <Icon className="h-5 w-5" />
                     </div>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent side="right" align="start" className="w-56">
-                    <div className="px-2 py-1.5 text-sm font-semibold text-foreground">
-                      {module.label}
-                    </div>
-                    {(module as any).submenu.map((item: any) => (
-                      <DropdownMenuItem key={item.path} asChild>
-                        <Link
-                          to={item.path}
-                          className={cn(
-                            'cursor-pointer',
-                            location.pathname === item.path && 'bg-primary/10 text-primary'
-                          )}
-                        >
-                          {item.label}
-                        </Link>
-                      </DropdownMenuItem>
-                    ))}
+                  <DropdownMenuContent side="right" align="start" className={cn("w-64", isAdminMenu && "w-72 p-2")}>
+                    {!isAdminMenu && (
+                      <div className="px-2 py-1.5 text-sm font-semibold text-foreground">
+                        {module.label}
+                      </div>
+                    )}
+                    {(module as any).submenu.map((item: any, index: number) => {
+                      if (item.type === 'separator') {
+                        return <DropdownMenuSeparator key={`sep-${index}`} className={cn(isAdminMenu && "my-2")} />;
+                      }
+                      if (item.type === 'label') {
+                        return (
+                          <DropdownMenuLabel
+                            key={`label-${index}`}
+                            className="text-xs uppercase text-muted-foreground"
+                          >
+                            {item.label}
+                          </DropdownMenuLabel>
+                        );
+                      }
+                      if (!item.path) return null;
+                      const ItemIcon = item.icon;
+                      const isItemActive = isPathActive(item.path);
+                      return (
+                        <DropdownMenuItem key={item.path} asChild>
+                          <Link
+                            to={item.path}
+                            className={cn(
+                              isAdminMenu
+                                ? "flex items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
+                                : "cursor-pointer",
+                              isItemActive &&
+                                (isAdminMenu ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary")
+                            )}
+                          >
+                            {ItemIcon && <ItemIcon className="h-4 w-4" />}
+                            {item.label}
+                          </Link>
+                        </DropdownMenuItem>
+                      );
+                    })}
                   </DropdownMenuContent>
                 </DropdownMenu>
               );
@@ -436,20 +700,41 @@ export default function VerticalSidebar({
                 
                 {isOpen && (
                   <div className="ml-8 mb-2 space-y-1">
-                    {(module as any).submenu.map((item: any) => (
-                      <Link
-                        key={item.path}
-                        to={item.path}
-                        className={cn(
-                          'block px-3 py-2 rounded-lg text-sm transition-colors',
-                          location.pathname === item.path
-                            ? 'text-primary bg-primary/10 font-medium'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                        )}
-                      >
-                        {item.label}
-                      </Link>
-                    ))}
+                    {(module as any).submenu.map((item: any, index: number) => {
+                      if (item.type === 'separator') {
+                        return <div key={`sep-${index}`} className={cn("my-2 h-px bg-border", isAdminMenu && "mx-2")} />;
+                      }
+                      if (item.type === 'label') {
+                        return (
+                          <div
+                            key={`label-${index}`}
+                            className="px-3 py-1 text-xs font-semibold uppercase text-muted-foreground"
+                          >
+                            {item.label}
+                          </div>
+                        );
+                      }
+                      if (!item.path) return null;
+                      const ItemIcon = item.icon;
+                      const isItemActive = isPathActive(item.path);
+                      return (
+                        <Link
+                          key={item.path}
+                          to={item.path}
+                          className={cn(
+                            isAdminMenu
+                              ? 'flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors'
+                              : 'flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors',
+                            isItemActive
+                              ? (isAdminMenu ? 'bg-primary text-primary-foreground' : 'text-primary bg-primary/10 font-medium')
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                          )}
+                        >
+                          {ItemIcon && <ItemIcon className="h-4 w-4" />}
+                          {item.label}
+                        </Link>
+                      );
+                    })}
                   </div>
                 )}
               </div>

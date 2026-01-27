@@ -166,7 +166,7 @@ export function useSupabaseLeads(options: UseSupabaseLeadsOptions = {}) {
       // Build query
       let query = supabase
         .from('leads')
-        .select('*')
+        .select('*, id:_id')
         .order('created_at', { ascending: false });
 
       // Apply filters

@@ -1,0 +1,41 @@
+/* ========== Task Status Badge ========== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-1) var(--spacing-2);
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+/* Sizes */
+.badge.sm {
+  font-size: var(--font-size-xs);
+  padding: var(--spacing-0-5) var(--spacing-1-5);
+}
+
+.badge.md {
+  font-size: var(--font-size-sm);
+}
+
+/* Status Variants */
+.badge.notstarted {
+  background: rgba(156, 163, 175, 0.15);
+  color: var(--muted-foreground);
+}
+
+.badge.inprogress {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--info);
+}
+
+.badge.completed {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--success);
+}
+
+.badge.paused {
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--warning);
+}

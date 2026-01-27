@@ -20,12 +20,13 @@ interface ScopeDepartment {
 }
 
 interface AreaRow {
-  _id: string;
+  id: string; // Mapped from _id
+  _id?: string; // Original from DB
   code: string;
   name: string;
   level: string;
-  provinceId?: string | null;
-  wardId?: string | null;
+  province_id?: string | null;
+  ward_id?: string | null;
 }
 
 interface DepartmentAreaRow {
@@ -122,7 +123,7 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
         ] = await Promise.all([
           supabase
             .from('departments')
-            .select('_id, parent_id, name, code, level')
+            .select('id:_id, parent_id, name, code, level')
             .is('deleted_at', null)
             .order('path', { ascending: true }),
           supabase
@@ -130,13 +131,13 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
             .select('department_id, area_id'),
           supabase
             .from('areas')
-            .select('_id, code, name, level, province_id, ward_id'),
+            .select('id:_id, code, name, level, "provinceId", "wardId"'),
           supabase
             .from('wards')
-            .select('_id, code, name, province_id'),
+            .select('id:_id, code, name, province_id'),
           supabase
             .from('provinces')
-            .select('_id, code, name'),
+            .select('id:_id, code, name'),
         ]);
 
         if (departmentsError) {
@@ -171,8 +172,8 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
           code: area.code,
           name: area.name,
           level: area.level,
-          provinceId: area.province_id,
-          wardId: area.ward_id,
+          province_id: area.province_id,
+          ward_id: area.ward_id,
         })));
 
         setWards((wardsData || []).map((ward) => ({
@@ -320,9 +321,9 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
       .map((areaId) => areasById.get(areaId))
       .filter((area): area is AreaRow => Boolean(area))
       .map((area) => {
-        const ward = area.wardId ? wardsById.get(area.wardId) : undefined;
+        const ward = area.ward_id ? wardsById.get(area.ward_id) : undefined;
         const provinceFromWard = ward ? provincesById.get(ward.province_id) : undefined;
-        const provinceFromArea = area.provinceId ? provincesById.get(area.provinceId) : undefined;
+        const provinceFromArea = area.province_id ? provincesById.get(area.province_id) : undefined;
         return {
           id: area.id,
           name: ward?.name || area.name,

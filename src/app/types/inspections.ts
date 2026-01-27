@@ -34,6 +34,7 @@ export interface InspectionRound {
   id: string;
   name: string;
   code: string;
+  campaign_code?: string;
   planId?: string;
   planCode?: string;
   planName?: string;

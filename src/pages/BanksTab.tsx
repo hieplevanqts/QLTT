@@ -66,7 +66,7 @@ export const BanksTab: React.FC = () => {
 
       const { data, error } = await supabase
         .from('banks')
-        .select('*')
+        .select('*, id:_id')
         .order('name', { ascending: true });
 
       if (error) {
@@ -143,7 +143,7 @@ export const BanksTab: React.FC = () => {
       const { error } = await supabase
         .from('banks')
         .delete()
-        .eq('id', bank.id);
+        .eq('_id', bank.id);
 
       if (error) {
         console.error('❌ Error deleting bank:', error);

@@ -1,0 +1,182 @@
+.filterBar {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 20px 24px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.filterLabel {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+  margin-bottom: 0;
+}
+
+/* Period Tabs */
+.periodTabs {
+  display: inline-flex;
+  gap: 0;
+  background: transparent;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.periodTab {
+  padding: 8px 20px;
+  background: var(--card);
+  border: none;
+  border-right: 1px solid var(--border);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.periodTab:last-child {
+  border-right: none;
+}
+
+.periodTab:hover:not(.active) {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.periodTab.active {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Mode Radios */
+.modeRadios {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--foreground);
+  cursor: pointer;
+  user-select: none;
+}
+
+.radioLabel:hover {
+  color: var(--primary);
+}
+
+.radioInput {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--primary);
+  margin: 0;
+}
+
+/* Select Dropdowns */
+.select {
+  min-width: 160px;
+  padding: 8px 12px;
+  background: var(--input-background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--foreground);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.select:hover {
+  border-color: var(--primary);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0, 92, 182, 0.1);
+}
+
+/* Apply Button */
+.applyButton {
+  padding: 8px 24px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  height: 38px;
+  margin-top: auto;
+}
+
+.applyButton:hover {
+  background: #004a94;
+  transform: translateY(-1px);
+  box-shadow: var(--elevation-sm);
+}
+
+.applyButton:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 1200px) {
+  .filterBar {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .filterBar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filterGroup {
+    width: 100%;
+  }
+
+  .periodTabs {
+    width: 100%;
+  }
+
+  .periodTab {
+    flex: 1;
+  }
+
+  .select {
+    min-width: 100%;
+  }
+
+  .applyButton {
+    width: 100%;
+  }
+}

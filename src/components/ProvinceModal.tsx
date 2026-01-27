@@ -78,7 +78,7 @@ export const ProvinceModal: React.FC<ProvinceModalProps> = ({
             code: formData.code.trim(),
             name: formData.name.trim(),
           })
-          .eq('id', province.id);
+          .eq('_id', province.id);
 
         if (error) {
           console.error('❌ Error updating province:', error);

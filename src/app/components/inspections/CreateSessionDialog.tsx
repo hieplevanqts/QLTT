@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import { Calendar, Users, Store, FileText } from 'lucide-react';
+import { Calendar, Users, Store, FileText, Plus, AlertCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
-  DialogClose,
 } from '../ui/dialog';
 import { Button } from '../ui/button';
 import {
@@ -23,7 +21,6 @@ import { toast } from 'sonner';
 interface CreateSessionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  roundId: string;
   roundName: string;
   onCreateSession?: (sessionData: {
     storeId: string;
@@ -71,7 +68,6 @@ const mockInspectors = [
 export function CreateSessionDialog({
   open,
   onOpenChange,
-  roundId,
   roundName,
   onCreateSession,
 }: CreateSessionDialogProps) {
@@ -155,12 +151,16 @@ export function CreateSessionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogClose onClose={handleCancel} />
-        <DialogHeader>
-          <DialogTitle>Tạo phiên làm việc mới</DialogTitle>
-          <DialogDescription>
-            Lập phiên làm việc cho đợt "{roundName}"
+      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden border-none shadow-2xl">
+        <DialogHeader className="px-6 pt-6 pb-4 bg-gradient-to-r from-primary/5 to-transparent">
+          <DialogTitle className="text-2xl font-bold text-foreground flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Plus className="w-6 h-6 text-primary" />
+            </div>
+            Tạo phiên làm việc mới
+          </DialogTitle>
+          <DialogDescription className="text-muted-foreground mt-1 ml-14">
+            Thiết lập kế hoạch kiểm tra chi tiết cho đợt <span className="font-semibold text-primary">"{roundName}"</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -169,7 +169,7 @@ export function CreateSessionDialog({
             {/* Store Selection */}
             <div className={styles.formField}>
               <label className={styles.label}>
-                <Store size={16} className={styles.labelIcon} />
+                <Store size={14} className={styles.labelIcon} />
                 Cửa hàng kiểm tra <span className={styles.required}>*</span>
               </label>
               <Select
@@ -179,12 +179,12 @@ export function CreateSessionDialog({
                   setErrors({ ...errors, storeId: '' });
                 }}
               >
-                <SelectTrigger className={errors.storeId ? styles.inputError : ''}>
-                  <SelectValue placeholder="Chọn cửa hàng..." />
+                <SelectTrigger className={`${styles.selectTrigger} ${errors.storeId ? styles.inputError : ''}`}>
+                  <SelectValue placeholder="Chọn cửa hàng kiểm tra..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[300px]">
                   {mockStores.map((store) => (
-                    <SelectItem key={store.id} value={store.id}>
+                    <SelectItem key={store.id} value={store.id} className="cursor-pointer focus:bg-primary/5">
                       <div className={styles.storeOption}>
                         <div className={styles.storeName}>{store.name}</div>
                         <div className={styles.storeAddress}>{store.address}</div>
@@ -193,14 +193,18 @@ export function CreateSessionDialog({
                   ))}
                 </SelectContent>
               </Select>
-              {errors.storeId && <span className={styles.errorText}>{errors.storeId}</span>}
+              {errors.storeId && (
+                <span className={styles.errorText}>
+                  <AlertCircle size={12} /> {errors.storeId}
+                </span>
+              )}
             </div>
 
             {/* Inspector Selection */}
             <div className={styles.formField}>
               <label className={styles.label}>
-                <Users size={16} className={styles.labelIcon} />
-                Thanh tra viên <span className={styles.required}>*</span>
+                <Users size={14} className={styles.labelIcon} />
+                Thanh tra viên phụ trách <span className={styles.required}>*</span>
               </label>
               <Select
                 value={formData.inspectorId}
@@ -209,12 +213,12 @@ export function CreateSessionDialog({
                   setErrors({ ...errors, inspectorId: '' });
                 }}
               >
-                <SelectTrigger className={errors.inspectorId ? styles.inputError : ''}>
-                  <SelectValue placeholder="Chọn thanh tra viên..." />
+                <SelectTrigger className={`${styles.selectTrigger} ${errors.inspectorId ? styles.inputError : ''}`}>
+                  <SelectValue placeholder="Chọn thanh tra viên phụ trách..." />
                 </SelectTrigger>
                 <SelectContent>
                   {mockInspectors.map((inspector) => (
-                    <SelectItem key={inspector.id} value={inspector.id}>
+                    <SelectItem key={inspector.id} value={inspector.id} className="cursor-pointer focus:bg-primary/5">
                       <div className={styles.inspectorOption}>
                         <div className={styles.inspectorName}>{inspector.name}</div>
                         <div className={styles.inspectorPosition}>{inspector.position}</div>
@@ -224,7 +228,9 @@ export function CreateSessionDialog({
                 </SelectContent>
               </Select>
               {errors.inspectorId && (
-                <span className={styles.errorText}>{errors.inspectorId}</span>
+                <span className={styles.errorText}>
+                  <AlertCircle size={12} /> {errors.inspectorId}
+                </span>
               )}
             </div>
 
@@ -232,63 +238,84 @@ export function CreateSessionDialog({
             <div className={styles.formRow}>
               <div className={styles.formField}>
                 <label className={styles.label}>
-                  <Calendar size={16} className={styles.labelIcon} />
+                  <Calendar size={14} className={styles.labelIcon} />
                   Ngày bắt đầu <span className={styles.required}>*</span>
                 </label>
-                <input
-                  type="date"
-                  className={`${styles.input} ${errors.startDate ? styles.inputError : ''}`}
-                  value={formData.startDate}
-                  onChange={(e) => {
-                    setFormData({ ...formData, startDate: e.target.value });
-                    setErrors({ ...errors, startDate: '' });
-                  }}
-                  min={new Date().toISOString().split('T')[0]}
-                />
-                {errors.startDate && <span className={styles.errorText}>{errors.startDate}</span>}
+                <div className={styles.inputWrapper}>
+                  <input
+                    type="date"
+                    className={`${styles.input} ${errors.startDate ? styles.inputError : ''}`}
+                    value={formData.startDate}
+                    onChange={(e) => {
+                      setFormData({ ...formData, startDate: e.target.value });
+                      setErrors({ ...errors, startDate: '' });
+                    }}
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+                {errors.startDate && (
+                  <span className={styles.errorText}>
+                    <AlertCircle size={12} /> {errors.startDate}
+                  </span>
+                )}
               </div>
 
               <div className={styles.formField}>
                 <label className={styles.label}>
-                  <Calendar size={16} className={styles.labelIcon} />
+                  <Calendar size={14} className={styles.labelIcon} />
                   Ngày kết thúc <span className={styles.required}>*</span>
                 </label>
-                <input
-                  type="date"
-                  className={`${styles.input} ${errors.endDate ? styles.inputError : ''}`}
-                  value={formData.endDate}
-                  onChange={(e) => {
-                    setFormData({ ...formData, endDate: e.target.value });
-                    setErrors({ ...errors, endDate: '' });
-                  }}
-                  min={new Date().toISOString().split('T')[0]}
-                />
-                {errors.endDate && <span className={styles.errorText}>{errors.endDate}</span>}
+                <div className={styles.inputWrapper}>
+                  <input
+                    type="date"
+                    className={`${styles.input} ${errors.endDate ? styles.inputError : ''}`}
+                    value={formData.endDate}
+                    onChange={(e) => {
+                      setFormData({ ...formData, endDate: e.target.value });
+                      setErrors({ ...errors, endDate: '' });
+                    }}
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+                {errors.endDate && (
+                  <span className={styles.errorText}>
+                    <AlertCircle size={12} /> {errors.endDate}
+                  </span>
+                )}
               </div>
             </div>
 
             {/* Notes */}
             <div className={styles.formField}>
               <label className={styles.label}>
-                <FileText size={16} className={styles.labelIcon} />
-                Ghi chú
+                <FileText size={14} className={styles.labelIcon} />
+                Ghi chú nội dung
               </label>
               <textarea
                 className={styles.textarea}
-                placeholder="Nhập ghi chú về phiên làm việc..."
-                rows={4}
+                placeholder="Nhập ghi chú hoặc yêu cầu cụ thể cho phiên làm việc này..."
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               />
             </div>
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleCancel}>
-              Hủy
+          <div className={styles.footer}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={handleCancel}
+              className={styles.cancelBtn}
+            >
+              Hủy bỏ
             </Button>
-            <Button type="submit">Tạo phiên</Button>
-          </DialogFooter>
+            <Button 
+              type="submit"
+              className={styles.submitBtn}
+            >
+              Thiết lập phiên
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

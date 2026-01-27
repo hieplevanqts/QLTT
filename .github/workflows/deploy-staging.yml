@@ -3,7 +3,7 @@ name: Build and Deploy Pipeline
 on:
   push:
     branches:
-      - QA-main
+      - main
   workflow_call:
     secrets:
       REGISTRY_URL:
@@ -17,6 +17,8 @@ on:
       VITE_SUPABASE_URL:
         required: true
       VITE_SUPABASE_ANON_KEY:
+        required: true
+      PUBLIC_URL:
         required: true
 
 jobs:
@@ -47,7 +49,7 @@ jobs:
         run: |
           echo "🚀 Building image: ${{ env.FULL_IMAGE }}"
           # Build
-          docker build --build-arg VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} --build-arg VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} -t ${{ env.FULL_IMAGE }} -f Dockerfile .
+          docker build --build-arg VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} --build-arg VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} --build-arg PUBLIC_URL=${{ secrets.PUBLIC_URL }} -t ${{ env.FULL_IMAGE }} -f Dockerfile .
         
           # Push
           docker push ${{ env.FULL_IMAGE }}

@@ -1,0 +1,25 @@
+{
+  "id": "kpi-qltt",
+  "name": "KPI & Thống kê QLTT",
+  "version": "0.2.1",
+  "basePath": "/kpi",
+  "entry": "src/modules/kpi-qltt/index.ts",
+  "routes": "src/modules/kpi-qltt/routes.tsx",
+  "routeExport": "kpiQlttRoute",
+  "permissions": [
+    "reports:read"
+  ],
+  "ui": {
+    "menuLabel": "KPI QLTT",
+    "menuPath": "/kpi"
+  },
+  "release": {
+    "type": "patch",
+    "notes": "Chuẩn hóa metadata module.json theo yêu cầu importer (release/compat); đồng bộ tài liệu tích hợp.",
+    "breaking": []
+  },
+  "compat": {
+    "minAppVersion": "0.1.0",
+    "maxAppVersion": "0.9.0"
+  }
+}

@@ -4,6 +4,7 @@
 
 import axios from 'axios';
 import { SUPABASE_REST_URL, getHeaders } from './config';
+import { supabase } from '../../lib/supabase';
 
 /**
  * User interface for department users
@@ -216,15 +217,48 @@ export async function getWardCoordinatesByDepartment(departmentId: string): Prom
       return [];
     }
 
+    // 🔥 FIX: Validate UUID format and resolve department name to UUID if needed
+    const isValidUUID = (str: string): boolean => {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      return uuidRegex.test(str);
+    };
+    
+    let actualDepartmentId = departmentId;
+    
+    // Check if departmentId is a valid UUID
+    if (!isValidUUID(departmentId)) {
+      console.log(`⚠️ DepartmentAreasAPI: departmentId is not a UUID, searching by name:`, departmentId);
+      
+      // Try to find department by name
+      const { data: deptByName, error: searchError } = await supabase
+        .from('departments')
+        .select('_id')
+        .eq('name', departmentId)
+        .is('deleted_at', null)
+        .single();
+      
+      if (searchError || !deptByName) {
+        console.error(`❌ DepartmentAreasAPI: Department not found by name "${departmentId}":`, searchError);
+        return []; // Return empty array if department not found
+      }
+      
+      actualDepartmentId = deptByName._id;
+      console.log(`✅ DepartmentAreasAPI: Found department UUID:`, actualDepartmentId);
+    }
+
     console.log('🔄 DepartmentAreasAPI: Calling RPC get_ward_coordinates_by_department via axios');
-    console.log('📋 DepartmentAreasAPI: Parameters:', { departmentId, type: typeof departmentId });
+    console.log('📋 DepartmentAreasAPI: Parameters:', { 
+      originalDepartmentId: departmentId, 
+      actualDepartmentId,
+      type: typeof actualDepartmentId 
+    });
     
     // Call RPC function via REST API (PostgREST)
     // Endpoint: POST /rest/v1/rpc/{function_name}
     const rpcUrl = `${SUPABASE_REST_URL}/rpc/get_ward_coordinates_by_department`;
     
     // Try with department_id (snake_case) first
-    const requestBody = { department_id: departmentId };
+    const requestBody = { department_id: actualDepartmentId };
     
     try {
       console.log('📤 DepartmentAreasAPI: Sending POST request to:', rpcUrl);
@@ -249,7 +283,7 @@ export async function getWardCoordinatesByDepartment(departmentId: string): Prom
         console.warn('⚠️ DepartmentAreasAPI: RPC returned invalid data:', data);
         // Try with departmentId (camelCase) parameter name
         console.log('🔄 DepartmentAreasAPI: Retrying with departmentId parameter name...');
-        const retryResponse = await axios.post(rpcUrl, { departmentId: departmentId }, {
+        const retryResponse = await axios.post(rpcUrl, { departmentId: actualDepartmentId }, {
           headers: getHeaders()
         });
         
@@ -312,7 +346,7 @@ export async function getWardCoordinatesByDepartment(departmentId: string): Prom
         if (error.response.status === 400 || error.response.status === 404) {
           console.log('🔄 DepartmentAreasAPI: Retrying with departmentId parameter name...');
           try {
-            const retryResponse = await axios.post(rpcUrl, { departmentId: departmentId }, {
+            const retryResponse = await axios.post(rpcUrl, { departmentId: actualDepartmentId }, {
               headers: getHeaders()
             });
             
@@ -567,7 +601,7 @@ export async function getUsersByDepartment(departmentId: string): Promise<Depart
         if (error.response.status === 400 || error.response.status === 404) {
           console.log('🔄 DepartmentAreasAPI: Retrying with departmentId parameter name...');
           try {
-            const retryResponse = await axios.post(rpcUrl, { departmentId: departmentId }, {
+            const retryResponse = await axios.post(rpcUrl, { departmentId: actualDepartmentId }, {
               headers: getHeaders()
             });
             

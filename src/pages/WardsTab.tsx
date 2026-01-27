@@ -68,7 +68,7 @@ export const WardsTab: React.FC = () => {
       // Fetch provinces first
       const { data: provincesData, error: provincesError } = await supabase
         .from('provinces')
-        .select('*')
+        .select('*, id:_id')
         .order('code', { ascending: true });
 
       if (provincesError) {
@@ -220,7 +220,7 @@ export const WardsTab: React.FC = () => {
       const { error } = await supabase
         .from('wards')
         .delete()
-        .eq('id', ward.id);
+        .eq('_id', ward.id);
 
       if (error) {
         console.error('❌ Error deleting ward:', error);

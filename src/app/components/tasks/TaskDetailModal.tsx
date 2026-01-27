@@ -6,12 +6,12 @@ import {
   CheckSquare,
   Edit2,
   AlertTriangle,
-  Upload,
   AlertCircle,
   Image as ImageIcon,
   ClipboardList,
   Check,
   Download,
+  Plus,
 } from 'lucide-react';
 import { type InspectionTask, type TaskStatus } from '../../data/inspection-tasks-mock-data';
 import { InspectionTaskStatusBadge } from './InspectionTaskStatusBadge';
@@ -19,8 +19,8 @@ import { toast } from 'sonner';
 import styles from './TaskDetailModal.module.css';
 import ViolationDetailModal, { type Violation } from './ViolationDetailModal';
 import ChecklistItemModal from './ChecklistItemModal';
-import type { ChecklistItem, ChecklistItemData } from './ChecklistItemModal';
-import InspectionConclusionModal, { type InspectionSession, type ConclusionData } from './InspectionConclusionModal';
+import type { ChecklistItem } from './ChecklistItemModal';
+import InspectionConclusionModal, { type InspectionSession } from './InspectionConclusionModal';
 import { generateForm06PDF, createForm06DataFromTask } from '@/app/utils/generateForm06PDF';
 
 interface TaskDetailModalProps {
@@ -111,7 +111,7 @@ const MOCK_VIOLATION: Violation | null = {
   ],
 };
 
-export function TaskDetailModal({ task, isOpen, onClose, onEdit, onStatusChange }: TaskDetailModalProps) {
+export function TaskDetailModal({ task, isOpen, onClose, onEdit }: TaskDetailModalProps) {
   const [activeTab, setActiveTab] = useState<'info' | 'checklist' | 'evidence' | 'violations'>('info');
   const [isViolationDetailOpen, setIsViolationDetailOpen] = useState(false);
   const [isChecklistItemModalOpen, setIsChecklistItemModalOpen] = useState(false);
@@ -168,15 +168,11 @@ export function TaskDetailModal({ task, isOpen, onClose, onEdit, onStatusChange 
     setIsChecklistItemModalOpen(true);
   };
 
-  const handleSaveChecklistItem = (itemId: string, data: ChecklistItemData) => {
+  const handleSaveChecklistItem = () => {
     toast.success('Đã lưu kết quả kiểm tra');
   };
 
-  const handleOpenInspectionConclusionModal = () => {
-    setIsInspectionConclusionModalOpen(true);
-  };
-
-  const handleSaveInspectionConclusion = (conclusion: ConclusionData) => {
+  const handleSaveInspectionConclusion = () => {
     toast.success('Đã lưu kết luận kiểm tra');
   };
 
@@ -196,14 +192,14 @@ export function TaskDetailModal({ task, isOpen, onClose, onEdit, onStatusChange 
           <div className={styles.header}>
             <div className={styles.headerContent}>
               <div className={styles.headerIcon}>
-                <FileText size={20} />
+                <ClipboardList size={28} />
               </div>
               <div className={styles.headerText}>
                 <h2 className={styles.title}>Chi tiết phiên làm việc</h2>
-                <span className={styles.taskCode}>{task.code}</span>
+                <span className={styles.taskCode}>{task.code} • {task.roundName}</span>
               </div>
             </div>
-            <button className={styles.closeButton} onClick={onClose}>
+            <button className={styles.closeButton} onClick={onClose} title="Đóng">
               <X size={20} />
             </button>
           </div>
@@ -214,29 +210,29 @@ export function TaskDetailModal({ task, isOpen, onClose, onEdit, onStatusChange 
               className={`${styles.tab} ${activeTab === 'info' ? styles.tabActive : ''}`}
               onClick={() => setActiveTab('info')}
             >
-              <Info size={16} />
-              Thông tin
+              <Info size={18} />
+              Thông tin chung
             </button>
             <button
               className={`${styles.tab} ${activeTab === 'checklist' ? styles.tabActive : ''}`}
               onClick={() => setActiveTab('checklist')}
             >
-              <CheckSquare size={16} />
-              Checklist
+              <CheckSquare size={18} />
+              Checklist kiểm tra
             </button>
             <button
               className={`${styles.tab} ${activeTab === 'evidence' ? styles.tabActive : ''}`}
               onClick={() => setActiveTab('evidence')}
             >
-              <ImageIcon size={16} />
-              Chứng cứ
+              <ImageIcon size={18} />
+              Chứng cứ hình ảnh
             </button>
             <button
               className={`${styles.tab} ${activeTab === 'violations' ? styles.tabActive : ''}`}
               onClick={() => setActiveTab('violations')}
             >
-              <AlertTriangle size={16} />
-              Vi phạm
+              <AlertTriangle size={18} />
+              Hồ sơ vi phạm
             </button>
           </div>
 
@@ -245,50 +241,52 @@ export function TaskDetailModal({ task, isOpen, onClose, onEdit, onStatusChange 
             {/* Tab: Thông tin */}
             {activeTab === 'info' && (
               <div className={styles.infoTabContent}>
-                {/* Basic Info Section */}
-                <div className={styles.infoSection}>
-                  <div className={styles.infoRow}>
-                    <div className={styles.infoLabel}>Tên phiên</div>
-                    <div className={styles.infoValue}>{task.title}</div>
-                  </div>
-                  <div className={styles.infoRow}>
-                    <div className={styles.infoLabel}>Phiên #ID</div>
-                    <div className={styles.infoValue}>{task.code}</div>
-                  </div>
-                  <div className={styles.infoRow}>
-                    <div className={styles.infoLabel}>Trạng thái</div>
-                    <div className={styles.infoValue}>
-                      <InspectionTaskStatusBadge type="status" value={task.status} />
+                <div className={styles.infoGrid}>
+                  {/* Left Column Info Card */}
+                  <div className={styles.infoCard}>
+                    <div className={styles.infoRow}>
+                      <div className={styles.infoLabel}>Tên phiên làm việc</div>
+                      <div className={styles.infoValue}>{task.title}</div>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <div className={styles.infoLabel}>Trạng thái hiện tại</div>
+                      <div className={styles.infoValue}>
+                        <InspectionTaskStatusBadge type="status" value={task.status} />
+                      </div>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <div className={styles.infoLabel}>Cơ sở kiểm tra</div>
+                      <div className={styles.infoValue}>{task.targetName}</div>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <div className={styles.infoLabel}>Địa điểm</div>
+                      <div className={styles.infoValue}>{task.targetAddress || 'N/A'}</div>
                     </div>
                   </div>
-                  <div className={styles.infoRow}>
-                    <div className={styles.infoLabel}>Cửa hàng</div>
-                    <div className={styles.infoValue}>{task.targetName}</div>
-                  </div>
-                  <div className={styles.infoRow}>
-                    <div className={styles.infoLabel}>Ngày kiểm tra</div>
-                    <div className={styles.infoValue}>
-                      {new Date(task.dueDate).toLocaleDateString('vi-VN')}
+
+                  {/* Right Column Info Card */}
+                  <div className={styles.infoCard}>
+                    <div className={styles.infoRow}>
+                      <div className={styles.infoLabel}>Trưởng đoàn / Người phụ trách</div>
+                      <div className={styles.infoValue}>{task.assignee?.name || 'N/A'}</div>
                     </div>
-                  </div>
-                  <div className={styles.infoRow}>
-                    <div className={styles.infoLabel}>Giới hạn địa điểm</div>
-                    <div className={styles.infoValue}>18:00</div>
-                  </div>
-                  <div className={styles.infoRow}>
-                    <div className={styles.infoLabel}>Trưởng đoàn</div>
-                    <div className={styles.infoValue}>{task.assignee?.name || 'N/A'}</div>
-                  </div>
-                  <div className={styles.infoRow}>
-                    <div className={styles.infoLabel}>Thành viên đoàn</div>
-                    <div className={styles.infoValue}>
-                      {task.teamMembers || 'Bùi Văn Khoa, Đặng Thị Mai'}
+                    <div className={styles.infoRow}>
+                      <div className={styles.infoLabel}>Thành viên tham gia</div>
+                      <div className={styles.infoValue}>
+                        {(task as any).teamMembers || 'Bùi Văn Khoa, Đặng Thị Mai'}
+                      </div>
                     </div>
-                  </div>
-                  <div className={styles.infoRow}>
-                    <div className={styles.infoLabel}>Ghi chú</div>
-                    <div className={styles.infoValue}>
-                      {task.description || 'Phiên kiểm tra thực phẩm sạch và organic. Cần chuẩn bị thiết bị test nhanh chất lượng.'}
+                    <div className={styles.infoRow}>
+                      <div className={styles.infoLabel}>Thời gian kiểm tra</div>
+                      <div className={styles.infoValue}>
+                        {new Date(task.dueDate).toLocaleDateString('vi-VN')}
+                      </div>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <div className={styles.infoLabel}>Ghi chú đợt phiên</div>
+                      <div className={styles.infoValue}>
+                        {(task as any).description || 'Phiên kiểm tra thực phẩm sạch và organic. Cần chuẩn bị thiết bị test nhanh chất lượng.'}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -296,26 +294,26 @@ export function TaskDetailModal({ task, isOpen, onClose, onEdit, onStatusChange 
                 {/* Results Section */}
                 <div className={styles.resultsSection}>
                   <h3 className={styles.sectionTitle}>
-                    <ClipboardList size={16} />
-                    Kết quả kiểm tra
+                    <FileText size={20} />
+                    Kết luận & Kết quả kiểm tra
                   </h3>
                   <div className={styles.resultBox}>
-                    <div className={styles.resultLabel}>Kết luận kiểm tra</div>
+                    <div className={styles.resultLabel}>Kết luận cuối cùng</div>
                     <div className={styles.resultValue}>
-                      {task.status === 'completed' ? 'Không đạt' : 'Chưa có kết luận'}
+                      {task.status === 'completed' || task.status === 'closed' ? '🚨 PHÁT HIỆN VI PHẠM' : 'Sáng kiến / Chưa có kết luận'}
                     </div>
                   </div>
                   <div className={styles.resultBox}>
-                    <div className={styles.resultLabel}>Mô tả chi tiết</div>
+                    <div className={styles.resultLabel}>Báo cáo tóm tắt</div>
                     <div className={styles.resultDesc}>
-                      Tại thời điểm kiểm tra (18:00 ngày 24/01/2024), cơ sở đang hoạt động kinh doanh thực phẩm với quy mô 50m². Phát hiện nhiều vi phạm nghiêm trọng về an toàn thực phẩm:
+                      Tại thời điểm kiểm tra, đoàn công tác đã tiến hành rà soát các tiêu chuẩn ATTP. Kết quả ghi nhận như sau:
                       <ul>
-                        <li>Không có giấy chứng nhận đủ điều kiện ATTP hợp lệ (giấy đã hết hạn từ 15/12/2023)</li>
-                        <li>Phát hiện 12 nhân viên sửa hết hạn sổ khám sức khỏe, vẫn đang bày bán</li>
-                        <li>Khu vực chế biến không đảm bảo vệ sinh</li>
-                        <li>Nhân viên không mặc đồng phục, không đeo khẩu trang</li>
+                        <li>Không có giấy chứng nhận đủ điều kiện ATTP hợp lệ (Hết hạn).</li>
+                        <li>Phát hiện nhân viên chưa khám sức khỏe định kỳ.</li>
+                        <li>Khu vực chế biến không đảm bảo tiêu chuẩn vệ sinh môi trường.</li>
+                        <li>Nhân viên không đeo khẩu trang, bảo hộ lao động theo quy định.</li>
                       </ul>
-                      Đã yêu cầu cơ sở có giấy nghiêm tình trong vòng 15 ngày và khắc phục trong vòng 15 ngày.
+                      Toàn bộ hồ sơ vi phạm đã được lập biên bản và yêu cầu khắc phục triệt để.
                     </div>
                   </div>
                 </div>
@@ -328,14 +326,9 @@ export function TaskDetailModal({ task, isOpen, onClose, onEdit, onStatusChange 
                 {MOCK_FORMS.map((form) => (
                   <div key={form.id} className={styles.formSection}>
                     <div className={styles.formHeader}>
-                      <div className={styles.formHeaderLeft}>
-                        <FileText size={16} className={styles.formIcon} />
-                        <div>
-                          <div className={styles.formName}>{form.name}</div>
-                          <div className={styles.formMeta}>
-                            {form.completedItems} hạng mục đã • {form.totalItems} tổng
-                          </div>
-                        </div>
+                      <div className={styles.formName}>{form.name}</div>
+                      <div className={styles.formMeta}>
+                        Tiến độ: {form.completedItems}/{form.totalItems} hạng mục đã hoàn thành
                       </div>
                     </div>
 
@@ -343,26 +336,20 @@ export function TaskDetailModal({ task, isOpen, onClose, onEdit, onStatusChange 
                       {form.items.map((item) => (
                         <div key={item.id} className={styles.formItem}>
                           <div className={styles.formItemLeft}>
-                            {item.status === 'passed' ? (
-                              <div className={styles.checkboxPassed}>
-                                <Check size={14} />
-                              </div>
-                            ) : (
-                              <div className={styles.checkboxFailed}>
-                                <X size={14} />
-                              </div>
-                            )}
+                            <div className={`${styles.statusIndicator} ${item.status === 'passed' ? styles.statusPassed : styles.statusFailed}`}>
+                              {item.status === 'passed' ? <Check size={16} /> : <X size={16} />}
+                            </div>
                             <span className={styles.formItemTitle}>{item.title}</span>
                           </div>
                           <div className={styles.formItemRight}>
                             {item.attachments > 0 && (
                               <div className={styles.attachmentBadge}>
-                                <FileText size={12} />
-                                {item.attachments} tệp đính kèm
+                                <ImageIcon size={12} />
+                                {item.attachments} ảnh
                               </div>
                             )}
                             <button className={styles.viewDetailButton} onClick={() => handleOpenChecklistItemModal(item)}>
-                              Xem chi tiết
+                              Chi tiết
                             </button>
                           </div>
                         </div>
@@ -376,12 +363,6 @@ export function TaskDetailModal({ task, isOpen, onClose, onEdit, onStatusChange 
             {/* Tab: Chứng cứ */}
             {activeTab === 'evidence' && (
               <div className={styles.evidenceTabContent}>
-                <div className={styles.evidenceHeader}>
-                  <button className={styles.uploadButton} onClick={handleUploadEvidence}>
-                    <Upload size={16} />
-                    Tải lên chứng cứ
-                  </button>
-                </div>
                 <div className={styles.evidenceGrid}>
                   {MOCK_EVIDENCES.map((evidence) => (
                     <div key={evidence.id} className={styles.evidenceItem}>
@@ -389,6 +370,11 @@ export function TaskDetailModal({ task, isOpen, onClose, onEdit, onStatusChange 
                       <div className={styles.evidenceName}>{evidence.name}</div>
                     </div>
                   ))}
+                  {/* Plus placeholder for upload */}
+                  <div className={`${styles.evidenceItem} flex flex-col items-center justify-center border-dashed p-8 text-muted-foreground`} onClick={handleUploadEvidence}>
+                    <Plus size={32} />
+                    <span className="mt-2 text-sm font-medium">Bổ sung ảnh</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -397,39 +383,26 @@ export function TaskDetailModal({ task, isOpen, onClose, onEdit, onStatusChange 
             {activeTab === 'violations' && (
               <div className={styles.violationsTabContent}>
                 {MOCK_VIOLATION ? (
-                  <div className={styles.violationsList}>
-                    <div key={MOCK_VIOLATION.id} className={styles.violationItem}>
-                      <div className={styles.violationHeader}>
-                        <div className={styles.violationHeaderLeft}>
-                          <div className={`${styles.severityBadge} ${styles[`severity-${MOCK_VIOLATION.severity}`]}`}>
-                            {MOCK_VIOLATION.severity === 'high' && '🔴 Nghiêm trọng'}
-                            {MOCK_VIOLATION.severity === 'medium' && '🟠 Trung bình'}
-                            {MOCK_VIOLATION.severity === 'low' && '🟡 Nhẹ'}
-                          </div>
-                          <span className={styles.violationCode}>{MOCK_VIOLATION.code}</span>
-                        </div>
+                  <div className={styles.violationItem}>
+                    <div className="flex justify-between items-start">
+                      <h4 className={styles.violationTitle}>{MOCK_VIOLATION.title}</h4>
+                      <div className={`${styles.severityBadge} ${styles[`severity-${MOCK_VIOLATION.severity}`]}`}>
+                        {MOCK_VIOLATION.severity === 'high' ? 'Rất nghiêm trọng' : MOCK_VIOLATION.severity === 'medium' ? 'Nghiêm trọng' : 'Nhẹ'}
                       </div>
-                      <div className={styles.violationTitle}>{MOCK_VIOLATION.title}</div>
-                      <div className={styles.violationDesc}>{MOCK_VIOLATION.description}</div>
-                      <div className={styles.violationMeta}>
-                        <div className={styles.violationMetaRow}>
-                          <span className={styles.violationMetaLabel}>Căn cứ pháp lý:</span>
-                          <span>{MOCK_VIOLATION.regulation}</span>
-                        </div>
-                        <div className={styles.violationMetaRow}>
-                          <span className={styles.violationMetaLabel}>Hướng xử lý:</span>
-                          <span>{MOCK_VIOLATION.suggestedAction}</span>
-                        </div>
-                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed mt-2">
+                      {MOCK_VIOLATION.description}
+                    </p>
+                    <div className="mt-4 pt-4 border-t flex justify-end">
                       <button className={styles.viewDetailButton} onClick={handleViewViolationDetail}>
-                        Xem chi tiết
+                        Xem hồ sơ vi phạm chi tiết
                       </button>
                     </div>
                   </div>
                 ) : (
                   <div className={styles.emptyState}>
-                    <AlertCircle size={48} />
-                    <p>Chưa có vi phạm nào được ghi nhận</p>
+                    <AlertCircle size={48} className="opacity-20" />
+                    <p>Phiên làm việc này chưa ghi nhận vi phạm nào.</p>
                   </div>
                 )}
               </div>
@@ -438,18 +411,18 @@ export function TaskDetailModal({ task, isOpen, onClose, onEdit, onStatusChange 
 
           {/* Footer */}
           <div className={styles.footer}>
-            <button className={styles.cancelButton} onClick={onClose}>
-              Đóng
+            <button className={`${styles.footerButton} ${styles.closeBtn}`} onClick={onClose}>
+              Đóng cửa sổ
             </button>
-            {task.status === 'completed' && (
-              <button className={styles.downloadButton} onClick={handleDownloadForm06}>
-                <Download size={16} />
-                Tải biên bản
+            { (task.status === 'completed' || task.status === 'closed') && (
+              <button className={`${styles.footerButton} ${styles.downloadBtn}`} onClick={handleDownloadForm06}>
+                <Download size={18} />
+                Xuất biên bản (PDF)
               </button>
             )}
-            <button className={styles.editButton} onClick={handleEdit}>
-              <Edit2 size={16} />
-              Chỉnh sửa
+            <button className={`${styles.footerButton} ${styles.editBtn}`} onClick={handleEdit}>
+              <Edit2 size={18} />
+              Cập nhật dữ liệu
             </button>
           </div>
         </div>

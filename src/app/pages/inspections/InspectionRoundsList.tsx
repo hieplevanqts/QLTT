@@ -91,13 +91,12 @@ export function InspectionRoundsList() {
   const openModal = (type: typeof modalState.type, round: InspectionRound) => setModalState({ type, round });
 
   // Modal action handlers
-  const handleSendForApproval = async (note: string) => {
+  const handleSendForApproval = async () => {
     if (!modalState.round) return;
-    
     
     try {
       // Update status from 'draft' to 'pending_approval'
-      await updateRoundStatus(modalState.round.id, 'pending_approval', note);
+      await updateRoundStatus(modalState.round.id, 'pending_approval');
       
       // Close modal first
       closeModal();
@@ -114,7 +113,7 @@ export function InspectionRoundsList() {
     }
   };
 
-  const handleStartInspection = async (note: string) => {
+  const handleStartInspection = async () => {
     if (!modalState.round) return;
     
     try {
@@ -122,13 +121,13 @@ export function InspectionRoundsList() {
       
       if (isApproval) {
         // Phê duyệt: Update status from 'pending_approval' to 'approved'
-        await updateRoundStatus(modalState.round.id, 'approved', note);
+        await updateRoundStatus(modalState.round.id, 'approved');
         closeModal();
         toast.success(`Đã phê duyệt đợt kiểm tra "${modalState.round.name}"`);
         await refetch();
       } else {
         // Bắt đầu kiểm tra: Update status from 'approved' to 'in_progress'
-        await updateRoundStatus(modalState.round.id, 'in_progress', note);
+        await updateRoundStatus(modalState.round.id, 'in_progress');
         closeModal();
         toast.success(`Đã bắt đầu kiểm tra "${modalState.round.name}"`);
         await refetch();
@@ -139,12 +138,12 @@ export function InspectionRoundsList() {
     }
   };
 
-  const handleCompleteInspection = async (summary: string) => {
+  const handleCompleteInspection = async () => {
     if (!modalState.round) return;
     
     try {
       // Update status from 'in_progress' to 'completed'
-      await updateRoundStatus(modalState.round.id, 'completed', summary);
+      await updateRoundStatus(modalState.round.id, 'completed');
       closeModal();
       toast.success(`Đã hoàn thành kiểm tra "${modalState.round.name}"`);
       await refetch();
@@ -169,11 +168,11 @@ export function InspectionRoundsList() {
     }
   };
 
-  const handleCancelRound = async (reason: string) => {
+  const handleCancelRound = async () => {
     if (!modalState.round) return;
     
     try {
-      await updateRoundStatus(modalState.round.id, 'cancelled', reason);
+      await updateRoundStatus(modalState.round.id, 'cancelled');
       closeModal();
       toast.success(`Đã hủy đợt kiểm tra "${modalState.round.name}"`);
       await refetch();
@@ -197,12 +196,12 @@ export function InspectionRoundsList() {
     }
   };
 
-  const handleRejectRound = async (reason: string) => {
+  const handleRejectRound = async () => {
     if (!modalState.round) return;
     
     try {
       // Update status from 'pending_approval' to 'rejected'
-      await updateRoundStatus(modalState.round.id, 'rejected', reason);
+      await updateRoundStatus(modalState.round.id, 'rejected');
       closeModal();
       toast.success(`Đã từ chối duyệt đợt kiểm tra "${modalState.round.name}"`);
       await refetch();
@@ -264,8 +263,8 @@ export function InspectionRoundsList() {
       draft: rounds.filter((r: InspectionRound) => r.status === 'draft').length,
       pending_approval: rounds.filter((r: InspectionRound) => r.status === 'pending_approval').length,
       approved: rounds.filter((r: InspectionRound) => r.status === 'approved').length,
+      active: rounds.filter((r: InspectionRound) => r.status === 'active' || r.status === 'in_progress').length,
       paused: rounds.filter((r: InspectionRound) => r.status === 'paused').length,
-      in_progress: rounds.filter((r: InspectionRound) => r.status === 'in_progress').length,
       completed: rounds.filter((r: InspectionRound) => r.status === 'completed').length,
       cancelled: rounds.filter((r: InspectionRound) => r.status === 'cancelled').length,
     };
@@ -281,7 +280,10 @@ export function InspectionRoundsList() {
       const matchesPlan = planFilter === 'all' || 
                          (planFilter === 'with_plan' && round.planId) ||
                          (planFilter === 'no_plan' && !round.planId);
-      const matchesActiveFilter = activeFilter === null || round.status === (activeFilter as any);
+      const matchesActiveFilter = activeFilter === null || 
+                                 (activeFilter === 'active' 
+                                   ? (round.status === 'active' || round.status === 'in_progress')
+                                   : round.status === (activeFilter as any));
       
       // Date range filter
       let matchesDateRange = true;
@@ -388,7 +390,8 @@ export function InspectionRoundsList() {
         break;
 
       case 'active':
-        // Đang triển khai: Phiên làm việc, Hoàn thành, Tạm dừng
+      case 'in_progress':
+        // Đang triển khai/Đang kiểm tra: Phiên làm việc, Hoàn thành, Tạm dừng
         actions.push(
           {
             label: 'Phiên làm việc',
@@ -427,30 +430,6 @@ export function InspectionRoundsList() {
             icon: <PlayCircle size={16} />,
             onClick: () => openModal('resume', round),
             priority: 9,
-          }
-        );
-        break;
-
-      case 'in_progress':
-        // Đang kiểm tra: Phiên làm việc, Hoàn thành
-        actions.push(
-          {
-            label: 'Phiên làm việc',
-            icon: <Calendar size={16} />,
-            onClick: () => {
-              setCreateSessionDialog({
-                open: true,
-                roundId: round.id,
-                roundName: round.name,
-              });
-            },
-            priority: 9,
-          },
-          {
-            label: 'Hoàn thành',
-            icon: <ClipboardCheck size={16} />,
-            onClick: () => openModal('completeInspection', round),
-            priority: 10,
           }
         );
         break;
@@ -520,12 +499,7 @@ export function InspectionRoundsList() {
       sortable: true,
       width: '140px',
       render: (round) => (
-        <div>
-          <div className={styles.roundCodeBadgeRow}>
-            <StatusBadge type="inspectionType" value={round.type} size="sm" />
-          </div>
-          <div className={styles.roundCode}>{round.code}</div>
-        </div>
+        <div className={styles.roundCode}>{round.campaign_code || '--'}</div>
       ),
     },
     {
@@ -534,7 +508,7 @@ export function InspectionRoundsList() {
       sortable: true,
       render: (round) => (
         <div>
-          <div className={styles.roundName}>{round.name || 'Chưa đặt tên'}</div>
+          <div className={styles.roundName}>{round.name || '--'}</div>
           {round.planName && (
             <div className={styles.roundPlan}>KH: {round.planName}</div>
           )}
@@ -545,7 +519,7 @@ export function InspectionRoundsList() {
       key: 'time',
       label: 'Thời gian',
       sortable: true,
-      width: '180px',
+      width: '220px',
       render: (round) => {
         if (!round.startDate || !round.endDate) {
           return <span className={styles.timeRange}>Chưa xác định</span>;
@@ -568,7 +542,7 @@ export function InspectionRoundsList() {
       width: '250px',
       truncate: true,
       render: (round) => (
-        <span className={styles.leadUnit}>{round.leadUnit || 'Chưa xác định'}</span>
+        <span className={styles.leadUnit}>{round.leadUnit || '--'}</span>
       ),
     },
     {
@@ -578,7 +552,7 @@ export function InspectionRoundsList() {
       width: '120px',
       render: (round) => (
         <span className={styles.teamSize}>
-          {round.teamSize > 0 ? `${round.teamSize} người` : 'Chưa phân công'}
+          {round.teamSize > 0 ? `${round.teamSize} người` : '--'}
         </span>
       ),
     },
@@ -590,7 +564,7 @@ export function InspectionRoundsList() {
       render: (round) => (
         <div className={styles.targetsInfo}>
           <div className={styles.targetsCount}>
-            {round.totalTargets > 0 ? `${round.inspectedTargets}/${round.totalTargets}` : 'Chưa xác định'}
+            {round.totalTargets > 0 ? `${round.inspectedTargets}/${round.totalTargets}` : '--'}
           </div>
           {round.totalTargets > 0 && (
             <div className={styles.targetsProgress}>
@@ -612,7 +586,7 @@ export function InspectionRoundsList() {
       sortable: true,
       width: '140px',
       truncate: true,
-      render: (round) => <span className={styles.creator}>{round.createdBy}</span>,
+      render: (round) => <span className={styles.creator}>{round.createdBy || '--'}</span>,
     },
     {
       key: 'actions',
@@ -766,6 +740,14 @@ export function InspectionRoundsList() {
             variant="info"
             active={activeFilter === 'approved'}
             onClick={() => setActiveFilter('approved')}
+          />
+          <ModernSummaryCard
+            label="Đang triển khai"
+            value={stats.active.toString()}
+            icon={PlayCircle}
+            variant="primary"
+            active={activeFilter === 'active'}
+            onClick={() => setActiveFilter('active')}
           />
           <ModernSummaryCard
             label="Tạm dừng"

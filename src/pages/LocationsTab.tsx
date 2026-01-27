@@ -26,7 +26,6 @@ import { supabase } from '../lib/supabase';
 import { Pagination, usePagination } from '../components/Pagination';
 import { ProvinceModal } from '../components/ProvinceModal';
 import { WardModal } from '../components/WardModal';
-import * as XLSX from 'xlsx';
 
 interface Province {
   id: string;
@@ -86,7 +85,7 @@ export const LocationsTab: React.FC = () => {
 
       const { data, error } = await supabase
         .from('provinces')
-        .select('*')
+        .select('*, id:_id')
         .order('code', { ascending: true });
 
       if (error) {
@@ -200,7 +199,7 @@ export const LocationsTab: React.FC = () => {
       // Check if province has wards
       const { count, error: countError } = await supabase
         .from('wards')
-        .select('*', { count: 'exact', head: true })
+        .select('*, id:_id', { count: 'exact', head: true })
         .eq('provinceId', province.id);
 
       if (countError) {
@@ -217,7 +216,7 @@ export const LocationsTab: React.FC = () => {
       const { error } = await supabase
         .from('provinces')
         .delete()
-        .eq('id', province.id);
+        .eq('_id', province.id);
 
       if (error) {
         console.error('❌ Error deleting province:', error);
@@ -271,7 +270,7 @@ export const LocationsTab: React.FC = () => {
       const { error } = await supabase
         .from('wards')
         .delete()
-        .eq('id', ward.id);
+        .eq('_id', ward.id);
 
       if (error) {
         console.error('❌ Error deleting ward:', error);
@@ -288,8 +287,9 @@ export const LocationsTab: React.FC = () => {
     }
   };
 
-  const handleExportProvincesExcel = () => {
+  const handleExportProvincesExcel = async () => {
     try {
+      const XLSX = await import('xlsx');
       const excelData = filteredProvinces.map((province, index) => ({
         'STT': index + 1,
         'Mã tỉnh/TP': province.code,
@@ -312,13 +312,14 @@ export const LocationsTab: React.FC = () => {
     }
   };
 
-  const handleExportWardsExcel = () => {
+  const handleExportWardsExcel = async () => {
     if (!selectedProvince) {
       toast.error('Vui lòng chọn tỉnh/thành phố');
       return;
     }
 
     try {
+      const XLSX = await import('xlsx');
       const excelData = filteredWards.map((ward, index) => ({
         'STT': index + 1,
         'Mã phường/xã': ward.code,

@@ -112,10 +112,40 @@ export function PlanCreate() {
       }
 
       try {
+        // 🔥 FIX: Validate UUID format and resolve department name to UUID if needed
+        const isValidUUID = (str: string): boolean => {
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          return uuidRegex.test(str);
+        };
+        
+        let actualDivisionId = divisionId;
+        
+        // Check if divisionId is a valid UUID
+        if (!isValidUUID(divisionId)) {
+          console.log(`⚠️ PlanCreate: divisionId is not a UUID, searching by name:`, divisionId);
+          
+          // Try to find department by name
+          const { data: deptByName, error: searchError } = await supabase
+            .from('departments')
+            .select('_id')
+            .eq('name', divisionId)
+            .is('deleted_at', null)
+            .single();
+          
+          if (searchError || !deptByName) {
+            console.error(`❌ PlanCreate: Department not found by name "${divisionId}":`, searchError);
+            setManagingUnits([]);
+            return;
+          }
+          
+          actualDivisionId = deptByName._id;
+          console.log(`✅ PlanCreate: Found department UUID:`, actualDivisionId);
+        }
+        
         const { data, error } = await supabase
           .from('departments')
           .select('_id, name')
-          .eq('parent_id', divisionId);
+          .eq('parent_id', actualDivisionId);
 
         if (error) {
           console.error('Error fetching managing units:', error);

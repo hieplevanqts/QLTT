@@ -83,7 +83,7 @@ export const DepartmentsTab: React.FC = () => {
 
       const { data, error } = await supabase
         .from('departments')
-        .select('*')
+        .select('*, id:_id')
         .is('deleted_at', null)
         .order('path', { ascending: true });
 
@@ -425,7 +425,7 @@ export const DepartmentsTab: React.FC = () => {
             level: source.level,
             path: newPath,
           })
-          .select('*')
+          .select('*, id:_id')
           .single();
 
         if (error) throw error;

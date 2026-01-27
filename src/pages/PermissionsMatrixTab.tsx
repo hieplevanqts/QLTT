@@ -86,7 +86,7 @@ export const PermissionsMatrixTab: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('map_modules')
-        .select('*')
+        .select('*, id:_id')
         .order('name', { ascending: true });
 
       if (error) {
@@ -106,7 +106,7 @@ export const PermissionsMatrixTab: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('permissions')
-        .select('*')
+        .select('*, id:_id')
         .order('module_id', { ascending: true })
         .order('name', { ascending: true });
 
@@ -147,7 +147,7 @@ export const PermissionsMatrixTab: React.FC = () => {
             description: formData.description || null,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', editingModule.id);
+          .eq('_id', editingModule.id);
 
         if (error) throw error;
 
@@ -198,7 +198,7 @@ export const PermissionsMatrixTab: React.FC = () => {
       const { error } = await supabase
         .from('map_modules')
         .delete()
-        .eq('id', module.id);
+        .eq('_id', module.id);
 
       if (error) throw error;
 
@@ -227,7 +227,7 @@ export const PermissionsMatrixTab: React.FC = () => {
             description: formData.description || null,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', editingPermission.id);
+          .eq('_id', editingPermission.id);
 
         if (error) throw error;
 
@@ -277,7 +277,7 @@ export const PermissionsMatrixTab: React.FC = () => {
       const { error } = await supabase
         .from('permissions')
         .delete()
-        .eq('id', permission.id);
+        .eq('_id', permission.id);
 
       if (error) throw error;
 

@@ -26,7 +26,7 @@ export async function testSupabaseConnection() {
   try {
     const { data, error } = await supabase
       .from('leads')
-      .select('id')
+      .select('id:_id')
       .limit(1);
 
     if (error) {
@@ -48,7 +48,7 @@ export async function checkTableExists(tableName: string) {
   try {
     const { error } = await supabase
       .from(tableName)
-      .select('*')
+      .select('*, id:_id')
       .limit(1);
 
     if (error) {
@@ -72,7 +72,7 @@ export async function getTableRowCount(tableName: string): Promise<number> {
   try {
     const { count, error } = await supabase
       .from(tableName)
-      .select('*', { count: 'exact', head: true });
+      .select('*, id:_id', { count: 'exact', head: true });
 
     if (error) throw error;
 

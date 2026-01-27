@@ -45,14 +45,14 @@ const DEFAULT_PASSWORD = 'Couppa@123';
  * 
  * ✅ CORRECT: Use user_roles junction table (many-to-many)
  *   - users (1) ←→ (N) user_roles (N) ←→ (1) roles
- *   - Query: .select('*, user_roles(roles(id, code, name))')
+ *   - Query: .select('*, user_roles(roles(id:_id, code, name))')
  *   - Access: user.user_roles?.map(ur => ur.roles.name)
  * 
  * ⚠️ IMPORTANT - Department Relationship:
  *   - Uses department_users junction table (many-to-many, but 1 user = 1 department)
  *   - users (1) ←→ (N) department_users (N) ←→ (1) departments
  *   - 1 user has only 1 department (enforce in logic)
- *   - Query: .select('*, department_users(departments(id, name, code, level))')
+ *   - Query: .select('*, department_users(departments(id:_id, name, code, level))')
  *   - Access: user.department_users?.[0]?.departments
  * 
  * ❌ INCORRECT: user.role (legacy field)
@@ -129,7 +129,7 @@ export const UserListTabNew: React.FC = () => {
       // Fetch roles first
       const { data: rolesData, error: rolesError } = await supabase
         .from('roles')
-        .select('*')
+        .select('*, id:_id')
         .order('name', { ascending: true });
 
       if (rolesError) {
@@ -142,7 +142,7 @@ export const UserListTabNew: React.FC = () => {
       // Fetch departments
       const { data: departmentsData, error: deptError } = await supabase
         .from('departments')
-        .select('*')
+        .select('*, id:_id')
         .is('deleted_at', null) // ✅ Filter out deleted records
         .order('path', { ascending: true });
 
@@ -160,14 +160,14 @@ export const UserListTabNew: React.FC = () => {
           *,
           user_roles (
             roles (
-              id,
+              id:_id,
               code,
               name
             )
           ),
           department_users (
             departments (
-              id,
+              id:_id,
               name,
               code,
               level
@@ -255,7 +255,7 @@ export const UserListTabNew: React.FC = () => {
       const { error } = await supabase
         .from('users')
         .update({ status: newStatus })
-        .eq('id', user.id);
+        .eq('_id', user.id);
 
       if (error) {
         console.error('❌ Error updating status:', error);
@@ -288,6 +288,18 @@ export const UserListTabNew: React.FC = () => {
       const salt = bcrypt.genSaltSync(10);
       const hashedPassword = bcrypt.hashSync(DEFAULT_PASSWORD, salt);
 
+      // Debug: First, try to fetch the current user data to see schema
+      const { data: currentUser, error: fetchError } = await supabase
+        .from('users')
+        .select('*, id:_id')
+        .eq('_id', userToReset.id)
+        .single();
+
+      if (fetchError) {
+        console.error('❌ Error fetching user for debug:', fetchError);
+      } else {
+      }
+
       // Update password trong database
       // Note: Trong production, nên hash password ở server-side để bảo mật hơn
       const { error } = await supabase
@@ -296,7 +308,7 @@ export const UserListTabNew: React.FC = () => {
           password: hashedPassword,
           updated_at: new Date().toISOString() 
         })
-        .eq('id', userToReset.id)
+        .eq('_id', userToReset.id)
         .select();
 
       if (error) {
