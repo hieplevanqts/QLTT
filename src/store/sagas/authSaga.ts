@@ -30,9 +30,7 @@ function* handleLogin(action: PayloadAction<{ email: string; password: string }>
 
     // Store token and refresh token using professional storage (encrypted, secure)
     if (response.access_token) {
-      console.log('💾 AuthSaga: Storing token after login...');
       yield call(storeToken, response.access_token, response.expires_in, response.refresh_token);
-      console.log('✅ AuthSaga: Token stored successfully');
     } else {
       console.warn('⚠️ AuthSaga: No access_token in login response');
     }
@@ -81,11 +79,8 @@ function* handleRestoreSession(): Generator<any, any, any> {
     const session = yield call(restoreSession);
     
     if (session) {
-      console.log('✅ AuthSaga: Session restored, token:', session.token ? 'present' : 'missing', 'user:', session.user ? session.user.id : 'null');
-      
       // If we have token but no user, fetch user info first
       if (session.token && !session.user) {
-        console.log('🔄 AuthSaga: Token exists but no user, fetching user info...');
         try {
           const userInfo = yield call(fetchUserInfoApi, session.token);
           if (userInfo) {
@@ -133,7 +128,6 @@ function* handleRestoreSession(): Generator<any, any, any> {
       try {
         const storedToken = yield call(getStoredToken);
         if (storedToken) {
-          console.log('✅ AuthSaga: Found token in storage despite restore failure, restoring with token only');
           // Restore with token only, user will be fetched later
           yield put(restoreSessionSuccess({
             token: storedToken,
@@ -143,7 +137,6 @@ function* handleRestoreSession(): Generator<any, any, any> {
           // Try to fetch user info in background
           yield put(fetchUserInfoRequest(storedToken));
         } else {
-          console.log('❌ AuthSaga: No token in storage, dispatching restoreSessionFailure');
           yield put(restoreSessionFailure());
         }
       } catch (error) {
