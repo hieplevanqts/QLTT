@@ -39,7 +39,7 @@ function mapStatus(status: string | null | undefined) {
  * 
  * @param limit - Maximum number of records to fetch
  * @param offset - Pagination offset
- * @param filters - Optional filters (status, district, businessType, etc.)
+ * @param filters - Optional filters (status, province_id, district, businessType, etc.)
  * @returns Array of stores mapped from merchants data
  */
 export async function fetchStores(
@@ -47,6 +47,7 @@ export async function fetchStores(
   offset: number = 0,
   filters?: {
     status?: string;
+    province_id?: string;
     district?: string;
     businessType?: string;
     hasViolations?: boolean;
@@ -61,6 +62,10 @@ export async function fetchStores(
     // Apply filters if provided
     if (filters?.status) {
       url += `&status=eq.${encodeURIComponent(filters.status)}`;
+    }
+    // Filter by province_id (UUID field)
+    if (filters?.province_id) {
+      url += `&province_id=eq.${encodeURIComponent(filters.province_id)}`;
     }
     if (filters?.district) {
       url += `&district=eq.${encodeURIComponent(filters.district)}`;
@@ -90,6 +95,9 @@ export async function fetchStores(
 
     const data = await response.json();
     console.log('✅ Fetched merchants data:', data.length, 'records');
+    if (filters?.province_id) {
+      console.log('📍 Filtered by province_id:', filters.province_id);
+    }
 
     // Map merchant data to Store interface
     const stores: Store[] = data.map((merchant: any, index: number): Store => {
@@ -102,14 +110,11 @@ export async function fetchStores(
       const gpsCoordinates =
         latitude && longitude ? `${latitude.toFixed(6)}, ${longitude.toFixed(6)}` : undefined;
 
-      // Map complaint count to violations/complaints (mock for now)
-      // hasViolations can be used for filtering in the future
-      const complaintCount = merchant.complaint_count || 0;
-
       // Create Store object
       const store: Store = {
         // Basic info
         id: numericId,
+        merchantId: merchant._id, // UUID from database
         name: merchant.business_name || 'Unnamed Store',
         address: merchant.address || '',
         type: merchant.business_type || 'Chưa xác định',
@@ -137,11 +142,16 @@ export async function fetchStores(
         businessType: merchant.business_type || '',
         ownerName: merchant.owner_name || '',
         ownerPhone: merchant.owner_phone || '',
+        ownerPhone2: merchant.owner_phone_2 || '',
+        ownerBirthYear: merchant.owner_birth_year,
+        ownerIdNumber: merchant.owner_identity_no || '',
+        ownerEmail: merchant.owner_email || '',
         businessPhone: merchant.business_phone || '',
         email: merchant.business_email || '',
         website: merchant.website || '',
         fax: merchant.fax || '',
-        businessArea: merchant.store_area || '',
+        businessArea: merchant.store_area?.toString() || '',
+        area_name: merchant.store_area?.toString() || '',
         notes: merchant.note || '',
 
         // Last inspection
@@ -258,7 +268,7 @@ export async function fetchStoresStats(filters?: {
  */
 export async function fetchStoreById(storeId: string | number): Promise<Store | null> {
   try {
-    const url = `${SUPABASE_REST_URL}/merchants?id=eq.${storeId}&select=*&limit=1`;
+    const url = `${SUPABASE_REST_URL}/merchants?_id=eq.${storeId}&select=*&limit=1`;
 
     const response = await fetch(url, {
       method: 'GET',
@@ -280,13 +290,23 @@ export async function fetchStoreById(storeId: string | number): Promise<Store | 
     const latitude = parseFloat(merchant.latitude) || undefined;
     const longitude = parseFloat(merchant.longitude) || undefined;
 
+    console.log('✅ [fetchStoreById] API returned merchant:', {
+      url_query_id: storeId,
+      merchant_id_uuid: merchant._id,
+      business_name: merchant.business_name,
+      numeric_id: numericId,
+      timestamp: new Date().toISOString(),
+    });
+
     return {
       id: numericId,
+      merchantId: merchant._id,  // 🔴 CRITICAL: UUID for API updates
       name: merchant.business_name || '',
       address: merchant.address || '',
       type: merchant.business_type || '',
       status: mapStatus(merchant.status) as any,
       riskLevel: mapRiskLevel(merchant.risk_level),
+      area_name: merchant.store_area?.toString() || '',
       province: merchant.province || '',
       provinceCode: merchant.province_id || '',
       jurisdiction: merchant.district || '',
@@ -404,5 +424,173 @@ export async function createMerchant(data: {
   } catch (error: any) {
     console.error('❌ Error creating merchant:', error);
     throw error;
+  }
+}
+
+/**
+ * 📝 Update merchant via update_merchant_full RPC
+ * @param merchantId - The merchant UUID to update
+ * @param data - Updated merchant data
+ * @returns Updated merchant data
+ */
+export async function updateMerchant(
+  merchantId: string,
+  data: {
+    p_business_name?: string;
+    p_owner_name?: string;
+    p_owner_phone?: string;
+    p_license_status?: string;
+    p_tax_code?: string;
+    p_business_type?: string;
+    p_province_id?: string;
+    p_ward_id?: string;
+    p_address?: string;
+    p_latitude?: number;
+    p_longitude?: number;
+    p_status?: string;
+    p_established_date?: string;
+    p_fax?: string;
+    p_department_id?: string;
+    p_note?: string;
+    p_business_phone?: string;
+    p_business_email?: string;
+    p_website?: string;
+    p_store_area?: number;
+    p_owner_phone_2?: string;
+    p_owner_birth_year?: number;
+    p_owner_identity_no?: string;
+    p_owner_email?: string;
+  }
+): Promise<any> {
+  try {
+    const url = `${SUPABASE_REST_URL}/rpc/update_merchant_full`;
+
+    console.log('� [updateMerchant] Calling API:', {
+      merchant_id: merchantId,
+      endpoint: '/rpc/update_merchant_full',
+      fields_updating: Object.keys(data).filter(k => data[k as keyof typeof data] !== undefined).length,
+      timestamp: new Date().toISOString(),
+    });
+
+    // Create payload with merchant_id and all parameters
+    const payload = {
+      p_merchant_id: merchantId,
+      p_business_name: data.p_business_name || null,
+      p_owner_name: data.p_owner_name || null,
+      p_owner_phone: data.p_owner_phone || null,
+      p_license_status: data.p_license_status || 'valid',
+      p_tax_code: data.p_tax_code || null,
+      p_business_type: data.p_business_type || null,
+      p_province_id: data.p_province_id || null,
+      p_ward_id: data.p_ward_id || null,
+      p_address: data.p_address || null,
+      p_latitude: data.p_latitude || null,
+      p_longitude: data.p_longitude || null,
+      p_status: data.p_status || 'active',
+      p_established_date: data.p_established_date || null,
+      p_fax: data.p_fax || null,
+      p_department_id: data.p_department_id || null,
+      p_note: data.p_note || null,
+      p_business_phone: data.p_business_phone || null,
+      p_business_email: data.p_business_email || null,
+      p_website: data.p_website || null,
+      p_store_area: data.p_store_area || null,
+      p_owner_phone_2: data.p_owner_phone_2 || null,
+      p_owner_birth_year: data.p_owner_birth_year || null,
+      p_owner_identity_no: data.p_owner_identity_no || null,
+      p_owner_email: data.p_owner_email || null,
+    };
+
+    console.log('📤 [updateMerchant] Request payload:', {
+      p_merchant_id: payload.p_merchant_id,
+      p_business_name: payload.p_business_name,
+      p_owner_name: payload.p_owner_name,
+      p_province_id: payload.p_province_id,
+      p_ward_id: payload.p_ward_id,
+      timestamp: new Date().toISOString(),
+    });
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ [updateMerchant] API error:', {
+        merchant_id: merchantId,
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText,
+        timestamp: new Date().toISOString(),
+      });
+      throw new Error(
+        `Failed to update merchant: ${response.status} ${response.statusText}\n${errorText}`
+      );
+    }
+
+    const result = await response.json();
+
+    console.log('✅ [updateMerchant] Success response:', {
+      merchant_id: merchantId,
+      result: result,
+      timestamp: new Date().toISOString(),
+    });
+
+    return result;
+  } catch (error: any) {
+    console.error('❌ [updateMerchant] Error:', {
+      merchant_id: merchantId,
+      error_message: error.message,
+      timestamp: new Date().toISOString(),
+    });
+    throw error;
+  }
+}
+
+/**
+ * 📄 Fetch merchant licenses (legal documents) by merchant ID
+ * @param merchantId - The merchant UUID
+ * @returns Array of legal documents/licenses
+ */
+export async function fetchMerchantLicenses(merchantId: string): Promise<any[]> {
+  try {
+    const url = `${SUPABASE_REST_URL}/merchant_licenses?merchant_id=eq.${merchantId}&order=license_type.asc,created_at.desc,_id.desc&limit=100`;
+
+    console.log('📄 [fetchMerchantLicenses] Fetching licenses for merchant:', merchantId);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ [fetchMerchantLicenses] API error:', {
+        merchant_id: merchantId,
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText,
+      });
+      throw new Error(`Failed to fetch merchant licenses: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    console.log('✅ [fetchMerchantLicenses] Fetched licenses:', {
+      merchant_id: merchantId,
+      count: data.length,
+      types: data.map((l: any) => l.license_type),
+    });
+
+    return data;
+  } catch (error: any) {
+    console.error('❌ [fetchMerchantLicenses] Error:', {
+      merchant_id: merchantId,
+      error_message: error.message,
+    });
+    // Return empty array on error instead of throwing
+    return [];
   }
 }

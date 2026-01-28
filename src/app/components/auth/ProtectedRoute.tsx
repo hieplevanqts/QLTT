@@ -239,8 +239,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     
     // Only redirect if final check is done and no token found
     if (hasDoneFinalCheck) {
-        hasDoneFinalCheck
-      });
       return <Navigate to="/auth/login" state={{ from: location }} replace />;
     }
     
