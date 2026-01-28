@@ -28,6 +28,7 @@ interface DocumentUploadDialogProps {
   existingData?: Record<string, any>;
   existingFileUrl?: string;
   editingDocument?: any;
+  isSaving?: boolean;
   onSave: (data: { file: File | null; fields: Record<string, any> }) => void;
 }
 
@@ -38,6 +39,7 @@ export function DocumentUploadDialog({
   existingData,
   existingFileUrl,
   editingDocument,
+  isSaving,
   onSave,
 }: DocumentUploadDialogProps) {
   // Get document type config
@@ -58,12 +60,12 @@ export function DocumentUploadDialog({
     if (open && editingDocument) {
       // Pre-fill form with existing document data
       const existingFields: Record<string, any> = {};
-      
+
       // Extract all uploaded data fields
       if (editingDocument.uploadedData) {
         Object.assign(existingFields, editingDocument.uploadedData);
       }
-      
+
       // Map top-level fields to form field keys
       // Handle documentNumber -> licenseNumber/certificateNumber mapping
       if (editingDocument.documentNumber) {
@@ -77,7 +79,7 @@ export function DocumentUploadDialog({
           existingFields.contractNumber = editingDocument.documentNumber;
         }
       }
-      
+
       // Helper function to convert dd/mm/yyyy to yyyy-mm-dd for HTML date input
       const convertDateFormat = (dateStr: string): string => {
         if (!dateStr) return '';
@@ -90,7 +92,7 @@ export function DocumentUploadDialog({
         }
         return dateStr;
       };
-      
+
       // Map common top-level fields with date conversion
       const dateFields = ['issueDate', 'expiryDate', 'dateOfBirth', 'startDate', 'endDate'];
       dateFields.forEach(field => {
@@ -98,7 +100,7 @@ export function DocumentUploadDialog({
           existingFields[field] = convertDateFormat(editingDocument[field]);
         }
       });
-      
+
       // Map other common fields
       const commonFields = ['issuingAuthority', 'notes'];
       commonFields.forEach(field => {
@@ -106,7 +108,7 @@ export function DocumentUploadDialog({
           existingFields[field] = editingDocument[field];
         }
       });
-      
+
       // Map other possible fields based on document type
       const allPossibleFields = [
         'fullName', 'issuePlace', 'address',
@@ -119,9 +121,9 @@ export function DocumentUploadDialog({
           existingFields[field] = editingDocument[field];
         }
       });
-      
+
       setFormData(existingFields);
-      
+
       // Set existing file preview if available
       if (editingDocument.fileUrl) {
         setFilePreview(editingDocument.fileUrl);
@@ -138,7 +140,7 @@ export function DocumentUploadDialog({
   }, [open, editingDocument, documentType]);
 
   // Mock OCR/AI extraction
-  const mockExtractData = useCallback((file: File): Promise<Record<string, any>> => {
+  const mockExtractData = useCallback((_file: File): Promise<Record<string, any>> => {
     return new Promise((resolve) => {
       setTimeout(() => {
         // Mock extracted data based on document type
@@ -189,7 +191,7 @@ export function DocumentUploadDialog({
           },
         };
 
-        resolve(mockData[documentType?.id] || {});
+        resolve(documentType?.id ? (mockData[documentType.id] || {}) : {});
       }, 2000); // Simulate processing time
     });
   }, [documentType?.id]);
@@ -267,7 +269,7 @@ export function DocumentUploadDialog({
       .filter((field) => field.required && !formData[field.key])
       .map((field) => field.label);
 
-    if (missingFields?.length > 0) {
+    if (missingFields && missingFields.length > 0) {
       setError(`Vui lòng điền đầy đủ: ${missingFields.join(', ')}`);
       return;
     }
@@ -419,8 +421,15 @@ export function DocumentUploadDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Hủy
           </Button>
-          <Button onClick={handleSave}>
-            {isEditing ? 'Cập nhật' : 'Lưu'}
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Đang lưu...
+              </>
+            ) : (
+              isEditing ? 'Cập nhật' : 'Lưu'
+            )}
           </Button>
         </div>
       </div>

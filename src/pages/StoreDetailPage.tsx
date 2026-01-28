@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
@@ -28,7 +28,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../app/components/ui/t
 import { mockStores, Store } from '../data/mockStores';
 import { getProvinceByCode, getDistrictByName, getWardByCode } from '../data/vietnamLocations';
 import { fetchProvinceById, fetchWardById } from '../utils/api/locationsApi';
-import { fetchStoreById, fetchMerchantLicenses } from '../utils/api/storesApi';
+import { fetchStoreById, fetchMerchantLicenses, upsertMerchantLicense } from '../utils/api/storesApi';
+import { uploadFile } from '../utils/api/storageApi';
 import { generateLegalDocuments, LegalDocumentData } from '../data/mockLegalDocuments';
 import { LegalDocumentItem, ApprovalStatus } from '../ui-kit/LegalDocumentItem';
 import { DocumentUploadDialog } from '../ui-kit/DocumentUploadDialog';
@@ -57,6 +58,7 @@ export default function StoreDetailPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [idCardDialogOpen, setIdCardDialogOpen] = useState(false);
+  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editingDocument, setEditingDocument] = useState<LegalDocumentData | null>(null);
   const [currentDocumentType, setCurrentDocumentType] = useState<string | null>(null);
@@ -74,6 +76,7 @@ export default function StoreDetailPage() {
   const [provinceName, setProvinceName] = useState<string | null>(null);
   const [wardName, setWardName] = useState<string | null>(null);
   const [loadingLocation, setLoadingLocation] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Read tab from query param on mount and when searchParams change
   useEffect(() => {
@@ -193,125 +196,122 @@ export default function StoreDetailPage() {
     loadLocationNames();
   }, [store?.province, store?.ward]);
 
-  // Fetch merchant licenses from API
-  useEffect(() => {
+  // Fetch merchant licenses function to be reused
+  const loadMerchantLicenses = useCallback(async () => {
     if (!store?.merchantId) return;
 
-    const loadMerchantLicenses = async () => {
-      try {
-        console.log('📄 [StoreDetailPage] Fetching licenses for merchant:', store.merchantId);
+    try {
+      console.log('📄 [StoreDetailPage] Fetching licenses for merchant:', store.merchantId);
 
-        // Required types config
-        const requiredTypes = [
-          { id: 'cccd', title: 'CCCD / CMND chủ hộ', apiName: 'CCCD / CMND chủ hộ' },
-          { id: 'business-license', title: 'Giấy phép kinh doanh', apiName: 'Giấy phép kinh doanh' },
-          { id: 'food-safety', title: 'Giấy chứng nhận ATTP', apiName: 'Giấy chứng nhận ATTP' },
-          { id: 'lease-contract', title: 'Hợp đồng thuê mặt bằng', apiName: 'Hợp đồng thuê mặt bằng' },
-          { id: 'specialized-license', title: 'Giấy phép chuyên ngành', apiName: 'Giấy phép chuyên ngành' },
-          { id: 'fire-safety', title: 'Giấy phép PCCC', apiName: 'Giấy phép PCCC' },
-        ];
+      // Required types config
+      const requiredTypes = [
+        { id: 'cccd', title: 'CCCD / CMND chủ hộ', apiName: 'CCCD / CMND chủ hộ' },
+        { id: 'business-license', title: 'Giấy phép kinh doanh', apiName: 'Giấy phép kinh doanh' },
+        { id: 'food-safety', title: 'Giấy chứng nhận ATTP', apiName: 'Giấy chứng nhận ATTP' },
+        { id: 'lease-contract', title: 'Hợp đồng thuê mặt bằng', apiName: 'Hợp đồng thuê mặt bằng' },
+        { id: 'specialized-license', title: 'Giấy phép chuyên ngành', apiName: 'Giấy phép chuyên ngành' },
+        { id: 'fire-safety', title: 'Giấy phép PCCC', apiName: 'Giấy phép PCCC' },
+      ];
 
-        const licensesFromApi = await fetchMerchantLicenses(store.merchantId || '');
+      const licensesFromApi = await fetchMerchantLicenses(store.merchantId || '');
 
-        // Map for lookup
-        const typeMap: Record<string, string> = {
-          'CCCD / CMND chủ hộ': 'cccd',
-          'Giấy phép kinh doanh': 'business-license',
-          'Giấy chứng nhận ATTP': 'food-safety',
-          'Hợp đồng thuê mặt bằng': 'lease-contract',
-          'Giấy phép chuyên ngành': 'specialized-license',
-          'Giấy phép PCCC': 'fire-safety',
-        };
+      const approvalStatusMap: Record<number, ApprovalStatus> = {
+        0: 'pending',
+        1: 'approved',
+        2: 'rejected',
+      };
 
-        const approvalStatusMap: Record<number, ApprovalStatus> = {
-          0: 'pending',
-          1: 'approved',
-          2: 'rejected',
-        };
+      const approvalStatusTextMap: Record<number, string> = {
+        0: 'Chờ duyệt',
+        1: 'Đã phê duyệt',
+        2: 'Từ chối',
+      };
 
-        const approvalStatusTextMap: Record<number, string> = {
-          0: 'Chờ duyệt',
-          1: 'Đã phê duyệt',
-          2: 'Từ chối',
-        };
+      // Combine logic: All API licenses + Placeholders for missing required types
+      const processedTypeIds = new Set<string>();
+      const mappedDocs: LegalDocumentData[] = [];
 
-        // Combine logic: All API licenses + Placeholders for missing required types
-        const processedApiNames = new Set<string>();
-        const mappedDocs: LegalDocumentData[] = [];
+      // 1. Process API licenses
+      if (licensesFromApi && licensesFromApi.length > 0) {
+        licensesFromApi.forEach((license: any) => {
+          // Find matching type info by technical ID or descriptive name
+          const typeInfo = requiredTypes.find(rt => rt.id === license.license_type || rt.apiName === license.license_type);
 
-        // 1. Process API licenses
-        if (licensesFromApi && licensesFromApi.length > 0) {
-          licensesFromApi.forEach((license: any) => {
-            processedApiNames.add(license.license_type);
+          const docType = typeInfo?.id || 'other';
+          const docTitle = typeInfo?.title || license.license_type;
 
-            const docType = typeMap[license.license_type] || 'other';
-
-            // Calculate validity and status text
-            const isExpiring = license.expiry_date ?
-              (new Date(license.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24) <= 45
-              : false;
-
-            const status = license.validity_status === 0 ? 'missing' : (isExpiring ? 'expiring' : 'valid');
-            const statusText = license.validity_status === 0 ? 'Hết hạn/Không hợp lệ' :
-              (isExpiring ? `Sắp hết hạn (${Math.ceil((new Date(license.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} ngày)` : 'Còn hiệu lực');
-
-            mappedDocs.push({
-              id: license._id,
-              type: docType,
-              title: license.license_type,
-              status: status as any,
-              statusText,
-              approvalStatus: approvalStatusMap[license.approval_status] || 'pending',
-              approvalStatusText: approvalStatusTextMap[license.approval_status] || 'Chờ duyệt',
-              documentNumber: license.license_number,
-              issueDate: license.issued_date ? new Date(license.issued_date).toLocaleDateString('vi-VN') : '',
-              expiryDate: license.expiry_date ? new Date(license.expiry_date).toLocaleDateString('vi-VN') : '',
-              issuingAuthority: license.issued_by_name || license.issued_by || '',
-              notes: license.notes || '',
-              fileUrl: license.file_url || undefined,
-              fileName: license.file_url ? license.file_url.split('/').pop()?.split('?')[0] || 'file' : undefined,
-              backFileUrl: license.file_url_2 || undefined,
-              backFileName: license.file_url_2 ? license.file_url_2.split('/').pop()?.split('?')[0] || 'file_back' : undefined,
-              uploadDate: license.created_at ? new Date(license.created_at).toLocaleString('vi-VN') : '',
-              uploadedBy: license.approved_by || 'Hệ thống',
-            });
-          });
-          console.log('✅ [StoreDetailPage] Loaded licenses from API:', licensesFromApi.length);
-        }
-
-        // 2. Add placeholders for missing required types
-        requiredTypes.forEach(rt => {
-          if (!processedApiNames.has(rt.apiName)) {
-            mappedDocs.push({
-              id: `missing-${rt.id}-${store.id || 'unknown'}`,
-              type: rt.id,
-              title: rt.title,
-              status: 'missing',
-              statusText: 'Chưa có thông tin',
-            });
+          if (typeInfo) {
+            processedTypeIds.add(typeInfo.id);
           }
-        });
 
-        // 3. Sort by priority (CCCD first, then Business License, then others)
-        const sortOrder = ['cccd', 'business-license', 'food-safety', 'lease-contract', 'specialized-license', 'fire-safety'];
-        mappedDocs.sort((a, b) => {
-          const indexA = sortOrder.indexOf(a.type);
-          const indexB = sortOrder.indexOf(b.type);
-          if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-          if (indexA !== -1) return -1;
-          if (indexB !== -1) return 1;
-          return a.title.localeCompare(b.title);
-        });
+          // Calculate validity and status text
+          const isExpiring = license.expiry_date ?
+            (new Date(license.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24) <= 45
+            : false;
 
-        setLegalDocuments(mappedDocs);
-      } catch (error) {
-        console.error('❌ [StoreDetailPage] Error loading licenses:', error);
-        setLegalDocuments(generateLegalDocuments(store.id || 0));
+          const status = license.validity_status === 0 ? 'missing' : (isExpiring ? 'expiring' : 'valid');
+          const statusText = license.validity_status === 0 ? 'Hết hạn/Không hợp lệ' :
+            (isExpiring ? `Sắp hết hạn (${Math.ceil((new Date(license.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} ngày)` : 'Còn hiệu lực');
+
+          mappedDocs.push({
+            id: license._id,
+            type: docType,
+            title: docTitle,
+            status: status as any,
+            statusText,
+            approvalStatus: approvalStatusMap[license.approval_status] || 'pending',
+            approvalStatusText: approvalStatusTextMap[license.approval_status] || 'Chờ duyệt',
+            documentNumber: license.license_number,
+            issueDate: license.issued_date ? new Date(license.issued_date).toLocaleDateString('vi-VN') : '',
+            expiryDate: license.expiry_date ? new Date(license.expiry_date).toLocaleDateString('vi-VN') : '',
+            issuingAuthority: license.issued_by_name || license.issued_by || '',
+            notes: license.notes || '',
+            fileUrl: license.file_url || undefined,
+            fileName: license.file_url ? license.file_url.split('/').pop()?.split('?')[0] || 'file' : undefined,
+            backFileUrl: license.file_url_2 || undefined,
+            backFileName: license.file_url_2 ? license.file_url_2.split('/').pop()?.split('?')[0] || 'file_back' : undefined,
+            uploadDate: license.created_at ? new Date(license.created_at).toLocaleString('vi-VN') : '',
+            uploadedBy: license.approved_by || 'Hệ thống',
+          });
+        });
+        console.log('✅ [StoreDetailPage] Loaded licenses from API:', licensesFromApi.length);
       }
-    };
 
-    loadMerchantLicenses();
+      // 2. Add placeholders for missing required types
+      requiredTypes.forEach(rt => {
+        if (!processedTypeIds.has(rt.id)) {
+          mappedDocs.push({
+            id: `missing-${rt.id}-${store.id || 'unknown'}`,
+            type: rt.id,
+            title: rt.title,
+            status: 'missing',
+            statusText: 'Chưa có thông tin',
+          });
+        }
+      });
+
+      // 3. Sort by priority (CCCD first, then Business License, then others)
+      const sortOrder = ['cccd', 'business-license', 'food-safety', 'lease-contract', 'specialized-license', 'fire-safety'];
+      mappedDocs.sort((a, b) => {
+        const indexA = sortOrder.indexOf(a.type);
+        const indexB = sortOrder.indexOf(b.type);
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+        return a.title.localeCompare(b.title);
+      });
+
+      setLegalDocuments(mappedDocs);
+    } catch (error) {
+      console.error('❌ [StoreDetailPage] Error loading licenses:', error);
+      setLegalDocuments(generateLegalDocuments(store.id || 0));
+    }
   }, [store?.merchantId, store?.id]);
+
+  // Initial load
+  useEffect(() => {
+    loadMerchantLicenses();
+  }, [loadMerchantLicenses]);
 
   // Loading state
   if (isLoadingStore) {
@@ -390,87 +390,78 @@ export default function StoreDetailPage() {
     }
   };
 
-  const handleSaveDocument = (data: { file: File | null; fields: Record<string, any> }) => {
-    const now = new Date().toLocaleString('vi-VN');
+  const handleSaveDocument = async (data: { file: File | null; fields: Record<string, any> }) => {
     const docTypeName = getDocumentTypeById(currentDocumentType || '')?.name || 'Hồ sơ';
 
-    if (editingDocument) {
-      // Update existing document - save old version for comparison
-      setLegalDocuments((prev) =>
-        prev.map((doc) =>
-          doc.id === editingDocument.id
-            ? {
-              ...doc,
-              ...data.fields,
-              uploadedData: data.fields,
-              uploadDate: now,
-              uploadedBy: 'Admin User',
-              fileUrl: data.file ? URL.createObjectURL(data.file) : doc.fileUrl,
-              fileName: data.file?.name || doc.fileName,
-              status: 'valid' as const,
-              statusText: 'Còn hiệu lực',
-              approvalStatus: 'pending' as const,
-              approvalStatusText: 'Chờ duyệt',
-              // Save previous version for comparison
-              previousVersion: {
-                ...editingDocument.uploadedData,
-                fileUrl: editingDocument.fileUrl,
-                fileName: editingDocument.fileName,
-                uploadDate: editingDocument.uploadDate,
-                uploadedBy: editingDocument.uploadedBy,
-              },
-            }
-            : doc
-        )
-      );
-
-      // Show toast notification for update
-      toast.success(`Đã cập nhật ${docTypeName}`, {
-        description: 'Hồ sơ đã được chuyển về trạng thái chờ duyệt',
-      });
-    } else {
-      // Add new document (convert missing to uploaded) - set as pending
-      setLegalDocuments((prev) =>
-        prev.map((doc) =>
-          doc.type === currentDocumentType && doc.status === 'missing'
-            ? {
-              ...doc,
-              ...data.fields,
-              uploadedData: data.fields,
-              uploadDate: now,
-              uploadedBy: 'Admin User',
-              fileUrl: data.file ? URL.createObjectURL(data.file) : undefined,
-              fileName: data.file?.name,
-              status: 'valid' as const,
-              statusText: 'Còn hiệu lực',
-              approvalStatus: 'pending' as const,
-              approvalStatusText: 'Chờ duyệt',
-            }
-            : doc
-        )
-      );
-
-      // Show toast notification for new upload
-      toast.success(`Đã tải lên ${docTypeName}`, {
-        description: 'Hồ sơ đang chờ phê duyệt',
-      });
+    if (!store?.merchantId) {
+      toast.error('Không tìm thấy ID thương nhân');
+      return;
     }
 
-    setUploadDialogOpen(false);
-    setEditingDocument(null);
-    setCurrentDocumentType(null);
+    setIsSaving(true);
+    try {
+      let fileUrl = editingDocument?.fileUrl;
+
+      // 1. Upload file if changed
+      if (data.file) {
+        const fileExt = data.file.name.split('.').pop();
+        const filePath = `licenses/${store.merchantId}/${currentDocumentType}_${Date.now()}.${fileExt}`;
+        fileUrl = await uploadFile(data.file, 'licenses', filePath);
+      }
+
+      // 2. Call RPC to update database
+      const rpcPayload = {
+        p_merchant_id: store.merchantId || '',
+        p_license_type: docTypeName || '', // Use descriptive name as requested
+        p_license_number: data.fields.licenseNumber || data.fields.certificateNumber || data.fields.contractNumber || data.fields.idNumber || '',
+        p_issued_date: data.fields.issueDate || '',
+        p_expiry_date: data.fields.expiryDate || '2099-12-31',
+        p_status: 'valid',
+        p_issued_by: data.fields.issuingAuthority || data.fields.issuePlace || '',
+        p_issued_by_name: data.fields.issuingAuthority || data.fields.issuePlace || '',
+        p_file_url: fileUrl || '',
+        p_notes: data.fields.notes || '',
+      };
+
+      console.log('📝 [handleSaveDocument] Prepared rpcPayload:', rpcPayload);
+      console.log('📊 [handleSaveDocument] data.fields:', data.fields);
+
+      await upsertMerchantLicense(rpcPayload);
+
+      toast.success(editingDocument ? `Đã cập nhật ${docTypeName}` : `Đã tải lên ${docTypeName}`, {
+        description: editingDocument ? 'Hồ sơ đã được lưu và chuyển về trạng thái chờ duyệt' : 'Hồ sơ đang chờ phê duyệt',
+      });
+
+      setUploadDialogOpen(false);
+      setEditingDocument(null);
+      setCurrentDocumentType(null);
+
+      // Re-fetch licenses to ensure local state matches DB
+      await loadMerchantLicenses();
+    } catch (error) {
+      console.error('❌ Error saving document:', error);
+      toast.error(`Không thể lưu ${docTypeName}`, {
+        description: 'Vui lòng kiểm tra kết nối và thử lại',
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Handler for ID Card (2 files: front + back)
-  const handleSaveIDCard = (data: {
+  const handleSaveIDCard = async (data: {
     frontFile: File | null;
     backFile: File | null;
     frontFileUrl?: string;
     backFileUrl?: string;
     fields: Record<string, any>;
   }) => {
-    const now = new Date().toLocaleString('vi-VN');
     const docTypeName = 'CCCD / CMND chủ hộ';
+
+    if (!store?.merchantId) {
+      toast.error('Không tìm thấy ID thương nhân');
+      return;
+    }
 
     // Validate: Must have both front and back
     if (!data.frontFile && !data.frontFileUrl) {
@@ -482,87 +473,63 @@ export default function StoreDetailPage() {
       return;
     }
 
-    if (editingDocument) {
-      // Update existing ID Card
-      setLegalDocuments((prev) =>
-        prev.map((doc) =>
-          doc.id === editingDocument.id
-            ? {
-              ...doc,
-              ...data.fields,
-              uploadedData: data.fields,
-              uploadDate: now,
-              uploadedBy: 'Admin User',
-              // Front file
-              fileUrl: data.frontFile
-                ? URL.createObjectURL(data.frontFile)
-                : data.frontFileUrl || doc.fileUrl,
-              fileName: data.frontFile?.name || doc.fileName,
-              // Back file
-              backFileUrl: data.backFile
-                ? URL.createObjectURL(data.backFile)
-                : data.backFileUrl || doc.backFileUrl,
-              backFileName: data.backFile?.name || doc.backFileName,
-              status: 'valid' as const,
-              statusText: 'Còn hiệu lực',
-              approvalStatus: 'pending' as const,
-              approvalStatusText: 'Chờ duyệt',
-              // Save previous version
-              previousVersion: {
-                ...editingDocument.uploadedData,
-                fileUrl: editingDocument.fileUrl,
-                fileName: editingDocument.fileName,
-                backFileUrl: editingDocument.backFileUrl,
-                backFileName: editingDocument.backFileName,
-                uploadDate: editingDocument.uploadDate,
-                uploadedBy: editingDocument.uploadedBy,
-              },
-            }
-            : doc
-        )
-      );
+    setIsSaving(true);
+    try {
+      let frontUrl = data.frontFileUrl || editingDocument?.fileUrl;
+      let backUrl = data.backFileUrl || editingDocument?.backFileUrl;
 
-      toast.success(`Đã cập nhật ${docTypeName}`, {
+      // 1. Upload front file if changed
+      if (data.frontFile) {
+        const fileExt = data.frontFile.name.split('.').pop();
+        const filePath = `licenses/${store.merchantId}/cccd_front_${Date.now()}.${fileExt}`;
+        frontUrl = await uploadFile(data.frontFile, 'licenses', filePath);
+      }
+
+      // 2. Upload back file if changed
+      if (data.backFile) {
+        const fileExt = data.backFile.name.split('.').pop();
+        const filePath = `licenses/${store.merchantId}/cccd_back_${Date.now()}.${fileExt}`;
+        backUrl = await uploadFile(data.backFile, 'licenses', filePath);
+      }
+
+      // 3. Call RPC to update database
+      const rpcPayload = {
+        p_merchant_id: store.merchantId || '',
+        p_license_type: 'CCCD / CMND chủ hộ', // Use descriptive name as requested
+        p_license_number: data.fields.idNumber || '',
+        p_issued_date: data.fields.issueDate || '',
+        p_expiry_date: data.fields.expiryDate || '2099-12-31',
+        p_status: 'valid',
+        p_issued_by: data.fields.issuePlace || data.fields.issuingAuthority || '',
+        p_issued_by_name: data.fields.issuePlace || data.fields.issuingAuthority || '',
+        p_file_url: frontUrl || '',
+        p_file_url_2: backUrl || '',
+        p_notes: data.fields.notes || '',
+      };
+
+      console.log('📝 [handleSaveIDCard] Prepared rpcPayload:', rpcPayload);
+      console.log('📊 [handleSaveIDCard] data.fields:', data.fields);
+
+      await upsertMerchantLicense(rpcPayload);
+
+      toast.success(editingDocument ? `Đã cập nhật ${docTypeName}` : `Đã tải lên ${docTypeName}`, {
         description: 'Đã upload đầy đủ 2 mặt - Hồ sơ chờ phê duyệt',
       });
-    } else {
-      // Add new ID Card
-      setLegalDocuments((prev) =>
-        prev.map((doc) =>
-          doc.type === 'cccd' && doc.status === 'missing'
-            ? {
-              ...doc,
-              ...data.fields,
-              uploadedData: data.fields,
-              uploadDate: now,
-              uploadedBy: 'Admin User',
-              // Front file
-              fileUrl: data.frontFile
-                ? URL.createObjectURL(data.frontFile)
-                : data.frontFileUrl,
-              fileName: data.frontFile?.name || 'cccd-mat-truoc.pdf',
-              // Back file
-              backFileUrl: data.backFile
-                ? URL.createObjectURL(data.backFile)
-                : data.backFileUrl,
-              backFileName: data.backFile?.name || 'cccd-mat-sau.pdf',
-              status: 'valid' as const,
-              statusText: 'Còn hiệu lực',
-              approvalStatus: 'pending' as const,
-              approvalStatusText: 'Chờ duyệt',
-            }
-            : doc
-        )
-      );
 
-      toast.success(`Đã tải lên ${docTypeName}`, {
-        description: 'Đã upload đầy đủ 2 mặt - Hồ sơ chờ phê duyệt',
+      setIdCardDialogOpen(false);
+      setEditingDocument(null);
+      setCurrentDocumentType(null);
+
+      // Re-fetch licenses to ensure local state matches DB
+      await loadMerchantLicenses();
+    } catch (error) {
+      console.error('❌ Error saving ID card:', error);
+      toast.error('Không thể lưu CCCD/CMND', {
+        description: 'Vui lòng kiểm tra kết nối và thử lại',
       });
+    } finally {
+      setIsSaving(false);
     }
-
-    setIdCardDialogOpen(false);
-    setEditingDocument(null);
-    setCurrentDocumentType(null);
   };
 
   // Handlers for approve/reject
@@ -666,16 +633,6 @@ export default function StoreDetailPage() {
     });
   };
 
-  const handleOpenMap = () => {
-    // Deep link to map view
-    console.log('Opening store on map:', store.id);
-  };
-
-  const handleRelatedTasks = () => {
-    // Link to related leads/tasks
-    console.log('Opening related tasks for store:', store.id);
-    // In production: navigate to tasks/leads view
-  };
 
   // Handle delete store (only available for closed status)
   const handleDeleteStore = () => {
@@ -1390,6 +1347,7 @@ export default function StoreDetailPage() {
         onOpenChange={setUploadDialogOpen}
         documentType={currentDocumentType}
         editingDocument={editingDocument}
+        isSaving={isSaving}
         onSave={handleSaveDocument}
       />
 
@@ -1398,6 +1356,7 @@ export default function StoreDetailPage() {
         open={idCardDialogOpen}
         onOpenChange={setIdCardDialogOpen}
         editingDocument={editingDocument}
+        isSaving={isSaving}
         onSave={handleSaveIDCard}
       />
     </div>
