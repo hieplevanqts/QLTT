@@ -113,6 +113,21 @@ export function usePermissions() {
   const hasAdminAccess =
     userPermissions.includes('admin:access') || userPermissions.includes('ADMIN_VIEW');
 
+  // Allow mapping between legacy sa.* permissions and new USER.* codes from DB
+  const permissionAliases: Record<string, string[]> = {
+    'sa.iam.user.delete': ['USER.DELETE', 'user.delete', 'USER_DELETE'],
+    'sa.iam.user.update': ['USER.UPDATE', 'user.update', 'USER_UPDATE'],
+    'sa.iam.user.create': ['USER.CREATE', 'user.create', 'USER_CREATE'],
+    'sa.iam.user.read': ['USER.READ', 'user.read', 'USER_READ', 'USER.VIEW'],
+  };
+
+  const hasPermissionDirect = (permission: string): boolean => {
+    if (userPermissions.includes(permission)) return true;
+    const aliases = permissionAliases[permission];
+    if (!aliases) return false;
+    return aliases.some((alias) => userPermissions.includes(alias));
+  };
+
   /**
    * Kiểm tra có quyền cụ thể
    */
@@ -120,7 +135,7 @@ export function usePermissions() {
     if (hasAdminAccess && permission.startsWith('sa.')) {
       return true;
     }
-    return userPermissions.includes(permission);
+    return hasPermissionDirect(permission);
   };
 
   /**
@@ -130,7 +145,7 @@ export function usePermissions() {
     if (hasAdminAccess && permissions.some((p) => p.startsWith('sa.'))) {
       return true;
     }
-    return permissions.some(p => userPermissions.includes(p));
+    return permissions.some((p) => hasPermissionDirect(p));
   };
 
   /**
@@ -140,7 +155,7 @@ export function usePermissions() {
     if (hasAdminAccess && permissions.every((p) => p.startsWith('sa.'))) {
       return true;
     }
-    return permissions.every(p => userPermissions.includes(p));
+    return permissions.every((p) => hasPermissionDirect(p));
   };
 
   /**

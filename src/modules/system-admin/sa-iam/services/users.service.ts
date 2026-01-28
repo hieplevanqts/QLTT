@@ -56,13 +56,26 @@ export type UserPayload = {
   phone?: string | null;
   status?: UserStatusValue;
   note?: string | null;
+  default_password?: string | null;
 };
+
+const API_BASE = import.meta.env.VITE_SYSTEM_ADMIN_API ?? "http://localhost:7788";
 
 const mapStatusFilter = (value: UserListParams["status"]) => {
   if (!value || value === "all") return null;
   if (value === "active") return 1;
   if (value === "inactive") return 0;
   return 2;
+};
+
+const requestAdmin = async <T>(path: string, options?: RequestInit): Promise<T> => {
+  const response = await fetch(`${API_BASE}${path}`, options);
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    const message = payload?.message || `Request failed: ${response.status}`;
+    throw new Error(message);
+  }
+  return (await response.json()) as T;
 };
 
 const mapRow = (row: any): UserRecord => ({
@@ -128,30 +141,31 @@ export const usersService = {
   },
 
   async createUser(payload: UserPayload): Promise<UserRecord> {
-    const { data, error } = await supabase
-      .from("users")
-      .insert([
-        {
-          ...payload,
-          status: payload.status ?? 1,
-          updated_at: new Date().toISOString(),
-        },
-      ])
-      .select("*")
-      .single();
-
-    if (error) {
-      throw new Error(`user insert failed: ${error.message}`);
+    const { default_password, ...rest } = payload;
+    if (!default_password || !default_password.trim()) {
+      throw new Error("Vui lòng nhập mật khẩu mặc định để tạo tài khoản đăng nhập.");
     }
-
+    const data = await requestAdmin<any>("/system-admin/admin/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...rest,
+        status: rest.status ?? 1,
+        default_password: default_password.trim(),
+      }),
+    });
     return mapRow(data);
   },
 
   async updateUser(id: string, payload: UserPayload): Promise<UserRecord> {
+    const { default_password, ...rest } = payload;
     const { data, error } = await supabase
       .from("users")
       .update({
-        ...payload,
+        ...rest,
+        metadata: default_password
+          ? { defaultPassword: default_password }
+          : undefined,
         updated_at: new Date().toISOString(),
       })
       .eq("_id", id)
@@ -180,6 +194,21 @@ export const usersService = {
     const { error } = await supabase.from("users").update(payload).eq("_id", id);
     if (error) {
       throw new Error(`user status update failed: ${error.message}`);
+    }
+  },
+
+  async softDeleteUser(id: string): Promise<void> {
+    const { error } = await supabase
+      .from("users")
+      .update({
+        deleted_at: new Date().toISOString(),
+        status: 0,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("_id", id);
+
+    if (error) {
+      throw new Error(`user delete failed: ${error.message}`);
     }
   },
 

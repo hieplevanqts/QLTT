@@ -13,6 +13,7 @@ import {
   Dropdown,
   Input,
   Modal,
+  Popconfirm,
   Radio,
   Select,
   Space,
@@ -26,6 +27,7 @@ import {
   PlusOutlined,
   EyeOutlined,
   EditOutlined,
+  DeleteOutlined,
   LockOutlined,
   UnlockOutlined,
   TeamOutlined,
@@ -81,6 +83,7 @@ export default function UsersPage() {
 
   const canCreate = hasPermission("sa.iam.user.create");
   const canUpdate = hasPermission("sa.iam.user.update");
+  const canDelete = hasPermission("sa.iam.user.delete");
 
   const [loading, setLoading] = React.useState(false);
   const [users, setUsers] = React.useState<UserRecord[]>([]);
@@ -198,6 +201,16 @@ export default function UsersPage() {
     } catch (err) {
       const messageText = err instanceof Error ? err.message : "Không thể cập nhật trạng thái.";
       Modal.error({ title: "Lỗi cập nhật", content: messageText });
+    }
+  };
+
+  const handleDeleteUser = async (record: UserRecord) => {
+    try {
+      await usersService.softDeleteUser(record.id);
+      void loadUsers();
+    } catch (err) {
+      const messageText = err instanceof Error ? err.message : "Không thể xóa người dùng.";
+      Modal.error({ title: "Lỗi xóa dữ liệu", content: messageText });
     }
   };
 
@@ -444,6 +457,24 @@ export default function UsersPage() {
                           onClick={() => openEditModal(record)}
                         />
                       </Tooltip>
+                      <Popconfirm
+                        title="Xóa người dùng?"
+                        description="Thao tác này sẽ ẩn người dùng khỏi danh sách."
+                        okText="Xóa"
+                        cancelText="Hủy"
+                        onConfirm={() => handleDeleteUser(record)}
+                        disabled={!canDelete}
+                      >
+                        <Tooltip title="Xóa">
+                          <Button
+                            type="text"
+                            size="small"
+                            danger
+                            icon={<DeleteOutlined />}
+                            disabled={!canDelete}
+                          />
+                        </Tooltip>
+                      </Popconfirm>
                       <Tooltip title={record.status === "locked" ? "Mở khóa" : "Khóa tài khoản"}>
                         <Button
                           type="text"
@@ -502,6 +533,18 @@ export default function UsersPage() {
                   { value: 2, label: "Khóa" },
                 ]}
               />
+            </Form.Item>
+            <Form.Item
+              label="Mật khẩu mặc định"
+              name="default_password"
+              tooltip="Dùng để gửi cho người dùng sau khi tạo tài khoản."
+              rules={
+                editingUser
+                  ? []
+                  : [{ required: true, message: "Vui lòng nhập mật khẩu mặc định." }]
+              }
+            >
+              <Input.Password placeholder="Nhập mật khẩu mặc định" />
             </Form.Item>
             <Form.Item label="Ghi chú" name="note">
               <Input.TextArea rows={3} />
