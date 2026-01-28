@@ -27,6 +27,7 @@ import {
   EyeOutlined,
   EditOutlined,
   TeamOutlined,
+  UserAddOutlined,
   KeyOutlined,
   StopOutlined,
   CheckCircleOutlined,
@@ -43,6 +44,7 @@ import { getColumnSearchProps } from "@/components/data-table/columnSearch";
 import { PermissionGate } from "../../_shared";
 import { rolesService, type RoleRecord, type RoleStatusValue } from "../services/roles.service";
 import RoleUsersModal from "./RoleUsersModal";
+import RoleUserAssignmentModal from "./RoleUserAssignmentModal";
 
 type FormMode = "create" | "edit";
 
@@ -81,6 +83,8 @@ export default function RolesPage() {
   const [viewRole, setViewRole] = React.useState<RoleRecord | null>(null);
   const [usersModalOpen, setUsersModalOpen] = React.useState(false);
   const [usersRole, setUsersRole] = React.useState<RoleRecord | null>(null);
+  const [assignModalOpen, setAssignModalOpen] = React.useState(false);
+  const [assignRole, setAssignRole] = React.useState<RoleRecord | null>(null);
 
   const loadRoles = React.useCallback(async () => {
     setLoading(true);
@@ -207,6 +211,11 @@ export default function RolesPage() {
   const openUsersModal = (role: RoleRecord) => {
     setUsersRole(role);
     setUsersModalOpen(true);
+  };
+
+  const openAssignUsers = (role: RoleRecord) => {
+    setAssignRole(role);
+    setAssignModalOpen(true);
   };
 
   const getMoreActions = (record: RoleRecord): MenuProps => ({
@@ -395,6 +404,14 @@ export default function RolesPage() {
                             onClick={() => openUsersModal(record)}
                           />
                         </Tooltip>
+                        <Tooltip title="Gán người dùng">
+                          <Button
+                            type="text"
+                            size="small"
+                            icon={<UserAddOutlined />}
+                            onClick={() => openAssignUsers(record)}
+                          />
+                        </Tooltip>
                         <Tooltip title="Phân quyền">
                           <Button
                             type="text"
@@ -542,6 +559,22 @@ export default function RolesPage() {
         onClose={() => {
           setUsersModalOpen(false);
           setUsersRole(null);
+        }}
+        onAssignUsers={(role) => {
+          setUsersModalOpen(false);
+          setUsersRole(null);
+          openAssignUsers(role);
+        }}
+      />
+      <RoleUserAssignmentModal
+        open={assignModalOpen}
+        role={assignRole}
+        onClose={() => {
+          setAssignModalOpen(false);
+          setAssignRole(null);
+        }}
+        onSaved={() => {
+          void loadRoles();
         }}
       />
     </PermissionGate>

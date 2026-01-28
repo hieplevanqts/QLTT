@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Eye,
   Edit2,
@@ -6,27 +7,27 @@ import {
   MoreVertical,
   FileText,
   XCircle,
-  Copy,
   UserPlus,
-  ArrowUpCircle,
   Play,
   RotateCcw,
   Pause,
   Upload,
   CheckCircle2,
-  Lock,
   Download,
-  Link2,
   Clock,
 } from 'lucide-react';
 import type { LeadStatus } from '../../../data/lead-risk/types';
 import styles from './LeadActionMenu.module.css';
 
-type LeadAction = 
+export type LeadAction =
   | 'view'
   | 'edit'
   | 'delete'
   | 'start_verification'
+  | 'pause_verification'
+  | 'resume_verification'
+  | 'pause_processing'
+  | 'resume_processing'
   | 'assign'
   | 'reject'
   | 'hold'
@@ -48,17 +49,21 @@ interface LeadActionMenuProps {
 const getAllowedActions = (status: LeadStatus): LeadAction[] => {
   switch (status) {
     case 'new':
-      return ['view', 'note', 'start_verification'];
-    case 'in_verification':
-      return ['view', 'note', 'assign', 'reject', 'hold', 'cancel'];
-    case 'in_progress':
-      return ['view', 'note', 'add_evidence', 'update_sla', 'complete', 'hold', 'cancel'];
+      return ['view', 'start_verification'];
+    case 'verifying':
+      return ['view', 'assign', 'pause_verification'];
+    case 'verify_paused':
+      return ['view', 'resume_verification'];
+    case 'processing':
+      return ['view', 'add_evidence', 'pause_processing'];
+    case 'process_paused':
+      return ['view', 'add_evidence', 'resume_processing'];
     case 'resolved':
-      return ['view', 'note', 'export', 'reopen_to_progress', 'reopen_to_verification'];
+      return ['view'];
     case 'rejected':
-      return ['view', 'export'];
+      return ['view', 'add_evidence'];
     case 'cancelled':
-      return ['view', 'export'];
+      return ['view'];
     default:
       return ['view'];
   }
@@ -70,7 +75,11 @@ const actionConfig: Record<LeadAction, { label: string; icon: any; variant?: 'de
   edit: { label: 'Chỉnh sửa', icon: Edit2 },
   delete: { label: 'Xóa', icon: Trash2, variant: 'danger' },
   start_verification: { label: 'Bắt đầu xác minh', icon: Play, variant: 'primary' },
-  assign: { label: 'Giao xử lý', icon: UserPlus, variant: 'primary' },
+  pause_verification: { label: 'Tạm dừng xác minh', icon: Pause },
+  resume_verification: { label: 'Tiếp tục xác minh', icon: Play, variant: 'primary' },
+  pause_processing: { label: 'Tạm dừng xử lý', icon: Pause },
+  resume_processing: { label: 'Tiếp tục xử lý', icon: Play, variant: 'primary' },
+  assign: { label: 'Giao việc', icon: UserPlus },
   reject: { label: 'Từ chối', icon: XCircle, variant: 'danger' },
   hold: { label: 'Tạm dừng', icon: Pause },
   cancel: { label: 'Hủy bỏ', icon: XCircle, variant: 'danger' },
@@ -87,50 +96,70 @@ export function LeadActionMenu({ status, onAction }: LeadActionMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showAbove, setShowAbove] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+
+  // Custom Tooltip State
+  const [tooltip, setTooltip] = useState<{ label: string; x: number; y: number } | null>(null);
+
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const allowedActions = getAllowedActions(status);
 
+  // Debug log to see what actions are available
+  // console.log(`🎯 [LeadActionMenu] Status: "${status}" → Allowed actions:`, allowedActions);
+
   // Always show first 3 actions as quick buttons
   const quickActions = allowedActions.slice(0, 3);
   const menuActions = allowedActions.length > 3 ? allowedActions.slice(3) : [];
+
+  const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>, label: string) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltip({
+      label,
+      x: rect.left + rect.width / 2,
+      y: rect.top
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setTooltip(null);
+  };
 
   // Calculate fixed position for dropdown menu
   useEffect(() => {
     if (isOpen && buttonRef.current && menuActions.length > 0) {
       requestAnimationFrame(() => {
         if (!buttonRef.current) return;
-        
+
         const buttonRect = buttonRef.current.getBoundingClientRect();
         const viewportHeight = window.innerHeight;
         const viewportWidth = window.innerWidth;
-        
+
         // Menu dimensions
         const menuWidth = 240; // Fixed width from CSS
         const menuItemHeight = 42;
         const menuPadding = 8;
         const estimatedMenuHeight = (menuActions.length * menuItemHeight) + menuPadding;
-        
+
         // Calculate available space
         const spaceBelow = viewportHeight - buttonRect.bottom - 10;
         const spaceAbove = buttonRect.top - 10;
-        
+
         // Decide position
         const shouldShowAbove = spaceBelow < estimatedMenuHeight && spaceAbove > spaceBelow;
-        
+
         // Calculate horizontal position (align right edge of menu with button)
         let left = buttonRect.right - menuWidth;
-        
+
         // Make sure menu doesn't go off-screen on the left
         if (left < 10) {
           left = 10;
         }
-        
+
         // Make sure menu doesn't go off-screen on the right
         if (left + menuWidth > viewportWidth - 10) {
           left = viewportWidth - menuWidth - 10;
         }
-        
+
         // Calculate vertical position
         let top;
         if (shouldShowAbove) {
@@ -140,20 +169,9 @@ export function LeadActionMenu({ status, onAction }: LeadActionMenuProps) {
           // Show below: position menu top at button bottom
           top = buttonRect.bottom + 4;
         }
-        
+
         setShowAbove(shouldShowAbove);
         setMenuPosition({ top, left });
-        
-        // Debug log for menu positioning
-        console.log({
-          buttonRect: { top: buttonRect.top, bottom: buttonRect.bottom, left: buttonRect.left, right: buttonRect.right },
-          viewportHeight,
-          spaceBelow: Math.round(spaceBelow),
-          spaceAbove: Math.round(spaceAbove),
-          estimatedMenuHeight,
-          shouldShowAbove,
-          finalPosition: { top: Math.round(top), left: Math.round(left) }
-        });
       });
     }
   }, [isOpen, menuActions.length]);
@@ -190,7 +208,9 @@ export function LeadActionMenu({ status, onAction }: LeadActionMenuProps) {
               key={action}
               className={`${styles.quickButton} ${config.variant ? styles[`quickButton${config.variant.charAt(0).toUpperCase() + config.variant.slice(1)}`] : ''}`}
               onClick={() => handleAction(action)}
-              title={config.label}
+              onMouseEnter={(e) => handleMouseEnter(e, config.label)}
+              onMouseLeave={handleMouseLeave}
+              aria-label={config.label}
             >
               <Icon size={16} />
             </button>
@@ -201,8 +221,10 @@ export function LeadActionMenu({ status, onAction }: LeadActionMenuProps) {
           <button
             className={styles.menuButton}
             onClick={() => setIsOpen(!isOpen)}
-            title="Thêm"
+            onMouseEnter={(e) => handleMouseEnter(e, "Thêm")}
+            onMouseLeave={handleMouseLeave}
             ref={buttonRef}
+            aria-label="Thêm tùy chọn"
           >
             <MoreVertical size={16} />
           </button>
@@ -226,6 +248,17 @@ export function LeadActionMenu({ status, onAction }: LeadActionMenuProps) {
             );
           })}
         </div>
+      )}
+
+      {/* Portal Tooltip */}
+      {tooltip && createPortal(
+        <div
+          className={styles.fixedTooltip}
+          style={{ top: tooltip.y, left: tooltip.x }}
+        >
+          {tooltip.label}
+        </div>,
+        document.body
       )}
     </div>
   );

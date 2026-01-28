@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  AlertTriangle, 
-  Clock, 
-  CheckCircle2, 
+import { useNavigate } from 'react-router';
+import {
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
+  Clock,
+  CheckCircle2,
   XCircle,
   Search,
   Filter,
@@ -17,23 +17,27 @@ import {
   X,
   Plus,
   Trash2,
+  FileCheck, // Thêm icon cho "Đang xác minh"
+  Ban, // Thêm icon cho "Đã huỷ"
+  FileText, // Thêm icon cho "Mới"
 } from 'lucide-react';
 import { mockDashboardMetrics, mockRiskProfiles } from '../../data/lead-risk/mockLeads';
 import MultiSelectDropdown from '../../app/components/lead-risk/MultiSelectDropdown';
 import { RiskFormModal } from '../../app/components/lead-risk/RiskFormModal';
 import { Breadcrumb } from '../../app/components/Breadcrumb';
+import { SkeletonCardGroup, SkeletonTable, SkeletonFilterBar } from '../../app/components/SkeletonLoader';
 import type { RiskLevel, RiskTrendDirection, RiskProfile } from '../../data/lead-risk/types';
-import { projectId, publicAnonKey } from '../../utils/supabase/info';
+import { projectId, publicAnonKey } from '/utils/supabase/info';
 import styles from './RiskDashboard.module.css';
 
-type FilterType = 'all' | 'total' | 'critical' | 'high' | 'resolved' | 'watchlist' | 'in_progress';
+type FilterType = 'all' | 'total' | 'moi' | 'dang_xac_minh' | 'dang_xu_ly' | 'da_xu_ly' | 'da_huy';
 
 // API base URL
 const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-bb2eb709`;
 
 export default function RiskDashboard() {
   const navigate = useNavigate();
-  
+
   // Data states
   const [riskProfiles, setRiskProfiles] = useState<RiskProfile[]>([]);
   const [metrics, setMetrics] = useState({
@@ -48,13 +52,16 @@ export default function RiskDashboard() {
     inProgress: 0,
     overdue: 0,
     resolved: 0,
+    newStatus: 0, // Thêm trạng thái mới
+    inVerification: 0, // Thêm đang xác minh
+    cancelled: 0, // Thêm đã huỷ
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Multi-select filters
   const [selectedRiskLevels, setSelectedRiskLevels] = useState<string[]>([]);
   const [selectedEntityTypes, setSelectedEntityTypes] = useState<string[]>([]);
@@ -80,7 +87,7 @@ export default function RiskDashboard() {
   const fetchRiskData = async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       // Fetch risk profiles (aggregated from cases)
       const profilesResponse = await fetch(`${API_BASE_URL}/risk-profiles`, {
@@ -118,6 +125,9 @@ export default function RiskDashboard() {
         throw new Error(statsData.error || 'Failed to fetch risk stats');
       }
 
+      console.log('✅ Successfully fetched data from database');
+      console.log(`📊 Loaded ${profilesData.data.length} risk profiles`);
+      console.log(`📈 Stats:`, statsData.data);
 
       // Transform database data to RiskProfile format
       const transformedProfiles: RiskProfile[] = profilesData.data.map((profile: any) => ({
@@ -136,6 +146,7 @@ export default function RiskDashboard() {
         monthOverMonthChange: profile.monthOverMonthChange || 0,
         isWatchlisted: profile.isWatchlisted || false,
         hasActiveAlert: profile.hasActiveAlert || false,
+        latestCaseStatus: profile.latestCaseStatus || 'new', // Thêm status
       }));
 
       setRiskProfiles(transformedProfiles);
@@ -143,21 +154,25 @@ export default function RiskDashboard() {
     } catch (err) {
       console.error('❌ Error fetching risk data:', err);
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
-      
+
       // Fallback to mock data on error
+      console.log('⚠️ Using mock data as fallback...');
       setRiskProfiles(mockRiskProfiles);
       setMetrics({
-        totalEntities: mockRiskProfiles.length,
-        criticalEntities: mockRiskProfiles.filter(p => p.riskLevel === 'critical').length,
-        highEntities: mockRiskProfiles.filter(p => p.riskLevel === 'high').length,
-        watchlistedEntities: mockRiskProfiles.filter(p => p.isWatchlisted).length,
-        alertEntities: mockRiskProfiles.filter(p => p.hasActiveAlert).length,
-        totalLeads: mockDashboardMetrics.totalLeads,
-        activeLeads: mockDashboardMetrics.inProgress,
-        resolvedLeads: mockDashboardMetrics.resolved,
-        inProgress: mockDashboardMetrics.inProgress,
-        overdue: mockDashboardMetrics.overdue,
-        resolved: mockDashboardMetrics.resolved,
+        totalEntities: mockRiskProfiles.length || 0,
+        criticalEntities: mockRiskProfiles.filter(p => p.riskLevel === 'critical').length || 0,
+        highEntities: mockRiskProfiles.filter(p => p.riskLevel === 'high').length || 0,
+        watchlistedEntities: mockRiskProfiles.filter(p => p.isWatchlisted).length || 0,
+        alertEntities: mockRiskProfiles.filter(p => p.hasActiveAlert).length || 0,
+        totalLeads: mockDashboardMetrics.totalLeads || 0,
+        activeLeads: mockDashboardMetrics.inProgress || 0,
+        resolvedLeads: mockDashboardMetrics.resolved || 0,
+        inProgress: mockRiskProfiles.filter(p => p.latestCaseStatus === 'dang_xu_ly').length || 0,
+        overdue: mockDashboardMetrics.overdue || 0,
+        resolved: mockRiskProfiles.filter(p => p.latestCaseStatus === 'da_xu_ly').length || 0,
+        newStatus: mockRiskProfiles.filter(p => p.latestCaseStatus === 'moi').length || 0,
+        inVerification: mockRiskProfiles.filter(p => p.latestCaseStatus === 'dang_xac_minh').length || 0,
+        cancelled: mockRiskProfiles.filter(p => p.latestCaseStatus === 'da_huy').length || 0,
       });
     } finally {
       setIsLoading(false);
@@ -167,9 +182,11 @@ export default function RiskDashboard() {
   // Handle save risk (create or edit)
   const handleSaveRisk = (riskData: Partial<RiskProfile>) => {
     if (formMode === 'create') {
+      console.log('Creating new risk:', riskData);
       // TODO: Add to mockRiskProfiles or call API
       alert('✅ Đã thêm cơ sở giám sát mới thành công!');
     } else {
+      console.log('Updating risk:', riskData);
       // TODO: Update in mockRiskProfiles or call API
       alert('✅ Đã cập nhật thông tin cơ sở thành công!');
     }
@@ -180,6 +197,7 @@ export default function RiskDashboard() {
   // Handle delete risk
   const handleDeleteRisk = () => {
     if (deletingRisk) {
+      console.log('Deleting risk:', deletingRisk);
       // TODO: Remove from mockRiskProfiles or call API
       alert(`✅ Đã xóa "${deletingRisk.entityName}" khỏi danh sách giám sát!`);
       setIsDeleteModalOpen(false);
@@ -189,13 +207,14 @@ export default function RiskDashboard() {
 
   // Apply filters
   const filteredProfiles = riskProfiles.filter(profile => {
-    // Active filter from overview cards
-    if (activeFilter === 'critical' && profile.riskLevel !== 'critical') return false;
-    if (activeFilter === 'high' && profile.riskLevel !== 'high') return false;
-    if (activeFilter === 'watchlist' && !profile.isWatchlisted) return false;
-    if (activeFilter === 'in_progress' && profile.activeLeads === 0) return false;
+    // Active filter from overview cards - Status-based filters only
+    if (activeFilter === 'moi' && !['moi', 'new'].includes(profile.latestCaseStatus || '')) return false;
+    if (activeFilter === 'dang_xac_minh' && !['dang_xac_minh', 'verifying', 'in_verification'].includes(profile.latestCaseStatus || '')) return false;
+    if (activeFilter === 'dang_xu_ly' && !['dang_xu_ly', 'processing', 'in_progress'].includes(profile.latestCaseStatus || '')) return false;
+    if (activeFilter === 'da_xu_ly' && !['da_xu_ly', 'resolved', 'closed'].includes(profile.latestCaseStatus || '')) return false;
+    if (activeFilter === 'da_huy' && !['da_huy', 'rejected', 'cancelled'].includes(profile.latestCaseStatus || '')) return false;
 
-    // Risk level filter
+    // Risk level filter (from dropdown)
     if (selectedRiskLevels.length > 0 && !selectedRiskLevels.includes(profile.riskLevel)) return false;
 
     // Entity type filter
@@ -213,7 +232,7 @@ export default function RiskDashboard() {
     // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      const matchesSearch = 
+      const matchesSearch =
         profile.entityName.toLowerCase().includes(query) ||
         profile.entityId.toLowerCase().includes(query);
       if (!matchesSearch) return false;
@@ -243,7 +262,7 @@ export default function RiskDashboard() {
   const getPageNumbers = () => {
     const pages = [];
     const maxPagesToShow = 5;
-    
+
     if (totalPages <= maxPagesToShow) {
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
@@ -271,7 +290,7 @@ export default function RiskDashboard() {
         pages.push(totalPages);
       }
     }
-    
+
     return pages;
   };
 
@@ -285,13 +304,63 @@ export default function RiskDashboard() {
     setCurrentPage(1);
   };
 
-  const hasActiveFilters = 
-    activeFilter !== 'all' || 
-    selectedRiskLevels.length > 0 || 
-    selectedEntityTypes.length > 0 || 
-    selectedTrends.length > 0 || 
-    selectedWatchlistStatuses.length > 0 || 
+  const hasActiveFilters =
+    activeFilter !== 'all' ||
+    selectedRiskLevels.length > 0 ||
+    selectedEntityTypes.length > 0 ||
+    selectedTrends.length > 0 ||
+    selectedWatchlistStatuses.length > 0 ||
     searchQuery !== '';
+
+  // Helper function to get status label
+  const getStatusLabel = (status?: string): string => {
+    if (!status) return 'Chưa xác định';
+    const labels: Record<string, string> = {
+      // Tiếng Việt mới
+      moi: 'Mới',
+      dang_xac_minh: 'Đang xác minh',
+      dang_xu_ly: 'Đang xử lý',
+      da_xu_ly: 'Đã xử lý',
+      da_huy: 'Đã huỷ',
+      // Tiếng Anh cũ (backward compatibility)
+      new: 'Mới',
+      verifying: 'Đang xác minh',
+      in_verification: 'Đang xác minh',
+      processing: 'Đang xử lý',
+      in_progress: 'Đang xử lý',
+      under_investigation: 'Đang điều tra',
+      resolved: 'Đã xử lý',
+      closed: 'Đã đóng',
+      rejected: 'Đã từ chối',
+      cancelled: 'Đã huỷ',
+    };
+    return labels[status] || status;
+  };
+
+  // Helper function to get status style class
+  const getStatusClass = (status?: string): string => {
+    if (!status) return 'statusUnknown';
+    const classes: Record<string, string> = {
+      // Tiếng Việt mới
+      moi: 'statusNew',
+      dang_xac_minh: 'statusVerification',
+      dang_xu_ly: 'statusProgress',
+      da_xu_ly: 'statusResolved',
+      da_huy: 'statusClosed',
+      // Tiếng Anh cũ (backward compatibility)
+      new: 'statusNew',
+      verifying: 'statusVerification',
+      in_verification: 'statusVerification',
+      processing: 'statusProgress',
+      in_progress: 'statusProgress',
+      under_investigation: 'statusInvestigation',
+      resolved: 'statusResolved',
+      closed: 'statusClosed',
+      rejected: 'statusClosed',
+      cancelled: 'statusClosed',
+    };
+    return classes[status] || 'statusUnknown';
+  };
 
   return (
     <div className={styles.container}>
@@ -321,43 +390,19 @@ export default function RiskDashboard() {
       {isLoading ? (
         <div className={styles.loadingOverlay}>
           {/* Loading Overview Cards */}
-          <div className={styles.loadingGrid}>
-            {[...Array(6)].map((_, idx) => (
-              <div key={idx} className={`${styles.loadingCard} ${styles.skeleton}`} />
-            ))}
-          </div>
+          <SkeletonCardGroup />
 
           {/* Loading Filters */}
-          <div className={styles.loadingFilters}>
-            {[...Array(5)].map((_, idx) => (
-              <div key={idx} className={`${styles.loadingFilter} ${styles.skeleton}`} />
-            ))}
-          </div>
+          <SkeletonFilterBar />
 
           {/* Loading Table */}
-          <div className={styles.loadingTable}>
-            <div className={`${styles.loadingTableHeader} ${styles.skeleton}`} />
-            <div className={styles.loadingTableBody}>
-              {[...Array(4)].map((_, idx) => (
-                <div key={idx} className={styles.loadingRow}>
-                  <div className={`${styles.loadingCell} ${styles.loadingCellLarge} ${styles.skeleton}`} />
-                  <div className={`${styles.loadingCell} ${styles.loadingCellSmall} ${styles.skeleton}`} />
-                  <div className={`${styles.loadingCell} ${styles.loadingCellSmall} ${styles.skeleton}`} />
-                  <div className={`${styles.loadingCell} ${styles.loadingCellSmall} ${styles.skeleton}`} />
-                  <div className={`${styles.loadingCell} ${styles.loadingCellMedium} ${styles.skeleton}`} />
-                  <div className={`${styles.loadingCell} ${styles.loadingCellSmall} ${styles.skeleton}`} />
-                  <div className={`${styles.loadingCell} ${styles.loadingCellSmall} ${styles.skeleton}`} />
-                  <div className={`${styles.loadingCell} ${styles.loadingCellMedium} ${styles.skeleton}`} />
-                </div>
-              ))}
-            </div>
-          </div>
+          <SkeletonTable />
         </div>
       ) : (
         <>
           {/* Overview Metrics Grid - Clickable */}
           <div className={styles.overviewGrid}>
-            <div 
+            <div
               className={`${styles.metricCard} ${activeFilter === 'total' ? styles.metricCardActive : ''}`}
               onClick={() => setActiveFilter('total')}
             >
@@ -365,7 +410,7 @@ export default function RiskDashboard() {
                 <div className={styles.metricIcon} style={{ backgroundColor: 'rgba(239, 246, 255, 1)' }}>
                   <AlertTriangle size={20} style={{ color: 'rgba(37, 99, 235, 1)' }} />
                 </div>
-                <span className={styles.metricLabel}>Tổng cơ sở giám sát</span>
+                <span className={styles.metricLabel}>Tổng các rủi ro</span>
               </div>
               <div className={styles.metricValue}>{metrics.totalEntities}</div>
               <div className={styles.metricDetail}>
@@ -376,83 +421,45 @@ export default function RiskDashboard() {
               </div>
             </div>
 
-            <div 
-              className={`${styles.metricCard} ${activeFilter === 'critical' ? styles.metricCardActive : ''}`}
-              onClick={() => setActiveFilter('critical')}
-            >
-              <div className={styles.metricHeader}>
-                <div className={styles.metricIcon} style={{ backgroundColor: 'rgba(254, 226, 226, 1)' }}>
-                  <XCircle size={20} style={{ color: 'var(--destructive)' }} />
-                </div>
-                <span className={styles.metricLabel}>Rủi ro nghiêm trọng</span>
-              </div>
-              <div className={styles.metricValue}>{metrics.criticalEntities}</div>
-              <div className={styles.metricDetail}>
-                <span className={styles.metricDetailLabel}>Cần xử lý khẩn</span>
-              </div>
-            </div>
-
-            <div 
-              className={`${styles.metricCard} ${activeFilter === 'high' ? styles.metricCardActive : ''}`}
-              onClick={() => setActiveFilter('high')}
-            >
-              <div className={styles.metricHeader}>
-                <div className={styles.metricIcon} style={{ backgroundColor: 'rgba(254, 243, 199, 1)' }}>
-                  <AlertOctagon size={20} style={{ color: 'rgba(180, 83, 9, 1)' }} />
-                </div>
-                <span className={styles.metricLabel}>Rủi ro cao</span>
-              </div>
-              <div className={styles.metricValue}>{metrics.highEntities}</div>
-              <div className={styles.metricDetail}>
-                <span className={styles.metricDetailLabel}>Theo dõi sát</span>
-              </div>
-            </div>
-
-            <div 
-              className={`${styles.metricCard} ${activeFilter === 'resolved' ? styles.metricCardActive : ''}`}
-              onClick={() => setActiveFilter('resolved')}
-            >
-              <div className={styles.metricHeader}>
-                <div className={styles.metricIcon} style={{ backgroundColor: 'rgba(220, 252, 231, 1)' }}>
-                  <CheckCircle2 size={20} style={{ color: 'rgba(34, 197, 94, 1)' }} />
-                </div>
-                <span className={styles.metricLabel}>Leads đã xử lý</span>
-              </div>
-              <div className={styles.metricValue}>{metrics.resolved}</div>
-              <div className={styles.metricDetail}>
-                <span className={styles.metricDetailLabel}>Tuần này:</span>
-                <span className={styles.metricDetailValue} style={{ color: 'rgba(34, 197, 94, 1)' }}>
-                  {Math.floor(metrics.resolved * 0.4)}
-                </span>
-              </div>
-            </div>
-
-            <div 
-              className={`${styles.metricCard} ${activeFilter === 'watchlist' ? styles.metricCardActive : ''}`}
-              onClick={() => setActiveFilter('watchlist')}
-            >
-              <div className={styles.metricHeader}>
-                <div className={styles.metricIcon} style={{ backgroundColor: 'rgba(243, 244, 246, 1)' }}>
-                  <Eye size={20} style={{ color: 'rgba(107, 114, 128, 1)' }} />
-                </div>
-                <span className={styles.metricLabel}>Đang theo dõi</span>
-              </div>
-              <div className={styles.metricValue}>{metrics.watchlistedEntities}</div>
-              <div className={styles.metricDetail}>
-                <span className={styles.metricDetailLabel}>Có cảnh báo:</span>
-                <span className={styles.metricDetailValue} style={{ color: 'var(--destructive)' }}>
-                  {metrics.alertEntities}
-                </span>
-              </div>
-            </div>
-
-            <div 
-              className={`${styles.metricCard} ${activeFilter === 'in_progress' ? styles.metricCardActive : ''}`}
-              onClick={() => setActiveFilter('in_progress')}
+            <div
+              className={`${styles.metricCard} ${activeFilter === 'moi' ? styles.metricCardActive : ''}`}
+              onClick={() => setActiveFilter('moi')}
             >
               <div className={styles.metricHeader}>
                 <div className={styles.metricIcon} style={{ backgroundColor: 'rgba(239, 246, 255, 1)' }}>
-                  <Clock size={20} style={{ color: 'rgba(37, 99, 235, 1)' }} />
+                  <FileText size={20} style={{ color: 'rgba(37, 99, 235, 1)' }} />
+                </div>
+                <span className={styles.metricLabel}>Trạng thái mới</span>
+              </div>
+              <div className={styles.metricValue}>{metrics.newStatus}</div>
+              <div className={styles.metricDetail}>
+                <span className={styles.metricDetailLabel}>Chờ xử lý</span>
+              </div>
+            </div>
+
+            <div
+              className={`${styles.metricCard} ${activeFilter === 'dang_xac_minh' ? styles.metricCardActive : ''}`}
+              onClick={() => setActiveFilter('dang_xac_minh')}
+            >
+              <div className={styles.metricHeader}>
+                <div className={styles.metricIcon} style={{ backgroundColor: 'rgba(254, 249, 195, 1)' }}>
+                  <FileCheck size={20} style={{ color: 'rgba(161, 98, 7, 1)' }} />
+                </div>
+                <span className={styles.metricLabel}>Đang xác minh</span>
+              </div>
+              <div className={styles.metricValue}>{metrics.inVerification}</div>
+              <div className={styles.metricDetail}>
+                <span className={styles.metricDetailLabel}>Cần kiểm tra</span>
+              </div>
+            </div>
+
+            <div
+              className={`${styles.metricCard} ${activeFilter === 'dang_xu_ly' ? styles.metricCardActive : ''}`}
+              onClick={() => setActiveFilter('dang_xu_ly')}
+            >
+              <div className={styles.metricHeader}>
+                <div className={styles.metricIcon} style={{ backgroundColor: 'rgba(254, 243, 199, 1)' }}>
+                  <Clock size={20} style={{ color: 'rgba(180, 83, 9, 1)' }} />
                 </div>
                 <span className={styles.metricLabel}>Đang xử lý</span>
               </div>
@@ -462,6 +469,38 @@ export default function RiskDashboard() {
                 <span className={styles.metricDetailValue} style={{ color: 'var(--destructive)' }}>
                   {metrics.overdue}
                 </span>
+              </div>
+            </div>
+
+            <div
+              className={`${styles.metricCard} ${activeFilter === 'da_xu_ly' ? styles.metricCardActive : ''}`}
+              onClick={() => setActiveFilter('da_xu_ly')}
+            >
+              <div className={styles.metricHeader}>
+                <div className={styles.metricIcon} style={{ backgroundColor: 'rgba(220, 252, 231, 1)' }}>
+                  <CheckCircle2 size={20} style={{ color: 'rgba(34, 197, 94, 1)' }} />
+                </div>
+                <span className={styles.metricLabel}>Đã xử lý</span>
+              </div>
+              <div className={styles.metricValue}>{metrics.resolved}</div>
+              <div className={styles.metricDetail}>
+                <span className={styles.metricDetailLabel}>Hoàn thành</span>
+              </div>
+            </div>
+
+            <div
+              className={`${styles.metricCard} ${activeFilter === 'da_huy' ? styles.metricCardActive : ''}`}
+              onClick={() => setActiveFilter('da_huy')}
+            >
+              <div className={styles.metricHeader}>
+                <div className={styles.metricIcon} style={{ backgroundColor: 'rgba(243, 244, 246, 1)' }}>
+                  <Ban size={20} style={{ color: 'rgba(107, 114, 128, 1)' }} />
+                </div>
+                <span className={styles.metricLabel}>Đã huỷ</span>
+              </div>
+              <div className={styles.metricValue}>{metrics.cancelled}</div>
+              <div className={styles.metricDetail}>
+                <span className={styles.metricDetailLabel}>Không xử lý</span>
               </div>
             </div>
           </div>
@@ -542,11 +581,11 @@ export default function RiskDashboard() {
               <span className={styles.activeFilterLabel}>Đang lọc:</span>
               <span className={styles.activeFilterBadge}>
                 {activeFilter === 'total' && 'Tất cả cơ sở'}
-                {activeFilter === 'critical' && 'Rủi ro nghiêm trọng'}
-                {activeFilter === 'high' && 'Rủi ro cao'}
-                {activeFilter === 'resolved' && 'Leads đã xử lý'}
-                {activeFilter === 'watchlist' && 'Đang theo dõi'}
-                {activeFilter === 'in_progress' && 'Có leads đang xử lý'}
+                {activeFilter === 'moi' && 'Trạng thái mới'}
+                {activeFilter === 'dang_xac_minh' && 'Đang xác minh'}
+                {activeFilter === 'dang_xu_ly' && 'Đang xử lý'}
+                {activeFilter === 'da_xu_ly' && 'Đã xử lý'}
+                {activeFilter === 'da_huy' && 'Đã huỷ'}
               </span>
               <span className={styles.activeFilterCount}>({filteredProfiles.length} cơ sở)</span>
             </div>
@@ -568,8 +607,8 @@ export default function RiskDashboard() {
             <div className={styles.tableBody}>
               {paginatedProfiles.length > 0 ? (
                 paginatedProfiles.map((profile) => (
-                  <div 
-                    key={profile.entityId} 
+                  <div
+                    key={profile.entityId}
                     className={styles.riskRow}
                   >
                     <div className={styles.riskCell} style={{ flex: '1 1 0', minWidth: '200px' }}>
@@ -618,23 +657,14 @@ export default function RiskDashboard() {
                     </div>
 
                     <div className={styles.riskCell} style={{ flex: '0 0 110px', justifyContent: 'center' }}>
-                      <div className={styles.statusBadges}>
-                        {profile.isWatchlisted && (
-                          <span className={styles.watchBadge} title="Đang theo dõi">
-                            <Eye size={12} />
-                          </span>
-                        )}
-                        {profile.hasActiveAlert && (
-                          <span className={styles.alertBadge} title="Có cảnh báo">
-                            <AlertTriangle size={12} />
-                          </span>
-                        )}
-                      </div>
+                      <span className={styles[getStatusClass(profile.latestCaseStatus)]}>
+                        {getStatusLabel(profile.latestCaseStatus)}
+                      </span>
                     </div>
 
                     <div className={styles.riskCell} style={{ flex: '0 0 140px', justifyContent: 'center' }} onClick={(e) => e.stopPropagation()}>
                       <div className={styles.actionButtons}>
-                        <button 
+                        <button
                           className={styles.actionButton}
                           onClick={() => navigate(`/lead-risk/risk/${profile.entityId}`)}
                           title="Xem chi tiết"
@@ -664,8 +694,8 @@ export default function RiskDashboard() {
               <div className={styles.paginationButtons}>
                 <button className={styles.pageButton} disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)}>Trước</button>
                 {getPageNumbers().map(page => (
-                  <button 
-                    key={page} 
+                  <button
+                    key={page}
                     className={currentPage === page ? styles.pageButtonActive : styles.pageButton}
                     onClick={() => handlePageChange(page)}
                   >
@@ -705,8 +735,8 @@ export default function RiskDashboard() {
                   </p>
                 </div>
                 <div className={styles.deleteModalFooter}>
-                  <button 
-                    className={styles.cancelButton} 
+                  <button
+                    className={styles.cancelButton}
                     onClick={() => {
                       setIsDeleteModalOpen(false);
                       setDeletingRisk(null);
@@ -714,7 +744,7 @@ export default function RiskDashboard() {
                   >
                     Hủy
                   </button>
-                  <button 
+                  <button
                     className={styles.deleteButton}
                     onClick={handleDeleteRisk}
                   >

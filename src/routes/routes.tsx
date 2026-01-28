@@ -6,16 +6,11 @@ import { Login } from '../app/pages/auth/Login';
 import { ProtectedRoute } from '../app/components/auth/ProtectedRoute';
 import { PermissionProtectedRoute } from '../app/components/auth/PermissionProtectedRoute';
 import TvWallboardPage from '../app/pages/TvWallboardPage';
-import { systemAdminDashboardRoute } from '../modules/system-admin/routes';
-import { saMasterDataRoutes } from '../modules/system-admin/sa-master-data';
-import { saIamRoutes } from '../modules/system-admin/sa-iam';
-import { saSystemConfigRoutes } from '../modules/system-admin/sa-system-config';
+import { moduleRoutes } from '../modules/_registry';
 // Plans module - moved to /src/app/pages/plans/
 import { PlansProvider } from '../app/contexts/PlansContext';
 
 // Lead & Risk pages
-import { installedRoutes } from '../imports/installedModules';
-
 import { InspectionRoundsProvider } from '../contexts/InspectionRoundsContext';
 
 const OverviewPage = React.lazy(() => import('../pages/OverviewPage'));
@@ -72,11 +67,15 @@ const InspectionRoundStatistics = React.lazy(
 );
 
 const LeadInbox = React.lazy(() => import('../pages/lead-risk/LeadInbox'));
+const LeadInboxAIDemo = React.lazy(() => import('../pages/lead-risk/LeadInboxAIDemo'));
+const LeadDetailAIDemo = React.lazy(() => import('../pages/lead-risk/LeadDetailAIDemo'));
+const LeadDuplicateDemo = React.lazy(() => import('../pages/lead-risk/LeadDuplicateDemo'));
 const LeadRiskHome = React.lazy(() => import('../pages/lead-risk/LeadRiskHome'));
 const LeadList = React.lazy(() => import('../pages/lead-risk/LeadList'));
 const LeadMapView = React.lazy(() => import('../pages/lead-risk/LeadMapView'));
 const CreateLeadQuick = React.lazy(() => import('../pages/lead-risk/CreateLeadQuick'));
 const CreateLeadFull = React.lazy(() => import('../pages/lead-risk/CreateLeadFull'));
+const CreateLeadSource = React.lazy(() => import('../pages/lead-risk/CreateLeadSource'));
 const RiskDashboard = React.lazy(() => import('../pages/lead-risk/RiskDashboard'));
 const LeadDetail = React.lazy(() => import('../pages/lead-risk/LeadDetail'));
 const RiskDetail = React.lazy(() => import('../pages/lead-risk/RiskDetail'));
@@ -304,11 +303,7 @@ export const router = createBrowserRouter([
               </PermissionProtectedRoute>
             ),
           },
-          systemAdminDashboardRoute,
-          saMasterDataRoutes,
-          saIamRoutes,
-          saSystemConfigRoutes,
-          ...installedRoutes,
+          ...moduleRoutes,
           // Account pages
           {
             path: 'account/profile',
@@ -476,6 +471,38 @@ export const router = createBrowserRouter([
             element: (
               <PermissionProtectedRoute>
                 <CreateLeadFull />
+              </PermissionProtectedRoute>
+            ),
+          },
+          {
+            path: 'lead-risk/create-lead-source',
+            element: (
+              <PermissionProtectedRoute>
+                <CreateLeadSource />
+              </PermissionProtectedRoute>
+            ),
+          },
+          {
+            path: 'lead-risk/inbox-ai-demo',
+            element: (
+              <PermissionProtectedRoute>
+                <LeadInboxAIDemo />
+              </PermissionProtectedRoute>
+            ),
+          },
+          {
+            path: 'lead-risk/lead-detail-ai-demo',
+            element: (
+              <PermissionProtectedRoute>
+                <LeadDetailAIDemo />
+              </PermissionProtectedRoute>
+            ),
+          },
+          {
+            path: 'lead-risk/duplicate-demo',
+            element: (
+              <PermissionProtectedRoute>
+                <LeadDuplicateDemo />
               </PermissionProtectedRoute>
             ),
           },

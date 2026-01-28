@@ -1,0 +1,92 @@
+.skeleton {
+    background: linear-gradient(90deg,
+            var(--muted) 0%,
+            var(--muted-foreground) 25%,
+            var(--muted) 50%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--radius);
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Card Group */
+.cardGroup {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--spacing-4);
+    margin-bottom: var(--spacing-6);
+}
+
+.card {
+    height: 120px;
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    padding: var(--spacing-4);
+    border-radius: var(--radius);
+}
+
+/* Filter Bar */
+.filterBar {
+    display: flex;
+    gap: var(--spacing-3);
+    margin-bottom: var(--spacing-6);
+    flex-wrap: wrap;
+}
+
+.filterItem {
+    height: 36px;
+    width: 120px;
+    border-radius: var(--radius);
+}
+
+/* Table */
+.tableContainer {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.tableHeader {
+    height: 48px;
+    background-color: var(--muted);
+    margin-bottom: 1px;
+}
+
+.tableRow {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-3) var(--spacing-4);
+    border-bottom: 1px solid var(--border);
+    gap: var(--spacing-4);
+}
+
+.tableCell {
+    height: 20px;
+    border-radius: 4px;
+}
+
+.w20 {
+    width: 20%;
+}
+
+.w30 {
+    width: 30%;
+}
+
+.w40 {
+    width: 40%;
+}
+
+.w15 {
+    width: 15%;
+}

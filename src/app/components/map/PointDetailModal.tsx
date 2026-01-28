@@ -8,6 +8,9 @@ import { fetchMerchantInspectionResults, updateInspectionChecklistResultStatus }
 import { SUPABASE_REST_URL } from '../../../utils/api/config';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '../../../ui-kit/ConfirmDialog';
+import { useAppDispatch, useAppSelector } from '../../../app/hooks';
+import { RootState } from '../../../store/rootReducer';
+import { fetchMerchantDetailRequest, clearCurrentMerchant, fetchInspectionHistoryRequest, fetchMerchantLicensesRequest } from '../../../store/slices/merchantSlice';
 
 interface PointDetailModalProps {
   point: Restaurant | null;
@@ -111,6 +114,23 @@ function getStatusBadge(category: Restaurant['category']) {
 }
 
 export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalProps) {
+  const dispatch = useAppDispatch();
+  const { currentMerchant, inspectionHistory, licenses, isLoading: isMerchantLoading, isHistoryLoading, isLicensesLoading } = useAppSelector((state: RootState) => state.merchant);
+
+  // 🔥 Fetch merchant detail when modal opens
+  useEffect(() => {
+    if (isOpen && point?.id) {
+      dispatch(fetchMerchantDetailRequest({ merchantId: point.id }));
+      dispatch(fetchInspectionHistoryRequest(point.id));
+      dispatch(fetchMerchantLicensesRequest(point.id));
+    }
+    return () => {
+      if (!isOpen) {
+        dispatch(clearCurrentMerchant());
+      }
+    };
+  }, [isOpen, point?.id, dispatch]);
+
   // 🔥 FIX: Prevent immediate close after opening (click event from popup button may bubble up)
   const justOpenedRef = useRef(false);
   const openTimeRef = useRef(0);
@@ -146,6 +166,16 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+  // Staff list modal state
+  const [showStaffModal, setShowStaffModal] = useState(false);
+
+  // Close staff modal when parent modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setShowStaffModal(false);
+    }
+  }, [isOpen]);
 
   // 🔥 Lưu data từ API - key là document_type_id từ Backend (không map)
   interface DocumentResult {
@@ -474,43 +504,82 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
     };
   }, [isOpen]);
 
-  // 🔥 FIX: Memoize mock data to prevent re-generation on every render (causes content jumping)
-  // Generate mock data based on point.id for consistency
-  // Must be called BEFORE early return (React Hooks rule)
-  const mockData = useMemo(() => {
-    if (!point) return null;
-    // Use point.id as seed for pseudo-random values (consistent per point)
-    const seed = point.id.charCodeAt(0) + point.id.charCodeAt(point.id.length - 1);
-    const random1 = (seed * 9301 + 49297) % 233280 / 233280;
-    const random2 = ((seed * 9301 + 49297) * 9301 + 49297) % 233280 / 233280;
-    const random3 = (((seed * 9301 + 49297) * 9301 + 49297) * 9301 + 49297) % 233280 / 233280;
-    const random4 = ((((seed * 9301 + 49297) * 9301 + 49297) * 9301 + 49297) * 9301 + 49297) % 233280 / 233280;
-
-    return {
-      businessLicense: `GP${Math.floor(random1 * 9000 + 1000)}-${new Date().getFullYear()}`,
-      attpCertificateNumber: `CN-ATTP ${Math.floor(random1 * 9000 + 1000)}/${new Date().getFullYear()}`, // 🔥 FIX: Add certificate number to mockData
-      establishedDate: new Date(Date.now() - random1 * 5 * 365 * 24 * 60 * 60 * 1000),
-      lastInspection: new Date(Date.now() - random2 * 60 * 24 * 60 * 60 * 1000),
-      nextInspection: point.category === 'scheduled'
-        ? new Date(Date.now() + random3 * 30 * 24 * 60 * 60 * 1000)
-        : null,
-      ownerName: `Nguyễn Văn ${String.fromCharCode(65 + Math.floor(random1 * 26))}`,
-      phone: `0${Math.floor(random2 * 9 + 1)}${Math.floor(random3 * 100000000 + 100000000)}`,
-      email: `contact@${point.name.toLowerCase().replace(/\s+/g, '').slice(0, 15)}.vn`,
-      employees: Math.floor(random2 * 30 + 5),
-      capacity: Math.floor(random3 * 150 + 50),
-      inspectionCount: Math.floor(random4 * 10 + 1),
-      rating: point.category === 'certified' ? 'A' : point.category === 'hotspot' ? 'C' : 'B',
-      violationCount: point.category === 'hotspot' ? Math.floor(random4 * 3 + 2) : Math.floor(random4 * 2)
-    };
-  }, [point?.id, point?.category, point?.name]); // 🔥 Only regenerate when point changes
-
   if (!isOpen || !point) return null;
 
   const categoryColor = getCategoryColor(point.category);
   const statusBadge = getStatusBadge(point.category);
 
-  const { businessLicense, attpCertificateNumber, establishedDate, lastInspection, nextInspection, ownerName, phone, email, employees, capacity, inspectionCount, rating, violationCount } = mockData || {};
+  // 🔥 Map Redux data to display variables
+  const displayData = {
+    name: currentMerchant?.business_name || point.name,
+    taxCode: currentMerchant?.tax_code || point.taxCode || 'N/A',
+    businessType: currentMerchant?.business_type || point.type || 'N/A',
+    license: currentMerchant?.merchant_licenses?.[0]?.license_number || point.taxCode || 'N/A',
+    owner: currentMerchant?.owner_name || 'N/A',
+    phone: currentMerchant?.owner_phone || point.hotline || 'N/A',
+    email: currentMerchant?.email || 'N/A',
+    address: currentMerchant?.address || point.address,
+    ward: currentMerchant?.ward || point.ward,
+    district: currentMerchant?.district || point.district,
+    province: currentMerchant?.province || point.province,
+    establishedDate: currentMerchant?.created_at ? new Date(currentMerchant.created_at) : null,
+    employees: currentMerchant?.merchant_staff?.length || currentMerchant?.employee_count || 0,
+    capacity: currentMerchant?.capacity || 0,
+    inspectionCount: currentMerchant?.inspection_count || 0,
+    violationCount: currentMerchant?.violation_count || 0,
+    rating: currentMerchant?.rating || (point.category === 'certified' ? 'A' : point.category === 'hotspot' ? 'C' : 'B'),
+    lastInspectionDate: currentMerchant?.last_inspection_date ? new Date(currentMerchant.last_inspection_date) : null,
+    nextInspectionDate: currentMerchant?.next_inspection_date ? new Date(currentMerchant.next_inspection_date) : null,
+    attpCertificateNumber: currentMerchant?.attp_certificate_number || `CN-ATTP ${Math.floor(1000 + (point?.id?.charCodeAt(0) || 0) % 9000)}/${new Date().getFullYear()}`,
+  };
+
+  // mapping certificate status to Vietnamese and colors
+  const getLicenseStatusConfig = (status: string, isATTP: boolean) => {
+    const s = status?.toLowerCase() || '';
+    
+    // Check if status is already in Vietnamese (from fallback or other sources)
+    if (s === 'còn hiệu lực') {
+      return { 
+        text: 'Còn hiệu lực', 
+        bg: isATTP ? '#dcfce7' : '#dbeafe', 
+        color: isATTP ? '#166534' : '#1e40af' 
+      };
+    }
+
+    switch (s) {
+      case 'valid':
+      case 'active':
+        return { 
+          text: 'Còn hiệu lực', 
+          bg: isATTP ? '#dcfce7' : '#dbeafe', 
+          color: isATTP ? '#166534' : '#1e40af' 
+        };
+      case 'expiring':
+        return { 
+          text: 'Sắp hết hạn', 
+          bg: '#fef3c7', 
+          color: '#92400e' 
+        };
+      case 'expired':
+        return { 
+          text: 'Hết hiệu lực', 
+          bg: '#fee2e2', 
+          color: '#991b1b' 
+        };
+      case 'revoked':
+        return { 
+          text: 'Bị thu hồi', 
+          bg: '#f3f4f6', 
+          color: '#374151' 
+        };
+      default:
+        return { 
+          text: status || 'N/A', 
+          bg: '#f3f4f6', 
+          color: '#374151' 
+        };
+    }
+  };
 
   // 🔥 FIX: Handle overlay click - only close if clicking directly on overlay, not from event bubbling
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -554,6 +623,71 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
           <X size={18} />
         </button>
 
+        {/* Employee List Modal Overlay */}
+        {showStaffModal && (
+          <div className={styles.staffModalOverlay}>
+            <div className={styles.staffModalHeader}>
+              <div className={styles.staffModalTitle}>
+                <Users size={20} />
+                <span>Danh sách nhân viên ({currentMerchant?.merchant_staff?.length || 0})</span>
+              </div>
+              <button 
+                className={styles.staffModalClose} 
+                onClick={() => setShowStaffModal(false)}
+                title="Quay lại"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className={styles.staffModalBody}>
+              {currentMerchant?.merchant_staff && currentMerchant.merchant_staff.length > 0 ? (
+                <div className={styles.staffGrid}>
+                  {currentMerchant.merchant_staff.map((staff: any, index: number) => (
+                    <div key={staff._id || index} className={styles.staffCard}>
+                      <div className={styles.staffAvatar}>
+                        <User size={24} />
+                      </div>
+                      <div className={styles.staffInfo}>
+                        <div className={styles.staffName}>{staff.full_name || staff.name || 'N/A'}</div>
+                        <div className={styles.staffRole}>{staff.position || staff.role || 'Nhân viên'}</div>
+                        
+                        <div className={styles.staffDetailItem}>
+                          <Phone size={14} />
+                          <span>{staff.phone_number || staff.phone || 'N/A'}</span>
+                        </div>
+                        
+                        <div className={styles.staffDetailItem}>
+                          <Mail size={14} />
+                          <span>{staff.email || 'N/A'}</span>
+                        </div>
+
+                        {staff.staff_code && (
+                          <div className={styles.staffDetailItem}>
+                            <Hash size={14} />
+                            <span>Mã Nhân viên: {staff.staff_code}</span>
+                          </div>
+                        )}
+
+                        {staff.citizen_id && (
+                          <div className={styles.staffDetailItem}>
+                            <FileText size={14} />
+                            <span>CCCD: {staff.citizen_id}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.noStaffMessage}>
+                  <Users size={48} strokeWidth={1} />
+                  <p>Không có dữ liệu nhân viên</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Header Section - Compact */}
         <div className={styles.header}>
           <div className={styles.headerBadge} style={{ background: statusBadge.bg, color: statusBadge.color }}>
@@ -561,40 +695,50 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
             <span>{statusBadge.text}</span>
           </div>
           <div className={styles.headerTitleRow}>
-            <h1 className={styles.headerTitle}>{point.name}</h1>
+            <h1 className={styles.headerTitle}>{displayData.name}</h1>
             {/* Compact Stats - Inline with title */}
             <div className={styles.compactStats}>
-              <div className={styles.compactStatItem}>
+              <div 
+                className={`${styles.compactStatItem} ${styles.clickableStatItem}`}
+                onClick={() => setShowStaffModal(true)}
+                title="Xem danh sách nhân viên"
+              >
                 <Users size={14} />
-                <span>{employees} NV</span>
+                <span>{displayData.employees} Nhân viên</span>
               </div>
               <div className={styles.compactStatItem}>
                 <Utensils size={14} />
-                <span>{capacity} chỗ</span>
+                <span>{displayData.capacity} chỗ</span>
               </div>
               <div className={styles.compactStatItem}>
                 <Shield size={14} />
-                <span>{inspectionCount} lần KT</span>
+                <span>{displayData.inspectionCount} Lần kiểm tra</span>
               </div>
               <div className={styles.compactStatItem} style={{
-                color: violationCount > 2 ? '#dc2626' : violationCount > 0 ? '#eab308' : '#16a34a'
+                color: displayData.violationCount > 2 ? '#dc2626' : displayData.violationCount > 0 ? '#eab308' : '#16a34a'
               }}>
                 <AlertCircle size={14} />
-                <span>{violationCount} VP</span>
+                <span>{displayData.violationCount} Vi phạm</span>
               </div>
             </div>
           </div>
           <div className={styles.headerMeta}>
-            <span className={styles.metaId}>MST: {point.taxCode || 'N/A'}</span>
+            <span className={styles.metaId}>MST: {displayData.taxCode}</span>
             <span className={styles.metaDivider}>•</span>
             <span className={styles.metaCategory}>{getCategoryLabel(point.category)}</span>
             <span className={styles.metaDivider}>•</span>
-            <span className={styles.metaRating}>Xếp loại: {rating}</span>
+            <span className={styles.metaRating}>Xếp loại: {displayData.rating}</span>
           </div>
         </div>
 
         {/* Content Section */}
         <div className={styles.content}>
+          {isMerchantLoading && (
+            <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+              Đang cập nhật dữ liệu mới nhất...
+            </div>
+          )}
           {/* Alert for Hotspots - Move to top */}
           {point.category === 'hotspot' && (
             <div className={styles.alertCard}>
@@ -605,7 +749,7 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                 <div className={styles.alertTitle}>Cảnh báo điểm nóng ATTP</div>
                 <div className={styles.alertText}>
                   Cơ sở này đã được xác định là điểm nóng về an toàn thực phẩm.
-                  Phát hiện {violationCount} vi phạm trong lần kiểm tra gần nhất.
+                  Phát hiện {displayData.violationCount} vi phạm trong lần kiểm tra gần nhất.
                   Cần tiến hành kiểm tra và giám sát chặt chẽ.
                 </div>
               </div>
@@ -639,22 +783,22 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                     <div className={styles.infoGrid}>
                       <div className={styles.infoItem}>
                         <div className={styles.infoLabel}>Loại hình</div>
-                        <div className={styles.infoValue}>{point.type}</div>
+                        <div className={styles.infoValue}>{displayData.businessType}</div>
                       </div>
 
                       <div className={styles.infoItem}>
                         <div className={styles.infoLabel}>Giấy phép</div>
-                        <div className={styles.infoValue}>{businessLicense}</div>
+                        <div className={styles.infoValue}>{displayData.license}</div>
                       </div>
 
                       <div className={styles.infoItem}>
                         <div className={styles.infoLabel}>Ngày thành lập</div>
                         <div className={styles.infoValue}>
-                          {establishedDate.toLocaleDateString('vi-VN', {
+                          {displayData.establishedDate ? displayData.establishedDate.toLocaleDateString('vi-VN', {
                             day: '2-digit',
                             month: '2-digit',
                             year: 'numeric'
-                          })}
+                          }) : 'N/A'}
                         </div>
                       </div>
 
@@ -662,10 +806,10 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                         <div className={styles.infoLabel}>Xếp loại ATTP</div>
                         <div className={styles.infoValue}>
                           <span className={styles.ratingBadge} style={{
-                            background: rating === 'A' ? '#dcfce7' : rating === 'C' ? '#fee2e2' : '#fef3c7',
-                            color: rating === 'A' ? '#166534' : rating === 'C' ? '#991b1b' : '#92400e'
+                            background: displayData.rating === 'A' ? '#dcfce7' : displayData.rating === 'C' ? '#fee2e2' : '#fef3c7',
+                            color: displayData.rating === 'A' ? '#166534' : displayData.rating === 'C' ? '#991b1b' : '#92400e'
                           }}>
-                            {rating}
+                            {displayData.rating}
                           </span>
                         </div>
                       </div>
@@ -694,13 +838,13 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                 </div>
                 {!collapsedSections.address && (
                   <div className={styles.cardBody}>
-                    <div className={styles.addressFull}>{point.address}</div>
+                    <div className={styles.addressFull}>{displayData.address}</div>
                     <div className={styles.addressCompact}>
-                      {point.ward && <span>{point.ward}</span>}
-                      {point.ward && <span className={styles.addressSep}>•</span>}
-                      <span>{point.district}</span>
+                      {displayData.ward && <span>{displayData.ward}</span>}
+                      {displayData.ward && <span className={styles.addressSep}>•</span>}
+                      <span>{displayData.district}</span>
                       <span className={styles.addressSep}>•</span>
-                      <span>{point.province}</span>
+                      <span>{displayData.province}</span>
                     </div>
                     <div className={styles.gpsCoords}>
                       GPS: {point.lat.toFixed(6)}, {point.lng.toFixed(6)}
@@ -733,17 +877,17 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                       <div className={styles.contactRow}>
                         <User size={14} />
                         <span className={styles.contactLabel}>Đại diện:</span>
-                        <span className={styles.contactValue}>{ownerName}</span>
+                        <span className={styles.contactValue}>{displayData.owner}</span>
                       </div>
                       <div className={styles.contactRow}>
                         <Phone size={14} />
                         <span className={styles.contactLabel}>SĐT:</span>
-                        <span className={styles.contactValue}>{phone}</span>
+                        <span className={styles.contactValue}>{displayData.phone}</span>
                       </div>
                       <div className={styles.contactRow}>
                         <Mail size={14} />
                         <span className={styles.contactLabel}>Email:</span>
-                        <span className={styles.contactValue}>{email}</span>
+                        <span className={styles.contactValue}>{displayData.email}</span>
                       </div>
                     </div>
                   </div>
@@ -856,33 +1000,67 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                 {!collapsedSections.timeline && (
                   <div className={styles.cardBody}>
                     <div className={styles.timeline}>
-                      <div className={styles.timelineItem}>
-                        <div className={styles.timelineDot} style={{ background: '#22c55e' }} />
-                        <div className={styles.timelineContent}>
-                          <div className={styles.timelineTitle}>Kiểm tra gần nhất</div>
-                          <div className={styles.timelineDate}>
-                            {lastInspection.toLocaleDateString('vi-VN', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric'
-                            })}
+                      {isHistoryLoading ? (
+                        <div className="flex items-center justify-center py-4 text-xs text-muted-foreground">
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary mr-2"></div>
+                          Đang tải lịch sử...
+                        </div>
+                      ) : inspectionHistory && inspectionHistory.length > 0 ? (
+                        inspectionHistory.map((item, index) => (
+                          <div key={item._id || index} className={styles.timelineItem}>
+                            <div 
+                              className={styles.timelineDot} 
+                              style={{ 
+                                background: item.status === 'passed' ? '#22c55e' : item.status === 'failed' ? '#ef4444' : '#94a3b8' 
+                              }} 
+                            />
+                            <div className={styles.timelineContent}>
+                              <div className={styles.timelineTitle}>{item.document_type_name || 'Kiểm tra'}</div>
+                              <div className={styles.timelineDate}>
+                                {item.inspection_date ? new Date(item.inspection_date).toLocaleDateString('vi-VN', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric'
+                                }) : 'N/A'}
+                              </div>
+                              {item.notes && <div className={styles.timelineMeta}>{item.notes}</div>}
+                              <div className={styles.timelineResult}>
+                                KQ: <strong style={{ color: item.status === 'passed' ? '#16a34a' : item.status === 'failed' ? '#dc2626' : 'inherit' }}>
+                                  {item.status === 'passed' ? 'Đạt' : item.status === 'failed' ? 'Không đạt' : 'Chưa có kết quả'}
+                                </strong>
+                              </div>
+                            </div>
                           </div>
-                          <div className={styles.timelineMeta}>
-                            Chi cục QLTT {point.district}
-                          </div>
-                          <div className={styles.timelineResult}>
-                            KQ: <strong>{point.category === 'hotspot' ? 'Không đạt' : 'Đạt yêu cầu'}</strong>
+                        ))
+                      ) : (
+                        <div className={styles.timelineItem}>
+                          <div className={styles.timelineDot} style={{ background: '#22c55e' }} />
+                          <div className={styles.timelineContent}>
+                            <div className={styles.timelineTitle}>Kiểm tra gần nhất</div>
+                            <div className={styles.timelineDate}>
+                              {displayData.lastInspectionDate ? displayData.lastInspectionDate.toLocaleDateString('vi-VN', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric'
+                              }) : 'N/A'}
+                            </div>
+                            <div className={styles.timelineMeta}>
+                              Chi cục QLTT {point.district}
+                            </div>
+                            <div className={styles.timelineResult}>
+                              KQ: <strong>{point.category === 'hotspot' ? 'Không đạt' : 'Đạt yêu cầu'}</strong>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      )}
 
-                      {nextInspection && (
+                      {displayData.nextInspectionDate && (
                         <div className={styles.timelineItem}>
                           <div className={styles.timelineDot} style={{ background: '#eab308' }} />
                           <div className={styles.timelineContent}>
                             <div className={styles.timelineTitle}>Kiểm tra tiếp theo</div>
                             <div className={styles.timelineDate}>
-                              {nextInspection.toLocaleDateString('vi-VN', {
+                              {displayData.nextInspectionDate.toLocaleDateString('vi-VN', {
                                 day: '2-digit',
                                 month: '2-digit',
                                 year: 'numeric'
@@ -898,11 +1076,11 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                         <div className={styles.timelineContent}>
                           <div className={styles.timelineTitle}>Cấp giấy phép</div>
                           <div className={styles.timelineDate}>
-                            {establishedDate.toLocaleDateString('vi-VN', {
+                            {displayData.establishedDate ? displayData.establishedDate.toLocaleDateString('vi-VN', {
                               day: '2-digit',
                               month: '2-digit',
                               year: 'numeric'
-                            })}
+                            }) : 'N/A'}
                           </div>
                           <div className={styles.timelineMeta}>
                             Sở Y tế {point.province}
@@ -935,65 +1113,91 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                 {!collapsedSections.certificates && (
                   <div className={styles.cardBody}>
                     <div className={styles.certCompact}>
-                      {/* ATTP Certificate */}
-                      <div className={styles.certItem}>
-                        <div className={styles.certItemHeader}>
-                          <div className={styles.certIconSmall} style={{ background: '#dcfce7', color: '#16a34a' }}>
-                            <FileCheck size={14} />
-                          </div>
-                          <div>
-                            <div className={styles.certTitleSmall}>Chứng nhận ATTP</div>
-                            <div className={styles.certNumber}>{attpCertificateNumber || `CN-ATTP ${Math.floor(1000 + (point?.id?.charCodeAt(0) || 0) % 9000)}/${new Date().getFullYear()}`}</div>
-                          </div>
-                          <span className={styles.certStatusBadge} style={{ background: '#dcfce7', color: '#166534' }}>
-                            Còn hiệu lực
-                          </span>
+                      {isLicensesLoading ? (
+                        <div className="flex items-center justify-center py-4 text-xs text-muted-foreground">
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary mr-2"></div>
+                          Đang tải giấy chứng nhận...
                         </div>
-                        <div className={styles.certMeta}>
-                          Cấp bởi: Sở Y tế {point.province} •
-                          Cấp: {establishedDate.toLocaleDateString('vi-VN')} •
-                          HH: {new Date(establishedDate.getTime() + 3 * 365 * 24 * 60 * 60 * 1000).toLocaleDateString('vi-VN')}
-                        </div>
-                      </div>
-
-                      {/* Business License */}
-                      <div className={styles.certItem}>
-                        <div className={styles.certItemHeader}>
-                          <div className={styles.certIconSmall} style={{ background: '#dbeafe', color: '#005cb6' }}>
-                            <FileCheck size={14} />
-                          </div>
-                          <div>
-                            <div className={styles.certTitleSmall}>Giấy phép KD</div>
-                            <div className={styles.certNumber}>{businessLicense}</div>
-                          </div>
-                          <span className={styles.certStatusBadge} style={{ background: '#dbeafe', color: '#1e40af' }}>
-                            Còn hiệu lực
-                          </span>
-                        </div>
-                        <div className={styles.certMeta}>
-                          Cấp bởi: Phòng ĐKKD {point.district} • Loại hình: {point.type}
-                        </div>
-                      </div>
-
-                      {/* Training Certificate - only for certified */}
-                      {point.category === 'certified' && (
-                        <div className={styles.certItem}>
-                          <div className={styles.certItemHeader}>
-                            <div className={styles.certIconSmall} style={{ background: '#fef3c7', color: '#ca8a04' }}>
-                              <Award size={14} />
+                      ) : licenses && licenses.length > 0 ? (
+                        licenses.map((license, index) => {
+                          const isATTP = license.license_type?.toLowerCase().includes('an toàn thực phẩm') || 
+                                       license.license_type?.toLowerCase().includes('attp');
+                          const statusConfig = getLicenseStatusConfig(license.status, isATTP);
+                          
+                          return (
+                            <div key={license._id || index} className={styles.certItem}>
+                              <div className={styles.certItemHeader}>
+                                <div 
+                                  className={styles.certIconSmall} 
+                                  style={{ 
+                                    background: isATTP ? '#dcfce7' : '#dbeafe', 
+                                    color: isATTP ? '#16a34a' : '#005cb6' 
+                                  }}
+                                >
+                                  {isATTP ? <FileCheck size={14} /> : <FileCheck size={14} />}
+                                </div>
+                                <div>
+                                  <div className={styles.certTitleSmall}>{license.license_type || 'Giấy chứng nhận'}</div>
+                                  <div className={styles.certNumber}>{license.license_number || 'N/A'}</div>
+                                </div>
+                                <span 
+                                  className={styles.certStatusBadge} 
+                                  style={{ 
+                                    background: statusConfig.bg, 
+                                    color: statusConfig.color 
+                                  }}
+                                >
+                                  {statusConfig.text}
+                                </span>
+                              </div>
+                              <div className={styles.certMeta}>
+                                {license.issued_by_name && `Cấp bởi: ${license.issued_by_name} • `}
+                                Cấp: {license.issued_date ? new Date(license.issued_date).toLocaleDateString('vi-VN') : 'N/A'} 
+                                {license.expiry_date && ` • HH: ${new Date(license.expiry_date).toLocaleDateString('vi-VN')}`}
+                              </div>
                             </div>
-                            <div>
-                              <div className={styles.certTitleSmall}>Chứng chỉ đào tạo VSATTP</div>
-                              <div className={styles.certNumber}>DT-ATTP {Math.floor(Math.random() * 9000 + 1000)}</div>
+                          );
+                        })
+                      ) : (
+                        <>
+                          {/* ATTP Certificate Fallback */}
+                          <div className={styles.certItem}>
+                            <div className={styles.certItemHeader}>
+                              <div className={styles.certIconSmall} style={{ background: '#dcfce7', color: '#16a34a' }}>
+                                <FileCheck size={14} />
+                              </div>
+                              <div>
+                                <div className={styles.certTitleSmall}>Chứng nhận ATTP</div>
+                                <div className={styles.certNumber}>{displayData.attpCertificateNumber}</div>
+                              </div>
+                              <span className={styles.certStatusBadge} style={{ background: '#dcfce7', color: '#166534' }}>
+                                Còn hiệu lực
+                              </span>
                             </div>
-                            <span className={styles.certStatusBadge} style={{ background: '#fef3c7', color: '#92400e' }}>
-                              Còn hiệu lực
-                            </span>
+                            <div className={styles.certMeta}>
+                              Cấp bởi: Sở Y tế {point.province} • Cấp: {displayData.establishedDate ? displayData.establishedDate.toLocaleDateString('vi-VN') : 'N/A'} • HH: {displayData.establishedDate ? new Date(displayData.establishedDate.getTime() + 3 * 365 * 24 * 60 * 60 * 1000).toLocaleDateString('vi-VN') : 'N/A'}
+                            </div>
                           </div>
-                          <div className={styles.certMeta}>
-                            Cấp bởi: TTYT dự phòng {point.province} • {employees} nhân viên đã đào tạo
+
+                          {/* Business License Fallback */}
+                          <div className={styles.certItem}>
+                            <div className={styles.certItemHeader}>
+                              <div className={styles.certIconSmall} style={{ background: '#dbeafe', color: '#005cb6' }}>
+                                <FileCheck size={14} />
+                              </div>
+                              <div>
+                                <div className={styles.certTitleSmall}>Giấy phép KD</div>
+                                <div className={styles.certNumber}>{displayData.license}</div>
+                              </div>
+                              <span className={styles.certStatusBadge} style={{ background: '#dbeafe', color: '#1e40af' }}>
+                                Còn hiệu lực
+                              </span>
+                            </div>
+                            <div className={styles.certMeta}>
+                              Cấp bởi: Phòng ĐKKD {point.district} • Loại hình: {point.type}
+                            </div>
                           </div>
-                        </div>
+                        </>
                       )}
                     </div>
                   </div>

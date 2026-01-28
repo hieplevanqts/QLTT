@@ -1,6 +1,6 @@
 import React from "react";
 import { Button, Input, Modal, Select, Space, Table, Tag, Tooltip, message } from "antd";
-import { EyeOutlined } from "@ant-design/icons";
+import { EyeOutlined, UserAddOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 
 import { rolesService, type RoleRecord, type RoleUserRecord } from "../services/roles.service";
@@ -9,6 +9,7 @@ type RoleUsersModalProps = {
   open: boolean;
   role: RoleRecord | null;
   onClose: () => void;
+  onAssignUsers?: (role: RoleRecord) => void;
 };
 
 const statusLabel = (status?: number | string | null) => {
@@ -25,7 +26,7 @@ const statusColor = (status?: number | string | null) => {
   return "default";
 };
 
-export default function RoleUsersModal({ open, role, onClose }: RoleUsersModalProps) {
+export default function RoleUsersModal({ open, role, onClose, onAssignUsers }: RoleUsersModalProps) {
   const navigate = useNavigate();
   const [loading, setLoading] = React.useState(false);
   const [users, setUsers] = React.useState<RoleUserRecord[]>([]);
@@ -115,12 +116,18 @@ export default function RoleUsersModal({ open, role, onClose }: RoleUsersModalPr
               ]}
             />
           </Space>
+          {role && onAssignUsers ? (
+            <Button icon={<UserAddOutlined />} onClick={() => onAssignUsers(role)}>
+              Gán người dùng
+            </Button>
+          ) : null}
         </Space>
 
         <Table
           rowKey="id"
           loading={loading}
           dataSource={users}
+          bordered
           pagination={{
             current: page,
             pageSize,

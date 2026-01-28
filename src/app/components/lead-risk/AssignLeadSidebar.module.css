@@ -1,0 +1,500 @@
+/**
+ * MAPPA Portal - Assign Lead Sidebar Styles
+ * Sidebar component for assigning leads to inspectors
+ */
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 480px;
+  max-width: 90vw;
+  background: var(--surface-primary, #fff);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  z-index: 1001;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.header {
+  padding: var(--spacing-6, 24px);
+  border-bottom: 1px solid var(--border-primary, #e5e7eb);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface-primary, #fff);
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3, 12px);
+}
+
+.headerIcon {
+  width: 24px;
+  height: 24px;
+  color: var(--primary, #005cb6);
+}
+
+.headerTitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+  margin: 0;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  padding: var(--spacing-2, 8px);
+  cursor: pointer;
+  color: var(--text-tertiary, #6b7280);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md, 6px);
+  transition: all 0.2s;
+}
+
+.closeButton:hover {
+  background: var(--surface-tertiary, #f3f4f6);
+  color: var(--text-primary, #111827);
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-6, 24px);
+}
+
+.section {
+  margin-bottom: var(--spacing-6, 24px);
+}
+
+.sectionTitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+  margin: 0 0 var(--spacing-4, 16px) 0;
+}
+
+.leadInfo {
+  background: var(--surface-secondary, #f9fafb);
+  border: 1px solid var(--border-primary, #e5e7eb);
+  border-radius: var(--radius-lg, 8px);
+  padding: var(--spacing-4, 16px);
+}
+
+.leadCode {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary, #005cb6);
+  margin: 0 0 var(--spacing-2, 8px) 0;
+}
+
+.leadTitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary, #111827);
+  margin: 0 0 var(--spacing-3, 12px) 0;
+  line-height: 1.5;
+}
+
+.leadMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-4, 16px);
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 8px);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: var(--text-secondary, #6b7280);
+}
+
+.metaIcon {
+  width: 16px;
+  height: 16px;
+  color: var(--text-tertiary, #9ca3af);
+}
+
+.formGroup {
+  margin-bottom: var(--spacing-5, 20px);
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 8px);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary, #111827);
+  margin-bottom: var(--spacing-2, 8px);
+}
+
+.required {
+  color: var(--danger, #dc2626);
+}
+
+.select {
+  width: 100%;
+  padding: var(--spacing-3, 12px);
+  border: 1px solid var(--border-primary, #d1d5db);
+  border-radius: var(--radius-md, 6px);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--text-primary, #111827);
+  background: var(--surface-primary, #fff);
+  transition: all 0.2s;
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--primary, #005cb6);
+  box-shadow: 0 0 0 3px rgba(0, 92, 182, 0.1);
+}
+
+.input {
+  width: 100%;
+  padding: var(--spacing-3, 12px);
+  border: 1px solid var(--border-primary, #d1d5db);
+  border-radius: var(--radius-md, 6px);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--text-primary, #111827);
+  background: var(--surface-primary, #fff);
+  transition: all 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary, #005cb6);
+  box-shadow: 0 0 0 3px rgba(0, 92, 182, 0.1);
+}
+
+.fileInput {
+  width: 100%;
+  padding: var(--spacing-3, 12px);
+  border: 1px solid var(--border-primary, #d1d5db);
+  border-radius: var(--radius-md, 6px);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--text-primary, #111827);
+  background: var(--surface-primary, #fff);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.fileInput:focus {
+  outline: none;
+  border-color: var(--primary, #005cb6);
+  box-shadow: 0 0 0 3px rgba(0, 92, 182, 0.1);
+}
+
+.attachmentList {
+  margin-top: var(--spacing-3, 12px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2, 8px);
+}
+
+.attachmentItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 8px);
+  padding: var(--spacing-2, 8px) var(--spacing-3, 12px);
+  background: var(--surface-secondary, #f9fafb);
+  border-radius: var(--radius-md, 6px);
+  border: 1px solid var(--border-primary, #e5e7eb);
+}
+
+.attachmentIcon {
+  width: 16px;
+  height: 16px;
+  color: var(--text-tertiary, #6b7280);
+  flex-shrink: 0;
+}
+
+.attachmentName {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: var(--text-secondary, #374151);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inspectorList {
+  border: 1px solid var(--border-primary, #d1d5db);
+  border-radius: var(--radius-md, 6px);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.inspectorCard {
+  padding: var(--spacing-4, 16px);
+  border-bottom: 1px solid var(--border-primary, #e5e7eb);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3, 12px);
+}
+
+.inspectorCard:last-child {
+  border-bottom: none;
+}
+
+.inspectorCard:hover {
+  background: var(--surface-secondary, #f9fafb);
+}
+
+.inspectorCard.selected {
+  background: rgba(0, 92, 182, 0.05);
+  border-left: 3px solid var(--primary, #005cb6);
+}
+
+.inspectorRadio {
+  margin-top: 2px;
+  accent-color: var(--primary, #005cb6);
+}
+
+.inspectorInfo {
+  flex: 1;
+}
+
+.inspectorHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-2, 8px);
+}
+
+.inspectorName {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+  margin: 0;
+}
+
+.inspectorBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full, 999px);
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.inspectorBadge.available {
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+}
+
+.inspectorBadge.busy {
+  background: rgba(251, 191, 36, 0.1);
+  color: #d97706;
+}
+
+.inspectorBadge.offline {
+  background: rgba(107, 114, 128, 0.1);
+  color: #6b7280;
+}
+
+.inspectorRole {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: var(--text-secondary, #6b7280);
+  margin: 0 0 var(--spacing-3, 12px) 0;
+}
+
+.inspectorStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-3, 12px);
+}
+
+.statItem {
+  text-align: center;
+}
+
+.statValue {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+  margin: 0;
+}
+
+.statLabel {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: var(--text-tertiary, #9ca3af);
+  margin: 0;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: var(--spacing-3, 12px);
+  border: 1px solid var(--border-primary, #d1d5db);
+  border-radius: var(--radius-md, 6px);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--text-primary, #111827);
+  background: var(--surface-primary, #fff);
+  resize: vertical;
+  transition: all 0.2s;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--primary, #005cb6);
+  box-shadow: 0 0 0 3px rgba(0, 92, 182, 0.1);
+}
+
+.footer {
+  padding: var(--spacing-6, 24px);
+  border-top: 1px solid var(--border-primary, #e5e7eb);
+  background: var(--surface-primary, #fff);
+  display: flex;
+  gap: var(--spacing-3, 12px);
+}
+
+.button {
+  flex: 1;
+  padding: var(--spacing-3, 12px) var(--spacing-4, 16px);
+  border: none;
+  border-radius: var(--radius-md, 6px);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2, 8px);
+}
+
+.buttonCancel {
+  background: var(--surface-primary, #fff);
+  color: var(--text-primary, #111827);
+  border: 1px solid var(--border-primary, #d1d5db);
+}
+
+.buttonCancel:hover {
+  background: var(--surface-secondary, #f9fafb);
+}
+
+.buttonSubmit {
+  background: var(--primary, #005cb6);
+  color: #fff;
+}
+
+.buttonSubmit:hover {
+  background: #004a92;
+}
+
+.buttonSubmit:disabled {
+  background: var(--surface-tertiary, #e5e7eb);
+  color: var(--text-tertiary, #9ca3af);
+  cursor: not-allowed;
+}
+
+.emptyState {
+  padding: var(--spacing-8, 32px);
+  text-align: center;
+  color: var(--text-tertiary, #9ca3af);
+}
+
+.emptyIcon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto var(--spacing-4, 16px);
+  color: var(--text-tertiary, #9ca3af);
+}
+
+.emptyText {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--text-secondary, #6b7280);
+  margin: 0;
+}
+
+.loadingBar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 8px);
+  margin-top: var(--spacing-2, 8px);
+}
+
+.loadingBarFill {
+  flex: 1;
+  height: 4px;
+  background: var(--surface-tertiary, #e5e7eb);
+  border-radius: var(--radius-full, 999px);
+  overflow: hidden;
+}
+
+.loadingBarProgress {
+  height: 100%;
+  background: var(--primary, #005cb6);
+  transition: width 0.3s ease;
+}
+
+.loadingBarProgress.high {
+  background: var(--warning, #f59e0b);
+}
+
+.loadingBarProgress.full {
+  background: var(--danger, #dc2626);
+}
+
+.loadingBarText {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary, #9ca3af);
+  white-space: nowrap;
+}

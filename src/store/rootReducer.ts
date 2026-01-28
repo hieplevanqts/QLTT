@@ -4,6 +4,7 @@ import qlttScopeReducer from './slices/qlttScopeSlice';
 import mapFiltersReducer from './slices/mapFiltersSlice';
 import officerFilterReducer from './slices/officerFilterSlice';
 import departmentAreasReducer from './slices/departmentAreasSlice';
+import merchantReducer from './slices/merchantSlice';
 // import productReducer from './slices/productSlice';
 
 const rootReducer = combineReducers({
@@ -12,6 +13,7 @@ const rootReducer = combineReducers({
   mapFilters: mapFiltersReducer,
   officerFilter: officerFilterReducer,
   departmentAreas: departmentAreasReducer,
+  merchant: merchantReducer,
 //   products: productReducer,
 });
 
