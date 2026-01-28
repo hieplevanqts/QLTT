@@ -1225,34 +1225,24 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                 {!collapsedSections.legal && (
                   <div className={styles.cardBody}>
                     <div className={styles.legalCompact}>
-                      <div className={styles.legalItemCompact}>
-                        <BookOpen size={14} />
-                        <div>
-                          <div className={styles.legalTitleCompact}>Luật An toàn thực phẩm 2010</div>
-                          <div className={styles.legalMetaCompact}>55/2010/QH12 • Hiệu lực: 01/07/2011</div>
-                        </div>
-                      </div>
-                      <div className={styles.legalItemCompact}>
-                        <BookOpen size={14} />
-                        <div>
-                          <div className={styles.legalTitleCompact}>Nghị định 15/2018/NĐ-CP</div>
-                          <div className={styles.legalMetaCompact}>Quy định chi tiết Luật ATTP</div>
-                        </div>
-                      </div>
-                      <div className={styles.legalItemCompact}>
-                        <BookOpen size={14} />
-                        <div>
-                          <div className={styles.legalTitleCompact}>Thông tư 16/2019/TT-BYT</div>
-                          <div className={styles.legalMetaCompact}>Điều kiện ATTP cơ sở KD thực phẩm</div>
-                        </div>
-                      </div>
-                      <div className={styles.legalItemCompact}>
-                        <BookOpen size={14} />
-                        <div>
-                          <div className={styles.legalTitleCompact}>Thông tư 19/2013/TT-BYT</div>
-                          <div className={styles.legalMetaCompact}>Chương trình đào tạo ATTP</div>
-                        </div>
-                      </div>
+                      {currentMerchant?.merchant_law_docs && currentMerchant.merchant_law_docs.length > 0 ? (
+                        currentMerchant.merchant_law_docs.map((doc: any, index: number) => (
+                          <div key={doc._id || index} className={styles.legalItemCompact}>
+                            <BookOpen size={14} />
+                            <div>
+                              <div className={styles.legalTitleCompact}>{doc.title || doc.name || 'N/A'}</div>
+                              <div className={styles.legalMetaCompact}>
+                                {doc.document_number && <span>{doc.document_number}</span>}
+                                {doc.document_number && (doc.description || doc.effective_date) && <span> • </span>}
+                                {doc.description && <span>{doc.description}</span>}
+                                {!doc.description && doc.effective_date && <span>Hiệu lực: {new Date(doc.effective_date).toLocaleDateString('vi-VN')}</span>}
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className={styles.noDataCompact}>Không có dữ liệu văn bản pháp lý</div>
+                      )}
                     </div>
                   </div>
                 )}
