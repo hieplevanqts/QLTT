@@ -8,6 +8,9 @@ import { fetchMerchantInspectionResults, updateInspectionChecklistResultStatus }
 import { SUPABASE_REST_URL } from '../../../utils/api/config';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '../../../ui-kit/ConfirmDialog';
+import { useAppDispatch, useAppSelector } from '../../../app/hooks';
+import { RootState } from '../../../store/rootReducer';
+import { fetchMerchantDetailRequest, clearCurrentMerchant } from '../../../store/slices/merchantSlice';
 
 interface PointDetailModalProps {
   point: Restaurant | null;
@@ -111,6 +114,21 @@ function getStatusBadge(category: Restaurant['category']) {
 }
 
 export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalProps) {
+  const dispatch = useAppDispatch();
+  const { currentMerchant, isLoading: isMerchantLoading } = useAppSelector((state: RootState) => state.merchant);
+
+  // 🔥 Fetch merchant detail when modal opens
+  useEffect(() => {
+    if (isOpen && point?.id) {
+      dispatch(fetchMerchantDetailRequest({ merchantId: point.id }));
+    }
+    return () => {
+      if (!isOpen) {
+        dispatch(clearCurrentMerchant());
+      }
+    };
+  }, [isOpen, point?.id, dispatch]);
+
   // 🔥 FIX: Prevent immediate close after opening (click event from popup button may bubble up)
   const justOpenedRef = useRef(false);
   const openTimeRef = useRef(0);
@@ -474,43 +492,34 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
     };
   }, [isOpen]);
 
-  // 🔥 FIX: Memoize mock data to prevent re-generation on every render (causes content jumping)
-  // Generate mock data based on point.id for consistency
-  // Must be called BEFORE early return (React Hooks rule)
-  const mockData = useMemo(() => {
-    if (!point) return null;
-    // Use point.id as seed for pseudo-random values (consistent per point)
-    const seed = point.id.charCodeAt(0) + point.id.charCodeAt(point.id.length - 1);
-    const random1 = (seed * 9301 + 49297) % 233280 / 233280;
-    const random2 = ((seed * 9301 + 49297) * 9301 + 49297) % 233280 / 233280;
-    const random3 = (((seed * 9301 + 49297) * 9301 + 49297) * 9301 + 49297) % 233280 / 233280;
-    const random4 = ((((seed * 9301 + 49297) * 9301 + 49297) * 9301 + 49297) * 9301 + 49297) % 233280 / 233280;
-
-    return {
-      businessLicense: `GP${Math.floor(random1 * 9000 + 1000)}-${new Date().getFullYear()}`,
-      attpCertificateNumber: `CN-ATTP ${Math.floor(random1 * 9000 + 1000)}/${new Date().getFullYear()}`, // 🔥 FIX: Add certificate number to mockData
-      establishedDate: new Date(Date.now() - random1 * 5 * 365 * 24 * 60 * 60 * 1000),
-      lastInspection: new Date(Date.now() - random2 * 60 * 24 * 60 * 60 * 1000),
-      nextInspection: point.category === 'scheduled'
-        ? new Date(Date.now() + random3 * 30 * 24 * 60 * 60 * 1000)
-        : null,
-      ownerName: `Nguyễn Văn ${String.fromCharCode(65 + Math.floor(random1 * 26))}`,
-      phone: `0${Math.floor(random2 * 9 + 1)}${Math.floor(random3 * 100000000 + 100000000)}`,
-      email: `contact@${point.name.toLowerCase().replace(/\s+/g, '').slice(0, 15)}.vn`,
-      employees: Math.floor(random2 * 30 + 5),
-      capacity: Math.floor(random3 * 150 + 50),
-      inspectionCount: Math.floor(random4 * 10 + 1),
-      rating: point.category === 'certified' ? 'A' : point.category === 'hotspot' ? 'C' : 'B',
-      violationCount: point.category === 'hotspot' ? Math.floor(random4 * 3 + 2) : Math.floor(random4 * 2)
-    };
-  }, [point?.id, point?.category, point?.name]); // 🔥 Only regenerate when point changes
-
   if (!isOpen || !point) return null;
 
   const categoryColor = getCategoryColor(point.category);
   const statusBadge = getStatusBadge(point.category);
 
-  const { businessLicense, attpCertificateNumber, establishedDate, lastInspection, nextInspection, ownerName, phone, email, employees, capacity, inspectionCount, rating, violationCount } = mockData || {};
+  // 🔥 Map Redux data to display variables
+  const displayData = {
+    name: currentMerchant?.business_name || point.name,
+    taxCode: currentMerchant?.tax_code || point.taxCode || 'N/A',
+    businessType: currentMerchant?.business_type || point.type || 'N/A',
+    license: currentMerchant?.merchant_licenses?.[0]?.license_number || 'N/A',
+    owner: currentMerchant?.owner_name || 'N/A',
+    phone: currentMerchant?.owner_phone || point.hotline || 'N/A',
+    email: currentMerchant?.email || 'N/A',
+    address: currentMerchant?.address || point.address,
+    ward: currentMerchant?.ward || point.ward,
+    district: currentMerchant?.district || point.district,
+    province: currentMerchant?.province || point.province,
+    establishedDate: currentMerchant?.created_at ? new Date(currentMerchant.created_at) : null,
+    employees: currentMerchant?.employee_count || 0,
+    capacity: currentMerchant?.capacity || 0,
+    inspectionCount: currentMerchant?.inspection_count || 0,
+    violationCount: currentMerchant?.violation_count || 0,
+    rating: currentMerchant?.rating || (point.category === 'certified' ? 'A' : point.category === 'hotspot' ? 'C' : 'B'),
+    lastInspectionDate: currentMerchant?.last_inspection_date ? new Date(currentMerchant.last_inspection_date) : null,
+    nextInspectionDate: currentMerchant?.next_inspection_date ? new Date(currentMerchant.next_inspection_date) : null,
+    attpCertificateNumber: currentMerchant?.attp_certificate_number || `CN-ATTP ${Math.floor(1000 + (point?.id?.charCodeAt(0) || 0) % 9000)}/${new Date().getFullYear()}`,
+  };
 
   // 🔥 FIX: Handle overlay click - only close if clicking directly on overlay, not from event bubbling
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -561,40 +570,46 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
             <span>{statusBadge.text}</span>
           </div>
           <div className={styles.headerTitleRow}>
-            <h1 className={styles.headerTitle}>{point.name}</h1>
+            <h1 className={styles.headerTitle}>{displayData.name}</h1>
             {/* Compact Stats - Inline with title */}
             <div className={styles.compactStats}>
               <div className={styles.compactStatItem}>
                 <Users size={14} />
-                <span>{employees} NV</span>
+                <span>{displayData.employees} NV</span>
               </div>
               <div className={styles.compactStatItem}>
                 <Utensils size={14} />
-                <span>{capacity} chỗ</span>
+                <span>{displayData.capacity} chỗ</span>
               </div>
               <div className={styles.compactStatItem}>
                 <Shield size={14} />
-                <span>{inspectionCount} lần KT</span>
+                <span>{displayData.inspectionCount} lần KT</span>
               </div>
               <div className={styles.compactStatItem} style={{
-                color: violationCount > 2 ? '#dc2626' : violationCount > 0 ? '#eab308' : '#16a34a'
+                color: displayData.violationCount > 2 ? '#dc2626' : displayData.violationCount > 0 ? '#eab308' : '#16a34a'
               }}>
                 <AlertCircle size={14} />
-                <span>{violationCount} VP</span>
+                <span>{displayData.violationCount} VP</span>
               </div>
             </div>
           </div>
           <div className={styles.headerMeta}>
-            <span className={styles.metaId}>MST: {point.taxCode || 'N/A'}</span>
+            <span className={styles.metaId}>MST: {displayData.taxCode}</span>
             <span className={styles.metaDivider}>•</span>
             <span className={styles.metaCategory}>{getCategoryLabel(point.category)}</span>
             <span className={styles.metaDivider}>•</span>
-            <span className={styles.metaRating}>Xếp loại: {rating}</span>
+            <span className={styles.metaRating}>Xếp loại: {displayData.rating}</span>
           </div>
         </div>
 
         {/* Content Section */}
         <div className={styles.content}>
+          {isMerchantLoading && (
+            <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+              Đang cập nhật dữ liệu mới nhất...
+            </div>
+          )}
           {/* Alert for Hotspots - Move to top */}
           {point.category === 'hotspot' && (
             <div className={styles.alertCard}>
@@ -605,7 +620,7 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                 <div className={styles.alertTitle}>Cảnh báo điểm nóng ATTP</div>
                 <div className={styles.alertText}>
                   Cơ sở này đã được xác định là điểm nóng về an toàn thực phẩm.
-                  Phát hiện {violationCount} vi phạm trong lần kiểm tra gần nhất.
+                  Phát hiện {displayData.violationCount} vi phạm trong lần kiểm tra gần nhất.
                   Cần tiến hành kiểm tra và giám sát chặt chẽ.
                 </div>
               </div>
@@ -639,22 +654,22 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                     <div className={styles.infoGrid}>
                       <div className={styles.infoItem}>
                         <div className={styles.infoLabel}>Loại hình</div>
-                        <div className={styles.infoValue}>{point.type}</div>
+                        <div className={styles.infoValue}>{displayData.businessType}</div>
                       </div>
 
                       <div className={styles.infoItem}>
                         <div className={styles.infoLabel}>Giấy phép</div>
-                        <div className={styles.infoValue}>{businessLicense}</div>
+                        <div className={styles.infoValue}>{displayData.license}</div>
                       </div>
 
                       <div className={styles.infoItem}>
                         <div className={styles.infoLabel}>Ngày thành lập</div>
                         <div className={styles.infoValue}>
-                          {establishedDate.toLocaleDateString('vi-VN', {
+                          {displayData.establishedDate ? displayData.establishedDate.toLocaleDateString('vi-VN', {
                             day: '2-digit',
                             month: '2-digit',
                             year: 'numeric'
-                          })}
+                          }) : 'N/A'}
                         </div>
                       </div>
 
@@ -662,10 +677,10 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                         <div className={styles.infoLabel}>Xếp loại ATTP</div>
                         <div className={styles.infoValue}>
                           <span className={styles.ratingBadge} style={{
-                            background: rating === 'A' ? '#dcfce7' : rating === 'C' ? '#fee2e2' : '#fef3c7',
-                            color: rating === 'A' ? '#166534' : rating === 'C' ? '#991b1b' : '#92400e'
+                            background: displayData.rating === 'A' ? '#dcfce7' : displayData.rating === 'C' ? '#fee2e2' : '#fef3c7',
+                            color: displayData.rating === 'A' ? '#166534' : displayData.rating === 'C' ? '#991b1b' : '#92400e'
                           }}>
-                            {rating}
+                            {displayData.rating}
                           </span>
                         </div>
                       </div>
@@ -694,13 +709,13 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                 </div>
                 {!collapsedSections.address && (
                   <div className={styles.cardBody}>
-                    <div className={styles.addressFull}>{point.address}</div>
+                    <div className={styles.addressFull}>{displayData.address}</div>
                     <div className={styles.addressCompact}>
-                      {point.ward && <span>{point.ward}</span>}
-                      {point.ward && <span className={styles.addressSep}>•</span>}
-                      <span>{point.district}</span>
+                      {displayData.ward && <span>{displayData.ward}</span>}
+                      {displayData.ward && <span className={styles.addressSep}>•</span>}
+                      <span>{displayData.district}</span>
                       <span className={styles.addressSep}>•</span>
-                      <span>{point.province}</span>
+                      <span>{displayData.province}</span>
                     </div>
                     <div className={styles.gpsCoords}>
                       GPS: {point.lat.toFixed(6)}, {point.lng.toFixed(6)}
@@ -733,17 +748,17 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                       <div className={styles.contactRow}>
                         <User size={14} />
                         <span className={styles.contactLabel}>Đại diện:</span>
-                        <span className={styles.contactValue}>{ownerName}</span>
+                        <span className={styles.contactValue}>{displayData.owner}</span>
                       </div>
                       <div className={styles.contactRow}>
                         <Phone size={14} />
                         <span className={styles.contactLabel}>SĐT:</span>
-                        <span className={styles.contactValue}>{phone}</span>
+                        <span className={styles.contactValue}>{displayData.phone}</span>
                       </div>
                       <div className={styles.contactRow}>
                         <Mail size={14} />
                         <span className={styles.contactLabel}>Email:</span>
-                        <span className={styles.contactValue}>{email}</span>
+                        <span className={styles.contactValue}>{displayData.email}</span>
                       </div>
                     </div>
                   </div>
@@ -861,11 +876,11 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                         <div className={styles.timelineContent}>
                           <div className={styles.timelineTitle}>Kiểm tra gần nhất</div>
                           <div className={styles.timelineDate}>
-                            {lastInspection.toLocaleDateString('vi-VN', {
+                            {displayData.lastInspectionDate ? displayData.lastInspectionDate.toLocaleDateString('vi-VN', {
                               day: '2-digit',
                               month: '2-digit',
                               year: 'numeric'
-                            })}
+                            }) : 'N/A'}
                           </div>
                           <div className={styles.timelineMeta}>
                             Chi cục QLTT {point.district}
@@ -876,13 +891,13 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                         </div>
                       </div>
 
-                      {nextInspection && (
+                      {displayData.nextInspectionDate && (
                         <div className={styles.timelineItem}>
                           <div className={styles.timelineDot} style={{ background: '#eab308' }} />
                           <div className={styles.timelineContent}>
                             <div className={styles.timelineTitle}>Kiểm tra tiếp theo</div>
                             <div className={styles.timelineDate}>
-                              {nextInspection.toLocaleDateString('vi-VN', {
+                              {displayData.nextInspectionDate.toLocaleDateString('vi-VN', {
                                 day: '2-digit',
                                 month: '2-digit',
                                 year: 'numeric'
@@ -898,11 +913,11 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                         <div className={styles.timelineContent}>
                           <div className={styles.timelineTitle}>Cấp giấy phép</div>
                           <div className={styles.timelineDate}>
-                            {establishedDate.toLocaleDateString('vi-VN', {
+                            {displayData.establishedDate ? displayData.establishedDate.toLocaleDateString('vi-VN', {
                               day: '2-digit',
                               month: '2-digit',
                               year: 'numeric'
-                            })}
+                            }) : 'N/A'}
                           </div>
                           <div className={styles.timelineMeta}>
                             Sở Y tế {point.province}
@@ -943,7 +958,7 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                           </div>
                           <div>
                             <div className={styles.certTitleSmall}>Chứng nhận ATTP</div>
-                            <div className={styles.certNumber}>{attpCertificateNumber || `CN-ATTP ${Math.floor(1000 + (point?.id?.charCodeAt(0) || 0) % 9000)}/${new Date().getFullYear()}`}</div>
+                            <div className={styles.certNumber}>{displayData.attpCertificateNumber}</div>
                           </div>
                           <span className={styles.certStatusBadge} style={{ background: '#dcfce7', color: '#166534' }}>
                             Còn hiệu lực
@@ -951,8 +966,8 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                         </div>
                         <div className={styles.certMeta}>
                           Cấp bởi: Sở Y tế {point.province} •
-                          Cấp: {establishedDate.toLocaleDateString('vi-VN')} •
-                          HH: {new Date(establishedDate.getTime() + 3 * 365 * 24 * 60 * 60 * 1000).toLocaleDateString('vi-VN')}
+                          Cấp: {displayData.establishedDate ? displayData.establishedDate.toLocaleDateString('vi-VN') : 'N/A'} •
+                          HH: {displayData.establishedDate ? new Date(displayData.establishedDate.getTime() + 3 * 365 * 24 * 60 * 60 * 1000).toLocaleDateString('vi-VN') : 'N/A'}
                         </div>
                       </div>
 

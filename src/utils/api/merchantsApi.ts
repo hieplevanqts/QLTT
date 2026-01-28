@@ -250,6 +250,28 @@ export async function fetchMerchantStats(
   }
 }
 
+export async function fetchMerchantDetail(merchantId: string, licenseType: string = 'Giấy phép kinh doanh'): Promise<any> {
+  try {
+    const url = `${SUPABASE_REST_URL}/merchants?id=eq.${merchantId}&select=*,merchant_licenses!merchant_licenses_merchant_id_fkey!inner(*)&merchant_licenses.license_type=ilike.*${encodeURIComponent(licenseType)}*`;
+    
+    console.log('🔍 fetchMerchantDetail API call (axios):', url);
+
+    const response = await axios.get(url, {
+      headers: getHeaders()
+    });
+
+    const data = response.data;
+    return data && data.length > 0 ? data[0] : null;
+  } catch (error: any) {
+    console.error('❌ Error in fetchMerchantDetail:', error);
+    if (error.response) {
+      console.error('Response status:', error.response.status);
+      console.error('Response data:', error.response.data);
+    }
+    throw error;
+  }
+}
+
 /**
  * 📋 Fetch merchant inspection results (giấy tờ kiểm tra)
  * Calls RPC function: get_merchant_inspection_results

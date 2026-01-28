@@ -40,13 +40,15 @@ export default function Profile() {
   };
 
   // Get initials for avatar
-  const getInitials = (name: string) => {
+  const getInitials = (name: string = "") => {
+    if (!name) return "N/A";
     return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
+        .split(' ')
+        .filter(Boolean) // Loại bỏ các khoảng trắng thừa
+        .map(n => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
   };
 
   // Format role display

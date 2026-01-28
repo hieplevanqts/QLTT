@@ -1,6 +1,7 @@
 import { all, put, fork, call } from 'redux-saga/effects';
 import { watchAuthSaga } from './authSaga';
 import { watchQLTTScopeSaga } from './qlttScopeSaga';
+import { merchantSaga } from './merchantSaga';
 import { setHasInitialized, loadScopeFromStorage } from '../slices/qlttScopeSlice';
 import { restoreSessionRequest } from '../slices/authSlice';
 // import { watchProductSaga } from './productSaga';
@@ -38,6 +39,7 @@ export default function* rootSaga() {
   yield all([
     fork(watchAuthSaga),
     fork(watchQLTTScopeSaga),
+    fork(merchantSaga),
     // watchProductSaga(),
   ]);
 }
