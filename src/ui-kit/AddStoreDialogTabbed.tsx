@@ -92,7 +92,7 @@ export interface NewStoreData {
   ownerIdNumber?: string;
   ownerPhone?: string;
   ownerPhone2?: string;
-
+  area_name?: string;
   // Tab 3: Địa chỉ (All optional)
   registeredAddress?: string;
   province?: string;

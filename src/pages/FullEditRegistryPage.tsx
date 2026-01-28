@@ -16,8 +16,9 @@ import {
   SelectValue,
 } from '../app/components/ui/select';
 import { Badge } from '../app/components/ui/badge';
-import { Store, getStoreById, updateStore } from '../data/mockStores';
+import { Store, updateStore } from '../data/mockStores';
 import { fetchProvinces, fetchAllWards, type ProvinceApiData, type WardApiData } from '../utils/api/locationsApi';
+import { fetchStoreById } from '../utils/api/storesApi';
 import { DiffPreviewSection, FieldChange } from '../ui-kit/DiffPreviewSection';
 import { ChangeReasonDialog } from '../ui-kit/ChangeReasonDialog';
 import { SensitiveFieldWarning } from '../ui-kit/SensitiveFieldWarning';
@@ -59,11 +60,14 @@ const INDUSTRY_CATEGORIES = [
   { value: 'other', label: 'Khác' },
 ];
 
-// Operation status options
+// Operation status options - match FacilityStatus types
 const OPERATION_STATUS_OPTIONS = [
-  { value: 'active', label: 'Hoạt động' },
-  { value: 'suspended', label: 'Tạm ngừng' },
-  { value: 'inactive', label: 'Không hoạt động' },
+  { value: 'active', label: 'Đang hoạt động' },
+  { value: 'pending', label: 'Chờ xác minh' },
+  { value: 'underInspection', label: 'Đang xử lý kiểm tra' },
+  { value: 'suspended', label: 'Tạm ngưng hoạt động' },
+  { value: 'rejected', label: 'Từ chối phê duyệt' },
+  { value: 'closed', label: 'Ngừng hoạt động' },
 ];
 
 const FIELD_LABELS: Record<string, string> = {
@@ -103,6 +107,17 @@ const FIELD_LABELS: Record<string, string> = {
 
 type EditStep = 'form' | 'diff-preview';
 
+// Helper function to map API status to form operationStatus
+function mapApiStatusToForm(apiStatus: any): string {
+  if (typeof apiStatus === 'string') {
+    // Map API status values directly - support all FacilityStatus types
+    const validStatuses = ['active', 'pending', 'underInspection', 'suspended', 'rejected', 'closed'];
+    const normalized = apiStatus.toLowerCase();
+    return validStatuses.includes(normalized) ? normalized : 'active';
+  }
+  return 'active';
+}
+
 export default function FullEditRegistryPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -120,31 +135,106 @@ export default function FullEditRegistryPage() {
   const [apiProvinces, setApiProvinces] = useState<ProvinceApiData[]>([]);
   const [allWards, setAllWards] = useState<WardApiData[]>([]);
   const [loadingProvinces, setLoadingProvinces] = useState(false);
-  const [selectedProvince, setSelectedProvince] = useState('');
+  const [selectedProvince, setSelectedProvince] = useState<string>(''); // Store province_id (_id), not name
   const [wards, setWards] = useState<any[]>([]);
 
-  // Load store data
+  // Load store data from API
   useEffect(() => {
     const loadStore = async () => {
       setIsLoading(true);
       try {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        // Try to fetch from API first
+        if (!id) {
+          throw new Error('Store ID is required');
+        }
+        const storeFromApi = await fetchStoreById(id);
+        if (storeFromApi) {
+          console.log('✅ Loaded store from API:', storeFromApi);
+          
+          // Initialize form with API data
+          // Map API fields to form fields
+          const initialFormData: Partial<Store> = {
+            ...storeFromApi,
+            // Map business_type to industryName
+            industryName: storeFromApi.type || storeFromApi.businessType || '',
+            // Map status to operationStatus
+            operationStatus: mapApiStatusToForm(storeFromApi.status),
+          };
+          
+          console.log('📋 Initial form data:', initialFormData);
+          console.log('🏭 Industry:', initialFormData.industryName);
+          console.log('🔧 Operation Status:', initialFormData.operationStatus);
+          
+          setOriginalStore(storeFromApi);
+          setFormData(initialFormData);
+          
+          // Initialize province select with province_id (matching provinces table _id)
+          if (storeFromApi.province) {
+            // Need to find the province _id from API data
+            const matchedProvince = apiProvinces.find(p => p.name === storeFromApi.province);
+            if (matchedProvince) {
+              console.log('📍 Setting province to:', storeFromApi.province, 'with ID:', matchedProvince._id);
+              setSelectedProvince(matchedProvince._id);
+            }
+          }
+          
+          return;
+        }
+        
+        console.warn('⚠️ fetchStoreById returned null, trying fallback...');
+        
+        // Fallback: Load stores from localStorage
+        let stores: Store[] = [];
+        try {
+          const savedStores = localStorage.getItem('mappa_stores');
+          if (savedStores) {
+            stores = JSON.parse(savedStores);
+            console.log('📦 Loaded from localStorage:', stores.length, 'stores');
+          }
+        } catch (error) {
+          console.error('Error loading stores from localStorage:', error);
+        }
+        
+        // Fallback to mockStores if localStorage is empty
+        if (stores.length === 0) {
+          const { mockStores: mock } = await import('../data/mockStores');
+          stores = mock;
+          console.log('🎭 Loaded mockStores:', stores.length, 'stores');
+        }
 
-        const store = getStoreById(Number(id));
+        // Find store by id
+        const store = stores.find((s: Store) => s.id === Number(id));
         if (!store) {
           toast.error('Không tìm thấy cơ sở');
           navigate('/registry/stores');
           return;
         }
 
-        setOriginalStore(store);
-        setFormData(store);
+        console.log('✅ Found store from fallback:', store);
+        
+        // Map mockStore data to form data
+        const initialFormData: Partial<Store> = {
+          ...store,
+          // Ensure industryName is set
+          industryName: store.industryName || store.type || store.businessType || '',
+          // Ensure operationStatus is set
+          operationStatus: store.operationStatus || mapApiStatusToForm(store.status),
+        };
+        
+        console.log('📋 Form data from fallback:', initialFormData);
+        console.log('🏭 Industry:', initialFormData.industryName);
+        console.log('🔧 Operation Status:', initialFormData.operationStatus);
 
-        // Initialize location selects with province name
-        if (store.province) {
-          setSelectedProvince(store.province);
-          handleProvinceChange(store.province);
+        setOriginalStore(store);
+        setFormData(initialFormData);
+
+        // Initialize location selects with province_id (matching provinces table _id)
+        if (store.province && apiProvinces.length > 0) {
+          const matchedProvince = apiProvinces.find(p => p.name === store.province);
+          if (matchedProvince) {
+            console.log('📍 Setting province to:', store.province, 'with ID:', matchedProvince._id);
+            setSelectedProvince(matchedProvince._id);
+          }
         }
       } catch (error) {
         console.error('Error loading store:', error);
@@ -163,6 +253,13 @@ export default function FullEditRegistryPage() {
   useEffect(() => {
     loadLocationData();
   }, []);
+
+  // After location data and form data are loaded, filter wards for the province
+  useEffect(() => {
+    if (apiProvinces.length > 0 && allWards.length > 0 && selectedProvince) {
+      handleProvinceChange(selectedProvince);
+    }
+  }, [apiProvinces, allWards, selectedProvince]);
 
   const loadLocationData = async () => {
     try {
@@ -185,20 +282,29 @@ export default function FullEditRegistryPage() {
     }
   };
 
-  const handleProvinceChange = (provinceName: string) => {
-    setSelectedProvince(provinceName);
-    setFormData(prev => ({
-      ...prev,
-      province: provinceName,
-      ward: '',
-    }));
-
-    const provinceData = apiProvinces.find(p => p.name === provinceName);
+  const handleProvinceChange = (provinceId: string) => {
+    // provinceId is the province._id from provinces table
+    setSelectedProvince(provinceId);
+    
+    // Find province data to get name for formData
+    const provinceData = apiProvinces.find(p => p._id === provinceId);
     if (!provinceData) {
-      console.warn('⚠️ Province not found:', provinceName);
+      console.warn('⚠️ Province not found:', provinceId);
       setWards([]);
+      setFormData(prev => ({
+        ...prev,
+        province: '',
+        ward: '',
+      }));
       return;
     }
+    
+    // Store province name in formData, but use _id for ward filtering
+    setFormData(prev => ({
+      ...prev,
+      province: provinceData.name,
+      ward: '',
+    }));
 
     console.log('🔍 Filtering wards for province:', provinceData.name, 'ID:', provinceData._id);
     console.log('   Total wards in allWards:', allWards.length);
@@ -550,7 +656,7 @@ export default function FullEditRegistryPage() {
                       }
                     >
                       <SelectTrigger className='placeholder:text-gray-500 border-gray-300'>
-                        <SelectValue placeholder="Chọn ngành kinh doanh" />
+                        <SelectValue placeholder={INDUSTRY_CATEGORIES.find(c => c.value === formData.industryName)?.label || 'Chọn ngành kinh doanh'} />
                       </SelectTrigger>
                       <SelectContent>
                         {INDUSTRY_CATEGORIES.map((category) => (
@@ -579,13 +685,13 @@ export default function FullEditRegistryPage() {
                   <div className="space-y-2">
                     <Label htmlFor="operationStatus">Trạng thái hoạt động</Label>
                     <Select
-                      value={formData.operationStatus || ''}
+                      value={formData.status || ''}
                       onValueChange={(value) =>
-                        setFormData({ ...formData, operationStatus: value })
+                        setFormData({ ...formData, status: value as any })
                       }
                     >
                       <SelectTrigger className='placeholder:text-gray-500 border-gray-300'>
-                        <SelectValue placeholder="Chọn trạng thái hoạt động" className='placeholder:text-gray-500' />
+                        <SelectValue placeholder={OPERATION_STATUS_OPTIONS.find(s => s.value === formData.status)?.label || 'Chọn trạng thái'} />
                       </SelectTrigger>
                       <SelectContent>
                         {OPERATION_STATUS_OPTIONS.map((option) => (
@@ -634,11 +740,11 @@ export default function FullEditRegistryPage() {
                     <Label htmlFor="province">Tỉnh/Thành phố</Label>
                     <Select value={selectedProvince} onValueChange={handleProvinceChange}>
                       <SelectTrigger className='placeholder:text-gray-500 border-gray-300'>
-                        <SelectValue className='placeholder:text-gray-500' placeholder={loadingProvinces ? "Đang tải..." : "Chọn tỉnh/thành phố"} />
+                        <SelectValue placeholder={apiProvinces.find(p => p._id === selectedProvince)?.name || (loadingProvinces ? "Đang tải..." : "Chọn tỉnh/thành phố")} />
                       </SelectTrigger>
                       <SelectContent>
                         {apiProvinces.map((province) => (
-                          <SelectItem key={province._id} value={province.name}>
+                          <SelectItem key={province._id} value={province._id}>
                             {province.name}
                           </SelectItem>
                         ))}
@@ -654,7 +760,7 @@ export default function FullEditRegistryPage() {
                       disabled={!selectedProvince}
                     >
                       <SelectTrigger className='placeholder:text-gray-500 border-gray-300'>
-                        <SelectValue className='placeholder:text-gray-500' placeholder={selectedProvince ? "Chọn phường/xã" : "Chọn tỉnh/thành trước"} />
+                        <SelectValue placeholder={formData.ward || (selectedProvince ? "Chọn phường/xã" : "Chọn tỉnh/thành trước")} />
                       </SelectTrigger>
                       <SelectContent>
                         {wards.map((ward) => (

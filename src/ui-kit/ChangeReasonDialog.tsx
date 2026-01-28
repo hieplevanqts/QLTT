@@ -121,6 +121,7 @@ export function ChangeReasonDialog({
             </Label>
             <Textarea
               id="change-reason"
+              className='border-gray-200 p-2 focus:border-primary focus:ring-1 focus:ring-primary resize-y min-h-[100px] disabled:opacity-50 mb-2'
               value={reason}
               onChange={(e) => {
                 setReason(e.target.value);
@@ -131,7 +132,7 @@ export function ChangeReasonDialog({
               autoFocus
               disabled={isSubmitting}
             />
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mt-2">
               {error ? (
                 <p className="text-sm text-destructive">{error}</p>
               ) : (
@@ -157,11 +158,11 @@ export function ChangeReasonDialog({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className='gap-2'>
           <Button variant="outline" onClick={handleCancel} disabled={isSubmitting}>
             Hủy
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting || reason.length < 20}>
+          <Button className='' onClick={handleSubmit} disabled={isSubmitting || reason.length < 20}>
             {isSubmitting ? (
               <>
                 <span className="mr-2">Đang xử lý...</span>
