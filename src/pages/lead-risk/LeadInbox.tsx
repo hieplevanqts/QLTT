@@ -215,7 +215,7 @@ export default function LeadInbox() {
   >(["new"]); // Default: Filter by "Mới" status
   const [selectedAssignments, setSelectedAssignments] =
     useState<string[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<
+  const [selectedSources, setSelectedSources] = useState<
     string[]
   >([]);
 
@@ -245,7 +245,8 @@ export default function LeadInbox() {
     );
     console.log("📊 [LeadInbox] State:", {
       selectedStatuses,
-      selectedCategories,
+      selectedStatuses,
+      selectedSources,
       searchQuery,
       selectedAssignments,
     });
@@ -332,16 +333,16 @@ export default function LeadInbox() {
         selectedStatuses.length > 0
           ? selectedStatuses
           : undefined,
-      categories:
-        selectedCategories.length > 0
-          ? selectedCategories
+      sources:
+        selectedSources.length > 0
+          ? selectedSources
           : undefined,
       search: searchQuery || undefined,
       // NOTE: Assignment filtering moved to CLIENT-SIDE (filteredLeads)
       // unassigned: selectedAssignments.includes('unassigned') ? true : undefined,
       limit: 200,
     }),
-    [selectedStatuses, selectedCategories, searchQuery],
+    [selectedStatuses, selectedSources, searchQuery],
   );
 
   const {
@@ -462,7 +463,7 @@ export default function LeadInbox() {
   }, [
     selectedStatuses,
     selectedAssignments,
-    selectedCategories,
+    selectedSources,
     searchQuery,
   ]);
 
@@ -612,13 +613,13 @@ export default function LeadInbox() {
 
   const clearAllFilters = () => {
     setSelectedStatuses([]);
-    setSelectedCategories([]);
+    setSelectedSources([]);
     setSearchQuery("");
   };
 
   const hasActiveFilters =
     selectedStatuses.length > 0 ||
-    selectedCategories.length > 0 ||
+    selectedSources.length > 0 ||
     searchQuery !== "";
 
   // CRUD Handlers
@@ -1446,57 +1447,57 @@ export default function LeadInbox() {
           label="Danh mục vi phạm"
           options={[
             {
-              value: "counterfeit",
-              label: "Hàng giả",
+              value: "hotline",
+              label: "Hotline 1800",
               count: allLeads.filter(
-                (l) => l.category === "counterfeit",
+                (l) => l.source === "hotline",
               ).length,
             },
             {
-              value: "smuggling",
-              label: "Buôn lu",
+              value: "website",
+              label: "Website/Portal",
               count: allLeads.filter(
-                (l) => l.category === "smuggling",
+                (l) => l.source === "website",
               ).length,
             },
             {
-              value: "illegal_trading",
-              label: "Kinh doanh bất hợp pháp",
+              value: "email",
+              label: "Email",
               count: allLeads.filter(
-                (l) => l.category === "illegal_trading",
+                (l) => l.source === "email",
               ).length,
             },
             {
-              value: "food_safety",
-              label: "An toàn thực phẩm",
+              value: "social",
+              label: "Mạng xã hội",
               count: allLeads.filter(
-                (l) => l.category === "food_safety",
+                (l) => l.source === "social",
               ).length,
             },
             {
-              value: "price_fraud",
-              label: "Gian lận giá c",
+              value: "inspection",
+              label: "Kiểm tra trực tiếp",
               count: allLeads.filter(
-                (l) => l.category === "price_fraud",
+                (l) => l.source === "inspection",
               ).length,
             },
             {
-              value: "unlicensed",
-              label: "Không giy phép",
+              value: "authority",
+              label: "Công an/Chính quyền",
               count: allLeads.filter(
-                (l) => l.category === "unlicensed",
+                (l) => l.source === "authority",
               ).length,
             },
             {
               value: "other",
-              label: "Khác",
+              label: "Nguồn khác",
               count: allLeads.filter(
-                (l) => l.category === "other",
+                (l) => l.source === "other",
               ).length,
             },
           ]}
-          selectedValues={selectedCategories}
-          onChange={setSelectedCategories}
+          selectedValues={selectedSources}
+          onChange={setSelectedSources}
           placeholder="Tất cả"
         />
 
@@ -1637,7 +1638,7 @@ export default function LeadInbox() {
               <tr>
                 {/* REMOVED: Checkbox column removed per user request */}
                 <th style={{ width: "120px" }}>Mã Lead</th>
-                <th style={{ width: "280px" }}>Tiêu đề</th>
+                <th style={{ width: "280px" }}>Danh mục vi phạm</th>
                 <th style={{ width: "180px" }}>Người báo</th>
                 <th style={{ width: "160px" }}>Cửa hàng</th>
                 <th style={{ width: "180px" }}>Nội dung</th>
