@@ -175,6 +175,7 @@ export interface RiskProfile {
   // Flags
   isWatchlisted: boolean;
   hasActiveAlert: boolean;
+  latestCaseStatus?: string; // Add optional latestCaseStatus
 }
 
 // ========================================

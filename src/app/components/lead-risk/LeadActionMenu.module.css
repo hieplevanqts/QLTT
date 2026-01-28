@@ -45,36 +45,43 @@
   transform: scale(1);
 }
 
-/* Tooltips */
-.quickButton[title]:hover::after {
-  content: attr(title);
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: var(--spacing-2) var(--spacing-3);
+/* Tooltips - JS Implementation */
+.fixedTooltip {
+  position: fixed;
   background: var(--primary);
   color: white;
   font-size: var(--text-xs);
-  white-space: nowrap;
+  padding: var(--spacing-2) var(--spacing-3);
   border-radius: var(--radius-sm);
-  margin-bottom: 8px;
-  z-index: 99999;
-  pointer-events: none;
   box-shadow: var(--elevation-md);
+  z-index: 999999;
+  pointer-events: none;
+  white-space: nowrap;
+  transform: translate(-50%, -100%);
+  margin-top: -8px;
+  animation: fadeIn 0.15s ease;
 }
 
-.quickButton[title]:hover::before {
+.fixedTooltip::after {
   content: '';
   position: absolute;
-  bottom: 100%;
+  top: 100%;
   left: 50%;
   transform: translateX(-50%);
   border: 5px solid transparent;
   border-top-color: var(--primary);
-  margin-bottom: -2px;
-  z-index: 99999;
-  pointer-events: none;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -90%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%);
+  }
 }
 
 .menuButton {

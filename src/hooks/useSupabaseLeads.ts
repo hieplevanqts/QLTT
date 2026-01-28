@@ -43,7 +43,7 @@ function transformSupabaseLead(dbLead: SupabaseLead): Lead {
   if (!dbLead._id && !dbLead.id) {
     console.error('🚨 [transformSupabaseLead] Lead has NULL id! Using code as fallback:', dbLead.code);
   }
-  
+
   // Provide safe defaults for potentially missing data
   const slaData = dbLead.sla || {
     deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
@@ -78,7 +78,7 @@ function transformSupabaseLead(dbLead: SupabaseLead): Lead {
     status: dbLead.status,
     urgency: dbLead.urgency || mapConfidenceToUrgency(dbLead.confidence || 'medium'),
     confidence: dbLead.confidence,
-    source: dbLead.source || 'app',
+    source: dbLead.source || dbLead.title || 'app',
     category: dbLead.category,
     riskScope: (dbLead.risk_scope as 'point' | 'store' | 'zone' | 'topic') || 'point',
     location: {
@@ -119,6 +119,7 @@ function transformSupabaseLead(dbLead: SupabaseLead): Lead {
 interface UseSupabaseLeadsOptions {
   statuses?: string[];
   categories?: string[];
+  sources?: string[]; // Add sources option
   search?: string;
   assignedToMe?: boolean;
   unassigned?: boolean;
@@ -137,6 +138,7 @@ export function useSupabaseLeads(options: UseSupabaseLeadsOptions = {}) {
   }, [
     options.statuses?.join(','),
     options.categories?.join(','),
+    options.sources?.join(','), // Add dependency
     options.search,
     options.assignedToMe,
     options.unassigned,
@@ -176,6 +178,12 @@ export function useSupabaseLeads(options: UseSupabaseLeadsOptions = {}) {
         query = query.in('category', options.categories);
       }
 
+      if (options.sources && options.sources.length > 0) {
+        console.log('🎯 [useSupabaseLeads] Filtering by sources (using title column):', options.sources);
+        // User request: Filter by title because source column doesn't exist
+        query = query.in('title', options.sources);
+      }
+
       if (options.search) {
         console.log('🔎 [useSupabaseLeads] Searching for:', options.search);
         query = query.or(`title.ilike.%${options.search}%,description.ilike.%${options.search}%,code.ilike.%${options.search}%`);
@@ -213,19 +221,19 @@ export function useSupabaseLeads(options: UseSupabaseLeadsOptions = {}) {
       console.log(`✅ [useSupabaseLeads] Fetched ${data.length} leads from Supabase`);
       console.log(`📊 [useSupabaseLeads] First lead (RAW):`, JSON.stringify(data[0], null, 2));
       console.log(`📊 [useSupabaseLeads] Available columns in first lead:`, data[0] ? Object.keys(data[0]) : []);
-      
+
       // Check for null IDs BEFORE transformation
       const nullIdCount = data.filter(l => !l._id && !l.id).length;
       if (nullIdCount > 0) {
         console.error(`🚨 [useSupabaseLeads] Found ${nullIdCount} leads with NULL _id in database!`);
         console.error('🚨 [useSupabaseLeads] Sample null ID records:', data.filter(l => !l._id && !l.id).slice(0, 3));
       }
-      
+
       // Transform data
       const transformedLeads = data.map(transformSupabaseLead);
       console.log('🔄 [useSupabaseLeads] Transformed', transformedLeads.length, 'leads');
       console.log('📊 [useSupabaseLeads] First 3 transformed lead _ids:', transformedLeads.slice(0, 3).map(l => l._id));
-      
+
       // CRITICAL: Deduplicate by lead_code (not just ID)
       // Keep the most recent record if duplicate codes exist
       const uniqueLeadsMap = new Map<string, Lead>();
@@ -244,10 +252,10 @@ export function useSupabaseLeads(options: UseSupabaseLeadsOptions = {}) {
       });
 
       const uniqueLeads = Array.from(uniqueLeadsMap.values());
-      
+
       // Silent deduplication - UI will show warning banner if needed
       console.log('✅ [useSupabaseLeads] Final unique leads count:', uniqueLeads.length);
-      
+
       setLeads(uniqueLeads);
 
     } catch (err) {
@@ -374,20 +382,20 @@ export function useSupabaseLead(leadId: string | undefined) {
     }
 
     fetchLead();
-    
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leadId]);
 
   const fetchLead = async () => {
     if (!leadId) return;
-    
+
     setLoading(true);
     setError(null);
     setWasAutoUpdated(false);
 
     try {
       console.log('🔍 [useSupabaseLead] Fetching lead by ID:', leadId);
-      
+
       const { data, error: fetchError } = await supabase
         .from('leads')
         .select('*')
@@ -407,7 +415,7 @@ export function useSupabaseLead(leadId: string | undefined) {
 
       console.log('✅ [useSupabaseLead] Received lead:', data);
       const transformedLead = transformSupabaseLead(data);
-      
+
       // ❌ REMOVED AUTO-UPDATE: Không tự động chuyển status khi xem chi tiết
       // User chỉ muốn XEM, không muốn thay đổi trạng thái
       // Status sẽ được update thông qua các action button trong UI
