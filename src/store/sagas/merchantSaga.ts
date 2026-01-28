@@ -1,10 +1,13 @@
 import { call, put, takeLatest } from 'redux-saga/effects';
 import { PayloadAction } from '@reduxjs/toolkit';
-import { fetchMerchantDetail } from '../../utils/api/merchantsApi';
+import { fetchMerchantDetail, fetchMerchantInspectionResults } from '../../utils/api/merchantsApi';
 import {
   fetchMerchantDetailRequest,
   fetchMerchantDetailSuccess,
   fetchMerchantDetailFailure,
+  fetchInspectionHistoryRequest,
+  fetchInspectionHistorySuccess,
+  fetchInspectionHistoryFailure,
 } from '../slices/merchantSlice';
 
 function* handleFetchMerchantDetail(action: PayloadAction<{ merchantId: string; licenseType?: string }>) {
@@ -17,6 +20,24 @@ function* handleFetchMerchantDetail(action: PayloadAction<{ merchantId: string; 
   }
 }
 
+function* handleFetchInspectionHistory(action: PayloadAction<string>) {
+  try {
+    const data: any[] = yield call(fetchMerchantInspectionResults, action.payload);
+    
+    // Sắp xếp dữ liệu mới nhất (dựa trên inspection_date)
+    const sortedData = [...data].sort((a, b) => {
+      const dateA = a.inspection_date ? new Date(a.inspection_date).getTime() : 0;
+      const dateB = b.inspection_date ? new Date(b.inspection_date).getTime() : 0;
+      return dateB - dateA;
+    });
+
+    yield put(fetchInspectionHistorySuccess(sortedData));
+  } catch (error: any) {
+    yield put(fetchInspectionHistoryFailure(error.message || 'Failed to fetch inspection history'));
+  }
+}
+
 export function* merchantSaga() {
   yield takeLatest(fetchMerchantDetailRequest.type, handleFetchMerchantDetail);
+  yield takeLatest(fetchInspectionHistoryRequest.type, handleFetchInspectionHistory);
 }

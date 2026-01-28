@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { ConfirmDialog } from '../../../ui-kit/ConfirmDialog';
 import { useAppDispatch, useAppSelector } from '../../../app/hooks';
 import { RootState } from '../../../store/rootReducer';
-import { fetchMerchantDetailRequest, clearCurrentMerchant } from '../../../store/slices/merchantSlice';
+import { fetchMerchantDetailRequest, clearCurrentMerchant, fetchInspectionHistoryRequest } from '../../../store/slices/merchantSlice';
 
 interface PointDetailModalProps {
   point: Restaurant | null;
@@ -115,12 +115,13 @@ function getStatusBadge(category: Restaurant['category']) {
 
 export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalProps) {
   const dispatch = useAppDispatch();
-  const { currentMerchant, isLoading: isMerchantLoading } = useAppSelector((state: RootState) => state.merchant);
+  const { currentMerchant, inspectionHistory, isLoading: isMerchantLoading, isHistoryLoading } = useAppSelector((state: RootState) => state.merchant);
 
   // 🔥 Fetch merchant detail when modal opens
   useEffect(() => {
     if (isOpen && point?.id) {
       dispatch(fetchMerchantDetailRequest({ merchantId: point.id }));
+      dispatch(fetchInspectionHistoryRequest(point.id));
     }
     return () => {
       if (!isOpen) {
@@ -871,25 +872,59 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                 {!collapsedSections.timeline && (
                   <div className={styles.cardBody}>
                     <div className={styles.timeline}>
-                      <div className={styles.timelineItem}>
-                        <div className={styles.timelineDot} style={{ background: '#22c55e' }} />
-                        <div className={styles.timelineContent}>
-                          <div className={styles.timelineTitle}>Kiểm tra gần nhất</div>
-                          <div className={styles.timelineDate}>
-                            {displayData.lastInspectionDate ? displayData.lastInspectionDate.toLocaleDateString('vi-VN', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric'
-                            }) : 'N/A'}
+                      {isHistoryLoading ? (
+                        <div className="flex items-center justify-center py-4 text-xs text-muted-foreground">
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary mr-2"></div>
+                          Đang tải lịch sử...
+                        </div>
+                      ) : inspectionHistory && inspectionHistory.length > 0 ? (
+                        inspectionHistory.map((item, index) => (
+                          <div key={item._id || index} className={styles.timelineItem}>
+                            <div 
+                              className={styles.timelineDot} 
+                              style={{ 
+                                background: item.status === 'passed' ? '#22c55e' : item.status === 'failed' ? '#ef4444' : '#94a3b8' 
+                              }} 
+                            />
+                            <div className={styles.timelineContent}>
+                              <div className={styles.timelineTitle}>{item.document_type_name || 'Kiểm tra'}</div>
+                              <div className={styles.timelineDate}>
+                                {item.inspection_date ? new Date(item.inspection_date).toLocaleDateString('vi-VN', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric'
+                                }) : 'N/A'}
+                              </div>
+                              {item.notes && <div className={styles.timelineMeta}>{item.notes}</div>}
+                              <div className={styles.timelineResult}>
+                                KQ: <strong style={{ color: item.status === 'passed' ? '#16a34a' : item.status === 'failed' ? '#dc2626' : 'inherit' }}>
+                                  {item.status === 'passed' ? 'Đạt' : item.status === 'failed' ? 'Không đạt' : 'Chưa có kết quả'}
+                                </strong>
+                              </div>
+                            </div>
                           </div>
-                          <div className={styles.timelineMeta}>
-                            Chi cục QLTT {point.district}
-                          </div>
-                          <div className={styles.timelineResult}>
-                            KQ: <strong>{point.category === 'hotspot' ? 'Không đạt' : 'Đạt yêu cầu'}</strong>
+                        ))
+                      ) : (
+                        <div className={styles.timelineItem}>
+                          <div className={styles.timelineDot} style={{ background: '#22c55e' }} />
+                          <div className={styles.timelineContent}>
+                            <div className={styles.timelineTitle}>Kiểm tra gần nhất</div>
+                            <div className={styles.timelineDate}>
+                              {displayData.lastInspectionDate ? displayData.lastInspectionDate.toLocaleDateString('vi-VN', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric'
+                              }) : 'N/A'}
+                            </div>
+                            <div className={styles.timelineMeta}>
+                              Chi cục QLTT {point.district}
+                            </div>
+                            <div className={styles.timelineResult}>
+                              KQ: <strong>{point.category === 'hotspot' ? 'Không đạt' : 'Đạt yêu cầu'}</strong>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      )}
 
                       {displayData.nextInspectionDate && (
                         <div className={styles.timelineItem}>
