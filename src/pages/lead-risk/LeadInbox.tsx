@@ -17,6 +17,7 @@ import {
   RefreshCw,
   Ban,
   Copy,
+  Download,
 } from "lucide-react";
 import {
   useSupabaseLeads,
@@ -1188,6 +1189,73 @@ export default function LeadInbox() {
           >
             <Copy size={16} />
             <span>Phát hiện trùng</span>
+          </button>
+          <button
+            onClick={() => {
+              toast.info("Tính năng xuất Excel đang phát triển");
+            }}
+            style={{
+              marginRight: "var(--spacing-3)",
+              height: "44px",
+              padding: "0 var(--spacing-4)",
+              background: "rgba(255, 255, 255, 1)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius)",
+              color: "var(--text-primary)",
+              fontFamily: "Inter, sans-serif",
+              fontSize: "var(--text-sm)",
+              fontWeight: "var(--font-weight-medium)",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--spacing-2)",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--muted)";
+              e.currentTarget.style.borderColor = "var(--primary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(255, 255, 255, 1)";
+              e.currentTarget.style.borderColor = "var(--border)";
+            }}
+          >
+            <Download size={16} />
+            <span>Xuất Excel</span>
+          </button>
+          <button
+            onClick={() => {
+              refetch();
+              toast.info("Đang tải lại dữ liệu...");
+            }}
+            style={{
+              marginRight: "var(--spacing-3)",
+              height: "44px",
+              padding: "0 var(--spacing-4)",
+              background: "rgba(255, 255, 255, 1)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius)",
+              color: "var(--text-primary)",
+              fontFamily: "Inter, sans-serif",
+              fontSize: "var(--text-sm)",
+              fontWeight: "var(--font-weight-medium)",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--spacing-2)",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--muted)";
+              e.currentTarget.style.borderColor = "var(--primary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(255, 255, 255, 1)";
+              e.currentTarget.style.borderColor = "var(--border)";
+            }}
+          >
+            <RefreshCw size={16} />
+            <span>Tải lại</span>
           </button>
           <button
             onClick={() => setIsModalOpen(true)}
