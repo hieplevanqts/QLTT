@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
-import { useAuth } from './AuthContext';
+import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
+import { useAppSelector } from '../app/hooks';
+import { RootState } from '../store/rootReducer';
 import { supabase } from '../lib/supabase';
 
 export interface QLTTScope {
@@ -11,7 +12,7 @@ export interface QLTTScope {
 }
 
 interface ScopeDepartment {
-  _id: string;
+  id: string;
   parent_id: string | null;
   name: string;
   code?: string | null;
@@ -19,12 +20,13 @@ interface ScopeDepartment {
 }
 
 interface AreaRow {
-  _id: string;
+  id: string; // Mapped from _id
+  _id?: string; // Original from DB
   code: string;
   name: string;
   level: string;
-  provinceId?: string | null;
-  wardId?: string | null;
+  province_id?: string | null;
+  ward_id?: string | null;
 }
 
 interface DepartmentAreaRow {
@@ -33,14 +35,14 @@ interface DepartmentAreaRow {
 }
 
 interface WardRow {
-  _id: string;
+  id: string;
   code: string;
   name: string;
   province_id: string;
 }
 
 interface ProvinceRow {
-  _id: string;
+  id: string;
   code: string;
   name: string;
 }
@@ -82,8 +84,8 @@ const getDepartmentLevelFromCode = (code?: string | null): number | undefined =>
 };
 
 export function QLTTScopeProvider({ children }: { children: ReactNode }) {
-  const authContext = useAuth();
-  const user = authContext?.user || null;
+  // Get user from Redux instead of AuthContext
+  const { user } = useAppSelector((state: RootState) => state.auth);
 
   const [scope, setScope] = useState<QLTTScope>({
     divisionId: null,
@@ -121,7 +123,7 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
         ] = await Promise.all([
           supabase
             .from('departments')
-            .select('_id, parent_id, name, code, level')
+            .select('id:_id, parent_id, name, code, level')
             .is('deleted_at', null)
             .order('path', { ascending: true }),
           supabase
@@ -129,13 +131,13 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
             .select('department_id, area_id'),
           supabase
             .from('areas')
-            .select('_id, code, name, level, "provinceId", "wardId"'),
+            .select('id:_id, code, name, level, province_id, ward_id'),
           supabase
             .from('wards')
-            .select('_id, code, name, province_id'),
+            .select('id:_id, code, name, province_id'),
           supabase
             .from('provinces')
-            .select('_id, code, name'),
+            .select('id:_id, code, name'),
         ]);
 
         if (departmentsError) {
@@ -156,8 +158,8 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
 
         if (!isMounted) return;
 
-        setDepartments((departmentsData || []).map((dept) => ({
-          id: dept._id,
+        setDepartments((departmentsData || []).map((dept: any) => ({
+          id: dept.id,
           parent_id: dept.parent_id,
           name: dept.name,
           code: dept.code,
@@ -165,24 +167,24 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
         })));
 
         setDepartmentAreas(departmentAreasData || []);
-        setAreas((areasData || []).map((area) => ({
-          id: area._id,
+        setAreas((areasData || []).map((area: any) => ({
+          id: area.id,
           code: area.code,
           name: area.name,
           level: area.level,
-          provinceId: area.provinceId,
-          wardId: area.wardId,
+          province_id: area.province_id,
+          ward_id: area.ward_id,
         })));
 
-        setWards((wardsData || []).map((ward) => ({
-          id: ward._id,
+        setWards((wardsData || []).map((ward: any) => ({
+          id: ward.id,
           code: ward.code,
           name: ward.name,
           province_id: ward.province_id,
         })));
 
-        setProvinces((provincesData || []).map((province) => ({
-          id: province._id,
+        setProvinces((provincesData || []).map((province: any) => ({
+          id: province.id,
           code: province.code,
           name: province.name,
         })));
@@ -319,9 +321,9 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
       .map((areaId) => areasById.get(areaId))
       .filter((area): area is AreaRow => Boolean(area))
       .map((area) => {
-        const ward = area.wardId ? wardsById.get(area.wardId) : undefined;
+        const ward = area.ward_id ? wardsById.get(area.ward_id) : undefined;
         const provinceFromWard = ward ? provincesById.get(ward.province_id) : undefined;
-        const provinceFromArea = area.provinceId ? provincesById.get(area.provinceId) : undefined;
+        const provinceFromArea = area.province_id ? provincesById.get(area.province_id) : undefined;
         return {
           id: area.id,
           name: ward?.name || area.name,

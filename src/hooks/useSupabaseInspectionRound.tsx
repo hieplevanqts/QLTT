@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { type InspectionRound, type InspectionRoundStatus } from '@/app/data/inspection-rounds-mock-data';
-import { fetchInspectionRoundByIdApi, updateInspectionRoundApi, deleteInspectionRoundApi } from '@/utils/api/plansApi';
+import { fetchInspectionRoundByIdApi, updateInspectionRoundApi, deleteInspectionRoundApi } from '@/utils/api/inspectionRoundsApi';
 
 interface UseSupabaseInspectionRoundReturn {
   round: InspectionRound | null;

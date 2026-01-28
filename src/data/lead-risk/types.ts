@@ -6,7 +6,11 @@
 export type LeadStatus =
   | 'new'                 // Mới
   | 'in_verification'     // Đang xác minh
+  | 'verifying'           // Alias for in_verification
+  | 'verify_paused'       // Tạm dừng xác minh
   | 'in_progress'         // Đang xử lý
+  | 'processing'          // Alias for in_progress
+  | 'process_paused'      // Tạm dừng xử lý
   | 'resolved'            // Đã xử lý
   | 'rejected'            // Đã từ chối
   | 'cancelled';          // Đã hủy
@@ -43,6 +47,7 @@ export type LeadCategory =
 // LEAD INTERFACE
 // ========================================
 export interface Lead {
+  _id: string;
   id: string;
   code: string;                    // LEAD-2025-0001
   title: string;
@@ -53,7 +58,7 @@ export interface Lead {
   source: LeadSource | string;     // Allow custom string sources
   category: LeadCategory | string; // Allow custom categories
   riskScope: RiskScope;
-  
+
   // Location
   location: {
     lat: number;
@@ -63,18 +68,18 @@ export interface Lead {
     district?: string;
     province: string;
   };
-  
+
   // Store info (if linked)
   storeId?: string;
   storeName?: string;
   storeAddress?: string;
   storeType?: string;
-  
+
   // Reporter info (optional if anonymous)
   reporterName?: string;
   reporterPhone?: string;
   reporterEmail?: string;
-  
+
   // Assignment
   assignedTo?: {
     userId: string;
@@ -82,26 +87,26 @@ export interface Lead {
     teamName: string;
   };
   assignedAt?: Date;
-  
+
   // SLA
   sla: {
     deadline: Date;
     remainingHours: number;
     isOverdue: boolean;
   };
-  
+
   // Metadata
   reportedBy?: string;
   reportedAt: Date;
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Counts
   evidenceCount: number;
   relatedLeadsCount: number;
   activityCount: number;
-  
+
   // Flags
   isDuplicate: boolean;
   isWatched: boolean;
@@ -149,27 +154,28 @@ export interface RiskProfile {
   entityId: string;            // Store ID / Zone ID
   entityType: 'store' | 'zone';
   entityName: string;
-  
+
   riskScore: number;           // 0-100
   riskLevel: 'low' | 'medium' | 'high' | 'critical';
-  
+
   // Statistics
   totalLeads: number;
   activeLeads: number;
   resolvedLeads: number;
   rejectedLeads: number;
-  
+
   // Recent activity
   lastLeadDate: Date;
   recentCategories: LeadCategory[];
-  
+
   // Trends
   trendDirection: 'increasing' | 'stable' | 'decreasing';
   monthOverMonthChange: number; // Percentage
-  
+
   // Flags
   isWatchlisted: boolean;
   hasActiveAlert: boolean;
+  latestCaseStatus?: string; // Add optional latestCaseStatus
 }
 
 // ========================================
@@ -185,23 +191,23 @@ export interface Hotspot {
   };
   district: string;
   province: string;
-  
+
   // Risk metrics
   riskScore: number;
   leadCount: number;
   activeLeadCount: number;
-  
+
   // Top issues
   topCategories: Array<{
     category: LeadCategory;
     count: number;
     percentage: number;
   }>;
-  
+
   // Timeline
   detectedAt: Date;
   lastActivityAt: Date;
-  
+
   // Status
   status: 'active' | 'monitoring' | 'resolved';
 }
@@ -231,22 +237,22 @@ export interface DashboardMetrics {
   inProgress: number;
   resolved: number;
   overdue: number;
-  
+
   // By urgency
   critical: number;
   high: number;
   medium: number;
   low: number;
-  
+
   // Performance
   avgResolutionTime: number; // hours
   slaComplianceRate: number; // percentage
-  
+
   // Trends
   leadsThisWeek: number;
   leadsLastWeek: number;
   weekOverWeekChange: number; // percentage
-  
+
   // By category
   categoryBreakdown: Array<{
     category: LeadCategory;

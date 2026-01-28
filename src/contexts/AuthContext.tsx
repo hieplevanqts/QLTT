@@ -216,7 +216,7 @@ function getDepartmentLevelFromCode(code?: string | null): number | undefined {
 }
 
 // 🔥 NEW: Fetch user department from database (users -> department_users -> departments)
-async function fetchUserDepartment(userId: string): Promise<{ id: string; name: string; code?: string; level?: number; address?: string; latitude?: number; longitude?: number; parent_id?: string | null } | null> {
+async function fetchUserDepartment(userId: string): Promise<{ _id: string; name: string; code?: string; level?: number; address?: string; latitude?: number; longitude?: number; parent_id?: string | null } | null> {
   try {
     
     // Query department_users with nested select to get departments data (including address)
@@ -225,7 +225,7 @@ async function fetchUserDepartment(userId: string): Promise<{ id: string; name: 
       .select(`
         department_id,
         departments (
-          _id,
+          id:_id,
           name,
           code,
           level,
@@ -248,14 +248,14 @@ async function fetchUserDepartment(userId: string): Promise<{ id: string; name: 
     }
     
     // Extract department data from nested structure
-    const departmentData = departmentUsers[0]?.departments as any;
+    const departmentData = departmentUsers[0]?.departments;
     if (!departmentData || !departmentData._id) {
       return null;
     }
     
     const inferredLevel = getDepartmentLevelFromCode(departmentData.code);
     const departmentInfo = {
-      id: departmentData._id,
+      _id: departmentData._id,
       name: departmentData.name || '',
       code: departmentData.code || undefined,
       level: departmentData.level ?? inferredLevel,
@@ -486,7 +486,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Auto-restore session on mount using Supabase
+  // 🔥 FIX: Disable AuthContext restore session when using Redux auth
+  // Redux auth system handles session restore via rootSaga
   useEffect(() => {
+    // 🔥 FIX: Check if we're using Redux auth (token exists in localStorage)
+    // If token exists, let Redux handle restore, don't interfere
+    const token = localStorage.getItem('mappa_auth_access_token');
+    if (token) {
+      setIsLoading(false);
+      return; // Early return - don't run AuthContext restore
+    }
+
     const restoreSession = async () => {
       try {
         // Check if we're on login page - don't trigger logout redirect if already there
@@ -501,8 +511,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (err: any) {
           // Handle AbortError or other errors during session check
           if (err?.name === 'AbortError' || err?.message?.includes('aborted')) {
-            console.warn('Session check aborted - likely session expired');
-            // Clear everything and logout
+            console.warn('⚠️ AuthContext: Session check aborted - likely session expired');
+            // 🔥 FIX: Check if token exists in storage before clearing
+            const hasTokenInStorage = localStorage.getItem('mappa_auth_access_token');
+            if (hasTokenInStorage) {
+              setUser(null);
+              setIsAuthenticated(false);
+              setIsLoading(false);
+              return;
+            }
+            // No token, clear everything and logout
             if (!isOnLoginPage) {
               await performAutoLogout();
             } else {
@@ -516,8 +534,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         
         if (error) {
-          console.error('Error restoring session:', error);
-          // If error getting session, user is not authenticated
+          console.error('⚠️ AuthContext: Error restoring session:', error);
+          // 🔥 FIX: Check if token exists in storage before clearing
+          const hasTokenInStorage = localStorage.getItem('mappa_auth_access_token');
+          if (hasTokenInStorage) {
+            setUser(null);
+            setIsAuthenticated(false);
+            setIsLoading(false);
+            return;
+          }
+          // If error getting session and no token, user is not authenticated
           // Only call performAutoLogout if not already on login page to avoid double reload
           if (!isOnLoginPage) {
             await performAutoLogout();
@@ -536,7 +562,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const now = Date.now();
             
             if (now >= expiresAt) {
-              // Session expired, auto-logout
+              // Session expired, but check if token exists in storage
+              // 🔥 FIX: Don't clear localStorage if token exists - let Redux auth system handle it
+              const hasTokenInStorage = localStorage.getItem('mappa_auth_access_token');
+              if (hasTokenInStorage) {
+                setUser(null);
+                setIsAuthenticated(false);
+                setIsLoading(false);
+                return;
+              }
+              // Session expired and no token, auto-logout
               // Only call performAutoLogout if not already on login page to avoid double reload
               if (!isOnLoginPage) {
                 await performAutoLogout();
@@ -598,14 +633,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setIsAuthenticated(true);
           }
         } else {
-          // No session, user is not authenticated
+          // No Supabase session, but check if we have token in localStorage
+          // 🔥 FIX: Don't clear localStorage if token exists - let Redux auth system handle it
+          const hasTokenInStorage = localStorage.getItem('mappa_auth_access_token');
+          if (hasTokenInStorage) {
+            // Don't clear localStorage - Redux auth system will restore from token
+            setUser(null);
+            setIsAuthenticated(false);
+            setIsLoading(false);
+            return;
+          }
+          
+          // No session and no token, user is not authenticated
           // Don't trigger logout redirect if already on login page
           setUser(null);
           setIsAuthenticated(false);
         }
       } catch (error) {
-        console.error('Error in restoreSession:', error);
-        // Only call performAutoLogout if not already on login page
+        console.error('⚠️ AuthContext: Error in restoreSession:', error);
+        // 🔥 FIX: Check if token exists in storage before clearing
+        const hasTokenInStorage = localStorage.getItem('mappa_auth_access_token');
+        if (hasTokenInStorage) {
+          setUser(null);
+          setIsAuthenticated(false);
+          setIsLoading(false);
+          return;
+        }
+        // Only call performAutoLogout if not already on login page and no token exists
         const isOnLoginPage = window.location.pathname === '/auth/login';
         if (!isOnLoginPage) {
           await performAutoLogout();
@@ -618,13 +672,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
+    // No token, use AuthContext restore (legacy mode)
     restoreSession();
+  }, []); // Only run once on mount
+
+  // 🔥 FIX: Separate useEffect for Supabase auth listeners
+  // This ensures hooks are always called in the same order
+  useEffect(() => {
+    // Check if we're using Redux auth (token exists in localStorage)
+    const token = localStorage.getItem('mappa_auth_access_token');
+    if (token) {
+      return; // Early return - don't set up Supabase listeners
+    }
 
     // Listen for auth state changes (including token expiry)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       
       if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
         // User signed out or token refresh failed
+        // 🔥 FIX: Check if token exists in storage before clearing
+        const hasTokenInStorage = localStorage.getItem('mappa_auth_access_token');
+        if (hasTokenInStorage) {
+          setUser(null);
+          setIsAuthenticated(false);
+          return;
+        }
+        // No token, perform logout
         await performAutoLogout();
         return;
       }
@@ -639,6 +712,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             
             if (now >= expiresAt) {
               // Session expired even after refresh
+              // 🔥 FIX: Check if token exists in storage before clearing
+              const hasTokenInStorage = localStorage.getItem('mappa_auth_access_token');
+              if (hasTokenInStorage) {
+                setUser(null);
+                setIsAuthenticated(false);
+                return;
+              }
+              // No token, perform logout
               await performAutoLogout();
               return;
             }
@@ -649,7 +730,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const parsedUser = JSON.parse(storedUser) as UserInfo;
             // 🔥 FIX: Refresh role name if it's still the default/mock value
             if (!parsedUser.roleDisplay || parsedUser.roleDisplay === 'Người dùng' || parsedUser.roleDisplay.includes('Quản lý')) {
-              const roleName = await fetchUserRoleName(session.user.id);
+              const roleName = await fetchUserRoleName(session.user._id);
               if (roleName) {
                 parsedUser.roleDisplay = roleName;
                 localStorage.setItem('mappa-user', JSON.stringify(parsedUser));

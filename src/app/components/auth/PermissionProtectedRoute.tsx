@@ -1,6 +1,9 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAppSelector } from '../../../app/hooks';
+import { RootState } from '../../../store/rootReducer';
+import { useMenuRegistry } from '../../../hooks/useMenuRegistry';
+import { usePermissions } from '../../../modules/system-admin/_shared/usePermissions';
 import { Error403 } from '../error-states/Error403';
 
 interface PermissionProtectedRouteProps {
@@ -10,88 +13,17 @@ interface PermissionProtectedRouteProps {
 
 // Map routes to permission codes (matches the mapping in VerticalSidebar and HorizontalNavBar)
 const ROUTE_PERMISSION_MAP: { [path: string]: string | undefined } = {
-  '/overview': undefined, // No permission required (always accessible)
+  '/overview': undefined,
   '/map': 'MAP_VIEW',
   '/stores': 'STORES_VIEW',
-  '/stores/:id': 'STORES_VIEW', // Store detail requires STORES_VIEW
   '/leads': 'LEAD_RISK',
-  '/lead-risk/inbox': 'LEAD_RISK',
-  '/lead-risk/home': 'LEAD_RISK',
-  '/lead-risk/list': 'LEAD_RISK',
-  '/lead-risk/map': 'LEAD_RISK',
-  '/lead-risk/create-lead-quick': 'LEAD_RISK',
-  '/lead-risk/create-lead-full': 'LEAD_RISK',
-  '/lead-risk/dashboard': 'LEAD_RISK',
-  '/lead-risk/hotspots': 'LEAD_RISK',
-  '/lead-risk/sla-operation-map': 'LEAD_RISK',
-  '/lead-risk/watchlist': 'LEAD_RISK',
-  '/lead-risk/quality-metrics': 'LEAD_RISK',
-  '/lead-risk/workload-dashboard': 'LEAD_RISK',
-  '/lead-risk/sla-dashboard': 'LEAD_RISK',
-  '/lead-risk/permission-matrix': 'LEAD_RISK',
-  '/lead-risk/duplicate-detector': 'LEAD_RISK',
-  '/lead-risk/escalation-form': 'LEAD_RISK',
-  '/lead-risk/verification-outcome': 'LEAD_RISK',
-  '/lead-risk/entity-risk-profile': 'LEAD_RISK',
-  '/lead-risk/alert-feed': 'LEAD_RISK',
-  '/lead-risk/risk-indicators': 'LEAD_RISK',
-  '/lead-risk/import-leads': 'LEAD_RISK',
-  '/lead-risk/import-review': 'LEAD_RISK',
-  '/lead-risk/assignment-dispatch': 'LEAD_RISK',
   '/plans': 'PLAN_VIEW',
-  '/plans/list': 'PLAN_VIEW',
-  '/plans/create-new': 'PLAN_VIEW',
-  '/plans/task-board': 'PLAN_VIEW',
-  '/plans/inspection-session': 'PLAN_VIEW',
   '/tasks': 'TASKS_VIEW',
-  '/tasks/board': 'TASKS_VIEW',
   '/evidence': 'EVIDENCE_VIEW',
-  '/reports': undefined, // No permission required
+  '/reports': undefined,
   '/admin': 'ADMIN_VIEW',
-  '/system/modules': 'ADMIN_VIEW',
-  '/system/modules/import': 'ADMIN_VIEW',
-  '/system/modules/history': 'ADMIN_VIEW',
-  '/system/modules/:id': 'ADMIN_VIEW',
-  '/system/users': 'ADMIN_VIEW',
-  '/system/roles': 'ADMIN_VIEW',
-  '/system/settings': 'ADMIN_VIEW',
-  '/tv': 'TV_VIEW', // TV Wallboard mode
+  '/tv': 'TV_VIEW',
 };
-
-/**
- * Helper function to match route path with permission map
- * Handles dynamic routes like /stores/:id, /plans/:planId, etc.
- */
-function getPermissionForRoute(pathname: string): string | undefined {
-  // Try exact match first
-  if (ROUTE_PERMISSION_MAP[pathname]) {
-    return ROUTE_PERMISSION_MAP[pathname];
-  }
-
-  // Try pattern matching for dynamic routes
-  // Check if pathname matches any pattern in the map
-  for (const [routePattern, permission] of Object.entries(ROUTE_PERMISSION_MAP)) {
-    // Convert route pattern to regex (e.g., "/stores/:id" -> "/stores/[^/]+")
-    const patternRegex = new RegExp(
-      '^' + routePattern.replace(/:[^/]+/g, '[^/]+') + '$'
-    );
-    
-    if (patternRegex.test(pathname)) {
-      return permission;
-    }
-  }
-
-  // Check parent routes (e.g., /lead-risk/lead/:id should match /lead-risk permission)
-  const pathSegments = pathname.split('/').filter(Boolean);
-  for (let i = pathSegments.length; i > 0; i--) {
-    const parentPath = '/' + pathSegments.slice(0, i).join('/');
-    if (ROUTE_PERMISSION_MAP[parentPath]) {
-      return ROUTE_PERMISSION_MAP[parentPath];
-    }
-  }
-
-  return undefined;
-}
 
 /**
  * PermissionProtectedRoute - Checks if user has required permission to access route
@@ -101,27 +33,58 @@ export function PermissionProtectedRoute({
   children, 
   requiredPermission 
 }: PermissionProtectedRouteProps) {
-  const { user } = useAuth();
+  const { isLoading: isAuthLoading } = useAppSelector((state: RootState) => state.auth);
+  const { menus, loading: isMenuLoading } = useMenuRegistry();
+  const { hasPermission, hasAnyPermission } = usePermissions();
   const location = useLocation();
 
-  // Get permission code for current route
-  const routePermission = requiredPermission || getPermissionForRoute(location.pathname);
-
-  // If no permission required for this route, allow access
-  if (!routePermission) {
+  // 🔥 FIX: Skip permission check for system-admin routes (children of "Quản trị" menu)
+  // All routes under /system-admin/* don't need permission check
+  if (location.pathname.startsWith('/system-admin') || location.pathname.startsWith('/system/')) {
     return <>{children}</>;
   }
 
-  // Check if user has the required permission
-  const userPermissions = user?.permissions || [];
-  const hasPermission = userPermissions.includes(routePermission);
+  // Show nothing while loading auth or menus to prevent flickering or false 403
+  if (isAuthLoading || isMenuLoading) {
+    return null; // or a loading spinner
+  }
 
-  // If user doesn't have permission, show access denied page
-  if (!hasPermission) {
+  // 1. If explicit permission is required, check it first
+  if (requiredPermission) {
+    if (!hasPermission(requiredPermission)) {
+      return <Error403 />;
+    }
+    return <>{children}</>;
+  }
+
+  // 2. Check dynamic permissions from menus
+  if (menus) {
+    // Find exact match or longest prefix match
+    const sortedMenus = [...menus]
+      .filter(m => m.path && m.path !== '/')
+      .sort((a, b) => (b.path?.length || 0) - (a.path?.length || 0));
+    
+    for (const m of sortedMenus) {
+      if (m.path && (location.pathname === m.path || location.pathname.startsWith(m.path + '/'))) {
+        if (m.permissionsAny && m.permissionsAny.length > 0) {
+          if (!hasAnyPermission(m.permissionsAny)) {
+            return <Error403 />;
+          }
+          return <>{children}</>; // Found matching menu and user has permission
+        }
+        // If menu found but no permissions required, allow access
+        break; 
+      }
+    }
+  }
+
+  // 3. Fallback to static mapping for legacy or special routes
+  // Convert current path to pattern match for dynamic routes (e.g. /stores/123 -> /stores)
+  const staticPermission = ROUTE_PERMISSION_MAP[location.pathname];
+  if (staticPermission && !hasPermission(staticPermission)) {
     return <Error403 />;
   }
 
-  // User has permission, render children
   return <>{children}</>;
 }
 

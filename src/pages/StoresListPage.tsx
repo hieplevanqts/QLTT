@@ -52,6 +52,7 @@ import { ExportDialog, ExportOptions } from '../ui-kit/ExportDialog';
 import { AddStoreDialog, NewStoreData } from '../ui-kit/AddStoreDialog';
 import { AddStoreDialogTabbed, NewStoreData as NewStoreDataTabbed } from '../ui-kit/AddStoreDialogTabbed';
 import { AdvancedFilterPopup, AdvancedFilters } from '../ui-kit/AdvancedFilterPopup';
+import { adminUnitsService, type ProvinceRecord } from '../modules/system-admin/sa-master-data/services/adminUnits.service';
 import { ApproveDialog, RejectDialog } from '../ui-kit/ApprovalDialogs';
 import { mockStores, Store, addStore } from '../data/mockStores';
 import { getProvinceByCode, getDistrictByName, getWardByCode } from '../data/vietnamLocations';
@@ -66,21 +67,22 @@ import { getViolationsByStoreId } from '../data/mockViolations';
 import { getComplaintsByStoreId } from '../data/mockComplaints';
 import { PendingUpdatesDialog } from '../ui-kit/PendingUpdatesDialog';
 import { getTotalPendingCount } from '../data/mockPendingUpdates';
+import { fetchStores, fetchStoresStats, createMerchant } from '../utils/api/storesApi';
 import styles from './StoresListPage.module.css';
 
 export default function StoresListPage() {
   // Router
   const navigate = useNavigate();
-  
+
   // State management
   const [searchValue, setSearchValue] = useState('');
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [activeFilter, setActiveFilter] = useState<string | null>('active'); // Default to 'active'
-  
+
   // Filter states
   const [jurisdictionFilter, setJurisdictionFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('active'); // Default to 'active'
-  
+
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -98,7 +100,7 @@ export default function StoresListPage() {
     title: '',
     description: '',
     variant: 'default',
-    onConfirm: () => {},
+    onConfirm: () => { },
   });
   const [riskDialog, setRiskDialog] = useState<{
     open: boolean;
@@ -124,7 +126,7 @@ export default function StoresListPage() {
     open: boolean;
     document: LegalDocument | null;
   }>({ open: false, document: null });
-  
+
   // Bulk Action Modal state
   const [bulkActionModal, setBulkActionModal] = useState<{
     open: boolean;
@@ -148,38 +150,104 @@ export default function StoresListPage() {
     storeId: number;
     storeName: string;
   }>({ open: false, storeId: 0, storeName: '' });
-  
+
   // Pending Updates Dialog state
   const [pendingUpdatesDialogOpen, setPendingUpdatesDialogOpen] = useState(false);
-  
+
   // LocalStorage key
   const STORES_STORAGE_KEY = 'mappa_stores';
 
-  // Data state - Load from localStorage or use mock data
-  const [stores, setStores] = useState<Store[]>(() => {
-    try {
-      const savedStores = localStorage.getItem(STORES_STORAGE_KEY);
-      if (savedStores) {
-        const parsedStores = JSON.parse(savedStores);
-        
-        // ✅ Auto-migrate legacy 'underInspection' status to 'pending'
-        const migratedStores = parsedStores.map((store: any) => {
-          if (store.status === 'underInspection') {
-            console.warn(`⚠️ Migrating store ${store.id} from 'underInspection' to 'pending'`);
-            return { ...store, status: 'pending' as FacilityStatus };
-          }
-          return store;
-        });
-        
-        return migratedStores;
-      }
-    } catch (error) {
-      console.error('Error loading stores from localStorage:', error);
-    }
-    return mockStores;
-  });
+  // Data state - Fetch from API
+  const [stores, setStores] = useState<Store[]>([]);
+  const [isLoadingStores, setIsLoadingStores] = useState(true);
+  const [storeError, setStoreError] = useState<string | null>(null);
+  const [provinces, setProvinces] = useState<ProvinceRecord[]>([]);
+  const [isLoadingProvinces, setIsLoadingProvinces] = useState(true);
 
-  // Save stores to localStorage whenever they change
+  // Load stores from API on component mount
+  useEffect(() => {
+    const loadStores = async () => {
+      try {
+        setIsLoadingStores(true);
+        setStoreError(null);
+        console.log('📥 Fetching stores from API...');
+
+        // Build filters object with province_id if selected
+        const filters = jurisdictionFilter && jurisdictionFilter !== 'all'
+          ? { province_id: jurisdictionFilter }
+          : undefined;
+
+        const data = await fetchStores(10000, 0, filters);
+        console.log('Successfully loaded', data.length, 'stores from API');
+        if (filters?.province_id) {
+          console.log('📍 Filtered by province_id:', filters.province_id);
+        }
+
+        setStores(data);
+
+        // Save to localStorage for offline backup
+        try {
+          localStorage.setItem(STORES_STORAGE_KEY, JSON.stringify(data));
+        } catch (e) {
+          console.warn('Could not save to localStorage:', e);
+        }
+      } catch (error: any) {
+        console.error('Error loading stores:', error);
+        setStoreError(error.message || 'Failed to load stores');
+
+        // Try to load from localStorage as fallback
+        try {
+          const savedStores = localStorage.getItem(STORES_STORAGE_KEY);
+          if (savedStores) {
+            const parsedStores = JSON.parse(savedStores);
+            console.warn('⚠️ Loaded stores from localStorage fallback');
+            setStores(parsedStores);
+          } else {
+            // Use mock data as last resort
+            console.warn('⚠️ Using mock data as last resort');
+            setStores(mockStores);
+          }
+        } catch (fallbackError) {
+          console.error('Fallback error:', fallbackError);
+          setStores(mockStores);
+        }
+      } finally {
+        setIsLoadingStores(false);
+      }
+    };
+
+    loadStores();
+  }, [jurisdictionFilter]);
+
+  // Load provinces from API on component mount
+  useEffect(() => {
+    const loadProvinces = async () => {
+      try {
+        setIsLoadingProvinces(true);
+        console.log('📥 Fetching provinces from API...');
+
+        const data = await adminUnitsService.listProvinces();
+        console.log('Successfully loaded', data.length, 'provinces from API');
+
+        setProvinces(data);
+      } catch (error: any) {
+        console.error('Error loading provinces:', error);
+        // Fallback to hardcoded list if API fails
+        setProvinces([
+          { id: '1', code: 'HCM', name: 'Quận 1' },
+          { id: '2', code: 'HCM', name: 'Quận 3' },
+          { id: '3', code: 'HCM', name: 'Quận 5' },
+          { id: '4', code: 'HCM', name: 'Quận 10' },
+        ]);
+      } finally {
+        setIsLoadingProvinces(false);
+      }
+    };
+
+    loadProvinces();
+  }, []);
+
+  // Save stores to localStorage whenever they change (for local updates)
   useEffect(() => {
     try {
       localStorage.setItem(STORES_STORAGE_KEY, JSON.stringify(stores));
@@ -243,7 +311,7 @@ export default function StoresListPage() {
       storeId: editDialog.store?.id,
       storeName: editDialog.store?.name,
       type: 'quick-edit',
-      changedFields: Object.keys(data).filter(key => 
+      changedFields: Object.keys(data).filter(key =>
         key !== 'changeReason' && data[key as keyof QuickEditData] !== (editDialog.store as any)?.[key]
       ),
       newData: data,
@@ -259,12 +327,12 @@ export default function StoresListPage() {
     // - Save to approval queue
     // - Show pending badge on store
     // - Send notification to approver
-    
+
     // For now, just update the store data immediately (for demo)
     // In production, data only updates after approval
     setStores(prev =>
-      prev.map(s => (s.id === editDialog.store?.id ? { 
-        ...s, 
+      prev.map(s => (s.id === editDialog.store?.id ? {
+        ...s,
         name: data.name,
         phone: data.phone,
         email: data.email,
@@ -275,7 +343,7 @@ export default function StoresListPage() {
         pendingApprovalType: 'quick-edit',
       } : s))
     );
-    
+
     toast.success(
       'Thay đổi đã được gửi và đang chờ phê duyệt',
       {
@@ -365,7 +433,7 @@ export default function StoresListPage() {
   const handleApprove = (storeId: number) => {
     const store = stores.find(s => s.id === storeId);
     if (!store) return;
-    
+
     setApproveDialog({
       open: true,
       storeId: store.id,
@@ -376,7 +444,7 @@ export default function StoresListPage() {
   const handleReject = (storeId: number) => {
     const store = stores.find(s => s.id === storeId);
     if (!store) return;
-    
+
     setRejectDialog({
       open: true,
       storeId: store.id,
@@ -443,7 +511,7 @@ export default function StoresListPage() {
 
     setRejectDialog({ open: false, storeId: 0, storeName: '' });
   };
-  
+
   // Calculate summary stats
   const stats = {
     total: stores.length,
@@ -451,10 +519,10 @@ export default function StoresListPage() {
     pending: stores.filter(s => s.status === 'pending').length,
     suspended: stores.filter(s => s.status === 'suspended').length,
     closed: stores.filter(s => s.status === 'closed').length,
-    other: stores.filter(s => 
-      s.status !== 'active' && 
-      s.status !== 'pending' && 
-      s.status !== 'suspended' && 
+    other: stores.filter(s =>
+      s.status !== 'active' &&
+      s.status !== 'pending' &&
+      s.status !== 'suspended' &&
       s.status !== 'closed'
     ).length,
     highRisk: stores.filter(s => s.riskLevel === 'high').length,
@@ -464,19 +532,17 @@ export default function StoresListPage() {
   const filteredData = useMemo(() => {
     let filtered = stores;
 
-    // Apply basic filters
-    if (jurisdictionFilter !== 'all') {
-      filtered = filtered.filter(s => s.jurisdiction === jurisdictionFilter);
-    }
-    
+    // Note: province_id filtering is now done at API level (fetchStores)
+    // so we don't need to filter again on the client side
+
     // Handle status filter - including "other" category
     if (statusFilter !== 'all') {
       if (statusFilter === 'other') {
         // "Other" is a group of statuses that are not in the main categories
-        filtered = filtered.filter(s => 
-          s.status !== 'active' && 
-          s.status !== 'pending' && 
-          s.status !== 'suspended' && 
+        filtered = filtered.filter(s =>
+          s.status !== 'active' &&
+          s.status !== 'pending' &&
+          s.status !== 'suspended' &&
           s.status !== 'closed'
         );
       } else {
@@ -484,9 +550,9 @@ export default function StoresListPage() {
         filtered = filtered.filter(s => s.status === statusFilter);
       }
     }
-    
+
     if (searchValue) {
-      filtered = filtered.filter(s => 
+      filtered = filtered.filter(s =>
         s.name.toLowerCase().includes(searchValue.toLowerCase()) ||
         s.address.toLowerCase().includes(searchValue.toLowerCase())
       );
@@ -496,10 +562,10 @@ export default function StoresListPage() {
         filtered = filtered.filter(s => s.riskLevel === 'high');
       } else if (activeFilter === 'other') {
         // Filter for "other" statuses (not active, pending, suspended, closed)
-        filtered = filtered.filter(s => 
-          s.status !== 'active' && 
-          s.status !== 'pending' && 
-          s.status !== 'suspended' && 
+        filtered = filtered.filter(s =>
+          s.status !== 'active' &&
+          s.status !== 'pending' &&
+          s.status !== 'suspended' &&
           s.status !== 'closed'
         );
       } else {
@@ -513,7 +579,7 @@ export default function StoresListPage() {
     }
 
     return filtered;
-  }, [jurisdictionFilter, statusFilter, searchValue, activeFilter, advancedFilter, stores]);
+  }, [statusFilter, searchValue, activeFilter, advancedFilter, stores]);
 
   const paginatedData = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
@@ -691,7 +757,7 @@ export default function StoresListPage() {
           CommonActions.delete(() => handleDelete(store))
         );
         break;
-      
+
       case 'active':
         // Đang hoạt động: Full actions (7 actions - show top 3 + menu)
         actions.push(
@@ -704,7 +770,7 @@ export default function StoresListPage() {
           { ...CommonActions.pause(() => handleSuspend(store)), separator: true }
         );
         break;
-      
+
       case 'suspended':
         // Tạm ngưng: Xem chi tiết, Kích hoạt lại, Ngừng hoạt động (3 actions - show all)
         actions.push(
@@ -713,7 +779,7 @@ export default function StoresListPage() {
           { ...CommonActions.delete(() => handleClose(store)), label: 'Ngừng hoạt động', separator: true }
         );
         break;
-      
+
       case 'closed':
         // Ngừng hoạt động: Xem chi tiết, Lịch sử và Xóa (3 actions - show all)
         actions.push(
@@ -734,9 +800,11 @@ export default function StoresListPage() {
       label: 'STT',
       width: '60px',
       align: 'center',
-      render: (store, index) => {
+      render: (store: Store) => {
+        // Find index from paginatedData
+        const index = paginatedData.findIndex(s => s.id === store.id);
         // Calculate STT based on pagination
-        const stt = (currentPage - 1) * pageSize + (index || 0) + 1;
+        const stt = (currentPage - 1) * pageSize + (index >= 0 ? index : 0) + 1;
         return <div style={{ fontWeight: 'var(--font-weight-medium)' }}>{stt}</div>;
       },
     },
@@ -815,12 +883,13 @@ export default function StoresListPage() {
   ];
 
   // Handle row selection
-  const handleSelectRow = (id: number) => {
+  const handleSelectRow = (id: string | number) => {
+    const numId = typeof id === 'string' ? parseInt(id) : id;
     const newSelected = new Set(selectedRows);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
+    if (newSelected.has(numId)) {
+      newSelected.delete(numId);
     } else {
-      newSelected.add(id);
+      newSelected.add(numId);
     }
     setSelectedRows(newSelected);
   };
@@ -851,43 +920,43 @@ export default function StoresListPage() {
   const handleNavigateToMap = () => {
     // Prepare filters to pass to map page (exclude searchValue which is "Tên cơ sở")
     const mapFilters: Record<string, string> = {};
-    
+
     // Add jurisdiction filter
     if (jurisdictionFilter && jurisdictionFilter !== 'all') {
       mapFilters.jurisdiction = jurisdictionFilter;
     }
-    
+
     // Add status filter
     if (statusFilter && statusFilter !== 'all') {
       mapFilters.status = statusFilter;
     }
-    
+
     // Add advanced filters
-    if (advancedFilter.hasViolations !== 'all') {
+    if (advancedFilter.hasViolations && advancedFilter.hasViolations !== 'all') {
       mapFilters.hasViolations = advancedFilter.hasViolations;
     }
-    if (advancedFilter.hasComplaints !== 'all') {
+    if (advancedFilter.hasComplaints && advancedFilter.hasComplaints !== 'all') {
       mapFilters.hasComplaints = advancedFilter.hasComplaints;
     }
-    if (advancedFilter.riskLevel !== 'all') {
+    if (advancedFilter.riskLevel && advancedFilter.riskLevel !== 'all') {
       mapFilters.riskLevel = advancedFilter.riskLevel;
     }
-    if (advancedFilter.businessType !== 'all') {
+    if (advancedFilter.businessType && advancedFilter.businessType !== 'all') {
       mapFilters.businessType = advancedFilter.businessType;
     }
-    
+
     // Navigate to map page with filters as state
-    navigate('/map', { 
-      state: { 
+    navigate('/map', {
+      state: {
         filters: mapFilters,
         fromPage: 'stores-list'
-      } 
+      }
     });
   };
 
   // Check if there are any filters applied (for disabling map button)
-  const hasFiltersApplied = 
-    jurisdictionFilter !== 'all' || 
+  const hasFiltersApplied =
+    jurisdictionFilter !== 'all' ||
     statusFilter !== 'all' ||
     advancedFilter.hasViolations !== 'all' ||
     advancedFilter.hasComplaints !== 'all' ||
@@ -921,24 +990,24 @@ export default function StoresListPage() {
             <Button variant="outline" size="sm" onClick={() => {
               // Export based on current filters and selection
               let storesToExport = stores;
-              
+
               // If rows are selected, only export selected
               if (selectedRows.size > 0) {
                 storesToExport = stores.filter(store => selectedRows.has(store.id));
               }
-              
+
               // Generate filename with timestamp
               const timestamp = new Date().toISOString().split('T')[0];
               const filename = `danh-sach-cua-hang_${timestamp}`;
-              
+
               exportStoresPackage(storesToExport, filename);
-              
-              const filterDesc = selectedRows.size > 0 
+
+              const filterDesc = selectedRows.size > 0
                 ? `${selectedRows.size} cửa hàng được chọn`
-                : filteredData.length < stores.length 
+                : filteredData.length < stores.length
                   ? `${filteredData.length} cửa hàng (đã lọc)`
                   : `${stores.length} cửa hàng`;
-              
+
               toast.success(
                 `Xuất dữ liệu thành công`,
                 {
@@ -950,17 +1019,17 @@ export default function StoresListPage() {
               <Download size={16} />
               Xuất dữ liệu
             </Button>
-            <Button 
-              variant="secondary" 
-              size="sm" 
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => setPendingUpdatesDialogOpen(true)}
               className={styles.pendingButton}
               title="Danh sách thông tin cơ sở & hồ sơ pháp lý đang chờ phê duyệt"
             >
               <Bell size={16} />
               Chờ duyệt
-              <Badge 
-                variant="destructive" 
+              <Badge
+                variant="destructive"
                 className={styles.pendingBadge}
               >
                 {getTotalPendingCount()}
@@ -1049,10 +1118,10 @@ export default function StoresListPage() {
         </div>
 
         {/* QLTT Standard: Filters Layout - Advanced | Địa bàn | Trạng thái | Tên cơ sở | Bản đồ */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: 'var(--spacing-3)', 
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--spacing-3)',
           padding: 'var(--spacing-4) 0',
           width: '100%'
         }}>
@@ -1082,22 +1151,23 @@ export default function StoresListPage() {
           />
 
           {/* 2. Địa bàn */}
-          <Select value={jurisdictionFilter} onValueChange={setJurisdictionFilter}>
-            <SelectTrigger style={{ width: '200px' }}>
-              <SelectValue placeholder="Chọn địa bàn" />
+          <Select value={jurisdictionFilter} onValueChange={setJurisdictionFilter} disabled={isLoadingProvinces}>
+            <SelectTrigger style={{ width: '200px', border: '1px solid #e5e7eb' }}>
+              <SelectValue placeholder={isLoadingProvinces ? 'Đang tải...' : 'Chọn địa bàn'} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tất cả địa bàn</SelectItem>
-              <SelectItem value="Quận 1">Quận 1</SelectItem>
-              <SelectItem value="Quận 3">Quận 3</SelectItem>
-              <SelectItem value="Quận 5">Quận 5</SelectItem>
-              <SelectItem value="Quận 10">Quận 10</SelectItem>
+              {provinces.map((province) => (
+                <SelectItem key={province.id} value={province.id}>
+                  {province.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
           {/* 3. Trạng thái */}
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger style={{ width: '200px' }}>
+            <SelectTrigger style={{ width: '200px', border: '1px solid #e5e7eb' }}>
               <SelectValue placeholder="Chọn trạng thái" />
             </SelectTrigger>
             <SelectContent>
@@ -1120,8 +1190,8 @@ export default function StoresListPage() {
           </div>
 
           {/* 5. Bản đồ Button (secondary, gọn) */}
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             onClick={handleNavigateToMap}
             disabled={!hasFiltersApplied}
@@ -1142,41 +1212,64 @@ export default function StoresListPage() {
 
       {/* Data Table */}
       <div className={styles.tableContainer}>
-        <Card>
-          <CardContent className={styles.tableCard}>
-            {/* Bulk Action Bar - inline in table */}
-            {selectedRows.size > 0 && (
-              <BulkActionBar
-                selectedCount={selectedRows.size}
-                actions={bulkActions}
-                onClear={() => setSelectedRows(new Set())}
+        {isLoadingStores ? (
+          <Card>
+            <CardContent style={{ padding: '40px', textAlign: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                <RefreshCw size={32} style={{ animation: 'spin 1s linear infinite' }} />
+                <p style={{ fontSize: '16px', color: '#666' }}>Đang tải dữ liệu cơ sở...</p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : storeError ? (
+          <Card>
+            <CardContent style={{ padding: '40px', textAlign: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', color: '#d32f2f' }}>
+                <AlertTriangle size={32} />
+                <p style={{ fontSize: '16px' }}>Lỗi khi tải dữ liệu: {storeError}</p>
+                <Button size="sm" onClick={() => window.location.reload()}>
+                  Tải lại trang
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardContent className={styles.tableCard}>
+              {/* Bulk Action Bar - inline in table */}
+              {selectedRows.size > 0 && (
+                <BulkActionBar
+                  selectedCount={selectedRows.size}
+                  actions={bulkActions}
+                  onClear={() => setSelectedRows(new Set())}
+                />
+              )}
+
+              <DataTable
+                columns={columns}
+                data={paginatedData}
+                selectable={true}
+                selectedRows={selectedRows}
+                onSelectRow={handleSelectRow}
+                onSelectAll={handleSelectAll}
+                getRowId={(store) => store.id}
               />
-            )}
-            
-            <DataTable
-              columns={columns}
-              data={paginatedData}
-              selectable={true}
-              selectedRows={selectedRows}
-              onSelectRow={handleSelectRow}
-              onSelectAll={handleSelectAll}
-              getRowId={(store) => store.id}
-            />
-            
-            {/* QLTT Standard: Footer with Pagination */}
-            <TableFooter
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalRecords={filteredData.length}
-              pageSize={pageSize}
-              onPageChange={setCurrentPage}
-              onPageSizeChange={(size) => {
-                setPageSize(size);
-                setCurrentPage(1);
-              }}
-            />
-          </CardContent>
-        </Card>
+
+              {/* QLTT Standard: Footer with Pagination */}
+              <TableFooter
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalRecords={filteredData.length}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={(size) => {
+                  setPageSize(size);
+                  setCurrentPage(1);
+                }}
+              />
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Dialogs */}
@@ -1217,13 +1310,13 @@ export default function StoresListPage() {
           try {
             // Parse file
             const result = await parseImportFile(file);
-            
+
             // Close import dialog
             setImportDialogOpen(false);
-            
+
             // Navigate to review page with result
-            navigate('/registry/import-review', { 
-              state: { importResult: result } 
+            navigate('/registry/import-review', {
+              state: { importResult: result }
             });
           } catch (error: any) {
             console.error('Import failed:', error);
@@ -1246,74 +1339,145 @@ export default function StoresListPage() {
       <AddStoreDialogTabbed
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
-        onSubmit={(data: NewStoreDataTabbed) => {
-          console.log('📝 AddStoreDialogTabbed submitted data:', data);
-          
-          // Get district name from code
-          const districtName = getDistrictByName(data.jurisdiction)?.name || data.jurisdiction;
-          
-          // Generate new ID (highest existing ID + 1)
-          const maxId = Math.max(...stores.map(s => s.id), 0);
-          const newId = maxId + 1;
-          
-          const newStore: Store = {
-            id: newId,
-            name: data.name,
-            type: data.industryName || 'Chưa xác định',
-            address: data.registeredAddress,
-            province: data.province,
-            provinceCode: data.province,
-            jurisdiction: districtName,
-            jurisdictionCode: data.jurisdiction,
-            ward: data.ward,
-            wardCode: data.ward,
-            managementUnit: data.managementUnit || `Chi cục QLTT ${districtName}`,
-            status: (data.status || 'pending') as FacilityStatus,
-            riskLevel: 'none',
-            lastInspection: 'Chưa kiểm tra',
-            latitude: data.latitude,
-            longitude: data.longitude,
-            gpsCoordinates: data.latitude && data.longitude 
-              ? `${data.latitude.toFixed(6)}, ${data.longitude.toFixed(6)}` 
-              : undefined,
-            // Tab 1: Thông tin HKD
-            taxCode: data.taxCode,
-            industryName: data.industryName,
-            establishedDate: data.establishedDate,
-            operationStatus: data.operationStatus,
-            businessArea: data.businessArea,
-            businessPhone: data.businessPhone,
-            email: data.email,
-            website: data.website,
-            fax: data.fax,
-            notes: data.notes,
-            // Tab 2: Thông tin chủ hộ
-            ownerName: data.ownerName,
-            ownerBirthYear: data.ownerBirthYear,
-            ownerIdNumber: data.ownerIdNumber,
-            ownerPhone: data.ownerPhone,
-            // Tab 3: Địa chỉ
-            registeredAddress: data.registeredAddress,
-            headquarterAddress: data.headquarterAddress,
-            productionAddress: data.productionAddress,
-            // Compatibility fields
-            phone: data.ownerPhone,
-            businessType: data.industryName,
-            isVerified: false,
-          };
-          
-          console.log('✅ New store object:', newStore);
-          
-          // Add to global store registry
-          addStore(newStore);
-          
-          // Thêm vào đầu danh sách (prepend)
-          setStores(prev => [newStore, ...prev]);
-          // Chuyển về trang 1 để thấy dữ liệu mới
-          setCurrentPage(1);
-          toast.success('Thêm cửa hàng thành công', {
-            description: 'Cửa hàng mới đã được thêm và đang chờ phê duyệt',
-          });
+        onSubmit={async (data: NewStoreDataTabbed) => {
+          try {
+            console.log('📝 AddStoreDialogTabbed submitted data:', data);
+
+            // Validate required fields
+            if (!data.business_name) {
+              toast.error('Vui lòng nhập tên cơ sở');
+              return;
+            }
+            if (!data.taxCode) {
+              toast.error('Vui lòng nhập mã số thuế');
+              return;
+            }
+            if (!data.registeredAddress) {
+              toast.error('Vui lòng nhập địa chỉ');
+              return;
+            }
+            if (!data.province) {
+              toast.error('Vui lòng chọn tỉnh/thành phố');
+              return;
+            }
+            if (!data.ward) {
+              toast.error('Vui lòng chọn phường/xã');
+              return;
+            }
+            if (!data.latitude || !data.longitude) {
+              toast.error('Vui lòng chọn vị trí trên bản đồ');
+              return;
+            }
+
+            // Get district name from code - districtName is already provided in data
+            const districtName = data.jurisdiction || 'Quận 1';
+
+            // Prepare API payload matching create_merchant_full RPC parameters
+            // IMPORTANT: Send ALL parameters with null for empty optional fields
+            const apiPayload = {
+              p_business_name: data.business_name,
+              p_owner_name: data.ownerName || '',
+              p_owner_phone: data.ownerPhone || '',
+              p_license_status: 'valid',
+              p_tax_code: data.taxCode || '',
+              p_business_type: data.industryName || 'retail',
+              p_province_id: data.province || null,  // UUID field - use null not ""
+              p_ward_id: data.ward || null,          // UUID field - use null not ""
+              p_address: data.registeredAddress || '',
+              p_latitude: data.latitude || 0,
+              p_longitude: data.longitude || 0,
+              p_status: data.status || 'pending',
+              p_established_date: data.establishedDate || null,
+              p_fax: data.fax || null,
+              p_department_id: '0c081448-e64b-4d8e-a332-b79f743823c7',
+              p_note: data.notes || null,
+              p_business_phone: data.businessPhone || null,
+              p_business_email: data.email || null,
+              p_website: data.website || null,
+              p_store_area: data.area_name || null,  // Will use area_name from API response
+              p_owner_phone_2: data.ownerPhone2 || null,
+              p_owner_birth_year: data.ownerBirthYear ? parseInt(data.ownerBirthYear) : null,
+              p_owner_identity_no: data.ownerIdNumber || null,
+              p_owner_email: null,
+            };
+
+            console.log('📤 Sending API payload:', apiPayload);
+
+            // Call API to create merchant
+            const result = await createMerchant(apiPayload);
+
+            console.log('✅ Merchant created via API:', result);
+
+            // Create local Store object for display
+            const numericId = Math.random() * 1000000 | 0;
+            const newStore: Store = {
+              id: numericId,
+              name: data.business_name,
+              type: data.industryName || 'Chưa xác định',
+              address: data.registeredAddress || '',
+              province: data.province,
+              provinceCode: data.province,
+              jurisdiction: districtName,
+              jurisdictionCode: data.jurisdiction,
+              ward: data.ward,
+              wardCode: data.ward,
+              managementUnit: data.managementUnit || `Chi cục QLTT ${districtName}`,
+              status: (data.status || 'pending') as FacilityStatus,
+              riskLevel: 'none',
+              lastInspection: 'Chưa kiểm tra',
+              latitude: data.latitude,
+              longitude: data.longitude,
+              gpsCoordinates: data.latitude && data.longitude
+                ? `${data.latitude.toFixed(6)}, ${data.longitude.toFixed(6)}`
+                : undefined,
+              // Tab 1: Thông tin HKD
+              taxCode: data.taxCode,
+              industryName: data.industryName,
+              establishedDate: data.establishedDate,
+              operationStatus: data.operationStatus,
+              businessArea: result?.area_name || data.businessArea || null,  // Use area_name from API response
+              businessPhone: data.businessPhone,
+              email: data.email,
+              website: data.website,
+              fax: data.fax,
+              notes: data.notes,
+              // Tab 2: Thông tin chủ hộ
+              ownerName: data.ownerName,
+              ownerBirthYear: data.ownerBirthYear,
+              ownerIdNumber: data.ownerIdNumber,
+              ownerPhone: data.ownerPhone,
+              // Tab 3: Địa chỉ
+              registeredAddress: data.registeredAddress || '',
+              headquarterAddress: data.headquarterAddress,
+              productionAddress: data.productionAddress,
+              // Compatibility fields
+              phone: data.ownerPhone,
+              businessType: data.industryName,
+              isVerified: false,
+            };
+
+            console.log('✅ New store object:', newStore);
+
+            // Add to global store registry
+            addStore(newStore);
+
+            // Thêm vào đầu danh sách (prepend)
+            setStores(prev => [newStore, ...prev]);
+            // Chuyển về trang 1 để thấy dữ liệu mới
+            setCurrentPage(1);
+
+            // Close dialog
+            setAddDialogOpen(false);
+
+            toast.success('Thêm cửa hàng thành công', {
+              description: 'Cửa hàng mới đã được thêm vào hệ thống',
+            });
+          } catch (error: any) {
+            console.error('❌ Error creating merchant:', error);
+            toast.error('Lỗi khi thêm cửa hàng', {
+              description: error.message || 'Vui lòng thử lại',
+            });
+          }
         }}
       />
 

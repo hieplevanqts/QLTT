@@ -1,7 +1,6 @@
 import React, { useState, Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useLayout } from '../contexts/LayoutContext';
-import { SessionTimeoutDialog } from '../app/components/auth/SessionTimeoutDialog';
 import TopUtilityBar from './TopUtilityBar';
 import HorizontalNavBar from './HorizontalNavBar';
 import VerticalSidebar from './VerticalSidebar';
@@ -48,7 +47,6 @@ export default function MainLayout() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SessionTimeoutDialog />
       {layoutMode === 'horizontal' ? (
         // Horizontal Layout
         <>

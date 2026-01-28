@@ -39,10 +39,12 @@ export function ConfirmDialog({
   const [firstConfirm, setFirstConfirm] = React.useState(false);
 
   const handleConfirm = () => {
+    console.log('🔵 ConfirmDialog: handleConfirm called', { requireDoubleConfirm, firstConfirm });
     if (requireDoubleConfirm && !firstConfirm) {
       setFirstConfirm(true);
       return;
     }
+    console.log('🔵 ConfirmDialog: Calling onConfirm');
     onConfirm();
     setFirstConfirm(false);
     onOpenChange(false);

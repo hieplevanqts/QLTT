@@ -33,6 +33,7 @@ interface WardModalProps {
   mode: 'add' | 'edit' | 'view';
   ward: Ward | null;
   provinceId?: string; // Optional pre-selected province ID
+  provinces: Province[];
   onClose: () => void;
   onSave: () => void;
 }
@@ -41,6 +42,7 @@ export const WardModal: React.FC<WardModalProps> = ({
   mode,
   ward,
   provinceId,
+  provinces,
   onClose,
   onSave,
 }) => {
@@ -49,14 +51,7 @@ export const WardModal: React.FC<WardModalProps> = ({
     name: '',
     provinceid: '',
   });
-  const [provinces, setProvinces] = useState<Province[]>([]);
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-
-  // Fetch provinces on mount
-  useEffect(() => {
-    fetchProvinces();
-  }, []);
 
   useEffect(() => {
     if (ward) {
@@ -73,27 +68,6 @@ export const WardModal: React.FC<WardModalProps> = ({
       }));
     }
   }, [ward, provinceId]);
-
-  const fetchProvinces = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('provinces')
-        .select('id:_id, code, name')
-        .order('name');
-
-      if (error) {
-        console.error('❌ Error fetching provinces:', error);
-        toast.error('Không thể tải danh sách tỉnh/thành phố');
-      } else {
-        setProvinces(data || []);
-      }
-    } catch (error) {
-      console.error('❌ Error in fetchProvinces:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

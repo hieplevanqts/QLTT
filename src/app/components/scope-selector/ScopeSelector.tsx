@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { useQLTTScope } from '../../../contexts/QLTTScopeContext';
-import { useAppDispatch, useQLTTScope as useReduxQLTTScope } from '../../hooks';
+import { useAppDispatch } from '../../hooks';
 import { setScope } from '../../../store/slices/qlttScopeSlice';
 import styles from './ScopeSelector.module.css';
 
@@ -17,7 +17,6 @@ export function ScopeSelector() {
   
   // Redux dispatch and selector for Redux store
   const dispatch = useAppDispatch();
-  const reduxScope = useReduxQLTTScope();
   
   const [selectedDivision, setSelectedDivision] = useState<string>('');
   const [selectedTeam, setSelectedTeam] = useState<string>('');
@@ -47,7 +46,7 @@ export function ScopeSelector() {
                 setContextScope(newScope);
                 // 🔥 NEW: Also save to Redux store
                 dispatch(setScope(newScope));
-                console.log('💾 ScopeSelector: Restored from localStorage and saved to Redux:', newScope);
+                
             }
         }
     }
@@ -77,27 +76,19 @@ export function ScopeSelector() {
     setContextScope(newScope);
     // 🔥 NEW: Save to Redux store
     dispatch(setScope(newScope));
-    console.log('💾 ScopeSelector: Division changed and saved to Redux:', newScope);
+    
   };
 
   const handleTeamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation();
     const rawValue = e.target.value;
-    console.log('🔄 ScopeSelector: handleTeamChange - e.target.value:', rawValue);
-    console.log('🔄 ScopeSelector: handleTeamChange - typeof e.target.value:', typeof rawValue);
-    console.log('🔄 ScopeSelector: handleTeamChange - e.target.value === "":', rawValue === '');
     
     // 🔥 FIX: Convert empty string to null, but keep valid teamId strings
     const teamId = rawValue && rawValue.trim() !== '' ? rawValue : null;
-    console.log('🔄 ScopeSelector: handleTeamChange - teamId after processing:', teamId);
     
     setSelectedTeam(teamId || '');
     setSelectedArea('');
 
-    // 🔥 FIX: Use scope.divisionId from context instead of selectedDivision from local state
-    // to ensure we have the latest value
-    console.log('🔄 ScopeSelector: Current scope.divisionId:', scope.divisionId);
-    
     const newScope = {
       divisionId: scope.divisionId || null,  // 🔥 FIX: Use scope.divisionId instead of selectedDivision
       teamId,
@@ -106,11 +97,10 @@ export function ScopeSelector() {
       ward: null,
     };
     
-    console.log('🔄 ScopeSelector: setScope called with:', newScope);
     setContextScope(newScope);
     // 🔥 NEW: Save to Redux store
     dispatch(setScope(newScope));
-    console.log('💾 ScopeSelector: Team changed and saved to Redux:', newScope);
+    
   };
 
   const handleAreaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -131,20 +121,13 @@ export function ScopeSelector() {
     setContextScope(newScope);
     // 🔥 NEW: Save to Redux store
     dispatch(setScope(newScope));
-    console.log('💾 ScopeSelector: Area changed and saved to Redux:', newScope);
+   
   };
 
   const isDivisionDisabled = isLoading;
   const isTeamDisabled = isLoading || !selectedDivision;
   const isAreaDisabled = isLoading || !selectedTeam;
   
-  // 🔥 DEBUG: Log availableTeams
-  useEffect(() => {
-    console.log('🔄 ScopeSelector: availableTeams:', availableTeams.length, availableTeams.map(t => ({ id: t.id, name: t.name })));
-    console.log('🔄 ScopeSelector: scope.divisionId:', scope.divisionId);
-    console.log('🔄 ScopeSelector: selectedDivision:', selectedDivision);
-    console.log('🔄 ScopeSelector: selectedTeam:', selectedTeam);
-  }, [availableTeams, scope.divisionId, selectedDivision, selectedTeam]);
 
   return (
     <div 
@@ -164,8 +147,8 @@ export function ScopeSelector() {
           onMouseDown={(e) => e.stopPropagation()}
         >
           <option value="">Tất cả chi cục</option>
-          {availableDivisions.map((division) => (
-            <option key={division.id} value={division.id}>
+          {availableDivisions.map((division, index) => (
+            <option key={`${division.id || 'div'}-${index}`} value={division.id}>
               {division.name}
             </option>
           ))}
@@ -180,8 +163,8 @@ export function ScopeSelector() {
           onMouseDown={(e) => e.stopPropagation()}
         >
           <option value="">Tất cả đội</option>
-          {availableTeams.map((team) => (
-            <option key={team.id} value={team.id}>
+          {availableTeams.map((team, index) => (
+            <option key={`${team.id || 'team'}-${index}`} value={team.id}>
               {team.name}
             </option>
           ))}
@@ -196,8 +179,8 @@ export function ScopeSelector() {
           onMouseDown={(e) => e.stopPropagation()}
         >
           <option value="">Tất cả địa bàn</option>
-          {availableAreas.map((area) => (
-            <option key={area.id} value={area.id}>
+          {availableAreas.map((area, index) => (
+            <option key={`${area.id || 'area'}-${index}`} value={area.id}>
               {area.name}
             </option>
           ))}

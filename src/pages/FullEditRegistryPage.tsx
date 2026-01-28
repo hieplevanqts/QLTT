@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, X, AlertCircle, Shield, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
@@ -16,8 +16,9 @@ import {
   SelectValue,
 } from '../app/components/ui/select';
 import { Badge } from '../app/components/ui/badge';
-import { Store, getStoreById, updateStore } from '../data/mockStores';
-import { provinces, getDistrictsByProvince, getWardsByDistrict } from '../data/vietnamLocations';
+import { Store, updateStore } from '../data/mockStores';
+import { fetchProvinces, fetchAllWards, type ProvinceApiData, type WardApiData } from '../utils/api/locationsApi';
+import { fetchStoreById, updateMerchant } from '../utils/api/storesApi';
 import { DiffPreviewSection, FieldChange } from '../ui-kit/DiffPreviewSection';
 import { ChangeReasonDialog } from '../ui-kit/ChangeReasonDialog';
 import { SensitiveFieldWarning } from '../ui-kit/SensitiveFieldWarning';
@@ -59,11 +60,14 @@ const INDUSTRY_CATEGORIES = [
   { value: 'other', label: 'Khác' },
 ];
 
-// Operation status options
+// Operation status options - match FacilityStatus types
 const OPERATION_STATUS_OPTIONS = [
-  { value: 'active', label: 'Hoạt động' },
-  { value: 'suspended', label: 'Tạm ngừng' },
-  { value: 'inactive', label: 'Không hoạt động' },
+  { value: 'active', label: 'Đang hoạt động' },
+  { value: 'pending', label: 'Chờ xác minh' },
+  { value: 'underInspection', label: 'Đang xử lý kiểm tra' },
+  { value: 'suspended', label: 'Tạm ngưng hoạt động' },
+  { value: 'rejected', label: 'Từ chối phê duyệt' },
+  { value: 'closed', label: 'Ngừng hoạt động' },
 ];
 
 const FIELD_LABELS: Record<string, string> = {
@@ -103,13 +107,23 @@ const FIELD_LABELS: Record<string, string> = {
 
 type EditStep = 'form' | 'diff-preview';
 
+// Helper function to map API status to form operationStatus
+function mapApiStatusToForm(apiStatus: any): string {
+  if (typeof apiStatus === 'string') {
+    // Map API status values directly - support all FacilityStatus types
+    const validStatuses = ['active', 'pending', 'underInspection', 'suspended', 'rejected', 'closed'];
+    const normalized = apiStatus.toLowerCase();
+    return validStatuses.includes(normalized) ? normalized : 'active';
+  }
+  return 'active';
+}
+
 export default function FullEditRegistryPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [step, setStep] = useState<EditStep>('form');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasPermission, setHasPermission] = useState(true);
   const [originalStore, setOriginalStore] = useState<Store | null>(null);
   const [showReasonDialog, setShowReasonDialog] = useState(false);
 
@@ -118,39 +132,141 @@ export default function FullEditRegistryPage() {
   const [tagInput, setTagInput] = useState('');
 
   // Location cascading
-  const [selectedProvince, setSelectedProvince] = useState('');
-  const [selectedDistrict, setSelectedDistrict] = useState('');
-  const [districts, setDistricts] = useState<any[]>([]);
+  const [apiProvinces, setApiProvinces] = useState<ProvinceApiData[]>([]);
+  const [allWards, setAllWards] = useState<WardApiData[]>([]);
+  const [loadingProvinces, setLoadingProvinces] = useState(false);
+  const [selectedProvince, setSelectedProvince] = useState<string>(''); // Store province_id (_id), not name
+  const [selectedProvinceId, setSelectedProvinceId] = useState<string>(''); // Track UUID for API
+  const [selectedWardId, setSelectedWardId] = useState<string>(''); // Track UUID for API
   const [wards, setWards] = useState<any[]>([]);
 
-  // Load store data
+  // Load store data from API
   useEffect(() => {
     const loadStore = async () => {
       setIsLoading(true);
       try {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        // Try to fetch from API first
+        if (!id) {
+          throw new Error('Store ID is required');
+        }
 
-        const store = getStoreById(Number(id));
+        console.log('📥 [loadStore] Starting to load store:', {
+          url_id: id,
+          timestamp: new Date().toISOString(),
+        });
+
+        const storeFromApi = await fetchStoreById(id);
+        if (storeFromApi) {
+          console.log('✅ [loadStore] Loaded store from API:', {
+            numeric_id: storeFromApi.id,
+            merchant_id: storeFromApi.merchantId,
+            store_name: storeFromApi.name,
+            timestamp: new Date().toISOString(),
+          });
+
+          // Initialize form with API data
+          // Map API fields to form fields
+          const initialFormData: Partial<Store> = {
+            ...storeFromApi,
+            // Map business_type to industryName
+            industryName: storeFromApi.type || storeFromApi.businessType || '',
+            // Map status to operationStatus
+            operationStatus: mapApiStatusToForm(storeFromApi.status),
+          };
+
+          console.log('📋 Initial form data:', initialFormData);
+          console.log('🏭 Industry:', initialFormData.industryName);
+          console.log('🔧 Operation Status:', initialFormData.operationStatus);
+
+          setOriginalStore(storeFromApi);
+          setFormData(initialFormData);
+
+          // Initialize province select with province_id (matching provinces table _id)
+          if (storeFromApi.province) {
+            // Need to find the province _id from API data
+            const matchedProvince = apiProvinces.find(p => p.name === storeFromApi.province);
+            if (matchedProvince) {
+              console.log('📍 Setting province to:', storeFromApi.province, 'with ID:', matchedProvince._id);
+              setSelectedProvince(matchedProvince._id);
+              setSelectedProvinceId(matchedProvince._id);
+            }
+          }
+
+          // Initialize ward UUID if available
+          if (storeFromApi.ward && allWards.length > 0) {
+            const matchedWard = allWards.find(w => w.name === storeFromApi.ward);
+            if (matchedWard) {
+              console.log('🏘️ Setting ward to:', storeFromApi.ward, 'with ID:', matchedWard._id);
+              setSelectedWardId(matchedWard._id);
+            }
+          }
+
+          return;
+        }
+
+        console.warn('⚠️ fetchStoreById returned null, trying fallback...');
+
+        // Fallback: Load stores from localStorage
+        let stores: Store[] = [];
+        try {
+          const savedStores = localStorage.getItem('mappa_stores');
+          if (savedStores) {
+            stores = JSON.parse(savedStores);
+            console.log('📦 Loaded from localStorage:', stores.length, 'stores');
+          }
+        } catch (error) {
+          console.error('Error loading stores from localStorage:', error);
+        }
+
+        // Fallback to mockStores if localStorage is empty
+        if (stores.length === 0) {
+          const { mockStores: mock } = await import('../data/mockStores');
+          stores = mock;
+          console.log('🎭 Loaded mockStores:', stores.length, 'stores');
+        }
+
+        // Find store by id
+        const store = stores.find((s: Store) => s.id === Number(id));
         if (!store) {
           toast.error('Không tìm thấy cơ sở');
           navigate('/registry/stores');
           return;
         }
 
+        console.log('✅ Found store from fallback:', store);
+
+        // Map mockStore data to form data
+        const initialFormData: Partial<Store> = {
+          ...store,
+          // Ensure industryName is set
+          industryName: store.industryName || store.type || store.businessType || '',
+          // Ensure operationStatus is set
+          operationStatus: store.operationStatus || mapApiStatusToForm(store.status),
+        };
+
+        console.log('📋 Form data from fallback:', initialFormData);
+        console.log('🏭 Industry:', initialFormData.industryName);
+        console.log('🔧 Operation Status:', initialFormData.operationStatus);
+
         setOriginalStore(store);
-        setFormData(store);
+        setFormData(initialFormData);
 
-        // Initialize location selects
-        if (store.provinceCode) {
-          setSelectedProvince(store.provinceCode);
-          const districtList = getDistrictsByProvince(store.provinceCode);
-          setDistricts(districtList);
+        // Initialize location selects with province_id (matching provinces table _id)
+        if (store.province && apiProvinces.length > 0) {
+          const matchedProvince = apiProvinces.find(p => p.name === store.province);
+          if (matchedProvince) {
+            console.log('📍 Setting province to:', store.province, 'with ID:', matchedProvince._id);
+            setSelectedProvince(matchedProvince._id);
+            setSelectedProvinceId(matchedProvince._id);
+          }
+        }
 
-          if (store.jurisdictionCode) {
-            setSelectedDistrict(store.jurisdictionCode);
-            const wardList = getWardsByDistrict(store.jurisdictionCode);
-            setWards(wardList);
+        // Initialize ward UUID if available
+        if (store.ward && allWards.length > 0) {
+          const matchedWard = allWards.find(w => w.name === store.ward);
+          if (matchedWard) {
+            console.log('🏘️ Setting ward to:', store.ward, 'with ID:', matchedWard._id);
+            setSelectedWardId(matchedWard._id);
           }
         }
       } catch (error) {
@@ -165,6 +281,85 @@ export default function FullEditRegistryPage() {
       loadStore();
     }
   }, [id, navigate]);
+
+  // Fetch provinces and wards on mount
+  useEffect(() => {
+    loadLocationData();
+  }, []);
+
+  // After location data and form data are loaded, filter wards for the province
+  useEffect(() => {
+    if (apiProvinces.length > 0 && allWards.length > 0 && selectedProvince) {
+      handleProvinceChange(selectedProvince);
+    }
+  }, [apiProvinces, allWards, selectedProvince]);
+
+  const loadLocationData = async () => {
+    try {
+      setLoadingProvinces(true);
+      const prov = await fetchProvinces();
+      setApiProvinces(prov);
+    } catch (error) {
+      console.error('Error fetching provinces:', error);
+      toast.error('Không thể tải danh sách tỉnh/thành phố');
+    } finally {
+      setLoadingProvinces(false);
+    }
+
+    try {
+      const w = await fetchAllWards();
+      setAllWards(w);
+    } catch (error) {
+      console.error('Error fetching wards:', error);
+      toast.error('Không thể tải danh sách phường/xã');
+    }
+  };
+
+  const handleWardChange = (wardName: string) => {
+    // Find ward data to get _id for API
+    const wardData = wards.find(w => w.name === wardName);
+    if (wardData) {
+      setSelectedWardId(wardData._id); // Store UUID for API
+      console.log('🏘️ Selected ward:', wardName, 'ID:', wardData._id);
+    }
+    setFormData(prev => ({ ...prev, ward: wardName }));
+  };
+
+  const handleProvinceChange = (provinceId: string) => {
+    // provinceId is the province._id from provinces table
+    setSelectedProvince(provinceId);
+    setSelectedProvinceId(provinceId); // Store UUID for API
+
+    // Find province data to get name for formData
+    const provinceData = apiProvinces.find(p => p._id === provinceId);
+    if (!provinceData) {
+      console.warn('⚠️ Province not found:', provinceId);
+      setWards([]);
+      setFormData(prev => ({
+        ...prev,
+        province: '',
+        ward: '',
+      }));
+      setSelectedWardId(''); // Clear ward UUID
+      return;
+    }
+
+    // Store province name in formData, but use _id for ward filtering
+    setFormData(prev => ({
+      ...prev,
+      province: provinceData.name,
+      ward: '',
+    }));
+    setSelectedWardId(''); // Clear ward UUID when province changes
+
+    console.log('🔍 Filtering wards for province:', provinceData.name, 'ID:', provinceData._id);
+    console.log('   Total wards in allWards:', allWards.length);
+    console.log('   Sample wards province_id:', allWards.slice(0, 5).map(w => ({ id: w._id, name: w.name, province_id: w.province_id })));
+
+    const filteredWards = allWards.filter(w => w.province_id === provinceData._id);
+    console.log('✅ Found wards:', filteredWards.length, 'wards for this province');
+    setWards(filteredWards);
+  };
 
   // Detect changes
   const changes = useMemo((): FieldChange[] => {
@@ -208,41 +403,6 @@ export default function FullEditRegistryPage() {
   const sensitiveFieldsChanged = changes.filter((c) => c.isSensitive).map((c) => c.label);
 
   // Handlers
-  const handleProvinceChange = (provinceCode: string) => {
-    setSelectedProvince(provinceCode);
-    const province = provinces.find((p) => p.code === provinceCode);
-    
-    // Get all districts for this province
-    const districtList = getDistrictsByProvince(provinceCode);
-    setDistricts(districtList);
-    
-    // Get all wards from all districts in this province
-    const allWards: any[] = [];
-    districtList.forEach((district) => {
-      const wardList = getWardsByDistrict(district.code);
-      allWards.push(...wardList);
-    });
-    setWards(allWards);
-    
-    setFormData({
-      ...formData,
-      provinceCode,
-      province: province?.name || '',
-      wardCode: '',
-      ward: '',
-    });
-  };
-
-  const handleWardChange = (wardCode: string) => {
-    const ward = wards.find((w) => w.code === wardCode);
-
-    setFormData({
-      ...formData,
-      wardCode,
-      ward: ward?.name || '',
-    });
-  };
-
   const handleAddTag = () => {
     const tag = tagInput.trim();
     if (tag && !(formData.tags || []).includes(tag)) {
@@ -266,8 +426,8 @@ export default function FullEditRegistryPage() {
       if (
         confirm(
           'Bạn có chắc muốn hủy? Tất cả thay đổi chưa lưu sẽ bị mất.\n\nSố thay đổi: ' +
-            changes.length +
-            ' trường'
+          changes.length +
+          ' trường'
         )
       ) {
         navigate(`/registry/stores/${id}`);
@@ -294,6 +454,16 @@ export default function FullEditRegistryPage() {
     setIsSubmitting(true);
 
     try {
+      // Log submission start
+      console.log('🚀 [handleSubmitWithReason] Store edit submission started:', {
+        numeric_id: originalStore?.id,
+        merchant_id: originalStore?.merchantId,
+        store_name: originalStore?.name,
+        changed_fields: changes.length,
+        has_sensitive_changes: hasSensitiveChanges,
+        timestamp: new Date().toISOString(),
+      });
+
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
@@ -308,7 +478,7 @@ export default function FullEditRegistryPage() {
         hasSensitiveChanges,
       };
 
-      console.log('📝 Audit Log:', auditLog);
+      console.log('📝 [handleSubmitWithReason] Audit Log:', auditLog);
 
       if (hasSensitiveChanges) {
         // Create approval request
@@ -335,10 +505,57 @@ export default function FullEditRegistryPage() {
           duration: 5000,
         });
       } else {
-        // No sensitive changes - update immediately
-        updateStore(Number(id), formData);
+        // No sensitive changes - update immediately via API
+        if (originalStore?.merchantId) {
+          // Map form data to API payload - using UUIDs for province/ward
+          const updatePayload = {
+            p_merchant_id: originalStore.merchantId,
+            p_business_name: formData.name,
+            p_owner_name: formData.ownerName,
+            p_owner_phone: formData.phone,
+            p_business_phone: formData.businessPhone,
+            p_business_email: formData.email,
+            p_website: formData.website,
+            p_address: formData.address,
+            p_tax_code: formData.taxCode,
+            p_business_type: formData.type,
+            p_province_id: selectedProvinceId, // Use UUID, not name
+            p_ward_id: selectedWardId, // Use UUID, not name
+            p_latitude: formData.latitude,
+            p_longitude: formData.longitude,
+            p_status: formData.status,
+            p_established_date: formData.establishedDate,
+            p_fax: formData.fax,
+            p_note: formData.notes,
+            p_license_status: 'valid',
+            p_store_area: formData.businessArea ? parseFloat(formData.businessArea.toString()) : undefined,
+            p_owner_phone_2: formData.ownerPhone2,
+            p_owner_birth_year: formData.ownerBirthYear,
+            p_owner_identity_no: formData.ownerIdNumber,
+            p_owner_email: formData.ownerEmail,
+          };
 
-        console.log('✅ Store Updated Immediately:', formData);
+          console.log('📤 [handleSubmitWithReason] Calling updateMerchant with payload:', {
+            merchant_id: originalStore.merchantId,
+            p_business_name: updatePayload.p_business_name,
+            p_province_id: updatePayload.p_province_id,
+            p_ward_id: updatePayload.p_ward_id,
+            timestamp: new Date().toISOString(),
+          });
+
+          await updateMerchant(originalStore.merchantId, updatePayload);
+
+          console.log('✅ [handleSubmitWithReason] Store Updated via API:', {
+            merchant_id: originalStore.merchantId,
+            store_name: originalStore.name,
+            timestamp: new Date().toISOString(),
+          });
+        } else {
+          // Fallback to mock update if no merchantId
+          console.warn('⚠️ [handleSubmitWithReason] No merchantId, falling back to mock update');
+          updateStore(Number(id), formData);
+          console.log('✅ [handleSubmitWithReason] Store Updated via Mock:', formData);
+        }
 
         toast.success('Cập nhật cơ sở thành công', {
           description: 'Thông tin cơ sở đã được cập nhật.',
@@ -368,34 +585,6 @@ export default function FullEditRegistryPage() {
     );
   }
 
-  // No permission
-  if (!hasPermission) {
-    return (
-      <div className={styles.pageContainer}>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Card className="max-w-md">
-            <CardContent className="pt-6">
-              <div className="text-center space-y-4">
-                <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-full bg-destructive/10">
-                  <AlertCircle className="h-6 w-6 text-destructive" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold">Không có quyền truy cập</h3>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Bạn không có quyền chỉnh sửa đầy đủ thông tin cơ sở này.
-                  </p>
-                </div>
-                <Button onClick={() => navigate(`/registry/stores/${id}`)}>
-                  Quay lại chi tiết
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
   // Not found
   if (!originalStore) {
     return (
@@ -414,16 +603,15 @@ export default function FullEditRegistryPage() {
   }
 
   return (
-    <div className={styles.pageContainer}>
+    <div className={`${styles.pageContainer} pb-2`}>
       <PageHeader
         breadcrumbs={[
           { label: 'Trang chủ', href: '/' },
-          { label: 'Cơ sở & Địa bàn', href: '/registry/stores' },
+          { label: 'Cơ sở quản lý', href: '/registry/stores' },
           { label: originalStore.name, href: `/registry/stores/${id}` },
           { label: 'Chỉnh sửa đầy đủ' },
         ]}
         title="Chỉnh sửa đầy đủ"
-        subtitle={originalStore.name}
         actions={
           <Button variant="outline" onClick={handleCancel}>
             <ArrowLeft size={16} />
@@ -570,8 +758,8 @@ export default function FullEditRegistryPage() {
                         setFormData({ ...formData, industryName: value })
                       }
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn ngành kinh doanh" />
+                      <SelectTrigger className='placeholder:text-gray-500 border-gray-300'>
+                        <SelectValue placeholder={INDUSTRY_CATEGORIES.find(c => c.value === formData.industryName)?.label || 'Chọn ngành kinh doanh'} />
                       </SelectTrigger>
                       <SelectContent>
                         {INDUSTRY_CATEGORIES.map((category) => (
@@ -600,13 +788,13 @@ export default function FullEditRegistryPage() {
                   <div className="space-y-2">
                     <Label htmlFor="operationStatus">Trạng thái hoạt động</Label>
                     <Select
-                      value={formData.operationStatus || ''}
+                      value={formData.status || ''}
                       onValueChange={(value) =>
-                        setFormData({ ...formData, operationStatus: value })
+                        setFormData({ ...formData, status: value as any })
                       }
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn trạng thái hoạt động" />
+                      <SelectTrigger className='placeholder:text-gray-500 border-gray-300'>
+                        <SelectValue placeholder={OPERATION_STATUS_OPTIONS.find(s => s.value === formData.status)?.label || 'Chọn trạng thái'} />
                       </SelectTrigger>
                       <SelectContent>
                         {OPERATION_STATUS_OPTIONS.map((option) => (
@@ -654,12 +842,12 @@ export default function FullEditRegistryPage() {
                   <div className="space-y-2">
                     <Label htmlFor="province">Tỉnh/Thành phố</Label>
                     <Select value={selectedProvince} onValueChange={handleProvinceChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn tỉnh/thành phố" />
+                      <SelectTrigger className='placeholder:text-gray-500 border-gray-300'>
+                        <SelectValue placeholder={apiProvinces.find(p => p._id === selectedProvince)?.name || (loadingProvinces ? "Đang tải..." : "Chọn tỉnh/thành phố")} />
                       </SelectTrigger>
                       <SelectContent>
-                        {provinces.map((province) => (
-                          <SelectItem key={province.code} value={province.code}>
+                        {apiProvinces.map((province) => (
+                          <SelectItem key={province._id} value={province._id}>
                             {province.name}
                           </SelectItem>
                         ))}
@@ -670,16 +858,16 @@ export default function FullEditRegistryPage() {
                   <div className="space-y-2">
                     <Label htmlFor="ward">Phường/Xã</Label>
                     <Select
-                      value={formData.wardCode || ''}
+                      value={formData.ward || ''}
                       onValueChange={handleWardChange}
                       disabled={!selectedProvince}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder={selectedProvince ? "Chọn phường/xã" : "Chọn tỉnh/thành trước"} />
+                      <SelectTrigger className='placeholder:text-gray-500 border-gray-300'>
+                        <SelectValue placeholder={formData.ward || (selectedProvince ? "Chọn phường/xã" : "Chọn tỉnh/thành trước")} />
                       </SelectTrigger>
                       <SelectContent>
                         {wards.map((ward) => (
-                          <SelectItem key={ward.code} value={ward.code}>
+                          <SelectItem key={ward._id} value={ward.name}>
                             {ward.name}
                           </SelectItem>
                         ))}

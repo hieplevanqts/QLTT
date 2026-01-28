@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
@@ -10,17 +10,13 @@ import {
   User,
   Calendar,
   FileText,
-  Map,
-  ListTodo,
   ExternalLink,
-  Shield,
   Target,
   AlertTriangle,
   Eye,
   Camera,
   TrendingUp,
   CheckCircle2,
-  XCircle,
   Edit,
   Trash2,
   Activity
@@ -29,12 +25,12 @@ import { Button } from '../app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../app/components/ui/card';
 import { Badge } from '../app/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../app/components/ui/tabs';
-import FacilityStatusBadge from '../ui-kit/FacilityStatusBadge';
-import { mockStores } from '../data/mockStores';
+import { mockStores, Store } from '../data/mockStores';
 import { getProvinceByCode, getDistrictByName, getWardByCode } from '../data/vietnamLocations';
+import { fetchProvinceById, fetchWardById } from '../utils/api/locationsApi';
+import { fetchStoreById, fetchMerchantLicenses } from '../utils/api/storesApi';
 import { generateLegalDocuments, LegalDocumentData } from '../data/mockLegalDocuments';
-import { LegalDocumentItem } from '../ui-kit/LegalDocumentItem';
-import { LegalDocumentDialog } from '../ui-kit/LegalDocumentDialog';
+import { LegalDocumentItem, ApprovalStatus } from '../ui-kit/LegalDocumentItem';
 import { DocumentUploadDialog } from '../ui-kit/DocumentUploadDialog';
 import { IDCardUploadDialog } from '../ui-kit/IDCardUploadDialog';
 import { DocumentViewDialog } from '../ui-kit/DocumentViewDialog';
@@ -70,6 +66,15 @@ export default function StoreDetailPage() {
   const [approveDialog, setApproveDialog] = useState(false);
   const [rejectDialog, setRejectDialog] = useState(false);
 
+  // Store data from API
+  const [store, setStore] = useState<Store | null>(null);
+  const [isLoadingStore, setIsLoadingStore] = useState(true);
+
+  // Location data from API
+  const [provinceName, setProvinceName] = useState<string | null>(null);
+  const [wardName, setWardName] = useState<string | null>(null);
+  const [loadingLocation, setLoadingLocation] = useState(false);
+
   // Read tab from query param on mount and when searchParams change
   useEffect(() => {
     const tabParam = searchParams.get('tab');
@@ -85,19 +90,19 @@ export default function StoreDetailPage() {
   // Auto-scroll to section after tab is active
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    
+
     if (tabParam && activeTab === tabParam) {
       // Wait for DOM to render the tab content
       const timeoutId = setTimeout(() => {
         const sectionId = `${tabParam}-section`;
         const section = document.getElementById(sectionId);
-        
+
         if (section) {
           // Calculate offset for sticky header (if any)
           const headerOffset = 80; // Adjust based on your header height
           const elementPosition = section.getBoundingClientRect().top;
           const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-          
+
           window.scrollTo({
             top: offsetPosition,
             behavior: 'smooth'
@@ -109,27 +114,225 @@ export default function StoreDetailPage() {
     }
   }, [activeTab, searchParams]);
 
-  // Load stores from localStorage
-  const stores = (() => {
-    try {
-      const savedStores = localStorage.getItem('mappa_stores');
-      if (savedStores) {
-        return JSON.parse(savedStores);
+  // Fetch store data from API when ID changes
+  useEffect(() => {
+    const loadStoreData = async () => {
+      if (!id) return;
+
+      setIsLoadingStore(true);
+      try {
+        console.log('📥 [StoreDetailPage] Loading store data for ID:', id);
+
+        // Try to fetch from API first
+        const storeFromApi = await fetchStoreById(id);
+
+        if (storeFromApi) {
+          console.log('✅ [StoreDetailPage] Loaded store from API:', storeFromApi.name);
+          setStore(storeFromApi);
+        } else {
+          // Fallback to localStorage
+          console.log('⚠️ [StoreDetailPage] API returned null, trying localStorage fallback');
+          try {
+            const savedStores = localStorage.getItem('mappa_stores');
+            const stores = savedStores ? JSON.parse(savedStores) : mockStores;
+            const storeFromStorage = stores.find((s: any) => s.id === Number(id));
+
+            if (storeFromStorage) {
+              console.log('✅ [StoreDetailPage] Loaded store from localStorage:', storeFromStorage.name);
+              setStore(storeFromStorage);
+            } else {
+              console.error('❌ [StoreDetailPage] Store not found in localStorage');
+              setStore(null);
+            }
+          } catch (error) {
+            console.error('❌ [StoreDetailPage] Error loading from localStorage:', error);
+            setStore(null);
+          }
+        }
+      } catch (error) {
+        console.error('❌ [StoreDetailPage] Error loading store:', error);
+        toast.error('Không thể tải dữ liệu cơ sở');
+        setStore(null);
+      } finally {
+        setIsLoadingStore(false);
       }
-    } catch (error) {
-      console.error('Error loading stores from localStorage:', error);
-    }
-    return mockStores;
-  })();
+    };
 
-  // Find store by id
-  const store = stores.find((s: any) => s.id === Number(id));
+    loadStoreData();
+  }, [id]); // Re-fetch when ID changes
 
+  // Fetch province and ward names from API (by ID)
+  useEffect(() => {
+    if (!store) return;
+
+    const loadLocationNames = async () => {
+      setLoadingLocation(true);
+      try {
+        // Fetch province by ID if store has province_id or province (UUID)
+        if (store.province && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(store.province)) {
+          const prov = await fetchProvinceById(store.province);
+          if (prov) {
+            setProvinceName(prov.name);
+          }
+        }
+
+        // Fetch ward by ID if store has ward_id or ward (UUID)
+        if (store.ward && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(store.ward)) {
+          const w = await fetchWardById(store.ward);
+          if (w) {
+            setWardName(w.name);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading location names:', error);
+      } finally {
+        setLoadingLocation(false);
+      }
+    };
+
+    loadLocationNames();
+  }, [store?.province, store?.ward]);
+
+  // Fetch merchant licenses from API
+  useEffect(() => {
+    if (!store?.merchantId) return;
+
+    const loadMerchantLicenses = async () => {
+      try {
+        console.log('📄 [StoreDetailPage] Fetching licenses for merchant:', store.merchantId);
+
+        // Required types config
+        const requiredTypes = [
+          { id: 'cccd', title: 'CCCD / CMND chủ hộ', apiName: 'CCCD / CMND chủ hộ' },
+          { id: 'business-license', title: 'Giấy phép kinh doanh', apiName: 'Giấy phép kinh doanh' },
+          { id: 'food-safety', title: 'Giấy chứng nhận ATTP', apiName: 'Giấy chứng nhận ATTP' },
+          { id: 'lease-contract', title: 'Hợp đồng thuê mặt bằng', apiName: 'Hợp đồng thuê mặt bằng' },
+          { id: 'specialized-license', title: 'Giấy phép chuyên ngành', apiName: 'Giấy phép chuyên ngành' },
+          { id: 'fire-safety', title: 'Giấy phép PCCC', apiName: 'Giấy phép PCCC' },
+        ];
+
+        const licensesFromApi = await fetchMerchantLicenses(store.merchantId || '');
+
+        // Map for lookup
+        const typeMap: Record<string, string> = {
+          'CCCD / CMND chủ hộ': 'cccd',
+          'Giấy phép kinh doanh': 'business-license',
+          'Giấy chứng nhận ATTP': 'food-safety',
+          'Hợp đồng thuê mặt bằng': 'lease-contract',
+          'Giấy phép chuyên ngành': 'specialized-license',
+          'Giấy phép PCCC': 'fire-safety',
+        };
+
+        const approvalStatusMap: Record<number, ApprovalStatus> = {
+          0: 'pending',
+          1: 'approved',
+          2: 'rejected',
+        };
+
+        const approvalStatusTextMap: Record<number, string> = {
+          0: 'Chờ duyệt',
+          1: 'Đã phê duyệt',
+          2: 'Từ chối',
+        };
+
+        // Combine logic: All API licenses + Placeholders for missing required types
+        const processedApiNames = new Set<string>();
+        const mappedDocs: LegalDocumentData[] = [];
+
+        // 1. Process API licenses
+        if (licensesFromApi && licensesFromApi.length > 0) {
+          licensesFromApi.forEach((license: any) => {
+            processedApiNames.add(license.license_type);
+
+            const docType = typeMap[license.license_type] || 'other';
+
+            // Calculate validity and status text
+            const isExpiring = license.expiry_date ?
+              (new Date(license.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24) <= 45
+              : false;
+
+            const status = license.validity_status === 0 ? 'missing' : (isExpiring ? 'expiring' : 'valid');
+            const statusText = license.validity_status === 0 ? 'Hết hạn/Không hợp lệ' :
+              (isExpiring ? `Sắp hết hạn (${Math.ceil((new Date(license.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} ngày)` : 'Còn hiệu lực');
+
+            mappedDocs.push({
+              id: license._id,
+              type: docType,
+              title: license.license_type,
+              status: status as any,
+              statusText,
+              approvalStatus: approvalStatusMap[license.approval_status] || 'pending',
+              approvalStatusText: approvalStatusTextMap[license.approval_status] || 'Chờ duyệt',
+              documentNumber: license.license_number,
+              issueDate: license.issued_date ? new Date(license.issued_date).toLocaleDateString('vi-VN') : '',
+              expiryDate: license.expiry_date ? new Date(license.expiry_date).toLocaleDateString('vi-VN') : '',
+              issuingAuthority: license.issued_by_name || license.issued_by || '',
+              notes: license.notes || '',
+              fileUrl: license.file_url || undefined,
+              fileName: license.file_url ? license.file_url.split('/').pop()?.split('?')[0] || 'file' : undefined,
+              backFileUrl: license.file_url_2 || undefined,
+              backFileName: license.file_url_2 ? license.file_url_2.split('/').pop()?.split('?')[0] || 'file_back' : undefined,
+              uploadDate: license.created_at ? new Date(license.created_at).toLocaleString('vi-VN') : '',
+              uploadedBy: license.approved_by || 'Hệ thống',
+            });
+          });
+          console.log('✅ [StoreDetailPage] Loaded licenses from API:', licensesFromApi.length);
+        }
+
+        // 2. Add placeholders for missing required types
+        requiredTypes.forEach(rt => {
+          if (!processedApiNames.has(rt.apiName)) {
+            mappedDocs.push({
+              id: `missing-${rt.id}-${store.id || 'unknown'}`,
+              type: rt.id,
+              title: rt.title,
+              status: 'missing',
+              statusText: 'Chưa có thông tin',
+            });
+          }
+        });
+
+        // 3. Sort by priority (CCCD first, then Business License, then others)
+        const sortOrder = ['cccd', 'business-license', 'food-safety', 'lease-contract', 'specialized-license', 'fire-safety'];
+        mappedDocs.sort((a, b) => {
+          const indexA = sortOrder.indexOf(a.type);
+          const indexB = sortOrder.indexOf(b.type);
+          if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+          if (indexA !== -1) return -1;
+          if (indexB !== -1) return 1;
+          return a.title.localeCompare(b.title);
+        });
+
+        setLegalDocuments(mappedDocs);
+      } catch (error) {
+        console.error('❌ [StoreDetailPage] Error loading licenses:', error);
+        setLegalDocuments(generateLegalDocuments(store.id || 0));
+      }
+    };
+
+    loadMerchantLicenses();
+  }, [store?.merchantId, store?.id]);
+
+  // Loading state
+  if (isLoadingStore) {
+    return (
+      <div className={styles.container}>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center space-y-3">
+            <div className="h-8 w-8 mx-auto animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            <p className="text-sm text-muted-foreground">Đang tải dữ liệu...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Not found state
   if (!store) {
     return (
       <div className={styles.notFound}>
         <h2>Không tìm thấy cơ sở</h2>
-        <Button onClick={() => navigate('/stores')}>Quay lại danh sách</Button>
+        <Button onClick={() => navigate('/registry/stores')}>Quay lại danh sách</Button>
       </div>
     );
   }
@@ -137,24 +340,20 @@ export default function StoreDetailPage() {
   // Get location data
   const province = getProvinceByCode(store.province);
   const district = getDistrictByName(province?.name || '', store.district);
-  const ward = getWardByCode(district?.code || '', store.ward);
-  
+  const ward = store.wardCode ? getWardByCode(store.wardCode) : undefined;
+
+
   // Build clean address without undefined values
   const addressParts = [
     store.address,
-    ward?.name || store.ward,
+    wardName || ward?.name || store.ward,
     district?.name || store.district,
-    province?.name || store.province
+    provinceName || province?.name || store.province
   ].filter(part => part && part !== 'undefined' && part !== 'none');
   const fullAddress = addressParts.join(', ');
 
   // Get legal documents
   const initialLegalDocuments = generateLegalDocuments(store.id);
-
-  // Initialize legalDocuments state on mount or when store changes
-  useEffect(() => {
-    setLegalDocuments(initialLegalDocuments);
-  }, [store.id]);
 
   // Use legalDocuments for dynamic list
   const displayedDocuments = legalDocuments.length > 0 ? legalDocuments : initialLegalDocuments;
@@ -166,7 +365,7 @@ export default function StoreDetailPage() {
   const handleUploadClick = (docType: string) => {
     setCurrentDocumentType(docType);
     setEditingDocument(null);
-    
+
     // Check if this is ID Card (CCCD/CMND) - open special dialog
     if (docType === 'cccd') {
       console.log('Opening ID Card Upload Dialog for CCCD');
@@ -180,7 +379,7 @@ export default function StoreDetailPage() {
   const handleEditDocument = (doc: LegalDocumentData) => {
     setCurrentDocumentType(doc.type);
     setEditingDocument(doc);
-    
+
     // Check if this is ID Card (CCCD/CMND) - open special dialog
     if (doc.type === 'cccd') {
       console.log('Opening ID Card Upload Dialog for editing CCCD', doc);
@@ -194,37 +393,37 @@ export default function StoreDetailPage() {
   const handleSaveDocument = (data: { file: File | null; fields: Record<string, any> }) => {
     const now = new Date().toLocaleString('vi-VN');
     const docTypeName = getDocumentTypeById(currentDocumentType || '')?.name || 'Hồ sơ';
-    
+
     if (editingDocument) {
       // Update existing document - save old version for comparison
       setLegalDocuments((prev) =>
         prev.map((doc) =>
           doc.id === editingDocument.id
             ? {
-                ...doc,
-                ...data.fields,
-                uploadedData: data.fields,
-                uploadDate: now,
-                uploadedBy: 'Admin User',
-                fileUrl: data.file ? URL.createObjectURL(data.file) : doc.fileUrl,
-                fileName: data.file?.name || doc.fileName,
-                status: 'valid' as const,
-                statusText: 'Còn hiệu lực',
-                approvalStatus: 'pending' as const,
-                approvalStatusText: 'Chờ duyệt',
-                // Save previous version for comparison
-                previousVersion: {
-                  ...editingDocument.uploadedData,
-                  fileUrl: editingDocument.fileUrl,
-                  fileName: editingDocument.fileName,
-                  uploadDate: editingDocument.uploadDate,
-                  uploadedBy: editingDocument.uploadedBy,
-                },
-              }
+              ...doc,
+              ...data.fields,
+              uploadedData: data.fields,
+              uploadDate: now,
+              uploadedBy: 'Admin User',
+              fileUrl: data.file ? URL.createObjectURL(data.file) : doc.fileUrl,
+              fileName: data.file?.name || doc.fileName,
+              status: 'valid' as const,
+              statusText: 'Còn hiệu lực',
+              approvalStatus: 'pending' as const,
+              approvalStatusText: 'Chờ duyệt',
+              // Save previous version for comparison
+              previousVersion: {
+                ...editingDocument.uploadedData,
+                fileUrl: editingDocument.fileUrl,
+                fileName: editingDocument.fileName,
+                uploadDate: editingDocument.uploadDate,
+                uploadedBy: editingDocument.uploadedBy,
+              },
+            }
             : doc
         )
       );
-      
+
       // Show toast notification for update
       toast.success(`Đã cập nhật ${docTypeName}`, {
         description: 'Hồ sơ đã được chuyển về trạng thái chờ duyệt',
@@ -235,22 +434,22 @@ export default function StoreDetailPage() {
         prev.map((doc) =>
           doc.type === currentDocumentType && doc.status === 'missing'
             ? {
-                ...doc,
-                ...data.fields,
-                uploadedData: data.fields,
-                uploadDate: now,
-                uploadedBy: 'Admin User',
-                fileUrl: data.file ? URL.createObjectURL(data.file) : undefined,
-                fileName: data.file?.name,
-                status: 'valid' as const,
-                statusText: 'Còn hiệu lực',
-                approvalStatus: 'pending' as const,
-                approvalStatusText: 'Chờ duyệt',
-              }
+              ...doc,
+              ...data.fields,
+              uploadedData: data.fields,
+              uploadDate: now,
+              uploadedBy: 'Admin User',
+              fileUrl: data.file ? URL.createObjectURL(data.file) : undefined,
+              fileName: data.file?.name,
+              status: 'valid' as const,
+              statusText: 'Còn hiệu lực',
+              approvalStatus: 'pending' as const,
+              approvalStatusText: 'Chờ duyệt',
+            }
             : doc
         )
       );
-      
+
       // Show toast notification for new upload
       toast.success(`Đã tải lên ${docTypeName}`, {
         description: 'Hồ sơ đang chờ phê duyệt',
@@ -289,36 +488,36 @@ export default function StoreDetailPage() {
         prev.map((doc) =>
           doc.id === editingDocument.id
             ? {
-                ...doc,
-                ...data.fields,
-                uploadedData: data.fields,
-                uploadDate: now,
-                uploadedBy: 'Admin User',
-                // Front file
-                fileUrl: data.frontFile
-                  ? URL.createObjectURL(data.frontFile)
-                  : data.frontFileUrl || doc.fileUrl,
-                fileName: data.frontFile?.name || doc.fileName,
-                // Back file
-                backFileUrl: data.backFile
-                  ? URL.createObjectURL(data.backFile)
-                  : data.backFileUrl || doc.backFileUrl,
-                backFileName: data.backFile?.name || doc.backFileName,
-                status: 'valid' as const,
-                statusText: 'Còn hiệu lực',
-                approvalStatus: 'pending' as const,
-                approvalStatusText: 'Chờ duyệt',
-                // Save previous version
-                previousVersion: {
-                  ...editingDocument.uploadedData,
-                  fileUrl: editingDocument.fileUrl,
-                  fileName: editingDocument.fileName,
-                  backFileUrl: editingDocument.backFileUrl,
-                  backFileName: editingDocument.backFileName,
-                  uploadDate: editingDocument.uploadDate,
-                  uploadedBy: editingDocument.uploadedBy,
-                },
-              }
+              ...doc,
+              ...data.fields,
+              uploadedData: data.fields,
+              uploadDate: now,
+              uploadedBy: 'Admin User',
+              // Front file
+              fileUrl: data.frontFile
+                ? URL.createObjectURL(data.frontFile)
+                : data.frontFileUrl || doc.fileUrl,
+              fileName: data.frontFile?.name || doc.fileName,
+              // Back file
+              backFileUrl: data.backFile
+                ? URL.createObjectURL(data.backFile)
+                : data.backFileUrl || doc.backFileUrl,
+              backFileName: data.backFile?.name || doc.backFileName,
+              status: 'valid' as const,
+              statusText: 'Còn hiệu lực',
+              approvalStatus: 'pending' as const,
+              approvalStatusText: 'Chờ duyệt',
+              // Save previous version
+              previousVersion: {
+                ...editingDocument.uploadedData,
+                fileUrl: editingDocument.fileUrl,
+                fileName: editingDocument.fileName,
+                backFileUrl: editingDocument.backFileUrl,
+                backFileName: editingDocument.backFileName,
+                uploadDate: editingDocument.uploadDate,
+                uploadedBy: editingDocument.uploadedBy,
+              },
+            }
             : doc
         )
       );
@@ -332,26 +531,26 @@ export default function StoreDetailPage() {
         prev.map((doc) =>
           doc.type === 'cccd' && doc.status === 'missing'
             ? {
-                ...doc,
-                ...data.fields,
-                uploadedData: data.fields,
-                uploadDate: now,
-                uploadedBy: 'Admin User',
-                // Front file
-                fileUrl: data.frontFile
-                  ? URL.createObjectURL(data.frontFile)
-                  : data.frontFileUrl,
-                fileName: data.frontFile?.name || 'cccd-mat-truoc.pdf',
-                // Back file
-                backFileUrl: data.backFile
-                  ? URL.createObjectURL(data.backFile)
-                  : data.backFileUrl,
-                backFileName: data.backFile?.name || 'cccd-mat-sau.pdf',
-                status: 'valid' as const,
-                statusText: 'Còn hiệu lực',
-                approvalStatus: 'pending' as const,
-                approvalStatusText: 'Chờ duyệt',
-              }
+              ...doc,
+              ...data.fields,
+              uploadedData: data.fields,
+              uploadDate: now,
+              uploadedBy: 'Admin User',
+              // Front file
+              fileUrl: data.frontFile
+                ? URL.createObjectURL(data.frontFile)
+                : data.frontFileUrl,
+              fileName: data.frontFile?.name || 'cccd-mat-truoc.pdf',
+              // Back file
+              backFileUrl: data.backFile
+                ? URL.createObjectURL(data.backFile)
+                : data.backFileUrl,
+              backFileName: data.backFile?.name || 'cccd-mat-sau.pdf',
+              status: 'valid' as const,
+              statusText: 'Còn hiệu lực',
+              approvalStatus: 'pending' as const,
+              approvalStatusText: 'Chờ duyệt',
+            }
             : doc
         )
       );
@@ -372,10 +571,10 @@ export default function StoreDetailPage() {
       prev.map((doc) =>
         doc.id === documentId
           ? {
-              ...doc,
-              approvalStatus: 'approved' as const,
-              approvalStatusText: 'Đã phê duyệt',
-            }
+            ...doc,
+            approvalStatus: 'approved' as const,
+            approvalStatusText: 'Đã phê duyệt',
+          }
           : doc
       )
     );
@@ -388,12 +587,12 @@ export default function StoreDetailPage() {
       prev.map((doc) =>
         doc.id === documentId
           ? {
-              ...doc,
-              approvalStatus: 'rejected' as const,
-              approvalStatusText: 'Từ chối',
-              status: 'missing' as const,
-              statusText: undefined,
-            }
+            ...doc,
+            approvalStatus: 'rejected' as const,
+            approvalStatusText: 'Từ chối',
+            status: 'missing' as const,
+            statusText: undefined,
+          }
           : doc
       )
     );
@@ -448,18 +647,18 @@ export default function StoreDetailPage() {
   const handleStatCardClick = (targetTab: string) => {
     // First, switch the tab
     setActiveTab(targetTab);
-    
+
     // Use requestAnimationFrame to ensure React has finished rendering
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         const sectionId = `${targetTab}-section`;
         const section = document.getElementById(sectionId);
-        
+
         if (section) {
           // Get the element's position
           const elementPosition = section.getBoundingClientRect().top;
           const offsetPosition = elementPosition + window.pageYOffset - 100; // 100px offset for header
-          
+
           // Use custom smooth scroll with easing
           smoothScrollTo(offsetPosition, 800);
         }
@@ -543,7 +742,7 @@ export default function StoreDetailPage() {
                 variant="destructive"
                 size="sm"
                 onClick={handleDeleteStore}
-                style={{ 
+                style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: 'var(--spacing-2)'
@@ -567,7 +766,7 @@ export default function StoreDetailPage() {
             <div className={styles.headerLeft}>
               <div className={styles.headerTop}>
                 <h1 className={styles.storeName}>{store.name}</h1>
-                
+
                 {/* Status Badges - only show if data exists */}
                 <div className={styles.headerActions}>
                   {statusBadge && (
@@ -769,7 +968,7 @@ export default function StoreDetailPage() {
               <div className={styles.twoColumnLayout}>
                 <div className={styles.columnSection}>
                   <h3 className={styles.sectionTitle}>Thông tin hộ kinh doanh</h3>
-                  
+
                   <div className={styles.infoRowInline}>
                     <Building2 size={14} />
                     <span className={styles.infoLabel}>
@@ -813,7 +1012,7 @@ export default function StoreDetailPage() {
 
                 <div className={styles.columnSection}>
                   <h3 className={styles.sectionTitle}>&nbsp;</h3>
-                  
+
                   <div className={styles.infoRowInline}>
                     <Phone size={14} />
                     <span className={styles.infoLabel}>
@@ -856,7 +1055,7 @@ export default function StoreDetailPage() {
               <div className={styles.twoColumnLayout}>
                 <div className={styles.columnSection}>
                   <h3 className={styles.sectionTitle}>Thông tin chủ hộ</h3>
-                  
+
                   <div className={styles.infoRowInline}>
                     <User size={14} />
                     <span className={styles.infoLabel}>
@@ -876,7 +1075,7 @@ export default function StoreDetailPage() {
 
                 <div className={styles.columnSection}>
                   <h3 className={styles.sectionTitle}>&nbsp;</h3>
-                  
+
                   <div className={styles.infoRowInline}>
                     <FileText size={14} />
                     <span className={styles.infoLabel}>
@@ -899,7 +1098,7 @@ export default function StoreDetailPage() {
               <div className={styles.twoColumnLayout}>
                 <div className={styles.columnSection}>
                   <h3 className={styles.sectionTitle}>Địa chỉ hoạt động</h3>
-                  
+
                   <div className={styles.infoRowInline}>
                     <MapPin size={14} />
                     <span className={styles.infoLabel}>
@@ -911,7 +1110,10 @@ export default function StoreDetailPage() {
                   <div className={styles.infoRowInline}>
                     <MapPin size={14} />
                     <span className={styles.infoLabel}>Tỉnh / Thành phố :</span>
-                    <span className={styles.infoValue}>{store.province || province?.name || 'TP. Hồ Chí Minh'}</span>
+                    <span className={styles.infoValue}>
+                      {provinceName || store.province || province?.name || 'TP. Hồ Chí Minh'}
+                      {loadingLocation && provinceName === null && ' (đang tải...)'}
+                    </span>
                   </div>
 
                   {store.gpsCoordinates && (
@@ -933,7 +1135,7 @@ export default function StoreDetailPage() {
 
                 <div className={styles.columnSection}>
                   <h3 className={styles.sectionTitle}>&nbsp;</h3>
-                  
+
                   {store.productionAddress && (
                     <div className={styles.infoRowInline}>
                       <Building2 size={14} />
@@ -969,7 +1171,7 @@ export default function StoreDetailPage() {
               <div className={styles.twoColumnLayout}>
                 <div className={styles.columnSection}>
                   <h3 className={styles.sectionTitle}>Nhãn & Phân loại</h3>
-                  
+
                   <div className={styles.infoRow}>
                     <div className={styles.infoRowLabel}>Nhãn hệ thống</div>
                     <div className={styles.infoRowValue} style={{ flexWrap: 'wrap', gap: 'var(--spacing-2)' }}>
@@ -1002,7 +1204,7 @@ export default function StoreDetailPage() {
 
                 <div className={styles.columnSection}>
                   <h3 className={styles.sectionTitle}>Ghi chú</h3>
-                  
+
                   {store.notes ? (
                     <div className={styles.infoRow}>
                       <div className={styles.infoRowValue} style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
@@ -1160,7 +1362,7 @@ export default function StoreDetailPage() {
             height="280px"
           />
         </div>
-        
+
         <div className={styles.qualityIndicators}>
           <div className={styles.compactIndicator}>
             <div className={styles.indicatorValue}>{confidence}%</div>
@@ -1219,13 +1421,13 @@ const smoothScrollTo = (targetPosition: number, duration: number = 800) => {
     if (startTime === null) startTime = currentTime;
     const timeElapsed = currentTime - startTime;
     const progress = Math.min(timeElapsed / duration, 1);
-    
+
     // Apply easing
     const ease = easeInOutCubic(progress);
-    
+
     // Calculate new position
     window.scrollTo(0, startPosition + distance * ease);
-    
+
     // Continue animation if not complete
     if (progress < 1) {
       requestAnimationFrame(animation);

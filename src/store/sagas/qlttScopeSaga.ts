@@ -16,25 +16,33 @@ import type { ScopeDepartment, ScopeArea } from '../slices/qlttScopeSlice';
 
 // Interfaces
 interface WardRow {
-  id: string;
+  _id: string;
   code: string;
   name: string;
   province_id: string;
 }
 
 interface ProvinceRow {
-  id: string;
+  _id: string;
   code: string;
   name: string;
 }
 
 interface AreaRow {
-  id: string;
+  _id: string;
   code: string;
   name: string;
   level: string;
-  provinceId?: string | null;
-  wardId?: string | null;
+  province_id?: string | null;
+  ward_id?: string | null;
+}
+
+interface DepartmentRow {
+  _id: string;
+  parent_id: string | null;
+  name: string;
+  code: string;
+  level: number;
 }
 
 interface DepartmentAreaRow {
@@ -57,7 +65,7 @@ function* fetchScopeData(): Generator<any, any, any> {
       Promise.all([
         supabase
           .from('departments')
-          .select('id, parent_id, name, code, level')
+          .select('_id, parent_id, name, code, level')
           .is('deleted_at', null)
           .order('path', { ascending: true }),
         supabase
@@ -65,10 +73,10 @@ function* fetchScopeData(): Generator<any, any, any> {
           .select('department_id, area_id'),
         supabase
           .from('areas')
-          .select('id, code, name, level, "provinceId", "wardId"'),
+          .select('_id, code, name, level, province_id, ward_id'),
         supabase
           .from('wards')
-          .select('id, code, name, province_id'),
+          .select('_id, code, name, province_id'),
         supabase
           .from('provinces')
           .select('id, code, name'),
@@ -88,17 +96,39 @@ function* fetchScopeData(): Generator<any, any, any> {
     }
 
     // Build maps for lookups
-    const wardsById = new Map((wardsData || []).map((w: WardRow) => [w.id, w]));
-    const provincesById = new Map((provincesData || []).map((p: ProvinceRow) => [p.id, p]));
-    const areasById = new Map((areasData || []).map((a: AreaRow) => [a.id, a]));
+    const wardsById = new Map((wardsData || []).map((w: WardRow) => [w._id, w]));
+    const provincesById = new Map((provincesData || []).map((p: ProvinceRow) => [p._id, p]));
+    const areasById = new Map((areasData || []).map((a: AreaRow) => [a._id, a]));
 
-    // Filter departments by level
-    const departments: ScopeDepartment[] = departmentsData || [];
+    // Map departments with _id -> id conversion
+    const departments: ScopeDepartment[] = (departmentsData || []).map((dept: DepartmentRow) => ({
+      id: dept._id,
+      parent_id: dept.parent_id,
+      name: dept.name,
+      code: dept.code,
+      level: dept.level,
+    }));
+
     const divisions = departments.filter((dept) => dept.level === 2);
     const teams = departments.filter((dept) => dept.level === 3);
 
     yield put(setAvailableDivisions(divisions));
     yield put(setAvailableTeams(teams));
+
+    // Map areas with _id -> id conversion and resolved codes
+    const areas: ScopeArea[] = (areasData || []).map((area: AreaRow) => {
+      const provinceCode = area.province_id ? provincesById.get(area.province_id)?.code : null;
+      const wardCode = area.ward_id ? wardsById.get(area.ward_id)?.code : null;
+      return {
+        id: area._id,
+        name: area.name,
+        code: area.code,
+        provinceCode: provinceCode || null,
+        wardCode: wardCode || null,
+      };
+    });
+
+    yield put(setAvailableAreas(areas));
 
     // Process areas
     const departmentAreasByDepartment = new Map<string, string[]>();

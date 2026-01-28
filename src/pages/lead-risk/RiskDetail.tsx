@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { 
+import { useParams, useNavigate } from 'react-router';
+import {
   ArrowLeft,
   TrendingUp,
   TrendingDown,
@@ -34,7 +34,7 @@ import { mockRiskProfiles, mockLeads } from '../../data/lead-risk/mockLeads';
 import { StatusBadge } from '../../app/components/lead-risk/StatusBadge';
 import { UrgencyBadge } from '../../app/components/lead-risk/UrgencyBadge';
 import { Breadcrumb } from '../../app/components/Breadcrumb';
-import { projectId, publicAnonKey } from '../../utils/supabase/info';
+import { projectId, publicAnonKey } from '/utils/supabase/info';
 import type { RiskProfile } from '../../data/lead-risk/types';
 import styles from './RiskDetail.module.css';
 
@@ -53,10 +53,10 @@ export default function RiskDetail() {
   useEffect(() => {
     const fetchRiskDetail = async () => {
       if (!id) return;
-      
+
       setIsLoading(true);
       setError(null);
-      
+
       try {
         // Fetch all profiles to find the one matching this ID
         const profilesResponse = await fetch(`${API_BASE_URL}/risk-profiles`, {
@@ -124,8 +124,8 @@ export default function RiskDetail() {
                 title: `${getCategoryLabel(c.category)} - ${c.severity}`,
                 description: c.description || `Trường hợp ${c.category} với mức độ ${c.severity}`,
                 status: c.status || 'new',
-                urgency: c.severity === 'critical' ? 'high' : 
-                        c.severity === 'major' ? 'medium' : 'low',
+                urgency: c.severity === 'critical' ? 'high' :
+                  c.severity === 'major' ? 'medium' : 'low',
                 reportedAt: c.created_at ? new Date(c.created_at) : new Date(),
                 source: c.source || 'Hệ thống',
                 category: c.category,
@@ -135,15 +135,17 @@ export default function RiskDetail() {
           }
         }
 
+        console.log('✅ Successfully loaded risk detail for:', matchedProfile.entityName);
       } catch (err) {
         console.error('❌ Error fetching risk detail:', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
-        
+
         // Fallback to mock data
+        console.log('⚠️ Using mock data as fallback...');
         const mockProfile = mockRiskProfiles.find(p => p.entityId === id);
         if (mockProfile) {
           setProfile(mockProfile);
-          const mockRelated = mockLeads.filter(l => 
+          const mockRelated = mockLeads.filter(l =>
             l.storeId === id || l.location.address.includes(mockProfile.entityName)
           );
           setRelatedCases(mockRelated.map(l => ({
@@ -189,7 +191,7 @@ export default function RiskDetail() {
         />
         <div className={styles.loadingState}>
           <Loader2 size={48} className={styles.spinner} />
-          <p>Đang tải thông tin rủi ro...</p>
+          <p>Đang tải thng tin rủi ro...</p>
         </div>
       </div>
     );
@@ -327,12 +329,12 @@ export default function RiskDetail() {
         </div>
 
         <div className={styles.metricCard}>
-          <div 
-            className={styles.metricIcon} 
-            style={{ 
-              backgroundColor: profile.trendDirection === 'increasing' 
-                ? 'rgba(254, 226, 226, 1)' 
-                : 'rgba(220, 252, 231, 1)' 
+          <div
+            className={styles.metricIcon}
+            style={{
+              backgroundColor: profile.trendDirection === 'increasing'
+                ? 'rgba(254, 226, 226, 1)'
+                : 'rgba(220, 252, 231, 1)'
             }}
           >
             {getTrendIcon()}
@@ -382,13 +384,13 @@ export default function RiskDetail() {
                 </div>
                 <div className={styles.statusBadges}>
                   {profile.isWatchlisted && (
-                    <span className={styles.watchBadge}>Theo dõi</span>
+                    <span key="watched" className={styles.watchBadge}>Theo dõi</span>
                   )}
                   {profile.hasActiveAlert && (
-                    <span className={styles.alertBadge}>Cảnh báo</span>
+                    <span key="alert" className={styles.alertBadge}>Cảnh báo</span>
                   )}
                   {!profile.isWatchlisted && !profile.hasActiveAlert && (
-                    <span className={styles.normalBadge}>Bình thường</span>
+                    <span key="normal" className={styles.normalBadge}>Bình thường</span>
                   )}
                 </div>
               </div>
@@ -402,9 +404,9 @@ export default function RiskDetail() {
               <div className={styles.breakdownItem}>
                 <div className={styles.breakdownLabel}>Tỷ lệ xử lý thành công</div>
                 <div className={styles.breakdownBar}>
-                  <div 
+                  <div
                     className={styles.breakdownFill}
-                    style={{ 
+                    style={{
                       width: `${(profile.resolvedLeads / profile.totalLeads) * 100}%`,
                       backgroundColor: 'rgba(34, 197, 94, 1)'
                     }}
@@ -418,9 +420,9 @@ export default function RiskDetail() {
               <div className={styles.breakdownItem}>
                 <div className={styles.breakdownLabel}>Tỷ lệ từ chối</div>
                 <div className={styles.breakdownBar}>
-                  <div 
+                  <div
                     className={styles.breakdownFill}
-                    style={{ 
+                    style={{
                       width: `${(profile.rejectedLeads / profile.totalLeads) * 100}%`,
                       backgroundColor: 'var(--destructive)'
                     }}
@@ -434,9 +436,9 @@ export default function RiskDetail() {
               <div className={styles.breakdownItem}>
                 <div className={styles.breakdownLabel}>Đang xử lý</div>
                 <div className={styles.breakdownBar}>
-                  <div 
+                  <div
                     className={styles.breakdownFill}
-                    style={{ 
+                    style={{
                       width: `${(profile.activeLeads / profile.totalLeads) * 100}%`,
                       backgroundColor: 'rgba(251, 146, 60, 1)'
                     }}
@@ -454,21 +456,24 @@ export default function RiskDetail() {
         <div className={styles.main}>
           {/* Tabs */}
           <div className={styles.tabs}>
-            <button 
+            <button
+              key="leads"
               className={activeTab === 'leads' ? styles.tabActive : styles.tab}
               onClick={() => setActiveTab('leads')}
             >
               <FileText size={16} />
               Leads liên quan ({relatedCases.length})
             </button>
-            <button 
+            <button
+              key="history"
               className={activeTab === 'history' ? styles.tabActive : styles.tab}
               onClick={() => setActiveTab('history')}
             >
               <Activity size={16} />
               Lịch sử
             </button>
-            <button 
+            <button
+              key="analysis"
               className={activeTab === 'analysis' ? styles.tabActive : styles.tab}
               onClick={() => setActiveTab('analysis')}
             >
@@ -484,8 +489,8 @@ export default function RiskDetail() {
                 {relatedCases.length > 0 ? (
                   <div className={styles.leadsList}>
                     {relatedCases.map((lead) => (
-                      <div 
-                        key={lead.id} 
+                      <div
+                        key={lead.id}
                         className={styles.leadCard}
                         onClick={() => navigate(`/lead-risk/case/${lead.id}`)}
                       >

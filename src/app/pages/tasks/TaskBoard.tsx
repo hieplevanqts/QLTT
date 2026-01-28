@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams, useParams } from 'react-router-dom';
 import { 
   Filter, 
   LayoutGrid, 
@@ -12,11 +12,11 @@ import {
   Paperclip,
   RotateCcw,
   XCircle,
-  Info,
   Edit,
-  Search as SearchIcon,
   Table,
-  BookOpen
+  BookOpen,
+  Eye,
+  CheckCircle
 } from 'lucide-react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -27,40 +27,43 @@ import FilterActionBar from '../../../patterns/FilterActionBar';
 import SearchInput from '../../../ui-kit/SearchInput';
 import EmptyState from '../../../ui-kit/EmptyState';
 import { Button } from '../../components/ui/button';
-import { mockInspectionTasks, type InspectionTask, type TaskStatus } from '../../data/inspection-tasks-mock-data';
-import { mockPlans } from '../../data/kehoach-mock-data';
-import { mockInspectionRounds } from '../../data/inspection-rounds-mock-data';
+import { type InspectionTask, type TaskStatus } from '../../data/inspection-tasks-mock-data';
+import { useSupabasePlans } from '../../../hooks/useSupabasePlans';
+import { useSupabaseInspectionRounds } from '../../../hooks/useSupabaseInspectionRounds';
+import { fetchInspectionSessionsApi, updateInspectionSessionApi, createInspectionSessionApi } from '../../../utils/api/inspectionSessionsApi';
 import { TaskCard } from '../../components/tasks/TaskCard';
-import { InspectionTaskStatusBadge } from '../../components/tasks/InspectionTaskStatusBadge';
+import { StatusBadge } from '../../components/common/StatusBadge';
+import { getStatusProps } from '../../utils/status-badge-helper';
 import DataTable, { type Column } from '../../../ui-kit/DataTable';
-import AdvancedFilterModal, { type FilterConfig, type InfiniteScrollSelectOption } from '../../../ui-kit/AdvancedFilterModal';
+import AdvancedFilterModal, { type FilterConfig } from '../../../ui-kit/AdvancedFilterModal';
+import { type InfiniteScrollSelectOption } from '../../../ui-kit/InfiniteScrollSelect';
 import { type DateRange } from '../../../ui-kit/DateRangePicker';
 import { toast } from 'sonner';
 import CreateTaskModal, { type CreateTaskFormData } from '../../components/tasks/CreateTaskModal';
-import { EditTaskModal, type EditTaskFormData } from '../../components/tasks/EditTaskModal';
-import { InspectionTaskFilterModal, type InspectionTaskFilters } from '../../components/tasks/InspectionTaskFilterModal';
 import { TaskDetailModal } from '../../components/tasks/TaskDetailModal';
-import InspectionResultModal, { type InspectionResultData } from '../../components/sessions/InspectionResultModal';
+import InspectionResultModal from '../../components/sessions/InspectionResultModal';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../../components/ui/select';
 import ActionColumn, { type Action } from '../../../patterns/ActionColumn';
 import { Card, CardContent } from '../../components/ui/card';
 import TableFooter from '../../../ui-kit/TableFooter';
 import ReopenTaskModal from '../../components/tasks/ReopenTaskModal';
 import AttachEvidenceModal from '../../components/tasks/AttachEvidenceModal';
-import { generateForm06PDF, createForm06DataFromTask } from '@/app/utils/generateForm06PDF';
 import { Form06Modal } from '@/app/components/tasks/Form06Modal';
 import { Form10Modal } from '@/app/components/tasks/Form10Modal';
 import { Form12Modal } from '@/app/components/tasks/Form12Modal';
 import { Form11Modal } from '@/app/components/tasks/Form11Modal';
+import { DeployTaskModal } from '../../components/tasks/TaskActionModals';
 
 type ViewMode = 'kanban' | 'list';
 
 // Valid status transitions based on workflow rules - v2
 const VALID_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
   not_started: ['in_progress'], // Chỉ có thể bắt đầu
-  in_progress: ['not_started', 'completed'], // Có thể quay lại hoặc hoàn thành
+  in_progress: ['not_started', 'completed', 'pending_approval'], // Có thể quay lại hoặc hoàn thành/chờ duyệt
+  pending_approval: ['completed', 'in_progress'], // Có thể duyệt xong hoặc yêu cầu sửa
   completed: ['in_progress', 'closed'], // Có thể reopen hoặc đóng
   closed: ['completed'], // Chỉ có thể reopen về hoàn thành
+  cancelled: [], // Không thể chuyển đi đâu
 };
 
 // Check if a status transition is valid - v2
@@ -94,7 +97,7 @@ function DraggableTask({ task, onClick, actions }: DraggableTaskProps) {
 
   return (
     <div
-      ref={drag}
+      ref={drag as any}
       style={{ 
         opacity: isDragging ? 0.5 : 1,
         cursor: 'move',
@@ -116,6 +119,22 @@ interface KanbanColumnProps {
 }
 
 function KanbanColumn({ column, tasks, onTaskClick, onDropTask, getTaskActions }: KanbanColumnProps) {
+  const [visibleCount, setVisibleCount] = useState(12);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop <= clientHeight + 100) {
+      if (visibleCount < tasks.length) {
+        setVisibleCount(prev => prev + 12);
+      }
+    }
+  };
+
+  // Reset visibleCount when switching columns or when data changes significantly
+  useEffect(() => {
+    setVisibleCount(12);
+  }, [column.key]);
+
   const [{ isOver, canDrop }, drop] = useDrop({
     accept: 'TASK',
     canDrop: (item: { id: string; status: TaskStatus }) => {
@@ -144,16 +163,13 @@ function KanbanColumn({ column, tasks, onTaskClick, onDropTask, getTaskActions }
     }),
   });
 
-  const wipLimit = 5;
-  const isOverLimit = tasks.length > wipLimit;
-  
   // Determine column visual state
   const isValidDropZone = isOver && canDrop;
   const isInvalidDropZone = isOver && !canDrop;
 
   return (
     <div 
-      ref={drop}
+      ref={drop as any}
       className={`${styles.kanbanColumn} ${isValidDropZone ? styles.columnDragOver : ''} ${isInvalidDropZone ? styles.columnDragInvalid : ''}`}
     >
       {/* Column Header */}
@@ -169,21 +185,29 @@ function KanbanColumn({ column, tasks, onTaskClick, onDropTask, getTaskActions }
       </div>
 
       {/* Column Content */}
-      <div className={styles.columnContent}>
+      <div className={styles.columnContent} onScroll={handleScroll}>
         {tasks.length === 0 ? (
           <div className={styles.emptyColumn}>
             <XCircle size={24} />
             <p>Không có phiên làm việc</p>
           </div>
         ) : (
-          tasks.map(task => (
-            <DraggableTask
-              key={task.id}
-              task={task}
-              onClick={onTaskClick}
-              actions={getTaskActions(task)}
-            />
-          ))
+          <>
+            {tasks.slice(0, visibleCount).map(task => (
+              <DraggableTask
+                key={task.id}
+                task={task}
+                onClick={onTaskClick}
+                actions={getTaskActions(task)}
+              />
+            ))}
+            {visibleCount < tasks.length && (
+              <div className={styles.loadingMoreItems}>
+                <RefreshCw size={16} className="animate-spin" />
+                <span>Đang tải thêm...</span>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -191,15 +215,17 @@ function KanbanColumn({ column, tasks, onTaskClick, onDropTask, getTaskActions }
 }
 
 export function TaskBoard() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
+  const { roundId } = useParams<{ roundId: string }>();
 
   // Debug: verify component is loading
 
   // View mode
-  const [viewMode, setViewMode] = useState<ViewMode>('kanban');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
   
-  // Tasks state - use state instead of direct mock data
-  const [tasks, setTasks] = useState<InspectionTask[]>(mockInspectionTasks);
+  // Tasks state
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Modal state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -217,6 +243,7 @@ export function TaskBoard() {
   const [isForm10ModalOpen, setIsForm10ModalOpen] = useState(false);
   const [isForm12ModalOpen, setIsForm12ModalOpen] = useState(false);
   const [isForm11ModalOpen, setIsForm11ModalOpen] = useState(false);
+  const [isDeployModalOpen, setIsDeployModalOpen] = useState(false);
 
   // Filters
   const [searchValue, setSearchValue] = useState('');
@@ -225,78 +252,117 @@ export function TaskBoard() {
   const [roundFilter, setRoundFilter] = useState<string>('all');
   const [planFilter, setPlanFilter] = useState<string>('all');
   const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
   const [dateRangeFilter, setDateRangeFilter] = useState<DateRange>({ startDate: null, endDate: null });
 
   // Pagination for list view
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
 
-  // Infinite scroll state for plan and round selects
+  // Infinite scroll state for plan selects
   const [planPage, setPlanPage] = useState(1);
-  const [roundPage, setRoundPage] = useState(1);
   const [planLoading, setPlanLoading] = useState(false);
-  const [roundLoading, setRoundLoading] = useState(false);
   const ITEMS_PER_PAGE = 20;
+
+  // Fetch sessions from API
+  const loadSessions = async () => {
+    try {
+      setLoading(true);
+      const campaignId = roundId || searchParams.get('campaignId') || undefined;
+      const data = await fetchInspectionSessionsApi(campaignId);
+      
+      // Map InspectionSession to the expected UI format (InspectionTask compatible)
+      const mappedTasks = data.map(session => ({
+        id: session.id,
+        code: session.id.substring(0, 8).toUpperCase(),
+        roundId: session.campaignId,
+        roundName: session.campaignName,
+        planId: session.departmentId, // Using dept id as fallback if needed
+        planName: '--',
+        type: session.type, // Use type directly from API
+        title: session.name,
+        description: session.description || '',
+        targetName: session.merchantName,
+        targetAddress: session.merchantAddress,
+        merchantId: session.merchantId,
+        assignee: { id: session.userId || '', name: session.userName },
+        assignedBy: { id: '', name: '--' },
+        assignedDate: session.createdAt,
+        status: session.status,
+        priority: session.priority === 3 ? 'urgent' : session.priority === 2 ? 'high' : 'medium',
+        dueDate: session.deadlineTime,
+        progress: session.status === 'completed' || session.status === 'closed' ? 100 : 
+                  session.status === 'in_progress' ? 50 : 0,
+        checklistTotal: 0,
+        checklistCompleted: 0,
+        createdAt: session.createdAt
+      }));
+      
+      setTasks(mappedTasks);
+    } catch (error) {
+      console.error('TaskBoard loadSessions Error:', error);
+      toast.error('Không thể tải danh sách phiên kiểm tra');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSessions();
+  }, [roundId, searchParams.get('campaignId')]);
 
   // Initialize filter from URL query params
   useEffect(() => {
     const planParam = searchParams.get('planId') || searchParams.get('plan');
     if (planParam) {
       setPlanFilter(decodeURIComponent(planParam));
-    } else {
-      // Auto-select the latest plan if no plan is selected
-      const latestPlan = findLatestPlan();
-      if (latestPlan) {
-        setPlanFilter(latestPlan.id);
-      }
     }
   }, [searchParams]);
 
-  // Find the latest plan based on startDate (closest to today) and status
-  const findLatestPlan = () => {
-    const today = new Date();
-    
-    // Priority order: active plans first, then by start date closest to today
-    const sortedPlans = [...mockPlans].sort((a, b) => {
-      // Prioritize active plans
-      if (a.status === 'active' && b.status !== 'active') return -1;
-      if (b.status === 'active' && a.status !== 'active') return 1;
-      
-      // Then sort by start date (closest to today)
-      const dateA = new Date(a.startDate);
-      const dateB = new Date(b.startDate);
-      const diffA = Math.abs(today.getTime() - dateA.getTime());
-      const diffB = Math.abs(today.getTime() - dateB.getTime());
-      
-      return diffA - diffB;
-    });
-    
-    return sortedPlans[0] || null;
-  };
+  // Get real plans and rounds from Supabase
+  const { plans: realPlans } = useSupabasePlans();
+  const { rounds: realRounds } = useSupabaseInspectionRounds(undefined, true);
 
   // Prepare plan options with pagination
+  const approvedPlans = useMemo(() => {
+    return realPlans.filter(plan => plan.status === 'approved');
+  }, [realPlans]);
+
   const planOptions: InfiniteScrollSelectOption[] = useMemo(() => {
-    const plans = mockPlans.slice(0, planPage * ITEMS_PER_PAGE);
+    const plans = approvedPlans.slice(0, planPage * ITEMS_PER_PAGE);
     return plans.map(plan => ({
       value: plan.id,
       label: plan.name,
-      subtitle: `${plan.id} - ${plan.planType === 'periodic' ? 'Định kỳ' : plan.planType === 'thematic' ? 'Chuyên đề' : 'Đt xuất'}`,
+      subtitle: `${plan.code || plan.id} - ${plan.planType === 'periodic' ? 'Định kỳ' : plan.planType === 'thematic' ? 'Chuyên đề' : 'Đột xuất'}`,
     }));
-  }, [planPage]);
+  }, [planPage, approvedPlans]);
 
-  const hasMorePlans = planPage * ITEMS_PER_PAGE < mockPlans.length;
+  const hasMorePlans = planPage * ITEMS_PER_PAGE < approvedPlans.length;
 
-  // Prepare round options with pagination
-  const roundOptions: InfiniteScrollSelectOption[] = useMemo(() => {
-    const rounds = mockInspectionRounds.slice(0, roundPage * ITEMS_PER_PAGE);
-    return rounds.map(round => ({
+  // Prepare round options
+  const roundOptions = useMemo(() => {
+    let filteredRounds = realRounds.filter(round => round.status === 'approved');
+    
+    if (planFilter !== 'all') {
+      filteredRounds = filteredRounds.filter(round => round.planId === planFilter);
+    }
+
+    return filteredRounds.map(round => ({
       value: round.id,
       label: round.name,
       subtitle: `${round.code} - ${round.leadUnit}`,
     }));
-  }, [roundPage]);
+  }, [realRounds, planFilter]);
 
-  const hasMoreRounds = roundPage * ITEMS_PER_PAGE < mockInspectionRounds.length;
+  // Reset round filter if it doesn't belong to the selected plan
+  useEffect(() => {
+    if (planFilter !== 'all' && roundFilter !== 'all') {
+      const selectedRound = realRounds.find(r => r.id === roundFilter);
+      if (selectedRound && selectedRound.planId !== planFilter) {
+        setRoundFilter('all');
+      }
+    }
+  }, [planFilter, roundFilter, realRounds]);
 
   // Handle load more for plans
   const handleLoadMorePlans = () => {
@@ -310,24 +376,6 @@ export function TaskBoard() {
     }
   };
 
-  // Handle load more for rounds
-  const handleLoadMoreRounds = () => {
-    if (!roundLoading && hasMoreRounds) {
-      setRoundLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        setRoundPage(prev => prev + 1);
-        setRoundLoading(false);
-      }, 500);
-    }
-  };
-
-  // Get unique values for filters
-  const uniqueRounds = useMemo(() => {
-    if (!tasks || tasks.length === 0) return [];
-    const rounds = Array.from(new Set(tasks.map(t => t?.roundId).filter(Boolean)));
-    return rounds;
-  }, [tasks]);
 
   const uniqueAssignees = useMemo(() => {
     if (!tasks || tasks.length === 0) return [];
@@ -350,13 +398,14 @@ export function TaskBoard() {
       const matchesRound = roundFilter === 'all' || task.roundId === roundFilter;
       const matchesPlan = planFilter === 'all' || task.planId === planFilter;
       const matchesAssignee = assigneeFilter === 'all' || task.assignee?.name === assigneeFilter;
+      const matchesType = typeFilter === 'all' || task.type === typeFilter;
 
       // Date range filter
       let matchesDateRange = true;
       if (dateRangeFilter.startDate || dateRangeFilter.endDate) {
         const taskDate = task.assignedDate ? new Date(task.assignedDate) : null;
         if (taskDate) {
-          if (dateRangeFilter.startDate && taskDate < dateRangeFilter.startDate) {
+          if (dateRangeFilter.startDate && taskDate < new Date(dateRangeFilter.startDate)) {
             matchesDateRange = false;
           }
           if (dateRangeFilter.endDate) {
@@ -369,38 +418,26 @@ export function TaskBoard() {
         }
       }
 
-      return matchesSearch && matchesStatus && matchesPriority && matchesRound && matchesPlan && matchesAssignee && matchesDateRange;
+      return matchesSearch && matchesStatus && matchesPriority && matchesRound && matchesPlan && matchesAssignee && matchesType && matchesDateRange;
     });
-  }, [tasks, searchValue, statusFilter, priorityFilter, roundFilter, planFilter, assigneeFilter, dateRangeFilter]);
-
-  // Count tasks for summary cards
-  const getSummaryCounts = () => {
-    const notStarted = filteredTasks.filter(t => t.status === 'not_started').length;
-    const inProgress = filteredTasks.filter(t => t.status === 'in_progress').length;
-    const pendingApproval = filteredTasks.filter(t => t.status === 'pending_approval').length;
-    const completed = filteredTasks.filter(t => t.status === 'completed').length;
-    
-    // Calculate overdue
-    const today = new Date();
-    const overdue = filteredTasks.filter(t => {
-      if (t.status === 'completed' || t.status === 'closed') return false;
-      return new Date(t.dueDate) < today;
-    }).length;
-
-    return { notStarted, inProgress, pendingApproval, completed, overdue };
-  };
+  }, [tasks, searchValue, statusFilter, priorityFilter, roundFilter, planFilter, assigneeFilter, typeFilter, dateRangeFilter]);
 
   // Group tasks by status for Kanban
   const tasksByStatus = useMemo(() => {
     const grouped: Record<TaskStatus, InspectionTask[]> = {
       not_started: [],
       in_progress: [],
+      pending_approval: [],
       completed: [],
       closed: [],
+      cancelled: [],
     };
 
     filteredTasks.forEach(task => {
-      grouped[task.status].push(task);
+      const status = task.status as TaskStatus;
+      if (grouped[status]) {
+        grouped[status].push(task);
+      }
     });
 
     return grouped;
@@ -426,7 +463,8 @@ export function TaskBoard() {
     toast.success('Đang xuất dữ liệu...');
   };
 
-  const handleStatusChange = (taskId: string, newStatus: TaskStatus) => {
+  const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
+    // Optimistic update
     setTasks(prevTasks => 
       prevTasks.map(task => 
         task.id === taskId 
@@ -434,15 +472,32 @@ export function TaskBoard() {
           : task
       )
     );
-    
+
     // Update selected task to trigger re-render in modal
     setSelectedTask(prevTask => 
       prevTask && prevTask.id === taskId 
         ? { ...prevTask, status: newStatus }
         : prevTask
     );
-    
-    toast.success(`Đã cập nhật trạng thái phiên làm việc thành công`);
+
+    try {
+      // Convert string status to numeric code for database
+      const statusMap: Record<string, number> = {
+        'not_started': 1,
+        'in_progress': 2,
+        'completed': 3,
+        'closed': 4,
+        'cancelled': 5
+      };
+
+      const numericStatus = statusMap[newStatus] || 1;
+      
+      await updateInspectionSessionApi(taskId, { status: numericStatus });
+      toast.success(`Đã cập nhật trạng thái phiên làm việc thành công`);
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      toast.error('Không thể cập nhật trạng thái vào cơ sở dữ liệu');
+    }
   };
 
   const clearFilters = () => {
@@ -452,6 +507,7 @@ export function TaskBoard() {
     setRoundFilter('all');
     setPlanFilter('all');
     setAssigneeFilter('all');
+    setTypeFilter('all');
     setDateRangeFilter({ startDate: null, endDate: null });
   };
 
@@ -463,13 +519,24 @@ export function TaskBoard() {
       roundFilter !== 'all' || 
       planFilter !== 'all' || 
       assigneeFilter !== 'all' || 
+      typeFilter !== 'all' ||
       dateRangeFilter.startDate || 
       dateRangeFilter.endDate
     );
-  }, [searchValue, statusFilter, priorityFilter, roundFilter, planFilter, assigneeFilter, dateRangeFilter]);
+  }, [searchValue, statusFilter, priorityFilter, roundFilter, planFilter, assigneeFilter, typeFilter, dateRangeFilter]);
 
   // Advanced filter configuration - using correct AdvancedFilterModal format
   const filterConfigs: FilterConfig[] = [
+    {
+      key: 'type',
+      label: 'Loại phiên',
+      type: 'select',
+      options: [
+        { value: 'all', label: 'Tất cả loại' },
+        { value: 'passive', label: 'Nguồn tin (Passive)' },
+        { value: 'proactive', label: 'Kế hoạch (Proactive)' },
+      ],
+    },
     {
       key: 'status',
       label: 'Trạng thái',
@@ -500,7 +567,7 @@ export function TaskBoard() {
       type: 'select',
       options: [
         { value: 'all', label: 'Tất cả đợt' },
-        ...uniqueRounds.map(round => ({ value: round, label: round })),
+        ...roundOptions.map(opt => ({ value: opt.value, label: opt.label })),
       ],
     },
     {
@@ -534,6 +601,7 @@ export function TaskBoard() {
     round: roundFilter,
     plan: planFilter,
     assignee: assigneeFilter,
+    type: typeFilter,
     dateRange: dateRangeFilter,
   };
 
@@ -544,6 +612,7 @@ export function TaskBoard() {
     setRoundFilter(values.round || 'all');
     setPlanFilter(values.plan || 'all');
     setAssigneeFilter(values.assignee || 'all');
+    setTypeFilter(values.type || 'all');
     setDateRangeFilter(values.dateRange || { startDate: null, endDate: null });
   };
 
@@ -583,16 +652,12 @@ export function TaskBoard() {
     
     const statusLabel = STATUS_COLUMNS.find(c => c.key === newStatus)?.label || newStatus;
     
-    // Update task status
-    const taskIndex = tasks.findIndex(t => t.id === taskId);
-    if (taskIndex !== -1) {
-      const updatedTasks = [...tasks];
-      updatedTasks[taskIndex].status = newStatus;
-      setTasks(updatedTasks);
-      toast.success(`Đã chuyển \"${task?.title}\" sang \"${statusLabel}\"`, {
-        duration: 2000,
-      });
-    }
+    // Call centralized handler to update both state and database
+    handleStatusChange(taskId, newStatus);
+    
+    toast.success(`Đã chuyển "${task?.title}" sang "${statusLabel}"`, {
+      duration: 2000,
+    });
   };
 
   // Auto-filter by inspectionRound query parameter
@@ -606,82 +671,73 @@ export function TaskBoard() {
   }, [searchParams]);
 
   // Handle create task
-  const handleCreateTask = (formData: CreateTaskFormData) => {
-    // Generate new task ID
-    const newId = `task-${Date.now()}`;
-    const newCode = `NV-${String(tasks.length + 1).padStart(4, '0')}`;
+  const handleCreateOrUpdateTask = async (formData: CreateTaskFormData, taskId?: string) => {
+    if (taskId) {
+      // HANDLE EDIT
+      try {
+        await updateInspectionSessionApi(taskId, {
+          name: formData.title,
+          description: formData.description,
+          merchant_id: formData.merchantId,
+          campaign_id: formData.roundId,
+          user_id: formData.assigneeId || null,
+          start_time: formData.startDate,
+          deadline_time: formData.dueDate,
+          status: formData.status === 'not_started' ? 1 : 
+                  formData.status === 'in_progress' ? 2 : 
+                  formData.status === 'completed' ? 3 : 
+                  formData.status === 'closed' ? 4 : 5,
+        });
 
-    // Find assignee and round details from mock data
-    const assignee = {
-      id: formData.assigneeId,
-      name: 'Người thực hiện', // In production, look up from user list
-    };
+        toast.success(`Đã cập nhật nhiệm vụ "${formData.title}" thành công!`);
+        // Refresh local list
+        loadSessions();
+      } catch (error) {
+        console.error('Error updating task:', error);
+        toast.error('Có lỗi xảy ra khi cập nhật nhiệm vụ');
+      }
+      return;
+    }
 
-    const newTask: InspectionTask = {
-      id: newId,
-      code: newCode,
-      roundId: formData.roundId,
-      roundName: 'Tên đợt kiểm tra', // In production, look up from round list
-      planId: formData.planId,
-      planName: formData.planId ? 'Tên kế hoạch' : undefined,
-      title: formData.title,
-      description: formData.description,
-      targetName: formData.targetName,
-      targetAddress: formData.targetAddress,
-      targetCode: `CS-${String(Math.floor(Math.random() * 1000)).padStart(4, '0')}`,
-      assignee,
-      assignedBy: {
-        id: 'current-user',
-        name: 'Người tạo',
-      },
-      assignedDate: new Date().toISOString(),
-      status: formData.status,
-      priority: formData.priority,
-      dueDate: formData.dueDate,
-      startDate: formData.startDate || new Date().toISOString(),
-      progress: 0,
-      checklistTotal: 0,
-      checklistCompleted: 0,
-      tags: [],
-    };
+    // HANDLE CREATE
+    try {
+      const newSession = await createInspectionSessionApi({
+        name: formData.title,
+        description: formData.description,
+        merchant_id: formData.merchantId,
+        campaign_id: formData.roundId,
+        user_id: formData.assigneeId || null,
+        start_time: formData.startDate,
+        deadline_time: formData.dueDate,
+        status: 1, // not_started
+        type: formData.planId ? 'proactive' : 'passive', // Use planId to determine type
+        note: formData.description,
+      });
 
-    // Add to tasks list
-    setTasks([newTask, ...tasks]);
-    toast.success(`Đã tạo nhiệm vụ "${formData.title}" thành công!`);
-  };
-
-  // Handle edit task
-  const handleEditTask = (taskId: string, formData: EditTaskFormData) => {
-    const taskIndex = tasks.findIndex(t => t.id === taskId);
-    if (taskIndex === -1) return;
-
-    const updatedTask: InspectionTask = {
-      ...tasks[taskIndex],
-      title: formData.title,
-      description: formData.description,
-      targetName: formData.targetName,
-      roundId: formData.roundId,
-      planId: formData.planId,
-      assignee: {
-        id: formData.assigneeId,
-        name: 'Người thực hiện', // In production, look up from user list
-      },
-      status: formData.status,
-      priority: formData.priority,
-      dueDate: formData.dueDate,
-      startDate: formData.startDate || new Date().toISOString(),
-    };
-
-    const updatedTasks = [...tasks];
-    updatedTasks[taskIndex] = updatedTask;
-    setTasks(updatedTasks);
-    toast.success(`Đã cập nhật nhiệm vụ \"${formData.title}\" thành công!`);
+      if (newSession) {
+        toast.success(`Đã tạo nhiệm vụ "${formData.title}" thành công!`);
+        // Refresh local list
+        loadSessions();
+      }
+    } catch (error) {
+      console.error('Error creating task:', error);
+      toast.error('Có lỗi xảy ra khi tạo nhiệm vụ');
+    }
   };
 
   // Action handlers for task actions
   const handleStartTask = (task: InspectionTask) => {
-    handleStatusChange(task.id, 'in_progress');
-    toast.success(`Đã bắt đầu phiên làm việc "${task.title}"`);
+    setActionTask(task);
+    setIsDeployModalOpen(true);
+  };
+
+  const handleConfirmStartTask = () => {
+    if (actionTask) {
+      handleStatusChange(actionTask.id, 'in_progress');
+      // In a real app, we would also update the startDate of the task here
+      setIsDeployModalOpen(false);
+      setActionTask(null);
+    }
   };
 
   const handleEnterResults = (task: InspectionTask) => {
@@ -704,6 +760,11 @@ export function TaskBoard() {
     toast.success(`Đã đóng phiên làm việc \"${task.title}\"`);
   };
 
+  const handleCompleteTask = (task: InspectionTask) => {
+    handleStatusChange(task.id, 'completed');
+    toast.success(`Đã hoàn thành phiên làm việc \"${task.title}\"`);
+  };
+
   // Handle edit task button click
   const handleEditTaskClick = (task: InspectionTask) => {
     setSelectedTask(task);
@@ -721,7 +782,7 @@ export function TaskBoard() {
         actions.push(
           {
             label: 'Xem chi tiết',
-            icon: <Info size={16} />,
+            icon: <Eye size={16} />,
             onClick: () => handleTaskClick(task),
             priority: 10,
           },
@@ -745,9 +806,9 @@ export function TaskBoard() {
         actions.push(
           {
             label: 'Xem chi tiết',
-            icon: <Info size={16} />,
+            icon: <Eye size={16} />,
             onClick: () => handleTaskClick(task),
-            priority: 10,
+            priority: 11,
           },
           {
             label: 'Chỉnh sửa',
@@ -766,6 +827,12 @@ export function TaskBoard() {
             icon: <Paperclip size={16} />,
             onClick: () => handleAttachEvidence(task),
             priority: 7,
+          },
+          {
+            label: 'Hoàn thành',
+            icon: <CheckCircle size={16} />,
+            onClick: () => handleCompleteTask(task),
+            priority: 10,
           }
         );
         break;
@@ -775,7 +842,7 @@ export function TaskBoard() {
         actions.push(
           {
             label: 'Xem chi tiết',
-            icon: <Info size={16} />,
+            icon: <Eye size={16} />,
             onClick: () => handleTaskClick(task),
             priority: 10,
           },
@@ -832,7 +899,7 @@ export function TaskBoard() {
         actions.push(
           {
             label: 'Xem chi tiết',
-            icon: <Info size={16} />,
+            icon: <Eye size={16} />,
             onClick: () => handleTaskClick(task),
             priority: 10,
           },
@@ -870,7 +937,7 @@ export function TaskBoard() {
         actions.push(
           {
             label: 'Xem chi tiết',
-            icon: <Info size={16} />,
+            icon: <Eye size={16} />,
             onClick: () => handleTaskClick(task),
             priority: 10,
           }
@@ -916,27 +983,19 @@ export function TaskBoard() {
       key: 'status',
       label: 'Trạng thái',
       sortable: true,
-      render: (task) => task?.status ? <InspectionTaskStatusBadge type="status" value={task.status} /> : <span>-</span>,
+      render: (task) => task?.status ? <StatusBadge {...getStatusProps('task', task.status)} size="sm" /> : <span>-</span>,
+    },
+    {
+      key: 'type',
+      label: 'Loại',
+      sortable: true,
+      render: (task) => task?.type ? <StatusBadge {...getStatusProps('sessionType', task.type)} size="sm" /> : <span>--</span>,
     },
     {
       key: 'priority',
       label: 'Ưu tiên',
       sortable: true,
-      render: (task) => {
-        if (!task?.priority) return <span>-</span>;
-        const priorityMap = {
-          urgent: { icon: '🔴', label: 'Khẩn cấp', class: 'urgent' },
-          high: { icon: '🟠', label: 'Cao', class: 'high' },
-          medium: { icon: '🟡', label: 'Trung bình', class: 'medium' },
-          low: { icon: '⚪', label: 'Thấp', class: 'low' },
-        };
-        const p = priorityMap[task.priority];
-        return (
-          <span className={`${styles.priorityCell} ${styles[`priority-${p.class}`]}`}>
-            {p.icon} {p.label}
-          </span>
-        );
-      },
+      render: (task) => task?.priority ? <StatusBadge {...getStatusProps('priority', task.priority)} size="sm" /> : <span>-</span>,
     },
     {
       key: 'assignee',
@@ -966,7 +1025,7 @@ export function TaskBoard() {
       label: 'Thao tác',
       sortable: false,
       sticky: 'right',
-      width: '120px',
+      width: '170px',
       render: (task) => (
         <ActionColumn actions={getTaskActions(task)} />
       ),
@@ -977,27 +1036,26 @@ export function TaskBoard() {
     <div className={styles.container}>
       <PageHeader
         title="Phiên làm việc"
-        description="Quản lý phiên làm việc từ các đợt kiểm tra và kế hoạch"
         breadcrumbs={[
-          { label: 'Trang chủ', path: '/' },
+          { label: 'Trang chủ', href: '/' },
           { label: 'Phiên làm việc' },
         ]}
         actions={
           <>
             <div className={styles.viewToggle}>
               <Button
-                variant={viewMode === 'kanban' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('kanban')}
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-              <Button
                 variant={viewMode === 'list' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setViewMode('list')}
               >
                 <List className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'kanban' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('kanban')}
+              >
+                <LayoutGrid className="h-4 w-4" />
               </Button>
             </div>
 
@@ -1028,13 +1086,15 @@ export function TaskBoard() {
         <FilterActionBar
           filters={
             <>
-              <SearchInput
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                placeholder="Tìm kiếm phiên làm việc..."
-                style={{ width: '280px' }}
-              />
-              
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setIsFilterModalOpen(true)}
+              >
+                <Filter size={16} />
+                Bộ lọc
+              </Button>
+
               {/* Kế hoạch kiểm tra filter */}
               <Select value={planFilter} onValueChange={setPlanFilter}>
                 <SelectTrigger style={{ width: '240px' }}>
@@ -1065,23 +1125,29 @@ export function TaskBoard() {
                 </SelectContent>
               </Select>
 
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setIsFilterModalOpen(true)}
-              >
-                <Filter size={16} />
-                Bộ lọc khác
-              </Button>
+              <SearchInput
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                placeholder="Tìm kiếm phiên làm việc..."
+                style={{ width: '400px' }}
+              />
             </>
           }
         />
       </div>
 
-      {/* Kanban View */}
-      {viewMode === 'kanban' && (
+      {/* Loading state */}
+      {loading ? (
+        <div className={styles.loadingContainer} style={{ padding: '60px', textAlign: 'center' }}>
+          <RefreshCw className="animate-spin h-8 w-8 mx-auto mb-4" style={{ color: 'var(--primary)' }} />
+          <p>Đang tải dữ liệu từ hệ thống...</p>
+        </div>
+      ) : (
         <>
-          {filteredTasks.length === 0 ? (
+          {/* Kanban View */}
+          {viewMode === 'kanban' && (
+            <>
+              {filteredTasks.length === 0 ? (
             <div className={styles.emptyStateContainer}>
               <EmptyState
                 type="empty"
@@ -1109,8 +1175,6 @@ export function TaskBoard() {
               <div className={styles.kanbanContainer}>
                 {STATUS_COLUMNS.map(column => {
                   const tasks = tasksByStatus[column.key];
-                  const wipLimit = 5; // Example WIP limit
-                  const isOverLimit = tasks.length > wipLimit;
 
                   return (
                     <KanbanColumn
@@ -1186,15 +1250,19 @@ export function TaskBoard() {
       <CreateTaskModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSubmit={handleCreateTask}
+        onSubmit={handleCreateOrUpdateTask}
       />
 
-      {/* Edit Task Modal */}
-      <EditTaskModal
+      {/* Edit Task Modal - REUSING CreateTaskModal */}
+      <CreateTaskModal
         isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        onSubmit={handleEditTask}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedTask(null);
+        }}
+        onSubmit={handleCreateOrUpdateTask}
         task={selectedTask}
+        taskId={selectedTask?.id}
       />
 
       {/* Task Detail Modal */}
@@ -1204,6 +1272,7 @@ export function TaskBoard() {
         onClose={() => setIsDetailModalOpen(false)}
         onStatusChange={handleStatusChange}
         onEdit={handleEditTaskClick}
+        onCompleteTask={handleCompleteTask}
       />
 
       {/* Advanced Filter Modal */}
@@ -1227,10 +1296,10 @@ export function TaskBoard() {
         } : null}
         isOpen={isEnterResultsModalOpen}
         onClose={() => setIsEnterResultsModalOpen(false)}
-        onSave={(data: InspectionResultData) => {
+        onSave={() => {
           toast.success('Đã lưu kết quả kiểm tra');
         }}
-        onComplete={(data: InspectionResultData) => {
+        onComplete={() => {
           if (actionTask) {
             handleStatusChange(actionTask.id, 'completed');
           }
@@ -1242,11 +1311,10 @@ export function TaskBoard() {
         onClose={() => setIsReopenModalOpen(false)}
         taskTitle={actionTask?.title || ''}
         taskId={actionTask?.id || ''}
-        onReopen={(reason) => {
+        onReopen={() => {
           if (actionTask) {
             const updatedTask = {
               ...actionTask,
-              reopenReason: reason,
               reopenedAt: new Date().toISOString(),
               reopenedBy: { id: 'current-user', name: 'Người dùng hiện tại' },
             };
@@ -1262,8 +1330,8 @@ export function TaskBoard() {
         onClose={() => setIsAttachEvidenceModalOpen(false)}
         taskTitle={actionTask?.title || ''}
         taskId={actionTask?.id || ''}
-        onSubmit={(files) => {
-          toast.success(`Đã đính kèm ${files.length} file chứng cứ`);
+        onSubmit={() => {
+          toast.success(`Đã đính kèm file chứng cứ`);
         }}
       />
 
@@ -1287,8 +1355,20 @@ export function TaskBoard() {
       <Form11Modal
         open={isForm11ModalOpen}
         onOpenChange={setIsForm11ModalOpen}
-        task={actionTask}
+        task={actionTask || undefined}
       />
+
+      <DeployTaskModal
+        isOpen={isDeployModalOpen}
+        onClose={() => {
+          setIsDeployModalOpen(false);
+          setActionTask(null);
+        }}
+        task={actionTask}
+        onConfirm={handleConfirmStartTask}
+      />
+        </>
+      )}
     </div>
   );
 }

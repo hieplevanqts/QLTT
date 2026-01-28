@@ -14,10 +14,7 @@ interface FullscreenMapModalProps {
   isOpen: boolean;
   onClose: () => void;
   filters: {
-    certified: boolean;
-    hotspot: boolean;
-    scheduled: boolean;
-    inspected: boolean;
+    [key: string]: boolean;  // Dynamic keys from point_status table
   };
   businessTypeFilters: {
     [key: string]: boolean;
@@ -32,8 +29,10 @@ interface FullscreenMapModalProps {
   pointStatuses: PointStatus[];  // 🔥 ADD: Dynamic statuses
   categories: Category[];  // 🔥 NEW: Categories for mapping ID to name
   merchantStats?: MerchantStats | null;  // 🔥 NEW: Merchant statistics from API
+  divisionId?: string | null;  // 🔥 NEW: Division ID for fetching manager
+  teamId?: string | null;  // 🔥 NEW: Team ID for fetching manager (priority)
   onPointClick?: (point: Restaurant) => void;
-  onFilterChange: (key: keyof FullscreenMapModalProps['filters']) => void;
+  onFilterChange: (key: string) => void;  // Dynamic key instead of keyof
   onBusinessTypeFilterChange: (type: string) => void;
   onBusinessTypeToggleAll: (checked: boolean) => void;  // 🔥 NEW: Toggle all business types
   onProvinceChange: (province: string) => void;
@@ -56,6 +55,8 @@ export function FullscreenMapModal({
   pointStatuses,  // 🔥 RECEIVE: Dynamic statuses
   categories,  // 🔥 NEW: Categories for mapping ID to name
   merchantStats,  // 🔥 NEW: Merchant statistics from API
+  divisionId,  // 🔥 NEW: Division ID
+  teamId,  // 🔥 NEW: Team ID (priority)
   onPointClick,
   onFilterChange,
   onBusinessTypeFilterChange,
@@ -264,6 +265,8 @@ export function FullscreenMapModal({
             businessTypeFilters={businessTypeFilters}
             categories={categories}  // 🔥 NEW: Categories for mapping ID to name
             merchantStats={merchantStats}  // 🔥 NEW: Merchant statistics from API
+            divisionId={divisionId}
+            teamId={teamId}
             onClose={() => {
               // Clear all location filters when closing stats card
               onProvinceChange('');

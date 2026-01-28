@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -8,19 +8,23 @@ import {
   FileText,
   Store,
   CheckCircle2,
-  Filter,
   Eye,
   X,
   Search,
-  Upload
+  Upload,
+  RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import styles from './InspectionRoundCreate.module.css';
 import DateRangePicker, { DateRange } from '@/ui-kit/DateRangePicker';
-import { mockPlans } from '@/app/data/kehoach-mock-data';
-import { mockStores } from '@/data/mockStores';
-import { useInspectionRounds } from '@/contexts/InspectionRoundsContext';
-import type { InspectionRound } from '@/app/data/inspection-rounds-mock-data';
+import { useSupabaseInspectionRounds } from '@/hooks/useSupabaseInspectionRounds';
+import type { InspectionRound } from '@/app/types/inspections';
+import type { Plan } from '@/app/types/plans';
+import { fetchPlansApi } from '@/utils/api/plansApi';
+import { fetchMerchants } from '@/utils/api/merchantsApi';
+import type { Restaurant } from '@/data/restaurantData';
+import { supabase } from '@/lib/supabase';
+import { uploadMultipleFiles } from '@/utils/supabase/storage';
 import {
   InspectionDecisionModal,
   AssignmentDecisionModal,
@@ -29,7 +33,8 @@ import {
   type InsDecision,
 } from '@/app/components/inspections/InspectionRoundDecisionModals';
 
-type PriorityLevel = 'low' | 'medium' | 'high';
+
+type PriorityLevel = 'low' | 'medium' | 'high' | 'urgent';
 
 interface FormData {
   // Step 1: Thông tin chung
@@ -39,14 +44,18 @@ interface FormData {
   startDate: string | null;
   endDate: string | null;
   leadUnit: string;
-  scopeArea: string;
+  provinceId: string;
+  wardId: string;
   priority: PriorityLevel;
   
   // Step 2: Tiêu chí kiểm tra
   selectedForms: string[];
   
   // Step 3: Cửa hàng
-  selectedStores: number[];
+  selectedStores: string[];
+
+  // Tài liệu đính kèm
+  attachments: File[];
 }
 
 // Mock biểu mẫu data
@@ -156,11 +165,55 @@ export default function InspectionRoundCreate() {
   const editMode = searchParams.get('mode') === 'edit';
   const editId = searchParams.get('id');
   
-  const { addRound, updateRound, getRoundById } = useInspectionRounds();
+  // Use real API hook
+  const { createRound, updateRound, getRoundById } = useSupabaseInspectionRounds(undefined, false); // false = don't fetch list automatically
   
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [realPlans, setRealPlans] = useState<Plan[]>([]);
+  const [provinces, setProvinces] = useState<{_id: string, name: string}[]>([]);
+  const [wards, setWards] = useState<{_id: string, name: string}[]>([]);
+  const [realMerchants, setRealMerchants] = useState<Restaurant[]>([]);
+  const [loadingMerchants, setLoadingMerchants] = useState(false);
+
+  // Fetch plans on mount
+  useEffect(() => {
+    const loadPlans = async () => {
+      try {
+        const data = await fetchPlansApi();
+        setRealPlans(data);
+      } catch (err) {
+        console.error("Error fetching plans:", err);
+      }
+    };
+    loadPlans();
+  }, []);
+
+  // Fetch provinces
+  useEffect(() => {
+    async function fetchProvinces() {
+      try {
+        const { data, error } = await supabase
+          .from('provinces')
+          .select('_id, name')
+          .order('name');
+        
+        if (error) {
+          console.error('Error fetching provinces:', error);
+          return;
+        }
+
+        if (data) {
+          setProvinces(data);
+        }
+      } catch (err) {
+        console.error('Error fetching provinces:', err);
+      }
+    }
+    fetchProvinces();
+  }, []);
+
   // Generate code first
   const generatedCode = `DKT-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
   
@@ -171,39 +224,104 @@ export default function InspectionRoundCreate() {
     startDate: null,
     endDate: null,
     leadUnit: '',
-    scopeArea: '',
     priority: 'medium',
     selectedForms: [],
     selectedStores: [],
+    provinceId: '',
+    wardId: '',
+    attachments: [],
   });
+
+  // Fetch wards when province changes
+  useEffect(() => {
+    async function fetchWards() {
+      if (!formData.provinceId) {
+        setWards([]);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('wards')
+          .select('_id, name')
+          .eq('province_id', formData.provinceId)
+          .order('name');
+        
+        if (error) {
+          console.error('Error fetching wards:', error);
+          return;
+        }
+
+        if (data) {
+          setWards(data);
+        }
+      } catch (err) {
+        console.error('Error fetching wards:', err);
+      }
+    }
+    fetchWards();
+  }, [formData.provinceId]);
+
+  // Fetch merchants based on province and ward
+  useEffect(() => {
+    async function loadMerchants() {
+      try {
+        setLoadingMerchants(true);
+        // Using positional parameters of fetchMerchants(statusCodes, businessTypes, departmentIds, provinceId, wardId)
+        const merchants = await fetchMerchants(
+          undefined, 
+          undefined, 
+          undefined, 
+          formData.provinceId || undefined, 
+          formData.wardId || undefined
+        );
+        setRealMerchants(merchants || []);
+      } catch (err) {
+        console.error('Error fetching merchants:', err);
+      } finally {
+        setLoadingMerchants(false);
+      }
+    }
+    loadMerchants();
+  }, [formData.provinceId, formData.wardId]);
+
+
+  // Check if round is approved (for edit mode) - now handled via state since fetch is async
+  const [isApproved, setIsApproved] = useState(false);
 
   // Load data if in edit mode
   useEffect(() => {
-    if (editMode && editId) {
-      const existingRound = getRoundById(editId);
-      if (existingRound) {
-        // Map existing round data to form data
-        setFormData({
-          code: existingRound.code,
-          name: existingRound.name,
-          relatedPlanId: existingRound.planId || '',
-          startDate: existingRound.startDate,
-          endDate: existingRound.endDate,
-          leadUnit: existingRound.leadUnit,
-          scopeArea: existingRound.leadUnit, // Using leadUnit as scopeArea for now
-          priority: 'medium', // Default since we don't have this in InspectionRound type
-          selectedForms: [], // Would need to be stored in InspectionRound type
-          selectedStores: [], // Would need to map from targets
-        });
-      } else {
-        toast.error('Không tìm thấy đợt kiểm tra');
-        navigate('/plans/inspection-rounds');
-      }
+    async function loadData() {
+        if (editMode && editId) {
+        const existingRound = await getRoundById(editId);
+        if (existingRound) {
+            setIsApproved(existingRound.status === 'approved');
+            // Map existing round data to form data
+            setFormData({
+            code: existingRound.code || existingRound.id, // Fallback to ID if code missing
+            name: existingRound.name,
+            relatedPlanId: existingRound.planId || '',
+            startDate: existingRound.startDate,
+            endDate: existingRound.endDate,
+            leadUnit: existingRound.leadUnit, // owner_dept
+            priority: existingRound.priority || 'medium', // Map from existing round
+            selectedForms: [], // Would need to be stored in InspectionRound type in backend
+            selectedStores: [], // Would need to map from targets/stats
+            provinceId: (existingRound as any).provinceId || '',
+            wardId: (existingRound as any).wardId || '',
+            attachments: [],
+            });
+        } else {
+            toast.error('Không tìm thấy đợt kiểm tra');
+            navigate('/plans/inspection-rounds');
+        }
+        }
     }
+    loadData();
   }, [editMode, editId, navigate, getRoundById]);
 
   // Mock user role - Change this to test different scenarios
-  const userRole = 'district'; // 'district' | 'ward'
+  const [userRole] = useState<'district' | 'ward'>('district');
   const userWard = 'Phường Bến Nghé'; // For ward users
 
   // Filter stores based on selection
@@ -227,14 +345,10 @@ export default function InspectionRoundCreate() {
   const [amendmentDecision, setAmendmentDecision] = useState<InsDecision | null>(null);
   const [extensionDecision, setExtensionDecision] = useState<InsDecision | null>(null);
 
-  // Check if round is approved (for edit mode)
-  const isApproved = editMode && editId ? getRoundById(editId)?.status === 'approved' : false;
-
   // Filter stores
-  const filteredStores = mockStores.filter(store => {
+  const filteredStores = realMerchants.filter(store => {
     // Apply filter conditions
-    if (storeFilters.highRisk && store.riskLevel !== 'high') return false;
-    if (storeFilters.manyComplaints && !store.hasComplaints) return false;
+    if (storeFilters.highRisk && store.category !== 'hotspot') return false;
     
     // Apply search query
     if (storeSearchQuery.trim()) {
@@ -248,7 +362,27 @@ export default function InspectionRoundCreate() {
   });
 
   const handleChange = (field: keyof FormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    if (field === 'relatedPlanId') {
+      const selectedPlan = realPlans.find(p => p.id === value);
+      if (selectedPlan) {
+        setFormData(prev => ({
+          ...prev,
+          relatedPlanId: value,
+          provinceId: selectedPlan.provinceId || '',
+          wardId: selectedPlan.wardId || '',
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          relatedPlanId: value,
+          provinceId: '',
+          wardId: '',
+        }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    }
+    
     // Clear error when user types
     if (errors[field]) {
       setErrors(prev => {
@@ -274,7 +408,7 @@ export default function InspectionRoundCreate() {
     }
   };
 
-  const validateStep1 = (): boolean => {
+  const validateStep1 = (shouldUpdateErrors: boolean = true): boolean => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
@@ -293,23 +427,23 @@ export default function InspectionRoundCreate() {
       newErrors.leadUnit = 'Vui lòng chọn đơn vị chủ trì';
     }
 
-    if (userRole !== 'ward' && !formData.scopeArea.trim()) {
-      newErrors.scopeArea = 'Vui lòng chọn phạm vi kiểm tra';
+    if (!formData.relatedPlanId) {
+      newErrors.relatedPlanId = 'Vui lòng chọn kế hoạch liên quan';
     }
 
-    setErrors(newErrors);
+    if (!formData.provinceId || !formData.wardId) {
+      newErrors.location = 'Khu vực kiểm tra chưa được xác định từ kế hoạch';
+    }
+
+    if (shouldUpdateErrors) {
+      setErrors(newErrors);
+    }
     return Object.keys(newErrors).length === 0;
   };
 
   const validateStep3 = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (formData.selectedStores.length === 0) {
-      newErrors.selectedStores = 'Vui lòng chọn ít nhất một cửa hàng';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    // Tạm thời không bắt buộc chọn cửa hàng
+    return true;
   };
 
   const handleNext = () => {
@@ -328,66 +462,96 @@ export default function InspectionRoundCreate() {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateStep3()) {
       return;
     }
 
-    if (editMode && editId) {
-      // Update existing round
-      updateRound(editId, {
-        name: formData.name,
-        planId: formData.relatedPlanId || undefined,
-        planName: formData.relatedPlanId ? approvedPlans.find(p => p.id === formData.relatedPlanId)?.name : undefined,
-        startDate: formData.startDate!,
-        endDate: formData.endDate!,
-        leadUnit: formData.leadUnit || userWard,
-        totalTargets: formData.selectedStores.length,
-      });
-      toast.success('Đã cập nhật đợt kiểm tra thành công');
-    } else {
-      // Create new round
-      const currentDate = new Date();
-      const newRound: InspectionRound = {
-        id: formData.code,
-        code: formData.code,
-        name: formData.name,
-        planId: formData.relatedPlanId || undefined,
-        planName: formData.relatedPlanId ? approvedPlans.find(p => p.id === formData.relatedPlanId)?.name : undefined,
-        type: 'routine',
-        status: 'draft', // Trạng thái mặc định là Nháp
-        startDate: formData.startDate!,
-        endDate: formData.endDate!,
-        leadUnit: formData.leadUnit || userWard,
-        team: [],
-        teamSize: 0,
-        totalTargets: formData.selectedStores.length,
-        inspectedTargets: 0,
-        createdBy: 'Người dùng hiện tại',
-        createdAt: currentDate.toISOString().split('T')[0],
-        notes: formData.selectedForms.length > 0 
-          ? `Sử dụng biểu mẫu: ${formData.selectedForms.join(', ')}` 
-          : undefined,
-      };
-      addRound(newRound);
-      toast.success('Đã tạo đợt kiểm tra thành công');
-    }
+    setIsSubmitting(true);
+    let uploadedAttachments: any[] = [];
     
-    navigate('/plans/inspection-rounds');
+    try {
+      if (formData.attachments && formData.attachments.length > 0) {
+        uploadedAttachments = await uploadMultipleFiles('vhv_file', formData.attachments, 'inspection-rounds');
+      }
+    } catch (uploadError) {
+      console.error('File upload failed:', uploadError);
+      toast.error('Lỗi khi tải tài liệu lên. Vui lòng thử lại.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+        if (editMode && editId) {
+            // Update existing round
+            await updateRound(editId, {
+                name: formData.name,
+                planId: formData.relatedPlanId || undefined,
+                planName: formData.relatedPlanId ? approvedPlans.find(p => p.id === formData.relatedPlanId)?.name : undefined,
+                startDate: formData.startDate!,
+                endDate: formData.endDate!,
+                leadUnit: formData.leadUnit || userWard,
+                totalTargets: formData.selectedStores.length,
+                provinceId: formData.provinceId,
+                wardId: formData.wardId,
+                priority: formData.priority,
+                attachments: uploadedAttachments.length > 0 ? uploadedAttachments : undefined,
+            });
+            toast.success('Đã cập nhật đợt kiểm tra thành công');
+        } else {
+            // Create new round
+            const currentDate = new Date();
+            const newRound: Partial<InspectionRound> = {
+                code: formData.code,
+                name: formData.name,
+                planId: formData.relatedPlanId || undefined,
+                planName: formData.relatedPlanId ? approvedPlans.find(p => p.id === formData.relatedPlanId)?.name : undefined,
+                type: 'routine',
+                status: 'draft', // Trạng thái mặc định là Nháp
+                startDate: formData.startDate!,
+                endDate: formData.endDate!,
+                leadUnit: formData.leadUnit || userWard,
+                team: [],
+                teamSize: 0,
+                totalTargets: formData.selectedStores.length,
+                inspectedTargets: 0,
+                provinceId: formData.provinceId,
+                wardId: formData.wardId,
+                priority: formData.priority,
+                createdBy: 'Người dùng hiện tại',
+                createdAt: currentDate.toISOString().split('T')[0],
+                attachments: uploadedAttachments,
+            };
+            await createRound(newRound);
+            toast.success('Đã tạo đợt kiểm tra thành công');
+        }
+        
+        navigate('/plans/inspection-rounds');
+    } catch (error) {
+        console.error("Submit Error", error);
+        toast.error('Có lỗi xảy ra, vui lòng thử lại');
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
-  const handleSaveDraft = () => {
-    toast.success('Đã lưu nháp đợt kiểm tra');
-    navigate('/plans/inspection-rounds');
-  };
 
-  const toggleStore = (storeId: number) => {
-    setFormData(prev => ({
-      ...prev,
-      selectedStores: prev.selectedStores.includes(storeId)
-        ? prev.selectedStores.filter(id => id !== storeId)
-        : [...prev.selectedStores, storeId],
-    }));
+
+  const toggleStore = (storeId: string) => {
+    setFormData(prev => {
+      const isSelected = prev.selectedStores.includes(storeId);
+      if (isSelected) {
+        return {
+          ...prev,
+          selectedStores: prev.selectedStores.filter(id => id !== storeId)
+        };
+      } else {
+        return {
+          ...prev,
+          selectedStores: [...prev.selectedStores, storeId]
+        };
+      }
+    });
     
     // Clear error when user selects
     if (errors.selectedStores) {
@@ -408,7 +572,7 @@ export default function InspectionRoundCreate() {
     }));
   };
 
-  const approvedPlans = mockPlans.filter(p => p.status === 'approved' || p.status === 'active');
+  const approvedPlans = realPlans.filter(p => p.status === 'approved' || p.status === 'active');
   
   const selectedForm = mockForms.find(f => f.id === showFormDetailModal);
 
@@ -430,21 +594,30 @@ export default function InspectionRoundCreate() {
       {/* Progress Steps */}
       <div className={styles.stepsContainer}>
         <div className={styles.steps}>
-          <div className={`${styles.step} ${currentStep >= 1 ? styles.stepActive : ''}`}>
+          <div 
+            className={`${styles.step} ${currentStep >= 1 ? styles.stepActive : ''}`}
+            onClick={() => setCurrentStep(1)}
+          >
             <div className={styles.stepNumber}>
               {currentStep > 1 ? <CheckCircle2 size={20} /> : '1'}
             </div>
             <div className={styles.stepLabel}>Thông tin chung</div>
           </div>
           <div className={styles.stepDivider}></div>
-          <div className={`${styles.step} ${currentStep >= 2 ? styles.stepActive : ''}`}>
+          <div 
+            className={`${styles.step} ${currentStep >= 2 ? styles.stepActive : ''} ${validateStep1(false) ? '' : styles.stepDisabled}`}
+            onClick={() => validateStep1() && setCurrentStep(2)}
+          >
             <div className={styles.stepNumber}>
               {currentStep > 2 ? <CheckCircle2 size={20} /> : '2'}
             </div>
             <div className={styles.stepLabel}>Tiêu chí kiểm tra</div>
           </div>
           <div className={styles.stepDivider}></div>
-          <div className={`${styles.step} ${currentStep >= 3 ? styles.stepActive : ''}`}>
+          <div 
+            className={`${styles.step} ${currentStep >= 3 ? styles.stepActive : ''} ${validateStep1(false) ? '' : styles.stepDisabled}`}
+            onClick={() => validateStep1() && setCurrentStep(3)}
+          >
             <div className={styles.stepNumber}>3</div>
             <div className={styles.stepLabel}>Cửa hàng</div>
           </div>
@@ -453,12 +626,12 @@ export default function InspectionRoundCreate() {
 
       {/* Content */}
       <div className={styles.content}>
-        <div className={styles.formContainer}>
+        <div className={styles.form}>
           {/* Step 1: Thông tin chung */}
           {currentStep === 1 && (
             <div className={styles.section}>
               <div className={styles.formGrid}>
-                {/* Mã đợt kiểm tra - Auto generated */}
+                {/* Mã đợt kiểm tra */}
                 <div className={styles.formGroup}>
                   <label className={styles.label}>
                     Mã đợt kiểm tra <span className={styles.required}>*</span>
@@ -467,26 +640,8 @@ export default function InspectionRoundCreate() {
                     type="text"
                     className={styles.input}
                     value={formData.code}
-                    disabled
-                    style={{ background: 'var(--muted)', cursor: 'not-allowed' }}
+                    onChange={(e) => handleChange('code', e.target.value)}
                   />
-                  <span className={styles.helpText}>Hệ thống tự động sinh</span>
-                </div>
-
-                {/* Độ ưu tiên */}
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>
-                    Độ ưu tiên <span className={styles.required}>*</span>
-                  </label>
-                  <select
-                    className={styles.select}
-                    value={formData.priority}
-                    onChange={(e) => handleChange('priority', e.target.value)}
-                  >
-                    <option value="low">Thấp</option>
-                    <option value="medium">Trung bình</option>
-                    <option value="high">Cao</option>
-                  </select>
                 </div>
 
                 {/* Tên đợt kiểm tra */}
@@ -510,23 +665,47 @@ export default function InspectionRoundCreate() {
                   )}
                 </div>
 
-                {/* Kế hoạch liên quan - Optional */}
-                <div className={styles.formGroupFull}>
-                  <label className={styles.label}>Kế hoạch liên quan</label>
+                {/* Độ ưu tiên */}
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>
+                    Độ ưu tiên <span className={styles.required}>*</span>
+                  </label>
                   <select
                     className={styles.select}
+                    value={formData.priority}
+                    onChange={(e) => handleChange('priority', e.target.value)}
+                  >
+                    <option value="low">Thấp</option>
+                    <option value="medium">Trung bình</option>
+                    <option value="high">Cao</option>
+                    <option value="urgent">Khẩn cấp</option>
+                  </select>
+                </div>
+
+                {/* Kế hoạch liên quan - Optional */}
+                <div className={styles.formGroupFull}>
+                  <label className={styles.label}>
+                    Kế hoạch liên quan <span className={styles.required}>*</span>
+                  </label>
+                  <select
+                    className={`${styles.select} ${errors.relatedPlanId ? styles.inputError : ''}`}
                     value={formData.relatedPlanId}
                     onChange={(e) => handleChange('relatedPlanId', e.target.value)}
                     disabled={!!planIdFromUrl}
-                    style={planIdFromUrl ? { background: 'var(--muted)', cursor: 'not-allowed' } : {}}
                   >
-                    <option value="">Không liên kt với kế hoạch</option>
+                    <option value="">Chọn kế hoạch kiểm tra</option>
                     {approvedPlans.map(plan => (
                       <option key={plan.id} value={plan.id}>
                         {plan.id} - {plan.name}
                       </option>
                     ))}
                   </select>
+                  {errors.relatedPlanId && (
+                    <div className={styles.errorMessage}>
+                      <AlertCircle size={14} />
+                      <span>{errors.relatedPlanId}</span>
+                    </div>
+                  )}
                   {planIdFromUrl && (
                     <span className={styles.helpText}>Tự động liên kết từ kế hoạch</span>
                   )}
@@ -552,18 +731,18 @@ export default function InspectionRoundCreate() {
                   )}
                 </div>
 
-                {/* Đơn vị chủ trì - Conditional based on user role */}
+                {/* Người chủ trì - Conditional based on user role */}
                 {userRole !== 'ward' && (
                   <div className={styles.formGroup}>
                     <label className={styles.label}>
-                      Đơn vị chủ trì <span className={styles.required}>*</span>
+                      Người chủ trì <span className={styles.required}>*</span>
                     </label>
                     <select
                       className={`${styles.select} ${errors.leadUnit ? styles.inputError : ''}`}
                       value={formData.leadUnit}
                       onChange={(e) => handleChange('leadUnit', e.target.value)}
                     >
-                      <option value="">Chọn xã/phường</option>
+                      <option value="">Chọn người chủ trì</option>
                       <option value="Phường Bến Nghé">Phường Bến Nghé</option>
                       <option value="Phường Bến Thành">Phường Bến Thành</option>
                       <option value="Phường Cô Giang">Phường Cô Giang</option>
@@ -584,43 +763,40 @@ export default function InspectionRoundCreate() {
                   </div>
                 )}
 
-                {/* Phạm vi kiểm tra - Conditional based on user role */}
-                {userRole !== 'ward' && (
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>
-                      Phạm vi kiểm tra <span className={styles.required}>*</span>
-                    </label>
+                {/* Khu vực kiểm tra - Disabled and auto-filled */}
+                <div className={styles.formGroupFull}>
+                  <label className={styles.label}>
+                    Khu vực kiểm tra <span className={styles.required}>*</span>
+                  </label>
+                  <div className={styles.formRow}>
                     <select
-                      className={`${styles.select} ${errors.scopeArea ? styles.inputError : ''}`}
-                      value={formData.scopeArea}
-                      onChange={(e) => handleChange('scopeArea', e.target.value)}
+                      className={styles.select}
+                      value={formData.provinceId}
+                      disabled={true}
                     >
-                      <option value="">Chọn xã/phường</option>
-                      <option value="Phường Bến Nghé">Phường Bến Nghé</option>
-                      <option value="Phường Bến Thành">Phường Bến Thành</option>
-                      <option value="Phường Cô Giang">Phường Cô Giang</option>
-                      <option value="Phường Nguyễn Cư Trinh">Phường Nguyễn Cư Trinh</option>
-                      <option value="Phường Cầu Kho">Phường Cầu Kho</option>
-                      <option value="Phường Đa Kao">Phường Đa Kao</option>
-                      <option value="Phường Nguyễn Thái Bình">Phường Nguyễn Thái Bình</option>
-                      <option value="Phường Phạm Ngũ Lão">Phường Phạm Ngũ Lão</option>
-                      <option value="Phường Cầu Ông Lãnh">Phường Cầu Ông Lãnh</option>
-                      <option value="Phường Tân Định">Phường Tân Định</option>
+                      <option value="">Tỉnh/Thành phố</option>
+                      {provinces.map(p => (
+                        <option key={p._id} value={p._id}>{p.name}</option>
+                      ))}
                     </select>
-                    {errors.scopeArea && (
-                      <div className={styles.errorMessage}>
-                        <AlertCircle size={14} />
-                        <span>{errors.scopeArea}</span>
-                      </div>
-                    )}
+                    <select
+                      className={styles.select}
+                      value={formData.wardId}
+                      disabled={true}
+                    >
+                      <option value="">Xã/Phường</option>
+                      {wards.map(w => (
+                        <option key={w._id} value={w._id}>{w.name}</option>
+                      ))}
+                    </select>
                   </div>
-                )}
+                </div>
 
                 {/* Display values for ward users */}
                 {userRole === 'ward' && (
                   <>
                     <div className={styles.formGroup}>
-                      <label className={styles.label}>Đơn vị chủ trì</label>
+                      <label className={styles.label}>Người chủ trì</label>
                       <div className={styles.readOnlyField}>{userWard}</div>
                     </div>
                     <div className={styles.formGroup}>
@@ -638,11 +814,11 @@ export default function InspectionRoundCreate() {
                       <label className={styles.label}>
                         Quyết định kiểm tra việc chấp hành pháp luật trong sản xuất, kinh doanh hàng hóa, dịch vụ
                       </label>
-                      <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center' }}>
+                      <div className={styles.decisionContainer}>
                         {inspectionDecision ? (
                           <>
                             <div className={styles.selectedDecisionBox}>
-                              <CheckCircle2 size={16} style={{ color: 'var(--primary)' }} />
+                              <CheckCircle2 size={16} color="var(--primary)" />
                               <div>
                                 <div className={styles.selectedDecisionCode}>{inspectionDecision.code}</div>
                                 <div className={styles.selectedDecisionTitle}>{inspectionDecision.title}</div>
@@ -674,11 +850,11 @@ export default function InspectionRoundCreate() {
                       <label className={styles.label}>
                         Quyết định phân công công chức thực hiện biện pháp nghiệp vụ
                       </label>
-                      <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center' }}>
+                      <div className={styles.decisionContainer}>
                         {assignmentDecision ? (
                           <>
                             <div className={styles.selectedDecisionBox}>
-                              <CheckCircle2 size={16} style={{ color: 'var(--primary)' }} />
+                              <CheckCircle2 size={16} color="var(--primary)" />
                               <div>
                                 <div className={styles.selectedDecisionCode}>{assignmentDecision.code}</div>
                                 <div className={styles.selectedDecisionTitle}>{assignmentDecision.title}</div>
@@ -715,11 +891,11 @@ export default function InspectionRoundCreate() {
                       <label className={styles.label}>
                         Quyết định sửa đổi, bổ sung Quyết định kiểm tra việc chấp hành pháp luật
                       </label>
-                      <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center' }}>
+                      <div className={styles.decisionContainer}>
                         {amendmentDecision ? (
                           <>
                             <div className={styles.selectedDecisionBox}>
-                              <CheckCircle2 size={16} style={{ color: 'var(--primary)' }} />
+                              <CheckCircle2 size={16} color="var(--primary)" />
                               <div>
                                 <div className={styles.selectedDecisionCode}>{amendmentDecision.code}</div>
                                 <div className={styles.selectedDecisionTitle}>{amendmentDecision.title}</div>
@@ -751,11 +927,11 @@ export default function InspectionRoundCreate() {
                       <label className={styles.label}>
                         Quyết định kéo dài/Gia hạn thời hạn thẩm tra, xác minh
                       </label>
-                      <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center' }}>
+                      <div className={styles.decisionContainer}>
                         {extensionDecision ? (
                           <>
                             <div className={styles.selectedDecisionBox}>
-                              <CheckCircle2 size={16} style={{ color: 'var(--primary)' }} />
+                              <CheckCircle2 size={16} color="var(--primary)" />
                               <div>
                                 <div className={styles.selectedDecisionCode}>{extensionDecision.code}</div>
                                 <div className={styles.selectedDecisionTitle}>{extensionDecision.title}</div>
@@ -783,6 +959,61 @@ export default function InspectionRoundCreate() {
                     </div>
                   </>
                 )}
+
+                {/* Tài liệu đính kèm */}
+                <div className={styles.formGroupFull}>
+                  <label className={styles.label}>
+                    Tài liệu đính kèm
+                    <span className={styles.helpTextSmall}> - Tùy chọn (Chọn nhiều file)</span>
+                  </label>
+                  <div className={styles.fileUploadContainer}>
+                    <input
+                      type="file"
+                      id="round-attachments"
+                      multiple
+                      className={styles.fileInput}
+                      onChange={(e) => {
+                        if (e.target.files) {
+                          const newFiles = Array.from(e.target.files);
+                          setFormData(prev => ({
+                            ...prev,
+                            attachments: [...prev.attachments, ...newFiles]
+                          }));
+                        }
+                      }}
+                    />
+                    <label htmlFor="round-attachments" className={styles.fileLabel}>
+                      <Upload size={20} />
+                      <span>Chọn tài liệu hoặc kéo thả vào đây</span>
+                    </label>
+                  </div>
+                  
+                  {formData.attachments.length > 0 && (
+                    <div className={styles.fileList}>
+                      {formData.attachments.map((file, index) => (
+                        <div key={`${file.name}-${index}`} className={styles.fileItem}>
+                          <div className={styles.fileInfo}>
+                            <FileText size={16} className={styles.fileIcon} />
+                            <span className={styles.fileName}>{file.name}</span>
+                            <span className={styles.fileSize}>({(file.size / 1024).toFixed(1)} KB)</span>
+                          </div>
+                          <button
+                            type="button"
+                            className={styles.removeFileButton}
+                            onClick={() => {
+                              setFormData(prev => ({
+                                ...prev,
+                                attachments: prev.attachments.filter((_, i) => i !== index)
+                              }));
+                            }}
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -800,25 +1031,47 @@ export default function InspectionRoundCreate() {
 
               <div className={styles.formsGrid}>
                 {mockForms.map(form => (
-                  <div key={form.id} className={styles.formCard}>
-                    <div className={styles.formCardHeader}>
-                      <input
-                        type="checkbox"
-                        className={styles.checkbox}
-                        checked={formData.selectedForms.includes(form.id)}
-                        onChange={() => toggleForm(form.id)}
-                      />
-                      <div className={styles.formCardTitle}>
-                        <strong>{form.id}</strong> - {form.name}
+                  <div 
+                    key={form.id} 
+                    className={`${styles.formCard} ${formData.selectedForms.includes(form.id) ? styles.formCardSelected : ''}`}
+                    onClick={() => toggleForm(form.id)}
+                  >
+                    <div className={styles.formCardMain}>
+                      <div className={styles.formCardHeader}>
+                        <div className={styles.formCheckboxContainer}>
+                          <input
+                            type="checkbox"
+                            className={styles.checkbox}
+                            checked={formData.selectedForms.includes(form.id)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              toggleForm(form.id);
+                            }}
+                          />
+                        </div>
+                        <div className={styles.formCardIcon}>
+                          <FileText size={24} />
+                        </div>
+                        <div className={styles.formCardTitle}>
+                          <span className={styles.formId}>{form.id}</span>
+                          <span className={styles.formName}>{form.name}</span>
+                        </div>
                       </div>
-                      <button
-                        type="button"
-                        className={styles.viewButton}
-                        onClick={() => setShowFormDetailModal(form.id)}
-                      >
-                        <Eye size={16} />
-                      </button>
+                      <div className={styles.formCardDescription}>
+                        {form.criteria.length} tiêu chí kiểm tra trong biểu mẫu này
+                      </div>
                     </div>
+                    <button
+                      type="button"
+                      className={styles.viewButton}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowFormDetailModal(form.id);
+                      }}
+                    >
+                      <Eye size={18} />
+                      Chi tiết
+                    </button>
                   </div>
                 ))}
               </div>
@@ -862,46 +1115,56 @@ export default function InspectionRoundCreate() {
                     />
                     <span>Rủi ro cao</span>
                   </label>
-                  <label className={styles.filterOption}>
-                    <input
-                      type="checkbox"
-                      className={styles.checkbox}
-                      checked={storeFilters.manyComplaints}
-                      onChange={(e) => setStoreFilters(prev => ({ ...prev, manyComplaints: e.target.checked }))}
-                    />
-                    <span>Nhiều khiếu nại</span>
-                  </label>
                 </div>
               </div>
 
               {/* Store Multi-Select */}
-              <div className={styles.storeMultiSelect}>
-                {filteredStores.slice(0, 100).map(store => (
-                  <div
-                    key={store.id}
-                    className={`${styles.storeOption} ${formData.selectedStores.includes(store.id) ? styles.storeOptionSelected : ''}`}
-                    onClick={() => toggleStore(store.id)}
-                  >
-                    <input
-                      type="checkbox"
-                      className={styles.checkbox}
-                      checked={formData.selectedStores.includes(store.id)}
-                      onChange={() => {}}
-                    />
-                    <div className={styles.storeOptionInfo}>
-                      <div className={styles.storeOptionName}>{store.name}</div>
-                      <div className={styles.storeOptionMeta}>
-                        {store.address} • {store.type}
-                        {store.riskLevel === 'high' && (
-                          <span className={styles.riskBadge}>Rủi ro cao</span>
-                        )}
-                        {store.hasComplaints && (
-                          <span className={styles.complaintBadge}>Nhiều khiếu nại</span>
-                        )}
+              <div className={styles.storesGridContainer}>
+                {loadingMerchants ? (
+                  <div className={styles.loadingStores}>
+                    <RefreshCw className="animate-spin" />
+                    <span>Đang tải danh sách cơ sở...</span>
+                  </div>
+                ) : filteredStores.length === 0 ? (
+                  <div className={styles.noStores}>
+                    Không tìm thấy cơ sở nào phù hợp.
+                  </div>
+                ) : (
+                  filteredStores.slice(0, 100).map(store => (
+                    <div
+                      key={store.id}
+                      className={`${styles.storeCard} ${formData.selectedStores.includes(store.id) ? styles.storeCardSelected : ''}`}
+                      onClick={() => toggleStore(store.id)}
+                    >
+                      <div className={styles.storeCardCheckbox}>
+                        <input
+                          type="checkbox"
+                          className={styles.checkbox}
+                          checked={formData.selectedStores.includes(store.id)}
+                          onChange={() => {}} // Controlled by parent div
+                        />
+                      </div>
+                      <div className={styles.storeCardIcon}>
+                        <Store size={22} />
+                      </div>
+                      <div className={styles.storeCardContent}>
+                        <div className={styles.storeCardHeader}>
+                          <div className={styles.storeCardName}>{store.name}</div>
+                          <div className={styles.storeCardBadges}>
+                            {store.category === 'hotspot' && (
+                              <span className={`${styles.badge} ${styles.badgeHigh}`}>Rủi ro cao</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className={styles.storeCardMeta}>
+                          <span className={styles.storeCardType}>{store.type}</span>
+                          <span className={styles.metaDivider}>•</span>
+                          <span className={styles.storeCardAddress}>{store.address}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
               {errors.selectedStores && (
@@ -927,18 +1190,29 @@ export default function InspectionRoundCreate() {
               Quay lại
             </button>
           )}
-          <button className={styles.draftButton} onClick={handleSaveDraft}>
-            Lưu nháp
-          </button>
+
           {currentStep < 3 ? (
             <button className={styles.nextButton} onClick={handleNext}>
               Tiếp theo
               <ChevronRight size={18} />
             </button>
           ) : (
-            <button className={styles.submitButton} onClick={handleSubmit}>
-              <CheckCircle2 size={18} />
-              {editMode ? 'Cập nhật đợt kiểm tra' : 'Tạo đợt kiểm tra'}
+            <button 
+              className={styles.submitButton} 
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <RefreshCw size={18} className={styles.spinner} />
+                  Đang xử lý...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 size={18} />
+                  {editMode ? 'Cập nhật đợt kiểm tra' : 'Tạo đợt kiểm tra'}
+                </>
+              )}
             </button>
           )}
         </div>

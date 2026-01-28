@@ -52,8 +52,8 @@ const PlanCreate = React.lazy(() =>
 const PlanDetail = React.lazy(() =>
   import('../app/pages/plans/PlanDetail').then((module) => ({ default: module.PlanDetail })),
 );
-const PlanTaskBoard = React.lazy(() =>
-  import('../app/pages/plans/PlanTaskBoard').then((module) => ({ default: module.PlanTaskBoard })),
+const TaskBoard = React.lazy(() =>
+  import('../app/pages/tasks/TaskBoard').then((module) => ({ default: module.TaskBoard })),
 );
 const InspectionRoundsList = React.lazy(() =>
   import('../app/pages/inspections/InspectionRoundsList').then((module) => ({
@@ -65,19 +65,17 @@ const InspectionRoundCreate = React.lazy(() => import('../app/pages/inspections/
 const InspectionRoundStatistics = React.lazy(
   () => import('../app/pages/inspections/InspectionRoundStatistics'),
 );
-const InspectionTasksList = React.lazy(() =>
-  import('../app/pages/tasks/InspectionTasksList').then((module) => ({
-    default: module.InspectionTasksList,
-  })),
-);
-const TaskBoard = React.lazy(() => import('../app/pages/tasks/TaskBoard'));
 
 const LeadInbox = React.lazy(() => import('../pages/lead-risk/LeadInbox'));
+const LeadInboxAIDemo = React.lazy(() => import('../pages/lead-risk/LeadInboxAIDemo'));
+const LeadDetailAIDemo = React.lazy(() => import('../pages/lead-risk/LeadDetailAIDemo'));
+const LeadDuplicateDemo = React.lazy(() => import('../pages/lead-risk/LeadDuplicateDemo'));
 const LeadRiskHome = React.lazy(() => import('../pages/lead-risk/LeadRiskHome'));
 const LeadList = React.lazy(() => import('../pages/lead-risk/LeadList'));
 const LeadMapView = React.lazy(() => import('../pages/lead-risk/LeadMapView'));
 const CreateLeadQuick = React.lazy(() => import('../pages/lead-risk/CreateLeadQuick'));
 const CreateLeadFull = React.lazy(() => import('../pages/lead-risk/CreateLeadFull'));
+const CreateLeadSource = React.lazy(() => import('../pages/lead-risk/CreateLeadSource'));
 const RiskDashboard = React.lazy(() => import('../pages/lead-risk/RiskDashboard'));
 const LeadDetail = React.lazy(() => import('../pages/lead-risk/LeadDetail'));
 const RiskDetail = React.lazy(() => import('../pages/lead-risk/RiskDetail'));
@@ -212,7 +210,7 @@ export const router = createBrowserRouter([
             path: 'plans/:planId/inspection-session-board',
             element: (
               <PermissionProtectedRoute>
-                <PlanTaskBoard />
+                <TaskBoard />
               </PermissionProtectedRoute>
             ),
           },
@@ -221,14 +219,6 @@ export const router = createBrowserRouter([
             element: (
               <PermissionProtectedRoute>
                 <TaskBoard />
-              </PermissionProtectedRoute>
-            ),
-          },
-          {
-            path: 'plans/task-board',
-            element: (
-              <PermissionProtectedRoute>
-                <PlanTaskBoard />
               </PermissionProtectedRoute>
             ),
           },
@@ -269,7 +259,7 @@ export const router = createBrowserRouter([
             path: 'plans/inspection-rounds/:roundId/tasks',
             element: (
               <PermissionProtectedRoute>
-                <InspectionTasksList />
+                <TaskBoard />
               </PermissionProtectedRoute>
             ),
           },
@@ -277,7 +267,7 @@ export const router = createBrowserRouter([
             path: 'tasks',
             element: (
               <PermissionProtectedRoute>
-                <InspectionTasksList />
+                <TaskBoard />
               </PermissionProtectedRoute>
             ),
           },
@@ -481,6 +471,38 @@ export const router = createBrowserRouter([
             element: (
               <PermissionProtectedRoute>
                 <CreateLeadFull />
+              </PermissionProtectedRoute>
+            ),
+          },
+          {
+            path: 'lead-risk/create-lead-source',
+            element: (
+              <PermissionProtectedRoute>
+                <CreateLeadSource />
+              </PermissionProtectedRoute>
+            ),
+          },
+          {
+            path: 'lead-risk/inbox-ai-demo',
+            element: (
+              <PermissionProtectedRoute>
+                <LeadInboxAIDemo />
+              </PermissionProtectedRoute>
+            ),
+          },
+          {
+            path: 'lead-risk/lead-detail-ai-demo',
+            element: (
+              <PermissionProtectedRoute>
+                <LeadDetailAIDemo />
+              </PermissionProtectedRoute>
+            ),
+          },
+          {
+            path: 'lead-risk/duplicate-demo',
+            element: (
+              <PermissionProtectedRoute>
+                <LeadDuplicateDemo />
               </PermissionProtectedRoute>
             ),
           },

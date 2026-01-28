@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { type Plan } from '@/app/data/kehoach-mock-data';
+import { type Plan } from '@/app/types/plans';
 import { fetchPlansApi, fetchPlanByIdApi } from '@/utils/api/plansApi';
 
 interface UseSupabasePlansReturn {
@@ -71,7 +71,7 @@ export function useSupabasePlans(): UseSupabasePlansReturn {
       const data = await fetchPlansApi();
       setPlans(data);
     } catch (err: any) {
-      console.error('Error fetching plans from API:', err);
+      console.error('Error fetching plans:', err);
       setError(err.message || 'Không thể tải danh sách kế hoạch');
     } finally {
       setLoading(false);

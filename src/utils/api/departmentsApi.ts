@@ -37,14 +37,10 @@ export async function fetchMarketManagementTeams(options?: {
   teamId?: string | null;
 }): Promise<Department[]> {
   try {
-    console.log('🔍 fetchMarketManagementTeams called with options:', JSON.stringify(options, null, 2));
-    console.log('🔍 options?.teamId:', options?.teamId);
-    console.log('🔍 options?.divisionId:', options?.divisionId);
-    
-    // Build query
+   
     let query = supabase
       .from('departments')
-      .select('id, name, code, level, path, parent_id')
+      .select('_id, name, code, level, path, parent_id')
       .is('deleted_at', null);
     
     // 🔥 CHANGED: Priority: teamId > divisionId
@@ -56,18 +52,85 @@ export async function fetchMarketManagementTeams(options?: {
         ? { type: 'divisionId', value: options.divisionId }
         : null;
     
+    // 🔥 FIX: Validate UUID format and resolve department name to UUID if needed
+    const isValidUUID = (str: string): boolean => {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      return uuidRegex.test(str);
+    };
+    
+    let actualFilterId: { type: string; value: string } | null = null;
+    
     if (filterId) {
-      console.log(`🔍 Filtering departments by ${filterId.type}:`, filterId.value);
-      // Use .or() with proper format: field1.operator.value1,field2.operator.value2
-      query = query.or(`_id.eq.${filterId.value},parent_id.eq.${filterId.value}`);
-    } else {
-      console.log('📋 No filter - fetching all departments');
+      // Check if value is a valid UUID
+      if (isValidUUID(filterId.value)) {
+        actualFilterId = filterId;
+        console.log(`🔍 Filtering departments by ${filterId.type} (UUID):`, filterId.value);
+      } else {
+        // Value is not a UUID, try to find department by name
+        console.log(`⚠️ ${filterId.type} is not a UUID, searching by name:`, filterId.value);
+        const { data: deptByName, error: searchError } = await supabase
+          .from('departments')
+          .select('_id')
+          .eq('name', filterId.value)
+          .is('deleted_at', null)
+          .single();
+        
+        if (searchError || !deptByName) {
+          console.error(`❌ Department not found by name "${filterId.value}":`, searchError);
+          // Return empty array if department not found
+          return [];
+        }
+        
+        actualFilterId = { type: filterId.type, value: deptByName._id };
+        console.log(`✅ Found department UUID:`, deptByName._id);
+      }
     }
     
-    const { data, error } = await query.order('name', { ascending: true });
-    console.log('data', data);
-    console.log('options?.divisionId', options?.divisionId);
+    let data: any[] = [];
+    let error: any = null;
     
+    if (actualFilterId) {
+      // 🔥 FIX: Fetch twice and merge to avoid .or() issues with _id field
+      // Query 1: _id = actualFilterId.value
+      const query1 = supabase
+        .from('departments')
+        .select('_id, name, code, level, path, parent_id')
+        .is('deleted_at', null)
+        .eq('_id', actualFilterId.value);
+      
+      // Query 2: parent_id = actualFilterId.value
+      const query2 = supabase
+        .from('departments')
+        .select('_id, name, code, level, path, parent_id')
+        .is('deleted_at', null)
+        .eq('parent_id', actualFilterId.value);
+      
+      // Execute both queries in parallel
+      const [result1, result2] = await Promise.all([
+        query1.order('name', { ascending: true }),
+        query2.order('name', { ascending: true })
+      ]);
+      
+      if (result1.error) {
+        error = result1.error;
+      } else if (result2.error) {
+        error = result2.error;
+      } else {
+        // Merge results and remove duplicates
+        const merged = [...(result1.data || []), ...(result2.data || [])];
+        const uniqueMap = new Map();
+        merged.forEach((dept: any) => {
+          uniqueMap.set(dept._id, dept);
+        });
+        data = Array.from(uniqueMap.values());
+      }
+    } else {
+      console.log('📋 No filter - fetching all departments');
+      const result = await query.select('_id, name, code, level, path, parent_id').order('name', { ascending: true });
+      data = result.data || [];
+      error = result.error;
+    }
+   
     if (error) {
       console.error('❌ Error fetching market management teams:', error);
       throw new Error(`Failed to fetch departments: ${error.message}`);
@@ -92,12 +155,6 @@ export async function fetchMarketManagementTeams(options?: {
       }
     }
 
-    console.log('📊 Total departments fetched:', data?.length || 0);
-    console.log(`✅ Filtered departments by ${filterId?.type || 'none'}:`, filteredData.length);
-    
-    if (filteredData && filteredData.length > 0) {
-      console.log('📝 Departments after filter:', filteredData.map((d: Department) => d.name));
-    }
     
     // 🔥 TEMP: Bỏ điều kiện filter theo name (regex pattern)
     // Chỉ trả về departments đã được filter theo teamId hoặc divisionId
@@ -108,3 +165,64 @@ export async function fetchMarketManagementTeams(options?: {
   }
 }
 
+/**
+ * Fetch department by ID
+ */
+export async function fetchDepartmentById(departmentId: string): Promise<Department | null> {
+  try {
+    // 🔥 FIX: Validate UUID format and resolve department name to UUID if needed
+    const isValidUUID = (str: string): boolean => {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      return uuidRegex.test(str);
+    };
+    
+    let actualDepartmentId = departmentId;
+    
+    // Check if departmentId is a valid UUID
+    if (!isValidUUID(departmentId)) {
+      console.log(`⚠️ fetchDepartmentById: departmentId is not a UUID, searching by name:`, departmentId);
+      
+      // Try to find department by name
+      const { data: deptByName, error: searchError } = await supabase
+        .from('departments')
+        .select('_id')
+        .eq('name', departmentId)
+        .is('deleted_at', null)
+        .single();
+      
+      if (searchError || !deptByName) {
+        console.error(`❌ fetchDepartmentById: Department not found by name "${departmentId}":`, searchError);
+        return null; // Return null if department not found
+      }
+      
+      actualDepartmentId = deptByName._id;
+      console.log(`✅ fetchDepartmentById: Found department UUID:`, actualDepartmentId);
+    }
+    
+    const { data, error } = await supabase
+      .from('departments')
+      .select('_id, name, code, level, path, parent_id, address, latitude, longitude, created_at, updated_at')
+      .eq('_id', actualDepartmentId)
+      .is('deleted_at', null)
+      .single();
+
+    if (error) {
+      console.error('❌ Error fetching department by ID:', error);
+      throw new Error(`Failed to fetch department: ${error.message}`);
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    // Map _id to id for application compatibility
+    return {
+      ...data,
+      id: data._id,
+      _id: data._id,
+    };
+  } catch (error: any) {
+    console.error('❌ Error fetching department by ID:', error);
+    throw error;
+  }
+}

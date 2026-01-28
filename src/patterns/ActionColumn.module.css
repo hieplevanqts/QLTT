@@ -2,7 +2,6 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  justify-content: flex-end;
 }
 
 .iconButton {
@@ -30,9 +29,6 @@
   color: var(--primary);
 }
 
-.actionWrapper {
-  /* Wrapper for menu items with separators */
-}
 
 .actionLabel {
   margin-left: 8px;

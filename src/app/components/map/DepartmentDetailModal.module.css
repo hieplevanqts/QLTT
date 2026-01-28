@@ -1,0 +1,565 @@
+/* Department Detail Modal Styles */
+
+.backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 9998;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: var(--card);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  width: 95%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow: hidden;
+  z-index: 9999;
+  animation: slideUpFade 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  flex-direction: column;
+  font-family: 'Inter', sans-serif;
+}
+
+.header {
+  background: linear-gradient(135deg, var(--color-primary) 0%, #003d82 100%);
+  padding: var(--spacing-5);
+  position: relative;
+}
+
+.closeButton {
+  position: absolute;
+  top: var(--spacing-3);
+  right: var(--spacing-3);
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: var(--radius-full);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: white;
+  z-index: 10;
+}
+
+.closeButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg) scale(1.1);
+}
+
+.headerContent {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+}
+
+.avatar {
+  width: 70px;
+  height: 70px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.15) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+}
+
+.departmentInfo {
+  flex: 1;
+}
+
+.departmentTitle {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: white;
+  margin-bottom: var(--spacing-1);
+}
+
+.departmentSubtitle {
+  font-size: var(--font-size-sm);
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: var(--spacing-1);
+}
+
+.departmentsByWardHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  margin-top: var(--spacing-1);
+  margin-bottom: var(--spacing-1);
+  padding: var(--spacing-1) var(--spacing-2);
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+}
+
+.departmentsByWardText {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.departmentMeta {
+  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+.quickStats {
+  display: flex;
+  gap: var(--spacing-3);
+  flex-shrink: 0;
+}
+
+.statBadge {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-2) var(--spacing-3);
+  text-align: center;
+}
+
+.statValue {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: white;
+}
+
+.statLabel {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.content {
+  flex: 1;
+  overflow: auto;
+  padding: var(--spacing-5);
+}
+
+.loadingState,
+.errorState {
+  text-align: center;
+  padding: var(--spacing-8);
+}
+
+.loadingState {
+  color: var(--color-text-muted);
+}
+
+.errorState {
+  color: var(--color-error);
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-4);
+  margin-bottom: var(--spacing-5);
+}
+
+.section {
+  /* Section container */
+}
+
+.sectionTitle {
+  margin: 0 0 var(--spacing-3) 0;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.infoList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.infoItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2);
+  background: var(--color-background-muted);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}
+
+.infoItemSmall {
+  font-size: var(--font-size-xs);
+}
+
+.infoItemText {
+  font-weight: var(--font-weight-medium);
+}
+
+.infoItemTextEllipsis {
+  font-weight: var(--font-weight-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.infoItemAddress {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2);
+  background: var(--color-background-muted);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+}
+
+.infoItemAddressIcon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.officersSection {
+  margin-bottom: var(--spacing-5);
+}
+
+.officersList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  max-height: 300px;
+  overflow: auto;
+}
+
+/* Ward Department Group */
+.wardDepartmentGroup {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-3);
+  margin-bottom: var(--spacing-3);
+}
+
+.wardHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-2);
+  padding-bottom: var(--spacing-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.wardName {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--foreground);
+}
+
+.wardDeptCount {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  margin-left: auto;
+}
+
+.departmentsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.departmentItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2);
+  background: var(--card);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.departmentItemMain {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.departmentName {
+  font-size: 13px;
+  color: var(--foreground);
+  font-weight: 500;
+}
+
+.departmentType {
+  font-size: 11px;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+}
+
+.departmentUserCount {
+  font-size: 11px;
+  color: var(--muted-foreground);
+  margin-left: auto;
+}
+
+.departmentUsersList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  margin-top: var(--spacing-1);
+  padding-top: var(--spacing-1);
+  border-top: 1px solid var(--border);
+}
+
+.departmentUserItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-1);
+  background: var(--background);
+  border-radius: var(--radius-xs);
+  font-size: 11px;
+}
+
+.departmentUserName {
+  color: var(--foreground);
+  font-size: 11px;
+}
+
+.departmentUserMore {
+  font-size: 10px;
+  color: var(--muted-foreground);
+  font-style: italic;
+  padding-left: var(--spacing-1);
+}
+
+.officerItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3);
+  background: var(--color-background-muted);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}
+
+.officerInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  flex: 1;
+}
+
+.officerDetails {
+  flex: 1;
+}
+
+.officerName {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin-bottom: 2px;
+}
+
+.officerMeta {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  display: flex;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
+}
+
+.officerStats {
+  display: flex;
+  gap: var(--spacing-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.officerStatItem {
+  text-align: right;
+}
+
+.officerStatValue {
+  font-weight: var(--font-weight-semibold);
+}
+
+.officerStatValuePrimary {
+  color: var(--color-primary);
+}
+
+.officerStatValueDanger {
+  color: #ef4444;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-3);
+}
+
+.metricCard {
+  padding: var(--spacing-3);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.metricCardBlue {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #93c5fd;
+}
+
+.metricCardRed {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 1px solid #fca5a5;
+}
+
+.metricCardPurple {
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  border: 1px solid #d8b4fe;
+}
+
+.metricCardYellow {
+  background: linear-gradient(135deg, #fefce8 0%, #fef08a 100%);
+  border: 1px solid #fde047;
+}
+
+.metricCardGreen {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #86efac;
+}
+
+.metricCardOrange {
+  background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
+  border: 1px solid #fdba74;
+}
+
+.metricIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--spacing-2);
+}
+
+.metricIconBlue {
+  background: #3b82f6;
+}
+
+.metricIconRed {
+  background: #ef4444;
+}
+
+.metricIconPurple {
+  background: #a855f7;
+}
+
+.metricIconYellow {
+  background: #eab308;
+}
+
+.metricIconGreen {
+  background: #22c55e;
+}
+
+.metricIconOrange {
+  background: #f97316;
+}
+
+.metricValue {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-1);
+}
+
+.metricValueBlue {
+  color: #1e3a8a;
+}
+
+.metricValueRed {
+  color: #991b1b;
+}
+
+.metricValuePurple {
+  color: #581c87;
+}
+
+.metricValueYellow {
+  color: #854d0e;
+}
+
+.metricValueGreen {
+  color: #14532d;
+}
+
+.metricValueOrange {
+  color: #7c2d12;
+}
+
+.metricValueLarge {
+  font-size: var(--font-size-lg);
+}
+
+.metricLabel {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.metricLabelBlue {
+  color: #1e40af;
+}
+
+.metricLabelRed {
+  color: #b91c1c;
+}
+
+.metricLabelPurple {
+  color: #7e22ce;
+}
+
+.metricLabelYellow {
+  color: #a16207;
+}
+
+.metricLabelGreen {
+  color: #15803d;
+}
+
+.metricLabelOrange {
+  color: #c2410c;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -45%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}

@@ -3,7 +3,7 @@ name: Build and Deploy Pipeline
 on:
   push:
     branches:
-      - QA-main
+      - main
   workflow_call:
     secrets:
       REGISTRY_URL:
@@ -18,15 +18,38 @@ on:
         required: true
       VITE_SUPABASE_ANON_KEY:
         required: true
+      PUBLIC_URL:
+        required: true
 
 jobs:
   build-and-deploy:
     runs-on: [self-hosted, Linux, X64, build-image-mappa-runner]
     env:
-      IMAGE_NAME: saas-go/mappa-portal
+      FRONTEND_IMAGE_NAME: saas-go/mappa-portal
+      BACKEND_IMAGE_NAME: saas-go/mappa-backend
       MANIFEST_REPO: MappaWeb/mappa-manifest
-      MANIFEST_FILE_PATH: staging/frontend/mappa-portal-deployment.yaml
     steps:
+      - name: Determine Environment and Manifest Paths
+        id: env-config
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          echo "🔹 Current branch: $BRANCH_NAME"
+
+          if [ "$BRANCH_NAME" = "main" ]; then
+            echo "FE_MANIFEST_PATH=production/frontend/mappa-portal-deployment.yaml" >> $GITHUB_ENV
+            echo "BE_MANIFEST_PATH=production/backend/mappa-backend-deployment.yaml" >> $GITHUB_ENV
+            echo "ENV_NAME=staging" >> $GITHUB_ENV
+            echo "🔹 Deploying to STAGING environment"
+          elif [ "$BRANCH_NAME" = "QA-main" ]; then
+            echo "FE_MANIFEST_PATH=staging/frontend/mappa-portal-deployment.yaml" >> $GITHUB_ENV
+            echo "BE_MANIFEST_PATH=staging/backend/mappa-backend-deployment.yaml" >> $GITHUB_ENV
+            echo "ENV_NAME=qa" >> $GITHUB_ENV
+            echo "🔹 Deploying to QA environment"
+          else
+            echo "❌ Error: Unsupported branch: $BRANCH_NAME"
+            exit 1
+          fi
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -34,25 +57,48 @@ jobs:
         run: |
           SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
           echo "COMMIT_TAG=$SHORT_SHA" >> $GITHUB_ENV
-          FULL_IMAGE="${{ secrets.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:$SHORT_SHA"
-          echo "FULL_IMAGE=$FULL_IMAGE" >> $GITHUB_ENV
-        
+
+          # Tạo biến FULL_IMAGE để dùng xuyên suốt
+          FULL_IMAGE_FE="${{ secrets.REGISTRY_URL }}/${{ env.FRONTEND_IMAGE_NAME }}:$SHORT_SHA"
+          FULL_IMAGE_BE="${{ secrets.REGISTRY_URL }}/${{ env.BACKEND_IMAGE_NAME }}:$SHORT_SHA"
+
+          echo "FULL_IMAGE_FE=$FULL_IMAGE_FE" >> $GITHUB_ENV
+          echo "FULL_IMAGE_BE=$FULL_IMAGE_BE" >> $GITHUB_ENV
+
           echo "🔹 Version to build: $SHORT_SHA"
 
       - name: Login to Docker Registry
         run: |
           echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login ${{ secrets.REGISTRY_URL }} -u ${{ secrets.REGISTRY_USERNAME }} --password-stdin
 
-      - name: Build and Push Docker Image
+      # BUILD & PUSH FRONTEND
+      - name: Build and Push FRONTEND Image
         run: |
-          echo "🚀 Building image: ${{ env.FULL_IMAGE }}"
-          # Build
-          docker build --build-arg VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} --build-arg VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} -t ${{ env.FULL_IMAGE }} -f Dockerfile .
-        
-          # Push
-          docker push ${{ env.FULL_IMAGE }}
-          echo "Push success: ${{ env.FULL_IMAGE }}"
+          echo "🚀 Building Frontend: ${{ env.FULL_IMAGE_FE }}"
+          docker build \
+            --build-arg VITE_SYSTEM_ADMIN_API=${{ secrets.PUBLIC_URL }} \
+            --build-arg VITE_PUBLIC_URL=${{ secrets.PUBLIC_URL }} \
+            --build-arg VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} \
+            --build-arg VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} \
+            --build-arg PUBLIC_URL=${{ secrets.PUBLIC_URL }} \
+            -t ${{ env.FULL_IMAGE_FE }} \
+            -f Dockerfile .
 
+          docker push ${{ env.FULL_IMAGE_FE }}
+          echo "✅ Push Frontend success"
+
+      # BUILD & PUSH BACKEND
+      - name: Build and Push BACKEND Image
+        run: |
+          echo "🚀 Building Backend: ${{ env.FULL_IMAGE_BE }}"
+          docker build \
+            -t ${{ env.FULL_IMAGE_BE }} \
+            -f Dockerfile-be .
+
+          docker push ${{ env.FULL_IMAGE_BE }}
+          echo "✅ Push Backend success"
+
+      # UPDATE K8S MANIFEST
       - name: Checkout Manifest Repository
         uses: actions/checkout@v4
         with:
@@ -61,29 +107,54 @@ jobs:
           path: mappa-manifest
           ref: main
 
-      - name: Update Kubernetes Manifest
+      - name: Update Kubernetes Manifests
         working-directory: mappa-manifest
         run: |
           git config user.name "CI Builder"
           git config user.email "ci-bot@mappa.com"
 
-          if [ ! -f "${{ env.MANIFEST_FILE_PATH }}" ]; then
-            echo "❌ Error: File ${{ env.MANIFEST_FILE_PATH }} not found!"
-            ls -R # Liệt kê file để debug nếu lỗi
+          # Update Frontend
+          if [ -f "${{ env.FE_MANIFEST_PATH }}" ]; then
+            echo "📝 Updating Frontend: ${{ env.FE_MANIFEST_PATH }}"
+            BASE_IMAGE_FE="${{ secrets.REGISTRY_URL }}/${{ env.FRONTEND_IMAGE_NAME }}"
+            sed -i "s|image: ${BASE_IMAGE_FE}:.*|image: ${{ env.FULL_IMAGE_FE }}|g" ${{ env.FE_MANIFEST_PATH }}
+          else
+            echo "⚠️ Warning: Frontend manifest not found"
+            ls -R
             exit 1
           fi
-          
-          BASE_IMAGE_STR="${{ secrets.REGISTRY_URL }}/${{ env.IMAGE_NAME }}"
-          echo "📝 Updating manifest file: ${{ env.MANIFEST_FILE_PATH }}"
-          
-          sed -i "s|image: ${BASE_IMAGE_STR}:.*|image: ${{ env.FULL_IMAGE }}|g" ${{ env.MANIFEST_FILE_PATH }}
 
-          # 4. Commit và Push
-          if git diff --quiet; then
-            echo "No changes detected. Image tag might be already up to date."
+          # Update Backend
+          if [ -f "${{ env.BE_MANIFEST_PATH }}" ]; then
+            echo "📝 Updating Backend: ${{ env.BE_MANIFEST_PATH }}"
+            BASE_IMAGE_BE="${{ secrets.REGISTRY_URL }}/${{ env.BACKEND_IMAGE_NAME }}"
+            sed -i "s|image: ${BASE_IMAGE_BE}:.*|image: ${{ env.FULL_IMAGE_BE }}|g" ${{ env.BE_MANIFEST_PATH }}
           else
-            git add ${{ env.MANIFEST_FILE_PATH }}
-            git commit -m "chore(deploy): update mappa-portal image to ${{ env.COMMIT_TAG }} [skip ci]"
-            git push origin main
-            echo " Manifest updated successfully!"
+             echo "⚠️ Warning: Backend manifest not found"
+             ls -R
+             exit 1
           fi
+
+          # Commit
+          if git diff --quiet; then
+            echo "No changes detected."
+          else
+            git add .
+            git commit -m "chore(deploy): update images to ${{ env.COMMIT_TAG }} for ${{ env.ENV_NAME }} [skip ci]"
+            git push origin main
+            echo "✅ All manifests updated successfully!"
+          fi
+
+      # CLEANUP (Mới thêm)
+      - name: Cleanup Local Docker Images
+        if: always() # Chạy ngay cả khi các bước trên bị lỗi
+        run: |
+          echo "🧹 Cleaning up local images..."
+          # Dùng "|| true" để pipeline không bị fail nếu image không tồn tại (ví dụ build lỗi)
+          docker rmi ${{ env.FULL_IMAGE_FE }} || echo "⚠️ Could not remove Frontend image"
+          docker rmi ${{ env.FULL_IMAGE_BE }} || echo "⚠️ Could not remove Backend image"
+
+          # (Tùy chọn) Xóa các dangling images để giải phóng thêm dung lượng
+          # docker image prune -f 
+
+          echo "✅ Cleanup complete."

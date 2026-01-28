@@ -94,8 +94,8 @@ export const TenantService = {
   async getById(_id: string): Promise<Tenant | null> {
     const { data, error } = await getSupabase()
       .from('tenants')
-      .select('*')
-      .eq('_id', _id)
+      .select('*, id:_id')
+      .eq('_id', id)
       .is('deleted_at', null)
       .single();
 

@@ -28,11 +28,13 @@ export interface InspectionTask {
   planName?: string;
   
   // Task info
+  type: 'passive' | 'proactive'; // Loại phiên: Kế hoạch (passive) hoặc Nguồn tin (proactive)
   title: string;
   description: string;
   targetName: string; // Tên cơ sở/đối tượng kiểm tra
   targetCode?: string; // Mã cơ sở
   targetAddress: string;
+  merchantId?: string; // 🔥 NEW: Link to merchant ID
   
   // Assignment
   assignee: TaskAssignee;
@@ -74,6 +76,7 @@ export const mockInspectionTasks: InspectionTask[] = [
     roundName: 'Đợt kiểm tra định kỳ Q1/2025 - Hà Nội',
     planId: 'KH-I/2025-HN',
     planName: 'Kế hoạch kiểm tra định kỳ quý I/2025 - Hà Nội',
+    type: 'passive',
     title: 'Kiểm tra Cơ sở sản xuất mỹ phẩm ABC - 10/01/2025',
     description: 'Kiểm tra điều kiện sản xuất, nguồn gốc nguyên liệu, hồ sơ sản phẩm',
     targetName: 'Cơ sở sản xuất mỹ phẩm ABC',
@@ -106,6 +109,7 @@ export const mockInspectionTasks: InspectionTask[] = [
     roundName: 'Đợt kiểm tra định kỳ Q1/2025 - Hà Nội',
     planId: 'KH-I/2025-HN',
     planName: 'Kế hoạch kiểm tra định kỳ quý I/2025 - Hà Nội',
+    type: 'passive',
     title: 'Kiểm tra Siêu thị BigC Thăng Long - 12/01/2025',
     description: 'Kiểm tra hàng hóa, giá cả, nguồn gốc xuất xứ',
     targetName: 'Siêu thị BigC Thăng Long',
@@ -138,6 +142,7 @@ export const mockInspectionTasks: InspectionTask[] = [
     roundName: 'Đợt kiểm tra định kỳ Q1/2025 - Hà Nội',
     planId: 'KH-I/2025-HN',
     planName: 'Kế hoạch kiểm tra định kỳ quý I/2025 - Hà Nội',
+    type: 'passive',
     title: 'Kiểm tra Cửa hàng thực phẩm XYZ - 15/01/2025',
     description: 'Kiểm tra ATVS thực phẩm, hạn sử dụng, nguồn gốc',
     targetName: 'Cửa hàng thực phẩm XYZ',
@@ -168,6 +173,7 @@ export const mockInspectionTasks: InspectionTask[] = [
     roundName: 'Đợt kiểm tra định kỳ Q1/2025 - Hà Nội',
     planId: 'KH-I/2025-HN',
     planName: 'Kế hoạch kiểm tra định kỳ quý I/2025 - Hà Nội',
+    type: 'passive',
     title: 'Kiểm tra Nhà thuốc Hoàn Mỹ - 05/02/2025',
     description: 'Kiểm tra điều kiện bảo quản thuốc, nguồn gốc dược phẩm',
     targetName: 'Nhà thuốc Hoàn Mỹ',
@@ -197,6 +203,7 @@ export const mockInspectionTasks: InspectionTask[] = [
     roundName: 'Đợt kiểm tra định kỳ Q1/2025 - Hà Nội',
     planId: 'KH-I/2025-HN',
     planName: 'Kế hoạch kiểm tra định kỳ quý I/2025 - Hà Nội',
+    type: 'passive',
     title: 'Kiểm tra Cửa hàng điện tử Mobile World - 18/01/2025',
     description: 'Kiểm tra nguồn gốc thiết bị, tem phiếu, bảo hành',
     targetName: 'Cửa hàng điện tử Mobile World',
@@ -229,6 +236,7 @@ export const mockInspectionTasks: InspectionTask[] = [
     roundName: 'Đợt kiểm tra thực phẩm Tết - TP.HCM',
     planId: 'KH-CD-ATVSTP-2025',
     planName: 'Chuyên đề An toàn vệ sinh thực phẩm Tết Nguyên Đán 2025',
+    type: 'passive',
     title: 'Kiểm tra Chợ Bến Thành - 20/01/2025',
     description: 'Kiểm tra ATVS thực phẩm Tết tại chợ Bến Thành',
     targetName: 'Chợ Bến Thành',
@@ -259,6 +267,7 @@ export const mockInspectionTasks: InspectionTask[] = [
     roundName: 'Đợt kiểm tra thực phẩm Tết - TP.HCM',
     planId: 'KH-CD-ATVSTP-2025',
     planName: 'Chuyên đề An toàn vệ sinh thực phẩm Tết Nguyên Đán 2025',
+    type: 'passive',
     title: 'Kiểm tra Siêu thị CoopMart Nguyễn Đình Chiểu - 21/01/2025',
     description: 'Kiểm tra thực phẩm, bánh kẹo Tết',
     targetName: 'Siêu thị CoopMart Nguyễn Đình Chiểu',
@@ -292,6 +301,7 @@ export const mockInspectionTasks: InspectionTask[] = [
     roundName: 'Đợt kiểm tra mỹ phẩm - Đà Nẵng',
     planId: 'KH-CD-MP-2025',
     planName: 'Chuyên đề Mỹ phẩm nhập lậu năm 2025',
+    type: 'passive',
     title: 'Kiểm tra Cửa hàng mỹ phẩm Beauty Shop - 19/01/2025',
     description: 'Kiểm tra nguồn gốc mỹ phẩm, tem nhãn, hồ sơ nhập khẩu',
     targetName: 'Cửa hàng mỹ phẩm Beauty Shop',
@@ -324,6 +334,7 @@ export const mockInspectionTasks: InspectionTask[] = [
     roundName: 'Đợt kiểm tra đột xuất Kit test Covid - Vũng Tàu',
     planId: 'KH-DX-COVID-VT',
     planName: 'Kiểm tra đột xuất kit test Covid giả - Vũng Tàu',
+    type: 'passive',
     title: 'Kiểm tra Nhà thuốc Sài Gòn - 21/01/2025',
     description: 'Kiểm tra nguồn gốc kit test Covid, hóa đơn nhập hàng',
     targetName: 'Nhà thuốc Sài Gòn',
@@ -354,6 +365,7 @@ export const mockInspectionTasks: InspectionTask[] = [
     roundName: 'Đợt kiểm tra đột xuất Kit test Covid - Vũng Tàu',
     planId: 'KH-DX-COVID-VT',
     planName: 'Kiểm tra đột xuất kit test Covid giả - Vũng Tàu',
+    type: 'passive',
     title: 'Kiểm tra Nhà thuốc Long Châu - 21/01/2025',
     description: 'Kiểm tra đột xuất kit test Covid',
     targetName: 'Nhà thuốc Long Châu',
@@ -385,6 +397,7 @@ export const mockInspectionTasks: InspectionTask[] = [
     code: 'NV-2025/011',
     roundId: 'ROUND-005',
     roundName: 'Đợt kiểm tra hàng giả - Bình Dương',
+    type: 'proactive',
     title: 'Kiểm tra Cửa hàng giày dép ABC - 10/02/2025',
     description: 'Kiểm tra nguồn gốc giày dép, tem nhãn thương hiệu',
     targetName: 'Cửa hàng giày dép ABC',
@@ -412,6 +425,7 @@ export const mockInspectionTasks: InspectionTask[] = [
     code: 'NV-2025/012',
     roundId: 'ROUND-005',
     roundName: 'Đợt kiểm tra hàng giả - Bình Dương',
+    type: 'proactive',
     title: 'Kiểm tra Xưởng sản xuất túi xách XYZ - 22/01/2025',
     description: 'Kiểm tra cơ sở sản xuất túi xách nhái thương hiệu',
     targetName: 'Xưởng sản xuất túi xách XYZ',
@@ -444,6 +458,7 @@ export const mockInspectionTasks: InspectionTask[] = [
     roundName: 'Đợt kiểm tra thực phẩm Tết - TP.HCM',
     planId: 'KH-CD-ATVSTP-2025',
     planName: 'Chuyên đề An toàn vệ sinh thực phẩm Tết Nguyên Đán 2025',
+    type: 'passive',
     title: 'Kiểm tra Cửa hàng bánh kẹo Kinh Đô - 28/12/2024',
     description: 'Đã hoàn thành và đóng hồ sơ',
     targetName: 'Cửa hàng bánh kẹo Kinh Đô',

@@ -45,6 +45,7 @@ export interface Action {
  */
 export interface ActionColumnProps {
   actions: Action[]; // All available actions
+  variant?: 'default' | 'dots'; // 'default' = icons+menu, 'dots' = menu only
 }
 
 /**
@@ -139,8 +140,46 @@ export const CommonActions = {
  * />
  * ```
  */
-export default function ActionColumn({ actions }: ActionColumnProps) {
+export default function ActionColumn({ actions, variant = 'default' }: ActionColumnProps) {
   const totalActions = actions.length;
+
+  // Rule: If variant is 'dots', show only ellipsis menu regardless of action count
+  if (variant === 'dots') {
+    return (
+      <div className={styles.actionColumn}>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+                variant="ghost" 
+                size="sm" 
+                className={styles.iconButton}
+                onClick={(e) => e.stopPropagation()}
+            >
+              <EllipsisVertical size={16} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {actions.map((action, index) => (
+              <div key={index} className={styles.actionWrapper}>
+                {action.separator && <DropdownMenuSeparator />}
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    action.onClick();
+                  }}
+                  disabled={action.disabled}
+                  className={action.variant === 'destructive' ? styles.destructiveAction : ''}
+                >
+                  {action.icon}
+                  <span className={styles.actionLabel}>{action.label}</span>
+                </DropdownMenuItem>
+              </div>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    );
+  }
 
   // QLTT Rule: If ≤ 4 actions, show all as icon buttons
   if (totalActions <= 4) {
@@ -152,7 +191,10 @@ export default function ActionColumn({ actions }: ActionColumnProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={action.onClick}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  action.onClick();
+                }}
                 disabled={action.disabled}
                 className={styles.iconButton}
               >
@@ -160,7 +202,7 @@ export default function ActionColumn({ actions }: ActionColumnProps) {
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>{action.label}</p>
+              {action.label}
             </TooltipContent>
           </Tooltip>
         ))}
@@ -191,7 +233,10 @@ export default function ActionColumn({ actions }: ActionColumnProps) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={action.onClick}
+              onClick={(e) => {
+                e.stopPropagation();
+                action.onClick();
+              }}
               disabled={action.disabled}
               className={styles.iconButton}
             >
@@ -199,7 +244,7 @@ export default function ActionColumn({ actions }: ActionColumnProps) {
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>{action.label}</p>
+            {action.label}
           </TooltipContent>
         </Tooltip>
       ))}
@@ -207,7 +252,12 @@ export default function ActionColumn({ actions }: ActionColumnProps) {
       {/* Ellipsis menu for remaining actions */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className={styles.iconButton}>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className={styles.iconButton}
+            onClick={(e) => e.stopPropagation()}
+          >
             <EllipsisVertical size={16} />
           </Button>
         </DropdownMenuTrigger>
@@ -216,7 +266,10 @@ export default function ActionColumn({ actions }: ActionColumnProps) {
             <div key={index} className={styles.actionWrapper}>
               {action.separator && <DropdownMenuSeparator />}
               <DropdownMenuItem
-                onClick={action.onClick}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  action.onClick();
+                }}
                 disabled={action.disabled}
                 className={action.variant === 'destructive' ? styles.destructiveAction : ''}
               >

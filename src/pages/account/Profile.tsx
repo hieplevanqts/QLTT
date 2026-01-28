@@ -17,12 +17,14 @@ import {
 import { Card, CardContent, CardHeader } from '../../ui-kit/Card/Card';
 import { Button } from '../../app/components/ui/button';
 import PageHeader from '../../layouts/PageHeader';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAppSelector } from '../../app/hooks';
+import { RootState } from '../../store/rootReducer';
 import styles from './Profile.module.css';
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  // Get user from Redux instead of AuthContext
+  const { user } = useAppSelector((state: RootState) => state.auth);
   const [showAllPermissions, setShowAllPermissions] = useState(false);
 
   // Fallback to mock data if user not loaded
@@ -38,13 +40,15 @@ export default function Profile() {
   };
 
   // Get initials for avatar
-  const getInitials = (name: string) => {
+  const getInitials = (name: string = "") => {
+    if (!name) return "N/A";
     return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
+        .split(' ')
+        .filter(Boolean) // Loại bỏ các khoảng trắng thừa
+        .map(n => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
   };
 
   // Format role display

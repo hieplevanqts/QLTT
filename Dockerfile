@@ -5,11 +5,11 @@ WORKDIR /app
 
 ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_ANON_KEY
-
+ARG PUBLIC_URL
 # 2. Gán ARG vào ENV để Vite có thể đọc được lúc build
 ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
 ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
-
+ENV PUBLIC_URL=$PUBLIC_URL
 # Chỉ copy những file liên quan đến NPM
 COPY package.json ./
 RUN npm install

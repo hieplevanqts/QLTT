@@ -3,12 +3,14 @@ import { LegalDocument } from '../ui-kit/LegalDocumentItem';
 
 export interface Store {
   id: number;
+  merchantId?: string; // UUID from Supabase merchants table
   name: string;
   address: string;
   type: string;
   status: FacilityStatus;
   riskLevel: 'low' | 'medium' | 'high' | 'none';
   lastInspection: string;
+  area_name: string;
   province?: string; // Province name (for display)
   provinceCode?: string; // Province code (for form editing)
   jurisdiction: string; // District name (for display)
@@ -21,8 +23,14 @@ export interface Store {
   legalDocuments?: LegalDocument[]; // Legal documents for this store
   // Additional fields for detail page
   ownerName?: string; // Tên chủ cơ sở
+  ownerPhone?: string; // SĐT chủ hộ
+  ownerPhone2?: string; // SĐT chủ hộ thứ 2
+  ownerBirthYear?: number; // Năm sinh chủ hộ
+  ownerIdNumber?: string; // Số CMTND/CCCD
+  ownerEmail?: string; // Email chủ hộ
   phone?: string; // Số điện thoại
   email?: string; // Email
+  businessPhone?: string; // SĐT cơ sở
   businessType?: string; // Loại hình kinh doanh
   gpsCoordinates?: string; // GPS coordinates formatted string
   isVerified?: boolean; // Đã xác minh
@@ -36,14 +44,9 @@ export interface Store {
   industryName?: string; // Tên ngành kinh doanh
   establishedDate?: string; // Ngày thành lập
   operationStatus?: string; // Trạng thái hoạt động
-  businessPhone?: string; // SĐT hộ kinh doanh
   businessArea?: string; // Diện tích cửa hàng
   website?: string; // Website
   fax?: string; // Fax
-  // Step 3
-  ownerBirthYear?: string; // Năm sinh chủ hộ
-  ownerIdNumber?: string; // Số CMTND/CCCD
-  ownerPhone?: string; // SĐT chủ hộ
   // Step 4
   registeredAddress?: string; // Địa chỉ đăng ký kinh doanh
   headquarterAddress?: string; // Địa chỉ trụ sở chính
@@ -60,6 +63,7 @@ export interface Store {
   businessLicenseFile?: string; // File giấy phép
   // Compatibility
   district?: string; // District name for compatibility
+  hasComplaints?: boolean; // Added for filtering support
 }
 
 const storeTypes = [
@@ -171,7 +175,7 @@ function generateInspectionDate(index: number): string {
   return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
 }
 
-export const mockStores: Store[] = Array.from({ length: 100 }, (_, index) => {
+export const mockStores: Store[] = Array.from({ length: 10000 }, (_, index) => {
   const id = index + 1;
   const jurisdictionIndex = index % jurisdictions.length;
   const jurisdiction = jurisdictions[jurisdictionIndex];
@@ -240,8 +244,8 @@ export const mockStores: Store[] = Array.from({ length: 100 }, (_, index) => {
     'Kinh doanh hàng tiêu dùng',
   ];
   
-  // Operation Status
-  const operationStatuses = ['Đang hoạt động', 'Tạm ngừng', 'Không hoạt động'];
+  // Operation Status - Use API values ('active', 'pending', 'rejected', 'suspended'), not labels
+  const operationStatuses = ['active', 'pending', 'rejected', 'suspended'];
   
   // Generate Tax Code (Vietnam format: 10 or 13 digits)
   // Format: XXXXXXXXXX or XXXXXXXXXX-XXX
@@ -318,6 +322,7 @@ export const mockStores: Store[] = Array.from({ length: 100 }, (_, index) => {
     status,
     riskLevel: riskLevels[index % riskLevels.length],
     lastInspection: generateInspectionDate(index),
+    area_name: businessArea,
     jurisdiction,
     province,
     provinceCode,
@@ -327,23 +332,25 @@ export const mockStores: Store[] = Array.from({ length: 100 }, (_, index) => {
     // Additional fields for detail page
     ownerName,
     phone,
+    ownerPhone,
+    ownerPhone2: index % 5 === 0 ? `${phonePrefix[(index + 4) % phonePrefix.length]}${String(1000000 + (index * 567890) % 9000000).substring(0, 7)}` : undefined,
+    ownerBirthYear: parseInt(ownerBirthYear),
+    ownerIdNumber,
+    ownerEmail: index % 4 === 0 ? `${ownerName.toLowerCase().replace(/\s+/g, '')}@email.com` : undefined,
     email: `${ownerName.toLowerCase().replace(/\s+/g, '')}@example.com`,
+    businessPhone,
     businessType: businessTypes[index % businessTypes.length],
     gpsCoordinates: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
     isVerified: index % 3 === 0, // Every 3rd store is verified
-    // All 19 required fields for QLTT
+    // All fields for QLTT
     taxCode,
     businessLicense,
     industryName: industryNames[index % industryNames.length],
     establishedDate,
     operationStatus: operationStatuses[index % operationStatuses.length],
-    businessPhone,
     businessArea,
     website,
     fax,
-    ownerBirthYear,
-    ownerIdNumber,
-    ownerPhone,
     registeredAddress,
     headquarterAddress,
     productionAddress,

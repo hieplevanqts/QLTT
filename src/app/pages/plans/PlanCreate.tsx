@@ -1,18 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import { ArrowLeft, AlertCircle, FileText } from 'lucide-react';
+import { ArrowLeft, AlertCircle, FileText, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import styles from './PlanCreate.module.css';
 import DateRangePicker, { DateRange } from '../../../ui-kit/DateRangePicker';
-import { RichTextEditor } from '../../../ui-kit/RichTextEditor';
+
 import { usePlans } from '../../contexts/PlansContext';
 import { type Plan, type PlanType, type Priority } from '../../data/kehoach-mock-data';
 import { SelectInsDecisionModal, type InsDecision } from '../../components/plans/SelectInsDecisionModal';
 import { supabase } from '../../../lib/supabase';
 import { useQLTTScope } from '../../../contexts/QLTTScopeContext';
-import { useAuth } from '../../../contexts/AuthContext';
-import { createPlanApi } from '../../../utils/api/plansApi';
+import { useAppSelector } from '../../../app/hooks';
+import { RootState } from '../../../store/rootReducer';
+import { createPlanApi, fetchPlanByIdApi, updatePlanApi } from '../../../utils/api/plansApi';
+import { uploadMultipleFiles } from '../../../utils/supabase/storage';
 
 type PlanTypeTab = 'periodic' | 'thematic' | 'urgent';
 
@@ -20,14 +22,19 @@ export function PlanCreate() {
   const navigate = useNavigate();
   const location = useLocation();
   const { planId } = useParams(); // Get planId from URL params
-  const { addPlan, updatePlan, plans } = usePlans();
+  const { addPlan, updatePlan: contextUpdatePlan, plans } = usePlans(); // Rename context updatePlan to avoid conflict if we use api directly
   const { scope } = useQLTTScope();
-  const { user } = useAuth();
-  console.log("user",user);
+  // Get user from Redux instead of AuthContext
+  const { user } = useAppSelector((state: RootState) => state.auth);
   
   // Check if in edit mode
   const isEditMode = !!planId;
-  const editingPlan = isEditMode ? plans.find(p => p.id === planId) : null;
+  
+  // State to hold the plan being edited, fetched from API
+  const [fetchedPlan, setFetchedPlan] = useState<Plan | null>(null);
+
+  // Use fetched plan if available, otherwise try finding in context (fallback)
+  const editingPlan = fetchedPlan || (isEditMode ? plans.find(p => p.id === planId) : null);
   
   // Read URL parameter to set initial tab
   const searchParams = new URLSearchParams(location.search);
@@ -43,7 +50,19 @@ export function PlanCreate() {
     }
   }, [location.search]);
   
+  const generateDefaultCode = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const timeStr = String(now.getHours()).padStart(2, '0') + 
+                    String(now.getMinutes()).padStart(2, '0') + 
+                    String(now.getSeconds()).padStart(2, '0');
+    return `KHKT-${year}-${day}-${month}-${timeStr}`;
+  };
+
   const [formData, setFormData] = useState({
+    code: generateDefaultCode(),
     planCategory: 'Kiểm tra định kỳ',
     year: '2026',
     quarter: '',
@@ -57,7 +76,15 @@ export function PlanCreate() {
     description: '',
     objectives: '',
     priority: 'medium' as Priority,
+    provinceId: '', // For UI selection
+    wardId: '',     // For UI selection
   });
+
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [provinces, setProvinces] = useState<{_id: string, name: string}[]>([]);
+  const [wards, setWards] = useState<{_id: string, name: string}[]>([]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [dateRange, setDateRange] = useState<DateRange>({ startDate: null, endDate: null });
@@ -67,6 +94,16 @@ export function PlanCreate() {
   const [showM03Modal, setShowM03Modal] = useState(false);
 
   const [managingUnits, setManagingUnits] = useState<{id: string, name: string}[]>([]);
+
+  // Helper functions
+  const getPlanTypeLabel = (type: PlanTypeTab): string => {
+    switch(type) {
+      case 'periodic': return 'Kiểm tra định kỳ';
+      case 'thematic': return 'Kiểm tra chuyên đề';
+      case 'urgent': return 'Kiểm tra đột xuất';
+      default: return 'Kiểm tra định kỳ';
+    }
+  };
 
   // Fetch departments based on scope
   useEffect(() => {
@@ -79,10 +116,40 @@ export function PlanCreate() {
       }
 
       try {
+        // 🔥 FIX: Validate UUID format and resolve department name to UUID if needed
+        const isValidUUID = (str: string): boolean => {
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          return uuidRegex.test(str);
+        };
+        
+        let actualDivisionId = divisionId;
+        
+        // Check if divisionId is a valid UUID
+        if (!isValidUUID(divisionId)) {
+          console.log(`⚠️ PlanCreate: divisionId is not a UUID, searching by name:`, divisionId);
+          
+          // Try to find department by name
+          const { data: deptByName, error: searchError } = await supabase
+            .from('departments')
+            .select('_id')
+            .eq('name', divisionId)
+            .is('deleted_at', null)
+            .single();
+          
+          if (searchError || !deptByName) {
+            console.error(`❌ PlanCreate: Department not found by name "${divisionId}":`, searchError);
+            setManagingUnits([]);
+            return;
+          }
+          
+          actualDivisionId = deptByName._id;
+          console.log(`✅ PlanCreate: Found department UUID:`, actualDivisionId);
+        }
+        
         const { data, error } = await supabase
           .from('departments')
           .select('_id, name')
-          .eq('parent_id', divisionId);
+          .eq('parent_id', actualDivisionId);
 
         if (error) {
           console.error('Error fetching managing units:', error);
@@ -101,61 +168,110 @@ export function PlanCreate() {
     fetchManagingUnits();
   }, [scope.divisionId]); // Re-run when division changes
 
-  // Helper functions - must be defined before useEffect
-  const getPlanTypeLabel = (type: PlanTypeTab): string => {
-    switch(type) {
-      case 'periodic': return 'Kiểm tra định kỳ';
-      case 'thematic': return 'Kiểm tra chuyên đề';
-      case 'urgent': return 'Kiểm tra đột xuất';
-    }
-  };
-
-  // Load existing plan data in edit mode
+  // Fetch provinces
   useEffect(() => {
-    if (isEditMode && editingPlan) {
-      // Parse year from startDate
-      const planYear = new Date(editingPlan.startDate).getFullYear().toString();
-      
-      setFormData({
-        planCategory: getPlanTypeLabel(editingPlan.planType as PlanTypeTab),
-        year: planYear,
-        quarter: editingPlan.quarter,
-        title: editingPlan.name,
-        startDate: editingPlan.startDate,
-        endDate: editingPlan.endDate,
-        responsibleUnit: editingPlan.responsibleUnit,
-        responsibleUnitId: editingPlan.leadUnit || '',
-        cooperatingUnits: '', // Not in Plan interface, keep empty
-        scopeArea: editingPlan.scopeLocation,
-        description: editingPlan.topic,
-        objectives: editingPlan.objectives,
-        priority: editingPlan.priority,
-      });
-      
-      setDateRange({
-        startDate: editingPlan.startDate,
-        endDate: editingPlan.endDate,
-      });
-      
-      setActiveTab(editingPlan.planType as PlanTypeTab);
-    }
-  }, [isEditMode, editingPlan]);
+    async function fetchProvinces() {
+      try {
+        const { data, error } = await supabase
+          .from('provinces')
+          .select('_id, name')
+          .order('name');
+        
+        if (error) {
+          console.error('Error fetching provinces:', error);
+          return;
+        }
 
-  const getTabTitle = (type: PlanTypeTab): string => {
-    switch(type) {
-      case 'periodic': return 'Kế hoạch kiểm tra định kỳ';
-      case 'thematic': return 'Kế hoạch kiểm tra chuyên đề';
-      case 'urgent': return 'Kế hoạch kiểm tra đột xuất';
+        if (data) {
+          setProvinces(data);
+        }
+      } catch (err) {
+        console.error('Error fetching provinces:', err);
+      }
     }
-  };
+    fetchProvinces();
+  }, []);
 
-  const getTabDescription = (type: PlanTypeTab): string => {
-    switch(type) {
-      case 'periodic': return 'Điền thông tin tạo chi tiết về kế hoạch kiểm tra định kỳ';
-      case 'thematic': return 'Điền thông tin tạo chi tiết về kế hoạch kiểm tra chuyên đề';
-      case 'urgent': return 'Điền thông tin tạo chi tiết về kế hoạch kiểm tra đột xuất';
+  // Fetch wards when province changes
+  useEffect(() => {
+    async function fetchWards() {
+      if (!formData.provinceId) {
+        setWards([]);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('wards')
+          .select('_id, name')
+          .eq('province_id', formData.provinceId)
+          .order('name');
+        
+        if (error) {
+          console.error('Error fetching wards:', error);
+          return;
+        }
+
+        if (data) {
+          setWards(data);
+        }
+      } catch (err) {
+        console.error('Error fetching wards:', err);
+      }
     }
-  };
+    fetchWards();
+  }, [formData.provinceId]);
+
+  // Fetch plan data from API when editing
+  useEffect(() => {
+    async function loadPlan() {
+      if (isEditMode && planId) {
+        try {
+          const plan = await fetchPlanByIdApi(planId);
+          if (plan) {
+            setFetchedPlan(plan);
+            
+            // Populate form data immediately upon fetch
+            const planYear = new Date(plan.startDate).getFullYear().toString();
+            setFormData(prev => ({
+              ...prev,
+              planCategory: getPlanTypeLabel(plan.planType as PlanTypeTab),
+              code: plan.code || prev.code,
+              year: planYear,
+              quarter: plan.quarter,
+              title: plan.name,
+              startDate: plan.startDate,
+              endDate: plan.endDate,
+              responsibleUnit: plan.responsibleUnit,
+              responsibleUnitId: plan.leadUnit || '',
+              cooperatingUnits: '', 
+              scopeArea: plan.scopeLocation,
+              description: plan.topic,
+              objectives: plan.objectives,
+              priority: plan.priority,
+              provinceId: (plan as any).provinceId || '',
+              wardId: (plan as any).wardId || '',
+            }));
+
+            setDateRange({
+              startDate: plan.startDate,
+              endDate: plan.endDate,
+            });
+
+            setActiveTab(plan.planType as PlanTypeTab);
+          } else {
+            toast.error('Không tìm thấy kế hoạch');
+          }
+        } catch (error) {
+          console.error('Error fetching plan:', error);
+          toast.error('Không thể tải thông tin kế hoạch');
+        }
+      }
+    }
+    loadPlan();
+  }, [isEditMode, planId]);
+
+
 
   const handleTabChange = (type: PlanTypeTab) => {
     setActiveTab(type);
@@ -189,6 +305,10 @@ export function PlanCreate() {
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
 
+    if (!formData.code.trim()) {
+      newErrors.code = 'Vui lòng nhập mã kế hoạch';
+    }
+
     if (!formData.planCategory.trim()) {
       newErrors.planCategory = 'Vui lòng chọn loại kế hoạch';
     }
@@ -213,6 +333,14 @@ export function PlanCreate() {
       newErrors.responsibleUnit = 'Vui lòng chọn đơn vị chủ trì';
     }
 
+    if (!formData.provinceId) {
+      newErrors.provinceId = 'Vui lòng chọn Tỉnh/Thành phố';
+    }
+
+    if (!formData.wardId) {
+      newErrors.wardId = 'Vui lòng chọn Phường/Xã';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -225,10 +353,25 @@ export function PlanCreate() {
       return;
     }
 
+    setIsSubmitting(true);
+    let uploadedAttachments: any[] = [];
+    
+    try {
+      if (attachments.length > 0) {
+        uploadedAttachments = await uploadMultipleFiles('vhv_file', attachments, 'plans');
+      }
+    } catch (uploadError) {
+      console.error('File upload failed:', uploadError);
+      toast.error('Lỗi khi tải tài liệu lên. Vui lòng thử lại.');
+      setIsSubmitting(false);
+      return;
+    }
+
     if (isEditMode && planId) {
       // Edit existing plan
       const updates: Partial<Plan> = {
         name: formData.title,
+        code: formData.code,
         planType: activeTab as PlanType,
         quarter: formData.quarter || '-',
         topic: formData.description || 'N/A',
@@ -240,18 +383,31 @@ export function PlanCreate() {
         startDate: formData.startDate,
         endDate: formData.endDate || formData.startDate,
         priority: formData.priority,
+        attachments: uploadedAttachments.length > 0 ? uploadedAttachments : undefined,
       };
       
-      updatePlan(planId, updates);
-      toast.success(`Đã cập nhật kế hoạch "${formData.title}" thành công!`);
-      navigate('/plans/list');
+      try {
+        await updatePlanApi(planId, updates);
+        contextUpdatePlan(planId, updates);
+        toast.success(`Đã cập nhật kế hoạch "${formData.title}" thành công!`);
+        navigate('/plans/list');
+      } catch (error) {
+        console.error('Failed to update plan:', error);
+        toast.error('Lỗi khi cập nhật kế hoạch. Vui lòng thử lại.');
+      }
     } else {
       // Create new plan
       // Note: ID will be generated by Backend, but we keep frontend ID for mock context if needed
       const newPlanId = `KH-${activeTab === 'periodic' ? 'DK' : activeTab === 'thematic' ? 'CD' : 'DX'}-${String(plans.length + 1).padStart(4, '0')}`;
       
-      const newPlan: Plan = {
+      // Resolve Province/Ward IDs (required by DB schema)
+      // Already selected in UI
+      const provinceId = formData.provinceId;
+      const wardId = formData.wardId;
+
+      const newPlan: any = {
         id: newPlanId,
+        code: formData.code,
         name: formData.title,
         planType: activeTab as PlanType,
         quarter: formData.quarter || '-',
@@ -265,9 +421,13 @@ export function PlanCreate() {
         priority: formData.priority,
         startDate: formData.startDate,
         endDate: formData.endDate || formData.startDate,
+        // Pass resolved UUIDs
+        provinceId: provinceId,
+        wardId: wardId,
         createdBy: user?.fullName || 'Người tạo hiện tại',
         createdById: user?._id,
         createdAt: new Date().toISOString(),
+        attachments: uploadedAttachments,
         // Save M03 if selected
         insDecisionM03: selectedM03 ? {
           id: selectedM03.id,
@@ -292,6 +452,8 @@ export function PlanCreate() {
       } catch (error) {
           console.error('Failed to create plan:', error);
           toast.error('Lỗi khi tạo kế hoạch. Vui lòng thử lại.');
+      } finally {
+          setIsSubmitting(false);
       }
     }
   };
@@ -360,29 +522,71 @@ export function PlanCreate() {
       {/* Form */}
       <div className={styles.container}>
         <form onSubmit={handleSubmit} className={styles.form}>
-          {/* Năm kế hoạch */}
+          {/* Mã kế hoạch */}
           <div className={styles.formGroup}>
             <label className={styles.label}>
-              Năm kế hoạch <span className={styles.required}>*</span>
+              Mã kế hoạch <span className={styles.required}>*</span>
             </label>
-            <select
-              className={`${styles.select} ${errors.year ? styles.inputError : ''}`}
-              value={formData.year}
-              onChange={(e) => handleChange('year', e.target.value)}
-            >
-              <option value="">Chọn năm</option>
-              <option value="2024">2024</option>
-              <option value="2025">2025</option>
-              <option value="2026">2026</option>
-              <option value="2027">2027</option>
-            </select>
-            {errors.year && (
+            <input
+              type="text"
+              className={`${styles.input} ${errors.code ? styles.inputError : ''}`}
+              value={formData.code}
+              onChange={(e) => handleChange('code', e.target.value)}
+              placeholder="Ví dụ: KHKT-2025-01-01-12345"
+            />
+            {errors.code && (
               <span className={styles.errorText}>
                 <AlertCircle size={14} />
-                {errors.year}
+                {errors.code}
               </span>
             )}
           </div>
+
+          {/* Tiêu đề kế hoạch */}
+          <div className={styles.formGroup}>
+            <label className={styles.label}>
+              Tiêu đề kế hoạch <span className={styles.required}>*</span>
+            </label>
+            <input
+              type="text"
+              className={`${styles.input} ${errors.title ? styles.inputError : ''}`}
+              value={formData.title}
+              onChange={(e) => handleChange('title', e.target.value)}
+              placeholder="Ví dụ: Kế hoạch kiểm tra định kỳ Quý I/2025"
+            />
+            {errors.title && (
+              <span className={styles.errorText}>
+                <AlertCircle size={14} />
+                {errors.title}
+              </span>
+            )}
+          </div>
+
+          {/* Năm kế hoạch (only for periodic) */}
+          {activeTab === 'periodic' && (
+            <div className={styles.formGroup}>
+              <label className={styles.label}>
+                Năm kế hoạch <span className={styles.required}>*</span>
+              </label>
+              <select
+                className={`${styles.select} ${errors.year ? styles.inputError : ''}`}
+                value={formData.year}
+                onChange={(e) => handleChange('year', e.target.value)}
+              >
+                <option value="">Chọn năm</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+                <option value="2027">2027</option>
+              </select>
+              {errors.year && (
+                <span className={styles.errorText}>
+                  <AlertCircle size={14} />
+                  {errors.year}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Quý/Tháng (only for periodic) */}
           {activeTab === 'periodic' && (
@@ -410,26 +614,6 @@ export function PlanCreate() {
             </div>
           )}
 
-          {/* Tiêu đề kế hoạch */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              Tiêu đề kế hoạch <span className={styles.required}>*</span>
-            </label>
-            <input
-              type="text"
-              className={`${styles.input} ${errors.title ? styles.inputError : ''}`}
-              value={formData.title}
-              onChange={(e) => handleChange('title', e.target.value)}
-              placeholder="Ví dụ: Kế hoạch kiểm tra định kỳ Quý I/2025"
-            />
-            {errors.title && (
-              <span className={styles.errorText}>
-                <AlertCircle size={14} />
-                {errors.title}
-              </span>
-            )}
-          </div>
-
           {/* Thời gian thực hiện */}
           <div className={styles.formGroup}>
             <label className={styles.label}>
@@ -444,6 +628,50 @@ export function PlanCreate() {
               <span className={styles.errorText}>
                 <AlertCircle size={14} />
                 {errors.startDate || errors.endDate}
+              </span>
+            )}
+          </div>
+
+          {/* Location Selection */}
+          <div className={styles.formGroup}>
+            <label className={styles.label}>
+              Khu vực kiểm tra <span className={styles.required}>*</span>
+            </label>
+            <div className={styles.formRow}>
+              {/* Province */}
+              <select
+                className={`${styles.select} ${errors.provinceId ? styles.inputError : ''}`}
+                value={formData.provinceId}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  handleChange('provinceId', val);
+                  handleChange('wardId', ''); // Reset ward
+                }}
+              >
+                <option value="">Chọn Tỉnh/Thành phố</option>
+                {provinces.map(p => (
+                  <option key={p._id} value={p._id}>{p.name}</option>
+                ))}
+              </select>
+              
+              {/* Ward */}
+              <select
+                className={`${styles.select} ${errors.wardId ? styles.inputError : ''}`}
+                value={formData.wardId}
+                onChange={(e) => handleChange('wardId', e.target.value)}
+                disabled={!formData.provinceId}
+              >
+                <option value="">Chọn Phường/Xã</option>
+                {wards.map(w => (
+                  <option key={w._id} value={w._id}>{w.name}</option>
+                ))}
+              </select>
+            </div>
+            
+            {(errors.provinceId || errors.wardId) && (
+              <span className={styles.errorText}>
+                <AlertCircle size={14} />
+                {errors.provinceId || errors.wardId}
               </span>
             )}
           </div>
@@ -562,20 +790,6 @@ export function PlanCreate() {
             </select>
           </div>
 
-          {/* Khu vực kiểm tra */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              Khu vực kiểm tra
-            </label>
-            <input
-              type="text"
-              className={styles.input}
-              value={formData.scopeArea}
-              onChange={(e) => handleChange('scopeArea', e.target.value)}
-              placeholder="Ví dụ: Thành phố Hồ Chí Minh, Tỉnh Đồng Nai"
-            />
-          </div>
-
           {/* Mô tả kế hoạch */}
           <div className={styles.formGroup}>
             <label className={styles.label}>
@@ -604,6 +818,53 @@ export function PlanCreate() {
             />
           </div>
 
+          {/* Tài liệu đính kèm */}
+          <div className={styles.formGroup}>
+            <label className={styles.label}>
+              Tài liệu đính kèm
+              <span className={styles.helpText}> - Tùy chọn (Chọn nhiều file)</span>
+            </label>
+            <div className={styles.fileUploadContainer}>
+              <input
+                type="file"
+                id="plan-attachments"
+                multiple
+                className={styles.fileInput}
+                onChange={(e) => {
+                  if (e.target.files) {
+                    const newFiles = Array.from(e.target.files);
+                    setAttachments(prev => [...prev, ...newFiles]);
+                  }
+                }}
+              />
+              <label htmlFor="plan-attachments" className={styles.fileLabel}>
+                <Upload size={20} />
+                <span>Chọn tài liệu hoặc kéo thả vào đây</span>
+              </label>
+            </div>
+            
+            {attachments.length > 0 && (
+              <div className={styles.fileList}>
+                {attachments.map((file, index) => (
+                  <div key={`${file.name}-${index}`} className={styles.fileItem}>
+                    <div className={styles.fileInfo}>
+                      <FileText size={16} className={styles.fileIcon} />
+                      <span className={styles.fileName}>{file.name}</span>
+                      <span className={styles.fileSize}>({(file.size / 1024).toFixed(1)} KB)</span>
+                    </div>
+                    <button
+                      type="button"
+                      className={styles.removeFileButton}
+                      onClick={() => setAttachments(prev => prev.filter((_, i) => i !== index))}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Form Actions */}
           <div className={styles.actions}>
             <button
@@ -616,8 +877,19 @@ export function PlanCreate() {
             <button
               type="submit"
               className={styles.submitButton}
+              disabled={isSubmitting}
             >
-              {isEditMode ? 'Cập nhật kế hoạch' : 'Tạo kế hoạch'}
+              {isSubmitting ? (
+                <>
+                  <div className={styles.spinner}></div>
+                  Đang xử lý...
+                </>
+              ) : (
+                <>
+                  <FileText size={18} />
+                  {isEditMode ? 'Cập nhật kế hoạch' : 'Tạo kế hoạch'}
+                </>
+              )}
             </button>
           </div>
         </form>

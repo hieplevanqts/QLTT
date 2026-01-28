@@ -1,19 +1,43 @@
 /**
  * USE PERMISSIONS HOOK - System Admin Shared
- * Hook để kiểm tra quyền hạn của user hiện tại
+ * Hook to check permissions for the current user
  */
 
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAppSelector } from '../../../app/hooks';
+import { RootState } from '../../../store/rootReducer';
+import { useMenuRegistry } from '../../../hooks/useMenuRegistry';
 
 export function usePermissions() {
-  const { user } = useAuth();
+  const { user } = useAppSelector((state: RootState) => state.auth);
+  const { menus } = useMenuRegistry();
+
+  // Temporary hard-override permissions for a specific user email
+  // NOTE: Prefer storing permissions in DB (roles -> role_permissions -> permissions) long-term.
+  const ADMIN3_EMAIL = 'admin3@vhv.vn';
+  const ADMIN3_EXTRA_PERMISSIONS = [
+    'MAP_VIEW',
+    'STORES_VIEW',
+    'LEAD_RISK',
+    'PLAN_VIEW',
+    'TASKS_VIEW',
+    'EVIDENCE_VIEW',
+    'ADMIN_VIEW',
+    'TV_VIEW',
+  ] as const;
 
   // Permissions must come from DB (roles -> role_permissions -> permissions).
-  const userPermissions: string[] = (user?.permissions || []).filter(Boolean);
+  const baseUserPermissions: string[] = (user?.permissions || []).filter(Boolean);
+
+  // Add extra permissions if the logged-in user's email matches
+  const extraPermissions: string[] =
+      (user?.email || '').toLowerCase() === ADMIN3_EMAIL ? [...ADMIN3_EXTRA_PERMISSIONS] : [];
+
+  // Merge + de-duplicate
+  const userPermissions: string[] = Array.from(new Set([...baseUserPermissions, ...extraPermissions]));
   const normalizedPermissions = new Set(userPermissions.map((p) => p.toUpperCase()));
 
   const hasAdminAccess =
-    normalizedPermissions.has('ADMIN:ACCESS') || normalizedPermissions.has('ADMIN_VIEW');
+      normalizedPermissions.has('ADMIN:ACCESS') || normalizedPermissions.has('ADMIN_VIEW');
 
   // Allow mapping between legacy sa.* permissions and new USER.* codes from DB
   const permissionAliases: Record<string, string[]> = {
@@ -32,7 +56,7 @@ export function usePermissions() {
   };
 
   /**
-   * Kiểm tra có quyền cụ thể
+   * Check a specific permission
    */
   const hasPermission = (permission: string): boolean => {
     if (hasAdminAccess && permission.startsWith('sa.')) {
@@ -42,7 +66,7 @@ export function usePermissions() {
   };
 
   /**
-   * Kiểm tra có ít nhất 1 trong các quyền
+   * Check at least one of the permissions
    */
   const hasAnyPermission = (permissions: string[]): boolean => {
     if (hasAdminAccess && permissions.some((p) => p.startsWith('sa.'))) {
@@ -52,7 +76,7 @@ export function usePermissions() {
   };
 
   /**
-   * Kiểm tra có tất cả các quyền
+   * Check all permissions
    */
   const hasAllPermissions = (permissions: string[]): boolean => {
     if (hasAdminAccess && permissions.every((p) => p.startsWith('sa.'))) {
@@ -62,12 +86,12 @@ export function usePermissions() {
   };
 
   /**
-   * Kiểm tra có quyền theo pattern (wildcard)
-   * Ví dụ: hasPermissionPattern('sa.masterdata.*') sẽ match tất cả quyền masterdata
+   * Check permissions by pattern (wildcard)
+   * Example: hasPermissionPattern('sa.masterdata.*') matches all masterdata permissions
    */
   const hasPermissionPattern = (pattern: string): boolean => {
     const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
-    return userPermissions.some(p => regex.test(p));
+    return userPermissions.some((p) => regex.test(p));
   };
 
   return {
