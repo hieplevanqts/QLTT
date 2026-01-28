@@ -4,54 +4,46 @@
  */
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { supabase } from '../utils/supabaseHelpers';
-import type { Lead, LeadStatus } from '../data/lead-risk/types';
+import { supabase } from '@/utils/supabaseHelpers';
+import type { Lead, LeadStatus } from '@/data/lead-risk/types';
 
-// Supabase Lead type (from database)
+// Supabase Lead type (from database) - Make flexible to handle actual schema
 interface SupabaseLead {
-  id: string;
+  _id?: string; // May be _id in some tables
+  id?: string;  // May be id in some tables
   code: string;
   title: string;
   description: string;
   status: LeadStatus;
-  confidence: 'low' | 'medium' | 'high';
+  urgency?: string; // May not exist in DB
+  confidence?: 'low' | 'medium' | 'high'; // May not exist in DB
   source: string;
   category: string;
   risk_scope: string;
-  location: {
-    lat: number;
-    lng: number;
-    address: string;
-    ward: string;
-    district: string;
-    province: string;
-  };
+  location: any; // JSONB - flexible
   store_name?: string;
   store_address?: string;
   reporter_name?: string;
   reporter_phone?: string;
-  assigned_to?: {
-    userId: string;
-    userName: string;
-    teamName?: string;
-  };
-  sla: {
-    deadline: string;
-    remainingHours: number;
-    isOverdue: boolean;
-  };
+  assigned_to?: any; // JSONB - flexible
+  sla: any; // JSONB - flexible
   reported_at: string;
   created_at: string;
   updated_at: string;
-  evidence_count: number;
-  related_leads_count: number;
-  activity_count: number;
-  is_watched: boolean;
+  evidence_count?: number;
+  related_leads_count?: number;
+  activity_count?: number;
+  is_watched?: boolean;
   tags?: string[];
 }
 
 // Transform Supabase lead to app Lead type
 function transformSupabaseLead(dbLead: SupabaseLead): Lead {
+  // CRITICAL: Ensure id is never null
+  if (!dbLead._id && !dbLead.id) {
+    console.error('🚨 [transformSupabaseLead] Lead has NULL id! Using code as fallback:', dbLead.code);
+  }
+  
   // Provide safe defaults for potentially missing data
   const slaData = dbLead.sla || {
     deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
@@ -79,12 +71,12 @@ function transformSupabaseLead(dbLead: SupabaseLead): Lead {
   };
 
   return {
-    id: dbLead.id,
+    _id: dbLead._id || dbLead.id || `temp-${dbLead.code}`, // Map to _id to match Lead interface
     code: dbLead.code,
     title: dbLead.title,
     description: dbLead.description,
     status: dbLead.status,
-    urgency: mapConfidenceToUrgency(dbLead.confidence),
+    urgency: dbLead.urgency || mapConfidenceToUrgency(dbLead.confidence || 'medium'),
     confidence: dbLead.confidence,
     source: dbLead.source || 'app',
     category: dbLead.category,
@@ -108,8 +100,8 @@ function transformSupabaseLead(dbLead: SupabaseLead): Lead {
     } : undefined,
     sla: {
       deadline: new Date(slaData.deadline),
-      remainingHours: slaData.remainingHours,
-      isOverdue: slaData.isOverdue,
+      remainingHours: typeof slaData.remainingHours === 'number' && !isNaN(slaData.remainingHours) ? slaData.remainingHours : 24,
+      isOverdue: slaData.isOverdue || false,
     },
     reportedAt: new Date(dbLead.reported_at),
     createdBy: 'SYSTEM', // Not in database schema
@@ -154,6 +146,7 @@ export function useSupabaseLeads(options: UseSupabaseLeadsOptions = {}) {
   const fetchLeads = async () => {
     // Prevent concurrent fetches
     if (isFetchingRef.current) {
+      console.log('⏭️ [useSupabaseLeads] Skipping fetch - already in progress');
       return;
     }
 
@@ -162,29 +155,39 @@ export function useSupabaseLeads(options: UseSupabaseLeadsOptions = {}) {
       setLoading(true);
       setError(null);
 
+      console.log('🔍 [useSupabaseLeads] Fetching leads from Supabase...');
+      console.log('📋 [useSupabaseLeads] Options:', options);
+      console.log('🕐 [useSupabaseLeads] Timestamp:', new Date().toISOString());
 
-      // Build query
+      // Build query - Use SELECT * to get all columns (let Supabase handle column names)
       let query = supabase
         .from('leads')
-        .select('*, id:_id')
+        .select('*')
         .order('created_at', { ascending: false });
 
       // Apply filters
       if (options.statuses && options.statuses.length > 0) {
+        console.log('🎯 [useSupabaseLeads] Filtering by statuses:', options.statuses);
         query = query.in('status', options.statuses);
       }
 
       if (options.categories && options.categories.length > 0) {
+        console.log('🎯 [useSupabaseLeads] Filtering by categories:', options.categories);
         query = query.in('category', options.categories);
       }
 
       if (options.search) {
+        console.log('🔎 [useSupabaseLeads] Searching for:', options.search);
         query = query.or(`title.ilike.%${options.search}%,description.ilike.%${options.search}%,code.ilike.%${options.search}%`);
       }
 
-      if (options.unassigned) {
-        query = query.is('assigned_to', null);
-      }
+      // NOTE: Assignment filtering is done CLIENT-SIDE in LeadInbox component
+      // because assigned_to column might not exist in all database instances
+      // Removing this to prevent "column does not exist" errors
+      // if (options.unassigned) {
+      //   console.log('👤 [useSupabaseLeads] Filtering unassigned');
+      //   query = query.is('assigned_to', null);
+      // }
 
       // Limit
       if (options.limit) {
@@ -202,13 +205,26 @@ export function useSupabaseLeads(options: UseSupabaseLeadsOptions = {}) {
       }
 
       if (!data) {
+        console.warn('⚠️ [useSupabaseLeads] No data returned');
         setLeads([]);
         return;
       }
 
+      console.log(`✅ [useSupabaseLeads] Fetched ${data.length} leads from Supabase`);
+      console.log(`📊 [useSupabaseLeads] First lead (RAW):`, JSON.stringify(data[0], null, 2));
+      console.log(`📊 [useSupabaseLeads] Available columns in first lead:`, data[0] ? Object.keys(data[0]) : []);
+      
+      // Check for null IDs BEFORE transformation
+      const nullIdCount = data.filter(l => !l._id && !l.id).length;
+      if (nullIdCount > 0) {
+        console.error(`🚨 [useSupabaseLeads] Found ${nullIdCount} leads with NULL _id in database!`);
+        console.error('🚨 [useSupabaseLeads] Sample null ID records:', data.filter(l => !l._id && !l.id).slice(0, 3));
+      }
       
       // Transform data
       const transformedLeads = data.map(transformSupabaseLead);
+      console.log('🔄 [useSupabaseLeads] Transformed', transformedLeads.length, 'leads');
+      console.log('📊 [useSupabaseLeads] First 3 transformed lead _ids:', transformedLeads.slice(0, 3).map(l => l._id));
       
       // CRITICAL: Deduplicate by lead_code (not just ID)
       // Keep the most recent record if duplicate codes exist
@@ -220,24 +236,17 @@ export function useSupabaseLeads(options: UseSupabaseLeadsOptions = {}) {
           uniqueLeadsMap.set(lead.code, lead);
         } else {
           // Duplicate code found - keep the one with newer created_at
-          
-          // Keep the newer one (or update if current is newer)
+          // Silent deduplication - UI banner will show warning in LeadInbox
           if (new Date(lead.createdAt) > new Date(existingLead.createdAt)) {
             uniqueLeadsMap.set(lead.code, lead);
           }
-          // If existing is newer, keep it (already in map)
         }
       });
 
       const uniqueLeads = Array.from(uniqueLeadsMap.values());
       
-      if (uniqueLeads.length !== transformedLeads.length) {
-        console.error('🚨 [useSupabaseLeads] DUPLICATE LEAD_CODES FOUND IN DATABASE!');
-        console.error(`   - Total records from DB: ${transformedLeads.length}`);
-        console.error(`   - Unique lead_codes: ${uniqueLeads.length}`);
-        console.error(`   - Duplicates removed: ${transformedLeads.length - uniqueLeads.length}`);
-      }
-
+      // Silent deduplication - UI will show warning banner if needed
+      console.log('✅ [useSupabaseLeads] Final unique leads count:', uniqueLeads.length);
       
       setLeads(uniqueLeads);
 
@@ -324,8 +333,8 @@ export function useLeadStats() {
       setStats({
         total,
         new: statusCounts.new || 0,
-        inVerification: statusCounts.in_verification || 0,
-        inProgress: statusCounts.in_progress || 0,
+        inVerification: (statusCounts.verifying || 0) + (statusCounts.in_verification || 0), // Support both DB and UI format
+        inProgress: (statusCounts.processing || 0) + (statusCounts.in_progress || 0), // Support both DB and UI format
         resolved: statusCounts.resolved || 0,
         rejected: statusCounts.rejected || 0,
         cancelled: statusCounts.cancelled || 0,
@@ -347,5 +356,82 @@ export function useLeadStats() {
     loading,
     error,
     refetch: fetchStats,
+  };
+}
+
+// Hook to get a single lead by ID
+export function useSupabaseLead(leadId: string | undefined) {
+  const [lead, setLead] = useState<Lead | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [wasAutoUpdated, setWasAutoUpdated] = useState(false);
+
+  useEffect(() => {
+    if (!leadId) {
+      setLoading(false);
+      setLead(null);
+      return;
+    }
+
+    fetchLead();
+    
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leadId]);
+
+  const fetchLead = async () => {
+    if (!leadId) return;
+    
+    setLoading(true);
+    setError(null);
+    setWasAutoUpdated(false);
+
+    try {
+      console.log('🔍 [useSupabaseLead] Fetching lead by ID:', leadId);
+      
+      const { data, error: fetchError } = await supabase
+        .from('leads')
+        .select('*')
+        .eq('_id', leadId) // CRITICAL: Use _id not id
+        .single();
+
+      if (fetchError) {
+        console.error('❌ [useSupabaseLead] Supabase error:', fetchError);
+        throw new Error(`Lỗi khi lấy lead: ${fetchError.message}`);
+      }
+
+      if (!data) {
+        console.warn('⚠️ [useSupabaseLead] Lead not found');
+        setLead(null);
+        return;
+      }
+
+      console.log('✅ [useSupabaseLead] Received lead:', data);
+      const transformedLead = transformSupabaseLead(data);
+      
+      // ❌ REMOVED AUTO-UPDATE: Không tự động chuyển status khi xem chi tiết
+      // User chỉ muốn XEM, không muốn thay đổi trạng thái
+      // Status sẽ được update thông qua các action button trong UI
+      setLead(transformedLead);
+
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Lỗi không xác định';
+      console.error('❌ [useSupabaseLead] Error fetching lead:', errorMessage);
+      setError(errorMessage);
+      setLead(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refetch = () => {
+    fetchLead();
+  };
+
+  return {
+    lead,
+    loading,
+    error,
+    refetch,
+    wasAutoUpdated, // Return flag để component có thể hiển thị notification
   };
 }
