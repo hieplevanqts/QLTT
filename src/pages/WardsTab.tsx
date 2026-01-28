@@ -87,8 +87,8 @@ export const WardsTab: React.FC = () => {
       while (hasMore) {
         const start = page * pageSize;
         const end = start + pageSize - 1;
-        
-        
+
+
         const { data: wardsData, error: wardsError } = await supabase
           .from('wards')
           .select(`
@@ -113,7 +113,7 @@ export const WardsTab: React.FC = () => {
           hasMore = false;
         } else {
           allWards = [...allWards, ...wardsData];
-          
+
           // If we got less than pageSize, we've reached the end
           if (wardsData.length < pageSize) {
             hasMore = false;
@@ -123,27 +123,27 @@ export const WardsTab: React.FC = () => {
         }
       }
 
-      
+
       // Debug: Log raw data structure - CHECK ALL KEYS
       if (allWards.length > 0) {
       }
-      
+
       // Map data: Try both field names
       const mappedWards = allWards.map((ward: any) => {
         // Check which field exists
         const provinceIdValue = ward.provinceId || ward.provinceid;
-        
+
         return {
           ...ward,
           provinceId: provinceIdValue, // Use whichever exists
           province: ward.provinces, // Rename provinces (plural) to province (singular)
         };
       });
-      
+
       // Debug: Log mapped data structure
       if (mappedWards.length > 0) {
       }
-      
+
       setWards(mappedWards);
     } catch (error) {
       console.error('❌ Error in fetchData:', error);
@@ -159,6 +159,7 @@ export const WardsTab: React.FC = () => {
     if (selectedProvinceId !== 'all') {
       // Debug log - MORE DETAILED
       if (wards.indexOf(ward) === 0) {
+        console.log({
           selectedProvinceId,
           wardProvinceId: ward.provinceId,
           wardProvinceIdLowercase: (ward as any).provinceid,
@@ -167,7 +168,7 @@ export const WardsTab: React.FC = () => {
           fullWard: ward
         });
       }
-      
+
       if (ward.provinceId !== selectedProvinceId) {
         return false;
       }
@@ -334,6 +335,7 @@ export const WardsTab: React.FC = () => {
                 value={selectedProvinceId}
                 onChange={(e) => {
                   const newValue = e.target.value;
+                  console.log({
                     from: selectedProvinceId,
                     to: newValue,
                     totalWards: wards.length,

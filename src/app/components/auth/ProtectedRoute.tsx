@@ -49,7 +49,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         }
       }
     };
-    
+
     // Run check immediately on mount
     checkStorage();
   }, [dispatch]); // Only run once on mount
@@ -96,7 +96,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         console.warn('⚠️ ProtectedRoute: Restore timeout after 5 seconds');
         setRestoreTimeout(true);
       }, 5000);
-      
+
       return () => clearTimeout(timeout);
     }
   }, [isRestoring, restoreTimeout]);
@@ -122,7 +122,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
           setHasDoneFinalCheck(true);
         }
       };
-      
+
       // Run final check
       finalCheck();
     }
@@ -147,7 +147,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   // 2. Not authenticated AND haven't checked storage yet
   // 3. Not authenticated AND restore just started (give it time)
   const shouldWaitForRestore = (isLoading || (isRestoring && !restoreTimeout)) || (!isAuthenticated && !hasCheckedStorage);
-  
+
   if (shouldWaitForRestore) {
     return (
       <div style={{
@@ -236,14 +236,12 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         </div>
       );
     }
-    
+
     // Only redirect if final check is done and no token found
     if (hasDoneFinalCheck) {
-        hasDoneFinalCheck
-      });
       return <Navigate to="/auth/login" state={{ from: location }} replace />;
     }
-    
+
     // Still waiting for final check, show loading
     // This gives restore more time to complete
     return (
