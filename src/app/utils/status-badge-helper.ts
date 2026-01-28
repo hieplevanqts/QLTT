@@ -22,7 +22,7 @@ const planStatusMap: Record<PlanStatus, { label: string; variant: string }> = {
   draft: { label: 'Nháp', variant: 'draft' },
   pending_approval: { label: 'Chờ duyệt', variant: 'pending_approval' },
   approved: { label: 'Đã duyệt', variant: 'approved' },
-  active: { label: 'Đang thực hiện', variant: 'active' },
+  active: { label: 'Đang triển khai', variant: 'active' },
   completed: { label: 'Hoàn thành', variant: 'completed' },
   paused: { label: 'Tạm dừng', variant: 'paused' },
   rejected: { label: 'Đã từ chối', variant: 'rejected' },

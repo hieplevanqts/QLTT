@@ -537,7 +537,7 @@ export function PlanDetail() {
 
           <div className={styles.headerTitle}>
             <div className={styles.headerTitleRow}>
-              <span className={styles.planId}>{plan.id}</span>
+              <span className={styles.planId}>{plan.code || '--'}</span>
               <StatusBadge {...getStatusProps('plan', plan.status)} size="sm" />
             </div>
             <h1 className={styles.pageTitle}>{plan.name}</h1>
@@ -692,7 +692,7 @@ export function PlanDetail() {
                     <div className={styles.infoLabel}>Mã kế hoạch</div>
                     <div className={styles.infoValue}>
                       <FileText size={16} className={styles.infoIcon} />
-                      {plan.id}
+                      {plan.code || '--'}
                     </div>
                   </div>
 

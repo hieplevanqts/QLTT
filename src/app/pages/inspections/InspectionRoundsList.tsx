@@ -175,12 +175,17 @@ export function InspectionRoundsList() {
   };
 
   const handleCancelRound = async () => {
-    if (!modalState.round) return;
+    const roundToCancel = modalState.round;
+    if (!roundToCancel) {
+      console.warn('handleCancelRound: No round selected in modalState');
+      return;
+    }
     
     try {
-      await updateRoundStatus(modalState.round.id, 'cancelled');
+      console.log('handleCancelRound: Cancelling round ID:', roundToCancel.id);
+      await updateRoundStatus(roundToCancel.id, 'cancelled');
       closeModal();
-      toast.success(`Đã hủy đợt kiểm tra "${modalState.round.name}"`);
+      toast.success(`Đã hủy đợt kiểm tra "${roundToCancel.name}"`);
       await refetch();
     } catch (error) {
       toast.error('Có lỗi xảy ra khi hủy đợt kiểm tra');
@@ -189,12 +194,17 @@ export function InspectionRoundsList() {
   };
 
   const handleDeleteRound = async () => {
-    if (!modalState.round) return;
+    const roundToDelete = modalState.round;
+    if (!roundToDelete) {
+      console.warn('handleDeleteRound: No round selected in modalState');
+      return;
+    }
     
     try {
-      await deleteRound(modalState.round.id);
+      console.log('handleDeleteRound: Calling deleteRound for ID:', roundToDelete.id);
+      await deleteRound(roundToDelete.id);
       closeModal();
-      toast.success(`Đã xóa đợt kiểm tra "${modalState.round.name}"`);
+      toast.success(`Đã xóa đợt kiểm tra "${roundToDelete.name}"`);
       await refetch();
     } catch (error) {
       toast.error('Có lỗi xảy ra khi xóa đợt kiểm tra');
@@ -464,13 +474,21 @@ export function InspectionRoundsList() {
         break;
 
       case 'paused':
-        // Tạm dừng: Tiếp tục
+        // Tạm dừng: Tiếp tục, Hủy
         actions.push(
           {
             label: 'Tiếp tục',
             icon: <PlayCircle size={16} />,
             onClick: () => openModal('resume', round),
             priority: 9,
+          },
+          {
+            label: 'Hủy đợt',
+            icon: <XCircle size={16} />,
+            onClick: () => openModal('cancel', round),
+            variant: 'destructive' as const,
+            separator: true,
+            priority: 1,
           }
         );
         break;
@@ -499,7 +517,7 @@ export function InspectionRoundsList() {
             priority: 8,
           },
           {
-            label: 'Gửi lại duyệt',
+            label: 'Gửi duyệt',
             icon: <Send size={16} />,
             onClick: () => openModal('sendApproval', round),
             priority: 9,
@@ -516,16 +534,7 @@ export function InspectionRoundsList() {
         break;
 
       case 'cancelled':
-        // Đã hủy: Xóa
-        actions.push(
-          {
-            label: 'Xóa',
-            icon: <Trash2 size={16} />,
-            onClick: () => openModal('delete', round),
-            variant: 'destructive' as const,
-            priority: 1,
-          }
-        );
+        // Đã hủy: Không cho xóa bản ghi
         break;
     }
 
@@ -538,41 +547,35 @@ export function InspectionRoundsList() {
       key: 'code',
       label: 'Mã đợt',
       sortable: true,
-      width: '140px',
+      width: '200px',
       render: (round) => (
         <div className={styles.roundCode}>{round.campaign_code || '--'}</div>
       ),
     },
     {
       key: 'name',
-      label: 'Tên đợt kiểm tra',
+      label: 'Đợt kiểm tra',
       sortable: true,
-      render: (round) => (
-        <div>
-          <div className={styles.roundName}>{round.name || '--'}</div>
-          {round.planName && (
-            <div className={styles.roundPlan}>KH: {round.planName}</div>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'time',
-      label: 'Thời gian',
-      sortable: true,
-      width: '220px',
       render: (round) => {
-        if (!round.startDate || !round.endDate) {
-          return <span className={styles.timeRange}>Chưa xác định</span>;
-        }
-        const startDate = new Date(round.startDate);
-        const endDate = new Date(round.endDate);
+        const startDate = round.startDate ? new Date(round.startDate) : null;
+        const endDate = round.endDate ? new Date(round.endDate) : null;
+        const timeStr = startDate && endDate 
+          ? `${startDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })} - ${endDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}`
+          : 'Chưa xác định';
+
         return (
-          <span className={styles.timeRange}>
-            {startDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-            {' - '}
-            {endDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-          </span>
+          <div>
+            <div className={styles.roundName}>{round.name || '--'}</div>
+            <div className={styles.roundPlan} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <span>Thời gian: {timeStr}</span>
+              {round.planName && (
+                <>
+                  <span style={{ color: 'var(--border)' }}>|</span>
+                  <span>KH: {round.planName}</span>
+                </>
+              )}
+            </div>
+          </div>
         );
       },
     },
@@ -584,17 +587,6 @@ export function InspectionRoundsList() {
       truncate: true,
       render: (round) => (
         <span className={styles.leadUnit}>{round.leadUnit || '--'}</span>
-      ),
-    },
-    {
-      key: 'team',
-      label: 'Lực lượng',
-      sortable: true,
-      width: '120px',
-      render: (round) => (
-        <span className={styles.teamSize}>
-          {round.teamSize > 0 ? `${round.teamSize} người` : '--'}
-        </span>
       ),
     },
     {
@@ -625,7 +617,7 @@ export function InspectionRoundsList() {
       key: 'creator',
       label: 'Người tạo',
       sortable: true,
-      width: '140px',
+      width: '180px',
       truncate: true,
       render: (round) => <span className={styles.creator}>{round.createdBy || '--'}</span>,
     },
@@ -739,13 +731,30 @@ export function InspectionRoundsList() {
           filters={
             <>
               <Select value={planFilter} onValueChange={setPlanFilter}>
-                <SelectTrigger style={{ width: '160px' }}>
+                <SelectTrigger style={{ width: '200px' }}>
                   <SelectValue placeholder="Kế hoạch" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tất cả kế hoạch</SelectItem>
                   <SelectItem value="with_plan">Thuộc kế hoạch</SelectItem>
                   <SelectItem value="no_plan">Không thuộc KH</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={activeFilter || 'all'} onValueChange={(val) => setActiveFilter(val === 'all' ? null : val)}>
+                <SelectTrigger style={{ width: '180px' }}>
+                  <SelectValue placeholder="Trạng thái" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                  <SelectItem value="draft">Nháp</SelectItem>
+                  <SelectItem value="pending_approval">Chờ duyệt</SelectItem>
+                  <SelectItem value="approved">Đã duyệt</SelectItem>
+                  <SelectItem value="active">Đang triển khai</SelectItem>
+                  <SelectItem value="paused">Tạm dừng</SelectItem>
+                  <SelectItem value="completed">Hoàn thành</SelectItem>
+                  <SelectItem value="rejected">Từ chối duyệt</SelectItem>
+                  <SelectItem value="cancelled">Đã hủy</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -762,7 +771,7 @@ export function InspectionRoundsList() {
               placeholder="Tìm theo mã, tên đợt hoặc đơn vị"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              style={{ width: '300px' }}
+              style={{ width: '400px' }}
             />
           }
           actions={
