@@ -1,6 +1,6 @@
 import { call, put, takeLatest } from 'redux-saga/effects';
 import { PayloadAction } from '@reduxjs/toolkit';
-import { fetchMerchantDetail, fetchMerchantInspectionResults } from '../../utils/api/merchantsApi';
+import { fetchMerchantDetail, fetchMerchantInspectionResults, fetchMerchantLicenses } from '../../utils/api/merchantsApi';
 import {
   fetchMerchantDetailRequest,
   fetchMerchantDetailSuccess,
@@ -8,11 +8,15 @@ import {
   fetchInspectionHistoryRequest,
   fetchInspectionHistorySuccess,
   fetchInspectionHistoryFailure,
+  fetchMerchantLicensesRequest,
+  fetchMerchantLicensesSuccess,
+  fetchMerchantLicensesFailure,
 } from '../slices/merchantSlice';
 
 function* handleFetchMerchantDetail(action: PayloadAction<{ merchantId: string; licenseType?: string }>) {
   try {
     const { merchantId, licenseType } = action.payload;
+    // @ts-ignore
     const data: any = yield call(fetchMerchantDetail, merchantId, licenseType);
     yield put(fetchMerchantDetailSuccess(data));
   } catch (error: any) {
@@ -37,7 +41,17 @@ function* handleFetchInspectionHistory(action: PayloadAction<string>) {
   }
 }
 
+function* handleFetchMerchantLicenses(action: PayloadAction<string>) {
+  try {
+    const data: any[] = yield call(fetchMerchantLicenses, action.payload);
+    yield put(fetchMerchantLicensesSuccess(data));
+  } catch (error: any) {
+    yield put(fetchMerchantLicensesFailure(error.message || 'Failed to fetch merchant licenses'));
+  }
+}
+
 export function* merchantSaga() {
   yield takeLatest(fetchMerchantDetailRequest.type, handleFetchMerchantDetail);
   yield takeLatest(fetchInspectionHistoryRequest.type, handleFetchInspectionHistory);
+  yield takeLatest(fetchMerchantLicensesRequest.type, handleFetchMerchantLicenses);
 }

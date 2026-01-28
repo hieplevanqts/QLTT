@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { ConfirmDialog } from '../../../ui-kit/ConfirmDialog';
 import { useAppDispatch, useAppSelector } from '../../../app/hooks';
 import { RootState } from '../../../store/rootReducer';
-import { fetchMerchantDetailRequest, clearCurrentMerchant, fetchInspectionHistoryRequest } from '../../../store/slices/merchantSlice';
+import { fetchMerchantDetailRequest, clearCurrentMerchant, fetchInspectionHistoryRequest, fetchMerchantLicensesRequest } from '../../../store/slices/merchantSlice';
 
 interface PointDetailModalProps {
   point: Restaurant | null;
@@ -115,13 +115,14 @@ function getStatusBadge(category: Restaurant['category']) {
 
 export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalProps) {
   const dispatch = useAppDispatch();
-  const { currentMerchant, inspectionHistory, isLoading: isMerchantLoading, isHistoryLoading } = useAppSelector((state: RootState) => state.merchant);
+  const { currentMerchant, inspectionHistory, licenses, isLoading: isMerchantLoading, isHistoryLoading, isLicensesLoading } = useAppSelector((state: RootState) => state.merchant);
 
   // 🔥 Fetch merchant detail when modal opens
   useEffect(() => {
     if (isOpen && point?.id) {
       dispatch(fetchMerchantDetailRequest({ merchantId: point.id }));
       dispatch(fetchInspectionHistoryRequest(point.id));
+      dispatch(fetchMerchantLicensesRequest(point.id));
     }
     return () => {
       if (!isOpen) {
@@ -520,6 +521,54 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
     lastInspectionDate: currentMerchant?.last_inspection_date ? new Date(currentMerchant.last_inspection_date) : null,
     nextInspectionDate: currentMerchant?.next_inspection_date ? new Date(currentMerchant.next_inspection_date) : null,
     attpCertificateNumber: currentMerchant?.attp_certificate_number || `CN-ATTP ${Math.floor(1000 + (point?.id?.charCodeAt(0) || 0) % 9000)}/${new Date().getFullYear()}`,
+  };
+
+  // mapping certificate status to Vietnamese and colors
+  const getLicenseStatusConfig = (status: string, isATTP: boolean) => {
+    const s = status?.toLowerCase() || '';
+    
+    // Check if status is already in Vietnamese (from fallback or other sources)
+    if (s === 'còn hiệu lực') {
+      return { 
+        text: 'Còn hiệu lực', 
+        bg: isATTP ? '#dcfce7' : '#dbeafe', 
+        color: isATTP ? '#166534' : '#1e40af' 
+      };
+    }
+
+    switch (s) {
+      case 'valid':
+      case 'active':
+        return { 
+          text: 'Còn hiệu lực', 
+          bg: isATTP ? '#dcfce7' : '#dbeafe', 
+          color: isATTP ? '#166534' : '#1e40af' 
+        };
+      case 'expiring':
+        return { 
+          text: 'Sắp hết hạn', 
+          bg: '#fef3c7', 
+          color: '#92400e' 
+        };
+      case 'expired':
+        return { 
+          text: 'Hết hiệu lực', 
+          bg: '#fee2e2', 
+          color: '#991b1b' 
+        };
+      case 'revoked':
+        return { 
+          text: 'Bị thu hồi', 
+          bg: '#f3f4f6', 
+          color: '#374151' 
+        };
+      default:
+        return { 
+          text: status || 'N/A', 
+          bg: '#f3f4f6', 
+          color: '#374151' 
+        };
+    }
   };
 
   // 🔥 FIX: Handle overlay click - only close if clicking directly on overlay, not from event bubbling
@@ -985,65 +1034,91 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                 {!collapsedSections.certificates && (
                   <div className={styles.cardBody}>
                     <div className={styles.certCompact}>
-                      {/* ATTP Certificate */}
-                      <div className={styles.certItem}>
-                        <div className={styles.certItemHeader}>
-                          <div className={styles.certIconSmall} style={{ background: '#dcfce7', color: '#16a34a' }}>
-                            <FileCheck size={14} />
-                          </div>
-                          <div>
-                            <div className={styles.certTitleSmall}>Chứng nhận ATTP</div>
-                            <div className={styles.certNumber}>{displayData.attpCertificateNumber}</div>
-                          </div>
-                          <span className={styles.certStatusBadge} style={{ background: '#dcfce7', color: '#166534' }}>
-                            Còn hiệu lực
-                          </span>
+                      {isLicensesLoading ? (
+                        <div className="flex items-center justify-center py-4 text-xs text-muted-foreground">
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary mr-2"></div>
+                          Đang tải giấy chứng nhận...
                         </div>
-                        <div className={styles.certMeta}>
-                          Cấp bởi: Sở Y tế {point.province} •
-                          Cấp: {displayData.establishedDate ? displayData.establishedDate.toLocaleDateString('vi-VN') : 'N/A'} •
-                          HH: {displayData.establishedDate ? new Date(displayData.establishedDate.getTime() + 3 * 365 * 24 * 60 * 60 * 1000).toLocaleDateString('vi-VN') : 'N/A'}
-                        </div>
-                      </div>
-
-                      {/* Business License */}
-                      <div className={styles.certItem}>
-                        <div className={styles.certItemHeader}>
-                          <div className={styles.certIconSmall} style={{ background: '#dbeafe', color: '#005cb6' }}>
-                            <FileCheck size={14} />
-                          </div>
-                          <div>
-                            <div className={styles.certTitleSmall}>Giấy phép KD</div>
-                            <div className={styles.certNumber}>{displayData.license}</div>
-                          </div>
-                          <span className={styles.certStatusBadge} style={{ background: '#dbeafe', color: '#1e40af' }}>
-                            Còn hiệu lực
-                          </span>
-                        </div>
-                        <div className={styles.certMeta}>
-                          Cấp bởi: Phòng ĐKKD {point.district} • Loại hình: {point.type}
-                        </div>
-                      </div>
-
-                      {/* Training Certificate - only for certified */}
-                      {point.category === 'certified' && (
-                        <div className={styles.certItem}>
-                          <div className={styles.certItemHeader}>
-                            <div className={styles.certIconSmall} style={{ background: '#fef3c7', color: '#ca8a04' }}>
-                              <Award size={14} />
+                      ) : licenses && licenses.length > 0 ? (
+                        licenses.map((license, index) => {
+                          const isATTP = license.license_type?.toLowerCase().includes('an toàn thực phẩm') || 
+                                       license.license_type?.toLowerCase().includes('attp');
+                          const statusConfig = getLicenseStatusConfig(license.status, isATTP);
+                          
+                          return (
+                            <div key={license._id || index} className={styles.certItem}>
+                              <div className={styles.certItemHeader}>
+                                <div 
+                                  className={styles.certIconSmall} 
+                                  style={{ 
+                                    background: isATTP ? '#dcfce7' : '#dbeafe', 
+                                    color: isATTP ? '#16a34a' : '#005cb6' 
+                                  }}
+                                >
+                                  {isATTP ? <FileCheck size={14} /> : <FileCheck size={14} />}
+                                </div>
+                                <div>
+                                  <div className={styles.certTitleSmall}>{license.license_type || 'Giấy chứng nhận'}</div>
+                                  <div className={styles.certNumber}>{license.license_number || 'N/A'}</div>
+                                </div>
+                                <span 
+                                  className={styles.certStatusBadge} 
+                                  style={{ 
+                                    background: statusConfig.bg, 
+                                    color: statusConfig.color 
+                                  }}
+                                >
+                                  {statusConfig.text}
+                                </span>
+                              </div>
+                              <div className={styles.certMeta}>
+                                {license.issued_by_name && `Cấp bởi: ${license.issued_by_name} • `}
+                                Cấp: {license.issued_date ? new Date(license.issued_date).toLocaleDateString('vi-VN') : 'N/A'} 
+                                {license.expiry_date && ` • HH: ${new Date(license.expiry_date).toLocaleDateString('vi-VN')}`}
+                              </div>
                             </div>
-                            <div>
-                              <div className={styles.certTitleSmall}>Chứng chỉ đào tạo VSATTP</div>
-                              <div className={styles.certNumber}>DT-ATTP {Math.floor(Math.random() * 9000 + 1000)}</div>
+                          );
+                        })
+                      ) : (
+                        <>
+                          {/* ATTP Certificate Fallback */}
+                          <div className={styles.certItem}>
+                            <div className={styles.certItemHeader}>
+                              <div className={styles.certIconSmall} style={{ background: '#dcfce7', color: '#16a34a' }}>
+                                <FileCheck size={14} />
+                              </div>
+                              <div>
+                                <div className={styles.certTitleSmall}>Chứng nhận ATTP</div>
+                                <div className={styles.certNumber}>{displayData.attpCertificateNumber}</div>
+                              </div>
+                              <span className={styles.certStatusBadge} style={{ background: '#dcfce7', color: '#166534' }}>
+                                Còn hiệu lực
+                              </span>
                             </div>
-                            <span className={styles.certStatusBadge} style={{ background: '#fef3c7', color: '#92400e' }}>
-                              Còn hiệu lực
-                            </span>
+                            <div className={styles.certMeta}>
+                              Cấp bởi: Sở Y tế {point.province} • Cấp: {displayData.establishedDate ? displayData.establishedDate.toLocaleDateString('vi-VN') : 'N/A'} • HH: {displayData.establishedDate ? new Date(displayData.establishedDate.getTime() + 3 * 365 * 24 * 60 * 60 * 1000).toLocaleDateString('vi-VN') : 'N/A'}
+                            </div>
                           </div>
-                          <div className={styles.certMeta}>
-                            Cấp bởi: TTYT dự phòng {point.province} • {employees} nhân viên đã đào tạo
+
+                          {/* Business License Fallback */}
+                          <div className={styles.certItem}>
+                            <div className={styles.certItemHeader}>
+                              <div className={styles.certIconSmall} style={{ background: '#dbeafe', color: '#005cb6' }}>
+                                <FileCheck size={14} />
+                              </div>
+                              <div>
+                                <div className={styles.certTitleSmall}>Giấy phép KD</div>
+                                <div className={styles.certNumber}>{displayData.license}</div>
+                              </div>
+                              <span className={styles.certStatusBadge} style={{ background: '#dbeafe', color: '#1e40af' }}>
+                                Còn hiệu lực
+                              </span>
+                            </div>
+                            <div className={styles.certMeta}>
+                              Cấp bởi: Phòng ĐKKD {point.district} • Loại hình: {point.type}
+                            </div>
                           </div>
-                        </div>
+                        </>
                       )}
                     </div>
                   </div>

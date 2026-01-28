@@ -273,6 +273,33 @@ export async function fetchMerchantDetail(merchantId: string, licenseType: strin
 }
 
 /**
+ * 📜 Fetch merchant licenses
+ * 
+ * @param merchantId - Merchant ID (UUID)
+ * @returns Array of merchant licenses
+ */
+export async function fetchMerchantLicenses(merchantId: string): Promise<any[]> {
+  try {
+    const url = `${SUPABASE_REST_URL}/merchant_licenses?select=_id,merchant_id,license_type,license_number,issued_date,expiry_date,status,issued_by,issued_by_name,file_url,notes,created_at,updated_at&merchant_id=eq.${merchantId}`;
+    
+    console.log('🔍 fetchMerchantLicenses API call (axios):', url);
+
+    const response = await axios.get(url, {
+      headers: getHeaders()
+    });
+
+    return response.data || [];
+  } catch (error: any) {
+    console.error('❌ Error in fetchMerchantLicenses:', error);
+    if (error.response) {
+      console.error('Response status:', error.response.status);
+      console.error('Response data:', error.response.data);
+    }
+    throw error;
+  }
+}
+
+/**
  * 📋 Fetch merchant inspection results (giấy tờ kiểm tra)
  * Calls RPC function: get_merchant_inspection_results
  * 
