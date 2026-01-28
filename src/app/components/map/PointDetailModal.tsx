@@ -664,7 +664,7 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                         {staff.staff_code && (
                           <div className={styles.staffDetailItem}>
                             <Hash size={14} />
-                            <span>Mã NV: {staff.staff_code}</span>
+                            <span>Mã Nhân viên: {staff.staff_code}</span>
                           </div>
                         )}
 
@@ -704,7 +704,7 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                 title="Xem danh sách nhân viên"
               >
                 <Users size={14} />
-                <span>{displayData.employees} NV</span>
+                <span>{displayData.employees} Nhân viên</span>
               </div>
               <div className={styles.compactStatItem}>
                 <Utensils size={14} />
@@ -712,13 +712,13 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
               </div>
               <div className={styles.compactStatItem}>
                 <Shield size={14} />
-                <span>{displayData.inspectionCount} lần KT</span>
+                <span>{displayData.inspectionCount} Lần kiểm tra</span>
               </div>
               <div className={styles.compactStatItem} style={{
                 color: displayData.violationCount > 2 ? '#dc2626' : displayData.violationCount > 0 ? '#eab308' : '#16a34a'
               }}>
                 <AlertCircle size={14} />
-                <span>{displayData.violationCount} VP</span>
+                <span>{displayData.violationCount} Vi phạm</span>
               </div>
             </div>
           </div>
