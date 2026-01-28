@@ -55,6 +55,7 @@ export interface Plan {
     completedTasks: number;
     progress: number;
   };
+  attachments?: any[];
 }
 
 export interface Target {

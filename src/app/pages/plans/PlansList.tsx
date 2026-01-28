@@ -17,7 +17,6 @@ import {
   PauseCircle, 
   Trash2, 
   XCircle, 
-  Filter, 
   FileDown, 
   BarChart3, 
   ClipboardCheck, 
@@ -30,13 +29,8 @@ import { SearchInput } from '../../../ui-kit/SearchInput';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+
 import ModernSummaryCard from '../../../patterns/ModernSummaryCard';
 import BulkActionBar, { BulkAction } from '../../../patterns/BulkActionBar';
 import FilterActionBar from '../../../patterns/FilterActionBar';
@@ -44,7 +38,7 @@ import ActionColumn, { Action } from '../../../patterns/ActionColumn';
 import TableFooter from '../../../ui-kit/TableFooter';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { getStatusProps } from '../../utils/status-badge-helper';
-import { type Plan, type PlanType } from '../../data/kehoach-mock-data';
+import { type Plan } from '../../data/kehoach-mock-data';
 import styles from './PlansList.module.css';
 import {
   SendForApprovalModal,
@@ -60,8 +54,8 @@ import {
 } from '../../components/plans/PlanActionModals';
 import { M09ProposalModal } from '../../components/plans/M09ProposalModal';
 import { M08ReportModal } from '../../components/plans/M08ReportModal';
-import AdvancedFilterModal, { FilterConfig } from '../../../ui-kit/AdvancedFilterModal';
-import { DateRange } from '../../../ui-kit/DateRangePicker';
+
+import DateRangePicker, { DateRange } from '../../../ui-kit/DateRangePicker';
 import { useSupabasePlans } from '../../../hooks/useSupabasePlans';
 import { updatePlanApi, deletePlanApi } from '../../../utils/api/plansApi';
 
@@ -82,7 +76,6 @@ export function PlansList() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [dateRangeFilter, setDateRangeFilter] = useState<DateRange>({ startDate: null, endDate: null });
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -108,7 +101,9 @@ export function PlansList() {
       total: safePlans.length,
       draft: safePlans.filter(p => p.status === 'draft').length,
       pending: safePlans.filter(p => p.status === 'pending_approval').length,
+      approved: safePlans.filter(p => p.status === 'approved').length,
       active: safePlans.filter(p => p.status === 'active').length,
+      paused: safePlans.filter(p => p.status === 'paused').length,
       completed: safePlans.filter(p => p.status === 'completed').length,
       // Count by plan type
       periodic: safePlans.filter(p => p.planType === 'periodic').length,
@@ -121,7 +116,7 @@ export function PlansList() {
   const filteredData = useMemo(() => {
     return safePlans.filter(plan => {
       const matchesSearch = plan.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-                           plan.id.toLowerCase().includes(searchValue.toLowerCase());
+                           (plan.code && plan.code.toLowerCase().includes(searchValue.toLowerCase()));
       const matchesType = planTypeFilter === 'all' || plan.planType === planTypeFilter;
       const matchesStatus = statusFilter === 'all' || plan.status === statusFilter;
       const matchesPriority = priorityFilter === 'all' || plan.priority === priorityFilter;
@@ -310,6 +305,26 @@ export function PlansList() {
         );
         break;
 
+      case 'paused':
+        // Tạm dừng: Tiếp tục, Hủy
+        actions.push(
+          {
+            label: 'Tiếp tục',
+            icon: <PlayCircle size={16} />,
+            onClick: () => openModal('resume', plan),
+            priority: 9,
+          },
+          {
+            label: 'Hủy kế hoạch',
+            icon: <XCircle size={16} />,
+            onClick: () => openModal('cancel', plan),
+            variant: 'destructive' as const,
+            separator: true,
+            priority: 1,
+          }
+        );
+        break;
+
       case 'completed':
         // Hoàn thành: Báo cáo, Tải đề xuất
         actions.push(
@@ -333,6 +348,28 @@ export function PlansList() {
           }
         );
         break;
+
+      case 'rejected':
+        // Từ chối: Chỉnh sửa, Gửi duyệt
+        actions.push(
+          {
+            label: 'Chỉnh sửa',
+            icon: <Edit size={16} />,
+            onClick: () => navigate(`/plans/${encodeURIComponent(plan.id)}/edit`),
+            priority: 8,
+          },
+          {
+            label: 'Gửi duyệt',
+            icon: <Send size={16} />,
+            onClick: () => openModal('sendApproval', plan),
+            priority: 9,
+          }
+        );
+        break;
+
+      case 'cancelled':
+        // Đã hủy: Không cho xóa bản ghi
+        break;
     }
 
     return actions;
@@ -341,8 +378,8 @@ export function PlansList() {
   // Define table columns
   const columns: Column<Plan>[] = [
     {
-      key: 'id',
-      label: 'Số/ký hiệu',
+      key: 'code',
+      label: 'Mã kế hoạch',
       sortable: true,
       width: '140px',
       render: (plan) => (
@@ -417,7 +454,7 @@ export function PlansList() {
     },
     {
       key: 'creator',
-      label: 'Người lập',
+      label: 'Người tạo',
       sortable: true,
       width: '160px',
       render: (plan) => <span className={styles.creator}>{plan.createdBy || '--'}</span>,
@@ -434,12 +471,13 @@ export function PlansList() {
   ];
 
   // Handle row selection
-  const handleSelectRow = (id: string) => {
+  const handleSelectRow = (id: string | number) => {
+    const stringId = String(id);
     const newSelected = new Set(selectedRows);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
+    if (newSelected.has(stringId)) {
+      newSelected.delete(stringId);
     } else {
-      newSelected.add(id);
+      newSelected.add(stringId);
     }
     setSelectedRows(newSelected);
   };
@@ -457,71 +495,7 @@ export function PlansList() {
     setCurrentPage(1);
   }, [planTypeFilter, statusFilter, priorityFilter, searchValue, activeFilter]);
 
-  // Filter configurations for Advanced Filter Modal
-  const filterConfigs: FilterConfig[] = [
-    {
-      key: 'status',
-      label: 'Trạng thái',
-      type: 'select',
-      options: [
-        { value: 'all', label: 'Tất cả trạng thái' },
-        { value: 'draft', label: 'Nháp' },
-        { value: 'pending_approval', label: 'Chờ phê duyệt' },
-        { value: 'approved', label: 'Đã phê duyệt' },
-        { value: 'active', label: 'Đang thực hiện' },
-        { value: 'completed', label: 'Hoàn thành' },
-        { value: 'cancelled', label: 'Đã hủy' },
-      ],
-    },
-    {
-      key: 'priority',
-      label: 'Độ ưu tiên',
-      type: 'select',
-      options: [
-        { value: 'all', label: 'Tất cả ưu tiên' },
-        { value: 'low', label: 'Thấp' },
-        { value: 'medium', label: 'Trung bình' },
-        { value: 'high', label: 'Cao' },
-        { value: 'critical', label: 'Khẩn cấp' },
-      ],
-    },
-    {
-      key: 'dateRange',
-      label: 'Thời gian triển khai',
-      type: 'daterange',
-    },
-  ];
 
-  const filterValues = {
-    status: statusFilter,
-    priority: priorityFilter,
-    dateRange: dateRangeFilter,
-  };
-
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (statusFilter !== 'all') count++;
-    if (priorityFilter !== 'all') count++;
-    if (dateRangeFilter.startDate || dateRangeFilter.endDate) count++;
-    return count;
-  }, [statusFilter, priorityFilter, dateRangeFilter]);
-
-  const handleFilterChange = (values: Record<string, any>) => {
-    setStatusFilter(values.status || 'all');
-    setPriorityFilter(values.priority || 'all');
-    setDateRangeFilter(values.dateRange || { startDate: null, endDate: null });
-  };
-
-  const handleFilterApply = () => {
-    toast.success('Đã áp dụng bộ lọc');
-  };
-
-  const handleFilterClear = () => {
-    setStatusFilter('all');
-    setPriorityFilter('all');
-    setDateRangeFilter({ startDate: null, endDate: null });
-    toast.info('Đã xóa bộ lọc');
-  };
 
   // Bulk actions
   const bulkActions: BulkAction[] = [
@@ -633,70 +607,105 @@ export function PlansList() {
         <div className={styles.summaryGrid}>
           <ModernSummaryCard
             label="Tổng số kế hoạch"
-            value={stats.total}
+            value={stats.total.toString()}
             icon={ClipboardList}
-            variant="info"
+            variant="primary"
             active={activeFilter === null}
             onClick={() => setActiveFilter(null)}
           />
           <ModernSummaryCard
             label="Nháp"
-            value={stats.draft}
+            value={stats.draft.toString()}
             icon={FileEdit}
             variant="neutral"
             active={activeFilter === 'draft'}
             onClick={() => setActiveFilter('draft')}
           />
           <ModernSummaryCard
-            label="Chờ phê duyệt"
-            value={stats.pending}
+            label="Chờ duyệt"
+            value={stats.pending.toString()}
             icon={Clock}
             variant="warning"
             active={activeFilter === 'pending_approval'}
             onClick={() => setActiveFilter('pending_approval')}
           />
           <ModernSummaryCard
-            label="Đang thực hiện"
-            value={stats.active}
-            icon={CircleCheck}
-            variant="success"
+            label="Đã duyệt"
+            value={stats.approved.toString()}
+            icon={CheckCircle2}
+            variant="info"
+            active={activeFilter === 'approved'}
+            onClick={() => setActiveFilter('approved')}
+          />
+          <ModernSummaryCard
+            label="Đang triển khai"
+            value={stats.active.toString()}
+            icon={PlayCircle}
+            variant="primary"
             active={activeFilter === 'active'}
             onClick={() => setActiveFilter('active')}
           />
           <ModernSummaryCard
+            label="Tạm dừng"
+            value={stats.paused.toString()}
+            icon={PauseCircle}
+            variant="warning"
+            active={activeFilter === 'paused'}
+            onClick={() => setActiveFilter('paused')}
+          />
+          <ModernSummaryCard
             label="Hoàn thành"
-            value={stats.completed}
+            value={stats.completed.toString()}
             icon={CircleCheck}
-            variant="primary"
+            variant="success"
             active={activeFilter === 'completed'}
             onClick={() => setActiveFilter('completed')}
           />
         </div>
+      </div>
 
-        {/* QLTT Standard: Filters and Search on SAME ROW */}
+      {/* QLTT Standard: Filters and Search on SAME ROW */}
+      <div className={styles.filterSection}>
         <FilterActionBar
           filters={
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setIsFilterModalOpen(true)}
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              Bộ lọc
-              {activeFilterCount > 0 && (
-                <span style={{
-                  marginLeft: '8px',
-                  padding: '2px 8px',
-                  background: 'var(--color-primary)',
-                  color: 'white',
-                  borderRadius: 'var(--radius-full)',
-                  fontSize: 'var(--font-size-xs)',
-                  fontWeight: 600,
-                }}>
-                  {activeFilterCount}
-                </span>
-              )}
-            </Button>
+            <>
+              <Select value={activeFilter || 'all'} onValueChange={(val) => setActiveFilter(val === 'all' ? null : val)}>
+                <SelectTrigger style={{ width: '180px' }}>
+                  <SelectValue placeholder="Trạng thái" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                  <SelectItem value="draft">Nháp</SelectItem>
+                  <SelectItem value="pending_approval">Chờ duyệt</SelectItem>
+                  <SelectItem value="approved">Đã duyệt</SelectItem>
+                  <SelectItem value="active">Đang triển khai</SelectItem>
+                  <SelectItem value="paused">Tạm dừng</SelectItem>
+                  <SelectItem value="completed">Hoàn thành</SelectItem>
+                  <SelectItem value="rejected">Từ chối duyệt</SelectItem>
+                  <SelectItem value="cancelled">Đã hủy</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                <SelectTrigger style={{ width: '150px' }}>
+                  <SelectValue placeholder="Ưu tiên" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả ưu tiên</SelectItem>
+                  <SelectItem value="low">Thấp</SelectItem>
+                  <SelectItem value="medium">Trung bình</SelectItem>
+                  <SelectItem value="high">Cao</SelectItem>
+                  <SelectItem value="critical">Khẩn cấp</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <DateRangePicker 
+                value={dateRangeFilter} 
+                onChange={setDateRangeFilter}
+                placeholder="Thời gian triển khai"
+                className={styles.datePicker}
+              />
+            </>
           }
           searchInput={
             <SearchInput
@@ -966,15 +975,7 @@ export function PlansList() {
       )}
 
       {/* Advanced Filter Modal */}
-      <AdvancedFilterModal
-        isOpen={isFilterModalOpen}
-        onClose={() => setIsFilterModalOpen(false)}
-        filters={filterConfigs}
-        values={filterValues}
-        onChange={handleFilterChange}
-        onApply={handleFilterApply}
-        onClear={handleFilterClear}
-      />
+
 
       {/* M09 Proposal Modal */}
       {selectedPlanForDocument && (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../layouts/PageHeader';
 import {
@@ -9,21 +9,16 @@ import {
   CheckCircle2,
   AlertTriangle,
   AlertCircle,
-  Clock,
-  MapPin,
-  Users,
   Building2,
-  Shield,
-  Loader2,
   Info,
-  XCircle,
   ShieldAlert,
   RefreshCw,
-  Calendar,
+  Users,
   Target,
-  ChevronRight,
+  Shield,
+  MapPin,
 } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 type ViewState = 'normal' | 'loading' | 'empty' | 'error' | 'no-permission';
 type UserRole = 'leader' | 'manager' | 'field-team';
@@ -185,7 +180,7 @@ export default function DashboardPage() {
             { label: 'Dashboard' },
           ]}
           title="Dashboard"
-          description="Theo dõi tình hình hoạt động và các chỉ số quan trọng"
+          subtitle="Theo dõi tình hình hoạt động và các chỉ số quan trọng"
         />
         <div
           style={{
@@ -226,7 +221,7 @@ export default function DashboardPage() {
             { label: 'Dashboard' },
           ]}
           title="Dashboard"
-          description="Theo dõi tình hình hoạt động và các chỉ số quan trọng"
+          subtitle="Theo dõi tình hình hoạt động và các chỉ số quan trọng"
         />
         <div
           style={{
@@ -279,7 +274,7 @@ export default function DashboardPage() {
             { label: 'Dashboard' },
           ]}
           title="Dashboard"
-          description="Theo dõi tình hình hoạt động và các chỉ số quan trọng"
+          subtitle="Theo dõi tình hình hoạt động và các chỉ số quan trọng"
         />
         <div
           style={{
@@ -353,7 +348,7 @@ export default function DashboardPage() {
             { label: 'Dashboard' },
           ]}
           title="Dashboard"
-          description="Theo dõi tình hình hoạt động và các chỉ số quan trọng"
+          subtitle="Theo dõi tình hình hoạt động và các chỉ số quan trọng"
         />
         <div
           style={{
@@ -407,7 +402,7 @@ export default function DashboardPage() {
           { label: 'Dashboard' },
         ]}
         title="Dashboard"
-        description="Theo dõi tình hình hoạt động và các chỉ số quan trọng"
+        subtitle="Theo dõi tình hình hoạt động và các chỉ số quan trọng"
         actions={
           <div style={{ display: 'flex', gap: 'var(--spacing-2, 8px)', flexWrap: 'wrap' }}>
             {/* Role switcher (for demo) */}

@@ -38,6 +38,7 @@ export interface PlanResponse {
   wards?: { name: string } | null;
   description: string;
   target: string;
+  attachments?: any; // JSON field
   created_at: number | string | null; // bigint can come as number or string
   updated_at: number | string | null;
   deleted_at: string | null;
@@ -83,18 +84,25 @@ function mapRowToPlan(row: PlanResponse): Plan | null {
 
   const start = row.start_time || timeframe.start_date || timeframe.startDate || new Date().toISOString();
   
-  const mapPriority = (p: string | null): 'low' | 'medium' | 'high' | 'critical' => {
-     if (p === 'urgent') return 'critical';
-     if (p === 'critical') return 'critical';
+  const mapPriority = (p: any): 'low' | 'medium' | 'high' | 'critical' => {
+     const val = typeof p === 'string' ? parseInt(p, 10) : p;
+     if (val === 4) return 'critical';
+     if (val === 3) return 'high';
+     if (val === 2) return 'medium';
+     if (val === 1) return 'low';
+     
+     // Fallback for old string data
+     if (p === 'urgent' || p === 'critical') return 'critical';
      if (p === 'high') return 'high';
      if (p === 'medium') return 'medium';
      if (p === 'low') return 'low';
+     
      return 'medium';
   };
 
   return {
     id: id,
-    code: row.code || row.plan_code || id,
+    code: row.code || "",
     name: row.plan_name || '',
     planType: mapPlanType(row.plan_type),
     quarter: row.quarter || calculateQuarter(start),
@@ -264,7 +272,9 @@ export async function createPlanApi(plan: Partial<Plan>): Promise<Plan | null> {
       department_id: plan.leadUnit || plan.responsibleUnit,
       created_by: plan.createdById || undefined,
       creator_name: plan.createdBy || 'Người dùng',
-      priority: plan.priority === 'critical' ? 'urgent' : plan.priority || 'medium',
+      priority: plan.priority === 'urgent' || plan.priority === 'critical' ? 4 : 
+                plan.priority === 'high' ? 3 : 
+                plan.priority === 'medium' ? 2 : 1,
       start_time: plan.startDate,
       end_time: plan.endDate,
       year: plan.startDate ? new Date(plan.startDate).getFullYear().toString() : new Date().getFullYear().toString(),
@@ -286,7 +296,8 @@ export async function createPlanApi(plan: Partial<Plan>): Promise<Plan | null> {
       application_scope: {
         scope: plan.scope,
         location: plan.scopeLocation
-      }
+      },
+      attachments: plan.attachments || []
     };
 
     const response = await fetch(url, {
@@ -343,8 +354,11 @@ export async function updatePlanApi(id: string, updates: Partial<Plan>): Promise
     if (updates.endDate) payload.end_time = updates.endDate;
     if (updates.quarter) payload.quarter = updates.quarter;
     if (updates.priority) {
-      payload.priority = updates.priority === 'critical' ? 'urgent' : updates.priority;
+      payload.priority = updates.priority === 'urgent' || updates.priority === 'critical' ? 4 : 
+                        updates.priority === 'high' ? 3 : 
+                        updates.priority === 'medium' ? 2 : 1;
     }
+    if (updates.attachments) payload.attachments = updates.attachments;
     
     const response = await fetch(url, {
       method: 'PATCH',

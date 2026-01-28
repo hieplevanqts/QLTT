@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import { ArrowLeft, AlertCircle, FileText } from 'lucide-react';
+import { ArrowLeft, AlertCircle, FileText, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import styles from './PlanCreate.module.css';
 import DateRangePicker, { DateRange } from '../../../ui-kit/DateRangePicker';
@@ -14,6 +14,7 @@ import { useQLTTScope } from '../../../contexts/QLTTScopeContext';
 import { useAppSelector } from '../../../app/hooks';
 import { RootState } from '../../../store/rootReducer';
 import { createPlanApi, fetchPlanByIdApi, updatePlanApi } from '../../../utils/api/plansApi';
+import { uploadMultipleFiles } from '../../../utils/supabase/storage';
 
 type PlanTypeTab = 'periodic' | 'thematic' | 'urgent';
 
@@ -78,6 +79,9 @@ export function PlanCreate() {
     provinceId: '', // For UI selection
     wardId: '',     // For UI selection
   });
+
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [provinces, setProvinces] = useState<{_id: string, name: string}[]>([]);
   const [wards, setWards] = useState<{_id: string, name: string}[]>([]);
@@ -349,6 +353,20 @@ export function PlanCreate() {
       return;
     }
 
+    setIsSubmitting(true);
+    let uploadedAttachments: any[] = [];
+    
+    try {
+      if (attachments.length > 0) {
+        uploadedAttachments = await uploadMultipleFiles('vhv_file', attachments, 'plans');
+      }
+    } catch (uploadError) {
+      console.error('File upload failed:', uploadError);
+      toast.error('Lỗi khi tải tài liệu lên. Vui lòng thử lại.');
+      setIsSubmitting(false);
+      return;
+    }
+
     if (isEditMode && planId) {
       // Edit existing plan
       const updates: Partial<Plan> = {
@@ -365,6 +383,7 @@ export function PlanCreate() {
         startDate: formData.startDate,
         endDate: formData.endDate || formData.startDate,
         priority: formData.priority,
+        attachments: uploadedAttachments.length > 0 ? uploadedAttachments : undefined,
       };
       
       try {
@@ -408,6 +427,7 @@ export function PlanCreate() {
         createdBy: user?.fullName || 'Người tạo hiện tại',
         createdById: user?._id,
         createdAt: new Date().toISOString(),
+        attachments: uploadedAttachments,
         // Save M03 if selected
         insDecisionM03: selectedM03 ? {
           id: selectedM03.id,
@@ -432,6 +452,8 @@ export function PlanCreate() {
       } catch (error) {
           console.error('Failed to create plan:', error);
           toast.error('Lỗi khi tạo kế hoạch. Vui lòng thử lại.');
+      } finally {
+          setIsSubmitting(false);
       }
     }
   };
@@ -796,6 +818,53 @@ export function PlanCreate() {
             />
           </div>
 
+          {/* Tài liệu đính kèm */}
+          <div className={styles.formGroup}>
+            <label className={styles.label}>
+              Tài liệu đính kèm
+              <span className={styles.helpText}> - Tùy chọn (Chọn nhiều file)</span>
+            </label>
+            <div className={styles.fileUploadContainer}>
+              <input
+                type="file"
+                id="plan-attachments"
+                multiple
+                className={styles.fileInput}
+                onChange={(e) => {
+                  if (e.target.files) {
+                    const newFiles = Array.from(e.target.files);
+                    setAttachments(prev => [...prev, ...newFiles]);
+                  }
+                }}
+              />
+              <label htmlFor="plan-attachments" className={styles.fileLabel}>
+                <Upload size={20} />
+                <span>Chọn tài liệu hoặc kéo thả vào đây</span>
+              </label>
+            </div>
+            
+            {attachments.length > 0 && (
+              <div className={styles.fileList}>
+                {attachments.map((file, index) => (
+                  <div key={`${file.name}-${index}`} className={styles.fileItem}>
+                    <div className={styles.fileInfo}>
+                      <FileText size={16} className={styles.fileIcon} />
+                      <span className={styles.fileName}>{file.name}</span>
+                      <span className={styles.fileSize}>({(file.size / 1024).toFixed(1)} KB)</span>
+                    </div>
+                    <button
+                      type="button"
+                      className={styles.removeFileButton}
+                      onClick={() => setAttachments(prev => prev.filter((_, i) => i !== index))}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Form Actions */}
           <div className={styles.actions}>
             <button
@@ -808,9 +877,19 @@ export function PlanCreate() {
             <button
               type="submit"
               className={styles.submitButton}
+              disabled={isSubmitting}
             >
-              <FileText size={18} />
-              {isEditMode ? 'Cập nhật kế hoạch' : 'Tạo kế hoạch'}
+              {isSubmitting ? (
+                <>
+                  <div className={styles.spinner}></div>
+                  Đang xử lý...
+                </>
+              ) : (
+                <>
+                  <FileText size={18} />
+                  {isEditMode ? 'Cập nhật kế hoạch' : 'Tạo kế hoạch'}
+                </>
+              )}
             </button>
           </div>
         </form>

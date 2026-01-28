@@ -57,6 +57,7 @@ export interface InspectionRound {
   passedCount?: number;
   warningCount?: number;
   violationCount?: number;
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
   createdBy: string;
   createdById?: string;
   createdAt: string;
@@ -77,4 +78,5 @@ export interface InspectionRound {
     violationRate: number;
     progress: number;
   };
+  attachments?: any[];
 }
