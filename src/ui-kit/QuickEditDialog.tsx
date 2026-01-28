@@ -14,15 +14,33 @@ import { Label } from '../app/components/ui/label';
 import { Textarea } from '../app/components/ui/textarea';
 import { Badge } from '../app/components/ui/badge';
 import { FacilityStatus } from './FacilityStatusBadge';
+import { updateMerchant } from '../utils/api/storesApi';
+import { toast } from 'sonner';
 
 interface Store {
   id: number;
+  merchantId?: string; // UUID from API
   name: string;
   phone?: string;
   email?: string;
   notes?: string;
   tags?: string[];
   status?: FacilityStatus;
+  // Additional editable fields
+  ownerName?: string;
+  ownerPhone?: string;
+  businessPhone?: string;
+  businessEmail?: string;
+  website?: string;
+  ownerPhone2?: string;
+  ownerBirthYear?: number;
+  ownerIdNumber?: string;
+  ownerEmail?: string;
+  businessType?: string;
+  provinceCode?: string;
+  wardCode?: string;
+  latitude?: number;
+  longitude?: number;
   // Fields NOT editable in Quick Edit
   address: string;
   type: string;
@@ -47,6 +65,16 @@ export interface QuickEditData {
   notes: string;
   tags: string[];
   changeReason: string;
+  // Additional fields from API
+  ownerName?: string;
+  ownerPhone?: string;
+  businessPhone?: string;
+  businessEmail?: string;
+  website?: string;
+  ownerPhone2?: string;
+  ownerBirthYear?: number;
+  ownerIdNumber?: string;
+  ownerEmail?: string;
 }
 
 type EditStep = 'form' | 'reason';
@@ -84,6 +112,16 @@ export function QuickEditDialog({
     email: '',
     notes: '',
     tags: [] as string[],
+    // Additional fields
+    ownerName: '',
+    ownerPhone: '',
+    businessPhone: '',
+    businessEmail: '',
+    website: '',
+    ownerPhone2: '',
+    ownerBirthYear: undefined as number | undefined,
+    ownerIdNumber: '',
+    ownerEmail: '',
   });
 
   const [changeReason, setChangeReason] = useState('');
@@ -99,6 +137,16 @@ export function QuickEditDialog({
         email: store.email || '',
         notes: store.notes || '',
         tags: store.tags || [],
+        // Additional fields
+        ownerName: store.ownerName || '',
+        ownerPhone: store.ownerPhone || '',
+        businessPhone: store.businessPhone || '',
+        businessEmail: store.businessEmail || '',
+        website: store.website || '',
+        ownerPhone2: store.ownerPhone2 || '',
+        ownerBirthYear: store.ownerBirthYear,
+        ownerIdNumber: store.ownerIdNumber || '',
+        ownerEmail: store.ownerEmail || '',
       });
       setChangeReason('');
       setTagInput('');
@@ -176,16 +224,40 @@ export function QuickEditDialog({
 
     setIsSubmitting(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      // Call API to update merchant if merchantId exists
+      if (store?.merchantId) {
+        const updatePayload = {
+          p_business_name: formData.name,
+          p_owner_name: formData.ownerName,
+          p_owner_phone: formData.ownerPhone,
+          p_business_phone: formData.businessPhone,
+          p_business_email: formData.businessEmail,
+          p_website: formData.website,
+          p_owner_phone_2: formData.ownerPhone2,
+          p_owner_birth_year: formData.ownerBirthYear,
+          p_owner_identity_no: formData.ownerIdNumber,
+          p_owner_email: formData.ownerEmail,
+          p_note: formData.notes,
+        };
 
-    onConfirm({
-      ...formData,
-      changeReason,
-    });
+        await updateMerchant(store.merchantId, updatePayload);
+        toast.success('Cập nhật cơ sở thành công');
+      }
 
-    setIsSubmitting(false);
-    onOpenChange(false);
+      // Call onConfirm with form data
+      onConfirm({
+        ...formData,
+        changeReason,
+      });
+
+      setIsSubmitting(false);
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error('Error updating merchant:', error);
+      toast.error('Lỗi khi cập nhật cơ sở: ' + error.message);
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
@@ -321,7 +393,7 @@ export function QuickEditDialog({
               {/* Contact Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Số điện thoại</Label>
+                  <Label htmlFor="phone">Số điện thoại chủ hộ</Label>
                   <Input
                     id="phone"
                     value={formData.phone}
@@ -332,16 +404,101 @@ export function QuickEditDialog({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="business-phone">Số điện thoại cơ sở</Label>
                   <Input
-                    id="email"
+                    id="business-phone"
+                    value={formData.businessPhone}
+                    onChange={(e) => setFormData({ ...formData, businessPhone: e.target.value })}
+                    placeholder="028xxxxxxxx"
+                  />
+                </div>
+              </div>
+
+              {/* Email & Owner Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="business-email">Email cơ sở</Label>
+                  <Input
+                    id="business-email"
                     type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    value={formData.businessEmail}
+                    onChange={(e) => setFormData({ ...formData, businessEmail: e.target.value })}
                     placeholder="example@email.com"
                   />
                   {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="owner-email">Email chủ hộ</Label>
+                  <Input
+                    id="owner-email"
+                    type="email"
+                    value={formData.ownerEmail}
+                    onChange={(e) => setFormData({ ...formData, ownerEmail: e.target.value })}
+                    placeholder="owner@email.com"
+                  />
+                </div>
+              </div>
+
+              {/* Owner Information */}
+              <div className="space-y-3 pt-2 border-t border-border">
+                <h4 className="text-sm font-medium">Thông tin chủ hộ kinh doanh</h4>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="owner-name">Tên chủ hộ</Label>
+                    <Input
+                      id="owner-name"
+                      value={formData.ownerName}
+                      onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })}
+                      placeholder="Nguyễn Văn A"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="owner-birth-year">Năm sinh</Label>
+                    <Input
+                      id="owner-birth-year"
+                      type="number"
+                      value={formData.ownerBirthYear || ''}
+                      onChange={(e) => setFormData({ ...formData, ownerBirthYear: e.target.value ? parseInt(e.target.value) : undefined })}
+                      placeholder="1990"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="owner-phone2">Số điện thoại thứ 2</Label>
+                    <Input
+                      id="owner-phone2"
+                      value={formData.ownerPhone2}
+                      onChange={(e) => setFormData({ ...formData, ownerPhone2: e.target.value })}
+                      placeholder="0987654321"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="owner-id">CMND/CCCD</Label>
+                    <Input
+                      id="owner-id"
+                      value={formData.ownerIdNumber}
+                      onChange={(e) => setFormData({ ...formData, ownerIdNumber: e.target.value })}
+                      placeholder="079123456789"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Website & Other Info */}
+              <div className="space-y-2">
+                <Label htmlFor="website">Website</Label>
+                <Input
+                  id="website"
+                  value={formData.website}
+                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  placeholder="https://example.com"
+                />
               </div>
 
               {/* Tags */}
@@ -378,16 +535,17 @@ export function QuickEditDialog({
               </div>
 
               {/* Notes */}
-              <div className="space-y-2">
+                <div className="space-y-2">
                 <Label htmlFor="notes">Ghi chú</Label>
                 <Textarea
                   id="notes"
+                  className='border border-gray-300'
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   placeholder="Nhập ghi chú về cơ sở..."
                   rows={3}
                 />
-              </div>
+                </div>
 
               {/* Read-only Reference Fields */}
               <div className="pt-4 border-t border-border space-y-3">

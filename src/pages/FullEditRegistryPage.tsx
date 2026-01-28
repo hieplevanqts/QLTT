@@ -18,7 +18,7 @@ import {
 import { Badge } from '../app/components/ui/badge';
 import { Store, updateStore } from '../data/mockStores';
 import { fetchProvinces, fetchAllWards, type ProvinceApiData, type WardApiData } from '../utils/api/locationsApi';
-import { fetchStoreById } from '../utils/api/storesApi';
+import { fetchStoreById, updateMerchant } from '../utils/api/storesApi';
 import { DiffPreviewSection, FieldChange } from '../ui-kit/DiffPreviewSection';
 import { ChangeReasonDialog } from '../ui-kit/ChangeReasonDialog';
 import { SensitiveFieldWarning } from '../ui-kit/SensitiveFieldWarning';
@@ -136,6 +136,8 @@ export default function FullEditRegistryPage() {
   const [allWards, setAllWards] = useState<WardApiData[]>([]);
   const [loadingProvinces, setLoadingProvinces] = useState(false);
   const [selectedProvince, setSelectedProvince] = useState<string>(''); // Store province_id (_id), not name
+  const [selectedProvinceId, setSelectedProvinceId] = useState<string>(''); // Track UUID for API
+  const [selectedWardId, setSelectedWardId] = useState<string>(''); // Track UUID for API
   const [wards, setWards] = useState<any[]>([]);
 
   // Load store data from API
@@ -147,10 +149,21 @@ export default function FullEditRegistryPage() {
         if (!id) {
           throw new Error('Store ID is required');
         }
+
+        console.log('📥 [loadStore] Starting to load store:', {
+          url_id: id,
+          timestamp: new Date().toISOString(),
+        });
+
         const storeFromApi = await fetchStoreById(id);
         if (storeFromApi) {
-          console.log('✅ Loaded store from API:', storeFromApi);
-          
+          console.log('✅ [loadStore] Loaded store from API:', {
+            numeric_id: storeFromApi.id,
+            merchant_id: storeFromApi.merchantId,
+            store_name: storeFromApi.name,
+            timestamp: new Date().toISOString(),
+          });
+
           // Initialize form with API data
           // Map API fields to form fields
           const initialFormData: Partial<Store> = {
@@ -160,14 +173,14 @@ export default function FullEditRegistryPage() {
             // Map status to operationStatus
             operationStatus: mapApiStatusToForm(storeFromApi.status),
           };
-          
+
           console.log('📋 Initial form data:', initialFormData);
           console.log('🏭 Industry:', initialFormData.industryName);
           console.log('🔧 Operation Status:', initialFormData.operationStatus);
-          
+
           setOriginalStore(storeFromApi);
           setFormData(initialFormData);
-          
+
           // Initialize province select with province_id (matching provinces table _id)
           if (storeFromApi.province) {
             // Need to find the province _id from API data
@@ -175,14 +188,24 @@ export default function FullEditRegistryPage() {
             if (matchedProvince) {
               console.log('📍 Setting province to:', storeFromApi.province, 'with ID:', matchedProvince._id);
               setSelectedProvince(matchedProvince._id);
+              setSelectedProvinceId(matchedProvince._id);
             }
           }
-          
+
+          // Initialize ward UUID if available
+          if (storeFromApi.ward && allWards.length > 0) {
+            const matchedWard = allWards.find(w => w.name === storeFromApi.ward);
+            if (matchedWard) {
+              console.log('🏘️ Setting ward to:', storeFromApi.ward, 'with ID:', matchedWard._id);
+              setSelectedWardId(matchedWard._id);
+            }
+          }
+
           return;
         }
-        
+
         console.warn('⚠️ fetchStoreById returned null, trying fallback...');
-        
+
         // Fallback: Load stores from localStorage
         let stores: Store[] = [];
         try {
@@ -194,7 +217,7 @@ export default function FullEditRegistryPage() {
         } catch (error) {
           console.error('Error loading stores from localStorage:', error);
         }
-        
+
         // Fallback to mockStores if localStorage is empty
         if (stores.length === 0) {
           const { mockStores: mock } = await import('../data/mockStores');
@@ -211,7 +234,7 @@ export default function FullEditRegistryPage() {
         }
 
         console.log('✅ Found store from fallback:', store);
-        
+
         // Map mockStore data to form data
         const initialFormData: Partial<Store> = {
           ...store,
@@ -220,7 +243,7 @@ export default function FullEditRegistryPage() {
           // Ensure operationStatus is set
           operationStatus: store.operationStatus || mapApiStatusToForm(store.status),
         };
-        
+
         console.log('📋 Form data from fallback:', initialFormData);
         console.log('🏭 Industry:', initialFormData.industryName);
         console.log('🔧 Operation Status:', initialFormData.operationStatus);
@@ -234,6 +257,16 @@ export default function FullEditRegistryPage() {
           if (matchedProvince) {
             console.log('📍 Setting province to:', store.province, 'with ID:', matchedProvince._id);
             setSelectedProvince(matchedProvince._id);
+            setSelectedProvinceId(matchedProvince._id);
+          }
+        }
+
+        // Initialize ward UUID if available
+        if (store.ward && allWards.length > 0) {
+          const matchedWard = allWards.find(w => w.name === store.ward);
+          if (matchedWard) {
+            console.log('🏘️ Setting ward to:', store.ward, 'with ID:', matchedWard._id);
+            setSelectedWardId(matchedWard._id);
           }
         }
       } catch (error) {
@@ -282,10 +315,21 @@ export default function FullEditRegistryPage() {
     }
   };
 
+  const handleWardChange = (wardName: string) => {
+    // Find ward data to get _id for API
+    const wardData = wards.find(w => w.name === wardName);
+    if (wardData) {
+      setSelectedWardId(wardData._id); // Store UUID for API
+      console.log('🏘️ Selected ward:', wardName, 'ID:', wardData._id);
+    }
+    setFormData(prev => ({ ...prev, ward: wardName }));
+  };
+
   const handleProvinceChange = (provinceId: string) => {
     // provinceId is the province._id from provinces table
     setSelectedProvince(provinceId);
-    
+    setSelectedProvinceId(provinceId); // Store UUID for API
+
     // Find province data to get name for formData
     const provinceData = apiProvinces.find(p => p._id === provinceId);
     if (!provinceData) {
@@ -296,20 +340,22 @@ export default function FullEditRegistryPage() {
         province: '',
         ward: '',
       }));
+      setSelectedWardId(''); // Clear ward UUID
       return;
     }
-    
+
     // Store province name in formData, but use _id for ward filtering
     setFormData(prev => ({
       ...prev,
       province: provinceData.name,
       ward: '',
     }));
+    setSelectedWardId(''); // Clear ward UUID when province changes
 
     console.log('🔍 Filtering wards for province:', provinceData.name, 'ID:', provinceData._id);
     console.log('   Total wards in allWards:', allWards.length);
     console.log('   Sample wards province_id:', allWards.slice(0, 5).map(w => ({ id: w._id, name: w.name, province_id: w.province_id })));
-    
+
     const filteredWards = allWards.filter(w => w.province_id === provinceData._id);
     console.log('✅ Found wards:', filteredWards.length, 'wards for this province');
     setWards(filteredWards);
@@ -408,6 +454,16 @@ export default function FullEditRegistryPage() {
     setIsSubmitting(true);
 
     try {
+      // Log submission start
+      console.log('🚀 [handleSubmitWithReason] Store edit submission started:', {
+        numeric_id: originalStore?.id,
+        merchant_id: originalStore?.merchantId,
+        store_name: originalStore?.name,
+        changed_fields: changes.length,
+        has_sensitive_changes: hasSensitiveChanges,
+        timestamp: new Date().toISOString(),
+      });
+
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
@@ -422,7 +478,7 @@ export default function FullEditRegistryPage() {
         hasSensitiveChanges,
       };
 
-      console.log('📝 Audit Log:', auditLog);
+      console.log('📝 [handleSubmitWithReason] Audit Log:', auditLog);
 
       if (hasSensitiveChanges) {
         // Create approval request
@@ -449,10 +505,57 @@ export default function FullEditRegistryPage() {
           duration: 5000,
         });
       } else {
-        // No sensitive changes - update immediately
-        updateStore(Number(id), formData);
+        // No sensitive changes - update immediately via API
+        if (originalStore?.merchantId) {
+          // Map form data to API payload - using UUIDs for province/ward
+          const updatePayload = {
+            p_merchant_id: originalStore.merchantId,
+            p_business_name: formData.name,
+            p_owner_name: formData.ownerName,
+            p_owner_phone: formData.phone,
+            p_business_phone: formData.businessPhone,
+            p_business_email: formData.email,
+            p_website: formData.website,
+            p_address: formData.address,
+            p_tax_code: formData.taxCode,
+            p_business_type: formData.type,
+            p_province_id: selectedProvinceId, // Use UUID, not name
+            p_ward_id: selectedWardId, // Use UUID, not name
+            p_latitude: formData.latitude,
+            p_longitude: formData.longitude,
+            p_status: formData.status,
+            p_established_date: formData.establishedDate,
+            p_fax: formData.fax,
+            p_note: formData.notes,
+            p_license_status: 'valid',
+            p_store_area: formData.businessArea ? parseFloat(formData.businessArea.toString()) : undefined,
+            p_owner_phone_2: formData.ownerPhone2,
+            p_owner_birth_year: formData.ownerBirthYear,
+            p_owner_identity_no: formData.ownerIdNumber,
+            p_owner_email: formData.ownerEmail,
+          };
 
-        console.log('✅ Store Updated Immediately:', formData);
+          console.log('📤 [handleSubmitWithReason] Calling updateMerchant with payload:', {
+            merchant_id: originalStore.merchantId,
+            p_business_name: updatePayload.p_business_name,
+            p_province_id: updatePayload.p_province_id,
+            p_ward_id: updatePayload.p_ward_id,
+            timestamp: new Date().toISOString(),
+          });
+
+          await updateMerchant(originalStore.merchantId, updatePayload);
+
+          console.log('✅ [handleSubmitWithReason] Store Updated via API:', {
+            merchant_id: originalStore.merchantId,
+            store_name: originalStore.name,
+            timestamp: new Date().toISOString(),
+          });
+        } else {
+          // Fallback to mock update if no merchantId
+          console.warn('⚠️ [handleSubmitWithReason] No merchantId, falling back to mock update');
+          updateStore(Number(id), formData);
+          console.log('✅ [handleSubmitWithReason] Store Updated via Mock:', formData);
+        }
 
         toast.success('Cập nhật cơ sở thành công', {
           description: 'Thông tin cơ sở đã được cập nhật.',
@@ -500,7 +603,7 @@ export default function FullEditRegistryPage() {
   }
 
   return (
-    <div className={ `${styles.pageContainer} pb-2` }>
+    <div className={`${styles.pageContainer} pb-2`}>
       <PageHeader
         breadcrumbs={[
           { label: 'Trang chủ', href: '/' },
@@ -649,7 +752,7 @@ export default function FullEditRegistryPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="industryName">Ngành kinh doanh</Label>
-                    <Select 
+                    <Select
                       value={formData.industryName || ''}
                       onValueChange={(value) =>
                         setFormData({ ...formData, industryName: value })
@@ -756,7 +859,7 @@ export default function FullEditRegistryPage() {
                     <Label htmlFor="ward">Phường/Xã</Label>
                     <Select
                       value={formData.ward || ''}
-                      onValueChange={(wardName) => setFormData({ ...formData, ward: wardName })}
+                      onValueChange={handleWardChange}
                       disabled={!selectedProvince}
                     >
                       <SelectTrigger className='placeholder:text-gray-500 border-gray-300'>
