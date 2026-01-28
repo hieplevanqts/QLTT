@@ -502,7 +502,7 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
     name: currentMerchant?.business_name || point.name,
     taxCode: currentMerchant?.tax_code || point.taxCode || 'N/A',
     businessType: currentMerchant?.business_type || point.type || 'N/A',
-    license: currentMerchant?.merchant_licenses?.[0]?.license_number || 'N/A',
+    license: currentMerchant?.merchant_licenses?.[0]?.license_number || point.taxCode || 'N/A',
     owner: currentMerchant?.owner_name || 'N/A',
     phone: currentMerchant?.owner_phone || point.hotline || 'N/A',
     email: currentMerchant?.email || 'N/A',
@@ -979,7 +979,7 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                           </div>
                           <div>
                             <div className={styles.certTitleSmall}>Giấy phép KD</div>
-                            <div className={styles.certNumber}>{businessLicense}</div>
+                            <div className={styles.certNumber}>{displayData.license}</div>
                           </div>
                           <span className={styles.certStatusBadge} style={{ background: '#dbeafe', color: '#1e40af' }}>
                             Còn hiệu lực
