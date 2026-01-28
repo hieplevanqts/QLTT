@@ -79,8 +79,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       const timer = setTimeout(() => {
         setRestoreTimeout(true);
       }, 5000);
-      
-      return () => clearTimeout(timeout);
+      return () => clearTimeout(timer);
     }
   }, [isRestoring, restoreTimeout]);
 
