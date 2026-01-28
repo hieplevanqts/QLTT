@@ -54,7 +54,25 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // 🔥 NEW: Fetch user permissions from database (users -> user_roles -> roles -> role_permissions -> permissions)
 async function fetchUserPermissions(userId: string): Promise<string[]> {
   try {
-    
+    // Prefer a single RPC to avoid multi-step permission fetches.
+    const rpcResult = await supabase.rpc('rpc_user_permissions_codes', {
+      p_user_id: userId,
+    });
+
+    if (!rpcResult.error) {
+      const codes = (rpcResult.data || [])
+        .map((row: any) => row?.code)
+        .filter(Boolean) as string[];
+      return [...new Set(codes)];
+    }
+
+    const rpcMissing = rpcResult.error.message?.includes('rpc_user_permissions_codes');
+    if (!rpcMissing) {
+      console.error('❌ Error fetching user permissions via RPC:', rpcResult.error);
+      return [];
+    }
+
+    // Fallback: users -> user_roles -> role_permissions -> permissions.
     // Step 1: Get user roles from user_roles table
     const { data: userRoles, error: userRolesError } = await supabase
       .from(Tables.USER_ROLES)
@@ -105,8 +123,7 @@ async function fetchUserPermissions(userId: string): Promise<string[]> {
     }
     
     const permissionCodes = permissions.map(p => p.code).filter(Boolean) as string[];
-    
-    return permissionCodes;
+    return [...new Set(permissionCodes)];
   } catch (error: any) {
     console.error('❌ Error fetching user permissions:', error);
     return []; // Return empty array on error

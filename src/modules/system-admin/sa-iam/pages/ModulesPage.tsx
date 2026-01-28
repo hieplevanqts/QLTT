@@ -1,168 +1,257 @@
 /**
- * MODULES PAGE - Quản lý module/phân hệ
+ * MODULES PAGE - Quản lý phân hệ
  * Permission: sa.iam.module.read
  */
 
-import React, { useState, useMemo } from 'react';
-import { Plus, Search, Package } from 'lucide-react';
-import { PermissionGate, ModuleShell, EmptyState, usePermissions } from '../../_shared';
-import { MOCK_MODULES } from '../mock-data';
-import styles from '../pages/UsersPage.module.css';
+import React from "react";
+import {
+  Button,
+  Card,
+  Input,
+  Modal,
+  Select,
+  Space,
+  message,
+  type TablePaginationConfig,
+} from "antd";
+import { PlusOutlined, ReloadOutlined } from "@ant-design/icons";
+import type { FilterValue, SorterResult } from "antd/es/table/interface";
+
+import PageHeader from "@/layouts/PageHeader";
+import { PermissionGate, usePermissions } from "../../_shared";
+import { ModuleFormModal } from "../components/modules/ModuleFormModal";
+import { ModulesTable } from "../components/modules/ModulesTable";
+import {
+  modulesService,
+  type ModulePayload,
+  type ModuleRecord,
+} from "../services/modules.service";
+
+const GROUP_OPTIONS = [
+  { label: "Tất cả nhóm", value: "all" },
+  { label: "IAM", value: "IAM" },
+  { label: "DMS", value: "DMS" },
+  { label: "OPS", value: "OPS" },
+  { label: "SYSTEM", value: "SYSTEM" },
+];
 
 export default function ModulesPage() {
   const { hasPermission } = usePermissions();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
 
-  const canCreate = hasPermission('sa.iam.module.create');
-  const canUpdate = hasPermission('sa.iam.module.update');
+  const canCreate = hasPermission("sa.iam.module.create");
+  const canUpdate = hasPermission("sa.iam.module.update");
+  const canDelete = hasPermission("sa.iam.module.delete");
 
-  const filteredData = useMemo(() => {
-    return MOCK_MODULES.filter(module => {
-      if (!searchQuery) return true;
-      const query = searchQuery.toLowerCase();
-      return (
-        module.code.toLowerCase().includes(query) ||
-        module.name.toLowerCase().includes(query) ||
-        module.description.toLowerCase().includes(query)
-      );
-    });
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [debouncedSearch, setDebouncedSearch] = React.useState("");
+  const [groupFilter, setGroupFilter] = React.useState<string>("all");
+  const [statusFilter, setStatusFilter] = React.useState<"all" | "active" | "inactive">("all");
+
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(10);
+  const [sortField, setSortField] = React.useState<string>("sort_order");
+  const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("asc");
+
+  const [loading, setLoading] = React.useState(false);
+  const [modules, setModules] = React.useState<ModuleRecord[]>([]);
+  const [total, setTotal] = React.useState(0);
+
+  const [modalOpen, setModalOpen] = React.useState(false);
+  const [editingModule, setEditingModule] = React.useState<ModuleRecord | null>(null);
+  const [submitting, setSubmitting] = React.useState(false);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);
+    return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const paginatedData = filteredData.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  React.useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, groupFilter, statusFilter]);
 
-  const getParentName = (parentId: string | null) => {
-    if (!parentId) return '—';
-    const parent = MOCK_MODULES.find(m => m.id === parentId);
-    return parent?.name || 'N/A';
+  const loadModules = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await modulesService.listModules({
+        q: debouncedSearch || undefined,
+        group: groupFilter === "all" ? undefined : groupFilter,
+        status: statusFilter,
+        page,
+        pageSize,
+        sortBy: sortField,
+        sortDir: sortOrder,
+      });
+      setModules(result.data);
+      setTotal(result.total);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Không thể tải danh sách phân hệ.";
+      Modal.error({ title: "Lỗi tải dữ liệu", content: msg });
+    } finally {
+      setLoading(false);
+    }
+  }, [debouncedSearch, groupFilter, page, pageSize, sortField, sortOrder, statusFilter]);
+
+  React.useEffect(() => {
+    void loadModules();
+  }, [loadModules]);
+
+  const handleTableChange = (
+    pagination: TablePaginationConfig,
+    _filters: Record<string, FilterValue | null>,
+    sorter: SorterResult<ModuleRecord> | SorterResult<ModuleRecord>[],
+  ) => {
+    setPage(pagination.current ?? 1);
+    setPageSize(pagination.pageSize ?? 10);
+
+    const singleSorter = Array.isArray(sorter) ? sorter[0] : sorter;
+    if (singleSorter?.field && singleSorter.order) {
+      setSortField(String(singleSorter.field));
+      setSortOrder(singleSorter.order === "ascend" ? "asc" : "desc");
+    }
+  };
+
+  const openCreate = () => {
+    if (!canCreate) return;
+    setEditingModule(null);
+    setModalOpen(true);
+  };
+
+  const openEdit = (record: ModuleRecord) => {
+    if (!canUpdate) return;
+    setEditingModule(record);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    if (submitting) return;
+    setModalOpen(false);
+  };
+
+  const handleSubmit = async (values: ModulePayload) => {
+    try {
+      setSubmitting(true);
+      if (editingModule) {
+        await modulesService.updateModule(editingModule.id, values);
+        message.success("Đã cập nhật phân hệ.");
+      } else {
+        await modulesService.createModule(values);
+        message.success("Đã tạo phân hệ.");
+      }
+      setModalOpen(false);
+      await loadModules();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Không thể lưu phân hệ.";
+      message.error(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleToggleStatus = async (record: ModuleRecord) => {
+    if (!canUpdate) return;
+    try {
+      const nextStatus = record.status === 1 ? 0 : 1;
+      await modulesService.setModuleStatus(record.id, nextStatus);
+      message.success("Đã cập nhật trạng thái phân hệ.");
+      await loadModules();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Không thể cập nhật trạng thái.";
+      message.error(msg);
+    }
+  };
+
+  const handleDelete = async (record: ModuleRecord) => {
+    if (!canDelete) return;
+    try {
+      await modulesService.softDeleteModule(record.id);
+      message.success("Đã xóa mềm phân hệ.");
+      await loadModules();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Không thể xóa phân hệ.";
+      message.error(msg);
+    }
   };
 
   return (
     <PermissionGate permission="sa.iam.module.read">
-      <ModuleShell
-        title="Quản lý Module"
-        subtitle="Quản lý các phân hệ/module trong hệ thống"
-        breadcrumbs={[
-          { label: 'Trang chủ', path: '/' },
-          { label: 'Quản trị hệ thống', path: '/system-admin' },
-          { label: 'IAM', path: '/system-admin/iam' },
-          { label: 'Module' }
-        ]}
-        actions={
-          <button className={styles.buttonPrimary} disabled={!canCreate}>
-            <Plus size={18} />
-            Thêm module
-          </button>
-        }
-      >
-        <div className={styles.toolbar}>
-          <div className={styles.searchBox}>
-            <Search size={18} className={styles.searchIcon} />
-            <input
-              type="text"
-              placeholder="Tìm theo mã, tên module..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={styles.searchInput}
-            />
+      <div className="flex flex-col gap-6">
+        <PageHeader
+          breadcrumbs={[
+            { label: "Trang chủ", href: "/" },
+            { label: "Quản trị hệ thống", href: "/system-admin" },
+            { label: "IAM", href: "/system-admin/iam" },
+            { label: "Phân hệ" },
+          ]}
+          title="Quản lý Phân hệ"
+          subtitle="Quản lý registry phân hệ và routing theo module"
+          actions={
+            <Space>
+              <Button icon={<ReloadOutlined />} onClick={() => loadModules()}>
+                Làm mới
+              </Button>
+              <Button type="primary" icon={<PlusOutlined />} onClick={openCreate} disabled={!canCreate}>
+                Thêm phân hệ
+              </Button>
+            </Space>
+          }
+        />
+
+        <Card>
+          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <Space wrap>
+              <Input
+                allowClear
+                placeholder="Tìm theo mã, tên phân hệ..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ width: 280 }}
+              />
+              <Select
+                value={statusFilter}
+                onChange={(value) => setStatusFilter(value)}
+                style={{ width: 180 }}
+                options={[
+                  { label: "Tất cả trạng thái", value: "all" },
+                  { label: "Hoạt động", value: "active" },
+                  { label: "Ngừng", value: "inactive" },
+                ]}
+              />
+              <Select
+                value={groupFilter}
+                onChange={(value) => setGroupFilter(value)}
+                style={{ width: 180 }}
+                options={GROUP_OPTIONS}
+              />
+            </Space>
+            <div className="text-sm text-gray-500">Tổng: {total} phân hệ</div>
           </div>
 
-          <div className={styles.stats}>
-            <span className={styles.statsText}>
-              Tổng: <strong>{filteredData.length}</strong> module
-            </span>
-          </div>
-        </div>
-
-        {paginatedData.length === 0 ? (
-          <EmptyState
-            icon={<Package size={48} />}
-            title="Không tìm thấy module"
-            message="Không có module nào phù hợp với tiêu chí tìm kiếm."
+          <ModulesTable
+            data={modules}
+            loading={loading}
+            total={total}
+            page={page}
+            pageSize={pageSize}
+            statusFilter={statusFilter}
+            groupFilter={groupFilter}
+            groupOptions={GROUP_OPTIONS.filter((g) => g.value !== "all")}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
+            onChange={handleTableChange}
+            onEdit={openEdit}
+            onToggleStatus={handleToggleStatus}
+            onDelete={handleDelete}
           />
-        ) : (
-          <>
-            <div className={styles.tableContainer}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>Mã module</th>
-                    <th>Tên module</th>
-                    <th>Mô tả</th>
-                    <th>Icon</th>
-                    <th>Module cha</th>
-                    <th>Thứ tự</th>
-                    <th>Trạng thái</th>
-                    <th>Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedData.map((module) => (
-                    <tr key={module.id}>
-                      <td>
-                        <span className={styles.username}>{module.code}</span>
-                      </td>
-                      <td>
-                        <span className={styles.fullName}>{module.name}</span>
-                      </td>
-                      <td style={{ maxWidth: '250px' }}>
-                        <span className={styles.email}>{module.description}</span>
-                      </td>
-                      <td>
-                        <span className={styles.statusInactive}>{module.icon}</span>
-                      </td>
-                      <td>{getParentName(module.parentId)}</td>
-                      <td>
-                        <span className={styles.statusActive}>{module.order}</span>
-                      </td>
-                      <td>
-                        {module.status === 'active' ? (
-                          <span className={styles.statusActive}>Hoạt động</span>
-                        ) : (
-                          <span className={styles.statusInactive}>Tạm dừng</span>
-                        )}
-                      </td>
-                      <td>
-                        <button
-                          className={styles.buttonSecondary}
-                          disabled={!canUpdate}
-                        >
-                          Chỉnh sửa
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+        </Card>
 
-            <div className={styles.pagination}>
-              <button
-                className={styles.paginationButton}
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-              >
-                Trước
-              </button>
-              <span className={styles.paginationInfo}>
-                Trang {currentPage} / {totalPages}
-              </span>
-              <button
-                className={styles.paginationButton}
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-              >
-                Sau
-              </button>
-            </div>
-          </>
-        )}
-      </ModuleShell>
+        <ModuleFormModal
+          open={modalOpen}
+          loading={submitting}
+          initialValues={editingModule}
+          onCancel={closeModal}
+          onSubmit={handleSubmit}
+        />
+      </div>
     </PermissionGate>
   );
 }

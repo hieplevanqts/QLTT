@@ -6,16 +6,11 @@ import { Login } from '../app/pages/auth/Login';
 import { ProtectedRoute } from '../app/components/auth/ProtectedRoute';
 import { PermissionProtectedRoute } from '../app/components/auth/PermissionProtectedRoute';
 import TvWallboardPage from '../app/pages/TvWallboardPage';
-import { systemAdminDashboardRoute } from '../modules/system-admin/routes';
-import { saMasterDataRoutes } from '../modules/system-admin/sa-master-data';
-import { saIamRoutes } from '../modules/system-admin/sa-iam';
-import { saSystemConfigRoutes } from '../modules/system-admin/sa-system-config';
+import { moduleRoutes } from '../modules/_registry';
 // Plans module - moved to /src/app/pages/plans/
 import { PlansProvider } from '../app/contexts/PlansContext';
 
 // Lead & Risk pages
-import { installedRoutes } from '../imports/installedModules';
-
 import { InspectionRoundsProvider } from '../contexts/InspectionRoundsContext';
 
 const OverviewPage = React.lazy(() => import('../pages/OverviewPage'));
@@ -318,11 +313,7 @@ export const router = createBrowserRouter([
               </PermissionProtectedRoute>
             ),
           },
-          systemAdminDashboardRoute,
-          saMasterDataRoutes,
-          saIamRoutes,
-          saSystemConfigRoutes,
-          ...installedRoutes,
+          ...moduleRoutes,
           // Account pages
           {
             path: 'account/profile',

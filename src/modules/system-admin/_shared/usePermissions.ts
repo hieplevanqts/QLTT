@@ -8,67 +8,12 @@ import { useAuth } from '../../../contexts/AuthContext';
 export function usePermissions() {
   const { user } = useAuth();
 
-  // Check if user is qt_admin (full access to all system-admin functions)
-  const isQtAdmin = user?.username?.toLowerCase() === 'qt_admin';
-
-  // Mock permissions - trong thực tế sẽ lấy từ user.permissions
-  // Format: ['sa.masterdata.orgunit.read', 'sa.masterdata.orgunit.create', ...]
-  const userPermissions: string[] = isQtAdmin 
-    ? [
-        // qt_admin has ALL permissions - full CRUD on all modules
-        'sa.masterdata.orgunit.read',
-        'sa.masterdata.orgunit.create',
-        'sa.masterdata.orgunit.update',
-        'sa.masterdata.orgunit.delete',
-        'sa.masterdata.department.read',
-        'sa.masterdata.department.create',
-        'sa.masterdata.department.update',
-        'sa.masterdata.department.delete',
-        'sa.masterdata.jurisdiction.read',
-        'sa.masterdata.jurisdiction.create',
-        'sa.masterdata.jurisdiction.update',
-        'sa.masterdata.jurisdiction.delete',
-        'sa.masterdata.catalog.read',
-        'sa.masterdata.catalog.create',
-        'sa.masterdata.catalog.update',
-        'sa.masterdata.catalog.delete',
-        'sa.iam.user.read',
-        'sa.iam.user.create',
-        'sa.iam.user.update',
-        'sa.iam.user.delete',
-        'sa.iam.role.read',
-        'sa.iam.role.create',
-        'sa.iam.role.update',
-        'sa.iam.role.delete',
-        'sa.iam.permission.read',
-        'sa.iam.assignment.read',
-        'sa.iam.assignment.create',
-        'sa.iam.assignment.delete',
-        'sa.config.parameter.read',
-        'sa.config.parameter.update',
-        'sa.config.organization.read',
-        'sa.config.organization.update',
-        'sa.config.security.read',
-        'sa.config.security.update',
-        'sa.config.backup.read',
-        'sa.config.backup.create',
-        'sa.config.backup.restore',
-        'sa.config.backup.delete'
-      ]
-    : (user?.permissions || [
-        // Default permissions cho testing (limited access)
-        'sa.masterdata.orgunit.read',
-        'sa.masterdata.orgunit.create',
-        'sa.masterdata.orgunit.update',
-        'sa.masterdata.department.read',
-        'sa.masterdata.department.create',
-        'sa.masterdata.jurisdiction.read',
-        'sa.masterdata.catalog.read',
-        'sa.masterdata.catalog.update',
-      ]);
+  // Permissions must come from DB (roles -> role_permissions -> permissions).
+  const userPermissions: string[] = (user?.permissions || []).filter(Boolean);
+  const normalizedPermissions = new Set(userPermissions.map((p) => p.toUpperCase()));
 
   const hasAdminAccess =
-    userPermissions.includes('admin:access') || userPermissions.includes('ADMIN_VIEW');
+    normalizedPermissions.has('ADMIN:ACCESS') || normalizedPermissions.has('ADMIN_VIEW');
 
   // Allow mapping between legacy sa.* permissions and new USER.* codes from DB
   const permissionAliases: Record<string, string[]> = {
@@ -79,10 +24,11 @@ export function usePermissions() {
   };
 
   const hasPermissionDirect = (permission: string): boolean => {
-    if (userPermissions.includes(permission)) return true;
+    const normalized = permission.toUpperCase();
+    if (normalizedPermissions.has(normalized)) return true;
     const aliases = permissionAliases[permission];
     if (!aliases) return false;
-    return aliases.some((alias) => userPermissions.includes(alias));
+    return aliases.some((alias) => normalizedPermissions.has(alias.toUpperCase()));
   };
 
   /**

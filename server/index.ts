@@ -778,6 +778,7 @@ app.post('/system-admin/admin/users', async (req, res) => {
     const fullName = (req.body?.full_name as string | undefined)?.trim();
     const phone = (req.body?.phone as string | undefined)?.trim();
     const statusRaw = req.body?.status;
+    const departmentIdRaw = (req.body?.department_id as string | undefined)?.trim();
     const defaultPassword = (req.body?.default_password as string | undefined)?.trim();
     const password = (req.body?.password as string | undefined)?.trim() || defaultPassword;
     const note = (req.body?.note as string | undefined)?.trim();
@@ -818,36 +819,43 @@ app.post('/system-admin/admin/users', async (req, res) => {
     if (defaultPassword) metadata.defaultPassword = defaultPassword;
     if (note) metadata.note = note;
 
-    const { data, error } = await adminClient
-      .from('users')
-      .insert([
-        {
-          _id: authUserId,
-          username,
-          full_name: fullName ?? username,
-          email,
-          phone: phone || null,
-          status: typeof statusRaw === 'number' ? statusRaw : 1,
-          created_at: nowIso,
-          updated_at: nowIso,
-          metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
-        },
-      ])
-      .select('*')
-      .single();
+    const payload: Record<string, unknown> = {
+      _id: authUserId,
+      username,
+      full_name: fullName ?? username,
+      email,
+      phone: phone || null,
+      status: typeof statusRaw === 'number' ? statusRaw : 1,
+      departmentId: departmentIdRaw || null,
+      created_at: nowIso,
+      updated_at: nowIso,
+      metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+    };
+    if (departmentIdRaw) {
+      payload.department_id = departmentIdRaw;
+    }
 
-    if (error) {
+    let insertResult = await adminClient.from('users').insert([payload]).select('*').single();
+
+    if (insertResult.error && departmentIdRaw && insertResult.error.message.includes('department_id')) {
+      // Retry without department_id if the column does not exist yet.
+      const retryPayload = { ...payload };
+      delete retryPayload.department_id;
+      insertResult = await adminClient.from('users').insert([retryPayload]).select('*').single();
+    }
+
+    if (insertResult.error) {
       // Best-effort cleanup to avoid orphan auth user when profile insert fails.
       try {
         await adminClient.auth.admin.deleteUser(authUserId);
       } catch {
         // ignore cleanup failure
       }
-      res.status(400).json({ code: 'PROFILE_CREATE_FAILED', message: error.message });
+      res.status(400).json({ code: 'PROFILE_CREATE_FAILED', message: insertResult.error.message });
       return;
     }
 
-    res.json(data);
+    res.json(insertResult.data);
   } catch (error: any) {
     res.status(500).json({ code: 'ADMIN_USER_CREATE_FAILED', message: error.message });
   }
