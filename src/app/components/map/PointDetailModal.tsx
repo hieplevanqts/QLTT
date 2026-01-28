@@ -167,6 +167,16 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
+  // Staff list modal state
+  const [showStaffModal, setShowStaffModal] = useState(false);
+
+  // Close staff modal when parent modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setShowStaffModal(false);
+    }
+  }, [isOpen]);
+
   // 🔥 Lưu data từ API - key là document_type_id từ Backend (không map)
   interface DocumentResult {
     _id: string; // ID của record để update
@@ -513,7 +523,7 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
     district: currentMerchant?.district || point.district,
     province: currentMerchant?.province || point.province,
     establishedDate: currentMerchant?.created_at ? new Date(currentMerchant.created_at) : null,
-    employees: currentMerchant?.employee_count || 0,
+    employees: currentMerchant?.merchant_staff?.length || currentMerchant?.employee_count || 0,
     capacity: currentMerchant?.capacity || 0,
     inspectionCount: currentMerchant?.inspection_count || 0,
     violationCount: currentMerchant?.violation_count || 0,
@@ -613,6 +623,71 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
           <X size={18} />
         </button>
 
+        {/* Employee List Modal Overlay */}
+        {showStaffModal && (
+          <div className={styles.staffModalOverlay}>
+            <div className={styles.staffModalHeader}>
+              <div className={styles.staffModalTitle}>
+                <Users size={20} />
+                <span>Danh sách nhân viên ({currentMerchant?.merchant_staff?.length || 0})</span>
+              </div>
+              <button 
+                className={styles.staffModalClose} 
+                onClick={() => setShowStaffModal(false)}
+                title="Quay lại"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className={styles.staffModalBody}>
+              {currentMerchant?.merchant_staff && currentMerchant.merchant_staff.length > 0 ? (
+                <div className={styles.staffGrid}>
+                  {currentMerchant.merchant_staff.map((staff: any, index: number) => (
+                    <div key={staff._id || index} className={styles.staffCard}>
+                      <div className={styles.staffAvatar}>
+                        <User size={24} />
+                      </div>
+                      <div className={styles.staffInfo}>
+                        <div className={styles.staffName}>{staff.full_name || staff.name || 'N/A'}</div>
+                        <div className={styles.staffRole}>{staff.position || staff.role || 'Nhân viên'}</div>
+                        
+                        <div className={styles.staffDetailItem}>
+                          <Phone size={14} />
+                          <span>{staff.phone_number || staff.phone || 'N/A'}</span>
+                        </div>
+                        
+                        <div className={styles.staffDetailItem}>
+                          <Mail size={14} />
+                          <span>{staff.email || 'N/A'}</span>
+                        </div>
+
+                        {staff.staff_code && (
+                          <div className={styles.staffDetailItem}>
+                            <Hash size={14} />
+                            <span>Mã NV: {staff.staff_code}</span>
+                          </div>
+                        )}
+
+                        {staff.citizen_id && (
+                          <div className={styles.staffDetailItem}>
+                            <FileText size={14} />
+                            <span>CCCD: {staff.citizen_id}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.noStaffMessage}>
+                  <Users size={48} strokeWidth={1} />
+                  <p>Không có dữ liệu nhân viên</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Header Section - Compact */}
         <div className={styles.header}>
           <div className={styles.headerBadge} style={{ background: statusBadge.bg, color: statusBadge.color }}>
@@ -623,7 +698,11 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
             <h1 className={styles.headerTitle}>{displayData.name}</h1>
             {/* Compact Stats - Inline with title */}
             <div className={styles.compactStats}>
-              <div className={styles.compactStatItem}>
+              <div 
+                className={`${styles.compactStatItem} ${styles.clickableStatItem}`}
+                onClick={() => setShowStaffModal(true)}
+                title="Xem danh sách nhân viên"
+              >
                 <Users size={14} />
                 <span>{displayData.employees} NV</span>
               </div>
