@@ -79,7 +79,7 @@ const actionConfig: Record<LeadAction, { label: string; icon: any; variant?: 'de
   resume_verification: { label: 'Tiếp tục xác minh', icon: Play, variant: 'primary' },
   pause_processing: { label: 'Tạm dừng xử lý', icon: Pause },
   resume_processing: { label: 'Tiếp tục xử lý', icon: Play, variant: 'primary' },
-  assign: { label: 'Giao việc', icon: UserPlus },
+  assign: { label: 'Giao xử lý', icon: UserPlus },
   reject: { label: 'Từ chối', icon: XCircle, variant: 'danger' },
   hold: { label: 'Tạm dừng', icon: Pause },
   cancel: { label: 'Hủy bỏ', icon: XCircle, variant: 'danger' },

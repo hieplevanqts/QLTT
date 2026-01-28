@@ -120,7 +120,7 @@ export default function AssignLeadModal({
         <div className={styles.header}>
           <div className={styles.headerLeft}>
             <UserPlus className={styles.headerIcon} />
-            <h2 className={styles.headerTitle}>Giao việc cho người khác</h2>
+            <h2 className={styles.headerTitle}>Giao xử lý cho người khác</h2>
           </div>
           <button
             className={styles.closeButton}
