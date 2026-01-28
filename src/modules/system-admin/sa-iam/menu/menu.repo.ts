@@ -103,6 +103,7 @@ const mapPermissionRow = (row: PermissionRow) => ({
   module_id: row.module_id ?? null,
   module: row.module ?? row.permission_type ?? null,
   permission_type: row.permission_type ?? null,
+  category: row.category ?? null,
   resource: row.resource ?? null,
   action: row.action ?? null,
   status: row.status ?? null,
@@ -581,7 +582,7 @@ export const menuRepo = {
     const search = params.search?.trim();
     const moduleId = params.moduleId ?? null;
     const action = params.action?.trim();
-    const permissionType = params.permissionType?.trim();
+    const category = params.category?.trim();
     const resource = params.resource?.trim();
     const status = params.status ?? "active";
     const sortBy = params.sortBy ?? "code";
@@ -590,17 +591,20 @@ export const menuRepo = {
     let query = supabase.from("permissions").select("*", { count: "exact" });
 
     if (moduleId) {
-      query = query.eq("module_id", moduleId);
+      query = query.or(`module_id.eq.${moduleId},module_id.is.null`);
     }
-    if (permissionType) {
-      query = query.ilike("permission_type", permissionType);
+    if (category) {
+      query = query.ilike("category", category);
     }
     if (action) {
-      const normalizedAction = action.trim();
-      query = query.or(`action.ilike.%${normalizedAction}%,code.ilike.%${normalizedAction}%`);
+      const upperAction = action.trim().toUpperCase();
+      const lowerAction = action.trim().toLowerCase();
+      query = query.or(
+        `action.eq.${upperAction},action.ilike.%${upperAction}%,action.ilike.%${lowerAction}%,code.ilike.%${lowerAction}%`,
+      );
     }
     if (resource) {
-      query = query.ilike("resource", resource);
+      query = query.ilike("resource", `%${resource}%`);
     }
     if (status !== "all") {
       const statusValue = status === "active" ? 1 : 0;

@@ -6,6 +6,7 @@ with parsed as (
   select
     p._id,
     p.code,
+    p.permission_type,
     lower(p.code) as code_l,
     -- Normalize separators to dot for parsing.
     regexp_replace(lower(p.code), '[:_]+', '.', 'g') as code_norm,
@@ -25,6 +26,7 @@ normalized as (
   select
     _id,
     code,
+    permission_type,
     code_norm,
     code_no_action,
     case
@@ -55,7 +57,7 @@ set
   module_id = coalesce(p.module_id, m._id)
 from normalized n
 left join public.modules m
-  on m.code = coalesce(p.permission_type, n.module_key)
+  on m.code = coalesce(n.permission_type, n.module_key)
 where p._id = n._id
   and (
     p.action is null

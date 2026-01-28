@@ -387,16 +387,16 @@ export default function MenusPage() {
       }
 
       if (isPageMenu && selectedPermission) {
-        const permType = String(selectedPermission.permission_type ?? "").toUpperCase();
-        const action = String(selectedPermission.action ?? "").toLowerCase();
+        const category = String(selectedPermission.category ?? "").toUpperCase();
+        const action = String(selectedPermission.action ?? "").toUpperCase();
         const code = selectedPermission.code?.toLowerCase() ?? "";
         const codeAction = code.split(".").pop() ?? code.split(":").pop() ?? "";
-        const actionKey = action || codeAction;
-        if (permType && permType !== "PAGE") {
-          message.error("Quyền hiển thị phải có permission_type = PAGE.");
+        const actionKey = action || codeAction.toUpperCase();
+        if (category && category !== "PAGE") {
+          message.error("Quyền hiển thị phải có category = PAGE.");
           return;
         }
-        if (actionKey && !["read", "view"].includes(actionKey)) {
+        if (actionKey && !["READ", "VIEW"].includes(actionKey)) {
           message.error("Quyền hiển thị phải là READ/VIEW.");
           return;
         }
