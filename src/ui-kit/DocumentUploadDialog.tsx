@@ -1,7 +1,9 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { X, Upload, FileText, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Upload, FileText, AlertCircle, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '../app/components/ui/button';
 import { getDocumentTypeById } from '../data/documentTypes';
+import { extractDocumentData } from '../utils/api/ocrApi';
+import { toast } from 'sonner';
 import styles from './DocumentUploadDialog.module.css';
 
 export interface DocumentField {
@@ -139,62 +141,30 @@ export function DocumentUploadDialog({
     }
   }, [open, editingDocument, documentType]);
 
-  // Mock OCR/AI extraction
-  const mockExtractData = useCallback((_file: File): Promise<Record<string, any>> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Mock extracted data based on document type
-        const mockData: Record<string, Record<string, any>> = {
-          'cccd': {
-            idNumber: '001234567890',
-            fullName: 'Nguyễn Văn A',
-            dateOfBirth: '1990-05-15',
-            issueDate: '2023-01-10',
-            issuePlace: 'Cục Cảnh sát ĐKQL cư trú và DLQG về dân cư',
-          },
-          'business-license': {
-            licenseNumber: 'GPKD-0123456789',
-            issueDate: '2022-06-15',
-            expiryDate: '2027-06-15',
-            issuingAuthority: 'Sở Kế hoạch và Đầu tư TP.HCM',
-            businessScope: 'Kinh doanh thực phẩm, đồ uống',
-          },
-          'lease-contract': {
-            contractNumber: 'HĐ-2023-001',
-            lessor: 'Công ty TNHH ABC',
-            lessee: 'Nguyễn Văn A',
-            startDate: '2023-01-01',
-            endDate: '2025-12-31',
-            monthlyRent: '15000000',
-            address: '123 Nguyễn Huệ, Q.1, TP.HCM',
-          },
-          'food-safety': {
-            certificateNumber: 'ATTP-2023-001234',
-            issueDate: '2023-03-20',
-            expiryDate: '2025-03-20',
-            issuingAuthority: 'Chi cục An toàn Vệ sinh Thực phẩm TP.HCM',
-            scope: 'Chế biến và bán lẻ thực phẩm',
-          },
-          'specialized-license': {
-            licenseNumber: 'GPCN-2023-5678',
-            issueDate: '2023-02-10',
-            expiryDate: '2026-02-10',
-            issuingAuthority: 'Sở Y tế TP.HCM',
-            scope: 'Kinh doanh thuốc không kê đơn',
-          },
-          'fire-safety': {
-            certificateNumber: 'PCCC-2023-9999',
-            issueDate: '2023-04-01',
-            expiryDate: '2025-04-01',
-            issuingAuthority: 'Phòng Cảnh sát PCCC - Quận 1',
-            inspectionResult: 'Đạt yêu cầu PCCC',
-          },
-        };
+  // Real OCR Integration (Mocked in ocrApi.ts)
+  const handleExtractData = async (fileToExtract: File) => {
+    if (!documentType?.id) return;
 
-        resolve(documentType?.id ? (mockData[documentType.id] || {}) : {});
-      }, 2000); // Simulate processing time
-    });
-  }, [documentType?.id]);
+    setIsExtracting(true);
+    setExtractionComplete(false);
+
+    try {
+      const result = await extractDocumentData(fileToExtract, documentType.id);
+
+      if (result.success && result.data) {
+        setFormData((prev) => ({ ...prev, ...result.data }));
+        setExtractionComplete(true);
+        toast.success(result.message || 'Đã trích xuất thông tin thành công');
+      } else {
+        // Don't show error toast for silent auto-extraction failures, only log
+        console.warn('OCR Extraction failed:', result.message);
+      }
+    } catch (err) {
+      console.error('Error invoking OCR API:', err);
+    } finally {
+      setIsExtracting(false);
+    }
+  };
 
   const handleFileChange = async (selectedFile: File) => {
     setError(null);
@@ -227,17 +197,7 @@ export function DocumentUploadDialog({
     }
 
     // Auto-extract data
-    setIsExtracting(true);
-    setExtractionComplete(false);
-    try {
-      const extractedData = await mockExtractData(selectedFile);
-      setFormData((prev) => ({ ...prev, ...extractedData }));
-      setExtractionComplete(true);
-    } catch (err) {
-      console.error('Error extracting data:', err);
-    } finally {
-      setIsExtracting(false);
-    }
+    handleExtractData(selectedFile);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -332,17 +292,32 @@ export function DocumentUploadDialog({
                       <p className={styles.fileName}>{file?.name}</p>
                     </div>
                   )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={styles.changeFileButton}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      fileInputRef.current?.click();
-                    }}
-                  >
-                    Thay file khác
-                  </Button>
+                  <div className={styles.previewActions}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={styles.changeFileButton}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                    >
+                      Thay file khác
+                    </Button>
+                    <Button
+                      variant="default" // Primary style
+                      size="sm"
+                      className={styles.extractButton}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (file) handleExtractData(file);
+                      }}
+                      disabled={isExtracting}
+                    >
+                      {isExtracting ? <Loader2 size={14} className="animate-spin mr-1" /> : <Sparkles size={14} className="mr-1" />}
+                      Trích xuất AI
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className={styles.uploadPrompt}>

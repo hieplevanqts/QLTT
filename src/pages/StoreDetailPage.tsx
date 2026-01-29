@@ -272,6 +272,7 @@ export default function StoreDetailPage() {
             backFileName: license.file_url_2 ? license.file_url_2.split('/').pop()?.split('?')[0] || 'file_back' : undefined,
             uploadDate: license.created_at ? new Date(license.created_at).toLocaleString('vi-VN') : '',
             uploadedBy: license.approved_by || 'Hệ thống',
+            uploadedData: license, // Store raw data for approvals/updates
           });
         });
         console.log('✅ [StoreDetailPage] Loaded licenses from API:', licensesFromApi.length);
@@ -410,7 +411,7 @@ export default function StoreDetailPage() {
       }
 
       // 2. Call RPC to update database
-      const rpcPayload = {
+      const basePayload = {
         p_merchant_id: store.merchantId || '',
         p_license_type: docTypeName || '', // Use descriptive name as requested
         p_license_number: data.fields.licenseNumber || data.fields.certificateNumber || data.fields.contractNumber || data.fields.idNumber || '',
@@ -421,7 +422,18 @@ export default function StoreDetailPage() {
         p_issued_by_name: data.fields.issuingAuthority || data.fields.issuePlace || '',
         p_file_url: fileUrl || '',
         p_notes: data.fields.notes || '',
+        p_approval_status: 0,
       };
+
+      const rpcPayload = editingDocument
+        ? {
+          ...basePayload,
+          p_id: editingDocument.id,
+          // p_approval_status is already 0 in basePayload, but ensure it's explicitly 0 if overridden
+          p_approval_status: 0,
+          p_file_url_2: '',
+        }
+        : basePayload;
 
       console.log('📝 [handleSaveDocument] Prepared rpcPayload:', rpcPayload);
       console.log('📊 [handleSaveDocument] data.fields:', data.fields);
@@ -493,7 +505,7 @@ export default function StoreDetailPage() {
       }
 
       // 3. Call RPC to update database
-      const rpcPayload = {
+      const basePayload = {
         p_merchant_id: store.merchantId || '',
         p_license_type: 'CCCD / CMND chủ hộ', // Use descriptive name as requested
         p_license_number: data.fields.idNumber || '',
@@ -505,7 +517,16 @@ export default function StoreDetailPage() {
         p_file_url: frontUrl || '',
         p_file_url_2: backUrl || '',
         p_notes: data.fields.notes || '',
+        p_approval_status: 0,
       };
+
+      const rpcPayload = editingDocument
+        ? {
+          ...basePayload,
+          p_id: editingDocument.id,
+          p_approval_status: 0,
+        }
+        : basePayload;
 
       console.log('📝 [handleSaveIDCard] Prepared rpcPayload:', rpcPayload);
       console.log('📊 [handleSaveIDCard] data.fields:', data.fields);
@@ -533,38 +554,79 @@ export default function StoreDetailPage() {
   };
 
   // Handlers for approve/reject
-  const handleApproveDocument = (documentId: string) => {
-    setLegalDocuments((prev) =>
-      prev.map((doc) =>
-        doc.id === documentId
-          ? {
-            ...doc,
-            approvalStatus: 'approved' as const,
-            approvalStatusText: 'Đã phê duyệt',
-          }
-          : doc
-      )
-    );
-    setViewDialogOpen(false);
-    setSelectedDocument(null);
+  // Handlers for approve/reject
+  const handleApproveDocument = async (documentId: string) => {
+    const doc = legalDocuments.find(d => d.id === documentId);
+    if (!doc || !store?.merchantId) return;
+
+    try {
+      // Use raw data if available, otherwise fallback (which shouldn't happen for existing docs)
+      // Note: We need to ensure we send the correct p_approval_status
+      const rawLicense = doc.uploadedData || {};
+
+      const payload = {
+        p_merchant_id: store.merchantId,
+        p_id: documentId,
+        p_license_type: doc.type === 'cccd' || doc.type === 'CCCD / CMND chủ hộ' ? 'CCCD / CMND chủ hộ' : (doc.title || ''),
+        p_license_number: rawLicense.license_number || doc.documentNumber || '',
+        p_issued_date: rawLicense.issued_date || '',
+        p_expiry_date: rawLicense.expiry_date || '2099-12-31',
+        p_status: 'valid', // Ensure status is valid when approving
+        p_approval_status: 1, // Approved
+        p_issued_by: rawLicense.issued_by || doc.issuingAuthority || '',
+        p_issued_by_name: rawLicense.issued_by_name || doc.issuingAuthority || '',
+        p_file_url: rawLicense.file_url || doc.fileUrl || '',
+        p_file_url_2: rawLicense.file_url_2 || doc.backFileUrl || '',
+        p_notes: rawLicense.notes || doc.notes || '',
+      };
+
+      console.log('📝 [handleApproveDocument] Approving with payload:', payload);
+      await upsertMerchantLicense(payload);
+
+      toast.success('Đã phê duyệt hồ sơ');
+      await loadMerchantLicenses(); // Reload to update state
+      setViewDialogOpen(false);
+      setSelectedDocument(null);
+    } catch (error) {
+      console.error('❌ Error approving document:', error);
+      toast.error('Lỗi khi phê duyệt hồ sơ');
+    }
   };
 
-  const handleRejectDocument = (documentId: string) => {
-    setLegalDocuments((prev) =>
-      prev.map((doc) =>
-        doc.id === documentId
-          ? {
-            ...doc,
-            approvalStatus: 'rejected' as const,
-            approvalStatusText: 'Từ chối',
-            status: 'missing' as const,
-            statusText: undefined,
-          }
-          : doc
-      )
-    );
-    setViewDialogOpen(false);
-    setSelectedDocument(null);
+  const handleRejectDocument = async (documentId: string) => {
+    const doc = legalDocuments.find(d => d.id === documentId);
+    if (!doc || !store?.merchantId) return;
+
+    try {
+      const rawLicense = doc.uploadedData || {};
+
+      const payload = {
+        p_merchant_id: store.merchantId,
+        p_id: documentId,
+        p_license_type: doc.type === 'cccd' || doc.type === 'CCCD / CMND chủ hộ' ? 'CCCD / CMND chủ hộ' : (doc.title || ''),
+        p_license_number: rawLicense.license_number || doc.documentNumber || '',
+        p_issued_date: rawLicense.issued_date || '',
+        p_expiry_date: rawLicense.expiry_date || '2099-12-31',
+        p_status: 'valid', // Keep valid? Or missing? Usually rejection implies it needs re-upload but the record itself exists. Let's keep valid but rejected approval.
+        p_approval_status: 2, // Rejected
+        p_issued_by: rawLicense.issued_by || doc.issuingAuthority || '',
+        p_issued_by_name: rawLicense.issued_by_name || doc.issuingAuthority || '',
+        p_file_url: rawLicense.file_url || doc.fileUrl || '',
+        p_file_url_2: rawLicense.file_url_2 || doc.backFileUrl || '',
+        p_notes: rawLicense.notes || doc.notes || '',
+      };
+
+      console.log('📝 [handleRejectDocument] Rejecting with payload:', payload);
+      await upsertMerchantLicense(payload);
+
+      toast.success('Đã từ chối hồ sơ');
+      await loadMerchantLicenses(); // Reload to update state
+      setViewDialogOpen(false);
+      setSelectedDocument(null);
+    } catch (error) {
+      console.error('❌ Error rejecting document:', error);
+      toast.error('Lỗi khi từ chối hồ sơ');
+    }
   };
 
   // Calculate data quality
