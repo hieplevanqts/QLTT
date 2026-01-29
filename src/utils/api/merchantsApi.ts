@@ -470,3 +470,27 @@ export async function updateInspectionChecklistResultStatus(
     return { success: false, error: error.message || 'Unknown error' };
   }
 }
+
+export const fetchBusinessTypes = async () => {
+  try {
+    // Lấy danh sách business_type không trùng lặp
+    const response = await fetch(
+        `${SUPABASE_REST_URL}/merchants?select=business_type`,
+        {
+          headers: {
+            'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+            'Content-Type': 'application/json'
+          }
+        }
+    );
+    const data = await response.json();
+
+    // Lọc lấy các giá trị duy nhất và bỏ qua null/empty
+    const types = [...new Set(data.map((m: any) => m.business_type))]
+        .filter(Boolean) as string[];
+
+    return { data: types, error: null };
+  } catch (error: any) {
+    return { data: [], error: error.message };
+  }
+};
