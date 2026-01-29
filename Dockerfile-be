@@ -30,6 +30,9 @@ ENV NODE_ENV=production
 ENV SYSTEM_ADMIN_PORT=7788
 ENV PUBLIC_URL=http://localhost
 
+ARG VITE_SYSTEM_ADMIN_API
+ENV VITE_SYSTEM_ADMIN_API=$VITE_SYSTEM_ADMIN_API
+
 # Install runtime dependencies
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
