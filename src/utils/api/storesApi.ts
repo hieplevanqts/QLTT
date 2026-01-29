@@ -454,12 +454,14 @@ export async function updateMerchant(
     p_note?: string;
     p_business_phone?: string;
     p_business_email?: string;
-    p_website?: string;
+    p_website?: string; 
     p_store_area?: number;
     p_owner_phone_2?: string;
     p_owner_birth_year?: number;
     p_owner_identity_no?: string;
     p_owner_email?: string;
+    p_validity_status?: number;
+    p_approval_status?: number;
   }
 ): Promise<any> {
   try {
@@ -499,6 +501,8 @@ export async function updateMerchant(
       p_owner_birth_year: data.p_owner_birth_year || null,
       p_owner_identity_no: data.p_owner_identity_no || null,
       p_owner_email: data.p_owner_email || null,
+      p_approval_status: data.p_approval_status || null,
+      p_validity_status : data.p_validity_status || null,
     };
 
     console.log('📤 [updateMerchant] Request payload:', {
@@ -592,5 +596,59 @@ export async function fetchMerchantLicenses(merchantId: string): Promise<any[]> 
     });
     // Return empty array on error instead of throwing
     return [];
+  }
+}
+/**
+ * 📝 Upsert a merchant license via RPC
+ * @param data - License data matching upsert_merchant_license RPC parameters
+ * @returns Result from API
+ */
+export async function upsertMerchantLicense(data: {
+  p_merchant_id: string;
+  p_license_type: string;
+  p_license_number: string;
+  p_issued_date: string;
+  p_expiry_date: string;
+  p_approval_status: number;
+  p_status: string;
+  p_issued_by: string;
+  p_issued_by_name?: string;
+  p_file_url?: string;
+  p_file_url_2?: string;
+  p_notes?: string;
+  p_validity_status?: number;
+}): Promise<any> {
+  try {
+    const url = `${SUPABASE_REST_URL}/rpc/upsert_merchant_license`;
+
+    console.log('📤 [upsertMerchantLicense] Calling API:', {
+      endpoint: '/rpc/upsert_merchant_license',
+      payload: data,
+    });
+
+    const body = JSON.stringify(data);
+    console.log('📦 [upsertMerchantLicense] Request body:', body);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: body,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ [upsertMerchantLicense] API error:', {
+        status: response.status,
+        error: errorText,
+      });
+      throw new Error(`Failed to upsert merchant license: ${response.status} ${response.statusText}\n${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log('✅ [upsertMerchantLicense] Success:', result);
+    return result;
+  } catch (error: any) {
+    console.error('❌ [upsertMerchantLicense] Error:', error);
+    throw error;
   }
 }

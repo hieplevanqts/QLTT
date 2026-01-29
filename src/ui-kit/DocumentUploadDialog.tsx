@@ -1,7 +1,9 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { X, Upload, FileText, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Upload, FileText, AlertCircle, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '../app/components/ui/button';
 import { getDocumentTypeById } from '../data/documentTypes';
+import { extractDocumentData } from '../utils/api/ocrApi';
+import { toast } from 'sonner';
 import styles from './DocumentUploadDialog.module.css';
 
 export interface DocumentField {
@@ -28,6 +30,7 @@ interface DocumentUploadDialogProps {
   existingData?: Record<string, any>;
   existingFileUrl?: string;
   editingDocument?: any;
+  isSaving?: boolean;
   onSave: (data: { file: File | null; fields: Record<string, any> }) => void;
 }
 
@@ -38,6 +41,7 @@ export function DocumentUploadDialog({
   existingData,
   existingFileUrl,
   editingDocument,
+  isSaving,
   onSave,
 }: DocumentUploadDialogProps) {
   // Get document type config
@@ -58,12 +62,12 @@ export function DocumentUploadDialog({
     if (open && editingDocument) {
       // Pre-fill form with existing document data
       const existingFields: Record<string, any> = {};
-      
+
       // Extract all uploaded data fields
       if (editingDocument.uploadedData) {
         Object.assign(existingFields, editingDocument.uploadedData);
       }
-      
+
       // Map top-level fields to form field keys
       // Handle documentNumber -> licenseNumber/certificateNumber mapping
       if (editingDocument.documentNumber) {
@@ -77,7 +81,7 @@ export function DocumentUploadDialog({
           existingFields.contractNumber = editingDocument.documentNumber;
         }
       }
-      
+
       // Helper function to convert dd/mm/yyyy to yyyy-mm-dd for HTML date input
       const convertDateFormat = (dateStr: string): string => {
         if (!dateStr) return '';
@@ -90,7 +94,7 @@ export function DocumentUploadDialog({
         }
         return dateStr;
       };
-      
+
       // Map common top-level fields with date conversion
       const dateFields = ['issueDate', 'expiryDate', 'dateOfBirth', 'startDate', 'endDate'];
       dateFields.forEach(field => {
@@ -98,7 +102,7 @@ export function DocumentUploadDialog({
           existingFields[field] = convertDateFormat(editingDocument[field]);
         }
       });
-      
+
       // Map other common fields
       const commonFields = ['issuingAuthority', 'notes'];
       commonFields.forEach(field => {
@@ -106,7 +110,7 @@ export function DocumentUploadDialog({
           existingFields[field] = editingDocument[field];
         }
       });
-      
+
       // Map other possible fields based on document type
       const allPossibleFields = [
         'fullName', 'issuePlace', 'address',
@@ -119,9 +123,9 @@ export function DocumentUploadDialog({
           existingFields[field] = editingDocument[field];
         }
       });
-      
+
       setFormData(existingFields);
-      
+
       // Set existing file preview if available
       if (editingDocument.fileUrl) {
         setFilePreview(editingDocument.fileUrl);
@@ -137,62 +141,30 @@ export function DocumentUploadDialog({
     }
   }, [open, editingDocument, documentType]);
 
-  // Mock OCR/AI extraction
-  const mockExtractData = useCallback((file: File): Promise<Record<string, any>> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Mock extracted data based on document type
-        const mockData: Record<string, Record<string, any>> = {
-          'cccd': {
-            idNumber: '001234567890',
-            fullName: 'Nguyễn Văn A',
-            dateOfBirth: '1990-05-15',
-            issueDate: '2023-01-10',
-            issuePlace: 'Cục Cảnh sát ĐKQL cư trú và DLQG về dân cư',
-          },
-          'business-license': {
-            licenseNumber: 'GPKD-0123456789',
-            issueDate: '2022-06-15',
-            expiryDate: '2027-06-15',
-            issuingAuthority: 'Sở Kế hoạch và Đầu tư TP.HCM',
-            businessScope: 'Kinh doanh thực phẩm, đồ uống',
-          },
-          'lease-contract': {
-            contractNumber: 'HĐ-2023-001',
-            lessor: 'Công ty TNHH ABC',
-            lessee: 'Nguyễn Văn A',
-            startDate: '2023-01-01',
-            endDate: '2025-12-31',
-            monthlyRent: '15000000',
-            address: '123 Nguyễn Huệ, Q.1, TP.HCM',
-          },
-          'food-safety': {
-            certificateNumber: 'ATTP-2023-001234',
-            issueDate: '2023-03-20',
-            expiryDate: '2025-03-20',
-            issuingAuthority: 'Chi cục An toàn Vệ sinh Thực phẩm TP.HCM',
-            scope: 'Chế biến và bán lẻ thực phẩm',
-          },
-          'specialized-license': {
-            licenseNumber: 'GPCN-2023-5678',
-            issueDate: '2023-02-10',
-            expiryDate: '2026-02-10',
-            issuingAuthority: 'Sở Y tế TP.HCM',
-            scope: 'Kinh doanh thuốc không kê đơn',
-          },
-          'fire-safety': {
-            certificateNumber: 'PCCC-2023-9999',
-            issueDate: '2023-04-01',
-            expiryDate: '2025-04-01',
-            issuingAuthority: 'Phòng Cảnh sát PCCC - Quận 1',
-            inspectionResult: 'Đạt yêu cầu PCCC',
-          },
-        };
+  // Real OCR Integration (Mocked in ocrApi.ts)
+  const handleExtractData = async (fileToExtract: File) => {
+    if (!documentType?.id) return;
 
-        resolve(mockData[documentType?.id] || {});
-      }, 2000); // Simulate processing time
-    });
-  }, [documentType?.id]);
+    setIsExtracting(true);
+    setExtractionComplete(false);
+
+    try {
+      const result = await extractDocumentData(fileToExtract, documentType.id);
+
+      if (result.success && result.data) {
+        setFormData((prev) => ({ ...prev, ...result.data }));
+        setExtractionComplete(true);
+        toast.success(result.message || 'Đã trích xuất thông tin thành công');
+      } else {
+        // Don't show error toast for silent auto-extraction failures, only log
+        console.warn('OCR Extraction failed:', result.message);
+      }
+    } catch (err) {
+      console.error('Error invoking OCR API:', err);
+    } finally {
+      setIsExtracting(false);
+    }
+  };
 
   const handleFileChange = async (selectedFile: File) => {
     setError(null);
@@ -225,17 +197,7 @@ export function DocumentUploadDialog({
     }
 
     // Auto-extract data
-    setIsExtracting(true);
-    setExtractionComplete(false);
-    try {
-      const extractedData = await mockExtractData(selectedFile);
-      setFormData((prev) => ({ ...prev, ...extractedData }));
-      setExtractionComplete(true);
-    } catch (err) {
-      console.error('Error extracting data:', err);
-    } finally {
-      setIsExtracting(false);
-    }
+    handleExtractData(selectedFile);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -267,7 +229,7 @@ export function DocumentUploadDialog({
       .filter((field) => field.required && !formData[field.key])
       .map((field) => field.label);
 
-    if (missingFields?.length > 0) {
+    if (missingFields && missingFields.length > 0) {
       setError(`Vui lòng điền đầy đủ: ${missingFields.join(', ')}`);
       return;
     }
@@ -330,17 +292,32 @@ export function DocumentUploadDialog({
                       <p className={styles.fileName}>{file?.name}</p>
                     </div>
                   )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={styles.changeFileButton}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      fileInputRef.current?.click();
-                    }}
-                  >
-                    Thay file khác
-                  </Button>
+                  <div className={styles.previewActions}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={styles.changeFileButton}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                    >
+                      Thay file khác
+                    </Button>
+                    <Button
+                      variant="default" // Primary style
+                      size="sm"
+                      className={styles.extractButton}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (file) handleExtractData(file);
+                      }}
+                      disabled={isExtracting}
+                    >
+                      {isExtracting ? <Loader2 size={14} className="animate-spin mr-1" /> : <Sparkles size={14} className="mr-1" />}
+                      Trích xuất AI
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className={styles.uploadPrompt}>
@@ -419,8 +396,15 @@ export function DocumentUploadDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Hủy
           </Button>
-          <Button onClick={handleSave}>
-            {isEditing ? 'Cập nhật' : 'Lưu'}
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Đang lưu...
+              </>
+            ) : (
+              isEditing ? 'Cập nhật' : 'Lưu'
+            )}
           </Button>
         </div>
       </div>
