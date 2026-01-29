@@ -1,4 +1,4 @@
-import { supabase } from "../../../../../../lib/supabase";
+import { supabase } from "@/api/supabaseClient";
 import { menuRepo } from "../../../menu/menu.repo";
 import type {
   MenuHistoryRecord,
@@ -180,3 +180,5 @@ export const menuService: MenuService = {
     }));
   },
 };
+
+

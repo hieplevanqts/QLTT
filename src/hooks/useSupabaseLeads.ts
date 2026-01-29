@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '@/utils/supabaseHelpers';
-import type { Lead, LeadStatus } from '@/data/lead-risk/types';
+import type { Lead, LeadStatus } from '@/utils/data/lead-risk/types';
 
 // Supabase Lead type (from database) - Make flexible to handle actual schema
 interface SupabaseLead {

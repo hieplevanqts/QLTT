@@ -1,0 +1,142 @@
+/* EvidencePackageListPage.module.css */
+
+.container {
+  padding: 0;
+  max-width: 100%;
+  margin: 0;
+}
+
+.content {
+  padding: 24px;
+}
+
+/* Filters */
+.filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.searchBox {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.searchBox svg {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 10px 0;
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: 14px;
+}
+
+.searchInput:focus {
+  outline: none;
+}
+
+/* Package List */
+.packageList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.packageCard {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.packageCard:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 12px rgba(0, 92, 182, 0.1);
+  transform: translateY(-2px);
+}
+
+.packageIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.packageContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.packageHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.packageId {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin: 0;
+}
+
+.packageName {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 8px 0;
+}
+
+.packageMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  flex-wrap: wrap;
+}
+
+.metaItem {
+  white-space: nowrap;
+}
+
+.metaDot {
+  color: var(--color-text-tertiary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .filters {
+    flex-direction: column;
+  }
+
+  .packageCard {
+    flex-direction: column;
+  }
+
+  .packageIcon {
+    width: 48px;
+    height: 48px;
+  }
+}

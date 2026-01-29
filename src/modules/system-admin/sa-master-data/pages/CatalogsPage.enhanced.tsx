@@ -20,8 +20,8 @@ import {
   formStyles
 } from '../../_shared';
 import PageHeader from '@/layouts/PageHeader';
-import { Button } from '@/app/components/ui/button';
-import { Card, CardContent } from '@/app/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import type { Catalog } from '../types';
 import type { CreateCatalogPayload, UpdateCatalogPayload } from '../../mocks/masterData.types';
 import {

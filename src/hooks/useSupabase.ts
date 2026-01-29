@@ -18,7 +18,7 @@ import {
   type UserRole,
   type CreateData,
   type UpdateData,
-} from '../lib/supabase';
+} from '@/api/supabaseClient';
 
 // ============================================
 // GENERIC HOOKS

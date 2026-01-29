@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { supabase } from '../lib/supabase';
-import { Tables } from '../lib/supabase'; // 🔥 NEW: Import Tables for permission queries
+import { supabase } from '@/api/supabaseClient';
+import { Tables } from '@/api/supabaseClient'; // 🔥 NEW: Import Tables for permission queries
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
 

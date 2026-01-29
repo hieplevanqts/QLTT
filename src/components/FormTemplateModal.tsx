@@ -14,7 +14,7 @@ import {
   FileText,
   AlertCircle,
 } from 'lucide-react';
-import { FormTemplate, FormCriterion } from '../app/data/formCriteriaTemplates';
+import { FormTemplate, FormCriterion } from '@/utils/data/formCriteriaTemplates';
 import { toast } from 'sonner';
 
 interface FormTemplateModalProps {

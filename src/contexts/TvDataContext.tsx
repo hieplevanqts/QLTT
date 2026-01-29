@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useMemo, ReactNode, useEffect, useCallback } from 'react';
-import { FEATURES } from '@/config/features';
+import { FEATURES } from '@/constants/features';
 import type { LayerToggles, TvFilters } from '@/types/tv.types';
 import {
   DEFAULT_TOPICS,
@@ -11,8 +11,8 @@ import {
   Lead,
   Task,
   Evidence,
-} from '@/services/tvMockData';
-import { fetchTvData, fetchTvTopics } from '@/services/tvSupabase.service';
+} from '@/modules/tv/data/tvMockData';
+import { fetchTvData, fetchTvTopics } from '@/modules/tv/services/tvSupabase.service';
 
 // TV Data Context - v1.2 - Fixed infinite loops and Leaflet issues
 // 5 địa bàn trọng điểm để auto-rotation

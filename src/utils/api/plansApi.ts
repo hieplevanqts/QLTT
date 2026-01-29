@@ -4,7 +4,7 @@
  */
 
 import { SUPABASE_REST_URL, getHeaders } from './config';
-import { type Plan } from '@/app/types/plans';
+import { type Plan } from '@/types/plans';
 import { calculateQuarter } from './sharedUtils';
 
 // --- Types ---

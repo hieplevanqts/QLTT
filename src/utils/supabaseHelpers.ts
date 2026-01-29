@@ -3,7 +3,7 @@
  * Utility functions for Supabase operations
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/api/supabaseClient';
 import { projectId, publicAnonKey } from '@/utils/supabase/info';
 
 // Supabase configuration
@@ -11,7 +11,7 @@ export const SUPABASE_URL = `https://${projectId}.supabase.co`;
 export const SUPABASE_ANON_KEY = publicAnonKey;
 
 // Create and export Supabase client singleton
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export { supabase };
 
 /**
  * Log Supabase connection info (for debugging)

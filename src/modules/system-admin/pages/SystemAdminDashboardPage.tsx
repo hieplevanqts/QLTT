@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 
 import PageHeader from "../../../layouts/PageHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../app/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const summaryCards = [
   {
@@ -287,3 +287,4 @@ export default function SystemAdminDashboardPage() {
     </div>
   );
 }
+

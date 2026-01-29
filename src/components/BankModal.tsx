@@ -8,7 +8,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import styles from './BankModal.module.css';
 import { toast } from 'sonner';
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/api/supabaseClient';
 
 interface Bank {
   id: string;

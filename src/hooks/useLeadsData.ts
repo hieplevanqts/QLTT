@@ -4,12 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import { projectId, publicAnonKey } from '@/utils/supabase/info';
-
-// Supabase credentials
-const SUPABASE_URL = `https://${projectId}.supabase.co`;
-const SUPABASE_ANON_KEY = publicAnonKey;
+import { supabase } from '@/api/supabaseClient';
 
 interface LeadData {
   id: string;
@@ -34,10 +29,6 @@ export function useLeadsData(tenantId?: string) {
     async function fetchLeads() {
       try {
         setLoading(true);
-        
-        // Create Supabase client
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
         
         // Build query
         let query = supabase

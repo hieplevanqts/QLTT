@@ -19,8 +19,8 @@ import {
   formStyles
 } from '../../_shared';
 import PageHeader from '@/layouts/PageHeader';
-import { Button } from '@/app/components/ui/button';
-import { Card, CardContent } from '@/app/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import type { CreateAreaPayload, UpdateAreaPayload, AreaType } from '../../mocks/masterData.types';
 import type { Area } from '../../mocks/masterData.mock';
 import {

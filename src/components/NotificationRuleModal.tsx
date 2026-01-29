@@ -25,7 +25,7 @@ import {
   ALL_SCOPE_TYPES,
   ALL_CHANNELS,
   ALL_PRIORITIES,
-} from '../app/data/notificationRulesTemplates';
+} from '@/utils/data/notificationRulesTemplates';
 
 interface NotificationRuleModalProps {
   rule?: NotificationRule | null;

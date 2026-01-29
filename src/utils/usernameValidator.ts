@@ -19,7 +19,7 @@
  *     3. wards.provinceId matches province.id
  */
 
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/api/supabaseClient';
 
 export interface UsernameValidationResult {
   isValid: boolean;

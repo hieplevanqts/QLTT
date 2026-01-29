@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { mockInspectionRounds, type InspectionRound } from '../app/data/inspection-rounds-mock-data';
+import { mockInspectionRounds, type InspectionRound } from '@/utils/data/inspection-rounds-mock-data';
 
 interface InspectionRoundsContextType {
   rounds: InspectionRound[];

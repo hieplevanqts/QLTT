@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, UploadCloud } from "lucide-react";
 
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../../../app/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../app/components/ui/tabs";
-import { RadioGroup, RadioGroupItem } from "../../../app/components/ui/radio-group";
-import { Button } from "../../../app/components/ui/button";
-import { Badge } from "../../../app/components/ui/badge";
-import { Input } from "../../../app/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { moduleAdminService } from "../services/moduleAdminService";
 import { ImportJob } from "../types";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -205,3 +205,4 @@ export default function ModuleRollbackDialog({
     </Dialog>
   );
 }
+

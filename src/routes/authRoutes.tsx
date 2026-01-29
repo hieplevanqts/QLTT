@@ -1,7 +1,7 @@
 import { RouteObject } from 'react-router-dom';
-import { Login } from '../app/pages/auth/Login';
-import { PermissionProtectedRoute } from '../app/components/auth/PermissionProtectedRoute';
-import TvWallboardPage from '../app/pages/TvWallboardPage';
+import { Login } from '@/modules/auth';
+import { PermissionProtectedRoute } from '@/components/auth';
+import { TvWallboardPage } from '@/modules/tv';
 
 /**
  * Auth routes - không cần layout

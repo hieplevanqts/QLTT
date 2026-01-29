@@ -1,4 +1,4 @@
-import { supabase } from "../../../../lib/supabase";
+import { supabase } from '@/api/supabaseClient';
 
 export type UserStatusValue = 0 | 1 | 2;
 

@@ -5,7 +5,7 @@ import { systemAdminDashboardManifest } from "../system-admin/manifest";
 import { saIamManifest } from "../system-admin/sa-iam/manifest";
 import { saMasterDataManifest } from "../system-admin/sa-master-data/manifest";
 import { saSystemConfigManifest } from "../system-admin/sa-system-config/manifest";
-import { installedRoutes } from "../../imports/installedModules";
+import { installedRoutes } from "@/assets/imports/installedModules";
 
 const guessGroupFromPath = (path?: string | null): ModuleGroup => {
   if (!path) return "OPS";
@@ -35,4 +35,3 @@ export const modules: ModuleManifest[] = [
 ];
 
 export const moduleRoutes: RouteObject[] = modules.flatMap((mod) => mod.routes);
-

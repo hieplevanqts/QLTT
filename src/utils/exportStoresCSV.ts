@@ -1,5 +1,5 @@
 import { Store } from '../data/mockStores';
-import { FacilityStatus } from '../ui-kit/FacilityStatusBadge';
+import { FacilityStatus } from '@/components/ui-kit/FacilityStatusBadge';
 
 /**
  * Export stores data to CSV file

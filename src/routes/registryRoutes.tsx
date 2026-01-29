@@ -1,17 +1,19 @@
 import { RouteObject } from 'react-router-dom';
-import RegistryHomePage from '../pages/registry/RegistryHomePage';
-import RegistryStoreListPage from '../pages/registry/RegistryStoreListPage';
-import RegistryDedupWorkbenchPage from '../pages/registry/RegistryDedupWorkbenchPage';
-import RegistryVerificationQueuePage from '../pages/registry/RegistryVerificationQueuePage';
-import RegistryVerificationDetailPage from '../pages/registry/RegistryVerificationDetailPage';
-import RegistryApprovalQueuePage from '../pages/registry/RegistryApprovalQueuePage';
-import RegistryApprovalDetailPage from '../pages/registry/RegistryApprovalDetailPage';
-import RegistryImportPage from '../pages/registry/RegistryImportPage';
-import RegistryImportReviewPage from '../pages/registry/RegistryImportReviewPage';
-import RegistryAuditLogPage from '../pages/registry/RegistryAuditLogPage';
-import EditRegistryPage from '../pages/EditRegistryPage';
-import FullEditRegistryPage from '../pages/FullEditRegistryPage';
-import StoreDetailPage from '../pages/StoreDetailPage';
+import {
+  RegistryHomePage,
+  RegistryStoreListPage,
+  RegistryDedupWorkbenchPage,
+  RegistryVerificationQueuePage,
+  RegistryVerificationDetailPage,
+  RegistryApprovalQueuePage,
+  RegistryApprovalDetailPage,
+  RegistryImportPage,
+  RegistryImportReviewPage,
+  RegistryAuditLogPage,
+  EditRegistryPage,
+  FullEditRegistryPage,
+  StoreDetailPage,
+} from '@/modules/registry';
 
 /**
  * Registry routes
@@ -96,4 +98,5 @@ export const registryRoutes: RouteObject[] = [
     ],
   },
 ];
+
 

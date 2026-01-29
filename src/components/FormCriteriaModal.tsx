@@ -8,7 +8,7 @@
 
 import React, { useState } from 'react';
 import { X, FileText, Search, FileDown, ChevronDown } from 'lucide-react';
-import { FormTemplate } from '../app/data/formCriteriaTemplates';
+import { FormTemplate } from '@/utils/data/formCriteriaTemplates';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 
