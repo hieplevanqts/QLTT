@@ -65,6 +65,7 @@ export type MenuPermissionRecord = {
   module_id?: string | null;
   module?: string | null;
   permission_type?: string | null;
+  category?: string | null;
   resource?: string | null;
   action?: string | null;
   status?: number | string | null;
@@ -74,7 +75,7 @@ export type MenuPermissionListParams = {
   search?: string;
   moduleId?: string | null;
   action?: string;
-  permissionType?: string;
+  category?: string;
   resource?: string | null;
   status?: MenuPermissionStatusFilter;
   page?: number;

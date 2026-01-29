@@ -36,7 +36,7 @@ import {
   type ModuleOption,
 } from "../services/rolePermissions.service";
 
-type PermissionActionKey = "READ" | "CREATE" | "UPDATE" | "DELETE" | "EXPORT";
+type PermissionActionKey = "READ" | "CREATE" | "UPDATE" | "DELETE" | "EXPORT" | "RESTORE";
 
 type PermissionMatrixItem = {
   id: string;
@@ -75,6 +75,7 @@ const ACTIONS: Array<{ key: PermissionActionKey; label: string }> = [
   { key: "UPDATE", label: "Sửa" },
   { key: "DELETE", label: "Xóa" },
   { key: "EXPORT", label: "Xuất" },
+  { key: "RESTORE", label: "Khôi phục" },
 ];
 
 const ACTION_ALIASES: Record<string, PermissionActionKey> = {
@@ -93,6 +94,7 @@ const ACTION_ALIASES: Record<string, PermissionActionKey> = {
   destroy: "DELETE",
   export: "EXPORT",
   download: "EXPORT",
+  restore: "RESTORE",
 };
 
 const formatResourceLabel = (value: string) => {
@@ -248,6 +250,7 @@ const buildMatrixRows = (
           UPDATE: null,
           DELETE: null,
           EXPORT: null,
+          RESTORE: null,
         },
       });
     }
@@ -281,6 +284,7 @@ const buildMatrixRows = (
           UPDATE: null,
           DELETE: null,
           EXPORT: null,
+          RESTORE: null,
         },
         isGroup: true,
         children,
@@ -297,6 +301,7 @@ const collectPermissionIds = (rows: MatrixRow[]) => {
     UPDATE: [],
     DELETE: [],
     EXPORT: [],
+    RESTORE: [],
   };
   const perRow: Record<string, string[]> = {};
   const perModule: Record<string, string[]> = {};

@@ -57,9 +57,22 @@ function mapSessionStatus(status: number): InspectionSession['status'] {
     1: 'not_started',
     2: 'in_progress',
     3: 'completed',
-    4: 'closed'
+    4: 'closed',
+    5: 'cancelled'
   };
   return mapping[status] || 'not_started';
+}
+
+function mapPriority(p: any): number {
+  if (typeof p === 'number') return p;
+  const map: Record<string, number> = {
+    'low': 1,
+    'medium': 2,
+    'high': 3,
+    'urgent': 4,
+    'critical': 4
+  };
+  return map[String(p).toLowerCase()] || 2;
 }
 
 function mapRowToSession(row: InspectionSessionResponse): InspectionSession {
@@ -78,7 +91,7 @@ function mapRowToSession(row: InspectionSessionResponse): InspectionSession {
     merchantName: row.merchants?.business_name || '--',
     merchantAddress: row.merchants?.address || '--',
     type: row.type,
-    priority: row.priority || 1,
+    priority: row.priority || 2,
     deadlineTime: row.deadline_time,
     userId: row.user_id,
     userName: row.users?.full_name || '--',
@@ -110,6 +123,11 @@ export async function updateInspectionSessionApi(id: string, updates: Partial<In
   try {
     const url = `${SUPABASE_REST_URL}/map_inspection_sessions?_id=eq.${id}`;
     
+    const payload = { ...updates };
+    if (payload.priority) {
+      payload.priority = mapPriority(payload.priority);
+    }
+
     const response = await fetch(url, {
       method: 'PATCH',
       headers: {
@@ -117,7 +135,7 @@ export async function updateInspectionSessionApi(id: string, updates: Partial<In
         'Content-Type': 'application/json',
         'Prefer': 'return=representation'
       },
-      body: JSON.stringify(updates)
+      body: JSON.stringify(payload)
     });
     
     if (!response.ok) {
@@ -139,6 +157,14 @@ export async function createInspectionSessionApi(session: Partial<InspectionSess
   try {
     const url = `${SUPABASE_REST_URL}/map_inspection_sessions`;
     
+    const payload = {
+      ...session,
+      status: session.status || 1, // Default to 'not_started'
+      priority: mapPriority(session.priority || 'medium'),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -146,12 +172,7 @@ export async function createInspectionSessionApi(session: Partial<InspectionSess
         'Content-Type': 'application/json',
         'Prefer': 'return=representation'
       },
-      body: JSON.stringify({
-        ...session,
-        status: session.status || 1, // Default to 'not_started'
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
+      body: JSON.stringify(payload)
     });
     
     if (!response.ok) {

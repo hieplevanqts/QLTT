@@ -12,7 +12,7 @@
 }
 
 .header {
-  margin-bottom: var(--spacing-6);
+  margin: 24px 24px 24px 24px;
 }
 
 .titleRow {
@@ -99,7 +99,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: var(--spacing-4);
-  margin-bottom: var(--spacing-6);
+  margin: 0 24px 24px 24px;
 }
 
 .overviewCard {
@@ -148,7 +148,7 @@
 }
 
 .section {
-  margin-bottom: var(--spacing-8);
+  margin: 0 24px 32px 24px;
 }
 
 .sectionHeader {
@@ -610,7 +610,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: var(--spacing-4);
-  margin-bottom: var(--spacing-6);
+  margin: 0 24px 24px 24px;
 }
 
 .taskStatCard {
@@ -1240,6 +1240,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -1262,6 +1263,7 @@
     transform: translateY(20px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;

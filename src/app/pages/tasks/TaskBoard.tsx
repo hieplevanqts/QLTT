@@ -28,8 +28,8 @@ import SearchInput from '../../../ui-kit/SearchInput';
 import EmptyState from '../../../ui-kit/EmptyState';
 import { Button } from '../../components/ui/button';
 import { type InspectionTask, type TaskStatus } from '../../data/inspection-tasks-mock-data';
-import { mockPlans } from '../../data/kehoach-mock-data';
-import { mockInspectionRounds } from '../../data/inspection-rounds-mock-data';
+import { useSupabasePlans } from '../../../hooks/useSupabasePlans';
+import { useSupabaseInspectionRounds } from '../../../hooks/useSupabaseInspectionRounds';
 import { fetchInspectionSessionsApi, updateInspectionSessionApi, createInspectionSessionApi } from '../../../utils/api/inspectionSessionsApi';
 import { TaskCard } from '../../components/tasks/TaskCard';
 import { StatusBadge } from '../../components/common/StatusBadge';
@@ -319,26 +319,50 @@ export function TaskBoard() {
     }
   }, [searchParams]);
 
+  // Get real plans and rounds from Supabase
+  const { plans: realPlans } = useSupabasePlans();
+  const { rounds: realRounds } = useSupabaseInspectionRounds(undefined, true);
+
   // Prepare plan options with pagination
+  const approvedPlans = useMemo(() => {
+    return realPlans.filter(plan => plan.status === 'approved');
+  }, [realPlans]);
+
   const planOptions: InfiniteScrollSelectOption[] = useMemo(() => {
-    const plans = mockPlans.slice(0, planPage * ITEMS_PER_PAGE);
+    const plans = approvedPlans.slice(0, planPage * ITEMS_PER_PAGE);
     return plans.map(plan => ({
       value: plan.id,
       label: plan.name,
-      subtitle: `${plan.id} - ${plan.planType === 'periodic' ? 'Định kỳ' : plan.planType === 'thematic' ? 'Chuyên đề' : 'Đt xuất'}`,
+      subtitle: `${plan.code || plan.id} - ${plan.planType === 'periodic' ? 'Định kỳ' : plan.planType === 'thematic' ? 'Chuyên đề' : 'Đột xuất'}`,
     }));
-  }, [planPage]);
+  }, [planPage, approvedPlans]);
 
-  const hasMorePlans = planPage * ITEMS_PER_PAGE < mockPlans.length;
+  const hasMorePlans = planPage * ITEMS_PER_PAGE < approvedPlans.length;
 
   // Prepare round options
   const roundOptions = useMemo(() => {
-    return mockInspectionRounds.map(round => ({
+    let filteredRounds = realRounds.filter(round => round.status === 'approved');
+    
+    if (planFilter !== 'all') {
+      filteredRounds = filteredRounds.filter(round => round.planId === planFilter);
+    }
+
+    return filteredRounds.map(round => ({
       value: round.id,
       label: round.name,
       subtitle: `${round.code} - ${round.leadUnit}`,
     }));
-  }, []);
+  }, [realRounds, planFilter]);
+
+  // Reset round filter if it doesn't belong to the selected plan
+  useEffect(() => {
+    if (planFilter !== 'all' && roundFilter !== 'all') {
+      const selectedRound = realRounds.find(r => r.id === roundFilter);
+      if (selectedRound && selectedRound.planId !== planFilter) {
+        setRoundFilter('all');
+      }
+    }
+  }, [planFilter, roundFilter, realRounds]);
 
   // Handle load more for plans
   const handleLoadMorePlans = () => {
@@ -352,12 +376,6 @@ export function TaskBoard() {
     }
   };
 
-  // Get unique values for filters
-  const uniqueRounds = useMemo(() => {
-    if (!tasks || tasks.length === 0) return [];
-    const rounds = Array.from(new Set(tasks.map(t => t?.roundId).filter(Boolean)));
-    return rounds;
-  }, [tasks]);
 
   const uniqueAssignees = useMemo(() => {
     if (!tasks || tasks.length === 0) return [];
@@ -549,7 +567,7 @@ export function TaskBoard() {
       type: 'select',
       options: [
         { value: 'all', label: 'Tất cả đợt' },
-        ...uniqueRounds.map(round => ({ value: round, label: round })),
+        ...roundOptions.map(opt => ({ value: opt.value, label: opt.label })),
       ],
     },
     {
@@ -1111,7 +1129,7 @@ export function TaskBoard() {
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
                 placeholder="Tìm kiếm phiên làm việc..."
-                style={{ width: '280px' }}
+                style={{ width: '400px' }}
               />
             </>
           }

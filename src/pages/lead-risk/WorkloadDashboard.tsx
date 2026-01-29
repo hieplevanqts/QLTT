@@ -1,22 +1,14 @@
-import React, { useState } from 'react';
-import { 
-  Users, 
-  TrendingUp, 
-  AlertTriangle, 
-  CheckCircle2, 
+import { useState } from 'react';
+import {
+  Users,
+  TrendingUp,
+  AlertTriangle,
+  CheckCircle2,
   Clock,
   Download,
-  Briefcase,
-  Target,
   Calendar,
   ListTodo,
-  User,
   Activity,
-  BarChart3,
-  Award,
-  Zap,
-  MessageSquare,
-  FileText,
   X,
   Circle,
   CircleDot,
@@ -28,9 +20,9 @@ type ViewMode = 'team' | 'individual' | 'tasks';
 
 // Mock data
 const teamStats = [
-  { 
-    teamId: 'team-24', 
-    name: 'Đội 24 - TP.HCM số 4', 
+  {
+    teamId: 'team-24',
+    name: 'Đội 24 - TP.HCM số 4',
     members: 8,
     activeLeads: 45,
     capacity: 80,
@@ -40,9 +32,9 @@ const teamStats = [
     closedToday: 8,
     closedThisWeek: 34,
   },
-  { 
-    teamId: 'team-01', 
-    name: 'Đội 01 - Quản lý thị trường số 1', 
+  {
+    teamId: 'team-01',
+    name: 'Đội 01 - Quản lý thị trường số 1',
     members: 6,
     activeLeads: 38,
     capacity: 60,
@@ -52,9 +44,9 @@ const teamStats = [
     closedToday: 5,
     closedThisWeek: 28,
   },
-  { 
-    teamId: 'team-02', 
-    name: 'Đội 02 - Quản lý thị trường số 2', 
+  {
+    teamId: 'team-02',
+    name: 'Đội 02 - Quản lý thị trường số 2',
     members: 7,
     activeLeads: 28,
     capacity: 70,
@@ -344,6 +336,8 @@ const tasksData: Task[] = [
   },
 ];
 
+import { Breadcrumb } from '../../app/components/Breadcrumb';
+
 export default function WorkloadDashboard() {
   const [viewMode, setViewMode] = useState<ViewMode>('team');
   const [selectedTeam, setSelectedTeam] = useState('all');
@@ -351,8 +345,8 @@ export default function WorkloadDashboard() {
   const [detailMode, setDetailMode] = useState<'team' | 'individual' | 'task'>('team');
   const [selectedDetail, setSelectedDetail] = useState<any>(null);
 
-  const filteredIndividuals = selectedTeam === 'all' 
-    ? individualStats 
+  const filteredIndividuals = selectedTeam === 'all'
+    ? individualStats
     : individualStats.filter(s => s.teamId === selectedTeam);
 
   const totalActiveLeads = teamStats.reduce((sum, t) => sum + t.activeLeads, 0);
@@ -385,6 +379,14 @@ export default function WorkloadDashboard() {
 
   return (
     <div className={styles.container}>
+      {/* Breadcrumb */}
+      <Breadcrumb
+        items={[
+          { label: 'Nguồn tin, Rủi ro', path: '/lead-risk/inbox' },
+          { label: 'Quản lý công việc' },
+        ]}
+      />
+
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.titleRow}>
@@ -397,21 +399,21 @@ export default function WorkloadDashboard() {
           </div>
           <div className={styles.headerActions}>
             <div className={styles.viewToggle}>
-              <button 
+              <button
                 className={viewMode === 'team' ? styles.viewActive : styles.viewBtn}
                 onClick={() => setViewMode('team')}
               >
                 <Users size={16} />
                 Theo đội
               </button>
-              <button 
+              <button
                 className={viewMode === 'individual' ? styles.viewActive : styles.viewBtn}
                 onClick={() => setViewMode('individual')}
               >
                 <Users size={16} />
                 Cá nhân
               </button>
-              <button 
+              <button
                 className={viewMode === 'tasks' ? styles.viewActive : styles.viewBtn}
                 onClick={() => setViewMode('tasks')}
               >
@@ -494,7 +496,7 @@ export default function WorkloadDashboard() {
               <p className={styles.sectionDesc}>Tổng quan hiệu suất và công suất của từng đội</p>
             </div>
           </div>
-          
+
           <div className={styles.tableCard}>
             <table className={styles.table}>
               <thead>
@@ -516,7 +518,7 @@ export default function WorkloadDashboard() {
                   const isOverloaded = loadPercentage > 85;
                   const isUnderutilized = loadPercentage < 50;
                   const status = isOverloaded ? 'overloaded' : isUnderutilized ? 'underutilized' : 'optimal';
-                  
+
                   return (
                     <tr key={team.teamId} className={styles.tableRow} data-status={status} onClick={() => handleTeamClick(team)}>
                       <td>
@@ -541,14 +543,14 @@ export default function WorkloadDashboard() {
                             {team.activeLeads}/{team.capacity}
                           </div>
                           <div className={styles.capacityBarSmall}>
-                            <div 
+                            <div
                               className={styles.capacityFillSmall}
-                              style={{ 
+                              style={{
                                 width: `${Math.min(loadPercentage, 100)}%`,
-                                backgroundColor: isOverloaded 
-                                  ? 'var(--chart-1)' 
-                                  : isUnderutilized 
-                                    ? 'var(--chart-2)' 
+                                backgroundColor: isOverloaded
+                                  ? 'var(--chart-1)'
+                                  : isUnderutilized
+                                    ? 'var(--chart-2)'
                                     : 'var(--chart-4)'
                               }}
                             />
@@ -632,8 +634,8 @@ export default function WorkloadDashboard() {
               <h2>Khối lượng công việc cá nhân</h2>
               <p className={styles.sectionDesc}>Hiệu suất và công việc của từng cán bộ</p>
             </div>
-            <select 
-              value={selectedTeam} 
+            <select
+              value={selectedTeam}
               onChange={(e) => setSelectedTeam(e.target.value)}
               className={styles.teamFilter}
             >
@@ -643,7 +645,7 @@ export default function WorkloadDashboard() {
               ))}
             </select>
           </div>
-          
+
           <div className={styles.tableCard}>
             <table className={styles.table}>
               <thead>
@@ -663,13 +665,13 @@ export default function WorkloadDashboard() {
                   const loadPercentage = (analyst.activeLeads / analyst.capacity) * 100;
                   const isOverloaded = analyst.status === 'overloaded';
                   const isUnderutilized = analyst.status === 'underutilized';
-                  
+
                   return (
                     <tr key={analyst.userId} className={styles.tableRow} data-status={analyst.status} onClick={() => handleIndividualClick(analyst)}>
                       <td>
                         <div className={styles.analystNameCell}>
                           <div className={styles.analystAvatarSmall}>
-                            {analyst.name.split(' ').slice(-2).map(n => n[0]).join('')}
+                            {analyst.name.split(' ').slice(-2).map((n: string) => n[0]).join('')}
                           </div>
                           <div>
                             <div className={styles.analystNameText}>{analyst.name}</div>
@@ -686,14 +688,14 @@ export default function WorkloadDashboard() {
                             {analyst.activeLeads}/{analyst.capacity}
                           </div>
                           <div className={styles.capacityBarSmall}>
-                            <div 
+                            <div
                               className={styles.capacityFillSmall}
-                              style={{ 
+                              style={{
                                 width: `${Math.min(loadPercentage, 100)}%`,
-                                backgroundColor: isOverloaded 
-                                  ? 'var(--chart-1)' 
-                                  : isUnderutilized 
-                                    ? 'var(--chart-2)' 
+                                backgroundColor: isOverloaded
+                                  ? 'var(--chart-1)'
+                                  : isUnderutilized
+                                    ? 'var(--chart-2)'
                                     : 'var(--chart-4)'
                               }}
                             />
@@ -747,13 +749,13 @@ export default function WorkloadDashboard() {
                       </td>
                       <td>
                         <div className={styles.accuracyCell}>
-                          <span 
+                          <span
                             className={styles.accuracyBadge}
                             style={{
-                              color: analyst.accuracy >= 70 
-                                ? 'var(--chart-4)' 
-                                : analyst.accuracy >= 50 
-                                  ? 'var(--chart-2)' 
+                              color: analyst.accuracy >= 70
+                                ? 'var(--chart-4)'
+                                : analyst.accuracy >= 50
+                                  ? 'var(--chart-2)'
                                   : 'var(--chart-1)'
                             }}
                           >
@@ -1079,7 +1081,7 @@ export default function WorkloadDashboard() {
                 <div className={styles.individualDetail}>
                   <div className={styles.analystNameCell}>
                     <div className={styles.analystAvatarSmall}>
-                      {selectedDetail.name.split(' ').slice(-2).map(n => n[0]).join('')}
+                      {selectedDetail.name.split(' ').slice(-2).map((n: string) => n[0]).join('')}
                     </div>
                     <div>
                       <div className={styles.analystNameText}>{selectedDetail.name}</div>

@@ -27,6 +27,7 @@ export interface InspectionRoundResponse {
   ward_id?: string;
   created_at: string;
   priority: number;
+  attachments?: any; // JSON field
   [key: string]: any;
 }
 
@@ -115,7 +116,10 @@ function mapRowToRound(row: InspectionRoundResponse): InspectionRound {
       violationsFound: statsMeta.violationCount || 0,
       violationRate: total > 0 ? Math.round(((statsMeta.violationCount || 0) / total) * 100) : 0,
       progress: total > 0 ? Math.round((inspected / total) * 100) : 0
-    }
+    },
+    priority: row.priority === 4 ? 'urgent' : 
+              row.priority === 3 ? 'high' : 
+              row.priority === 2 ? 'medium' : 'low'
   };
 }
 
@@ -168,11 +172,14 @@ export async function createInspectionRoundApi(round: Partial<InspectionRound>):
       owner_dept: round.leadUnit || '',
       start_time: round.startDate,
       end_time: round.endDate,
-      priority: 0, 
+      priority: round.priority === 'urgent' ? 4 : 
+                round.priority === 'high' ? 3 : 
+                round.priority === 'medium' ? 2 : 1,
       campaign_code: round.code,
       province_id: round.provinceId || undefined,
       ward_id: round.wardId || undefined,
       partner: '',
+      attachments: round.attachments || []
     };
 
     const response = await fetch(url, {
@@ -234,6 +241,13 @@ export async function updateInspectionRoundApi(id: string, updates: Partial<Insp
     
     if (updates.provinceId) payload.province_id = updates.provinceId;
     if (updates.wardId) payload.ward_id = updates.wardId;
+    if (updates.priority) {
+      payload.priority = updates.priority === 'urgent' ? 4 : 
+                        updates.priority === 'high' ? 3 : 
+                        updates.priority === 'medium' ? 2 : 1;
+    }
+    
+    if (updates.attachments) payload.attachments = updates.attachments;
     
     // Removal of notes mapping as column doesn't exist in map_inspection_campaigns
     
@@ -249,6 +263,8 @@ export async function updateInspectionRoundApi(id: string, updates: Partial<Insp
       },
       body: JSON.stringify(payload)
     });
+    console.log('updateInspectionRoundApi: PATCH Payload:', JSON.stringify(payload));
+    console.log('updateInspectionRoundApi: PATCH Response status:', response.status);
     
     if (!response.ok) {
       const errText = await response.text();
@@ -268,7 +284,9 @@ export async function updateInspectionRoundApi(id: string, updates: Partial<Insp
 export async function deleteInspectionRoundApi(id: string): Promise<boolean> {
   try {
     const url = `${SUPABASE_REST_URL}/map_inspection_campaigns?_id=eq.${id}`;
+    console.log('deleteInspectionRoundApi: Fetching URL:', url);
     const response = await fetch(url, { method: 'DELETE', headers: getHeaders() });
+    console.log('deleteInspectionRoundApi: Response status:', response.status);
     if (!response.ok) {
       const errText = await response.text();
       throw new Error(`HTTP error! status: ${response.status} - ${errText}`);

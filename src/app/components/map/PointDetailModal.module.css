@@ -1395,6 +1395,16 @@
   line-height: 1.4;
 }
 
+.noDataCompact {
+  padding: 16px;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: var(--muted-foreground);
+  background: var(--muted);
+  border: 1px dashed var(--border);
+}
+
 /* Responsive - Compact */
 @media (max-width: 1024px) {
   .compactStats {

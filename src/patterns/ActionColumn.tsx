@@ -202,7 +202,7 @@ export default function ActionColumn({ actions, variant = 'default' }: ActionCol
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>{action.label}</p>
+              {action.label}
             </TooltipContent>
           </Tooltip>
         ))}
@@ -244,7 +244,7 @@ export default function ActionColumn({ actions, variant = 'default' }: ActionCol
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>{action.label}</p>
+            {action.label}
           </TooltipContent>
         </Tooltip>
       ))}

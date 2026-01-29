@@ -200,7 +200,7 @@ export default function AssignLeadSidebar({
         <div className={styles.header}>
           <div className={styles.headerLeft}>
             <UserPlus className={styles.headerIcon} />
-            <h2 className={styles.headerTitle}>Giao việc cho người khác</h2>
+            <h2 className={styles.headerTitle}>Giao xử lý cho người khác</h2>
           </div>
           <button
             className={styles.closeButton}
@@ -238,10 +238,10 @@ export default function AssignLeadSidebar({
                     {lead.urgency === 'critical'
                       ? 'Khẩn cấp'
                       : lead.urgency === 'high'
-                      ? 'Cao'
-                      : lead.urgency === 'medium'
-                      ? 'Trung bình'
-                      : 'Thấp'}
+                        ? 'Cao'
+                        : lead.urgency === 'medium'
+                          ? 'Trung bình'
+                          : 'Thấp'}
                   </span>
                 </div>
               </div>
@@ -336,13 +336,12 @@ export default function AssignLeadSidebar({
                         <div className={styles.loadingBar}>
                           <div className={styles.loadingBarFill}>
                             <div
-                              className={`${styles.loadingBarProgress} ${
-                                loadPercentage >= 90
+                              className={`${styles.loadingBarProgress} ${loadPercentage >= 90
                                   ? styles.full
                                   : loadPercentage >= 70
-                                  ? styles.high
-                                  : ''
-                              }`}
+                                    ? styles.high
+                                    : ''
+                                }`}
                               style={{ width: `${loadPercentage}%` }}
                             />
                           </div>

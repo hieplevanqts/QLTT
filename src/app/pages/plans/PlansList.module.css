@@ -85,6 +85,10 @@
   line-height: 1.5;
 }
 
+.filterSection {
+  padding: 0 24px;
+}
+
 /* Tabs Layout */
 .planTabs {
   margin: 0 24px 16px 24px;
@@ -106,9 +110,7 @@
   margin-left: 4px;
 }
 
-.tabContent {
-  /* Empty - content renders in tableContainer below */
-}
+
 
 /* Responsive - QLTT Standard */
 @media (max-width: 1024px) {
@@ -133,6 +135,14 @@
     padding: 0 16px 16px 16px;
   }
 
+  .filterSection {
+    padding: 0 16px;
+  }
+
+  .planTabs {
+    margin: 0 16px 12px 16px;
+  }
+
   .planId,
   .planName {
     font-size: var(--text-xs);
@@ -140,5 +150,15 @@
 
   .planTopic {
     font-size: 10px;
+  }
+}
+
+.datePicker {
+  width: 240px !important;
+}
+
+@media (max-width: 1024px) {
+  .datePicker {
+    width: 200px !important;
   }
 }

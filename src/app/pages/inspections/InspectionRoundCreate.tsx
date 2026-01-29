@@ -11,17 +11,20 @@ import {
   Eye,
   X,
   Search,
-  Upload
+  Upload,
+  RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import styles from './InspectionRoundCreate.module.css';
 import DateRangePicker, { DateRange } from '@/ui-kit/DateRangePicker';
-import { mockStores } from '@/data/mockStores';
 import { useSupabaseInspectionRounds } from '@/hooks/useSupabaseInspectionRounds';
 import type { InspectionRound } from '@/app/types/inspections';
 import type { Plan } from '@/app/types/plans';
 import { fetchPlansApi } from '@/utils/api/plansApi';
+import { fetchMerchants } from '@/utils/api/merchantsApi';
+import type { Restaurant } from '@/data/restaurantData';
 import { supabase } from '@/lib/supabase';
+import { uploadMultipleFiles } from '@/utils/supabase/storage';
 import {
   InspectionDecisionModal,
   AssignmentDecisionModal,
@@ -31,7 +34,7 @@ import {
 } from '@/app/components/inspections/InspectionRoundDecisionModals';
 
 
-type PriorityLevel = 'low' | 'medium' | 'high';
+type PriorityLevel = 'low' | 'medium' | 'high' | 'urgent';
 
 interface FormData {
   // Step 1: Thông tin chung
@@ -49,7 +52,10 @@ interface FormData {
   selectedForms: string[];
   
   // Step 3: Cửa hàng
-  selectedStores: number[];
+  selectedStores: string[];
+
+  // Tài liệu đính kèm
+  attachments: File[];
 }
 
 // Mock biểu mẫu data
@@ -164,9 +170,12 @@ export default function InspectionRoundCreate() {
   
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [realPlans, setRealPlans] = useState<Plan[]>([]);
   const [provinces, setProvinces] = useState<{_id: string, name: string}[]>([]);
   const [wards, setWards] = useState<{_id: string, name: string}[]>([]);
+  const [realMerchants, setRealMerchants] = useState<Restaurant[]>([]);
+  const [loadingMerchants, setLoadingMerchants] = useState(false);
 
   // Fetch plans on mount
   useEffect(() => {
@@ -220,6 +229,7 @@ export default function InspectionRoundCreate() {
     selectedStores: [],
     provinceId: '',
     wardId: '',
+    attachments: [],
   });
 
   // Fetch wards when province changes
@@ -252,6 +262,29 @@ export default function InspectionRoundCreate() {
     fetchWards();
   }, [formData.provinceId]);
 
+  // Fetch merchants based on province and ward
+  useEffect(() => {
+    async function loadMerchants() {
+      try {
+        setLoadingMerchants(true);
+        // Using positional parameters of fetchMerchants(statusCodes, businessTypes, departmentIds, provinceId, wardId)
+        const merchants = await fetchMerchants(
+          undefined, 
+          undefined, 
+          undefined, 
+          formData.provinceId || undefined, 
+          formData.wardId || undefined
+        );
+        setRealMerchants(merchants || []);
+      } catch (err) {
+        console.error('Error fetching merchants:', err);
+      } finally {
+        setLoadingMerchants(false);
+      }
+    }
+    loadMerchants();
+  }, [formData.provinceId, formData.wardId]);
+
 
   // Check if round is approved (for edit mode) - now handled via state since fetch is async
   const [isApproved, setIsApproved] = useState(false);
@@ -271,11 +304,12 @@ export default function InspectionRoundCreate() {
             startDate: existingRound.startDate,
             endDate: existingRound.endDate,
             leadUnit: existingRound.leadUnit, // owner_dept
-            priority: 'medium', // Default since we don't have this in InspectionRound type yet perfectly mapped
+            priority: existingRound.priority || 'medium', // Map from existing round
             selectedForms: [], // Would need to be stored in InspectionRound type in backend
             selectedStores: [], // Would need to map from targets/stats
             provinceId: (existingRound as any).provinceId || '',
             wardId: (existingRound as any).wardId || '',
+            attachments: [],
             });
         } else {
             toast.error('Không tìm thấy đợt kiểm tra');
@@ -312,10 +346,9 @@ export default function InspectionRoundCreate() {
   const [extensionDecision, setExtensionDecision] = useState<InsDecision | null>(null);
 
   // Filter stores
-  const filteredStores = mockStores.filter(store => {
+  const filteredStores = realMerchants.filter(store => {
     // Apply filter conditions
-    if (storeFilters.highRisk && store.riskLevel !== 'high') return false;
-    if (storeFilters.manyComplaints && !store.hasComplaints) return false;
+    if (storeFilters.highRisk && store.category !== 'hotspot') return false;
     
     // Apply search query
     if (storeSearchQuery.trim()) {
@@ -409,14 +442,8 @@ export default function InspectionRoundCreate() {
   };
 
   const validateStep3 = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (formData.selectedStores.length === 0) {
-      newErrors.selectedStores = 'Vui lòng chọn ít nhất một cửa hàng';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    // Tạm thời không bắt buộc chọn cửa hàng
+    return true;
   };
 
   const handleNext = () => {
@@ -440,6 +467,20 @@ export default function InspectionRoundCreate() {
       return;
     }
 
+    setIsSubmitting(true);
+    let uploadedAttachments: any[] = [];
+    
+    try {
+      if (formData.attachments && formData.attachments.length > 0) {
+        uploadedAttachments = await uploadMultipleFiles('vhv_file', formData.attachments, 'inspection-rounds');
+      }
+    } catch (uploadError) {
+      console.error('File upload failed:', uploadError);
+      toast.error('Lỗi khi tải tài liệu lên. Vui lòng thử lại.');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
         if (editMode && editId) {
             // Update existing round
@@ -453,6 +494,8 @@ export default function InspectionRoundCreate() {
                 totalTargets: formData.selectedStores.length,
                 provinceId: formData.provinceId,
                 wardId: formData.wardId,
+                priority: formData.priority,
+                attachments: uploadedAttachments.length > 0 ? uploadedAttachments : undefined,
             });
             toast.success('Đã cập nhật đợt kiểm tra thành công');
         } else {
@@ -474,8 +517,10 @@ export default function InspectionRoundCreate() {
                 inspectedTargets: 0,
                 provinceId: formData.provinceId,
                 wardId: formData.wardId,
+                priority: formData.priority,
                 createdBy: 'Người dùng hiện tại',
                 createdAt: currentDate.toISOString().split('T')[0],
+                attachments: uploadedAttachments,
             };
             await createRound(newRound);
             toast.success('Đã tạo đợt kiểm tra thành công');
@@ -485,18 +530,28 @@ export default function InspectionRoundCreate() {
     } catch (error) {
         console.error("Submit Error", error);
         toast.error('Có lỗi xảy ra, vui lòng thử lại');
+    } finally {
+        setIsSubmitting(false);
     }
   };
 
 
 
-  const toggleStore = (storeId: number) => {
-    setFormData(prev => ({
-      ...prev,
-      selectedStores: prev.selectedStores.includes(storeId)
-        ? prev.selectedStores.filter(id => id !== storeId)
-        : [...prev.selectedStores, storeId],
-    }));
+  const toggleStore = (storeId: string) => {
+    setFormData(prev => {
+      const isSelected = prev.selectedStores.includes(storeId);
+      if (isSelected) {
+        return {
+          ...prev,
+          selectedStores: prev.selectedStores.filter(id => id !== storeId)
+        };
+      } else {
+        return {
+          ...prev,
+          selectedStores: [...prev.selectedStores, storeId]
+        };
+      }
+    });
     
     // Clear error when user selects
     if (errors.selectedStores) {
@@ -623,6 +678,7 @@ export default function InspectionRoundCreate() {
                     <option value="low">Thấp</option>
                     <option value="medium">Trung bình</option>
                     <option value="high">Cao</option>
+                    <option value="urgent">Khẩn cấp</option>
                   </select>
                 </div>
 
@@ -903,6 +959,61 @@ export default function InspectionRoundCreate() {
                     </div>
                   </>
                 )}
+
+                {/* Tài liệu đính kèm */}
+                <div className={styles.formGroupFull}>
+                  <label className={styles.label}>
+                    Tài liệu đính kèm
+                    <span className={styles.helpTextSmall}> - Tùy chọn (Chọn nhiều file)</span>
+                  </label>
+                  <div className={styles.fileUploadContainer}>
+                    <input
+                      type="file"
+                      id="round-attachments"
+                      multiple
+                      className={styles.fileInput}
+                      onChange={(e) => {
+                        if (e.target.files) {
+                          const newFiles = Array.from(e.target.files);
+                          setFormData(prev => ({
+                            ...prev,
+                            attachments: [...prev.attachments, ...newFiles]
+                          }));
+                        }
+                      }}
+                    />
+                    <label htmlFor="round-attachments" className={styles.fileLabel}>
+                      <Upload size={20} />
+                      <span>Chọn tài liệu hoặc kéo thả vào đây</span>
+                    </label>
+                  </div>
+                  
+                  {formData.attachments.length > 0 && (
+                    <div className={styles.fileList}>
+                      {formData.attachments.map((file, index) => (
+                        <div key={`${file.name}-${index}`} className={styles.fileItem}>
+                          <div className={styles.fileInfo}>
+                            <FileText size={16} className={styles.fileIcon} />
+                            <span className={styles.fileName}>{file.name}</span>
+                            <span className={styles.fileSize}>({(file.size / 1024).toFixed(1)} KB)</span>
+                          </div>
+                          <button
+                            type="button"
+                            className={styles.removeFileButton}
+                            onClick={() => {
+                              setFormData(prev => ({
+                                ...prev,
+                                attachments: prev.attachments.filter((_, i) => i !== index)
+                              }));
+                            }}
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -1004,57 +1115,56 @@ export default function InspectionRoundCreate() {
                     />
                     <span>Rủi ro cao</span>
                   </label>
-                  <label className={styles.filterOption}>
-                    <input
-                      type="checkbox"
-                      className={styles.checkbox}
-                      checked={storeFilters.manyComplaints}
-                      onChange={(e) => setStoreFilters(prev => ({ ...prev, manyComplaints: e.target.checked }))}
-                    />
-                    <span>Nhiều khiếu nại</span>
-                  </label>
                 </div>
               </div>
 
               {/* Store Multi-Select */}
               <div className={styles.storesGridContainer}>
-                {filteredStores.slice(0, 100).map(store => (
-                  <div
-                    key={store.id}
-                    className={`${styles.storeCard} ${formData.selectedStores.includes(store.id) ? styles.storeCardSelected : ''}`}
-                    onClick={() => toggleStore(store.id)}
-                  >
-                    <div className={styles.storeCardCheckbox}>
-                      <input
-                        type="checkbox"
-                        className={styles.checkbox}
-                        checked={formData.selectedStores.includes(store.id)}
-                        onChange={() => {}} // Controlled by parent div
-                      />
-                    </div>
-                    <div className={styles.storeCardIcon}>
-                      <Store size={22} />
-                    </div>
-                    <div className={styles.storeCardContent}>
-                      <div className={styles.storeCardHeader}>
-                        <div className={styles.storeCardName}>{store.name}</div>
-                        <div className={styles.storeCardBadges}>
-                          {store.riskLevel === 'high' && (
-                            <span className={`${styles.badge} ${styles.badgeHigh}`}>Rủi ro cao</span>
-                          )}
-                          {store.hasComplaints && (
-                            <span className={`${styles.badge} ${styles.badgeWarning}`}>Nhiều khiếu nại</span>
-                          )}
+                {loadingMerchants ? (
+                  <div className={styles.loadingStores}>
+                    <RefreshCw className="animate-spin" />
+                    <span>Đang tải danh sách cơ sở...</span>
+                  </div>
+                ) : filteredStores.length === 0 ? (
+                  <div className={styles.noStores}>
+                    Không tìm thấy cơ sở nào phù hợp.
+                  </div>
+                ) : (
+                  filteredStores.slice(0, 100).map(store => (
+                    <div
+                      key={store.id}
+                      className={`${styles.storeCard} ${formData.selectedStores.includes(store.id) ? styles.storeCardSelected : ''}`}
+                      onClick={() => toggleStore(store.id)}
+                    >
+                      <div className={styles.storeCardCheckbox}>
+                        <input
+                          type="checkbox"
+                          className={styles.checkbox}
+                          checked={formData.selectedStores.includes(store.id)}
+                          onChange={() => {}} // Controlled by parent div
+                        />
+                      </div>
+                      <div className={styles.storeCardIcon}>
+                        <Store size={22} />
+                      </div>
+                      <div className={styles.storeCardContent}>
+                        <div className={styles.storeCardHeader}>
+                          <div className={styles.storeCardName}>{store.name}</div>
+                          <div className={styles.storeCardBadges}>
+                            {store.category === 'hotspot' && (
+                              <span className={`${styles.badge} ${styles.badgeHigh}`}>Rủi ro cao</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className={styles.storeCardMeta}>
+                          <span className={styles.storeCardType}>{store.type}</span>
+                          <span className={styles.metaDivider}>•</span>
+                          <span className={styles.storeCardAddress}>{store.address}</span>
                         </div>
                       </div>
-                      <div className={styles.storeCardMeta}>
-                        <span className={styles.storeCardType}>{store.type}</span>
-                        <span className={styles.metaDivider}>•</span>
-                        <span className={styles.storeCardAddress}>{store.address}</span>
-                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
               {errors.selectedStores && (
@@ -1087,9 +1197,22 @@ export default function InspectionRoundCreate() {
               <ChevronRight size={18} />
             </button>
           ) : (
-            <button className={styles.submitButton} onClick={handleSubmit}>
-              <CheckCircle2 size={18} />
-              {editMode ? 'Cập nhật đợt kiểm tra' : 'Tạo đợt kiểm tra'}
+            <button 
+              className={styles.submitButton} 
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <RefreshCw size={18} className={styles.spinner} />
+                  Đang xử lý...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 size={18} />
+                  {editMode ? 'Cập nhật đợt kiểm tra' : 'Tạo đợt kiểm tra'}
+                </>
+              )}
             </button>
           )}
         </div>

@@ -15,7 +15,7 @@ const AssignmentsPage = React.lazy(() => import('./pages/AssignmentsPage'));
 const UserAssignmentsPage = React.lazy(() => import('./pages/UserAssignmentsPage'));
 const RoleAssignmentsPage = React.lazy(() => import('./pages/RoleAssignmentsPage'));
 const ModulesPage = React.lazy(() => import('./pages/ModulesPage'));
-const MenusPage = React.lazy(() => import('./pages/MenusPage'));
+const MenusPage = React.lazy(() => import('./menu-admin/pages/MenuAdminPage'));
 
 /**
  * Route configuration cho SA IAM

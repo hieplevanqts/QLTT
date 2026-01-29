@@ -85,8 +85,8 @@ export default function PermissionPickerPanel({
   const [total, setTotal] = React.useState(0);
   const [search, setSearch] = React.useState("");
   const [moduleId, setModuleId] = React.useState<string | null>(menu?.module_id ?? null);
-  const [action, setAction] = React.useState<string | null>("read");
-  const [permissionType, setPermissionType] = React.useState<string | null>("PAGE");
+  const [action, setAction] = React.useState<string | null>("READ");
+  const [category, setCategory] = React.useState<string | null>("PAGE");
   const [resource, setResource] = React.useState<string | null>(null);
   const [status, setStatus] = React.useState<MenuPermissionListParams["status"]>("active");
   const [smartRouteOnly, setSmartRouteOnly] = React.useState(true);
@@ -103,12 +103,14 @@ export default function PermissionPickerPanel({
   );
 
   React.useEffect(() => {
-    setModuleId(menu?.module_id ?? null);
+    const menuModuleId = menu?.module_id ?? null;
+    const hasModule = menuModuleId && modules.some((item) => item._id === menuModuleId);
+    setModuleId(hasModule ? menuModuleId : null);
     setResource(null);
     setPage(1);
     setPageSize(DEFAULT_PAGE_SIZE);
     setSelectedPermission(null);
-  }, [menu?._id]);
+  }, [menu?._id, menu?.module_id, modules]);
 
   React.useEffect(() => {
     if (!selectedPermissionId) {
@@ -133,7 +135,7 @@ export default function PermissionPickerPanel({
             search,
             moduleId,
             action,
-            permissionType,
+            category,
             resource,
             status,
             page,
@@ -164,7 +166,7 @@ export default function PermissionPickerPanel({
     search,
     moduleId,
     action,
-    permissionType,
+    category,
     resource,
     status,
     page,
@@ -287,27 +289,25 @@ export default function PermissionPickerPanel({
           onChange={(value) => setAction(value === "all" ? null : value)}
           options={[
             { label: "Tất cả action", value: "all" },
-            { label: "READ", value: "read" },
-            { label: "VIEW", value: "view" },
-            { label: "CREATE", value: "create" },
-            { label: "UPDATE", value: "update" },
-            { label: "DELETE", value: "delete" },
-            { label: "EXPORT", value: "export" },
-          ]}
-          disabled={isGroupMenu}
-        />
-        <Select
-          placeholder="Permission type"
-          style={{ width: 160 }}
-          value={permissionType ?? "all"}
-          onChange={(value) => setPermissionType(value === "all" ? null : value)}
+        { label: "READ", value: "READ" },
+        { label: "VIEW", value: "VIEW" },
+        { label: "CREATE", value: "CREATE" },
+        { label: "UPDATE", value: "UPDATE" },
+        { label: "DELETE", value: "DELETE" },
+        { label: "EXPORT", value: "EXPORT" },
+        { label: "RESTORE", value: "RESTORE" },
+      ]}
+      disabled={isGroupMenu}
+    />
+    <Select
+      placeholder="Category"
+      style={{ width: 160 }}
+      value={category ?? "all"}
+      onChange={(value) => setCategory(value === "all" ? null : value)}
           options={[
-            { label: "Tất cả type", value: "all" },
+            { label: "Tất cả category", value: "all" },
             { label: "PAGE", value: "PAGE" },
-            { label: "READ", value: "READ" },
-            { label: "VIEW", value: "VIEW" },
             { label: "FEATURE", value: "FEATURE" },
-            { label: "SYSTEM", value: "SYSTEM" },
           ]}
           disabled={isGroupMenu}
         />

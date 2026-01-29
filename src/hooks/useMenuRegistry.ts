@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import type { MenuItem } from "../modules/system-admin/types";
 
 const STORAGE_KEY = "mappa.menu.registry";
+const STORAGE_VERSION_KEY = "mappa.menu.version";
 
 export const useMenuRegistry = () => {
   const [menus, setMenus] = useState<MenuItem[] | null>(null);
@@ -73,14 +74,30 @@ export const useMenuRegistry = () => {
       }));
     };
 
+    const loadMenuVersion = async (): Promise<string | null> => {
+      const { data, error } = await supabase
+        .from("menus")
+        .select("updated_at")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) {
+        return null;
+      }
+      return data?.updated_at ?? null;
+    };
+
     const loadMenus = async () => {
       try {
         setLoading(true);
         setError(null);
-        const dbMenus = await loadMenusFromDb();
+        const [dbMenus, version] = await Promise.all([loadMenusFromDb(), loadMenuVersion()]);
         if (dbMenus !== null) {
           setMenus(dbMenus);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(dbMenus));
+          if (version) {
+            localStorage.setItem(STORAGE_VERSION_KEY, version);
+          }
           return;
         }
         throw new Error("Không thể tải menu từ cơ sở dữ liệu.");
@@ -93,15 +110,23 @@ export const useMenuRegistry = () => {
 
     const handleRefresh = () => {
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(STORAGE_VERSION_KEY);
       void loadMenus();
     };
 
-    void loadMenus();
+    void (async () => {
+      const cachedVersion = localStorage.getItem(STORAGE_VERSION_KEY);
+      const latestVersion = await loadMenuVersion();
+      if (latestVersion && cachedVersion && latestVersion === cachedVersion && menus) {
+        return;
+      }
+      void loadMenus();
+    })();
     window.addEventListener("mappa:menu-refresh", handleRefresh);
     return () => {
       window.removeEventListener("mappa:menu-refresh", handleRefresh);
     };
-  }, []);
+  }, [menus]);
 
   return { menus, loading, error };
 };

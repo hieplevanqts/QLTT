@@ -73,7 +73,9 @@ export function useSupabaseInspectionRounds(planId?: string, enabled: boolean = 
 
   const deleteRound = async (id: string) => {
     try {
+      console.log('useSupabaseInspectionRounds: deleteRound call with ID:', id);
       await deleteInspectionRoundApi(id);
+      console.log('useSupabaseInspectionRounds: deleteRound successful, refetching...');
       await fetchRounds();
     } catch (err: any) {
       console.error('Error deleting round:', err);
