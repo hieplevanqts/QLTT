@@ -18,6 +18,10 @@ import {
   Ban,
   Copy,
   Download,
+  Play,
+  Pause,
+  RotateCcw,
+  ArrowRight,
 } from "lucide-react";
 import {
   useSupabaseLeads,
@@ -541,76 +545,7 @@ export default function LeadInbox() {
     }
   };
 
-  const handleBulkTriage = () => {
-    alert(`Phân loại ${selectedLeads.size} lead`);
-  };
 
-  const handleBulkAssign = () => {
-    alert(`Giao xử lý ${selectedLeads.size} lead`);
-  };
-
-  const handleBulkReject = () => {
-    if (
-      confirm(
-        `Bạn có chắc muốn từ chối ${selectedLeads.size} lead?`,
-      )
-    ) {
-      alert("Đã từ chối");
-    }
-  };
-
-  const handleBulkCancel = async () => {
-    if (selectedLeads.size === 0) {
-      toast.error("Vui lòng chọn ít nhất một lead");
-      return;
-    }
-
-    const unassignedLeads = allLeads.filter(
-      (l) => selectedLeads.has(l._id) && !l.assignedTo,
-    );
-
-    if (unassignedLeads.length === 0) {
-      toast.error("Không có lead chưa phân công nào được chọn");
-      return;
-    }
-
-    if (
-      !confirm(
-        `Bạn có chắc muốn hủy ${unassignedLeads.length} lead chưa phân công?`,
-      )
-    ) {
-      return;
-    }
-
-    try {
-      const supabase = getSupabaseClient();
-      const leadIds = unassignedLeads.map((l) => l._id);
-
-      const { error } = await supabase
-        .from("leads")
-        .update({
-          status: "cancelled",
-          updated_at: new Date().toISOString(),
-        })
-        .in("_id", leadIds)
-        .is("assigned_to", null);
-
-      if (error) {
-        console.error("Error cancelling leads:", error);
-        toast.error("Lỗi khi hủy leads: " + error.message);
-        return;
-      }
-
-      toast.success(
-        `Đã hủy ${unassignedLeads.length} lead thành công`,
-      );
-      setSelectedLeads(new Set());
-      refetch(); // Refresh data
-    } catch (err) {
-      console.error("Error in handleBulkCancel:", err);
-      toast.error("Có lỗi xảy ra khi hủy leads");
-    }
-  };
 
   const clearAllFilters = () => {
     setSelectedStatuses([]);
@@ -976,6 +911,67 @@ export default function LeadInbox() {
     }
   };
 
+  // Reject lead (any status → rejected)
+  const handleRejectLead = async (lead: Lead, reason: string) => {
+    try {
+      const supabase = getSupabaseClient();
+
+      console.log(
+        `🚫 [LeadInbox] Rejecting lead ${lead.code} with reason: "${reason}"`,
+      );
+
+      // Prepare update payload
+      const updatePayload = {
+        status: "rejected",
+        rejection_reason: reason,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { data, error } = await supabase
+        .from("leads")
+        .update(updatePayload)
+        .eq("_id", lead._id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error(
+          "❌ [LeadInbox] Failed to reject lead:",
+          error,
+        );
+        toast.error("Lỗi khi từ chối lead", {
+          description: error.message,
+        });
+        return;
+      }
+
+      console.log(
+        "✅ [LeadInbox] Lead rejected successfully",
+      );
+
+      toast.success("Đã từ chối lead", {
+        description: `Lead ${lead.code} đã bị từ chối.`,
+        duration: 3000,
+      });
+
+      // Clear filter and refetch
+      setSelectedStatuses([]);
+      await refetch();
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Lỗi không xác định";
+      console.error(
+        "❌ [LeadInbox] Error rejecting lead:",
+        errorMessage,
+      );
+      toast.error("Lỗi hệ thống", {
+        description: errorMessage,
+      });
+    }
+  };
+
   // Handle actions from menu
   const handleLeadAction = (lead: Lead, action: LeadAction) => {
     console.log(`Action ${action} on lead ${lead.code}`);
@@ -1086,6 +1082,11 @@ export default function LeadInbox() {
         // Open evidence document modal for this lead
         setCurrentLead(lead);
         setIsEvidenceModalOpen(true);
+        break;
+      case "reject":
+        // Open reject modal for this lead
+        setCurrentLead(lead);
+        setIsRejectModalOpen(true);
         break;
       // Add other cases as needed
       default:
@@ -1605,9 +1606,6 @@ export default function LeadInbox() {
         )}
       </div>
 
-      {/* Bulk Actions */}
-      {/* REMOVED: Bulk actions hidden per user request when selecting all leads */}
-      {/* 
       {selectedLeads.size > 0 && (
         <div className={styles.bulkActions}>
           <div className={styles.bulkActionsLeft}>
@@ -1615,30 +1613,200 @@ export default function LeadInbox() {
             <span>{selectedLeads.size} lead đã chọn</span>
           </div>
           <div className={styles.bulkActionsRight}>
-            <button className={styles.bulkButton} onClick={handleBulkTriage}>
-              <CheckCircle2 size={16} />
-              Phân loại
-            </button>
-            <button className={styles.bulkButton} onClick={handleBulkAssign}>
-              <UserPlus size={16} />
-              Giao xử lý
-            </button>
-            <button className={styles.bulkButtonDanger} onClick={handleBulkReject}>
-              <XCircle size={16} />
-              Từ chối
-            </button>
-            <button className={styles.bulkButtonDanger} onClick={handleBulkCancel}>
-              <Ban size={16} />
-              Hủy chưa giao
-            </button>
-            <button className={styles.bulkButtonDanger} onClick={handleBulkDelete}>
-              <Trash2 size={16} />
-              Xóa
-            </button>
+            {(() => {
+              // Determine common status
+              const selectedObjects = allLeads.filter((l) => selectedLeads.has(l._id));
+              const statuses = new Set(selectedObjects.map((l) => l.status));
+
+              if (statuses.size !== 1) {
+                return <span style={{ fontSize: '13px', color: '#666', fontStyle: 'italic' }}>Chọn các lead cùng trạng thái để thao tác</span>;
+              }
+
+              const status = statuses.values().next().value;
+
+              const performBulkUpdate = async (targetStatus: LeadStatus) => {
+                try {
+                  const supabase = getSupabaseClient();
+                  const { error } = await supabase
+                    .from("leads")
+                    .update({ status: targetStatus, updated_at: new Date().toISOString() })
+                    .in("_id", Array.from(selectedLeads));
+
+                  if (error) throw error;
+                  toast.success("Cập nhật thành công");
+                  setSelectedLeads(new Set());
+                  refetch();
+                } catch (e: any) {
+                  toast.error("Lỗi: " + e.message);
+                }
+              };
+
+              const openBulkConfirm = (
+                title: string,
+                message: string,
+                targetStatus: LeadStatus,
+                type: "info" | "warning" | "danger" | "success" = "warning"
+              ) => {
+                setConfirmDialog({
+                  isOpen: true,
+                  title,
+                  message,
+                  confirmText: "Xác nhận",
+                  type,
+                  onConfirm: () => performBulkUpdate(targetStatus),
+                });
+              };
+
+              switch (status) {
+                case "new":
+                  return (
+                    <button
+                      className={styles.bulkButton}
+                      onClick={() => openBulkConfirm(
+                        "Bắt đầu xác minh",
+                        `Bạn có chắc muốn chuyển ${selectedLeads.size} leads đang chọn sang trạng thái "Đang xác minh"?`,
+                        "verifying",
+                        "info"
+                      )}
+                    >
+                      <Play size={16} /> Bắt đầu xác minh
+                    </button>
+                  );
+
+                case "verifying": // Đang xác minh
+                  return (
+                    <>
+                      <button
+                        className={styles.bulkButton}
+                        onClick={() => {
+                          setCurrentLead(null);
+                          setIsAssignModalOpen(true);
+                        }}
+                      >
+                        <UserPlus size={16} /> Giao xử lý
+                      </button>
+                      <button
+                        className={styles.bulkButton}
+                        onClick={() => openBulkConfirm(
+                          "Tạm dừng xác minh",
+                          `Bạn có chắc muốn tạm dừng xác minh ${selectedLeads.size} leads đang chọn?`,
+                          "verify_paused",
+                          "warning"
+                        )}
+                      >
+                        <Pause size={16} /> Tạm dừng xác minh
+                      </button>
+                    </>
+                  );
+
+                case "verify_paused": // Tạm dừng xác minh
+                  return (
+                    <button
+                      className={styles.bulkButton}
+                      onClick={() => openBulkConfirm(
+                        "Tiếp tục xác minh",
+                        `Bạn có chắc muốn tiếp tục xác minh ${selectedLeads.size} leads đang chọn?`,
+                        "verifying",
+                        "success"
+                      )}
+                    >
+                      <Play size={16} /> Tiếp tục xác minh
+                    </button>
+                  );
+
+                case "processing": // Đang xử lý
+                  return (
+                    <>
+                      <button
+                        className={styles.bulkButton}
+                        onClick={() => openBulkConfirm(
+                          "Tạm dừng xử lý",
+                          `Bạn có chắc muốn tạm dừng xử lý ${selectedLeads.size} leads đang chọn?`,
+                          "process_paused",
+                          "warning"
+                        )}
+                      >
+                        <Pause size={16} /> Tạm dừng xử lý
+                      </button>
+                      <button
+                        className={styles.bulkButton}
+                        onClick={() => openBulkConfirm(
+                          "Hoàn thành xử lý",
+                          `Bạn có chắc muốn hoàn thành ${selectedLeads.size} leads đang chọn?`,
+                          "resolved",
+                          "success"
+                        )}
+                        style={{ borderColor: "var(--green-600)", color: "var(--green-600)" }}
+                      >
+                        <CheckCircle2 size={16} /> Hoàn thành
+                      </button>
+                      <button
+                        className={styles.bulkButtonDanger}
+                        onClick={() => openBulkConfirm(
+                          "Hủy bỏ leads",
+                          `Bạn có chắc muốn hủy bỏ ${selectedLeads.size} leads đang chọn? Hành động này không thể hoàn tác.`,
+                          "cancelled",
+                          "danger"
+                        )}
+                      >
+                        <Ban size={16} /> Hủy bỏ
+                      </button>
+                    </>
+                  );
+
+                case "process_paused": // Tạm dừng xử lý
+                  return (
+                    <button
+                      className={styles.bulkButton}
+                      onClick={() => openBulkConfirm(
+                        "Tiếp tục xử lý",
+                        `Bạn có chắc muốn tiếp tục xử lý ${selectedLeads.size} leads đang chọn?`,
+                        "processing",
+                        "success"
+                      )}
+                    >
+                      <Play size={16} /> Tiếp tục xử lý
+                    </button>
+                  );
+
+                case "resolved": // Đã xử lý
+                  return (
+                    <>
+                      <button
+                        className={styles.bulkButton}
+                        onClick={() => openBulkConfirm(
+                          "Mở lại xử lý",
+                          `Bạn có chắc muốn mở lại ${selectedLeads.size} leads để xử lý tiếp?`,
+                          "processing",
+                          "info"
+                        )}
+                      >
+                        <RefreshCw size={16} /> Mở lại
+                      </button>
+                      <button
+                        className={styles.bulkButton}
+                        onClick={() => openBulkConfirm(
+                          "Yêu cầu xác minh lại",
+                          `Bạn có chắc muốn yêu cầu xác minh lại ${selectedLeads.size} leads?`,
+                          "verifying",
+                          "warning"
+                        )}
+                      >
+                        <RotateCcw size={16} /> Yêu cầu xác minh lại
+                      </button>
+                    </>
+                  );
+
+                case "rejected":
+                  return null;
+
+                default:
+                  return null;
+              }
+            })()}
           </div>
         </div>
       )}
-      */}
 
       {/* Loading State */}
       {loading && (
@@ -1704,7 +1872,17 @@ export default function LeadInbox() {
           <table className={styles.table}>
             <thead>
               <tr>
-                {/* REMOVED: Checkbox column removed per user request */}
+                <th style={{ width: "50px", textAlign: "center" }}>
+                  <input
+                    type="checkbox"
+                    onChange={toggleSelectAll}
+                    checked={
+                      filteredLeads.length > 0 &&
+                      selectedLeads.size === filteredLeads.length
+                    }
+                    style={{ cursor: "pointer", width: "16px", height: "16px" }}
+                  />
+                </th>
                 <th style={{ width: "120px" }}>Mã Lead</th>
                 <th style={{ width: "280px" }}>Danh mục vi phạm</th>
                 <th style={{ width: "180px" }}>Người báo</th>
@@ -1733,7 +1911,28 @@ export default function LeadInbox() {
                       : ""
                   }
                 >
-                  {/* REMOVED: Checkbox column removed per user request */}
+                  <td onClick={(e) => e.stopPropagation()}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        height: "100%",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedLeads.has(lead._id)}
+                        onChange={() => toggleSelectLead(lead._id)}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          cursor: "pointer",
+                          width: "16px",
+                          height: "16px",
+                        }}
+                      />
+                    </div>
+                  </td>
                   <td>
                     <span className={styles.leadCode}>
                       {lead.code}
@@ -1935,13 +2134,9 @@ export default function LeadInbox() {
         onClose={() => setIsRejectModalOpen(false)}
         lead={currentLead}
         onSave={(reason) => {
-          console.log(
-            "Rejecting lead:",
-            { reason },
-            "for lead:",
-            currentLead?.code,
-          );
-          alert(`Đã từ chối lead ${currentLead?.code}`);
+          if (currentLead) {
+            handleRejectLead(currentLead, reason);
+          }
         }}
       />
       <EvidenceDocumentModal
@@ -1954,96 +2149,95 @@ export default function LeadInbox() {
         isOpen={isAssignModalOpen}
         onClose={() => setIsAssignModalOpen(false)}
         lead={currentLead}
+        leadCount={!currentLead ? selectedLeads.size : undefined}
         onAssign={async (data) => {
+          const leadsToAssign = currentLead ? [currentLead] : allLeads.filter(l => selectedLeads.has(l._id));
+
           console.log(
-            "👤 [LeadInbox] Assigning lead:",
-            currentLead?.code,
+            "👤 [LeadInbox] Assigning leads:",
+            leadsToAssign.map(l => l.code),
             "with data:",
             data,
           );
 
           try {
             const supabase = getSupabaseClient();
+            let successCount = 0;
+            let errorCount = 0;
 
-            // Step 1: Insert into map_inspection_sessions table and get the new session ID
-            const { data: sessionData, error: sessionError } =
-              await supabase
-                .from("map_inspection_sessions")
+            // Loop through each lead and assign
+            for (const lead of leadsToAssign) {
+              // Step 1: Insert into map_inspection_sessions table
+              const { data: sessionData, error: sessionError } =
+                await supabase
+                  .from("map_inspection_sessions")
+                  .insert({
+                    merchant_id: data.merchantId,
+                    status: 1,
+                    type: "passive",
+                    description: data.description || null,
+                  })
+                  .select("_id")
+                  .single();
+
+              if (sessionError) {
+                console.error(
+                  `❌ [LeadInbox] Error creating session for lead ${lead.code}:`,
+                  sessionError,
+                );
+                errorCount++;
+                continue;
+              }
+
+              // Step 2: Insert into lead_sessions table
+              const { error: leadSessionError } = await supabase
+                .from("lead_sessions")
                 .insert({
-                  merchant_id: data.merchantId,
-                  status: 1,
-                  type: "passive",
-                  description: data.description || null,
-                })
-                .select("_id")
-                .single();
+                  lead_id: lead._id,
+                  session_id: sessionData._id,
+                });
 
-            if (sessionError) {
-              console.error(
-                "❌ [LeadInbox] Error inserting inspection session:",
-                sessionError,
-              );
-              toast.error(
-                "Không thể giao việc. Vui lòng thử lại.",
-              );
-              return;
+              if (leadSessionError) {
+                console.error(
+                  `❌ [LeadInbox] Error linking session for lead ${lead.code}:`,
+                  leadSessionError,
+                );
+                errorCount++;
+                continue;
+              }
+
+              // Step 3: Update lead status
+              const { error: updateError } = await supabase
+                .from("leads")
+                .update({ status: "processing" })
+                .eq("_id", lead._id);
+
+              if (updateError) {
+                console.error(
+                  `❌ [LeadInbox] Error updating status for lead ${lead.code}:`,
+                  updateError,
+                );
+                errorCount++;
+                continue;
+              }
+
+              successCount++;
             }
 
-            console.log(
-              "✅ [LeadInbox] Created inspection session:",
-              sessionData._id,
-            );
-
-            // Step 2: Insert into lead_sessions table
-            const { error: leadSessionError } = await supabase
-              .from("lead_sessions")
-              .insert({
-                lead_id: currentLead?._id,
-                session_id: sessionData._id,
-              });
-
-            if (leadSessionError) {
-              console.error(
-                "❌ [LeadInbox] Error inserting lead session:",
-                leadSessionError,
-              );
-              toast.error(
-                "Không thể liên kết giao việc. Vui lòng thử lại.",
-              );
-              return;
+            if (successCount > 0) {
+              toast.success(`Đã giao việc thành công ${successCount} leads`);
+              setIsAssignModalOpen(false);
+              setSelectedLeads(new Set()); // Clear selection
+              refetch();
             }
 
-            console.log(
-              "✅ [LeadInbox] Created lead session link",
-            );
-
-            // Step 3: Update lead status from 'verifying' to 'processing'
-            const { error: updateError } = await supabase
-              .from("leads")
-              .update({ status: "processing" })
-              .eq("_id", currentLead?._id);
-
-            if (updateError) {
-              console.error(
-                "❌ [LeadInbox] Error updating lead status:",
-                updateError,
-              );
-              toast.error(
-                "Không thể cập nhật trạng thái. Vui lòng thử lại.",
-              );
-              return;
+            if (errorCount > 0) {
+              toast.error(`Giao việc thất bại ${errorCount} leads. Vui lòng kiểm tra lại.`);
             }
 
-            console.log(
-              "✅ [LeadInbox] Updated lead status to processing",
-            );
-
-            toast.success(`Đã giao việc thành công`);
-            setIsAssignModalOpen(false);
-            refetch();
           } catch (error) {
             console.error(
-              "❌ [LeadInbox] Error assigning lead:",
+              "❌ [LeadInbox] Error assigning leads:",
               error,
             );
             toast.error("Đã xảy ra lỗi khi giao việc");
@@ -2052,7 +2246,19 @@ export default function LeadInbox() {
       />
 
       {/* Lead Preview Panel */}
-      <LeadPreviewPanel lead={selectedLeadForPreview} />
+      <LeadPreviewPanel
+        lead={selectedLeadForPreview}
+        isOpen={showPreviewPanel}
+        onClose={() => {
+          setShowPreviewPanel(false);
+          setSelectedLeadForPreview(null);
+        }}
+        onViewFull={() => {
+          if (selectedLeadForPreview) {
+            navigate(`/lead-risk/lead/${selectedLeadForPreview._id}`);
+          }
+        }}
+      />
 
       {/* Quick Actions Sidebar */}
       <QuickActionsSidebar

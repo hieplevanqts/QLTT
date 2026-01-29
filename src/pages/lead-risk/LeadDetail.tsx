@@ -30,13 +30,13 @@ import { useSupabaseLead } from '../../hooks/useSupabaseLeads';
 import { StatusBadge } from '../../app/components/lead-risk/StatusBadge';
 import { UrgencyBadge } from '../../app/components/lead-risk/UrgencyBadge';
 import { SLATimer } from '../../app/components/lead-risk/SLATimer';
-import { OutcomeModal } from '../../app/components/OutcomeModal';
 import { StoreRiskProfile } from '../../app/components/StoreRiskProfile';
 import { EscalationPanel } from '../../app/components/EscalationPanel';
 import { AuditTrail } from '../../app/components/AuditTrail';
 import { Breadcrumb } from '../../app/components/Breadcrumb';
 import AssignLeadSidebar from '../../app/components/lead-risk/AssignLeadSidebar';
 import AssignLeadModal from '../../app/components/lead-risk/AssignLeadModal';
+import { ConfirmationDialog } from '../../app/components/lead-risk/ConfirmationDialog';
 import { getSupabaseClient } from '../../utils/supabaseClient';
 import { projectId, publicAnonKey } from '/utils/supabase/info';
 import type { LeadUrgency, LeadConfidence, LeadCategory } from '../../data/lead-risk/types';
@@ -125,9 +125,6 @@ export default function LeadDetail() {
   const [assignInstructions, setAssignInstructions] = useState('');
   const [assignPriority, setAssignPriority] = useState<LeadUrgency>('medium');
 
-  // Outcome tracking state
-  const [showOutcomeModal, setShowOutcomeModal] = useState(false);
-
   // Assign Lead Sidebar state
   const [showAssignLeadSidebar, setShowAssignLeadSidebar] = useState(false);
 
@@ -136,6 +133,9 @@ export default function LeadDetail() {
 
   // Quick Actions Sidebar state
   const [showQuickActionsSidebar, setShowQuickActionsSidebar] = useState(false);
+
+  // Start Verification Modal state
+  const [showStartVerificationModal, setShowStartVerificationModal] = useState(false);
 
   // Auto-redirect if lead not found
   useEffect(() => {
@@ -188,13 +188,8 @@ export default function LeadDetail() {
       priority: assignPriority,
     });
     setShowAssignPanel(false);
+    setShowAssignPanel(false);
     toast.success('Đã phân công lead!');
-  };
-
-  const handleOutcomeSubmit = (data: any) => {
-    console.log('Outcome submitted:', data);
-    toast.success(`Lead đã đóng!\nKết quả: ${data.outcome}\nRisk impact: ${data.riskImpact}`);
-    navigate('/lead-risk/inbox');
   };
 
   const handleEscalate = (data: any) => {
@@ -339,6 +334,50 @@ export default function LeadDetail() {
     }
   };
 
+  // Handle start verification (new → verifying)
+  const handleConfirmStartVerification = async () => {
+    try {
+      const supabase = getSupabaseClient();
+
+      console.log(`▶️ [LeadDetail] Starting verification for lead ${lead.code}`);
+
+      const updatePayload = {
+        status: 'verifying',
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('leads')
+        .update(updatePayload)
+        .eq('_id', lead._id);
+
+      if (error) {
+        console.error('❌ [LeadDetail] Failed to start verification:', error);
+        toast.error('Lỗi khi bắt đầu xác minh', {
+          description: error.message,
+        });
+        return;
+      }
+
+      console.log('✅ [LeadDetail] Verification started successfully');
+
+      toast.success('Đã bắt đầu xác minh', {
+        description: `Lead ${lead.code} đã chuyển sang trạng thái đang xác minh.`,
+        duration: 3000,
+      });
+
+      setShowStartVerificationModal(false);
+      // Refetch lead data to update UI
+      await refetch();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Lỗi không xác định';
+      console.error('❌ [LeadDetail] Error starting verification:', errorMessage);
+      toast.error('Lỗi hệ thống', {
+        description: errorMessage,
+      });
+    }
+  };
+
   return (
     <>
       <div className={styles.container}>
@@ -358,25 +397,6 @@ export default function LeadDetail() {
               <button onClick={() => navigate('/lead-risk/inbox')} className={styles.backBtn}>
                 <ChevronLeft size={16} />
                 Quay lại
-              </button>
-            </div>
-            <div className={styles.headerActions}>
-              {lead.status !== 'closed' && (
-                <button
-                  className={styles.closeLeadBtn}
-                  onClick={() => setShowOutcomeModal(true)}
-                >
-                  <CheckCircle2 size={16} />
-                  Đóng Lead
-                </button>
-              )}
-              <button className={styles.actionBtn}>
-                <Eye size={16} />
-                Theo dõi
-              </button>
-              <button className={styles.actionBtn}>
-                <Flag size={16} />
-                Báo cáo
               </button>
             </div>
           </div>
@@ -578,7 +598,7 @@ export default function LeadDetail() {
                     {lead.status === 'new' && (
                       <button
                         className={styles.submitBtn}
-                        onClick={() => setShowTriagePanel(true)}
+                        onClick={() => setShowStartVerificationModal(true)}
                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%' }}
                       >
                         <PlayCircle size={16} />
@@ -643,7 +663,7 @@ export default function LeadDetail() {
                         </button>
                         <button
                           className={styles.submitBtn}
-                          onClick={() => setShowOutcomeModal(true)}
+                          onClick={() => toast.info('Tính năng đang được cập nhật')}
                           style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%' }}
                         >
                           <CheckCircle2 size={16} />
@@ -710,7 +730,7 @@ export default function LeadDetail() {
                     {lead.status === 'completed' && (
                       <button
                         className={styles.submitBtn}
-                        onClick={() => setShowOutcomeModal(true)}
+                        onClick={() => toast.info('Tính năng đang được cập nhật')}
                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%' }}
                       >
                         <CheckCircle2 size={16} />
@@ -830,6 +850,18 @@ export default function LeadDetail() {
                         <div className={styles.infoLabel}>Loại vấn đề</div>
                         <div className={styles.infoValue}>{getCategoryLabel(lead.category)}</div>
                       </div>
+
+                      {lead.status === 'rejected' && lead.rejection_reason && (
+                        <div className={styles.infoRow} style={{ gridColumn: '1 / -1', marginTop: '8px' }}>
+                          <div className={styles.infoLabel} style={{ color: 'var(--destructive)' }}>
+                            <AlertTriangle size={14} style={{ display: 'inline', marginRight: '4px' }} />
+                            Lý do từ chối
+                          </div>
+                          <div className={styles.infoValue} style={{ color: 'var(--destructive)', fontWeight: 500 }}>
+                            {lead.rejection_reason}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </section>
 
@@ -1263,15 +1295,6 @@ export default function LeadDetail() {
           </div>
         )}
 
-        {/* Outcome Modal */}
-        <OutcomeModal
-          isOpen={showOutcomeModal}
-          onClose={() => setShowOutcomeModal(false)}
-          onSubmit={handleOutcomeSubmit}
-          leadId={lead._id}
-          leadTitle={lead.title}
-        />
-
         {/* Assign Lead Sidebar */}
         <AssignLeadSidebar
           isOpen={showAssignLeadSidebar}
@@ -1355,6 +1378,19 @@ export default function LeadDetail() {
               toast.error('Đã xảy ra lỗi khi giao việc');
             }
           }}
+        />
+
+        {/* Start Verification Confirmation Modal */}
+        <ConfirmationDialog
+          isOpen={showStartVerificationModal}
+          onClose={() => setShowStartVerificationModal(false)}
+          onConfirm={handleConfirmStartVerification}
+          title="Bắt đầu xác minh"
+          message="Bạn có chắc muốn chuyển lead này sang trạng thái 'Đang xác minh'?"
+          leadCode={lead.code}
+          confirmText="Xác nhận"
+          cancelText="Hủy"
+          type="info"
         />
       </div>
     </>
