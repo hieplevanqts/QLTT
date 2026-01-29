@@ -51,7 +51,8 @@ const getAllowedActions = (status: LeadStatus): LeadAction[] => {
     case 'new':
       return ['view', 'start_verification'];
     case 'verifying':
-      return ['view', 'assign', 'pause_verification'];
+    case 'in_verification':
+      return ['view', 'assign', 'pause_verification', 'reject'];
     case 'verify_paused':
       return ['view', 'resume_verification'];
     case 'processing':

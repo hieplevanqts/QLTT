@@ -28,6 +28,7 @@ interface AssignLeadModalProps {
   isOpen: boolean;
   onClose: () => void;
   lead: Lead | null;
+  leadCount?: number;
   onAssign: (data: {
     merchantId: string;
     deadline: string;
@@ -39,6 +40,7 @@ export default function AssignLeadModal({
   isOpen,
   onClose,
   lead,
+  leadCount,
   onAssign,
 }: AssignLeadModalProps) {
   const [selectedMerchantId, setSelectedMerchantId] = useState<string>('');
@@ -66,7 +68,7 @@ export default function AssignLeadModal({
       return;
     }
 
-    if (!lead) {
+    if (!lead && !leadCount) {
       toast.error('Không tìm thấy thông tin nguồn tin');
       return;
     }
@@ -107,7 +109,7 @@ export default function AssignLeadModal({
     fetchMerchants();
   }, []);
 
-  if (!isOpen || !lead) return null;
+  if (!isOpen || (!lead && !leadCount)) return null;
 
   return (
     <>
@@ -120,7 +122,9 @@ export default function AssignLeadModal({
         <div className={styles.header}>
           <div className={styles.headerLeft}>
             <UserPlus className={styles.headerIcon} />
-            <h2 className={styles.headerTitle}>Giao xử lý cho người khác</h2>
+            <h2 className={styles.headerTitle}>
+              {lead ? 'Giao xử lý cho người khác' : 'Giao xử lý hàng loạt'}
+            </h2>
           </div>
           <button
             className={styles.closeButton}
@@ -135,8 +139,16 @@ export default function AssignLeadModal({
         <div className={styles.content}>
           {/* Lead info banner */}
           <div className={styles.leadBanner}>
-            <p className={styles.leadCode}>{lead.code}</p>
-            <p className={styles.leadTitle}>{lead.title}</p>
+            {lead ? (
+              <>
+                <p className={styles.leadCode}>{lead.code}</p>
+                <p className={styles.leadTitle}>{lead.title}</p>
+              </>
+            ) : (
+              <p className={styles.leadTitle}>
+                Đang giao việc cho <strong>{leadCount}</strong> nguồn tin đã chọn
+              </p>
+            )}
           </div>
 
           {/* Two column layout */}

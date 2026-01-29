@@ -35,6 +35,7 @@ interface SupabaseLead {
   activity_count?: number;
   is_watched?: boolean;
   tags?: string[];
+  rejection_reason?: string;
 }
 
 // Transform Supabase lead to app Lead type
@@ -113,6 +114,7 @@ function transformSupabaseLead(dbLead: SupabaseLead): Lead {
     isDuplicate: false, // Not in database schema
     isWatched: dbLead.is_watched || false,
     hasAlert: false, // Not in database schema
+    rejection_reason: dbLead.rejection_reason,
   };
 }
 
@@ -186,7 +188,7 @@ export function useSupabaseLeads(options: UseSupabaseLeadsOptions = {}) {
 
       if (options.search) {
         console.log('🔎 [useSupabaseLeads] Searching for:', options.search);
-        query = query.or(`title.ilike.%${options.search}%,description.ilike.%${options.search}%,code.ilike.%${options.search}%`);
+        query = query.or(`title.ilike.%${options.search}%,description.ilike.%${options.search}%,code.ilike.%${options.search}%,reporter_name.ilike.%${options.search}%,store_name.ilike.%${options.search}%`);
       }
 
       // NOTE: Assignment filtering is done CLIENT-SIDE in LeadInbox component

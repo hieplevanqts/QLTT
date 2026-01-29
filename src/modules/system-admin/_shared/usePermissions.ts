@@ -15,7 +15,8 @@ export function usePermissions() {
   // NOTE: Prefer storing permissions in DB (roles -> role_permissions -> permissions) long-term.
   const ADMIN3_EMAIL = 'admin3@vhv.vn';
   const ADMIN3_EXTRA_PERMISSIONS = [
-    'MAP_VIEW',
+    'map.page.read',
+    'map.page.edit',
     'STORES_VIEW',
     'LEAD_RISK',
     'PLAN_VIEW',
@@ -45,6 +46,8 @@ export function usePermissions() {
     'sa.iam.user.update': ['USER.UPDATE', 'user.update', 'USER_UPDATE'],
     'sa.iam.user.create': ['USER.CREATE', 'user.create', 'USER_CREATE'],
     'sa.iam.user.read': ['USER.READ', 'user.read', 'USER_READ', 'USER.VIEW'],
+    'map.page.read': ['USER.READ', 'user.read', 'USER_READ', 'MAP_VIEW'],
+    'map.page.edit': ['MAP_EDIT', 'USER_UPDATE'],
   };
 
   const hasPermissionDirect = (permission: string): boolean => {

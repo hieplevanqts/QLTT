@@ -52,7 +52,7 @@ import mappaLogo from '../assets/79505e63e97894ec2d06837c57cf53a19680f611.png';
 // 🔥 NEW: Permission code mapping (from Insert.sql lines 39-46)
 const PERMISSION_MAP: { [path: string]: string } = {
   '/overview': '', // No permission required (always visible)
-  '/map': 'MAP_VIEW',
+  '/map': 'map.page.read',
   '/stores': 'STORES_VIEW',
   '/leads': 'LEAD_RISK',
   '/plans': 'PLAN_VIEW',

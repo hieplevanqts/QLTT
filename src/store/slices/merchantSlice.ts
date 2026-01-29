@@ -8,6 +8,8 @@ interface MerchantState {
   isHistoryLoading: boolean;
   isLicensesLoading: boolean;
   error: string | null;
+  businessTypes: string[];
+  isTypesLoading: boolean;
 }
 
 const initialState: MerchantState = {
@@ -18,6 +20,8 @@ const initialState: MerchantState = {
   isHistoryLoading: false,
   isLicensesLoading: false,
   error: null,
+  businessTypes: [],
+  isTypesLoading: false,
 };
 
 const merchantSlice = createSlice({
@@ -72,6 +76,16 @@ const merchantSlice = createSlice({
       state.isLicensesLoading = false;
       state.error = null;
     },
+    fetchBusinessTypesRequest: (state) => {
+      state.isTypesLoading = true;
+    },
+    fetchBusinessTypesSuccess: (state, action) => {
+      state.businessTypes = action.payload;
+      state.isTypesLoading = false;
+    },
+    fetchBusinessTypesFailure: (state) => {
+      state.isTypesLoading = false;
+    },
   },
 });
 
@@ -86,6 +100,9 @@ export const {
   fetchMerchantLicensesSuccess,
   fetchMerchantLicensesFailure,
   clearCurrentMerchant,
+  fetchBusinessTypesRequest,
+  fetchBusinessTypesSuccess,
+  fetchBusinessTypesFailure
 } = merchantSlice.actions;
 
 export default merchantSlice.reducer;

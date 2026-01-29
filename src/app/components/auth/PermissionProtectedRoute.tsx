@@ -14,7 +14,7 @@ interface PermissionProtectedRouteProps {
 // Map routes to permission codes (matches the mapping in VerticalSidebar and HorizontalNavBar)
 const ROUTE_PERMISSION_MAP: { [path: string]: string | undefined } = {
   '/overview': undefined,
-  '/map': 'MAP_VIEW',
+  '/map': 'map.page.read',
   '/stores': 'STORES_VIEW',
   '/leads': 'LEAD_RISK',
   '/plans': 'PLAN_VIEW',
@@ -31,7 +31,7 @@ const ROUTE_PERMISSION_MAP: { [path: string]: string | undefined } = {
  */
 export function PermissionProtectedRoute({ 
   children, 
-  requiredPermission 
+  requiredPermission
 }: PermissionProtectedRouteProps) {
   const { isLoading: isAuthLoading } = useAppSelector((state: RootState) => state.auth);
   const { menus, loading: isMenuLoading } = useMenuRegistry();

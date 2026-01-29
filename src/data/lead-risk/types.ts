@@ -111,6 +111,7 @@ export interface Lead {
   isDuplicate: boolean;
   isWatched: boolean;
   hasAlert: boolean;
+  rejection_reason?: string;
 }
 
 // ========================================
