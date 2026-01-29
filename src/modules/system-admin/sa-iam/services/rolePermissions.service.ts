@@ -132,4 +132,41 @@ export const rolePermissionsService = {
       throw new Error(`role permissions delete failed: ${error.message}`);
     }
   },
+  async listActions(): Promise<{ name: string; code: string }[]> {
+    const { data, error } = await supabase
+      .from('permission_actions')
+      .select('name, code')
+      .order('created_at', { ascending: true }); 
+    if (error) {
+      console.error('Error fetching permission actions:', error);
+      throw error;
+    }
+
+    return data || [];
+  },
+  
+  async createAction(action: { name: string; code: string }) {
+    const { data, error } = await supabase
+      .from('permission_actions')
+      .insert([action])
+      .select();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateAction(id: string, action: { name: string; code: string }) {
+    const { error } = await supabase
+      .from('permission_actions')
+      .update(action)
+      .eq('id', id);
+    if (error) throw error;
+  },
+
+  async deleteAction(id: string) {
+    const { error } = await supabase
+      .from('permission_actions')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  }
 };
