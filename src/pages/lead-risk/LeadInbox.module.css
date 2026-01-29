@@ -850,6 +850,70 @@
   pointer-events: none;
 }
 
+.bulkActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 24px 16px 24px;
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--blue-50);
+  border: 1px solid var(--blue-200);
+  border-radius: var(--radius);
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.bulkButton {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
+  background: white;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bulkButton:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.bulkButtonDanger {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
+  background: white;
+  color: var(--destructive);
+  border: 1px solid var(--destructive);
+  border-radius: var(--radius);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bulkButtonDanger:hover {
+  background: var(--destructive);
+  color: white;
+}
+
 .bulkActionsLeft {
   display: flex;
   align-items: center;

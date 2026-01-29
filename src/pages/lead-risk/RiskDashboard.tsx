@@ -150,7 +150,22 @@ export default function RiskDashboard() {
       }));
 
       setRiskProfiles(transformedProfiles);
-      setMetrics(statsData.data);
+      setMetrics({
+        totalEntities: statsData.data?.totalEntities ?? 0,
+        criticalEntities: statsData.data?.criticalEntities ?? 0,
+        highEntities: statsData.data?.highEntities ?? 0,
+        watchlistedEntities: statsData.data?.watchlistedEntities ?? 0,
+        alertEntities: statsData.data?.alertEntities ?? 0,
+        totalLeads: statsData.data?.totalLeads ?? 0,
+        activeLeads: statsData.data?.activeLeads ?? 0,
+        resolvedLeads: statsData.data?.resolvedLeads ?? 0,
+        inProgress: statsData.data?.inProgress ?? 0,
+        overdue: statsData.data?.overdue ?? 0,
+        resolved: statsData.data?.resolved ?? 0,
+        newStatus: statsData.data?.newStatus ?? 0,
+        inVerification: statsData.data?.inVerification ?? 0,
+        cancelled: statsData.data?.cancelled ?? 0,
+      });
     } catch (err) {
       console.error('❌ Error fetching risk data:', err);
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
