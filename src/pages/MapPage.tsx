@@ -17,6 +17,7 @@ import { DepartmentDetailModal } from '../app/components/map/DepartmentDetailMod
 import { DateRangePicker } from '../app/components/map/DateRangePicker';
 import { UploadExcelModal } from '../app/components/map/UploadExcelModal';
 import { Toaster } from 'sonner';
+import { Error403 } from '../app/components/error-states/Error403';
 import styles from './MapPage.module.css';
 import { Restaurant } from '../data/restaurantData';
 // Import utility functions
@@ -36,6 +37,7 @@ import { fetchMerchants, fetchMerchantStats, MerchantStats } from '../utils/api/
 import { fetchMarketManagementTeams, Department } from '../utils/api/departmentsApi';
 import { officersData, Officer, teamsData } from '../data/officerTeamData';
 import { useAppSelector, useAppDispatch } from '../app/hooks';
+import { usePermissions } from '../modules/system-admin/_shared/usePermissions';
 import {
   setFilters,
   setBusinessTypeFilters,
@@ -62,6 +64,11 @@ export default function MapPage() {
   const reduxQLTTScope = useAppSelector((state) => state.qlttScope);
   const mapFilters = useAppSelector((state) => state.mapFilters);
   const dispatch = useAppDispatch();
+  const { hasPermission } = usePermissions();
+  
+  // 🔥 Redux Auth Check
+  const canEditMap = hasPermission('map.page.edit') || hasPermission('ADMIN_VIEW');
+  const canViewMap = hasPermission('map.page.read') || hasPermission('ADMIN_VIEW');
   
   // 🔥 NEW: Get scope from Redux store (not from context anymore)
   const divisionId = reduxQLTTScope?.scope?.divisionId;
@@ -130,6 +137,10 @@ export default function MapPage() {
     return () => clearInterval(timer);
   }, []);
   
+  // 🔥 Permission Check - If no map.page.read permission, show 403
+  if (!canViewMap && isScopeInitialized) {
+    return <Error403 />;
+  }
   
   // 🔥 DISABLED: Auto-save search query (causes localStorage stale closure issues)
   // Users must click "Reset" or change filters to trigger save
@@ -924,8 +935,10 @@ export default function MapPage() {
               </select>
             </div>
             <Button variant="outline" onClick={handleResetAllFilters}>🔄 Tải Lại</Button>
-            {/* Hidden: Thêm điểm button */}
-            {/* <Button onClick={() => setIsUploadModalOpen(true)}>Thêm điểm</Button> */}
+            {/* Thêm điểm button - hiển thị dựa trên quyền map.page.edit */}
+            {canEditMap && (
+              <Button onClick={() => setIsUploadModalOpen(true)}>Thêm điểm</Button>
+            )}
           </div>
         }
       />
