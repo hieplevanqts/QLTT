@@ -1,10 +1,10 @@
 import { useState, forwardRef } from 'react';
 import { X, Save, ShieldCheck, Flame, Calendar, Check } from 'lucide-react';
 import styles from './MapFilterPanel.module.css';
-import { Restaurant } from '../../../data/restaurantData';
-import { PointStatus } from '../../../utils/api/pointStatusApi';
-import { Category } from '../../../utils/api/categoriesApi';
-import { Department } from '../../../utils/api/departmentsApi';
+import { Restaurant } from '@/utils/data/restaurantData';
+import { PointStatus } from '@/utils/api/pointStatusApi';
+import { Category } from '@/utils/api/categoriesApi';
+import { Department } from '@/utils/api/departmentsApi';
 import { CategoryFilterSection } from './CategoryFilterSection';
 import { LocationFilterSection } from './LocationFilterSection';
 import { BusinessTypeFilterSection } from './BusinessTypeFilterSection';

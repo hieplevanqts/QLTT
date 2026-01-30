@@ -30,15 +30,15 @@ export async function fetchMerchants(
 
   try {
     // Build query - simple select without nested joins
-    let url = `${SUPABASE_REST_URL}/merchants?limit=10000&order=created_at.desc&select=*`;
+    let url = `${SUPABASE_REST_URL}/merchants?limit=1000&order=created_at.desc&select=latitude,longitude,_id,status`;
     
-    if (provinceId) {
-      url += `&province_id=eq.${provinceId}`;
-    }
+    // if (provinceId) {
+    //   url += `&province_id=eq.${provinceId}`;
+    // }
     
-    if (wardId) {
-      url += `&ward_id=eq.${wardId}`;
-    }
+    // if (wardId) {
+    //   url += `&ward_id=eq.${wardId}`;
+    // }
     
     // 🔥 Filter by status if provided (direct field filter)
     // status field: 'active', 'pending', 'suspended', 'rejected'

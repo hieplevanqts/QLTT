@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { useQLTTScope } from '@/contexts/QLTTScopeContext';
-import { useAppDispatch } from '@/hooks/useAppStore';
+import { useAppDispatch, useAppSelector } from '@/hooks/useAppStore';
 import { setScope } from '@/store/slices/qlttScopeSlice';
 import styles from './ScopeSelector.module.css';
+import { RootState } from '@/store/rootReducer';
+
+
 
 export function ScopeSelector() {
   const {
@@ -14,6 +17,8 @@ export function ScopeSelector() {
     availableAreas,
     isLoading,
   } = useQLTTScope();
+  // Get user from Redux instead of AuthContext
+    const { user } = useAppSelector((state: RootState) => state.auth);
   
   // Redux dispatch and selector for Redux store
   const dispatch = useAppDispatch();
