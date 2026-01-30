@@ -28,7 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { mockStores, Store } from '@/utils/data/mockStores';
 import { getProvinceByCode, getDistrictByName, getWardByCode } from '@/utils/data/vietnamLocations';
 import { fetchProvinceById, fetchWardById } from '@/utils/api/locationsApi';
-import { fetchStoreById, fetchMerchantLicenses } from '@/utils/api/storesApi';
+import { fetchStoreById, fetchMerchantLicenses, upsertMerchantLicense } from '@/utils/api/storesApi';
 import { generateLegalDocuments, LegalDocumentData } from '@/utils/data/mockLegalDocuments';
 import { LegalDocumentItem, ApprovalStatus } from '@/components/ui-kit/LegalDocumentItem';
 import { DocumentUploadDialog } from '@/components/ui-kit/DocumentUploadDialog';
@@ -47,35 +47,10 @@ import { getRiskAssessmentByStoreId } from '@/utils/data/mockRiskAssessment';
 import { ImageGallery } from '@/components/ui-kit/ImageGallery';
 import { ApproveDialog, RejectDialog } from '@/components/ui-kit/ApprovalDialogs';
 import { FacilityStatus } from '@/components/ui-kit/FacilityStatusBadge';
-import { Button } from '../app/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../app/components/ui/card';
-import { Badge } from '../app/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../app/components/ui/tabs';
-import { mockStores, Store } from '../data/mockStores';
-import { getProvinceByCode, getDistrictByName, getWardByCode } from '../data/vietnamLocations';
-import { fetchProvinceById, fetchWardById } from '../utils/api/locationsApi';
-import { fetchStoreById, fetchMerchantLicenses, upsertMerchantLicense } from '../utils/api/storesApi';
-import { uploadFile } from '../utils/api/storageApi';
-import { generateLegalDocuments, LegalDocumentData } from '../data/mockLegalDocuments';
-import { LegalDocumentItem, ApprovalStatus } from '../ui-kit/LegalDocumentItem';
-import { DocumentUploadDialog } from '../ui-kit/DocumentUploadDialog';
-import { IDCardUploadDialog } from '../ui-kit/IDCardUploadDialog';
-import { DocumentViewDialog } from '../ui-kit/DocumentViewDialog';
-import { getDocumentTypeById } from '../data/documentTypes';
-import { MiniMapEmbed } from '../ui-kit/MiniMapEmbed';
-import { InspectionTimeline } from '../ui-kit/InspectionTimeline';
-import { getInspectionsByStoreId } from '../data/mockInspections';
-import { ViolationsTable } from '../ui-kit/ViolationsTable';
-import { getViolationsByStoreId } from '../data/mockViolations';
-import { ComplaintsTable } from '../ui-kit/ComplaintsTable';
-import { getComplaintsByStoreId } from '../data/mockComplaints';
-import { RiskAssessment } from '../ui-kit/RiskAssessment';
-import { getRiskAssessmentByStoreId } from '../data/mockRiskAssessment';
-import { ImageGallery } from '../ui-kit/ImageGallery';
-import { ApproveDialog, RejectDialog } from '../ui-kit/ApprovalDialogs';
-import { FacilityStatus } from '../ui-kit/FacilityStatusBadge';
-import { buildLicensePayload, DOCUMENT_TYPE_TO_KEY } from '../utils/licenseHelper'; // Import helper
+import { uploadFile } from '@/utils/api/storageApi';
+import { buildLicensePayload, DOCUMENT_TYPE_TO_KEY } from '@/utils/licenseHelper';
 import styles from './StoreDetailPage.module.css';
+
 
 // --- Optimization Config ---
 // Constants moved to ../utils/licenseHelper
