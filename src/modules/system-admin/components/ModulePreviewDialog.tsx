@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { ExternalLink, MonitorPlay } from "lucide-react";
 
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../../../app/components/ui/dialog";
-import { Button } from "../../../app/components/ui/button";
-import { Badge } from "../../../app/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { moduleAdminService } from "../services/moduleAdminService";
 import type { ModuleDetail } from "../types";
 
@@ -100,3 +100,4 @@ export default function ModulePreviewDialog({
     </Dialog>
   );
 }
+

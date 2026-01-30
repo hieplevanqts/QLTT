@@ -3,7 +3,7 @@
  * Hook to check permissions for the current user
  */
 
-import { useAppSelector } from '../../../app/hooks';
+import { useAppSelector } from '@/hooks/useAppStore';
 import { RootState } from '../../../store/rootReducer';
 import { useMenuRegistry } from '../../../hooks/useMenuRegistry';
 

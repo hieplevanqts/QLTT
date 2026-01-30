@@ -2,7 +2,7 @@
  * Departments API - Fetch departments from Supabase
  */
 
-import { supabase } from '../../lib/supabase';
+import { supabase } from '@/api/supabaseClient';
 
 export interface Department {
   id: string;

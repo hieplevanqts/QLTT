@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import styles from '../pages/AdminPage.module.css';
 import { toast } from 'sonner';
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/api/supabaseClient';
 
 interface Province {
   id: string;

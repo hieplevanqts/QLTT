@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 import { History, RefreshCcw, Trash2, Upload } from "lucide-react";
 
 import PageHeader from "../../../layouts/PageHeader";
-import { Button } from "../../../app/components/ui/button";
-import { Badge } from "../../../app/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../app/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../app/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { moduleAdminService } from "../services/moduleAdminService";
 import { ImportJob, ImportStatus } from "../types";
 
@@ -214,3 +214,4 @@ export default function ModuleImportHistoryPage() {
     </div>
   );
 }
+

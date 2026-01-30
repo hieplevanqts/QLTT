@@ -1,13 +1,10 @@
 import { Navigate, RouteObject } from 'react-router-dom';
-import { PermissionProtectedRoute } from '../app/components/auth/PermissionProtectedRoute';
-import OverviewPage from '../pages/OverviewPage';
-import MapPage from '../pages/MapPage';
-import DataExportPage from '../pages/DataExportPage';
-import DashboardPage from '../pages/DashboardPage';
-import ReportsPage from '../pages/ReportsPage';
-import AdminPage from '../pages/AdminPage';
-import LeadRiskHome from '../pages/lead-risk/LeadRiskHome';
-import EvidenceRoutes from '../app/routes/EvidenceRoutes';
+import { PermissionProtectedRoute } from '@/components/auth/PermissionProtectedRoute';
+import { OverviewPage, DashboardPage } from '@/modules/overview';
+import { MapPage } from '@/modules/map';
+import { DataExportPage, ReportsPage } from '@/modules/reports';
+import LeadRiskHome from '@/modules/leads/pages/lead-risk/LeadRiskHome';
+import EvidenceRoutes from './EvidenceRoutes';
 
 /**
  * Main routes - overview, map, dashboard, reports, admin
@@ -64,11 +61,7 @@ export const mainRoutes: RouteObject[] = [
   },
   {
     path: 'admin',
-    element: (
-      <PermissionProtectedRoute>
-        <AdminPage />
-      </PermissionProtectedRoute>
-    ),
+    element: <Navigate to="/system-admin" replace />,
   },
 ];
 

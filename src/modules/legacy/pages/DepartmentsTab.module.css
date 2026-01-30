@@ -1,0 +1,166 @@
+/* ==================== TREE VIEW STYLES - FIGMA DESIGN ==================== */
+.treeContainer {
+  padding: 0;
+  background: var(--card, #ffffff);
+  border-radius: var(--radius-lg, 12px);
+  min-height: 400px;
+  overflow: hidden;
+}
+
+/* Tree Node Row - Clean design like image */
+.treeNode {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3, 12px);
+  padding: var(--spacing-4, 16px) var(--spacing-5, 20px);
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  transition: all 0.2s;
+  position: relative;
+  background: white;
+}
+
+.treeNode:hover {
+  background: var(--muted, #f9fafb);
+}
+
+/* Expand/Collapse Button - Square style like image */
+.treeExpandButton {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--border, #d0d5dd);
+  background: white;
+  cursor: pointer;
+  border-radius: var(--radius-sm, 4px);
+  color: var(--muted-foreground, #667085);
+  transition: all 0.2s;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.treeExpandButton:hover {
+  border-color: var(--primary, #005cb6);
+  color: var(--primary, #005cb6);
+  background: var(--primary-foreground, #f0f7ff);
+}
+
+/* Green Status Dot - Like image */
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success, #10b981);
+  flex-shrink: 0;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.treeNodeContent {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3, 12px);
+  flex: 1;
+  min-width: 0;
+}
+
+.treeNodeInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 8px);
+  flex: 1;
+  min-width: 0;
+}
+
+.treeNodeName {
+  font-family: var(--font-family-sans, Inter, sans-serif);
+  font-size: var(--font-size-sm, 14px);
+  font-weight: var(--font-weight-medium, 500);
+  color: var(--foreground, #101828);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 20px;
+}
+
+.treeNodeCode {
+  font-family: var(--font-family-mono, 'Monaco', monospace);
+  font-size: var(--font-size-xs, 12px);
+  color: var(--muted-foreground, #667085);
+  white-space: nowrap;
+  line-height: 16px;
+}
+
+.treeNodeBadges {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 8px);
+  flex-shrink: 0;
+  margin-right: var(--spacing-4, 16px);
+}
+
+.levelBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--spacing-2, 8px);
+  background: var(--primary, #005cb6);
+  color: white;
+  border-radius: var(--radius-full, 9999px);
+  font-family: var(--font-family-sans, Inter, sans-serif);
+  font-size: var(--font-size-xs, 11px);
+  font-weight: var(--font-weight-medium, 500);
+  line-height: 16px;
+}
+
+.childCountBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--spacing-2, 8px);
+  background: var(--muted, #f9fafb);
+  color: var(--muted-foreground, #667085);
+  border: 1px solid var(--border, #d0d5dd);
+  border-radius: var(--radius-full, 9999px);
+  font-family: var(--font-family-sans, Inter, sans-serif);
+  font-size: var(--font-size-xs, 11px);
+  font-weight: var(--font-weight-medium, 500);
+  line-height: 16px;
+}
+
+/* Action Buttons - Always visible like image */
+.treeNodeActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 8px);
+  opacity: 1;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+
+/* Children Container */
+.treeChildren {
+  position: relative;
+}
+
+/* Tree view responsive */
+@media (max-width: 768px) {
+  .treeContainer {
+    padding: 0;
+  }
+
+  .treeNode {
+    flex-wrap: wrap;
+    padding: var(--spacing-3, 12px) var(--spacing-4, 16px);
+  }
+
+  .treeNodeBadges {
+    order: 3;
+    width: 100%;
+    margin-top: var(--spacing-2, 8px);
+    justify-content: flex-start;
+  }
+
+  .treeNodeActions {
+    opacity: 1;
+  }
+}

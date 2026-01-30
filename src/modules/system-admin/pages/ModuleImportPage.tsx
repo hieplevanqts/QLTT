@@ -3,13 +3,13 @@ import { Link } from "react-router-dom";
 import { AlertTriangle, History, RefreshCcw, UploadCloud, FileArchive, CircleHelp } from "lucide-react";
 
 import PageHeader from "../../../layouts/PageHeader";
-import { Button } from "../../../app/components/ui/button";
-import { Badge } from "../../../app/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../app/components/ui/card";
-import { Input } from "../../../app/components/ui/input";
-import { Label } from "../../../app/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../app/components/ui/table";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../../../app/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ZipUploadBox } from "../components/ZipUploadBox";
 import { ValidationResults } from "../components/ValidationResults";
 import { ImportJobTimeline } from "../components/ImportJobTimeline";
@@ -539,3 +539,4 @@ const buildOverrides = (form: {
 
   return Object.keys(overrides).length > 0 ? overrides : undefined;
 };
+

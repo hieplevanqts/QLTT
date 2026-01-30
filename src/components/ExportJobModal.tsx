@@ -17,7 +17,7 @@ import {
   formatDateTime,
   getRetentionPolicyBadge,
   ALL_SOURCE_TYPES,
-} from '../app/data/exportJobsTemplates';
+} from '@/utils/data/exportJobsTemplates';
 
 interface ExportJobModalProps {
   job?: ExportJob | null;

@@ -3,7 +3,7 @@
  * Dùng cho MapLegend và MapFilterPanel
  */
 
-import { FEATURES } from '../../config/features';
+import { FEATURES } from '@/constants/features';
 import { apiKey, SUPABASE_REST_URL } from './config';
 
 /**

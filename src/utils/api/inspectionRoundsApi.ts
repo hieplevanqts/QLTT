@@ -4,7 +4,7 @@
  */
 
 import { SUPABASE_REST_URL, getHeaders } from './config';
-import { type InspectionRound } from '@/app/types/inspections';
+import { type InspectionRound } from '@/types/inspections';
 import { calculateQuarter } from './sharedUtils';
 
 // --- Types ---

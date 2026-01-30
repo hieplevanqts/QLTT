@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { type InspectionRound, type InspectionRoundStatus } from '@/app/types/inspections';
+import { type InspectionRound, type InspectionRoundStatus } from '@/types/inspections';
 export type { InspectionRound, InspectionRoundStatus };
 import { 
   fetchInspectionRoundsApi, 

@@ -3,10 +3,10 @@ import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, GitBranch, RotateCcw } from "lucide-react";
 
 import PageHeader from "../../../layouts/PageHeader";
-import { Button } from "../../../app/components/ui/button";
-import { Badge } from "../../../app/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../app/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../app/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { moduleAdminService } from "../services/moduleAdminService";
 import { ModuleDetail } from "../types";
 import ModuleRollbackDialog from "../components/ModuleRollbackDialog";
@@ -475,3 +475,4 @@ export default function ModuleDetailPage() {
     </div>
   );
 }
+

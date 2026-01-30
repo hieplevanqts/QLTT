@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { supabase } from "../lib/supabase";
+import { supabase } from '@/api/supabaseClient';
 import type { MenuItem } from "../modules/system-admin/types";
 
 const STORAGE_KEY = "mappa.menu.registry";

@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { Eye, FileJson, Menu, Power, CheckCircle2, XCircle } from 'lucide-react';
-import { Button } from '@/app/components/ui/button';
+import { Button } from '@/components/ui/button';
 import type { ModuleManifest } from '../mocks/moduleRegistry.mock';
 import styles from './ModuleRegistryTable.module.css';
 

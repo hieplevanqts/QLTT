@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
-import { useAppSelector } from '../app/hooks';
+import { useAppSelector } from '@/hooks/useAppStore';
 import { RootState } from '../store/rootReducer';
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/api/supabaseClient';
 
 export interface QLTTScope {
   divisionId: string | null; // Chi cục (departments level 2)

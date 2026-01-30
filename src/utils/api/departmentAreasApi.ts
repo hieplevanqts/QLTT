@@ -4,7 +4,7 @@
 
 import axios from 'axios';
 import { SUPABASE_REST_URL, getHeaders } from './config';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '@/api/supabaseClient';
 
 /**
  * User interface for department users

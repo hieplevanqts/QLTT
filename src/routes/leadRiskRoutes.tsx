@@ -1,32 +1,32 @@
 import { RouteObject } from 'react-router-dom';
-import { PermissionProtectedRoute } from '../app/components/auth/PermissionProtectedRoute';
-import LeadInbox from '../pages/lead-risk/LeadInbox';
-import LeadRiskHome from '../pages/lead-risk/LeadRiskHome';
-import LeadList from '../pages/lead-risk/LeadList';
-import LeadMapView from '../pages/lead-risk/LeadMapView';
-import CreateLeadQuick from '../pages/lead-risk/CreateLeadQuick';
-import CreateLeadFull from '../pages/lead-risk/CreateLeadFull';
-import RiskDashboard from '../pages/lead-risk/RiskDashboard';
-import LeadDetail from '../pages/lead-risk/LeadDetail';
-import RiskDetail from '../pages/lead-risk/RiskDetail';
-import CaseDetail from '../pages/lead-risk/CaseDetail';
-import HotspotExplorer from '../pages/lead-risk/HotspotExplorer';
-import SLAOperationMap from '../pages/lead-risk/SLAOperationMap';
-import Watchlist from '../pages/lead-risk/Watchlist';
-import QualityMetrics from '../pages/lead-risk/QualityMetrics';
-import WorkloadDashboard from '../pages/lead-risk/WorkloadDashboard';
-import SLADashboard from '../pages/lead-risk/SLADashboard';
-import PermissionMatrix from '../pages/lead-risk/PermissionMatrix';
-import DuplicateDetector from '../pages/lead-risk/DuplicateDetector';
-import EscalationForm from '../pages/lead-risk/EscalationForm';
-import VerificationOutcome from '../pages/lead-risk/VerificationOutcome';
-import EntityRiskProfile from '../pages/lead-risk/EntityRiskProfile';
-import AlertFeed from '../pages/lead-risk/AlertFeed';
-import AlertAcknowledgement from '../pages/lead-risk/AlertAcknowledgement';
-import RiskIndicators from '../pages/lead-risk/RiskIndicators';
-import ImportLeads from '../pages/lead-risk/ImportLeads';
-import ImportReview from '../pages/lead-risk/ImportReview';
-import AssignmentDispatch from '../pages/lead-risk/AssignmentDispatch';
+import { PermissionProtectedRoute } from '@/components/auth/PermissionProtectedRoute';
+import LeadInbox from '@/modules/leads/pages/lead-risk/LeadInbox';
+import LeadRiskHome from '@/modules/leads/pages/lead-risk/LeadRiskHome';
+import LeadList from '@/modules/leads/pages/lead-risk/LeadList';
+import LeadMapView from '@/modules/leads/pages/lead-risk/LeadMapView';
+import CreateLeadQuick from '@/modules/leads/pages/lead-risk/CreateLeadQuick';
+import CreateLeadFull from '@/modules/leads/pages/lead-risk/CreateLeadFull';
+import RiskDashboard from '@/modules/leads/pages/lead-risk/RiskDashboard';
+import LeadDetail from '@/modules/leads/pages/lead-risk/LeadDetail';
+import RiskDetail from '@/modules/leads/pages/lead-risk/RiskDetail';
+import CaseDetail from '@/modules/leads/pages/lead-risk/CaseDetail';
+import HotspotExplorer from '@/modules/leads/pages/lead-risk/HotspotExplorer';
+import SLAOperationMap from '@/modules/leads/pages/lead-risk/SLAOperationMap';
+import Watchlist from '@/modules/leads/pages/lead-risk/Watchlist';
+import QualityMetrics from '@/modules/leads/pages/lead-risk/QualityMetrics';
+import WorkloadDashboard from '@/modules/leads/pages/lead-risk/WorkloadDashboard';
+import SLADashboard from '@/modules/leads/pages/lead-risk/SLADashboard';
+import PermissionMatrix from '@/modules/leads/pages/lead-risk/PermissionMatrix';
+import DuplicateDetector from '@/modules/leads/pages/lead-risk/DuplicateDetector';
+import EscalationForm from '@/modules/leads/pages/lead-risk/EscalationForm';
+import VerificationOutcome from '@/modules/leads/pages/lead-risk/VerificationOutcome';
+import EntityRiskProfile from '@/modules/leads/pages/lead-risk/EntityRiskProfile';
+import AlertFeed from '@/modules/leads/pages/lead-risk/AlertFeed';
+import AlertAcknowledgement from '@/modules/leads/pages/lead-risk/AlertAcknowledgement';
+import RiskIndicators from '@/modules/leads/pages/lead-risk/RiskIndicators';
+import ImportLeads from '@/modules/leads/pages/lead-risk/ImportLeads';
+import ImportReview from '@/modules/leads/pages/lead-risk/ImportReview';
+import AssignmentDispatch from '@/modules/leads/pages/lead-risk/AssignmentDispatch';
 
 /**
  * Lead & Risk routes
@@ -249,4 +249,5 @@ export const leadRiskRoutes: RouteObject[] = [
     ),
   },
 ];
+
 

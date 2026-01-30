@@ -3,13 +3,13 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, AlertTriangle, FileArchive, RefreshCcw, UploadCloud } from "lucide-react";
 
 import PageHeader from "../../../layouts/PageHeader";
-import { Button } from "../../../app/components/ui/button";
-import { Badge } from "../../../app/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../app/components/ui/card";
-import { Checkbox } from "../../../app/components/ui/checkbox";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../../../app/components/ui/dialog";
-import { RadioGroup, RadioGroupItem } from "../../../app/components/ui/radio-group";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../app/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ZipUploadBox } from "../components/ZipUploadBox";
 import { ValidationResults } from "../components/ValidationResults";
 import { ImportJobTimeline } from "../components/ImportJobTimeline";
@@ -471,3 +471,4 @@ export default function ModuleUpdatePage() {
     </div>
   );
 }
+

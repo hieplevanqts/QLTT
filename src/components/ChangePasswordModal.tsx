@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Save, Lock, Eye, EyeOff } from 'lucide-react';
 import styles from '../pages/AdminPage.module.css';
 import { toast } from 'sonner';
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/api/supabaseClient';
 
 interface ChangePasswordModalProps {
   userId: string;

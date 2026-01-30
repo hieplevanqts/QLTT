@@ -1,8 +1,5 @@
 import { RouteObject } from 'react-router-dom';
-import Profile from '../pages/account/Profile';
-import Preferences from '../pages/account/Preferences';
-import ActivityLog from '../pages/account/ActivityLog';
-import ChangePassword from '../pages/account/ChangePassword';
+import { Profile, Preferences, ActivityLog, ChangePassword } from '@/modules/auth';
 
 /**
  * Account routes
@@ -25,4 +22,5 @@ export const accountRoutes: RouteObject[] = [
     element: <ChangePassword />,
   },
 ];
+
 

@@ -1,4 +1,4 @@
-import { supabase } from "../../../../lib/supabase";
+import { supabase } from '@/api/supabaseClient';
 import type { AdminUnitLevel } from "./adminUnits.service";
 
 export type AdminUnitProfileRecord = {

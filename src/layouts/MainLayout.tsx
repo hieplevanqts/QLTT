@@ -4,7 +4,7 @@ import { useLayout } from '../contexts/LayoutContext';
 import TopUtilityBar from './TopUtilityBar';
 import HorizontalNavBar from './HorizontalNavBar';
 import VerticalSidebar from './VerticalSidebar';
-import { cn } from '../app/components/ui/utils';
+import { cn } from '@/components/ui/utils';
 
 // Inline page loader for route transitions
 function InlinePageLoader() {

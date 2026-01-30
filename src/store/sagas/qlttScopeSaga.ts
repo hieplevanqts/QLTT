@@ -1,5 +1,5 @@
 import { call, put, takeLatest, select } from 'redux-saga/effects';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '@/api/supabaseClient';
 import {
   setAvailableDivisions,
   setAvailableTeams,
