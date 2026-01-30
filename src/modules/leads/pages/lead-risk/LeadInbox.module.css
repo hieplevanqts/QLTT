@@ -942,8 +942,6 @@
   display: flex;
   gap: var(--spacing-2);
 }
-<<<<<<< Updated upstream:src/modules/leads/pages/lead-risk/LeadInbox.module.css
-=======
 
 .deselectButton {
   margin-left: var(--spacing-4);
@@ -957,4 +955,3 @@
 .deselectButton:hover {
   color: var(--destructive);
 }
->>>>>>> Stashed changes:src/pages/lead-risk/LeadInbox.module.css
