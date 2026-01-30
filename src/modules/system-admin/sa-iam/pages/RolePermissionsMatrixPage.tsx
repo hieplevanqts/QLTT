@@ -90,9 +90,9 @@ export default function RolePermissionsMatrixPage() {
     }
   };
 
-  const handleDeleteAction = async (id: string) => {
+  const handleDeleteAction = async (code: string) => {
     try {
-      await rolePermissionsService.deleteAction(id);
+      await rolePermissionsService.deleteAction(code);
       notify('success', 'Đã xóa hành động');
       loadInitialData();
     } catch (err) {
@@ -422,8 +422,8 @@ export default function RolePermissionsMatrixPage() {
               align: 'center',
               render: (_, rec) => (
                 <Space>
-                  <Button type="text" icon={<EditOutlined />} onClick={() => { setEditingActionId(rec.id); form.setFieldsValue(rec); }} />
-                  <Popconfirm title="Xóa hành động này?" onConfirm={() => handleDeleteAction(rec.id)}>
+                  <Button type="text" icon={<EditOutlined />} onClick={() => { setEditingActionId(rec.code); form.setFieldsValue(rec); }} />
+                  <Popconfirm title="Xóa hành động này?" onConfirm={() => handleDeleteAction(rec.code)}>
                     <Button type="text" danger icon={<DeleteOutlined />} />
                   </Popconfirm>
                 </Space>
