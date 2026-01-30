@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { X, Upload, FileText, AlertCircle, CheckCircle2, Loader2, ImageIcon } from 'lucide-react';
+import { X, FileText, AlertCircle, CheckCircle2, Loader2, ImageIcon } from 'lucide-react';
 import { Button } from '../app/components/ui/button';
 import { getDocumentTypeById } from '../data/documentTypes';
 import styles from './IDCardUploadDialog.module.css';
@@ -21,6 +21,7 @@ interface IDCardUploadDialogProps {
     fields?: Record<string, any>;
   };
   editingDocument?: any;
+  isSaving?: boolean;
   onSave: (data: IDCardData) => void;
 }
 
@@ -29,6 +30,7 @@ export function IDCardUploadDialog({
   onOpenChange,
   existingData,
   editingDocument,
+  isSaving,
   onSave,
 }: IDCardUploadDialogProps) {
   const isEditing = !!editingDocument;
@@ -122,7 +124,7 @@ export function IDCardUploadDialog({
   }, [open, editingDocument]);
 
   // Mock OCR extraction from both sides
-  const mockExtractData = useCallback((frontFile: File, backFile?: File): Promise<Record<string, any>> => {
+  const mockExtractData = useCallback((_frontFile: File, _backFile?: File): Promise<Record<string, any>> => {
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({
@@ -539,10 +541,18 @@ export function IDCardUploadDialog({
             disabled={
               (!frontFile && !frontFilePreview) ||
               (!backFile && !backFilePreview) ||
-              isExtracting
+              isExtracting ||
+              isSaving
             }
           >
-            {isEditing ? 'Cập nhật' : 'Lưu'}
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Đang lưu...
+              </>
+            ) : (
+              isEditing ? 'Cập nhật' : 'Lưu'
+            )}
           </Button>
         </div>
       </div>
