@@ -38,6 +38,8 @@ const DatePicker: React.FC<DatePickerProps> = ({
             placeholder={placeholder}
             className={className}
             style={{ width: '100%' }}
+            popupStyle={{ zIndex: 99999 }}
+            inputReadOnly
             format="YYYY-MM-DD"
         />
     );

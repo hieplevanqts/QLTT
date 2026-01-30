@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { 
+import {
   ShieldCheck,
   Search,
   Filter,
@@ -236,7 +236,7 @@ export default function EvidenceAuditLogPage() {
   };
 
   const filteredLogs = auditLogs.filter(log => {
-    const matchesSearch = !searchTerm || 
+    const matchesSearch = !searchTerm ||
       log.evidenceId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.evidenceName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.actor.toLowerCase().includes(searchTerm.toLowerCase());
@@ -318,7 +318,7 @@ export default function EvidenceAuditLogPage() {
               className={styles.searchInput}
             />
           </div>
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -332,7 +332,7 @@ export default function EvidenceAuditLogPage() {
 
         {filterExpanded && (
           <div className={styles.filterGrid}>
-            <select 
+            <select
               className={styles.filterSelect}
               value={selectedEventType}
               onChange={(e) => setSelectedEventType(e.target.value)}
@@ -350,7 +350,7 @@ export default function EvidenceAuditLogPage() {
               <option value="package">Package</option>
             </select>
 
-            <select 
+            <select
               className={styles.filterSelect}
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
@@ -362,7 +362,7 @@ export default function EvidenceAuditLogPage() {
               <option value="month">30 ngày qua</option>
             </select>
 
-            <select 
+            <select
               className={styles.filterSelect}
               value={selectedUser}
               onChange={(e) => setSelectedUser(e.target.value)}
@@ -385,9 +385,9 @@ export default function EvidenceAuditLogPage() {
           <div className={styles.logList}>
             {filteredLogs.map((log) => (
               <div key={log.id} className={styles.logCard}>
-                <div className={styles.logIcon} style={{ 
-                  background: `${getEventColor(log.eventType)}15`, 
-                  color: getEventColor(log.eventType) 
+                <div className={styles.logIcon} style={{
+                  background: `${getEventColor(log.eventType)}15`,
+                  color: getEventColor(log.eventType)
                 }}>
                   {getEventIcon(log.eventType)}
                 </div>
@@ -456,9 +456,9 @@ export default function EvidenceAuditLogPage() {
           <div>
             <p className={styles.noticeTitle}>OWASP Logging Guidance Compliance</p>
             <p className={styles.noticeText}>
-              Tất cả audit log được ghi theo tiêu chuẩn OWASP logging guidance, bao gồm: 
-              timestamp chính xác, user identity, event type, IP address, device/user agent, 
-              action context, và result status. Thao tác nhạy cảm (download, export, seal, delete) 
+              Tất cả audit log được ghi theo tiêu chuẩn OWASP logging guidance, bao gồm:
+              timestamp chính xác, user identity, event type, IP address, device/user agent,
+              action context, và result status. Thao tác nhạy cảm (download, export, seal, delete)
               được đánh dấu và monitor đặc biệt.
             </p>
           </div>

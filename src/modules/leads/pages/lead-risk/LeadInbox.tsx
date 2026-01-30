@@ -1161,20 +1161,23 @@ export default function LeadInbox() {
   return (
     <div className={styles.container}>
       {/* Breadcrumb */}
-      <Breadcrumb
-        items={[
-          {
-            label: "Nguồn tin, Rủi ro",
-            path: "/lead-risk/inbox",
-          },
-          { label: "Xử lý nguồn tin hằng ngày" },
-        ]}
-      />
+      <div className="mt-4">
+        <Breadcrumb
+          items={[
+            {
+              label: "Nguồn tin, Rủi ro",
+              path: "/lead-risk/inbox",
+            },
+            { label: "Xử lý nguồn tin hằng ngày" },
+          ]}
+        />
+      </div>
+
 
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h1 className={styles.title}>Hộp thư nguồn tin</h1>
+          <h1 className={styles.title}>Xử lý nguồn tin hằng ngày</h1>
           <p className={styles.subtitle}>
             Xử lý nguồn tin hàng ngày
           </p>
@@ -1397,7 +1400,7 @@ export default function LeadInbox() {
           <div className={styles.statContent}>
             <div className={styles.statValue}>{newLeads}</div>
             <div className={styles.statLabel}>
-              Mới tiếp nhận
+              Mới
             </div>
             <div className={styles.statDetail}>
               Cần phân loại ngay
@@ -1637,7 +1640,7 @@ export default function LeadInbox() {
           <Search className={styles.searchIcon} size={18} />
           <input
             type="text"
-            placeholder="Tìm kiếm theo mã, tiêu đề, người báo, cửa hàng..."
+            placeholder="Tìm kiếm theo mã, tiêu đề, người báo, cửa hàng"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className={styles.searchInput}
@@ -1662,7 +1665,7 @@ export default function LeadInbox() {
             className={styles.clearFiltersBtn}
             onClick={clearAllFilters}
           >
-            <X size={14} />
+            <X size={18} />
             Xóa bộ lọc
           </button>
         )}
@@ -1673,6 +1676,12 @@ export default function LeadInbox() {
           <div className={styles.bulkActionsLeft}>
             <CheckSquare size={18} />
             <span>{selectedLeads.size} lead đã chọn</span>
+            <div
+              className={styles.deselectButton}
+              onClick={() => setSelectedLeads(new Set())}
+            >
+              Bỏ chọn
+            </div>
           </div>
           <div className={styles.bulkActionsRight}>
             {(() => {
@@ -1745,7 +1754,7 @@ export default function LeadInbox() {
                           setIsAssignModalOpen(true);
                         }}
                       >
-                        <UserPlus size={16} /> Giao xử lý
+                        Giao xử lý
                       </button>
                       <button
                         className={styles.bulkButton}
@@ -1950,13 +1959,13 @@ export default function LeadInbox() {
                 <th style={{ width: "180px" }}>Người báo</th>
                 <th style={{ width: "160px" }}>Cửa hàng</th>
                 <th style={{ width: "180px" }}>Nội dung</th>
-                <th style={{ width: "110px" }}>Trạng thái</th>
+                <th style={{ width: "140px" }}>Trạng thái</th>
                 <th style={{ width: "110px" }}>SLA</th>
                 <th style={{ width: "140px" }}>Người xử lý</th>
                 <th
                   style={{
                     width: "140px",
-                    textAlign: "center",
+                    textAlign: "left",
                   }}
                 >
                   Thao tác

@@ -255,7 +255,7 @@ export default function CreateLeadSourceModal({
       }
 
       const newLeadCode = result.leadCode || result.data?.code;
-      
+
       toast.success(`Đã tạo nguồn tin ${newLeadCode} thành công! Trạng thái: Mới`);
 
       // Reset form
@@ -382,8 +382,8 @@ export default function CreateLeadSourceModal({
                   value={formData.storeId}
                   onChange={(e) => {
                     const selectedStore = stores.find(s => s.id === e.target.value);
-                    setFormData({ 
-                      ...formData, 
+                    setFormData({
+                      ...formData,
                       storeId: e.target.value,
                       storeName: selectedStore?.name || null
                     });
@@ -595,7 +595,6 @@ export default function CreateLeadSourceModal({
               onClick={handleClose}
               disabled={isSubmitting}
             >
-              <X size={16} />
               Hủy
             </button>
 
@@ -607,7 +606,6 @@ export default function CreateLeadSourceModal({
                 </>
               ) : (
                 <>
-                  <Save size={16} />
                   Lưu nguồn tin
                 </>
               )}

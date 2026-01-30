@@ -72,7 +72,7 @@ const mappaModules = [
   { path: '/registry/stores', label: 'Cơ sở quản lý', icon: Building2, permissionCode: 'STORES_VIEW' },
   {
     path: '/leads',
-    label: 'Nguồn tin',
+    label: 'Nguồn tin, Rủi ro',
     icon: TriangleAlert,
     permissionCode: 'LEAD_RISK',
     hasSubmenu: true,
@@ -242,8 +242,8 @@ const menuTreeToModules = (nodes: MenuNode[]) => {
     const submenuItems =
       node.children.length > 0
         ? (node.path === '/admin' || node.label === 'Quản trị'
-            ? buildAdminSubmenu(node.children)
-            : node.children.map((child) => toSubmenuItem(child)))
+          ? buildAdminSubmenu(node.children)
+          : node.children.map((child) => toSubmenuItem(child)))
         : [];
     return {
       path: node.path || '',
@@ -265,7 +265,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
 
   // 🔥 NEW: Get user permission codes
   const userPermissionCodes = user?.permissions || [];
-  
+
   // 🔥 DEBUG: Log permissions and menu data
   React.useEffect(() => {
     console.log('🔍 HorizontalNavBar - Debug Menu & Permissions:', {
@@ -274,17 +274,17 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
       menusCount: menus?.length || 0,
     });
   }, [userPermissionCodes, user?.roleCode, menus]);
-  
+
   // 🔥 NEW: Helper function to check if user has permission for a menu item
   const hasPermission = (permissionCode: string | undefined): boolean => {
     if (!permissionCode || permissionCode === '') return true; // No permission required = always visible
-    
+
     // 🔥 FIX: If user has no permissions at all, show all menus (fallback for development/testing)
     if (userPermissionCodes.length === 0) {
       console.warn('⚠️ User has no permissions - showing all menus (fallback mode)');
       return true; // Show all menus if user has no permissions
     }
-    
+
     return userPermissionCodes.includes(permissionCode);
   };
   const isPathActive = React.useCallback(
@@ -319,7 +319,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
     [registryTree, userPermissionCodes, user?.roleCode],
   );
   const registryModules = React.useMemo(() => menuTreeToModules(filteredRegistryTree), [filteredRegistryTree]);
-  
+
   // 🔥 FIX: Merge registry modules with mappa modules to ensure all menus are displayed
   const mappaModulesFiltered = mappaModules.filter(module => hasPermission(module.permissionCode));
   const registryPaths = new Set(registryModules.map(m => m.path));
@@ -358,10 +358,10 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
         {visibleModules.map((module) => { // 🔥 FIX: Use filtered modules instead of all modules
           const Icon = module.icon;
           const isAdminMenu = module.path === '/admin';
-          
+
           // Special logic for active state
           let isActive = false;
-          
+
           if (module.path === '/plans') {
             // "Kế hoạch tác nghiệp" menu cha KHÔNG active khi ở submenu
             // Chỉ active khi ở /plans (root) - không bao giờ vì ta không có route này
@@ -372,9 +372,9 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
           } else if ((module as any).hasSubmenu && (module as any).submenu) {
             if (module.path === '/leads') {
               isActive = location.pathname.startsWith('/lead-risk') || location.pathname === '/leads';
-          } else if (module.path === '/registry/stores') {
-            // Registry - include full-edit paths
-            isActive = location.pathname === module.path || location.pathname.startsWith(module.path + '/') || location.pathname.startsWith('/registry/full-edit');
+            } else if (module.path === '/registry/stores') {
+              // Registry - include full-edit paths
+              isActive = location.pathname === module.path || location.pathname.startsWith(module.path + '/') || location.pathname.startsWith('/registry/full-edit');
             } else if (module.path === '/admin') {
               isActive = location.pathname.startsWith('/system') || location.pathname.startsWith('/system-admin') || location.pathname === '/admin';
             } else {
@@ -384,14 +384,14 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
             // Normal modules - active when path matches
             isActive = location.pathname === module.path || location.pathname.startsWith(module.path + '/');
           }
-          
+
           // Special handling for "Kế hoạch tác nghiệp" with submenu
           if (module.path === '/plans') {
             return (
               <DropdownMenu key={module.path}>
                 <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     className={cn(
                       "gap-2 h-9 text-sm font-medium cursor-pointer",
                       isActive ? "text-primary bg-primary/10" : "text-foreground"
@@ -410,14 +410,14 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                       <div className="font-medium">Kế hoạch kiểm tra</div>
                     </Link>
                   </DropdownMenuItem>
-                  
+
                   <DropdownMenuItem asChild>
                     <Link to="/plans/inspection-rounds" className="flex items-center gap-3 cursor-pointer">
                       <ClipboardCheck className="h-4 w-4" />
                       <div className="font-medium">Đợt kiểm tra</div>
                     </Link>
                   </DropdownMenuItem>
-                  
+
                   <DropdownMenuItem asChild>
                     <Link to="/plans/inspection-session" className="flex items-center gap-3 cursor-pointer">
                       <KanbanSquare className="h-4 w-4" />
@@ -428,23 +428,23 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
               </DropdownMenu>
             );
           }
-          
+
           // If module has submenu, render dropdown
           if ((module as any).hasSubmenu && (module as any).submenu) {
             return (
               <DropdownMenu key={module.path}>
                 <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                className={cn(
-                  "gap-2 h-9 text-sm font-medium cursor-pointer",
-                  isActive ? "text-primary bg-primary/10" : "text-foreground"
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {module.label}
-                <ChevronDown className="h-3 w-3 ml-1" />
-              </Button>
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "gap-2 h-9 text-sm font-medium cursor-pointer",
+                      isActive ? "text-primary bg-primary/10" : "text-foreground"
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {module.label}
+                    <ChevronDown className="h-3 w-3 ml-1" />
+                  </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className={cn("w-64", isAdminMenu && "w-72 p-2")}>
                   {(module as any).submenu.map((item: any, index: number) => {
@@ -473,7 +473,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                               ? "flex items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
                               : "cursor-pointer",
                             isItemActive &&
-                              (isAdminMenu ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary")
+                            (isAdminMenu ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary")
                           )}
                         >
                           {ItemIcon && <ItemIcon className="h-4 w-4" />}
@@ -486,12 +486,12 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
               </DropdownMenu>
             );
           }
-          
+
           // Regular menu item without submenu
           return (
             <Link key={module.path} to={module.path}>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 className={cn(
                   "gap-2 h-9 text-sm font-medium cursor-pointer",
                   isActive ? "text-primary bg-primary/10" : "text-foreground"
@@ -534,7 +534,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                   </a>
                 </DropdownMenuItem>
               )}
-              
+
               {userPermissions.canImportFacilityData && (
                 <DropdownMenuItem asChild>
                   <a href="/stores/import" style={{ cursor: 'pointer' }}>
@@ -542,7 +542,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                   </a>
                 </DropdownMenuItem>
               )}
-              
+
               {userPermissions.canCreateRisk && (
                 <DropdownMenuItem asChild>
                   <a href="/leads/create-risk" style={{ cursor: 'pointer' }}>
@@ -550,7 +550,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                   </a>
                 </DropdownMenuItem>
               )}
-              
+
               {userPermissions.canCreateFeedback && (
                 <DropdownMenuItem asChild>
                   <a href="/leads/create-feedback" style={{ cursor: 'pointer' }}>
@@ -558,7 +558,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                   </a>
                 </DropdownMenuItem>
               )}
-              
+
               {userPermissions.canCreateInspectionPlan && (
                 <DropdownMenuItem asChild>
                   <a href="/plans/create-new" style={{ cursor: 'pointer' }}>
@@ -566,7 +566,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                   </a>
                 </DropdownMenuItem>
               )}
-              
+
               {userPermissions.canCreateInspectionRound && (
                 <DropdownMenuItem asChild>
                   <a href="/plans/create-round" style={{ cursor: 'pointer' }}>
@@ -574,7 +574,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                   </a>
                 </DropdownMenuItem>
               )}
-              
+
               {userPermissions.canCreateInspectionSession && (
                 <DropdownMenuItem asChild>
                   <a href="/tasks/create" style={{ cursor: 'pointer' }}>
@@ -595,7 +595,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
             className="absolute inset-0 bg-black/50"
             onClick={onClose}
           />
-          
+
           {/* Drawer */}
           <div className="absolute left-0 top-0 bottom-0 w-80 bg-card shadow-lg">
             <div className="flex items-center justify-between p-4 border-b border-border">
@@ -604,15 +604,15 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                 <X className="h-5 w-5" />
               </Button>
             </div>
-            
+
             <nav className="p-2 overflow-y-auto">
               {visibleModules.map((module) => { // 🔥 FIX: Use filtered modules instead of all modules
                 const Icon = module.icon;
                 const isAdminMenu = module.path === '/admin';
-                
+
                 // Special logic for active state
                 let isModuleActive = false;
-                
+
                 if (module.path === '/plans') {
                   // "Kế hoạch tác nghiệp" menu cha KHÔNG active khi ở submenu
                   isModuleActive = false;
@@ -622,9 +622,9 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                 } else if ((module as any).hasSubmenu && (module as any).submenu) {
                   if (module.path === '/leads') {
                     isModuleActive = location.pathname.startsWith('/lead-risk') || location.pathname === '/leads';
-                } else if (module.path === '/registry/stores') {
-                  // Registry - include full-edit paths
-                  isModuleActive = location.pathname === module.path || location.pathname.startsWith(module.path + '/') || location.pathname.startsWith('/registry/full-edit');
+                  } else if (module.path === '/registry/stores') {
+                    // Registry - include full-edit paths
+                    isModuleActive = location.pathname === module.path || location.pathname.startsWith(module.path + '/') || location.pathname.startsWith('/registry/full-edit');
                   } else if (module.path === '/admin') {
                     isModuleActive = location.pathname.startsWith('/system') || location.pathname.startsWith('/system-admin') || location.pathname === '/admin';
                   } else {
@@ -634,11 +634,11 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                   // Normal modules - active when path matches
                   isModuleActive = location.pathname === module.path || location.pathname.startsWith(module.path + '/');
                 }
-                
+
                 // Special handling for "Kế hoạch tác nghiệp" with submenu
                 if (module.path === '/plans') {
                   const isOpen = mobileSubmenuOpen === module.path;
-                  
+
                   return (
                     <div key={module.path}>
                       <button
@@ -654,14 +654,14 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                           <Icon className="h-5 w-5" />
                           <span className="font-medium">{module.label}</span>
                         </div>
-                        <ChevronDown 
+                        <ChevronDown
                           className={cn(
                             "h-4 w-4 transition-transform",
                             isOpen && "rotate-180"
-                          )} 
+                          )}
                         />
                       </button>
-                      
+
                       {isOpen && (
                         <div className="ml-4 mb-2 space-y-1">
                           <Link
@@ -677,7 +677,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                             <ListChecks className="h-4 w-4" />
                             <span>Kế hoạch kiểm tra</span>
                           </Link>
-                          
+
                           <Link
                             to="/plans/inspection-rounds"
                             onClick={onClose}
@@ -691,7 +691,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                             <ClipboardCheck className="h-4 w-4" />
                             <span>Đợt kiểm tra</span>
                           </Link>
-                          
+
                           <Link
                             to="/plans/inspection-session"
                             onClick={onClose}
@@ -710,11 +710,11 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                     </div>
                   );
                 }
-                
+
                 // If module has submenu
                 if ((module as any).hasSubmenu && (module as any).submenu) {
                   const isOpen = mobileSubmenuOpen === module.path;
-                  
+
                   return (
                     <div key={module.path}>
                       <button
@@ -730,14 +730,14 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                           <Icon className="h-5 w-5" />
                           <span className="font-medium">{module.label}</span>
                         </div>
-                        <ChevronDown 
+                        <ChevronDown
                           className={cn(
                             "h-4 w-4 transition-transform",
                             isOpen && "rotate-180"
-                          )} 
+                          )}
                         />
                       </button>
-                      
+
                       {isOpen && (
                         <div className="ml-4 mb-2 space-y-1">
                           {(module as any).submenu.map((item: any, index: number) => {
@@ -781,7 +781,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                     </div>
                   );
                 }
-                
+
                 // Regular menu item without submenu
                 return (
                   <Link
@@ -812,37 +812,37 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                       Thêm cơ sở
                     </a>
                   )}
-                  
+
                   {userPermissions.canImportFacilityData && (
                     <a href="/stores/import" className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 w-full text-left cursor-pointer">
                       Nhập dữ liệu cơ sở
                     </a>
                   )}
-                  
+
                   {userPermissions.canCreateRisk && (
                     <a href="/leads/create-risk" className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 w-full text-left cursor-pointer">
                       Tạo rủi ro
                     </a>
                   )}
-                  
+
                   {userPermissions.canCreateFeedback && (
                     <a href="/leads/create-feedback" className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 w-full text-left cursor-pointer">
                       Tạo phản ánh
                     </a>
                   )}
-                  
+
                   {userPermissions.canCreateInspectionPlan && (
                     <a href="/plans/create-new" className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 w-full text-left cursor-pointer">
                       Tạo kế hoạch kiểm tra
                     </a>
                   )}
-                  
+
                   {userPermissions.canCreateInspectionRound && (
                     <a href="/plans/create-round" className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 w-full text-left cursor-pointer">
                       Tạo đợt kiểm tra
                     </a>
                   )}
-                  
+
                   {userPermissions.canCreateInspectionSession && (
                     <a href="/tasks/create" className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 w-full text-left cursor-pointer">
                       Tạo phiên kiểm tra

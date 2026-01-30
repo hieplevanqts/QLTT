@@ -360,13 +360,13 @@
 .clearFiltersBtn {
   display: flex;
   align-items: center;
-  gap: var(--spacing-1);
-  padding: var(--spacing-1) var(--spacing-3);
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-4);
   background: var(--destructive);
   color: white;
   border: none;
   border-radius: var(--radius);
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
   transition: opacity 0.2s;
@@ -553,20 +553,21 @@
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
-  overflow: hidden;
-  /* Keep border-radius clipping */
+  /* overflow: hidden; Removed to allow sticky header */
   box-shadow: var(--elevation-sm);
 }
 
 .table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  /* Changed from collapse for better sticky support */
+  border-spacing: 0;
   table-layout: fixed;
 }
 
 .table thead {
   background: var(--muted);
-  border-bottom: 2px solid var(--border);
+  /* border-bottom removed, handled by box-shadow on th */
 }
 
 .table th {
@@ -577,6 +578,20 @@
   color: var(--muted-foreground);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--muted);
+  border-bottom: 2px solid var(--border);
+  /* Use border instead of box-shadow for cleaner sticky */
+}
+
+.table th:first-child {
+  border-top-left-radius: var(--radius-card);
+}
+
+.table th:last-child {
+  border-top-right-radius: var(--radius-card);
 }
 
 .table tbody tr {
@@ -776,7 +791,7 @@
 .actionButtons {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: var(--spacing-2);
 }
 
@@ -927,3 +942,19 @@
   display: flex;
   gap: var(--spacing-2);
 }
+<<<<<<< Updated upstream:src/modules/leads/pages/lead-risk/LeadInbox.module.css
+=======
+
+.deselectButton {
+  margin-left: var(--spacing-4);
+  color: var(--muted-foreground);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.deselectButton:hover {
+  color: var(--destructive);
+}
+>>>>>>> Stashed changes:src/pages/lead-risk/LeadInbox.module.css

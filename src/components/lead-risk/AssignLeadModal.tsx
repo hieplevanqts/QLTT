@@ -240,7 +240,6 @@ export default function AssignLeadModal({
             onClick={handleSubmit}
             disabled={!selectedMerchantId || !deadline}
           >
-            <Send size={16} />
             Giao việc
           </button>
         </div>

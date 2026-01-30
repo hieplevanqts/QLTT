@@ -26,6 +26,7 @@ import {
   PauseCircle,
   PlayCircle,
 } from 'lucide-react';
+<<<<<<< Updated upstream:src/modules/leads/pages/lead-risk/LeadDetail.tsx
 import { useSupabaseLead } from '@/hooks/useSupabaseLeads';
 import { StatusBadge } from '@/components/lead-risk/StatusBadge';
 import { UrgencyBadge } from '@/components/lead-risk/UrgencyBadge';
@@ -40,9 +41,23 @@ import AssignLeadModal from '@/components/lead-risk/AssignLeadModal';
 import { getSupabaseClient } from '@/utils/supabaseClient';
 import { projectId, publicAnonKey } from '@/utils/supabase/info';
 import type { LeadUrgency, LeadConfidence, LeadCategory } from '@/utils/data/lead-risk/types';
+=======
+import { useSupabaseLead } from '../../hooks/useSupabaseLeads';
+import { StatusBadge } from '../../app/components/lead-risk/StatusBadge';
+import { UrgencyBadge } from '../../app/components/lead-risk/UrgencyBadge';
+import { SLATimer } from '../../app/components/lead-risk/SLATimer';
+import { StoreRiskProfile } from '../../app/components/StoreRiskProfile';
+import { EscalationPanel } from '../../app/components/EscalationPanel';
+import { AuditTrail } from '../../app/components/AuditTrail';
+import { Breadcrumb } from '../../app/components/Breadcrumb';
+import AssignLeadSidebar from '../../app/components/lead-risk/AssignLeadSidebar';
+import AssignLeadModal from '../../app/components/lead-risk/AssignLeadModal';
+import { ConfirmationDialog } from '../../app/components/lead-risk/ConfirmationDialog';
+import { getSupabaseClient } from '../../utils/supabaseClient';
+import type { LeadUrgency, LeadConfidence, LeadCategory } from '../../data/lead-risk/types';
+>>>>>>> Stashed changes:src/pages/lead-risk/LeadDetail.tsx
 import styles from './LeadDetail.module.css';
 
-const API_BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-bb2eb709`;
 
 // Mock evidence data
 const mockEvidenceImages = [

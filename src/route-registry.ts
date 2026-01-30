@@ -10,7 +10,7 @@ export const ROUTE_REGISTRY: RouteRegistryEntry[] = [
   { path: "/overview", label: "Tổng quan", moduleKey: "overview" },
   { path: "/map", label: "Bản đồ điều hành", moduleKey: "map" },
   { path: "/stores", label: "Cơ sở quản lý", moduleKey: "stores" },
-  { path: "/lead-risk", label: "Nguồn tin", moduleKey: "leads" },
+  { path: "/lead-risk", label: "Nguồn tin, Rủi ro", moduleKey: "leads" },
   { path: "/lead-risk/inbox", label: "Nguồn tin hằng ngày", moduleKey: "leads" },
   { path: "/lead-risk/dashboard", label: "Tổng quan rủi ro", moduleKey: "leads" },
   { path: "/lead-risk/hotspots", label: "Phân tích điểm nóng", moduleKey: "leads" },
