@@ -32,7 +32,7 @@ import { fetchStoreById, fetchMerchantLicenses, upsertMerchantLicense } from '@/
 import { generateLegalDocuments, LegalDocumentData } from '@/utils/data/mockLegalDocuments';
 import { LegalDocumentItem, ApprovalStatus } from '@/components/ui-kit/LegalDocumentItem';
 import { DocumentUploadDialog } from '@/components/ui-kit/DocumentUploadDialog';
-import { IDCardUploadDialog } from '@/components/ui-kit/IDCardUploadDialog';
+import { IDCardUploadDialog } from '../components/IDCardUploadDialog';
 import { DocumentViewDialog } from '@/components/ui-kit/DocumentViewDialog';
 import { getDocumentTypeById } from '@/utils/data/documentTypes';
 import { MiniMapEmbed } from '@/components/ui-kit/MiniMapEmbed';

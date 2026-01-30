@@ -1,8 +1,7 @@
-import React from 'react';
 import { X, FileText, CheckCircle, XCircle, Calendar, Building, AlertCircle, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LegalDocument, ApprovalStatus } from './LegalDocumentItem';
+import { LegalDocument } from './LegalDocumentItem';
 import { getDocumentTypeById } from '@/utils/data/documentTypes';
 import styles from './DocumentViewDialog.module.css';
 
@@ -42,37 +41,37 @@ export function DocumentViewDialog({
 
   const handleDownload = () => {
     if (!document.fileUrl || !document.fileName) return;
-    
+
     // If ID card with 2 sides, download both
     if (document.backFileUrl && document.backFileName) {
       // Download front side
-      const frontLink = document.createElement('a');
+      const frontLink = window.document.createElement('a');
       frontLink.href = document.fileUrl;
       frontLink.download = document.fileName;
       frontLink.target = '_blank';
-      document.body.appendChild(frontLink);
+      window.document.body.appendChild(frontLink);
       frontLink.click();
-      document.body.removeChild(frontLink);
-      
+      window.document.body.removeChild(frontLink);
+
       // Download back side (with slight delay)
       setTimeout(() => {
-        const backLink = document.createElement('a');
+        const backLink = window.document.createElement('a');
         backLink.href = document.backFileUrl!;
         backLink.download = document.backFileName!;
         backLink.target = '_blank';
-        document.body.appendChild(backLink);
+        window.document.body.appendChild(backLink);
         backLink.click();
-        document.body.removeChild(backLink);
+        window.document.body.removeChild(backLink);
       }, 300);
     } else {
       // Single file download
-      const link = document.createElement('a');
+      const link = window.document.createElement('a');
       link.href = document.fileUrl;
       link.download = document.fileName;
       link.target = '_blank';
-      document.body.appendChild(link);
+      window.document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      window.document.body.removeChild(link);
     }
   };
 
@@ -100,25 +99,25 @@ export function DocumentViewDialog({
           <div className={styles.statusSection}>
             <div className={styles.statusBadges}>
               {document.statusText && (
-                <Badge 
+                <Badge
                   variant="secondary"
                   className={
                     document.status === 'valid' ? styles.badgeValid :
-                    document.status === 'expiring' ? styles.badgeExpiring :
-                    ''
+                      document.status === 'expiring' ? styles.badgeExpiring :
+                        ''
                   }
                 >
                   {document.statusText}
                 </Badge>
               )}
               {document.approvalStatusText && (
-                <Badge 
+                <Badge
                   variant="secondary"
                   className={
                     isPending ? styles.badgePending :
-                    isApproved ? styles.badgeApproved :
-                    isRejected ? styles.badgeRejected :
-                    ''
+                      isApproved ? styles.badgeApproved :
+                        isRejected ? styles.badgeRejected :
+                          ''
                   }
                 >
                   {document.approvalStatusText}
@@ -142,7 +141,7 @@ export function DocumentViewDialog({
                 <FileText size={16} />
                 <span>File đính kèm</span>
               </div>
-              
+
               {/* Check if this is ID Card with 2 sides */}
               {document.backFileUrl ? (
                 <div className={styles.idCardGrid}>
@@ -150,9 +149,9 @@ export function DocumentViewDialog({
                   <div className={styles.idCardSide}>
                     <div className={styles.idCardLabel}>Mặt trước</div>
                     <div className={styles.imagePreviewContainer}>
-                      <img 
-                        src={document.fileUrl} 
-                        alt="CCCD Mặt trước" 
+                      <img
+                        src={document.fileUrl}
+                        alt="CCCD Mặt trước"
                         className={styles.previewImage}
                       />
                     </div>
@@ -160,14 +159,14 @@ export function DocumentViewDialog({
                       <div className={styles.fileName}>{document.fileName}</div>
                     )}
                   </div>
-                  
+
                   {/* Back Side */}
                   <div className={styles.idCardSide}>
                     <div className={styles.idCardLabel}>Mặt sau</div>
                     <div className={styles.imagePreviewContainer}>
-                      <img 
-                        src={document.backFileUrl} 
-                        alt="CCCD Mặt sau" 
+                      <img
+                        src={document.backFileUrl}
+                        alt="CCCD Mặt sau"
                         className={styles.previewImage}
                       />
                     </div>
@@ -180,9 +179,9 @@ export function DocumentViewDialog({
                 /* Single file preview */
                 <>
                   <div className={styles.imagePreviewContainer}>
-                    <img 
-                      src={document.fileUrl} 
-                      alt={document.fileName || 'Document preview'} 
+                    <img
+                      src={document.fileUrl}
+                      alt={document.fileName || 'Document preview'}
                       className={styles.previewImage}
                     />
                   </div>
@@ -198,39 +197,66 @@ export function DocumentViewDialog({
           <div className={styles.detailsSection}>
             <h3 className={styles.sectionTitle}>Thông tin chi tiết</h3>
             <div className={styles.detailsGrid}>
-              {document.documentNumber && (
-                <div className={styles.detailItem}>
-                  <div className={styles.detailLabel}>Số giấy tờ</div>
-                  <div className={styles.detailValue}>{document.documentNumber}</div>
-                </div>
-              )}
-              {document.issueDate && (
-                <div className={styles.detailItem}>
-                  <div className={styles.detailLabel}>
-                    <Calendar size={14} />
-                    <span>Ngày cấp</span>
+              {/* Dynamic Fields from Document Type Config */}
+              {documentType?.fields.map((field) => {
+                const getValue = () => {
+                  // Direct common property mapping
+                  if (field.key === 'idNumber' || field.key === 'certificateNumber' || field.key === 'contractNumber' || field.key === 'licenseNumber')
+                    return document.documentNumber;
+                  if (field.key === 'issueDate') return document.issueDate;
+                  if (field.key === 'expiryDate') return document.expiryDate;
+                  if (field.key === 'issuingAuthority' || field.key === 'issuePlace') return document.issuingAuthority;
+
+                  // Fallback to uploadedData (raw DB keys)
+                  if (document.uploadedData) {
+                    const dbKeyMap: Record<string, string> = {
+                      fullName: 'holder_name',
+                      address: 'permanent_address',
+                      businessScope: 'business_field',
+                      scope: 'activity_scope',
+                      inspectionResult: 'inspection_result',
+                      lessor: 'lessor_name',
+                      lessee: 'lessee_name',
+                      monthlyRent: 'rent_price_monthly',
+                      startDate: 'rent_start_date',
+                      endDate: 'rent_end_date',
+                      sex: 'sex',
+                      nationality: 'nationality',
+                      placeOfOrigin: 'place_of_origin',
+                    };
+
+                    const dbKey = dbKeyMap[field.key];
+                    if (dbKey && document.uploadedData[dbKey]) {
+                      const val = document.uploadedData[dbKey];
+                      if (dbKey.includes('date') && val) return new Date(val).toLocaleDateString('vi-VN');
+                      if (dbKey === 'rent_price_monthly' && val) return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+                      return val;
+                    }
+
+                    // Direct key match in uploadedData (if any)
+                    if (document.uploadedData[field.key]) return document.uploadedData[field.key];
+                  }
+
+                  return null;
+                };
+
+                const value = getValue();
+                if (!value) return null;
+
+                const FieldIcon = field.type === 'date' ? Calendar : (field.key.toLowerCase().includes('authority') || field.key.toLowerCase().includes('place') ? Building : null);
+
+                return (
+                  <div key={field.key} className={field.type === 'textarea' ? styles.detailItemFull : styles.detailItem}>
+                    <div className={styles.detailLabel}>
+                      {FieldIcon && <FieldIcon size={14} />}
+                      <span>{field.label}</span>
+                    </div>
+                    <div className={styles.detailValue}>{value}</div>
                   </div>
-                  <div className={styles.detailValue}>{document.issueDate}</div>
-                </div>
-              )}
-              {document.expiryDate && (
-                <div className={styles.detailItem}>
-                  <div className={styles.detailLabel}>
-                    <Calendar size={14} />
-                    <span>Ngày hết hạn</span>
-                  </div>
-                  <div className={styles.detailValue}>{document.expiryDate}</div>
-                </div>
-              )}
-              {document.issuingAuthority && (
-                <div className={styles.detailItem}>
-                  <div className={styles.detailLabel}>
-                    <Building size={14} />
-                    <span>Cơ quan cấp</span>
-                  </div>
-                  <div className={styles.detailValue}>{document.issuingAuthority}</div>
-                </div>
-              )}
+                );
+              })}
+
+              {/* Common Metadata Fields */}
               {document.uploadDate && (
                 <div className={styles.detailItem}>
                   <div className={styles.detailLabel}>Ngày tải lên</div>
@@ -244,6 +270,7 @@ export function DocumentViewDialog({
                 </div>
               )}
             </div>
+
             {document.notes && (
               <div className={styles.notesSection}>
                 <div className={styles.detailLabel}>Ghi chú</div>
@@ -257,8 +284,8 @@ export function DocumentViewDialog({
         <div className={styles.footer}>
           {/* Left side - Download button */}
           {document.fileUrl && (
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={handleDownload}
               className={styles.downloadButton}
             >
@@ -266,20 +293,20 @@ export function DocumentViewDialog({
               Tải về
             </Button>
           )}
-          
+
           {/* Right side - Approval/Close buttons */}
           <div className={styles.footerRight}>
             {isPending ? (
               <>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={handleReject}
                   className={styles.rejectButton}
                 >
                   <XCircle size={16} />
                   Từ chối
                 </Button>
-                <Button 
+                <Button
                   onClick={handleApprove}
                   className={styles.approveButton}
                 >

@@ -2,8 +2,8 @@
 // --- Optimization Config ---
 export const LICENSE_FIELDS: Record<string, string[]> = {
     CCCD: [
-        'license_number', 'holder_name', 'issued_date', 'issued_by_name', 'issued_by',   
-        'permanent_address', 'file_url', 'file_url_2'
+        'license_number', 'holder_name', 'issued_date', 'issued_by_name', 'issued_by',
+        'permanent_address', 'sex', 'nationality', 'place_of_origin', 'file_url', 'file_url_2'
     ],
     BUSINESS_LICENSE: [
         'license_number', 'issued_date', 'issued_by_name', 'business_field', 'file_url'
@@ -32,6 +32,7 @@ export const FIELD_SOURCE_MAPPING: Record<string, string[]> = {
     issued_date: ['issueDate'],
     expired_date: ['expiryDate'],
     issued_by_name: ['issuingAuthority', 'issuePlace'],
+    issued_by: ['issuePlace'],
     holder_name: ['fullName'],
     permanent_address: ['address'],
     business_field: ['businessScope'],
@@ -43,6 +44,9 @@ export const FIELD_SOURCE_MAPPING: Record<string, string[]> = {
     rent_start_date: ['startDate'],
     rent_end_date: ['endDate'],
     property_address: ['address'],
+    sex: ['sex'],
+    nationality: ['nationality'],
+    place_of_origin: ['placeOfOrigin'],
 };
 
 // Maps UI document types to LICENSE_FIELDS keys
