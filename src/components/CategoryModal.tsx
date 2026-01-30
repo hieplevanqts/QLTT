@@ -7,7 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Tag, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/api/supabaseClient';
 import styles from './BankModal.module.css';
 
 interface Category {

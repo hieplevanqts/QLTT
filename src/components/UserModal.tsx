@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Save, User, Mail, Phone, Shield, Lock } from 'lucide-react';
 import styles from '../pages/AdminPage.module.css';
 import { toast } from 'sonner';
-import { supabase, Role } from '../lib/supabase';
+import { supabase, Role } from '@/api/supabaseClient';
 
 // Default password for all new users
 const DEFAULT_PASSWORD = 'Couppa@123';

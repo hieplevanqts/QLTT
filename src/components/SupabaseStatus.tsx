@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { checkConnection } from '../lib/supabase';
+import { checkConnection } from '@/api/supabaseClient';
 
 interface StatusState {
   connected: boolean;

@@ -1,7 +1,7 @@
 import React from "react";
 import { Outlet, type RouteObject } from "react-router-dom";
 
-import { PermissionProtectedRoute } from "../../app/components/auth/PermissionProtectedRoute";
+import { PermissionProtectedRoute } from "@/components/auth/PermissionProtectedRoute";
 
 const ModuleDetailPage = React.lazy(() => import("./pages/ModuleDetailPage"));
 const ModuleImportHistoryPage = React.lazy(() => import("./pages/ModuleImportHistoryPage"));
@@ -36,3 +36,4 @@ export const systemAdminDashboardRoute: RouteObject = {
     </PermissionProtectedRoute>
   ),
 };
+

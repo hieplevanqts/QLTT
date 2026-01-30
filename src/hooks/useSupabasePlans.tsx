@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { type Plan } from '@/app/types/plans';
+import { type Plan } from '@/types/plans';
 import { fetchPlansApi, fetchPlanByIdApi } from '@/utils/api/plansApi';
 
 interface UseSupabasePlansReturn {

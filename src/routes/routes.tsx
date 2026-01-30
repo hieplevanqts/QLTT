@@ -1,102 +1,92 @@
 import React from 'react';
 import { Navigate, createBrowserRouter } from 'react-router-dom';
-import RootLayout from '../layouts/RootLayout';
-import MainLayout from '../layouts/MainLayout';
-import { Login } from '../app/pages/auth/Login';
-import { ProtectedRoute } from '../app/components/auth/ProtectedRoute';
-import { PermissionProtectedRoute } from '../app/components/auth/PermissionProtectedRoute';
-import TvWallboardPage from '../app/pages/TvWallboardPage';
-import { moduleRoutes } from '../modules/_registry';
-// Plans module - moved to /src/app/pages/plans/
-import { PlansProvider } from '../app/contexts/PlansContext';
+import { RootLayout, MainLayout } from '@/layouts';
+import { Login, Profile, Preferences, ActivityLog, ChangePassword } from '@/modules/auth';
+import { ProtectedRoute, PermissionProtectedRoute } from '@/components/auth';
+import { TvWallboardPage } from '@/modules/tv';
+import { moduleRoutes } from '@/modules/_registry';
+import { PlansProvider, InspectionRoundsProvider } from '@/contexts';
 
-// Lead & Risk pages
-import { InspectionRoundsProvider } from '../contexts/InspectionRoundsContext';
+const OverviewPage = React.lazy(() => import('@/modules/overview/pages/OverviewPage'));
+const MapPage = React.lazy(() => import('@/modules/map/pages/MapPage'));
+const StoreDetailPage = React.lazy(() => import('@/modules/registry/pages/StoreDetailPage'));
+const DataExportPage = React.lazy(() => import('@/modules/reports/pages/DataExportPage'));
 
-const OverviewPage = React.lazy(() => import('../pages/OverviewPage'));
-const MapPage = React.lazy(() => import('../pages/MapPage'));
-const StoreDetailPage = React.lazy(() => import('../pages/StoreDetailPage'));
-const DataExportPage = React.lazy(() => import('../pages/DataExportPage'));
-
-const RegistryHomePage = React.lazy(() => import('../pages/registry/RegistryHomePage'));
-const RegistryStoreListPage = React.lazy(() => import('../pages/registry/RegistryStoreListPage'));
-const RegistryDedupWorkbenchPage = React.lazy(() => import('../pages/registry/RegistryDedupWorkbenchPage'));
-const RegistryVerificationQueuePage = React.lazy(() => import('../pages/registry/RegistryVerificationQueuePage'));
-const RegistryVerificationDetailPage = React.lazy(() => import('../pages/registry/RegistryVerificationDetailPage'));
-const RegistryApprovalQueuePage = React.lazy(() => import('../pages/registry/RegistryApprovalQueuePage'));
-const RegistryApprovalDetailPage = React.lazy(() => import('../pages/registry/RegistryApprovalDetailPage'));
-const RegistryImportPage = React.lazy(() => import('../pages/registry/RegistryImportPage'));
-const RegistryImportReviewPage = React.lazy(() => import('../pages/registry/RegistryImportReviewPage'));
-const RegistryAuditLogPage = React.lazy(() => import('../pages/registry/RegistryAuditLogPage'));
-const EditRegistryPage = React.lazy(() => import('../pages/EditRegistryPage'));
-const FullEditRegistryPage = React.lazy(() => import('../pages/FullEditRegistryPage'));
-const EvidenceRoutes = React.lazy(() => import('../app/routes/EvidenceRoutes'));
-const ReportsPage = React.lazy(() => import('../pages/ReportsPage'));
-const DashboardPage = React.lazy(() => import('../pages/DashboardPage'));
-const AdminPage = React.lazy(() => import('../pages/AdminPage'));
-const Profile = React.lazy(() => import('../pages/account/Profile'));
-const Preferences = React.lazy(() => import('../pages/account/Preferences'));
-const ActivityLog = React.lazy(() => import('../pages/account/ActivityLog'));
-const ChangePassword = React.lazy(() => import('../pages/account/ChangePassword'));
-const UserList = React.lazy(() => import('../pages/system/UserList'));
-const RoleList = React.lazy(() => import('../pages/system/RoleList'));
-const SystemSettings = React.lazy(() => import('../pages/system/SystemSettings'));
-const Error404 = React.lazy(() => import('../pages/system/Error404'));
+const RegistryHomePage = React.lazy(() => import('@/modules/registry/pages/RegistryHomePage'));
+const RegistryStoreListPage = React.lazy(() => import('@/modules/registry/pages/RegistryStoreListPage'));
+const RegistryDedupWorkbenchPage = React.lazy(() => import('@/modules/registry/pages/RegistryDedupWorkbenchPage'));
+const RegistryVerificationQueuePage = React.lazy(() => import('@/modules/registry/pages/RegistryVerificationQueuePage'));
+const RegistryVerificationDetailPage = React.lazy(() => import('@/modules/registry/pages/RegistryVerificationDetailPage'));
+const RegistryApprovalQueuePage = React.lazy(() => import('@/modules/registry/pages/RegistryApprovalQueuePage'));
+const RegistryApprovalDetailPage = React.lazy(() => import('@/modules/registry/pages/RegistryApprovalDetailPage'));
+const RegistryImportPage = React.lazy(() => import('@/modules/registry/pages/RegistryImportPage'));
+const RegistryImportReviewPage = React.lazy(() => import('@/modules/registry/pages/RegistryImportReviewPage'));
+const RegistryAuditLogPage = React.lazy(() => import('@/modules/registry/pages/RegistryAuditLogPage'));
+const EditRegistryPage = React.lazy(() => import('@/modules/registry/pages/EditRegistryPage'));
+const FullEditRegistryPage = React.lazy(() => import('@/modules/registry/pages/FullEditRegistryPage'));
+const EvidenceRoutes = React.lazy(() => import('./EvidenceRoutes'));
+const ReportsPage = React.lazy(() => import('@/modules/reports/pages/ReportsPage'));
+const DashboardPage = React.lazy(() => import('@/modules/overview/pages/DashboardPage'));
+// Account pages are statically imported via barrel above.
+const UserList = React.lazy(() => import('@/modules/system-admin/pages/legacy-system/UserList'));
+const RoleList = React.lazy(() => import('@/modules/system-admin/pages/legacy-system/RoleList'));
+const SystemSettings = React.lazy(() => import('@/modules/system-admin/pages/legacy-system/SystemSettings'));
+const Error404 = React.lazy(() => import('@/modules/system-admin/pages/legacy-system/Error404'));
 
 const PlansList = React.lazy(() =>
-  import('../app/pages/plans/PlansList').then((module) => ({ default: module.PlansList })),
+  import('@/modules/plans/pages/PlansList').then((module) => ({ default: module.PlansList })),
 );
 const PlanCreate = React.lazy(() =>
-  import('../app/pages/plans/PlanCreate').then((module) => ({ default: module.PlanCreate })),
+  import('@/modules/plans/pages/PlanCreate').then((module) => ({ default: module.PlanCreate })),
 );
 const PlanDetail = React.lazy(() =>
-  import('../app/pages/plans/PlanDetail').then((module) => ({ default: module.PlanDetail })),
+  import('@/modules/plans/pages/PlanDetail').then((module) => ({ default: module.PlanDetail })),
 );
 const TaskBoard = React.lazy(() =>
-  import('../app/pages/tasks/TaskBoard').then((module) => ({ default: module.TaskBoard })),
+  import('@/modules/tasks/pages/TaskBoard').then((module) => ({ default: module.TaskBoard })),
 );
 const InspectionRoundsList = React.lazy(() =>
-  import('../app/pages/inspections/InspectionRoundsList').then((module) => ({
+  import('@/modules/plans/pages/inspections/InspectionRoundsList').then((module) => ({
     default: module.InspectionRoundsList,
   })),
 );
-const InspectionRoundDetail = React.lazy(() => import('../app/pages/inspections/InspectionRoundDetail'));
-const InspectionRoundCreate = React.lazy(() => import('../app/pages/inspections/InspectionRoundCreate'));
+const InspectionRoundDetail = React.lazy(() => import('@/modules/plans/pages/inspections/InspectionRoundDetail'));
+const InspectionRoundCreate = React.lazy(() => import('@/modules/plans/pages/inspections/InspectionRoundCreate'));
 const InspectionRoundStatistics = React.lazy(
-  () => import('../app/pages/inspections/InspectionRoundStatistics'),
+  () => import('@/modules/plans/pages/inspections/InspectionRoundStatistics'),
 );
 
-const LeadInbox = React.lazy(() => import('../pages/lead-risk/LeadInbox'));
-const LeadInboxAIDemo = React.lazy(() => import('../pages/lead-risk/LeadInboxAIDemo'));
-const LeadDetailAIDemo = React.lazy(() => import('../pages/lead-risk/LeadDetailAIDemo'));
-const LeadDuplicateDemo = React.lazy(() => import('../pages/lead-risk/LeadDuplicateDemo'));
-const LeadRiskHome = React.lazy(() => import('../pages/lead-risk/LeadRiskHome'));
-const LeadList = React.lazy(() => import('../pages/lead-risk/LeadList'));
-const LeadMapView = React.lazy(() => import('../pages/lead-risk/LeadMapView'));
-const CreateLeadQuick = React.lazy(() => import('../pages/lead-risk/CreateLeadQuick'));
-const CreateLeadFull = React.lazy(() => import('../pages/lead-risk/CreateLeadFull'));
-const CreateLeadSource = React.lazy(() => import('../pages/lead-risk/CreateLeadSource'));
-const RiskDashboard = React.lazy(() => import('../pages/lead-risk/RiskDashboard'));
-const LeadDetail = React.lazy(() => import('../pages/lead-risk/LeadDetail'));
-const RiskDetail = React.lazy(() => import('../pages/lead-risk/RiskDetail'));
-const CaseDetail = React.lazy(() => import('../pages/lead-risk/CaseDetail'));
-const HotspotExplorer = React.lazy(() => import('../pages/lead-risk/HotspotExplorer'));
-const SLAOperationMap = React.lazy(() => import('../pages/lead-risk/SLAOperationMap'));
-const Watchlist = React.lazy(() => import('../pages/lead-risk/Watchlist'));
-const QualityMetrics = React.lazy(() => import('../pages/lead-risk/QualityMetrics'));
-const WorkloadDashboard = React.lazy(() => import('../pages/lead-risk/WorkloadDashboard'));
-const SLADashboard = React.lazy(() => import('../pages/lead-risk/SLADashboard'));
-const PermissionMatrix = React.lazy(() => import('../pages/lead-risk/PermissionMatrix'));
-const DuplicateDetector = React.lazy(() => import('../pages/lead-risk/DuplicateDetector'));
-const EscalationForm = React.lazy(() => import('../pages/lead-risk/EscalationForm'));
-const VerificationOutcome = React.lazy(() => import('../pages/lead-risk/VerificationOutcome'));
-const EntityRiskProfile = React.lazy(() => import('../pages/lead-risk/EntityRiskProfile'));
-const AlertFeed = React.lazy(() => import('../pages/lead-risk/AlertFeed'));
-const AlertAcknowledgement = React.lazy(() => import('../pages/lead-risk/AlertAcknowledgement'));
-const RiskIndicators = React.lazy(() => import('../pages/lead-risk/RiskIndicators'));
-const ImportLeads = React.lazy(() => import('../pages/lead-risk/ImportLeads'));
-const ImportReview = React.lazy(() => import('../pages/lead-risk/ImportReview'));
-const AssignmentDispatch = React.lazy(() => import('../pages/lead-risk/AssignmentDispatch'));
+const LeadInbox = React.lazy(() => import('@/modules/leads/pages/lead-risk/LeadInbox'));
+const LeadInboxAIDemo = React.lazy(() => import('@/modules/leads/pages/lead-risk/LeadInboxAIDemo'));
+const LeadDetailAIDemo = React.lazy(() => import('@/modules/leads/pages/lead-risk/LeadDetailAIDemo'));
+const LeadDuplicateDemo = React.lazy(() => import('@/modules/leads/pages/lead-risk/LeadDuplicateDemo'));
+const LeadRiskHome = React.lazy(() => import('@/modules/leads/pages/lead-risk/LeadRiskHome'));
+const LeadList = React.lazy(() => import('@/modules/leads/pages/lead-risk/LeadList'));
+const LeadMapView = React.lazy(() => import('@/modules/leads/pages/lead-risk/LeadMapView'));
+const CreateLeadQuick = React.lazy(() => import('@/modules/leads/pages/lead-risk/CreateLeadQuick'));
+const CreateLeadFull = React.lazy(() => import('@/modules/leads/pages/lead-risk/CreateLeadFull'));
+const CreateLeadSource = React.lazy(() => import('@/modules/leads/pages/lead-risk/CreateLeadSource'));
+const RiskDashboard = React.lazy(() => import('@/modules/leads/pages/lead-risk/RiskDashboard'));
+const LeadDetail = React.lazy(() => import('@/modules/leads/pages/lead-risk/LeadDetail'));
+const RiskDetail = React.lazy(() => import('@/modules/leads/pages/lead-risk/RiskDetail'));
+const CaseDetail = React.lazy(() => import('@/modules/leads/pages/lead-risk/CaseDetail'));
+const HotspotExplorer = React.lazy(() => import('@/modules/leads/pages/lead-risk/HotspotExplorer'));
+const SLAOperationMap = React.lazy(() => import('@/modules/leads/pages/lead-risk/SLAOperationMap'));
+const Watchlist = React.lazy(() => import('@/modules/leads/pages/lead-risk/Watchlist'));
+const QualityMetrics = React.lazy(() => import('@/modules/leads/pages/lead-risk/QualityMetrics'));
+const WorkloadDashboard = React.lazy(() => import('@/modules/leads/pages/lead-risk/WorkloadDashboard'));
+const SLADashboard = React.lazy(() => import('@/modules/leads/pages/lead-risk/SLADashboard'));
+const PermissionMatrix = React.lazy(() => import('@/modules/leads/pages/lead-risk/PermissionMatrix'));
+const DuplicateDetector = React.lazy(() => import('@/modules/leads/pages/lead-risk/DuplicateDetector'));
+const EscalationForm = React.lazy(() => import('@/modules/leads/pages/lead-risk/EscalationForm'));
+const VerificationOutcome = React.lazy(() => import('@/modules/leads/pages/lead-risk/VerificationOutcome'));
+const EntityRiskProfile = React.lazy(() => import('@/modules/leads/pages/lead-risk/EntityRiskProfile'));
+const AlertFeed = React.lazy(() => import('@/modules/leads/pages/lead-risk/AlertFeed'));
+const AlertAcknowledgement = React.lazy(() => import('@/modules/leads/pages/lead-risk/AlertAcknowledgement'));
+const RiskIndicators = React.lazy(() => import('@/modules/leads/pages/lead-risk/RiskIndicators'));
+const ImportLeads = React.lazy(() => import('@/modules/leads/pages/lead-risk/ImportLeads'));
+const ImportReview = React.lazy(() => import('@/modules/leads/pages/lead-risk/ImportReview'));
+const AssignmentDispatch = React.lazy(() => import('@/modules/leads/pages/lead-risk/AssignmentDispatch'));
 
 // Wrapper component for protected routes
 function ProtectedLayout() {
@@ -297,11 +287,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'admin',
-            element: (
-              <PermissionProtectedRoute>
-                <AdminPage />
-              </PermissionProtectedRoute>
-            ),
+            element: <Navigate to="/system-admin" replace />,
           },
           ...moduleRoutes,
           // Account pages
@@ -684,3 +670,7 @@ export const router = createBrowserRouter([
     ],
   },
 ]);
+
+
+
+

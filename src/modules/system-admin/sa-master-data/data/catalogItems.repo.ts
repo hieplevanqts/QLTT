@@ -1,4 +1,4 @@
-import { supabase } from "../../../../lib/supabase";
+import { supabase } from '@/api/supabaseClient';
 
 export type CatalogItemStatus = "ACTIVE" | "INACTIVE" | "active" | "inactive" | string;
 

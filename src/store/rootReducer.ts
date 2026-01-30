@@ -5,6 +5,7 @@ import mapFiltersReducer from './slices/mapFiltersSlice';
 import officerFilterReducer from './slices/officerFilterSlice';
 import departmentAreasReducer from './slices/departmentAreasSlice';
 import merchantReducer from './slices/merchantSlice';
+import reviewReducer from './slices/reviewSlice';
 // import productReducer from './slices/productSlice';
 
 const rootReducer = combineReducers({
@@ -14,6 +15,7 @@ const rootReducer = combineReducers({
   officerFilter: officerFilterReducer,
   departmentAreas: departmentAreasReducer,
   merchant: merchantReducer,
+  reviews: reviewReducer,
 //   products: productReducer,
 });
 

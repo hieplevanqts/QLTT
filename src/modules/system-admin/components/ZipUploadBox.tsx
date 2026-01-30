@@ -4,7 +4,7 @@
 
 import React, { useState, useRef } from 'react';
 import { Upload, FileArchive, X } from 'lucide-react';
-import { Button } from '@/app/components/ui/button';
+import { Button } from '@/components/ui/button';
 import styles from './ZipUploadBox.module.css';
 
 interface ZipUploadBoxProps {

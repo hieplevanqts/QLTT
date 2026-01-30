@@ -5,8 +5,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, MonitorPlay, Package, RotateCcw, UploadCloud } from 'lucide-react';
-import { Button } from '@/app/components/ui/button';
-import { Badge } from '@/app/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import type { ModuleInfo } from '../types';
 import styles from './InstalledModulesTable.module.css';
 

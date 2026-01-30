@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from 'lucide-react';
-import { Button } from '../../../app/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../app/components/ui/card';
-import { Badge } from '../../../app/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { moduleAdminService } from '../services/moduleAdminService';
 import type { MenuItem } from '../types';
 
@@ -277,3 +277,4 @@ export default function MenuRegistryPage() {
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-import { supabase } from "../../../../lib/supabase";
+import { supabase } from '@/api/supabaseClient';
 
 export type RolePermissionStatusValue = 0 | 1;
 
@@ -154,19 +154,19 @@ export const rolePermissionsService = {
     return data;
   },
 
-  async updateAction(id: string, action: { name: string; code: string }) {
+  async updateAction(code: string, action: { name: string; code: string }) {
     const { error } = await supabase
       .from('permission_actions')
       .update(action)
-      .eq('id', id);
+      .eq('code', code);
     if (error) throw error;
   },
 
-  async deleteAction(id: string) {
+  async deleteAction(code: string) {
     const { error } = await supabase
       .from('permission_actions')
       .delete()
-      .eq('id', id);
+      .eq('code', code);
     if (error) throw error;
   }
 };

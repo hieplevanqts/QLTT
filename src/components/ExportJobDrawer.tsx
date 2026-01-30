@@ -15,7 +15,7 @@ import {
   formatDateTime,
   JobMonitorItem,
   MonitorItemStatus,
-} from '../app/data/exportJobsTemplates';
+} from '@/utils/data/exportJobsTemplates';
 
 interface ExportJobDrawerProps {
   job: ExportJob | null;

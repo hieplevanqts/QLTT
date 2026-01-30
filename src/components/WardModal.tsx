@@ -8,7 +8,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Save, MapPin } from 'lucide-react';
 import styles from '../pages/AdminPage.module.css';
 import { toast } from 'sonner';
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/api/supabaseClient';
 
 interface Ward {
   id: string;

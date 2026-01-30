@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { X, Copy, CheckCircle2, AlertCircle } from 'lucide-react';
-import { Button } from '@/app/components/ui/button';
+import { Button } from '@/components/ui/button';
 import type { ModuleManifest } from '../mocks/moduleRegistry.mock';
 import { ManifestValidationPanel } from './ManifestValidationPanel';
 import { validateManifest } from '../utils/manifestValidator';

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Globe, Moon, Sun, Grid3x3, Bell, User, Menu, MessageSquare, LayoutGrid, LayoutList, Monitor, ChevronDown } from 'lucide-react';
-import { Button } from '../app/components/ui/button';
-import { GlobalSearch } from '../app/components/header/GlobalSearch';
-import { NotificationPanel } from '../app/components/header/NotificationPanel';
-import { FeedbackModal } from '../app/components/header/FeedbackModal';
-import { ScopeSelector } from '../app/components/scope-selector/ScopeSelector';
+import { Button } from '@/components/ui/button';
+import { GlobalSearch } from '@/components/header/GlobalSearch';
+import { NotificationPanel } from '@/components/header/NotificationPanel';
+import { FeedbackModal } from '@/components/header/FeedbackModal';
+import { ScopeSelector } from '@/components/scope-selector/ScopeSelector';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,9 +12,9 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
   DropdownMenuLabel,
-} from '../app/components/ui/dropdown-menu';
+} from '@/components/ui/dropdown-menu';
 import { useLayout } from '../contexts/LayoutContext';
-import { useAppSelector, useAppDispatch } from '../app/hooks';
+import { useAppSelector, useAppDispatch } from '@/hooks/useAppStore';
 import { RootState } from '../store/rootReducer';
 import { logout } from '../store/slices/authSlice';
 import { logout as logoutApi } from '../utils/api/authApi';
