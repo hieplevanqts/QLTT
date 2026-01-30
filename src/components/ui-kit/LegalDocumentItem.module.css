@@ -39,13 +39,17 @@
 }
 
 .iconValid {
-  background: rgba(168, 85, 247, 0.1); /* Purple light background */
-  color: rgba(168, 85, 247, 1); /* Purple */
+  background: rgba(168, 85, 247, 0.1);
+  /* Purple light background */
+  color: rgba(168, 85, 247, 1);
+  /* Purple */
 }
 
 .iconExpiring {
-  background: rgba(249, 115, 22, 0.1); /* Orange light background */
-  color: rgba(249, 115, 22, 1); /* Orange */
+  background: rgba(249, 115, 22, 0.1);
+  /* Orange light background */
+  color: rgba(249, 115, 22, 1);
+  /* Orange */
 }
 
 .iconMissing {
@@ -71,6 +75,21 @@
   line-height: 1.5;
 }
 
+.documentMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-4);
+}
+
+.metaItem {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
 .documentStatus {
   display: flex;
   align-items: center;
@@ -79,32 +98,42 @@
 
 /* Badge variants */
 .badgeValid {
-  background: rgba(168, 85, 247, 0.1); /* Purple light */
-  color: rgba(147, 51, 234, 1); /* Purple dark */
+  background: rgba(168, 85, 247, 0.1);
+  /* Purple light */
+  color: rgba(147, 51, 234, 1);
+  /* Purple dark */
   border: none;
 }
 
 .badgeExpiring {
-  background: rgba(249, 115, 22, 0.1); /* Orange light */
-  color: rgba(234, 88, 12, 1); /* Orange dark */
+  background: rgba(249, 115, 22, 0.1);
+  /* Orange light */
+  color: rgba(234, 88, 12, 1);
+  /* Orange dark */
   border: none;
 }
 
 .badgePending {
-  background: rgba(251, 191, 36, 0.1); /* Yellow light */
-  color: rgba(217, 119, 6, 1); /* Yellow dark */
+  background: rgba(251, 191, 36, 0.1);
+  /* Yellow light */
+  color: rgba(217, 119, 6, 1);
+  /* Yellow dark */
   border: none;
 }
 
 .badgeApproved {
-  background: rgba(34, 197, 94, 0.1); /* Green light */
-  color: rgba(22, 163, 74, 1); /* Green dark */
+  background: rgba(34, 197, 94, 0.1);
+  /* Green light */
+  color: rgba(22, 163, 74, 1);
+  /* Green dark */
   border: none;
 }
 
 .badgeRejected {
-  background: rgba(239, 68, 68, 0.1); /* Red light */
-  color: rgba(220, 38, 38, 1); /* Red dark */
+  background: rgba(239, 68, 68, 0.1);
+  /* Red light */
+  color: rgba(220, 38, 38, 1);
+  /* Red dark */
   border: none;
 }
 
@@ -128,7 +157,8 @@
 
 .uploadButton {
   gap: var(--spacing-2);
-  background: rgba(168, 85, 247, 1); /* Purple */
+  background: rgba(168, 85, 247, 1);
+  /* Purple */
   color: white;
   border: none;
   font-family: 'Inter', sans-serif;
@@ -136,7 +166,8 @@
 }
 
 .uploadButton:hover {
-  background: rgba(147, 51, 234, 1); /* Purple dark */
+  background: rgba(147, 51, 234, 1);
+  /* Purple dark */
 }
 
 .editButton {

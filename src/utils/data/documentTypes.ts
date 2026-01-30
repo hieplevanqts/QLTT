@@ -43,6 +43,24 @@ export const DOCUMENT_TYPES: Record<string, DocumentType> = {
         placeholder: 'VD: Cục Cảnh sát ĐKQL cư trú và DLQG về dân cư',
       },
       {
+        key: 'sex',
+        label: 'Giới tính',
+        type: 'text',
+        required: false,
+      },
+      {
+        key: 'nationality',
+        label: 'Quốc tịch',
+        type: 'text',
+        required: false,
+      },
+      {
+        key: 'placeOfOrigin',
+        label: 'Quê quán',
+        type: 'textarea',
+        required: false,
+      },
+      {
         key: 'address',
         label: 'Địa chỉ thường trú',
         type: 'textarea',

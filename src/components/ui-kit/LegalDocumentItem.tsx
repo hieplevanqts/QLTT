@@ -1,4 +1,3 @@
-import React from 'react';
 import { FileText, Home, Shield, ChevronRight, Upload, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +25,7 @@ export interface LegalDocument {
   backFileName?: string; // For ID cards with 2 sides
   uploadDate?: string;
   uploadedBy?: string;
+  uploadedData?: any;
 }
 
 interface LegalDocumentItemProps {
@@ -65,41 +65,56 @@ export function LegalDocumentItem({ document, onClick, onUploadClick, onEditClic
   };
 
   return (
-    <div 
+    <div
       className={`${styles.documentItem} ${isMissing ? styles.documentItemMissing : ''}`}
       onClick={isMissing ? undefined : onClick}
     >
       <div className={`${styles.documentIcon} ${getIconClass()}`}>
         <Icon size={20} />
       </div>
-      
+
       <div className={styles.documentContent}>
         <div className={styles.documentTitle}>{document.title}</div>
+
+        {!isMissing && (
+          <div className={styles.documentMeta}>
+            {document.documentNumber && (
+              <span className={styles.metaItem}>Số: {document.documentNumber}</span>
+            )}
+            {document.issueDate && (
+              <span className={styles.metaItem}>Ngày cấp: {document.issueDate}</span>
+            )}
+            {document.expiryDate && (
+              <span className={styles.metaItem}>HH: {document.expiryDate}</span>
+            )}
+          </div>
+        )}
+
         <div className={styles.documentStatus}>
           {document.statusText && (
-            <Badge 
+            <Badge
               variant={
-                document.status === 'valid' ? 'secondary' : 
-                document.status === 'expiring' ? 'default' : 
-                'outline'
+                document.status === 'valid' ? 'secondary' :
+                  document.status === 'expiring' ? 'default' :
+                    'outline'
               }
               className={
                 document.status === 'valid' ? styles.badgeValid :
-                document.status === 'expiring' ? styles.badgeExpiring :
-                ''
+                  document.status === 'expiring' ? styles.badgeExpiring :
+                    ''
               }
             >
               {document.statusText}
             </Badge>
           )}
           {document.approvalStatusText && (
-            <Badge 
+            <Badge
               variant="secondary"
               className={
                 document.approvalStatus === 'pending' ? styles.badgePending :
-                document.approvalStatus === 'approved' ? styles.badgeApproved :
-                document.approvalStatus === 'rejected' ? styles.badgeRejected :
-                ''
+                  document.approvalStatus === 'approved' ? styles.badgeApproved :
+                    document.approvalStatus === 'rejected' ? styles.badgeRejected :
+                      ''
               }
             >
               {document.approvalStatusText}
@@ -110,8 +125,8 @@ export function LegalDocumentItem({ document, onClick, onUploadClick, onEditClic
 
       <div className={styles.documentAction}>
         {isMissing ? (
-          <Button 
-            size="sm" 
+          <Button
+            size="sm"
             variant="outline"
             className={styles.uploadButton}
             onClick={(e) => {
@@ -125,8 +140,8 @@ export function LegalDocumentItem({ document, onClick, onUploadClick, onEditClic
         ) : (
           <>
             {onEditClick && (
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 variant="outline"
                 className={styles.editButton}
                 onClick={(e) => {
