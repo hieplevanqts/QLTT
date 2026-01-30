@@ -8,6 +8,7 @@ import { projectId as supabaseProjectId, publicAnonKey } from '@/utils/supabase/
 // Supabase credentials (from Vite env via src/utils/supabase/info.ts)
 export const projectId = supabaseProjectId;
 export const apiKey = publicAnonKey;
+export const SUPABASE_ANON_KEY = publicAnonKey;
 
 // Supabase REST API base URL (PostgREST)
 export const SUPABASE_REST_URL = `https://${supabaseProjectId}.supabase.co/rest/v1`;

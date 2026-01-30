@@ -1,16 +1,7 @@
-<<<<<<< HEAD:src/ui-kit/DocumentUploadDialog.tsx
-import React, { useState, useRef, useEffect } from 'react';
-import { X, Upload, FileText, AlertCircle, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
-import { Button } from '../app/components/ui/button';
-import { getDocumentTypeById } from '../data/documentTypes';
-import { extractDocumentData } from '../utils/api/ocrApi';
-import { toast } from 'sonner';
-=======
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { X, Upload, FileText, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getDocumentTypeById } from '@/utils/data/documentTypes';
->>>>>>> 3669988e0a01f4e8173dad89c9fd5b06173e18b5:src/components/ui-kit/DocumentUploadDialog.tsx
 import styles from './DocumentUploadDialog.module.css';
 
 export interface DocumentField {

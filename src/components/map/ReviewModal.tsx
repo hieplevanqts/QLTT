@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
 import { X, Star, ThumbsUp, MessageCircle, User, Calendar, AlertTriangle } from 'lucide-react';
 import styles from './ReviewModal.module.css';
-import { Restaurant } from '../../../data/restaurantData';
 import { ReviewImageGallery } from './ReviewImageGallery'; // Assuming this component exists and is correct
-import { useAppDispatch, useAppSelector } from '../../../app/hooks';
-import { RootState } from '../../../store/rootReducer';
-import { fetchReviewsRequest, clearReviews } from '../../../store/slices/reviewSlice';
+import { useAppDispatch, useAppSelector } from '@/hooks/useAppStore';
+import { RootState } from '@/store/rootReducer';
+import { Restaurant } from '@/utils/data/restaurantData';
+import { fetchReviewsRequest, clearReviews } from '@/store/slices/reviewSlice';
 
 interface ReviewModalProps {
   point: Restaurant | null;

@@ -4,7 +4,7 @@ import { watchQLTTScopeSaga } from './qlttScopeSaga';
 import { merchantSaga } from './merchantSaga';
 import { setHasInitialized, loadScopeFromStorage } from '../slices/qlttScopeSlice';
 import { restoreSessionRequest } from '../slices/authSlice';
-// import { watchProductSaga } from './productSaga';
+import { reviewsSaga } from './reviewsSaga';
 
 export default function* rootSaga() {
   // 🔥 FIXED: Initialize scope from localStorage on app startup with proper async/await
@@ -40,6 +40,6 @@ export default function* rootSaga() {
     fork(watchAuthSaga),
     fork(watchQLTTScopeSaga),
     fork(merchantSaga),
-    // watchProductSaga(),
+    reviewsSaga(),
   ]);
 }

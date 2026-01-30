@@ -1,13 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-<<<<<<< HEAD:src/ui-kit/IDCardUploadDialog.tsx
-import { X, FileText, AlertCircle, CheckCircle2, Loader2, ImageIcon } from 'lucide-react';
-import { Button } from '../app/components/ui/button';
-import { getDocumentTypeById } from '../data/documentTypes';
-=======
 import { X, Upload, FileText, AlertCircle, CheckCircle2, Loader2, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getDocumentTypeById } from '@/utils/data/documentTypes';
->>>>>>> 3669988e0a01f4e8173dad89c9fd5b06173e18b5:src/components/ui-kit/IDCardUploadDialog.tsx
 import styles from './IDCardUploadDialog.module.css';
 
 export interface IDCardData {

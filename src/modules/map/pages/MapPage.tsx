@@ -17,7 +17,7 @@ import { DepartmentDetailModal } from '@/components/map/DepartmentDetailModal';
 import { DateRangePicker } from '@/components/map/DateRangePicker';
 import { UploadExcelModal } from '@/components/map/UploadExcelModal';
 import { Toaster } from 'sonner';
-import { Error403 } from '../app/components/error-states/Error403';
+import { Error403 } from '@/components/error-states/Error403';
 import styles from './MapPage.module.css';
 import { Restaurant } from '@/utils/data/restaurantData';
 // Import utility functions
@@ -37,6 +37,8 @@ import { fetchMerchants, fetchMerchantStats, MerchantStats } from '@/utils/api/m
 import { fetchMarketManagementTeams, Department } from '@/utils/api/departmentsApi';
 import { officersData, Officer, teamsData } from '@/utils/data/officerTeamData';
 import { useAppSelector, useAppDispatch } from '@/hooks/useAppStore';
+import { usePermissions } from '@/modules/system-admin/_shared/usePermissions';
+
 import {
   setFilters,
   setBusinessTypeFilters,

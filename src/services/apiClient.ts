@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { SUPABASE_REST_URL, SUPABASE_ANON_KEY } from '../app/utils/api/config';
+import { SUPABASE_REST_URL, SUPABASE_ANON_KEY } from '@/utils/api/config';
 
 export const api = axios.create({
   baseURL: SUPABASE_REST_URL,
