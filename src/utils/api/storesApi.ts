@@ -454,7 +454,7 @@ export async function updateMerchant(
     p_note?: string;
     p_business_phone?: string;
     p_business_email?: string;
-    p_website?: string; 
+    p_website?: string;
     p_store_area?: number;
     p_owner_phone_2?: string;
     p_owner_birth_year?: number;
@@ -502,7 +502,7 @@ export async function updateMerchant(
       p_owner_identity_no: data.p_owner_identity_no || null,
       p_owner_email: data.p_owner_email || null,
       p_approval_status: data.p_approval_status || null,
-      p_validity_status : data.p_validity_status || null,
+      p_validity_status: data.p_validity_status || null,
     };
 
     console.log('📤 [updateMerchant] Request payload:', {
@@ -607,15 +607,26 @@ export async function upsertMerchantLicense(data: {
   p_merchant_id: string;
   p_license_type: string;
   p_license_number: string;
-  p_issued_date: string;
-  p_expiry_date: string;
+  p_issued_date?: string;
+  p_expiry_date?: string;
   p_approval_status: number;
   p_status: string;
-  p_issued_by: string;
+  p_issued_by?: string;
   p_issued_by_name?: string;
   p_file_url?: string;
   p_file_url_2?: string;
   p_notes?: string;
+  p_holder_name?: string;
+  p_permanent_address?: string;
+  p_business_field?: string;
+  p_activity_scope?: string;
+  p_lessor_name?: string;
+  p_lessee_name?: string;
+  p_rent_price_monthly?: number;
+  p_rent_start_date?: string;
+  p_rent_end_date?: string;
+  p_property_address?: string;
+  p_inspection_result?: string;
   p_validity_status?: number;
 }): Promise<any> {
   try {

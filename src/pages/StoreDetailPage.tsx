@@ -48,7 +48,11 @@ import { getRiskAssessmentByStoreId } from '../data/mockRiskAssessment';
 import { ImageGallery } from '../ui-kit/ImageGallery';
 import { ApproveDialog, RejectDialog } from '../ui-kit/ApprovalDialogs';
 import { FacilityStatus } from '../ui-kit/FacilityStatusBadge';
+import { buildLicensePayload, DOCUMENT_TYPE_TO_KEY } from '../utils/licenseHelper'; // Import helper
 import styles from './StoreDetailPage.module.css';
+
+// --- Optimization Config ---
+// Constants moved to ../utils/licenseHelper
 
 export default function StoreDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -205,12 +209,12 @@ export default function StoreDetailPage() {
 
       // Required types config
       const requiredTypes = [
-        { id: 'cccd', title: 'CCCD / CMND chủ hộ', apiName: 'CCCD / CMND chủ hộ' },
-        { id: 'business-license', title: 'Giấy phép kinh doanh', apiName: 'Giấy phép kinh doanh' },
-        { id: 'food-safety', title: 'Giấy chứng nhận ATTP', apiName: 'Giấy chứng nhận ATTP' },
-        { id: 'lease-contract', title: 'Hợp đồng thuê mặt bằng', apiName: 'Hợp đồng thuê mặt bằng' },
-        { id: 'specialized-license', title: 'Giấy phép chuyên ngành', apiName: 'Giấy phép chuyên ngành' },
-        { id: 'fire-safety', title: 'Giấy phép PCCC', apiName: 'Giấy phép PCCC' },
+        { id: 'cccd', title: 'CCCD / CMND chủ hộ', apiName: 'CCCD / CMND chủ hộ', dbKey: 'CCCD' },
+        { id: 'business-license', title: 'Giấy phép kinh doanh', apiName: 'Giấy phép kinh doanh', dbKey: 'BUSINESS_LICENSE' },
+        { id: 'food-safety', title: 'Giấy chứng nhận ATTP', apiName: 'Giấy chứng nhận ATTP', dbKey: 'FOOD_SAFETY' },
+        { id: 'lease-contract', title: 'Hợp đồng thuê mặt bằng', apiName: 'Hợp đồng thuê mặt bằng', dbKey: 'RENT_CONTRACT' },
+        { id: 'specialized-license', title: 'Giấy phép chuyên ngành', apiName: 'Giấy phép chuyên ngành', dbKey: 'PROFESSIONAL_LICENSE' },
+        { id: 'fire-safety', title: 'Giấy phép PCCC', apiName: 'Giấy phép PCCC', dbKey: 'FIRE_PREVENTION' },
       ];
 
       const licensesFromApi = await fetchMerchantLicenses(store.merchantId || '');
@@ -235,7 +239,7 @@ export default function StoreDetailPage() {
       if (licensesFromApi && licensesFromApi.length > 0) {
         licensesFromApi.forEach((license: any) => {
           // Find matching type info by technical ID or descriptive name
-          const typeInfo = requiredTypes.find(rt => rt.id === license.license_type || rt.apiName === license.license_type);
+          const typeInfo = requiredTypes.find(rt => rt.id === license.license_type || rt.apiName === license.license_type || rt.dbKey === license.license_type);
 
           const docType = typeInfo?.id || 'other';
           const docTitle = typeInfo?.title || license.license_type;
@@ -411,29 +415,30 @@ export default function StoreDetailPage() {
       }
 
       // 2. Call RPC to update database
-      const basePayload = {
-        p_merchant_id: store.merchantId || '',
-        p_license_type: docTypeName || '', // Use descriptive name as requested
-        p_license_number: data.fields.licenseNumber || data.fields.certificateNumber || data.fields.contractNumber || data.fields.idNumber || '',
-        p_issued_date: data.fields.issueDate || '',
-        p_expiry_date: data.fields.expiryDate || '2099-12-31',
-        p_status: 'valid',
-        p_issued_by: data.fields.issuingAuthority || data.fields.issuePlace || '',
-        p_issued_by_name: data.fields.issuingAuthority || data.fields.issuePlace || '',
-        p_file_url: fileUrl || '',
-        p_notes: data.fields.notes || '',
-        p_approval_status: 0,
-      };
+      // 2. Construct Payload based on Document Type
+      const typeKey = DOCUMENT_TYPE_TO_KEY[currentDocumentType || ''] || 'BUSINESS_LICENSE'; // Default fallback? or handle unknown?
 
-      const rpcPayload = editingDocument
-        ? {
-          ...basePayload,
-          p_id: editingDocument.id,
-          // p_approval_status is already 0 in basePayload, but ensure it's explicitly 0 if overridden
-          p_approval_status: 0,
-          p_file_url_2: '',
-        }
-        : basePayload;
+      const rpcPayload = buildLicensePayload(
+        typeKey,
+        data.fields,
+        store.merchantId,
+        fileUrl,
+        '' // fileUrl_2 is empty for single docs
+      );
+
+      // Add p_id if editing
+      if (editingDocument) {
+        rpcPayload.p_id = editingDocument.id;
+        rpcPayload.p_approval_status = 0;
+      }
+
+      // If we couldn't map the type, maybe fallback or log?
+      if (!DOCUMENT_TYPE_TO_KEY[currentDocumentType || '']) {
+        console.warn(`[handleSaveDocument] Unknown document type: ${currentDocumentType}, falling back to default handling or empty payload.`);
+        // For fallback, maybe just set license type to docTypeName if not in config?
+        // But our config covers all known types.
+        if (!rpcPayload.p_license_type) rpcPayload.p_license_type = docTypeName;
+      }
 
       console.log('📝 [handleSaveDocument] Prepared rpcPayload:', rpcPayload);
       console.log('📊 [handleSaveDocument] data.fields:', data.fields);
@@ -505,28 +510,20 @@ export default function StoreDetailPage() {
       }
 
       // 3. Call RPC to update database
-      const basePayload = {
-        p_merchant_id: store.merchantId || '',
-        p_license_type: 'CCCD / CMND chủ hộ', // Use descriptive name as requested
-        p_license_number: data.fields.idNumber || '',
-        p_issued_date: data.fields.issueDate || '',
-        p_expiry_date: data.fields.expiryDate || '2099-12-31',
-        p_status: 'valid',
-        p_issued_by: data.fields.issuePlace || data.fields.issuingAuthority || '',
-        p_issued_by_name: data.fields.issuePlace || data.fields.issuingAuthority || '',
-        p_file_url: frontUrl || '',
-        p_file_url_2: backUrl || '',
-        p_notes: data.fields.notes || '',
-        p_approval_status: 0,
-      };
+      // 3. Call RPC to update database
+      const rpcPayload = buildLicensePayload(
+        'CCCD', // Always CCCD for this handler
+        data.fields,
+        store.merchantId,
+        frontUrl,
+        backUrl
+      );
 
-      const rpcPayload = editingDocument
-        ? {
-          ...basePayload,
-          p_id: editingDocument.id,
-          p_approval_status: 0,
-        }
-        : basePayload;
+      // Add p_id if editing
+      if (editingDocument) {
+        rpcPayload.p_id = editingDocument.id;
+        rpcPayload.p_approval_status = 0;
+      }
 
       console.log('📝 [handleSaveIDCard] Prepared rpcPayload:', rpcPayload);
       console.log('📊 [handleSaveIDCard] data.fields:', data.fields);
