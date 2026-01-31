@@ -512,7 +512,7 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                                     <span>{result.document_type_name}</span>
                                     <Select value={result.status} onValueChange={(val) => handleStatusChange(result.document_type_id, val as DocumentStatus)}>
                                       <SelectTrigger className={styles.selectTrigger} style={{ width: 120, marginLeft: 'auto' }}><SelectValue /></SelectTrigger>
-                                      <SelectContent>{DOCUMENT_TYPES[0].options.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent>
+                                      <SelectContent style={{ zIndex: 10001 }}>{DOCUMENT_TYPES[0].options.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent>
                                     </Select>
                                   </div>
                               ))
@@ -599,5 +599,3 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
       </div>
   );
 }
-
-

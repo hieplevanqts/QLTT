@@ -34,6 +34,35 @@ export function ScopeSelector() {
     setSelectedArea(scope.areaId || '');
   }, [scope.divisionId, scope.teamId, scope.areaId]);
 
+  // Enforce user department/team restrictions
+  useEffect(() => {
+    if (user) {
+      const userDeptId = (user as any)?.app_metadata?.department?.id;
+
+      if (userDeptId && !isLoading) {
+        // Check if userDeptId matches a division
+        const isDivision = availableDivisions.some((d: any) => d.id === userDeptId);
+        if (isDivision) {
+          if (scope.divisionId !== userDeptId) {
+            const newScope = { ...scope, divisionId: userDeptId };
+            setContextScope(newScope);
+            dispatch(setScope(newScope));
+          }
+        } else {
+          // Check if userDeptId matches a team (if teams are loaded)
+          const isTeam = availableTeams.some((t: any) => t.id === userDeptId);
+          if (isTeam) {
+            if (scope.teamId !== userDeptId) {
+              const newScope = { ...scope, teamId: userDeptId };
+              setContextScope(newScope);
+              dispatch(setScope(newScope));
+            }
+          }
+        }
+      }
+    }
+  }, [user, availableDivisions, availableTeams, isLoading, scope, setContextScope, dispatch]);
+
   // Restore saved division from localStorage
   useEffect(() => {
     if (!isLoading && availableDivisions.length > 0 && !scope.divisionId) {
@@ -129,8 +158,10 @@ export function ScopeSelector() {
    
   };
 
-  const isDivisionDisabled = isLoading;
-  const isTeamDisabled = isLoading || !selectedDivision;
+  const userDeptId = (user as any)?.app_metadata?.department?.id;
+
+  const isDivisionDisabled = isLoading || !!userDeptId;
+  const isTeamDisabled = isLoading || !selectedDivision || (!!userDeptId && scope.teamId === userDeptId);
   const isAreaDisabled = isLoading || !selectedTeam;
   
 
@@ -194,7 +225,3 @@ export function ScopeSelector() {
     </div>
   );
 }
-
-
-
-
