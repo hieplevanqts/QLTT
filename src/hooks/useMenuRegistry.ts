@@ -1,24 +1,96 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
+
 import { supabase } from '@/api/supabaseClient';
 import type { MenuItem } from "../modules/system-admin/types";
 
 const STORAGE_KEY = "mappa.menu.registry";
 const STORAGE_VERSION_KEY = "mappa.menu.version";
 
+const loadCachedMenus = (): MenuItem[] | null => {
+  if (typeof localStorage === "undefined") return null;
+  const cached = localStorage.getItem(STORAGE_KEY);
+  if (!cached) return null;
+  try {
+    return JSON.parse(cached) as MenuItem[];
+  } catch {
+    localStorage.removeItem(STORAGE_KEY);
+    return null;
+  }
+};
+
 export const useMenuRegistry = () => {
-  const [menus, setMenus] = useState<MenuItem[] | null>(null);
+  const [menus, setMenus] = useState<MenuItem[] | null>(loadCachedMenus());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const menusRef = useRef<MenuItem[] | null>(menus);
 
-  // 1. Hàm kiểm tra lỗi liên quan đến DB Schema
-  const isMissingRelationError = (message: string) =>
-    message.includes("Could not find the table") ||
-    message.includes("does not exist") ||
-    message.includes("schema cache");
+  useEffect(() => {
+    menusRef.current = menus;
+  }, [menus]);
 
-  // 2. Hàm lấy version mới nhất từ DB
-  const loadMenuVersion = useCallback(async (): Promise<string | null> => {
-    try {
+  useEffect(() => {
+    const isMissingRelationError = (message: string) =>
+      message.includes("Could not find the table") ||
+      message.includes("does not exist") ||
+      message.includes("schema cache");
+
+    const loadMenusFromDb = async (): Promise<MenuItem[] | null> => {
+      const runQuery = async (orderField?: string | null, labelField?: string | null) => {
+        let query = supabase.from("v_my_menu").select("*");
+        if (orderField) {
+          query = query.order(orderField, { ascending: true });
+        }
+        if (labelField) {
+          query = query.order(labelField, { ascending: true });
+        }
+        return query;
+      };
+
+      let response = await runQuery("order_index", "name");
+      if (response.error) {
+        if (isMissingRelationError(response.error.message)) {
+          return null;
+        }
+
+        if (response.error.message.includes("order_index") || response.error.message.includes("name")) {
+          response = await runQuery("sort_order", "label");
+        }
+
+        if (response.error && (response.error.message.includes("sort_order") || response.error.message.includes("label"))) {
+          response = await runQuery(null, null);
+        }
+
+        if (response.error) {
+          throw new Error(`menu select failed: ${response.error.message}`);
+        }
+      }
+
+      const rows = response.data || [];
+      if (rows.length === 0) return [];
+
+      return rows.map((row: any) => {
+        const isEnabled =
+          row.is_active !== undefined
+            ? Boolean(row.is_active)
+            : row.is_visible !== undefined
+              ? Boolean(row.is_visible)
+              : true;
+
+        return {
+          id: row._id ?? row.id,
+          label: row.label ?? row.name ?? "",
+          path: row.route_path ?? row.path ?? null,
+          icon: row.icon ?? undefined,
+          order: row.sort_order ?? row.order_index ?? row.order ?? 0,
+          parentId: row.parent_id ?? null,
+          moduleId: row.module_id ?? null,
+          permissionsAny: Array.isArray(row.permission_codes) ? row.permission_codes : [],
+          isEnabled,
+        };
+      });
+    };
+
+    const loadMenuVersion = async (): Promise<string | null> => {
       const { data, error } = await supabase
         .from("menus")
         .select("updated_at")
@@ -131,6 +203,15 @@ export const useMenuRegistry = () => {
       void loadMenus();
     };
 
+    void (async () => {
+      const cachedVersion = localStorage.getItem(STORAGE_VERSION_KEY);
+      const hasCachedMenus = !!menusRef.current?.length;
+      const latestVersion = await loadMenuVersion();
+      if (latestVersion && cachedVersion && latestVersion === cachedVersion && hasCachedMenus) {
+        return;
+      }
+      void loadMenus();
+    })();
     window.addEventListener("mappa:menu-refresh", handleRefresh);
     window.addEventListener("mappa:menu-updated", handleRefresh);
 
@@ -138,7 +219,7 @@ export const useMenuRegistry = () => {
       window.removeEventListener("mappa:menu-refresh", handleRefresh);
       window.removeEventListener("mappa:menu-updated", handleRefresh);
     };
-  }, [loadMenus]);
+  }, []);
 
   return { menus, loading, error };
 };
