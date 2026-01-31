@@ -506,16 +506,21 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
                       <div className={styles.cardBody}>
                         <div className={styles.resultCompact}>
                           {isLoadingDocuments ? <div className="text-center py-4">Đang tải...</div> :
-                              Object.values(documentResults).map((result) => (
+                              Object.values(documentResults).map((result) => {
+                                const docType = DOCUMENT_TYPES.find(d => d.id === result.document_type_id) || DOCUMENT_TYPES[0];
+                                return (
                                   <div key={result.document_type_id} className={styles.resultRow}>
                                     {getStatusIcon(result.status)}
                                     <span>{result.document_type_name}</span>
-                                    <Select value={result.status} onValueChange={(val) => handleStatusChange(result.document_type_id, val as DocumentStatus)}>
-                                      <SelectTrigger className={styles.selectTrigger} style={{ width: 120, marginLeft: 'auto' }}><SelectValue /></SelectTrigger>
-                                      <SelectContent style={{ zIndex: 10001 }}>{DOCUMENT_TYPES[0].options.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent>
-                                    </Select>
+                                    <div onClick={(e) => e.stopPropagation()}>
+                                      <Select value={result.status} onValueChange={(val) => handleStatusChange(result.document_type_id, val as DocumentStatus)}>
+                                        <SelectTrigger className={styles.selectTrigger} style={{ width: 120, marginLeft: 'auto' }}><SelectValue /></SelectTrigger>
+                                        <SelectContent className={styles.selectContent}>{docType.options.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent>
+                                      </Select>
+                                    </div>
                                   </div>
-                              ))
+                                );
+                              })
                           }
                         </div>
                       </div>
