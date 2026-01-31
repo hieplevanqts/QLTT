@@ -107,17 +107,13 @@ export async function fetchStores(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ Fetch stores failed:', response.status, response.statusText);
-      console.error('Error details:', errorText);
       throw new Error(`Failed to fetch stores: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
     const total = parseInt(response.headers.get('content-range')?.split('/')?.[1] || '0', 10);
 
-    console.log('✅ Fetched merchants data:', data.length, '/', total, 'records');
     if (filters?.province_id) {
-      console.log('📍 Filtered by province_id:', filters.province_id);
     }
 
     // Map merchant data to Store interface
@@ -191,29 +187,13 @@ export async function fetchStores(
         sourceType: 'import',
       };
 
-      // Debug log for first record
-      if (index === 0) {
-        console.log('✅ First store mapped:', {
-          business_name: merchant.business_name,
-          owner_name: merchant.owner_name,
-          owner_phone: merchant.owner_phone,
-          status: merchant.status,
-          mapped_to: {
-            name: store.name,
-            ownerName: store.ownerName,
-            ownerPhone: store.ownerPhone,
-            status: store.status,
-          },
-        });
-      }
+   
 
       return store;
     });
 
-    console.log('✅ Successfully mapped', stores.length, 'stores');
     return { data: stores, total };
   } catch (error: any) {
-    console.error('❌ Error fetching stores:', error);
     throw error;
   }
 }
@@ -271,7 +251,6 @@ export async function fetchStoresStats(filters?: {
       fetchStatusCount('rejected'),
     ]);
 
-    console.log('✅ Store stats:', { total, active, pending, suspended, closed, rejected });
 
     return {
       total,
@@ -282,7 +261,6 @@ export async function fetchStoresStats(filters?: {
       rejected,
     };
   } catch (error: any) {
-    console.error('❌ Error fetching store stats:', error);
     // Return default stats on error
     return {
       total: 0,
@@ -322,14 +300,6 @@ export async function fetchStoreById(storeId: string | number): Promise<Store | 
     const latitude = parseFloat(merchant.latitude) || undefined;
     const longitude = parseFloat(merchant.longitude) || undefined;
 
-    console.log('✅ [fetchStoreById] API returned merchant:', {
-      url_query_id: storeId,
-      merchant_id_uuid: merchant._id,
-      business_name: merchant.business_name,
-      numeric_id: numericId,
-      timestamp: new Date().toISOString(),
-    });
-
     return {
       id: numericId,
       merchantId: merchant._id,  // 🔴 CRITICAL: UUID for API updates
@@ -363,7 +333,6 @@ export async function fetchStoreById(storeId: string | number): Promise<Store | 
       district: merchant.district || '',
     };
   } catch (error: any) {
-    console.error('❌ Error fetching store by ID:', error);
     return null;
   }
 }
@@ -402,7 +371,6 @@ export async function createMerchant(data: {
   try {
     const url = `${SUPABASE_REST_URL}/rpc/create_merchant_full`;
 
-    console.log('📤 Creating merchant with data:', data);
 
     // Create payload with ALL parameters - convert undefined to null for RPC
     const payload = {
@@ -432,7 +400,6 @@ export async function createMerchant(data: {
       p_owner_email: data.p_owner_email || null,
     };
 
-    console.log('📤 Complete payload with all parameters:', payload);
 
     const response = await fetch(url, {
       method: 'POST',
@@ -442,19 +409,16 @@ export async function createMerchant(data: {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ Create merchant failed:', response.status, response.statusText);
-      console.error('Error details:', errorText);
+     
       throw new Error(
         `Failed to create merchant: ${response.status} ${response.statusText}\n${errorText}`
       );
     }
 
     const result = await response.json();
-    console.log('✅ Merchant created successfully:', result);
 
     return result;
   } catch (error: any) {
-    console.error('❌ Error creating merchant:', error);
     throw error;
   }
 }
@@ -497,12 +461,6 @@ export async function updateMerchant(
   try {
     const url = `${SUPABASE_REST_URL}/rpc/update_merchant_full`;
 
-    console.log('� [updateMerchant] Calling API:', {
-      merchant_id: merchantId,
-      endpoint: '/rpc/update_merchant_full',
-      fields_updating: Object.keys(data).filter(k => data[k as keyof typeof data] !== undefined).length,
-      timestamp: new Date().toISOString(),
-    });
 
     // Create payload with merchant_id and all parameters
     const payload = {
@@ -533,15 +491,6 @@ export async function updateMerchant(
       p_website: data.p_website ?? null,
     };
 
-    console.log('📤 [updateMerchant] Request payload:', {
-      p_merchant_id: payload.p_merchant_id,
-      p_business_name: payload.p_business_name,
-      p_owner_name: payload.p_owner_name,
-      p_province_id: payload.p_province_id,
-      p_ward_id: payload.p_ward_id,
-      timestamp: new Date().toISOString(),
-    });
-
     const response = await fetch(url, {
       method: 'POST',
       headers: getHeaders(),
@@ -550,13 +499,7 @@ export async function updateMerchant(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ [updateMerchant] API error:', {
-        merchant_id: merchantId,
-        status: response.status,
-        statusText: response.statusText,
-        error: errorText,
-        timestamp: new Date().toISOString(),
-      });
+      
       throw new Error(
         `Failed to update merchant: ${response.status} ${response.statusText}\n${errorText}`
       );
@@ -564,19 +507,10 @@ export async function updateMerchant(
 
     const result = await response.json();
 
-    console.log('✅ [updateMerchant] Success response:', {
-      merchant_id: merchantId,
-      result: result,
-      timestamp: new Date().toISOString(),
-    });
 
     return result;
   } catch (error: any) {
-    console.error('❌ [updateMerchant] Error:', {
-      merchant_id: merchantId,
-      error_message: error.message,
-      timestamp: new Date().toISOString(),
-    });
+    
     throw error;
   }
 }
@@ -601,11 +535,6 @@ export async function updateMerchantStatus(
       throw new Error(`Invalid status: ${status}. Must be one of: ${validStatuses.join(', ')}`);
     }
 
-    console.log('⚡ [updateMerchantStatus] Calling API:', {
-      merchant_id: merchantId,
-      status: status,
-      timestamp: new Date().toISOString(),
-    });
 
     // Normalize older 'closed' value to new 'refuse'
     const normalizedStatus = status === 'closed' ? 'refuse' : status;
@@ -623,23 +552,14 @@ export async function updateMerchantStatus(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ [updateMerchantStatus] API error:', {
-        merchant_id: merchantId,
-        status: response.status,
-        error: errorText,
-      });
+     
       throw new Error(`Failed to update merchant status: ${response.status} ${response.statusText}\n${errorText}`);
     }
 
     const result = await response.json();
-    console.log('✅ [updateMerchantStatus] Success:', result);
+    
     return result;
   } catch (error: any) {
-    console.error('❌ [updateMerchantStatus] Error:', {
-      merchant_id: merchantId,
-      error_message: error.message,
-      timestamp: new Date().toISOString(),
-    });
     throw error;
   }
 }
@@ -662,22 +582,10 @@ export async function fetchMerchantLicenses(merchantId: string): Promise<any[]> 
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ [fetchMerchantLicenses] API error:', {
-        merchant_id: merchantId,
-        status: response.status,
-        statusText: response.statusText,
-        error: errorText,
-      });
       throw new Error(`Failed to fetch merchant licenses: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
-
-    console.log('✅ [fetchMerchantLicenses] Fetched licenses:', {
-      merchant_id: merchantId,
-      count: data.length,
-      types: data.map((l: any) => l.license_type),
-    });
 
     return data;
   } catch (error: any) {
@@ -723,11 +631,6 @@ export async function upsertMerchantLicense(data: {
   try {
     const url = `${SUPABASE_REST_URL}/rpc/upsert_merchant_license`;
 
-    console.log('📤 [upsertMerchantLicense] Calling API:', {
-      endpoint: '/rpc/upsert_merchant_license',
-      payload: data,
-    });
-
     const body = JSON.stringify(data);
     console.log('📦 [upsertMerchantLicense] Request body:', body);
 
@@ -739,18 +642,15 @@ export async function upsertMerchantLicense(data: {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ [upsertMerchantLicense] API error:', {
-        status: response.status,
-        error: errorText,
-      });
+      
       throw new Error(`Failed to upsert merchant license: ${response.status} ${response.statusText}\n${errorText}`);
     }
 
     const result = await response.json();
-    console.log('✅ [upsertMerchantLicense] Success:', result);
+   
     return result;
   } catch (error: any) {
-    console.error('❌ [upsertMerchantLicense] Error:', error);
+    
     throw error;
   }
 }

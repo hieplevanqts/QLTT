@@ -14,9 +14,7 @@ export default function* rootSaga() {
       // 🔥 FIX: Add small delay to ensure state is updated
       yield call(() => new Promise(resolve => setTimeout(resolve, 100)));
       yield put(setHasInitialized(true));
-      console.log('✅ RootSaga: QLTT Scope initialized on app startup');
     } catch (error) {
-      console.error('❌ RootSaga: Failed to initialize QLTT Scope:', error);
       // 🔥 FALLBACK: Set initialized even if loading fails to prevent infinite loading
       yield put(setHasInitialized(true));
     }
@@ -26,9 +24,7 @@ export default function* rootSaga() {
   function* initializeAuth(): Generator<any, any, any> {
     try {
       yield put(restoreSessionRequest());
-      console.log('✅ RootSaga: Auth session restore initiated');
     } catch (error) {
-      console.error('❌ RootSaga: Failed to initialize auth:', error);
     }
   }
 
