@@ -5,6 +5,7 @@
 
 import axios from 'axios';
 import { apiKey } from './config';
+import { supabase } from '@/api/supabaseClient';
 
 // Base URL for auth API - can be configured via environment variable
 // Default to Supabase if not specified, or use custom auth API URL
@@ -144,11 +145,29 @@ export async function storeToken(token: string, expiresIn?: number, refreshToken
   }
 }
 
+let refreshInFlight: Promise<LoginResponse | null> | null = null;
+
+async function syncSupabaseSession(accessToken: string, refreshToken?: string | null): Promise<void> {
+  if (!refreshToken) return;
+  try {
+    await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+  } catch (error) {
+    console.warn('⚠️ Sync Supabase session failed:', error);
+  }
+}
+
 /**
  * Refresh access token using refresh token
  */
 export async function refreshAccessToken(): Promise<LoginResponse | null> {
-  try {
+  if (refreshInFlight) {
+    return await refreshInFlight;
+  }
+
+  const refreshPromise = (async () => {
     const refreshToken = await tokenStorage.getRefreshToken();
     
     if (!refreshToken) {
@@ -181,15 +200,25 @@ export async function refreshAccessToken(): Promise<LoginResponse | null> {
         response.data.expires_in,
         response.data.refresh_token
       );
+      await syncSupabaseSession(response.data.access_token, response.data.refresh_token || refreshToken);
     }
 
     return response.data;
+  })();
+
+  refreshInFlight = refreshPromise;
+  try {
+    return await refreshPromise;
   } catch (error: any) {
     console.error('❌ RefreshToken: Error refreshing token:', error);
     // Don't logout on refresh failure - let the app continue with existing token
     // Only logout if token is actually expired (handled by restoreSession)
     // This prevents premature logout when refresh fails but token is still valid
     return null;
+  } finally {
+    if (refreshInFlight === refreshPromise) {
+      refreshInFlight = null;
+    }
   }
 }
 
