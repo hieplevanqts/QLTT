@@ -43,9 +43,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/components/ui/utils';
 import { useLayout } from '../contexts/LayoutContext';
-import { useAuth } from '../contexts/AuthContext'; // 🔥 NEW: Import useAuth for permissions
-import { useMenuRegistry } from '../hooks/useMenuRegistry';
-import { buildMenuTree, filterMenuTree, type MenuNode } from '../utils/menuRegistry';
+import { useRuntimeMenu } from '@/shared/menu/useRuntimeMenu';
+import { getMenuFallbackEnabled } from '@/shared/menu/menuCache';
+import { type MenuNode } from '../utils/menuRegistry';
 
 interface HorizontalNavBarProps {
   mobileMenuOpen: boolean;
@@ -259,34 +259,9 @@ const menuTreeToModules = (nodes: MenuNode[]) => {
 export default function HorizontalNavBar({ mobileMenuOpen, onClose }: HorizontalNavBarProps) {
   const location = useLocation();
   const { setLayoutMode } = useLayout();
-  const { user } = useAuth(); // 🔥 NEW: Get user with permissions
   const [mobileSubmenuOpen, setMobileSubmenuOpen] = React.useState<string | null>(null);
-  const { menus } = useMenuRegistry();
-
-  // 🔥 NEW: Get user permission codes
-  const userPermissionCodes = user?.permissions || [];
-  
-  // 🔥 DEBUG: Log permissions and menu data
-  React.useEffect(() => {
-    console.log('🔍 HorizontalNavBar - Debug Menu & Permissions:', {
-      userPermissions: userPermissionCodes,
-      userRoleCode: user?.roleCode,
-      menusCount: menus?.length || 0,
-    });
-  }, [userPermissionCodes, user?.roleCode, menus]);
-  
-  // 🔥 NEW: Helper function to check if user has permission for a menu item
-  const hasPermission = (permissionCode: string | undefined): boolean => {
-    if (!permissionCode || permissionCode === '') return true; // No permission required = always visible
-    
-    // 🔥 FIX: If user has no permissions at all, show all menus (fallback for development/testing)
-    if (userPermissionCodes.length === 0) {
-      console.warn('⚠️ User has no permissions - showing all menus (fallback mode)');
-      return true; // Show all menus if user has no permissions
-    }
-    
-    return userPermissionCodes.includes(permissionCode);
-  };
+  const { tree, loading } = useRuntimeMenu();
+  const fallbackEnabled = getMenuFallbackEnabled();
   const isPathActive = React.useCallback(
     (path?: string | null) => {
       if (!path) return false;
@@ -304,40 +279,12 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
     [location.pathname, location.search],
   );
 
-  const registryTree = React.useMemo(() => (menus ? buildMenuTree(menus) : []), [menus]);
-  const filteredRegistryTree = React.useMemo(
-    () => {
-      const filtered = filterMenuTree(registryTree, userPermissionCodes, user?.roleCode);
-      console.log('🔍 HorizontalNavBar - Filtered Registry Tree:', {
-        originalCount: registryTree.length,
-        filteredCount: filtered.length,
-        userPermissions: userPermissionCodes,
-        userRoleCode: user?.roleCode,
-      });
-      return filtered;
-    },
-    [registryTree, userPermissionCodes, user?.roleCode],
-  );
-  const registryModules = React.useMemo(() => menuTreeToModules(filteredRegistryTree), [filteredRegistryTree]);
-  
-  // 🔥 FIX: Merge registry modules with mappa modules to ensure all menus are displayed
-  const mappaModulesFiltered = mappaModules.filter(module => hasPermission(module.permissionCode));
-  const registryPaths = new Set(registryModules.map(m => m.path));
-  const additionalMappaModules = mappaModulesFiltered.filter(m => !registryPaths.has(m.path));
+  const runtimeModules = React.useMemo(() => menuTreeToModules(tree), [tree]);
   const visibleModules = React.useMemo(() => {
-    const merged = [...registryModules, ...additionalMappaModules].sort((a, b) => {
-      const aOrder = mappaModules.find(m => m.path === a.path)?.order ?? 999;
-      const bOrder = mappaModules.find(m => m.path === b.path)?.order ?? 999;
-      return aOrder - bOrder;
-    });
-    console.log('🔍 HorizontalNavBar - Visible Modules:', {
-      registryModulesCount: registryModules.length,
-      additionalMappaModulesCount: additionalMappaModules.length,
-      totalVisible: merged.length,
-      visiblePaths: merged.map(m => m.path),
-    });
-    return merged;
-  }, [registryModules, additionalMappaModules]);
+    if (runtimeModules.length > 0) return runtimeModules;
+    return fallbackEnabled ? mappaModules : [];
+  }, [runtimeModules, fallbackEnabled]);
+  const showEmptyState = !loading && visibleModules.length === 0 && !fallbackEnabled;
 
   // Mock permissions - In real app, this would come from user context/auth
   const userPermissions = {
@@ -355,7 +302,12 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
       {/* Desktop Navigation */}
       <nav className="hidden md:flex h-14 bg-card border-b border-border items-center px-6 gap-1">
         {/* Main MAPPA Modules */}
-        {visibleModules.map((module) => { // 🔥 FIX: Use filtered modules instead of all modules
+        {showEmptyState ? (
+          <span className="text-sm text-muted-foreground">
+            Tài khoản chưa được gán vai trò hoặc chưa có quyền hiển thị menu.
+          </span>
+        ) : (
+          visibleModules.map((module) => {
           const Icon = module.icon;
           const isAdminMenu = module.path === '/admin';
           
@@ -502,7 +454,8 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
               </Button>
             </Link>
           );
-        })}
+          })
+        )}
 
         {/* Layout Toggle & Quick Actions */}
         <div className="ml-auto flex items-center gap-2">
@@ -606,7 +559,12 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
             </div>
             
             <nav className="p-2 overflow-y-auto">
-              {visibleModules.map((module) => { // 🔥 FIX: Use filtered modules instead of all modules
+              {showEmptyState ? (
+                <div className="px-4 py-3 text-sm text-muted-foreground">
+                  Tài khoản chưa được gán vai trò hoặc chưa có quyền hiển thị menu.
+                </div>
+              ) : (
+                visibleModules.map((module) => {
                 const Icon = module.icon;
                 const isAdminMenu = module.path === '/admin';
                 
@@ -799,7 +757,8 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                     <span className="font-medium">{module.label}</span>
                   </Link>
                 );
-              })}
+                })
+              )}
 
               {/* Quick Actions in Mobile */}
               <div className="mt-6 px-4">

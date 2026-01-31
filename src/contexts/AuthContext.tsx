@@ -15,6 +15,7 @@ export interface UserInfo {
   role: UserRole;
   roleDisplay: string; // "Quản lý cục", "Quản lý chi cục Hồ Chí Minh", etc.
   roleCode?: string;
+  roleCodes?: string[];
   provinceCode?: string; // "01", "24", etc.
   provinceName?: string; // "Hà Nội", "Hồ Chí Minh", etc.
   teamCode?: string; // "01", "02", etc.
@@ -205,6 +206,37 @@ async function fetchUserRoleCode(userId: string): Promise<string | null> {
   } catch (error: any) {
     console.error('❌ Error fetching user role code:', error);
     return null;
+  }
+}
+
+async function fetchUserRoleCodes(userId: string): Promise<string[]> {
+  try {
+    const { data: userRoles, error: userRolesError } = await supabase
+      .from('user_roles')
+      .select('role_id')
+      .eq('user_id', userId);
+
+    if (userRolesError || !userRoles || userRoles.length === 0) {
+      return [];
+    }
+
+    const roleIds = userRoles.map((row) => row.role_id).filter(Boolean);
+    if (roleIds.length === 0) return [];
+
+    const { data: roles, error: rolesError } = await supabase
+      .from('roles')
+      .select('code')
+      .in('_id', roleIds);
+
+    if (rolesError) {
+      console.error('❌ Error fetching role codes:', rolesError);
+      return [];
+    }
+
+    return (roles ?? []).map((row: any) => row.code).filter(Boolean);
+  } catch (error: any) {
+    console.error('❌ Error fetching role codes:', error);
+    return [];
   }
 }
 
@@ -595,15 +627,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const parsedUser = JSON.parse(storedUser) as UserInfo;
             // 🔥 NEW: Refresh permissions, department, and role name if user doesn't have them yet
             if (!parsedUser.permissions || parsedUser.permissions.length === 0 || !parsedUser.departmentInfo || !parsedUser.roleDisplay || parsedUser.roleDisplay === 'Người dùng' || parsedUser.roleDisplay.includes('Quản lý')) {
-              const [permissionCodes, departmentInfo, roleName] = await Promise.all([
+              const [permissionCodes, departmentInfo, roleName, roleCodes] = await Promise.all([
                 fetchUserPermissions(supabaseUser.id),
                 fetchUserDepartment(supabaseUser.id),
                 fetchUserRoleName(supabaseUser.id),
+                fetchUserRoleCodes(supabaseUser.id),
               ]);
               parsedUser.permissions = permissionCodes;
               parsedUser.departmentInfo = departmentInfo || undefined;
               if (roleName) {
                 parsedUser.roleDisplay = roleName; // 🔥 FIX: Update roleDisplay with role name from database
+              }
+              if (roleCodes.length > 0) {
+                parsedUser.roleCodes = roleCodes;
+                parsedUser.roleCode = roleCodes[0];
               }
               localStorage.setItem('mappa-user', JSON.stringify(parsedUser));
             }
@@ -612,10 +649,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } else {
             // If no stored user info, create basic user info from Supabase user
             // 🔥 NEW: Fetch user permissions, department, and role name from database
-            const [permissionCodes, departmentInfo, roleName] = await Promise.all([
+            const [permissionCodes, departmentInfo, roleName, roleCodes] = await Promise.all([
               fetchUserPermissions(supabaseUser.id),
               fetchUserDepartment(supabaseUser.id),
               fetchUserRoleName(supabaseUser.id),
+              fetchUserRoleCodes(supabaseUser.id),
             ]);
             const userInfo: UserInfo = {
               _id: supabaseUser.id,
@@ -628,6 +666,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               department: 'Hệ thống',
               permissions: permissionCodes, // 🔥 NEW: Add permissions to user info
               departmentInfo: departmentInfo || undefined, // 🔥 NEW: Add department info
+              roleCodes: roleCodes.length > 0 ? roleCodes : undefined,
+              roleCode: roleCodes[0] || undefined,
             };
             setUser(userInfo);
             setIsAuthenticated(true);
@@ -729,12 +769,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (storedUser) {
             const parsedUser = JSON.parse(storedUser) as UserInfo;
             // 🔥 FIX: Refresh role name if it's still the default/mock value
-            if (!parsedUser.roleDisplay || parsedUser.roleDisplay === 'Người dùng' || parsedUser.roleDisplay.includes('Quản lý')) {
-              const roleName = await fetchUserRoleName(session.user._id);
+            if (!parsedUser.roleDisplay || parsedUser.roleDisplay === 'Người dùng' || parsedUser.roleDisplay.includes('Quản lý') || !parsedUser.roleCodes || parsedUser.roleCodes.length === 0) {
+              const [roleName, roleCodes] = await Promise.all([
+                fetchUserRoleName(session.user._id),
+                fetchUserRoleCodes(session.user._id),
+              ]);
               if (roleName) {
                 parsedUser.roleDisplay = roleName;
-                localStorage.setItem('mappa-user', JSON.stringify(parsedUser));
               }
+              if (roleCodes.length > 0) {
+                parsedUser.roleCodes = roleCodes;
+                parsedUser.roleCode = roleCodes[0];
+              }
+              localStorage.setItem('mappa-user', JSON.stringify(parsedUser));
             }
             setUser(parsedUser);
             setIsAuthenticated(true);
@@ -742,7 +789,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Create basic user info
             const supabaseUser = session.user;
             // 🔥 FIX: Fetch role name from database
-            const roleName = await fetchUserRoleName(supabaseUser.id);
+            const [roleName, roleCodes] = await Promise.all([
+              fetchUserRoleName(supabaseUser.id),
+              fetchUserRoleCodes(supabaseUser.id),
+            ]);
             const userInfo: UserInfo = {
               _id: supabaseUser.id,
               username: supabaseUser.email || '',
@@ -752,6 +802,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               roleDisplay: roleName || 'Người dùng',
               position: 'Người dùng',
               department: 'Hệ thống',
+              roleCodes: roleCodes.length > 0 ? roleCodes : undefined,
+              roleCode: roleCodes[0] || undefined,
             };
             setUser(userInfo);
             setIsAuthenticated(true);
@@ -861,10 +913,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const hasMultipleUnits = false; // For now, single unit
       
       // 🔥 NEW: Fetch user permissions, department, and role name from database
-      const [permissionCodes, departmentInfo, roleName] = await Promise.all([
+      const [permissionCodes, departmentInfo, roleName, roleCodes] = await Promise.all([
         fetchUserPermissions(supabaseUser.id),
         fetchUserDepartment(supabaseUser.id),
         fetchUserRoleName(supabaseUser.id),
+        fetchUserRoleCodes(supabaseUser.id),
       ]);
       
       const userInfo: UserInfo = {
@@ -876,6 +929,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         roleDisplay: roleName || roleInfo.roleDisplay, // 🔥 FIX: Use role name from database, fallback to mock roleInfo
         permissions: permissionCodes, // 🔥 NEW: Add permissions to user info
         departmentInfo: departmentInfo || undefined, // 🔥 NEW: Add department info
+        roleCodes: roleCodes.length > 0 ? roleCodes : undefined,
+        roleCode: roleCodes[0] || undefined,
       } as UserInfo;
       
       if (hasMultipleUnits) {

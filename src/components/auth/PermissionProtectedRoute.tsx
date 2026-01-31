@@ -2,7 +2,7 @@ import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAppSelector } from '@/hooks/useAppStore';
 import { RootState } from '@/store/rootReducer';
-import { useMenuRegistry } from '@/hooks/useMenuRegistry';
+import { useRuntimeMenu } from '@/shared/menu/useRuntimeMenu';
 import { usePermissions } from '@/modules/system-admin/_shared/usePermissions';
 import { Error403 } from '../error-states/Error403';
 
@@ -34,7 +34,7 @@ export function PermissionProtectedRoute({
   requiredPermission
 }: PermissionProtectedRouteProps) {
   const { isLoading: isAuthLoading } = useAppSelector((state: RootState) => state.auth);
-  const { menus, loading: isMenuLoading } = useMenuRegistry();
+  const { flatMenus, loading: isMenuLoading } = useRuntimeMenu();
   const { hasPermission, hasAnyPermission } = usePermissions();
   const location = useLocation();
 
@@ -58,9 +58,9 @@ export function PermissionProtectedRoute({
   }
 
   // 2. Check dynamic permissions from menus
-  if (menus) {
+  if (flatMenus && flatMenus.length > 0) {
     // Find exact match or longest prefix match
-    const sortedMenus = [...menus]
+    const sortedMenus = [...flatMenus]
       .filter(m => m.path && m.path !== '/')
       .sort((a, b) => (b.path?.length || 0) - (a.path?.length || 0));
     

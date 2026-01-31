@@ -39,6 +39,7 @@ import { menuRepo } from "../menu/menu.repo";
 import type { MenuPermissionRecord, MenuRecord } from "../menu/menu.types";
 import { buildMenuTree, filterMenuTreeByPermissions, isMenuActive, sortMenuNodes, toPermissionCodeSet } from "../menu/menu.utils";
 import PermissionPickerPanel from "../menu/PermissionPickerPanel";
+import { clearAllMenuCache, emitMenuUpdated } from "@/shared/menu/menuCache";
 
 type RoleOption = {
   _id: string;
@@ -58,26 +59,24 @@ type MenuTreeDataNode = DataNode & { menu: MenuRecord };
 
 type MenuFormValues = {
   code: string;
-  label: string;
+  name: string;
   parent_id?: string | null;
   module_id?: string | null;
-  route_path?: string | null;
+  path?: string | null;
   icon?: string | null;
-  sort_order?: number | null;
-  status?: string | number | null;
-  is_visible?: boolean;
+  order_index?: number | null;
+  is_active?: boolean;
 };
 
 const EMPTY_FORM: MenuFormValues = {
   code: "",
-  label: "",
+  name: "",
   parent_id: null,
   module_id: null,
-  route_path: null,
+  path: null,
   icon: null,
-  sort_order: 0,
-  status: "ACTIVE",
-  is_visible: true,
+  order_index: 0,
+  is_active: true,
 };
 
 const statusOptions = [
@@ -86,10 +85,7 @@ const statusOptions = [
   { label: "Ngừng", value: "inactive" },
 ];
 
-const normalizeStatusLabel = (value?: string | number | null) =>
-  isMenuActive(value) ? "Hoạt động" : "Ngừng";
-
-const normalizeStatusTag = (value?: string | number | null) =>
+const normalizeStatusTag = (value?: boolean | string | number | null) =>
   isMenuActive(value) ? <Tag color="green">Hoạt động</Tag> : <Tag color="red">Ngừng</Tag>;
 
 const highlightText = (text: string, search: string) => {
@@ -119,7 +115,7 @@ export default function MenusPage() {
   const [formMode, setFormMode] = React.useState<"create" | "edit">("edit");
   const [form] = Form.useForm<MenuFormValues>();
   const selectedModuleId = Form.useWatch("module_id", form);
-  const routePathValue = Form.useWatch("route_path", form);
+  const routePathValue = Form.useWatch("path", form);
 
   const [treeSearch, setTreeSearch] = React.useState("");
   const [treeStatusFilter, setTreeStatusFilter] = React.useState<"all" | "active" | "inactive">("all");
@@ -204,14 +200,13 @@ export default function MenusPage() {
     }
     form.setFieldsValue({
       code: selectedMenu.code,
-      label: selectedMenu.label,
+      name: selectedMenu.name,
       parent_id: selectedMenu.parent_id ?? null,
       module_id: selectedMenu.module_id ?? null,
-      route_path: selectedMenu.route_path ?? null,
+      path: selectedMenu.path ?? null,
       icon: selectedMenu.icon ?? null,
-      sort_order: selectedMenu.sort_order ?? 0,
-      status: selectedMenu.status ?? "ACTIVE",
-      is_visible: selectedMenu.is_visible ?? true,
+      order_index: selectedMenu.order_index ?? 0,
+      is_active: selectedMenu.is_active ?? true,
     });
     setSelectedPermissionId(selectedMenu.permission_ids?.[0] ?? null);
     setSelectedPermission(null);
@@ -229,13 +224,13 @@ export default function MenusPage() {
       const matchesSearch =
         !search ||
         node.code.toLowerCase().includes(search) ||
-        node.label.toLowerCase().includes(search) ||
-        (node.route_path ?? "").toLowerCase().includes(search);
+        node.name.toLowerCase().includes(search) ||
+        (node.path ?? "").toLowerCase().includes(search);
 
       const matchesStatus =
         statusFilter === "all" ||
-        (statusFilter === "active" && isMenuActive(node.status)) ||
-        (statusFilter === "inactive" && !isMenuActive(node.status));
+        (statusFilter === "active" && isMenuActive(node.is_active)) ||
+        (statusFilter === "inactive" && !isMenuActive(node.is_active));
 
       const matchesModule = !moduleFilter || node.module_id === moduleFilter;
 
@@ -259,8 +254,8 @@ export default function MenusPage() {
         title: (
           <Space size={6}>
             <MenuOutlined />
-            <span>{node.label}</span>
-            {node.route_path && <Tag color="blue">{node.route_path}</Tag>}
+            <span>{node.name}</span>
+            {node.path && <Tag color="blue">{node.path}</Tag>}
           </Space>
         ),
         menu: node,
@@ -282,7 +277,7 @@ export default function MenusPage() {
           .map((node) => ({
             key: node._id,
             value: node._id,
-            title: node.label,
+            title: node.name,
             menu: node,
             children: build(node.children),
           }));
@@ -312,19 +307,19 @@ export default function MenusPage() {
       let current: string | null = parentId;
       while (current) {
         if (current === dragId) return true;
-        const next = map.get(current)?.parent_id ?? null;
-        current = next;
+        const nextParent: string | null = map.get(current)?.parent_id ?? null;
+        current = nextParent;
       }
       return false;
     },
     [menus],
   );
 
-  const handleDrop: TreeProps["onDrop"] = async (info) => {
-    const dragNode = info.dragNode as MenuTreeDataNode;
-    const dropNode = info.node as MenuTreeDataNode;
-    const dragId = dragNode.key as string;
-    const dropId = dropNode.key as string;
+  const handleDrop: TreeProps<MenuTreeDataNode>["onDrop"] = async (info) => {
+    const dragNode = info.dragNode;
+    const dropNode = info.node;
+    const dragId = String(dragNode.key);
+    const dropId = String(dropNode.key);
 
     if (dragId === dropId) return;
 
@@ -369,9 +364,9 @@ export default function MenusPage() {
     form.setFieldsValue({
       ...EMPTY_FORM,
       parent_id: parentId,
-      sort_order: 0,
+      order_index: 0,
     });
-    setPermissionSelection([]);
+    handlePermissionSelection(null, null);
     setSelectedMenuId(null);
     setFormMode("create");
   };
@@ -379,7 +374,7 @@ export default function MenusPage() {
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
-      const isPageMenu = Boolean(values.route_path?.trim());
+      const isPageMenu = Boolean(values.path?.trim());
 
       if (!isPageMenu && selectedPermissionId) {
         message.error("Menu nhóm không được gán quyền hiển thị.");
@@ -426,7 +421,8 @@ export default function MenusPage() {
         const permissionIds = isPageMenu && selectedPermissionId ? [selectedPermissionId] : [];
         await menuRepo.setMenuPermissions(saved._id, permissionIds);
         await loadMenus();
-        window.dispatchEvent(new Event("mappa:menu-refresh"));
+        clearAllMenuCache();
+        emitMenuUpdated();
         setSelectedMenuId(saved._id);
         setFormMode("edit");
         message.success("Đã lưu menu.");
@@ -446,7 +442,8 @@ export default function MenusPage() {
       await menuRepo.softDeleteMenu(selectedMenuId);
       setSelectedMenuId(null);
       await loadMenus();
-      window.dispatchEvent(new Event("mappa:menu-refresh"));
+      clearAllMenuCache();
+      emitMenuUpdated();
       message.success("Đã xóa menu.");
     } catch (err) {
       message.error(err instanceof Error ? err.message : "Không thể xóa menu.");
@@ -491,7 +488,7 @@ export default function MenusPage() {
     <PermissionGate permission="sa.iam.menu.read">
       <PageHeader
         title="Quản lý Menu"
-        description="Quản lý cấu trúc menu, phân hệ, route và phân quyền hiển thị"
+        subtitle="Quản lý cấu trúc menu, phân hệ, route và phân quyền hiển thị"
         breadcrumbs={[
           { label: "Trang chủ", href: "/" },
           { label: "Quản trị hệ thống", href: "/system-admin" },
@@ -527,7 +524,7 @@ export default function MenusPage() {
           >
             <Space direction="vertical" style={{ width: "100%" }} size={12}>
               <Input.Search
-                placeholder="Tìm theo mã/nhãn/route..."
+                placeholder="Tìm theo mã/tên/path..."
                 value={treeSearch}
                 onChange={(e) => setTreeSearch(e.target.value)}
                 allowClear
@@ -610,7 +607,7 @@ export default function MenusPage() {
                 <Col span={12}>
                   <Form.Item
                     label="Tên hiển thị"
-                    name="label"
+                    name="name"
                     rules={[{ required: true, message: "Nhập tên hiển thị." }]}
                   >
                     <Input />
@@ -623,7 +620,7 @@ export default function MenusPage() {
                       placeholder="Menu gốc"
                       options={parentTreeOptions.map((node) => ({
                         value: node.key as string,
-                        label: node.menu.label,
+                        label: node.menu.name,
                       }))}
                     />
                   </Form.Item>
@@ -641,7 +638,7 @@ export default function MenusPage() {
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item label="Route/path" name="route_path">
+                  <Form.Item label="Route/path" name="path">
                     <AutoComplete options={routeOptions} placeholder="/system-admin/iam/users">
                       <Input />
                     </AutoComplete>
@@ -653,23 +650,13 @@ export default function MenusPage() {
                   </Form.Item>
                 </Col>
                 <Col span={8}>
-                  <Form.Item label="Thứ tự" name="sort_order">
+                  <Form.Item label="Thứ tự" name="order_index">
                     <InputNumber min={0} style={{ width: "100%" }} />
                   </Form.Item>
                 </Col>
                 <Col span={8}>
-                  <Form.Item label="Trạng thái" name="status">
-                    <Select
-                      options={[
-                        { label: "Hoạt động", value: "ACTIVE" },
-                        { label: "Ngừng", value: "INACTIVE" },
-                      ]}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item label="Hiển thị" name="is_visible" valuePropName="checked">
-                    <Switch checkedChildren="Hiển thị" unCheckedChildren="Ẩn" />
+                  <Form.Item label="Hoạt động" name="is_active" valuePropName="checked">
+                    <Switch checkedChildren="Đang bật" unCheckedChildren="Tạm ngừng" />
                   </Form.Item>
                 </Col>
               </Row>
@@ -732,15 +719,15 @@ export default function MenusPage() {
             },
             {
               title: "Tên menu",
-              dataIndex: "label",
-              key: "label",
-              sorter: (a: MenuRecord, b: MenuRecord) => a.label.localeCompare(b.label),
+              dataIndex: "name",
+              key: "name",
+              sorter: (a: MenuRecord, b: MenuRecord) => a.name.localeCompare(b.name),
               render: (text: string) => highlightText(text, treeSearch),
             },
             {
               title: "Route",
-              dataIndex: "route_path",
-              key: "route_path",
+              dataIndex: "path",
+              key: "path",
               width: 200,
               ellipsis: true,
             },
@@ -752,23 +739,27 @@ export default function MenusPage() {
             },
             {
               title: "Thứ tự",
-              dataIndex: "sort_order",
-              key: "sort_order",
-              sorter: (a: MenuRecord, b: MenuRecord) => a.sort_order - b.sort_order,
+              dataIndex: "order_index",
+              key: "order_index",
+              sorter: (a: MenuRecord, b: MenuRecord) => a.order_index - b.order_index,
               width: 100,
             },
             {
               title: "Trạng thái",
-              dataIndex: "status",
-              key: "status",
+              dataIndex: "is_active",
+              key: "is_active",
               width: 120,
               filters: [
                 { text: "Hoạt động", value: "active" },
                 { text: "Ngừng", value: "inactive" },
               ],
-              onFilter: (value: string | number | boolean, record: MenuRecord) =>
-                value === "active" ? isMenuActive(record.status) : !isMenuActive(record.status),
-              render: (_, record: MenuRecord) => normalizeStatusTag(record.status),
+              onFilter: (value, record) => {
+                const filterValue = String(value);
+                return filterValue === "active"
+                  ? isMenuActive(record.is_active)
+                  : !isMenuActive(record.is_active);
+              },
+              render: (_, record: MenuRecord) => normalizeStatusTag(record.is_active),
             },
           ]}
           pagination={{ pageSize: 8 }}

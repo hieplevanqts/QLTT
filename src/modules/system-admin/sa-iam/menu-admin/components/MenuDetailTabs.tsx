@@ -73,12 +73,12 @@ export const MenuDetailTabs: React.FC<MenuDetailTabsProps> = ({
     if (menu) {
       form.setFieldsValue({
         code: menu.code,
-        label: menu.label,
-        route_path: menu.route_path,
+        name: menu.name,
+        path: menu.path,
         module_id: menu.module_id ?? undefined,
         icon: menu.icon,
-        sort_order: menu.sort_order ?? 0,
-        is_visible: menu.is_visible ?? true,
+        order_index: menu.order_index ?? 0,
+        is_active: menu.is_active ?? true,
       });
       setMetaText(menu.meta ? JSON.stringify(menu.meta, null, 2) : "{}");
       setMetaError(null);
@@ -92,12 +92,12 @@ export const MenuDetailTabs: React.FC<MenuDetailTabsProps> = ({
   const handleSubmit = (values: any) => {
     onSaveMenu?.({
       code: values.code,
-      label: values.label,
-      route_path: values.route_path,
+      name: values.name,
+      path: values.path,
       module_id: values.module_id ?? null,
       icon: values.icon ?? null,
-      sort_order: values.sort_order ?? 0,
-      is_visible: values.is_visible ?? true,
+      order_index: values.order_index ?? 0,
+      is_active: values.is_active ?? true,
     });
   };
 
@@ -121,7 +121,7 @@ export const MenuDetailTabs: React.FC<MenuDetailTabsProps> = ({
                   </Form.Item>
                   <Form.Item
                     label="Tên hiển thị"
-                    name="label"
+                    name="name"
                     rules={[{ required: true, message: "Nhập tên menu" }]}
                     style={{ flex: 1 }}
                   >
@@ -129,7 +129,7 @@ export const MenuDetailTabs: React.FC<MenuDetailTabsProps> = ({
                   </Form.Item>
                 </Space>
                 <Space style={{ width: "100%" }} size={16} align="start">
-                  <Form.Item label="Route/path" name="route_path" style={{ flex: 1 }}>
+                  <Form.Item label="Route/path" name="path" style={{ flex: 1 }}>
                     <Input placeholder="/system-admin/iam/users" />
                   </Form.Item>
                   <Form.Item label="Phân hệ" name="module_id" style={{ flex: 1 }}>
@@ -147,11 +147,11 @@ export const MenuDetailTabs: React.FC<MenuDetailTabsProps> = ({
                   <Form.Item label="Icon" name="icon" style={{ flex: 1 }}>
                     <Input placeholder="Icon key" />
                   </Form.Item>
-                  <Form.Item label="Thứ tự" name="sort_order" style={{ flex: 1 }}>
+                  <Form.Item label="Thứ tự" name="order_index" style={{ flex: 1 }}>
                     <InputNumber min={0} style={{ width: "100%" }} />
                   </Form.Item>
                 </Space>
-                <Form.Item label="Hiển thị" name="is_visible" valuePropName="checked">
+                <Form.Item label="Trạng thái" name="is_active" valuePropName="checked">
                   <Switch />
                 </Form.Item>
                 <Button type="primary" htmlType="submit" loading={saving} disabled={!menu}>
