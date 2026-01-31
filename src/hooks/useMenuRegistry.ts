@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { supabase } from '@/api/supabaseClient';
 import type { MenuItem } from "../modules/system-admin/types";
@@ -6,22 +6,29 @@ import type { MenuItem } from "../modules/system-admin/types";
 const STORAGE_KEY = "mappa.menu.registry";
 const STORAGE_VERSION_KEY = "mappa.menu.version";
 
+const loadCachedMenus = (): MenuItem[] | null => {
+  if (typeof localStorage === "undefined") return null;
+  const cached = localStorage.getItem(STORAGE_KEY);
+  if (!cached) return null;
+  try {
+    return JSON.parse(cached) as MenuItem[];
+  } catch {
+    localStorage.removeItem(STORAGE_KEY);
+    return null;
+  }
+};
+
 export const useMenuRegistry = () => {
-  const [menus, setMenus] = useState<MenuItem[] | null>(null);
+  const [menus, setMenus] = useState<MenuItem[] | null>(loadCachedMenus());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const menusRef = useRef<MenuItem[] | null>(menus);
 
   useEffect(() => {
-    const cached = localStorage.getItem(STORAGE_KEY);
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached) as MenuItem[];
-        setMenus(parsed);
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
-      }
-    }
+    menusRef.current = menus;
+  }, [menus]);
 
+  useEffect(() => {
     const isMissingRelationError = (message: string) =>
       message.includes("Could not find the table") ||
       message.includes("does not exist") ||
@@ -125,8 +132,9 @@ export const useMenuRegistry = () => {
 
     void (async () => {
       const cachedVersion = localStorage.getItem(STORAGE_VERSION_KEY);
+      const hasCachedMenus = !!menusRef.current?.length;
       const latestVersion = await loadMenuVersion();
-      if (latestVersion && cachedVersion && latestVersion === cachedVersion && menus) {
+      if (latestVersion && cachedVersion && latestVersion === cachedVersion && hasCachedMenus) {
         return;
       }
       void loadMenus();
@@ -137,7 +145,7 @@ export const useMenuRegistry = () => {
       window.removeEventListener("mappa:menu-refresh", handleRefresh);
       window.removeEventListener("mappa:menu-updated", handleRefresh);
     };
-  }, [menus]);
+  }, []);
 
   return { menus, loading, error };
 };
