@@ -48,76 +48,6 @@ const TABS = [
 
 
 
-// Mock sessions data
-const mockSessions = [
-  {
-    id: 'PS-001',
-    storeCode: 'CH-001',
-    storeName: 'Cửa hàng Thực phẩm An Khang',
-    address: '123 Nguyễn Trãi, P. Bến Nghé, Q.1',
-    inspector: 'Nguyễn Văn A',
-    date: '2025-01-05',
-    time: '09:00',
-    status: 'completed' as const,
-    violationCount: 2,
-  },
-  {
-    id: 'PS-002',
-    storeCode: 'CH-002',
-    storeName: 'Siêu thị mini Phú Thọ',
-    address: '456 Lê Hồng Phong, P. Bến Thành, Q.1',
-    inspector: 'Trần Thị B',
-    date: '2025-01-05',
-    time: '14:00',
-    status: 'completed' as const,
-    violationCount: 0,
-  },
-  {
-    id: 'PS-003',
-    storeCode: 'CH-003',
-    storeName: 'Cửa hàng Sức khỏe Việt',
-    address: '789 Võ Văn Tần, P. Nguyễn Thái Bình, Q.1',
-    inspector: 'Lê Văn C',
-    date: '2025-01-06',
-    time: '10:30',
-    status: 'in_progress' as const,
-    violationCount: 1,
-  },
-  {
-    id: 'PS-004',
-    storeCode: 'CH-004',
-    storeName: 'Chợ Bến Thành - Gian hàng A12',
-    address: 'Lê Lợi, P. Bến Thành, Q.1',
-    inspector: 'Nguyễn Văn A',
-    date: '2025-01-07',
-    time: '08:00',
-    status: 'scheduled' as const,
-    violationCount: 0,
-  },
-  {
-    id: 'PS-005',
-    storeCode: 'CH-005',
-    storeName: 'Cửa hàng Thực phẩm Sạch Hà Thành',
-    address: '234 Hai Bà Trưng, P. Tân Định, Q.1',
-    inspector: 'Phạm Thị D',
-    date: '2025-01-07',
-    time: '13:30',
-    status: 'scheduled' as const,
-    violationCount: 0,
-  },
-  {
-    id: 'PS-006',
-    storeCode: 'CH-006',
-    storeName: 'Siêu thị CoopMart Cống Quỳnh',
-    address: '168 Cống Quỳnh, P. Phạm Ngũ Lão, Q.1',
-    inspector: 'Trần Thị B',
-    date: '2025-01-08',
-    time: '09:30',
-    status: 'scheduled' as const,
-    violationCount: 0,
-  },
-];
-
 // Mock team members data
 const mockTeamMembers = [
   {
@@ -301,7 +231,6 @@ export default function InspectionRoundDetail() {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [sessions, setSessions] = useState<any[]>([]);
-  const [loadingSessions, setLoadingSessions] = useState(false);
   const [showInsFormDetail, setShowInsFormDetail] = useState(false);
   const [selectedInsForm, setSelectedInsForm] = useState<{ code: string; type: string; name: string } | null>(null);
   const [selectedTask, setSelectedTask] = useState<InspectionTask | null>(null);
@@ -312,7 +241,6 @@ export default function InspectionRoundDetail() {
     const loadSessions = async () => {
       if (!roundId) return;
       try {
-        setLoadingSessions(true);
         const data = await fetchInspectionSessionsApi(roundId);
         // Map API sessions to match the UI format if needed
         const mapped = data.map(s => ({
@@ -330,7 +258,7 @@ export default function InspectionRoundDetail() {
       } catch (err) {
         console.error('Error fetching sessions:', err);
       } finally {
-        setLoadingSessions(false);
+        // loading state handled by parent if needed
       }
     };
     loadSessions();
@@ -464,7 +392,8 @@ export default function InspectionRoundDetail() {
             <div className={styles.headerTitleRow}>
               <span className={styles.roundId}>{data.code}</span>
               <StatusBadge {...getStatusProps('round', data.status)} />
-            <StatusBadge {...getStatusProps('inspectionType', data.type)} />
+              <StatusBadge {...getStatusProps('inspectionType', data.type)} />
+              <StatusBadge {...getStatusProps('priority', data.priority || 'medium')} />
             </div>
             <h1 className={styles.pageTitle}>{data.name}</h1>
             <p className={styles.pageSubtitle}>
@@ -584,6 +513,14 @@ export default function InspectionRoundDetail() {
                 </div>
 
                 <div className={styles.infoField}>
+                  <div className={styles.infoLabel}>Mức độ ưu tiên</div>
+                  <div className={styles.infoValue}>
+                    <TrendingUp size={16} className={styles.infoIcon} />
+                    <StatusBadge {...getStatusProps('priority', data.priority || 'medium')} size="sm" />
+                  </div>
+                </div>
+
+                <div className={styles.infoField}>
                   <div className={styles.infoLabel}>Loại kiểm tra</div>
                   <div className={styles.infoValue}>
                     <ClipboardCheck size={16} className={styles.infoIcon} />
@@ -601,7 +538,7 @@ export default function InspectionRoundDetail() {
                 </div>
 
                 <div className={styles.infoField}>
-                  <div className={styles.infoLabel}>Đơn vị chủ trì</div>
+                  <div className={styles.infoLabel}>Người chủ trì</div>
                   <div className={styles.infoValue}>
                     <Users size={16} className={styles.infoIcon} />
                     {data.leadUnit}

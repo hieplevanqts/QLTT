@@ -5,11 +5,9 @@
 
 import { useAppSelector } from '@/hooks/useAppStore';
 import { RootState } from '../../../store/rootReducer';
-import { useMenuRegistry } from '../../../hooks/useMenuRegistry';
 
 export function usePermissions() {
   const { user } = useAppSelector((state: RootState) => state.auth);
-  const { menus } = useMenuRegistry();
 
   // Temporary hard-override permissions for a specific user email
   // NOTE: Prefer storing permissions in DB (roles -> role_permissions -> permissions) long-term.

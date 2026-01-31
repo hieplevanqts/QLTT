@@ -553,8 +553,8 @@ export class TokenStorage {
  * Configure based on your security requirements
  */
 export const tokenStorage = new TokenStorage({
-  strategy: StorageStrategy.ENCRYPTED_LOCAL_STORAGE, // Change to your preferred strategy
-  encrypt: true, // Enable encryption
+  strategy: StorageStrategy.ENCRYPTED_LOCAL_STORAGE, // Uses localStorage
+  encrypt: false, // Disable encryption to store raw token
   keyPrefix: 'mappa_auth_',
 });
 

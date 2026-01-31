@@ -15,6 +15,21 @@ Chuẩn hoá Naming + Data Model cho IAM (Roles/Permissions) và Menu (Tree/Menu
 - Module quản trị: `system-admin`
 - Module báo cáo: `reports`
 
+### 1.1.1 Quy định `modules.code` (bắt buộc)
+- lowercase, dùng `kebab-case` hoặc `dot.case` (vd: `system-admin`, `system-admin.iam`)
+- chỉ dùng `[a-z0-9.-]`, không khoảng trắng, không dấu
+- **unique** trên `modules.code`
+- không đổi code sau khi đã phát hành (đổi `name`/`description` nếu cần đổi hiển thị)
+- FE dùng `modules.code` để:
+  - map permission `module.page.read`
+  - map route group/top menu
+  - filter menu theo module
+
+**Mapping gợi ý (theo data thực tế)**
+- `system-admin` = module root quản trị
+- `system-admin.iam` = phân hệ IAM
+- `reports` = báo cáo tổng hợp
+
 ### 1.2 PAGE permission (hiển thị menu)
 Chuẩn bắt buộc:
 - `module.page.read`
@@ -130,3 +145,26 @@ create index if not exists menus_order_idx on public.menus(order_index);
 
 create trigger trg_menus_updated_at
 before update on menus for each row execute function set_updated_at();
+```
+
+### 4.2 Quy định `menus.code` (bắt buộc)
+- lowercase, dùng `kebab-case`
+- chỉ dùng `[a-z0-9-]`, không khoảng trắng, không dấu
+- **unique** trên `menus.code`
+- không đổi code sau khi đã phát hành (đổi `name` để thay nhãn hiển thị)
+- group node vẫn cần `code` riêng, prefix gợi ý theo module
+
+**Gợi ý format**
+- Root: `<module>` (vd: `admin`, `reports`)
+- Page: `<module>-<page>` (vd: `admin-roles`, `admin-menus`, `reports-summary`)
+- Subpage: `<module>-<page>-<subpage>` (vd: `admin-user-create`)
+
+### 4.3 Quy định `menus.path`
+- format: route tuyệt đối bắt đầu bằng `/`
+- không dấu tiếng Việt
+- thống nhất với router FE
+- menu group (không có trang): `path = null`
+
+### 4.4 Quy định liên kết menu ↔ permission
+- Menu hiển thị theo permission `module.page.read` (hoặc `module.page.<pageKey>.read`)
+- `menu_permissions` dùng **permission_id** (không dùng permission code để join)

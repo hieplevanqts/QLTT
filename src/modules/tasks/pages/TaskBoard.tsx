@@ -52,7 +52,7 @@ import { Form06Modal } from '@/components/tasks/Form06Modal';
 import { Form10Modal } from '@/components/tasks/Form10Modal';
 import { Form12Modal } from '@/components/tasks/Form12Modal';
 import { Form11Modal } from '@/components/tasks/Form11Modal';
-import { DeployTaskModal } from '@/components/tasks/TaskActionModals';
+import { DeployTaskModal, CompleteTaskModal } from '@/components/tasks/TaskActionModals';
 
 type ViewMode = 'kanban' | 'list';
 
@@ -244,6 +244,7 @@ export function TaskBoard() {
   const [isForm12ModalOpen, setIsForm12ModalOpen] = useState(false);
   const [isForm11ModalOpen, setIsForm11ModalOpen] = useState(false);
   const [isDeployModalOpen, setIsDeployModalOpen] = useState(false);
+  const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
 
   // Filters
   const [searchValue, setSearchValue] = useState('');
@@ -259,10 +260,7 @@ export function TaskBoard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
 
-  // Infinite scroll state for plan selects
-  const [planPage, setPlanPage] = useState(1);
-  const [planLoading, setPlanLoading] = useState(false);
-  const ITEMS_PER_PAGE = 20;
+
 
   // Fetch sessions from API
   const loadSessions = async () => {
@@ -325,23 +323,20 @@ export function TaskBoard() {
 
   // Prepare plan options with pagination
   const approvedPlans = useMemo(() => {
-    return realPlans.filter(plan => plan.status === 'approved');
+    return realPlans.filter(plan => plan.status === 'approved' || plan.status === 'active');
   }, [realPlans]);
 
   const planOptions: InfiniteScrollSelectOption[] = useMemo(() => {
-    const plans = approvedPlans.slice(0, planPage * ITEMS_PER_PAGE);
-    return plans.map(plan => ({
+    return approvedPlans.map(plan => ({
       value: plan.id,
       label: plan.name,
       subtitle: `${plan.code || plan.id} - ${plan.planType === 'periodic' ? 'Định kỳ' : plan.planType === 'thematic' ? 'Chuyên đề' : 'Đột xuất'}`,
     }));
-  }, [planPage, approvedPlans]);
-
-  const hasMorePlans = planPage * ITEMS_PER_PAGE < approvedPlans.length;
+  }, [approvedPlans]);
 
   // Prepare round options
   const roundOptions = useMemo(() => {
-    let filteredRounds = realRounds.filter(round => round.status === 'approved');
+    let filteredRounds = realRounds;
     
     if (planFilter !== 'all') {
       filteredRounds = filteredRounds.filter(round => round.planId === planFilter);
@@ -364,17 +359,6 @@ export function TaskBoard() {
     }
   }, [planFilter, roundFilter, realRounds]);
 
-  // Handle load more for plans
-  const handleLoadMorePlans = () => {
-    if (!planLoading && hasMorePlans) {
-      setPlanLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        setPlanPage(prev => prev + 1);
-        setPlanLoading(false);
-      }, 500);
-    }
-  };
 
 
   const uniqueAssignees = useMemo(() => {
@@ -562,24 +546,6 @@ export function TaskBoard() {
       ],
     },
     {
-      key: 'round',
-      label: 'Đợt kiểm tra',
-      type: 'select',
-      options: [
-        { value: 'all', label: 'Tất cả đợt' },
-        ...roundOptions.map(opt => ({ value: opt.value, label: opt.label })),
-      ],
-    },
-    {
-      key: 'plan',
-      label: 'Kế hoạch',
-      type: 'infinite-scroll-select',
-      options: planOptions,
-      hasMore: hasMorePlans,
-      isLoading: planLoading,
-      onLoadMore: handleLoadMorePlans,
-    },
-    {
       key: 'assignee',
       label: 'Người thực hiện',
       type: 'select',
@@ -740,6 +706,16 @@ export function TaskBoard() {
     }
   };
 
+  const handleConfirmCompleteTask = () => {
+    if (actionTask) {
+      handleStatusChange(actionTask.id, 'completed');
+      toast.success(`Đã hoàn thành phiên làm việc \"${actionTask.title}\"`);
+      setIsCompleteModalOpen(false);
+      setActionTask(null);
+    }
+  };
+
+
   const handleEnterResults = (task: InspectionTask) => {
     setActionTask(task);
     setIsEnterResultsModalOpen(true);
@@ -761,8 +737,8 @@ export function TaskBoard() {
   };
 
   const handleCompleteTask = (task: InspectionTask) => {
-    handleStatusChange(task.id, 'completed');
-    toast.success(`Đã hoàn thành phiên làm việc \"${task.title}\"`);
+    setActionTask(task);
+    setIsCompleteModalOpen(true);
   };
 
   // Handle edit task button click
@@ -1095,14 +1071,13 @@ export function TaskBoard() {
                 Bộ lọc
               </Button>
 
-              {/* Kế hoạch kiểm tra filter */}
               <Select value={planFilter} onValueChange={setPlanFilter}>
-                <SelectTrigger style={{ width: '240px' }}>
-                  <SelectValue placeholder="Kế hoạch kiểm tra" />
+                <SelectTrigger style={{ width: '220px' }}>
+                  <SelectValue placeholder="Kế hoạch" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tất cả kế hoạch</SelectItem>
-                  {planOptions.slice(0, 10).map(plan => (
+                  {planOptions.map(plan => (
                     <SelectItem key={plan.value} value={plan.value}>
                       {plan.label}
                     </SelectItem>
@@ -1110,14 +1085,13 @@ export function TaskBoard() {
                 </SelectContent>
               </Select>
 
-              {/* Đợt kiểm tra filter */}
               <Select value={roundFilter} onValueChange={setRoundFilter}>
-                <SelectTrigger style={{ width: '240px' }}>
+                <SelectTrigger style={{ width: '220px' }}>
                   <SelectValue placeholder="Đợt kiểm tra" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tất cả đợt</SelectItem>
-                  {roundOptions.slice(0, 10).map(round => (
+                  {roundOptions.map(round => (
                     <SelectItem key={round.value} value={round.value}>
                       {round.label}
                     </SelectItem>
@@ -1301,7 +1275,7 @@ export function TaskBoard() {
         }}
         onComplete={() => {
           if (actionTask) {
-            handleStatusChange(actionTask.id, 'completed');
+            handleCompleteTask(actionTask);
           }
         }}
       />
@@ -1367,6 +1341,17 @@ export function TaskBoard() {
         task={actionTask}
         onConfirm={handleConfirmStartTask}
       />
+
+      <CompleteTaskModal
+        isOpen={isCompleteModalOpen}
+        onClose={() => {
+          setIsCompleteModalOpen(false);
+          setActionTask(null);
+        }}
+        task={actionTask}
+        onConfirm={handleConfirmCompleteTask}
+      />
+
         </>
       )}
     </div>

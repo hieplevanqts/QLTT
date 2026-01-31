@@ -44,3 +44,23 @@ td.allow-wrap {
   overflow-wrap: break-word;
   text-overflow: clip;
 }
+
+/* Fix Radix UI, Ant Design or other libraries hiding scrollbar and causing layout shift */
+html {
+  scrollbar-gutter: stable !important;
+}
+
+/* Force scrollbar to remain visible during any scroll lock mechanism */
+body[data-radix-scroll-lock],
+body[style*="overflow: hidden"],
+body.ant-scrolling-effect {
+  overflow-y: scroll !important;
+  padding-right: 0px !important;
+  border-right: none !important;
+}
+
+/* Ensure the scrollbar doesn't cause content shift in modern browsers */
+html, body {
+  margin: 0;
+  padding: 0;
+}

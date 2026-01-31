@@ -175,7 +175,7 @@ export function RejectModal({ isOpen, onClose, plan, onConfirm }: RejectModalPro
 
         <div className={styles.warningBox}>
           <AlertTriangle size={20} />
-          <p>Kế hoạch sẽ được chuyển về trạng thái <strong>"Nháp"</strong> để chỉnh sửa lại</p>
+          <p>Kế hoạch sẽ được chuyển sang trạng thái <strong>"Đã từ chối"</strong></p>
         </div>
       </div>
 

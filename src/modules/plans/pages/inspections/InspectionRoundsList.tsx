@@ -71,6 +71,7 @@ export function InspectionRoundsList() {
   
   // Filter states
   const [planFilter, setPlanFilter] = useState<string>('all');
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [dateRange, setDateRange] = useState<DateRange>({ startDate: null, endDate: null });
   
   // Pagination states
@@ -341,13 +342,14 @@ export function InspectionRoundsList() {
         const roundStart = new Date(round.startDate);
         const roundEnd = new Date(round.endDate);
         
-        // Check if round overlaps with filter range
         matchesDateRange = roundStart <= filterEnd && roundEnd >= filterStart;
       }
       
-      return matchesSearch && matchesPlan && matchesActiveFilter && matchesDateRange;
+      const matchesPriority = priorityFilter === 'all' || round.priority === priorityFilter;
+      
+      return matchesSearch && matchesPlan && matchesActiveFilter && matchesDateRange && matchesPriority;
     });
-  }, [rounds, searchValue, planFilter, activeFilter, dateRange]);
+  }, [rounds, searchValue, planFilter, activeFilter, dateRange, priorityFilter]);
 
   // Pagination
   const totalPages = Math.ceil(filteredData.length / pageSize);
@@ -544,6 +546,15 @@ export function InspectionRoundsList() {
   // Define table columns
   const columns: Column<InspectionRound>[] = [
     {
+      key: 'stt',
+      label: 'STT',
+      width: '60px',
+      className: 'text-center',
+      render: (_, index) => (
+        <div className="text-center">{(currentPage - 1) * pageSize + index + 1}</div>
+      ),
+    },
+    {
       key: 'code',
       label: 'Mã đợt',
       sortable: true,
@@ -566,22 +577,28 @@ export function InspectionRoundsList() {
         return (
           <div>
             <div className={styles.roundName}>{round.name || '--'}</div>
-            <div className={styles.roundPlan} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div className={styles.roundPlan}>
               <span>Thời gian: {timeStr}</span>
-              {round.planName && (
-                <>
-                  <span style={{ color: 'var(--border)' }}>|</span>
-                  <span>KH: {round.planName}</span>
-                </>
-              )}
             </div>
           </div>
         );
       },
     },
     {
+      key: 'plan',
+      label: 'Kế hoạch',
+      sortable: true,
+      width: '250px',
+      render: (round) => (
+        <div className={styles.planInfo}>
+          <div className={styles.planName}>{round.planName || '--'}</div>
+          {round.planCode && <div className={styles.planCode}>Mã: {round.planCode}</div>}
+        </div>
+      ),
+    },
+    {
       key: 'leadUnit',
-      label: 'Đơn vị chủ trì',
+      label: 'Người chủ trì',
       sortable: true,
       width: '250px',
       truncate: true,
@@ -605,6 +622,18 @@ export function InspectionRoundsList() {
             </div>
           )}
         </div>
+      ),
+    },
+    {
+      key: 'priority',
+      label: 'Ưu tiên',
+      sortable: true,
+      width: '120px',
+      render: (round) => (
+        <StatusBadge 
+          {...getStatusProps('priority', round.priority || 'medium')} 
+          size="sm" 
+        />
       ),
     },
     {
@@ -655,6 +684,7 @@ export function InspectionRoundsList() {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
+    setSelectedRows(new Set());
   }, [planFilter, searchValue, activeFilter]);
 
 
@@ -758,6 +788,19 @@ export function InspectionRoundsList() {
                 </SelectContent>
               </Select>
 
+              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                <SelectTrigger style={{ width: '160px' }}>
+                  <SelectValue placeholder="Ưu tiên" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả ưu tiên</SelectItem>
+                  <SelectItem value="low">Thấp</SelectItem>
+                  <SelectItem value="medium">Trung bình</SelectItem>
+                  <SelectItem value="high">Cao</SelectItem>
+                  <SelectItem value="urgent">Khẩn cấp</SelectItem>
+                </SelectContent>
+              </Select>
+
               <DateRangePicker 
                 value={dateRange}
                 onChange={setDateRange}
@@ -768,7 +811,7 @@ export function InspectionRoundsList() {
           }
           searchInput={
             <SearchInput
-              placeholder="Tìm theo mã, tên đợt hoặc đơn vị"
+              placeholder="Tìm theo mã, tên đợt hoặc người chủ trì"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
               style={{ width: '400px' }}
