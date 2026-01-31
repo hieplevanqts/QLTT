@@ -19,12 +19,13 @@ export function ScopeSelector() {
     isLoading,
   } = useQLTTScope();
   // Get user from Redux instead of AuthContext
-    const { user } = useAppSelector((state: RootState) => state.auth);
+    const { user,department } = useAppSelector((state: RootState) => state.auth);
   
   // Redux dispatch and selector for Redux store
   const dispatch = useAppDispatch();
   
   const deptInfoRef = useRef<any>(null);
+  const [isTeamMember, setIsTeamMember] = useState<boolean>(false);
   
   const [selectedDivision, setSelectedDivision] = useState<string>('');
   const [selectedTeam, setSelectedTeam] = useState<string>('');
@@ -42,16 +43,33 @@ export function ScopeSelector() {
     const enforceUserScope = async () => {
       if (user && !isLoading) {
         // Get department_id from Redux store
-        const userDeptId = (user as any)?.app_metadata?.department?.id;
-console.log('user', user)
+        const userDeptId = (user as any)?.app_metadata?.department?.id || 
+                           (user as any)?.user_metadata?.department?.id ||
+                           (user as any)?.department?.id ||
+                           (user as any)?.department_id ||
+                           (user as any)?.divisionId ||
+                           (user as any)?.division_id;
+console.log('user',user)
+console.log('department',department)
         if (userDeptId) {
           try {
             let dept = deptInfoRef.current;
             
             if (!dept || dept.id !== userDeptId) {
-              const fetched = await fetchDepartmentById(userDeptId);
-              if (fetched) {
-                dept = fetched;
+              // Check if userDeptId matches a division (optimization)
+              // const foundInDivisions = availableDivisions.find((d: any) => d.id == userDeptId);
+              
+              // if (foundInDivisions) {
+              //   dept = foundInDivisions;
+              // } else {
+                
+                
+                
+              // }
+              dept = await fetchDepartmentById(userDeptId);
+              
+              
+              if (dept) {
                 deptInfoRef.current = dept;
               }
             }
@@ -62,22 +80,21 @@ console.log('user', user)
 
               if (dept.parent_id) {
                 // User is Team Member -> Division = Parent, Team = Self
+                setIsTeamMember(true);
                 if (scope.divisionId !== dept.parent_id) {
-                  newScope.divisionId = dept.parent_id;
-                  hasChanges = true;
+                  newScope.divisionId = dept._id;
+                  hasChanges = false;
                 }
                 if (scope.teamId !== userDeptId) {
                   newScope.teamId = userDeptId;
                   hasChanges = true;
                 }
               } else {
-                // User is Division Member -> Division = Self, Team = null (disabled)
+                // User is Division Member -> Division = Self
+                setIsTeamMember(false);
                 if (scope.divisionId !== userDeptId) {
                   newScope.divisionId = userDeptId;
-                  hasChanges = true;
-                }
-                if (scope.teamId !== null) {
-                  newScope.teamId = null;
+                  newScope.teamId = null; // Reset team when switching to assigned division
                   hasChanges = true;
                 }
               }
@@ -94,30 +111,30 @@ console.log('user', user)
       }
     };
     enforceUserScope();
-  }, [user, isLoading, scope, setContextScope, dispatch]);
+  }, [user, isLoading, scope, setContextScope, dispatch, availableDivisions]);
 
   // Restore saved division from localStorage
-  // useEffect(() => {
-  //   if (!isLoading && availableDivisions.length > 0 && !scope.divisionId) {
-  //       const savedDivisionId = localStorage.getItem('division_id');
-  //       if (savedDivisionId) {
-  //           const divisionExists = availableDivisions.some((d: any) => d.id === savedDivisionId);
-  //           if (divisionExists) {
-  //               const newScope = {
-  //                   divisionId: savedDivisionId,
-  //                   teamId: null,
-  //                   areaId: null,
-  //                   province: null,
-  //                   ward: null,
-  //               };
-  //               setContextScope(newScope);
-  //               // NEW: Also save to Redux store
-  //               dispatch(setScope(newScope));
+  useEffect(() => {
+    if (!isLoading && availableDivisions.length > 0 && !scope.divisionId) {
+        const savedDivisionId = localStorage.getItem('division_id');
+        if (savedDivisionId) {
+            const divisionExists = availableDivisions.some((d: any) => d.id === savedDivisionId);
+            if (divisionExists) {
+                const newScope = {
+                    divisionId: savedDivisionId,
+                    teamId: null,
+                    areaId: null,
+                    province: null,
+                    ward: null,
+                };
+                setContextScope(newScope);
+                // NEW: Also save to Redux store
+                dispatch(setScope(newScope));
                 
-  //           }
-  //       }
-  //   }
-  // }, [availableDivisions, isLoading, scope.divisionId, setContextScope, dispatch]);
+            }
+        }
+    }
+  }, [availableDivisions, isLoading, scope.divisionId, setContextScope, dispatch]);
 
   const handleDivisionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation();
@@ -191,10 +208,13 @@ console.log('user', user)
    
   };
 
-  const userDeptId = (user as any)?.app_metadata?.department?.id;
+  const userDeptId = (user as any)?.app_metadata?.department?.id || 
+                     (user as any)?.department_id ||
+                     (user as any)?.divisionId ||
+                     (user as any)?.division_id;
 
   const isDivisionDisabled = isLoading || !!userDeptId;
-  const isTeamDisabled = isLoading || !selectedDivision || !!userDeptId;
+  const isTeamDisabled = isLoading || !selectedDivision || (!!userDeptId && isTeamMember) || availableTeams.length === 0;
   const isAreaDisabled = isLoading || !selectedTeam;
   
 
