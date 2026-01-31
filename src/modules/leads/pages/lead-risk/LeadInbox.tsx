@@ -1003,6 +1003,72 @@ export default function LeadInbox() {
     }
   };
 
+  // Complete processing (in_progress → resolved)
+  const handleCompleteProcessing = async (lead: Lead) => {
+    try {
+      const supabase = supabaseClient;
+      console.log(`✅ [LeadInbox] Completing processing for lead ${lead.code}`);
+
+      const { data, error } = await supabase
+        .from("leads")
+        .update({
+          status: "resolved",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("_id", lead._id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("❌ [LeadInbox] Failed to complete processing:", error);
+        toast.error("Lỗi khi hoàn thành xử lý", { description: error.message });
+        return;
+      }
+
+      console.log("✅ [LeadInbox] Processing completed successfully");
+      toast.success("Đã hoàn thành xử lý", { description: `Lead ${lead.code} đã được hoàn thành.` });
+
+      setSelectedStatuses([]);
+      await refetch();
+    } catch (err) {
+      console.error("❌ [LeadInbox] Error completing processing:", err);
+      toast.error("Lỗi hệ thống");
+    }
+  };
+
+  // Cancel processing (in_progress → cancelled)
+  const handleCancelProcessing = async (lead: Lead) => {
+    try {
+      const supabase = supabaseClient;
+      console.log(`🚫 [LeadInbox] Cancelling processing for lead ${lead.code}`);
+
+      const { data, error } = await supabase
+        .from("leads")
+        .update({
+          status: "cancelled",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("_id", lead._id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("❌ [LeadInbox] Failed to cancel processing:", error);
+        toast.error("Lỗi khi hủy xử lý", { description: error.message });
+        return;
+      }
+
+      console.log("✅ [LeadInbox] Processing cancelled successfully");
+      toast.success("Đã hủy xử lý", { description: `Lead ${lead.code} đã được hủy.` });
+
+      setSelectedStatuses([]);
+      await refetch();
+    } catch (err) {
+      console.error("❌ [LeadInbox] Error cancelling processing:", err);
+      toast.error("Lỗi hệ thống");
+    }
+  };
+
   // Reject lead (any status → rejected)
   const handleRejectLead = async (lead: Lead, reason: string) => {
     try {
@@ -1181,6 +1247,34 @@ export default function LeadInbox() {
         setIsRejectModalOpen(true);
         break;
       // Add other cases as needed
+      case "complete":
+        setConfirmDialog({
+          isOpen: true,
+          title: "Hoàn thành xử lý",
+          message: "Bạn có chắc chắn muốn hoàn thành xử lý lead này?",
+          confirmText: "Xác nhận",
+          type: "success",
+          leadCode: lead.code,
+          onConfirm: () => {
+            handleCompleteProcessing(lead);
+            setConfirmDialog({ ...confirmDialog, isOpen: false });
+          },
+        });
+        break;
+      case "cancel":
+        setConfirmDialog({
+          isOpen: true,
+          title: "Hủy bỏ xử lý",
+          message: "Bạn có chắc chắn muốn hủy bỏ xử lý lead này?",
+          confirmText: "Đồng ý hủy",
+          type: "danger",
+          leadCode: lead.code,
+          onConfirm: () => {
+            handleCancelProcessing(lead);
+            setConfirmDialog({ ...confirmDialog, isOpen: false });
+          },
+        });
+        break;
       default:
         console.log(`Unhandled action: ${action}`);
     }

@@ -135,6 +135,24 @@ export default function LeadDetail() {
   // Start Verification Modal state
   const [showStartVerificationModal, setShowStartVerificationModal] = useState(false);
 
+  // Generic Confirmation Dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText: string;
+    cancelText?: string;
+    type: 'info' | 'warning' | 'danger' | 'success';
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: 'Xác nhận',
+    type: 'info',
+    onConfirm: () => { },
+  });
+
   // Auto-redirect if lead not found
   useEffect(() => {
     if (id && !lead) {
@@ -233,6 +251,50 @@ export default function LeadDetail() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Lỗi không xác định';
       console.error('❌ [LeadDetail] Error pausing verification:', errorMessage);
+      toast.error('Lỗi hệ thống', {
+        description: errorMessage,
+      });
+    }
+  };
+
+  // Handle pause processing (processing → process_paused)
+  const handlePauseProcessing = async () => {
+    try {
+      const supabase = getSupabaseClient();
+
+      console.log(`⏸️ [LeadDetail] Pausing processing for lead ${lead.code}`);
+
+      const { data, error } = await supabase
+        .from('leads')
+        .update({
+          status: 'process_paused',
+          updated_at: new Date().toISOString()
+        })
+        .eq('_id', lead._id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ [LeadDetail] Failed to pause processing:', error);
+        toast.error('Lỗi khi tạm dừng xử lý', {
+          description: error.message,
+        });
+        return;
+      }
+
+      console.log('✅ [LeadDetail] Processing paused successfully');
+
+      toast.success('Đã tạm dừng xử lý', {
+        description: `Lead ${lead.code} đã được tạm dừng.`,
+        duration: 3000,
+      });
+
+      setShowQuickActionsSidebar(false);
+      // Refetch lead data to update UI
+      await refetch();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Lỗi không xác định';
+      console.error('❌ [LeadDetail] Error pausing processing:', errorMessage);
       toast.error('Lỗi hệ thống', {
         description: errorMessage,
       });
@@ -373,6 +435,72 @@ export default function LeadDetail() {
       toast.error('Lỗi hệ thống', {
         description: errorMessage,
       });
+    }
+  };
+
+  // Handle complete processing (processing → resolved)
+  const handleCompleteProcessing = async () => {
+    try {
+      const supabase = getSupabaseClient();
+      console.log(`✅ [LeadDetail] Completing processing for lead ${lead.code}`);
+
+      const { data, error } = await supabase
+        .from('leads')
+        .update({
+          status: 'resolved',
+          updated_at: new Date().toISOString()
+        })
+        .eq('_id', lead._id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ [LeadDetail] Failed to complete processing:', error);
+        toast.error('Lỗi khi hoàn thành xử lý', { description: error.message });
+        return;
+      }
+
+      console.log('✅ [LeadDetail] Processing completed successfully');
+      toast.success('Đã hoàn thành xử lý', { description: `Lead ${lead.code} đã được hoàn thành.` });
+
+      await refetch();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Lỗi không xác định';
+      console.error('❌ [LeadDetail] Error completing processing:', errorMessage);
+      toast.error('Lỗi hệ thống');
+    }
+  };
+
+  // Handle cancel processing (processing → cancelled)
+  const handleCancelProcessing = async () => {
+    try {
+      const supabase = getSupabaseClient();
+      console.log(`🚫 [LeadDetail] Cancelling processing for lead ${lead.code}`);
+
+      const { data, error } = await supabase
+        .from('leads')
+        .update({
+          status: 'cancelled',
+          updated_at: new Date().toISOString()
+        })
+        .eq('_id', lead._id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ [LeadDetail] Failed to cancel processing:', error);
+        toast.error('Lỗi khi hủy xử lý', { description: error.message });
+        return;
+      }
+
+      console.log('✅ [LeadDetail] Processing cancelled successfully');
+      toast.success('Đã hủy xử lý', { description: `Lead ${lead.code} đã được hủy.` });
+
+      await refetch();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Lỗi không xác định';
+      console.error('❌ [LeadDetail] Error cancelling processing:', errorMessage);
+      toast.error('Lỗi hệ thống');
     }
   };
 
@@ -653,7 +781,19 @@ export default function LeadDetail() {
                       <>
                         <button
                           className={styles.secondaryBtn}
-                          onClick={handlePauseVerification}
+                          onClick={() => {
+                            setConfirmDialog({
+                              isOpen: true,
+                              title: 'Tạm dừng xử lý',
+                              message: 'Bạn có chắc muốn tạm dừng xử lý lead này?',
+                              confirmText: 'Xác nhận',
+                              type: 'warning',
+                              onConfirm: () => {
+                                handlePauseProcessing();
+                                setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                              }
+                            });
+                          }}
                           style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%' }}
                         >
                           <PauseCircle size={16} />
@@ -661,11 +801,44 @@ export default function LeadDetail() {
                         </button>
                         <button
                           className={styles.submitBtn}
-                          onClick={() => toast.info('Tính năng đang được cập nhật')}
+                          onClick={() => {
+                            setConfirmDialog({
+                              isOpen: true,
+                              title: 'Hoàn thành xử lý',
+                              message: 'Bạn có chắc chắn muốn hoàn thành xử lý lead này?',
+                              confirmText: 'Xác nhận',
+                              type: 'success',
+                              onConfirm: () => {
+                                handleCompleteProcessing();
+                                setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                              }
+                            });
+                          }}
                           style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%' }}
                         >
                           <CheckCircle2 size={16} />
                           Hoàn thành xử lý
+                        </button>
+                        <button
+                          className={styles.secondaryBtn}
+                          onClick={() => {
+                            setConfirmDialog({
+                              isOpen: true,
+                              title: 'Hủy bỏ xử lý',
+                              message: 'Bạn có chắc chắn muốn hủy bỏ xử lý lead này?',
+                              confirmText: 'Đồng ý hủy',
+                              confirmButtonColor: 'red',
+                              type: 'danger',
+                              onConfirm: () => {
+                                handleCancelProcessing();
+                                setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                              }
+                            });
+                          }}
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', borderColor: 'var(--destructive)', color: 'var(--destructive)' }}
+                        >
+                          <XCircle size={16} />
+                          Hủy bỏ
                         </button>
                         {(typeof lead.sla.remainingHours === 'number' && !isNaN(lead.sla.remainingHours) && lead.sla.remainingHours <= 4) && (
                           <button
@@ -1390,6 +1563,18 @@ export default function LeadDetail() {
           confirmText="Xác nhận"
           cancelText="Hủy"
           type="info"
+        />
+
+        {/* Generic Confirmation Dialog */}
+        <ConfirmationDialog
+          isOpen={confirmDialog.isOpen}
+          onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
+          onConfirm={confirmDialog.onConfirm}
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          confirmText={confirmDialog.confirmText}
+          cancelText={confirmDialog.cancelText || "Hủy"}
+          type={confirmDialog.type}
         />
       </div>
     </>

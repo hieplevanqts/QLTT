@@ -56,7 +56,7 @@ const getAllowedActions = (status: LeadStatus): LeadAction[] => {
     case 'verify_paused':
       return ['view', 'resume_verification'];
     case 'processing':
-      return ['view', 'add_evidence', 'pause_processing'];
+      return ['view', 'add_evidence', 'pause_processing', 'complete', 'cancel'];
     case 'process_paused':
       return ['view', 'add_evidence', 'resume_processing'];
     case 'resolved':
