@@ -52,7 +52,7 @@ export const rolePermissionsService = {
     }
 
     return (response.data || []).map((row: any) => ({
-      id: row._id ?? row.id,
+      id: row._id ?? "",
       code: row.code,
       name: row.name,
       description: row.description ?? null,
@@ -67,28 +67,20 @@ export const rolePermissionsService = {
   },
 
   async listModules(): Promise<ModuleOption[]> {
-    const trySelect = async (idField: "_id" | "id") => {
-      const { data, error } = await supabase
-        .from("modules")
-        .select(`${idField}, code, name`)
-        .order("code", { ascending: true });
+    const { data, error } = await supabase
+      .from("modules")
+      .select("_id, code, name")
+      .order("code", { ascending: true });
 
-      if (error) {
-        throw error;
-      }
-
-      return (data || []).map((row: any) => ({
-        id: row[idField],
-        code: row.code,
-        name: row.name,
-      }));
-    };
-
-    try {
-      return await trySelect("id");
-    } catch (_err) {
-      return await trySelect("_id");
+    if (error) {
+      throw new Error(`modules select failed: ${error.message}`);
     }
+
+    return (data || []).map((row: any) => ({
+      id: row._id ?? "",
+      code: row.code,
+      name: row.name,
+    }));
   },
 
   async listRolePermissionIds(roleId: string): Promise<string[]> {

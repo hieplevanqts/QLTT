@@ -428,8 +428,11 @@ export default function MenusPage() {
         message.success("Đã lưu menu.");
       }
     } catch (err) {
+      console.error("[menus] save failed", err);
       if (err instanceof Error) {
         message.error(err.message);
+      } else {
+        message.error("Không thể lưu menu.");
       }
     } finally {
       setSaving(false);

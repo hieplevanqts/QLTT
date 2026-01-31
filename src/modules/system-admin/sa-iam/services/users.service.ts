@@ -86,7 +86,7 @@ const requestAdmin = async <T>(path: string, options?: RequestInit): Promise<T> 
 };
 
 const mapRow = (row: any): UserRecord => ({
-  id: row._id ?? row.id,
+  id: row._id ?? "",
   username: row.username ?? null,
   full_name: row.full_name ?? null,
   email: row.email ?? null,
@@ -115,7 +115,7 @@ export type DepartmentScopeRecord = {
 };
 
 const mapDepartmentRow = (row: any): DepartmentScopeRecord => ({
-  id: row._id ?? row.id,
+  id: row._id ?? "",
   parent_id: row.parent_id ?? null,
   name: row.name ?? "",
   code: row.code ?? null,
@@ -351,7 +351,7 @@ export const usersService = {
     }
 
     return (data || []).map((row: any) => ({
-      id: row._id ?? row.id,
+      id: row._id ?? "",
       code: row.code,
       name: row.name,
       status: row.status,

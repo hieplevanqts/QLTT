@@ -51,7 +51,7 @@ const normalizeStatus = (value: unknown): ModuleStatusValue => {
 };
 
 const mapRow = (row: any): ModuleRecord => ({
-  id: row._id ?? row.id,
+  id: row._id ?? "",
   key: row.key ?? row.code ?? "",
   code: row.code ?? row.key ?? "",
   name: row.name ?? "",
@@ -215,15 +215,6 @@ export const modulesService = {
       .select("*")
       .single();
 
-    if (response.error && response.error.message.includes("_id")) {
-      response = await supabase
-        .from("modules")
-        .update(basePayload)
-        .eq("id", id)
-        .select("*")
-        .single();
-    }
-
     if (response.error) {
       const stripped = stripMissingColumn(basePayload, response.error.message);
       if (stripped !== basePayload) {
@@ -249,13 +240,6 @@ export const modulesService = {
       .update({ status, updated_at: new Date().toISOString() })
       .eq("_id", id);
 
-    if (response.error && response.error.message.includes("_id")) {
-      response = await supabase
-        .from("modules")
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq("id", id);
-    }
-
     if (response.error) {
       throw new Error(`module status update failed: ${response.error.message}`);
     }
@@ -266,13 +250,6 @@ export const modulesService = {
       .from("modules")
       .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
       .eq("_id", id);
-
-    if (response.error && response.error.message.includes("_id")) {
-      response = await supabase
-        .from("modules")
-        .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-        .eq("id", id);
-    }
 
     if (response.error) {
       throw new Error(`module delete failed: ${response.error.message}`);

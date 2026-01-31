@@ -58,7 +58,7 @@ export type RoleUserListResult = {
 };
 
 const mapRow = (row: any): RoleRecord => ({
-  id: row._id ?? row.id,
+  id: row._id ?? "",
   code: row.code,
   name: row.name,
   description: row.description ?? null,

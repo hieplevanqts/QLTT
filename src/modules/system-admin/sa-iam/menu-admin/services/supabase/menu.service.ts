@@ -81,7 +81,7 @@ export const menuService: MenuService = {
       throw new Error(`permissions select failed: ${error.message}`);
     }
     return (data ?? []).map((row: any) => ({
-      _id: row._id ?? row.id,
+      _id: row._id ?? "",
       code: row.code ?? "",
       name: row.name ?? row.code ?? "",
       description: row.description ?? null,
@@ -102,7 +102,7 @@ export const menuService: MenuService = {
       throw new Error(`menu permissions select failed: ${error.message}`);
     }
     return (data ?? []).map((row: any) => ({
-      _id: row._id ?? row.id,
+      _id: row._id ?? "",
       menu_id: row.menu_id,
       permission_id: row.permission_id,
       created_at: row.created_at ?? null,
@@ -187,7 +187,7 @@ export const menuService: MenuService = {
       throw new Error(`menus history select failed: ${error.message}`);
     }
     return (data ?? []).map((row: any) => ({
-      _id: row._id ?? row.id,
+      _id: row._id ?? "",
       code: row.code ?? "",
       name: row.name ?? "",
       updated_at: row.updated_at ?? null,
