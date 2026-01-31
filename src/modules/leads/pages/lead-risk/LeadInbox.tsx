@@ -1177,7 +1177,7 @@ export default function LeadInbox() {
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h1 className={styles.title}>Xử lý nguồn tin hằng ngày</h1>
+          <h1 className={styles.title}>Xử lý nguồn tin hằng ngày 123</h1>
           <p className={styles.subtitle}>
             Xử lý nguồn tin hàng ngày
           </p>
