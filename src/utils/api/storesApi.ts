@@ -25,12 +25,21 @@ function mapRiskLevel(riskLevel: number | null | undefined): 'low' | 'medium' | 
 
 /**
  * Map status from API to FacilityStatus
- * API: 'active', 'pending', 'suspended', 'rejected', 'closed'
+ * API: 'active', 'pending', 'suspended', 'rejected', 'refuse'
  */
 function mapStatus(status: string | null | undefined) {
   if (!status) return 'pending';
-  const validStatuses = ['active', 'pending', 'suspended', 'rejected', 'closed'];
-  return validStatuses.includes(status) ? status : 'pending';
+  // Map database aliases to frontend-supported statuses
+  const statusAliases: Record<string, string> = {
+    'inactive': 'refuse',
+    'cancelled': 'refuse',
+    'underInspection': 'processing',
+    'declined': 'rejected',
+  };
+
+  const mappedStatus = statusAliases[status] || status;
+  const validStatuses = ['active', 'pending', 'suspended', 'rejected', 'refuse', 'processing'];
+  return validStatuses.includes(mappedStatus) ? mappedStatus : 'pending';
 }
 
 /**
@@ -253,12 +262,12 @@ export async function fetchStoresStats(filters?: {
       return parseInt(range?.split('/')?.[1] || '0', 10);
     };
 
-    const [total, active, pending, suspended, closed, rejected] = await Promise.all([
+    const [total, active, pending, suspended, refuse, rejected] = await Promise.all([
       fetchTotalCount(),
       fetchStatusCount('active'),
       fetchStatusCount('pending'),
       fetchStatusCount('suspended'),
-      fetchStatusCount('closed'),
+      fetchStatusCount('refuse'),
       fetchStatusCount('rejected'),
     ]);
 
@@ -269,7 +278,7 @@ export async function fetchStoresStats(filters?: {
       active,
       pending,
       suspended,
-      closed,
+      refuse,
       rejected,
     };
   } catch (error: any) {
@@ -280,7 +289,7 @@ export async function fetchStoresStats(filters?: {
       active: 0,
       pending: 0,
       suspended: 0,
-      closed: 0,
+      refuse: 0,
       rejected: 0,
     };
   }
@@ -483,8 +492,6 @@ export async function updateMerchant(
     p_owner_birth_year?: number;
     p_owner_identity_no?: string;
     p_owner_email?: string;
-    p_validity_status?: number;
-    p_approval_status?: number;
   }
 ): Promise<any> {
   try {
@@ -499,33 +506,31 @@ export async function updateMerchant(
 
     // Create payload with merchant_id and all parameters
     const payload = {
+      p_address: data.p_address ?? null,
+      p_business_email: data.p_business_email ?? null,
+      p_business_name: data.p_business_name ?? null,
+      p_business_phone: data.p_business_phone ?? null,
+      p_business_type: data.p_business_type ?? null,
+      p_department_id: data.p_department_id ?? null,
+      p_established_date: data.p_established_date ?? null,
+      p_fax: data.p_fax ?? null,
+      p_latitude: data.p_latitude ?? null,
+      p_license_status: data.p_license_status ?? 'valid',
+      p_longitude: data.p_longitude ?? null,
       p_merchant_id: merchantId,
-      p_business_name: data.p_business_name || null,
-      p_owner_name: data.p_owner_name || null,
-      p_owner_phone: data.p_owner_phone || null,
-      p_license_status: data.p_license_status || 'valid',
-      p_tax_code: data.p_tax_code || null,
-      p_business_type: data.p_business_type || null,
-      p_province_id: data.p_province_id || null,
-      p_ward_id: data.p_ward_id || null,
-      p_address: data.p_address || null,
-      p_latitude: data.p_latitude || null,
-      p_longitude: data.p_longitude || null,
-      p_status: data.p_status || 'active',
-      p_established_date: data.p_established_date || null,
-      p_fax: data.p_fax || null,
-      p_department_id: data.p_department_id || null,
-      p_note: data.p_note || null,
-      p_business_phone: data.p_business_phone || null,
-      p_business_email: data.p_business_email || null,
-      p_website: data.p_website || null,
-      p_store_area: data.p_store_area || null,
-      p_owner_phone_2: data.p_owner_phone_2 || null,
-      p_owner_birth_year: data.p_owner_birth_year || null,
-      p_owner_identity_no: data.p_owner_identity_no || null,
-      p_owner_email: data.p_owner_email || null,
-      p_approval_status: data.p_approval_status || null,
-      p_validity_status: data.p_validity_status || null,
+      p_note: data.p_note ?? null,
+      p_owner_birth_year: data.p_owner_birth_year ?? null,
+      p_owner_email: data.p_owner_email ?? null,
+      p_owner_identity_no: data.p_owner_identity_no ?? null,
+      p_owner_name: data.p_owner_name ?? null,
+      p_owner_phone: data.p_owner_phone ?? null,
+      p_owner_phone_2: data.p_owner_phone_2 ?? null,
+      p_province_id: data.p_province_id ?? null,
+      p_status: data.p_status ?? 'active',
+      p_store_area: data.p_store_area ?? null,
+      p_tax_code: data.p_tax_code ?? null,
+      p_ward_id: data.p_ward_id ?? null,
+      p_website: data.p_website ?? null,
     };
 
     console.log('📤 [updateMerchant] Request payload:', {
@@ -568,6 +573,69 @@ export async function updateMerchant(
     return result;
   } catch (error: any) {
     console.error('❌ [updateMerchant] Error:', {
+      merchant_id: merchantId,
+      error_message: error.message,
+      timestamp: new Date().toISOString(),
+    });
+    throw error;
+  }
+}
+
+/**
+ * ⚡ Update only the merchant status via specialized RPC
+ * @param merchantId - The merchant UUID to update
+ * @param status - New status ('active', 'pending', 'suspended', 'rejected', 'refuse')
+ *                 Note: Backend constraint allows these 5 statuses. 'refuse' = permanently closed
+ * @returns Result from API
+ */
+export async function updateMerchantStatus(
+  merchantId: string,
+  status: string
+): Promise<any> {
+  try {
+    const url = `${SUPABASE_REST_URL}/rpc/update_merchant_status`;
+
+    // Validate status on client side before sending to API
+    const validStatuses = ['active', 'pending', 'suspended', 'rejected', 'refuse'];
+    if (!validStatuses.includes(status)) {
+      throw new Error(`Invalid status: ${status}. Must be one of: ${validStatuses.join(', ')}`);
+    }
+
+    console.log('⚡ [updateMerchantStatus] Calling API:', {
+      merchant_id: merchantId,
+      status: status,
+      timestamp: new Date().toISOString(),
+    });
+
+    // Normalize older 'closed' value to new 'refuse'
+    const normalizedStatus = status === 'closed' ? 'refuse' : status;
+
+    const payload = {
+      p_merchant_id: merchantId,
+      p_status: normalizedStatus,
+    };
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ [updateMerchantStatus] API error:', {
+        merchant_id: merchantId,
+        status: response.status,
+        error: errorText,
+      });
+      throw new Error(`Failed to update merchant status: ${response.status} ${response.statusText}\n${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log('✅ [updateMerchantStatus] Success:', result);
+    return result;
+  } catch (error: any) {
+    console.error('❌ [updateMerchantStatus] Error:', {
       merchant_id: merchantId,
       error_message: error.message,
       timestamp: new Date().toISOString(),

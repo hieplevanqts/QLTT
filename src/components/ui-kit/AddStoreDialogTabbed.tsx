@@ -1,19 +1,15 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Building2,
-  X,
   Upload,
   Loader2,
   Sparkles,
   FileText,
   Users,
   MapPin,
-  Phone,
-  Mail,
   AlertCircle,
   CheckCircle2,
   XCircle,
-  Info,
   Check,
   ChevronsUpDown,
 } from 'lucide-react';
@@ -60,7 +56,7 @@ import {
   getWardsByProvince
 } from '@/utils/data/vietnamLocations';
 import { fetchProvinces, fetchWardsByProvince, type ProvinceApiData, type WardApiData } from '@/utils/api/locationsApi';
-import { INDUSTRIES, searchIndustries } from '@/utils/data/industries';
+import { INDUSTRIES } from '@/utils/data/industries';
 import { extractDocumentData } from '@/utils/api/ocrApi';
 import { toast } from 'sonner';
 import styles from './AddStoreDialogTabbed.module.css';

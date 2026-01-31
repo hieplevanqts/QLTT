@@ -67,7 +67,7 @@ const OPERATION_STATUS_OPTIONS = [
   { value: 'underInspection', label: 'Đang xử lý kiểm tra' },
   { value: 'suspended', label: 'Tạm ngưng hoạt động' },
   { value: 'rejected', label: 'Từ chối phê duyệt' },
-  { value: 'closed', label: 'Ngừng hoạt động' },
+  { value: 'refuse', label: 'Ngừng hoạt động' },
 ];
 
 const FIELD_LABELS: Record<string, string> = {
@@ -111,7 +111,7 @@ type EditStep = 'form' | 'diff-preview';
 function mapApiStatusToForm(apiStatus: any): string {
   if (typeof apiStatus === 'string') {
     // Map API status values directly - support all FacilityStatus types
-    const validStatuses = ['active', 'pending', 'underInspection', 'suspended', 'rejected', 'closed'];
+    const validStatuses = ['active', 'pending', 'underInspection', 'suspended', 'rejected', 'refuse'];
     const normalized = apiStatus.toLowerCase();
     return validStatuses.includes(normalized) ? normalized : 'active';
   }

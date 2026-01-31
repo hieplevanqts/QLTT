@@ -147,7 +147,7 @@ const storeNames = [
   'Quán ăn Bình Dân',
 ];
 
-const statuses: FacilityStatus[] = ['active', 'pending', 'suspended', 'rejected', 'closed'];
+const statuses: FacilityStatus[] = ['active', 'pending', 'suspended', 'rejected', 'refuse'];
 const riskLevels: ('low' | 'medium' | 'high' | 'none')[] = ['low', 'medium', 'high', 'none'];
 
 function generateStoreName(index: number): string {
@@ -165,7 +165,7 @@ function generateAddress(index: number): string {
 
 function generateInspectionDate(index: number): string {
   const statusIndex = index % statuses.length;
-  if (statuses[statusIndex] === 'pending' || statuses[statusIndex] === 'rejected' || statuses[statusIndex] === 'closed') {
+  if (statuses[statusIndex] === 'pending' || statuses[statusIndex] === 'rejected' || statuses[statusIndex] === 'refuse') {
     return 'Chưa kiểm tra';
   }
   

@@ -146,14 +146,85 @@
 }
 
 .statusTracking {
-  background: rgba(168, 85, 247, 0.1);
-  color: rgb(147, 51, 234);
-  border: 1px solid rgba(168, 85, 247, 0.3);
   font-family: 'Inter', sans-serif;
   font-size: var(--text-sm);
   padding: var(--spacing-2) var(--spacing-3);
   border-radius: var(--radius-md);
   font-weight: 500;
+}
+
+/* --- Semantic Status Buttons --- */
+
+.statusBtnSuccess {
+  background-color: #ecfdf5 !important;
+  color: #059669 !important;
+  border: 1px solid #10b981 !important;
+  gap: var(--spacing-2);
+  transition: all 0.2s ease;
+}
+
+.statusBtnSuccess:hover:not(:disabled) {
+  background-color: #d1fae5 !important;
+  border-color: #059669 !important;
+  box-shadow: 0 2px 4px rgba(5, 150, 105, 0.1);
+}
+
+.statusBtnSuccess:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.statusBtnWarning {
+  background-color: #fffbeb !important;
+  color: #d97706 !important;
+  border: 1px solid #f59e0b !important;
+  gap: var(--spacing-2);
+  transition: all 0.2s ease;
+}
+
+.statusBtnWarning:hover:not(:disabled) {
+  background-color: #fef3c7 !important;
+  border-color: #d97706 !important;
+  box-shadow: 0 2px 4px rgba(217, 119, 6, 0.1);
+}
+
+.statusBtnWarning:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.statusBtnDanger {
+  background-color: #fef2f2 !important;
+  color: #dc2626 !important;
+  border: 1px solid #ef4444 !important;
+  gap: var(--spacing-2);
+  transition: all 0.2s ease;
+}
+
+.statusBtnDanger:hover:not(:disabled) {
+  background-color: #fee2e2 !important;
+  border-color: #dc2626 !important;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.1);
+}
+
+.statusBtnDanger:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.statusBtnPrimary {
+  background-color: #eff6ff !important;
+  color: #2563eb !important;
+  border: 1px solid #3b82f6 !important;
+  gap: var(--spacing-2);
+  transition: all 0.2s ease;
+}
+
+.statusBtnPrimary:hover:not(:disabled) {
+  background-color: #dbeafe !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
+}
+
+.statusBtnPrimary:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .riskBadge {

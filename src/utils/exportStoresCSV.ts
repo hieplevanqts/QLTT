@@ -10,8 +10,8 @@ import { FacilityStatus } from '@/components/ui-kit/FacilityStatusBadge';
 const STATUS_MAP: Record<FacilityStatus, string> = {
   active: 'Hoạt động',
   pending: 'Chờ duyệt',
-  suspended: 'Tạm ngừng',
-  closed: 'Ngừng hoạt động',
+  suspended: 'Tạm ngưng',
+  refuse: 'Ngừng hoạt động',
   rejected: 'Từ chối phê duyệt',
 };
 

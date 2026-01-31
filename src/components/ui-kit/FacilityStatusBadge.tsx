@@ -15,7 +15,7 @@ export type FacilityStatus =
   | 'underInspection'   // Đang xử lý kiểm tra
   | 'suspended'         // Tạm ngưng hoạt động
   | 'rejected'          // Từ chối phê duyệt
-  | 'closed';           // Ngừng hoạt động
+  | 'refuse';           // Ngừng hoạt động (refuse)
 
 interface StatusConfig {
   label: string;
@@ -55,7 +55,7 @@ const statusConfig: Record<FacilityStatus, StatusConfig> = {
     variant: 'rejected',
     allowedActions: ['verify', 'edit', 'delete'],
   },
-  closed: {
+  refuse: {
     label: 'Ngừng hoạt động',
     icon: CircleX,
     variant: 'closed',

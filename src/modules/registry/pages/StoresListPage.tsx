@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Plus,
@@ -59,7 +59,7 @@ import { getViolationsByStoreId } from '@/utils/data/mockViolations';
 import { getComplaintsByStoreId } from '@/utils/data/mockComplaints';
 import { PendingUpdatesDialog } from '@/components/ui-kit/PendingUpdatesDialog';
 import { getTotalPendingCount } from '@/utils/data/mockPendingUpdates';
-import { fetchStores, fetchStoresStats, createMerchant } from '@/utils/api/storesApi';
+import { fetchStores, fetchStoresStats, createMerchant, updateMerchant, updateMerchantStatus } from '@/utils/api/storesApi';
 import styles from './StoresListPage.module.css';
 
 export default function StoresListPage() {
@@ -143,6 +143,13 @@ export default function StoresListPage() {
     open: boolean;
     store: Store | null;
   }>({ open: false, store: null });
+  
+  // State for close (refuse) reason dialog
+  const [closeReasonDialog, setCloseReasonDialog] = useState<{
+    open: boolean;
+    store: Store | null;
+    reason: string;
+  }>({ open: false, store: null, reason: '' });
 
   // New dialog states
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -202,26 +209,23 @@ export default function StoresListPage() {
     active: 0,
     pending: 0,
     suspended: 0,
-    closed: 0,
+    refuse: 0,
     rejected: 0,
-    other: 0,
   });
 
   // Fetch stats separately or when filters change if needed
-  useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const data = await fetchStoresStats();
-        setStats({
-          ...data,
-          other: data.rejected // Map rejected to other if needed, or keep separate
-        });
-      } catch (error) {
-        console.error('Error loading stats:', error);
-      }
-    };
-    loadStats();
+  const loadStats = useCallback(async () => {
+    try {
+      const data = await fetchStoresStats();
+      setStats(data);
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
   }, []);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
 
   // Load stores from API when pagination or filters change
   useEffect(() => {
@@ -436,42 +440,76 @@ export default function StoresListPage() {
       title: 'Tạm ngừng hoạt động',
       description: `Bạn có chắc chắn muốn tạm ngừng hoạt động của cơ sở "${store.name}"?`,
       variant: 'warning',
-      onConfirm: () => {
-        setStores((prev) =>
-          prev.map(s => (s.id === store.id ? { ...s, status: 'suspended' as FacilityStatus } : s))
-        );
-        toast.success('Tạm ngừng cơ sở thành công');
+      onConfirm: async () => {
+        if (!store.merchantId) {
+          toast.error('Không tìm thấy ID cơ sở để cập nhật');
+          return;
+        }
+        try {
+          await updateMerchantStatus(store.merchantId, 'suspended');
+          setStores((prev) =>
+            prev.map(s => (s.id === store.id ? { ...s, status: 'suspended' as FacilityStatus } : s))
+          );
+          toast.success('Tạm ngừng cơ sở thành công');
+          loadStats();
+        } catch (error: any) {
+          toast.error('Lỗi khi tạm ngưng cơ sở: ' + error.message);
+        }
       },
     });
   };
 
   const handleClose = (store: Store) => {
-    setConfirmDialog({
+    // Open reason dialog instead of confirm dialog
+    setCloseReasonDialog({
       open: true,
-      title: 'Ngừng hoạt động',
-      description: `Bạn có chắc chắn muốn ngừng hoạt động vĩnh viễn cơ sở "${store.name}"? Hành động này không thể hoàn tác.`,
-      variant: 'danger',
-      requireDoubleConfirm: true,
-      onConfirm: () => {
-        setStores(prev =>
-          prev.map(s => (s.id === store.id ? { ...s, status: 'closed' as FacilityStatus } : s))
-        );
-        toast.success('Ngừng hoạt động cơ sở thành công');
-      },
+      store: store,
+      reason: '',
     });
+  };
+
+  const handleCloseConfirm = async (reason: string) => {
+    const store = closeReasonDialog.store;
+    if (!store || !store.merchantId) {
+      toast.error('Không tìm thấy ID cơ sở để cập nhật');
+      setCloseReasonDialog({ open: false, store: null, reason: '' });
+      return;
+    }
+    try {
+      await updateMerchantStatus(store.merchantId, 'refuse');
+      setStores(prev =>
+        prev.map(s => (s.id === store.id ? { ...s, status: 'refuse' as FacilityStatus } : s))
+      );
+      toast.success('Ngừng hoạt động cơ sở thành công');
+      loadStats();
+    } catch (error: any) {
+      toast.error('Lỗi khi ngừng hoạt động cơ sở: ' + error.message);
+    } finally {
+      setCloseReasonDialog({ open: false, store: null, reason: '' });
+    }
   };
 
   const handleResume = (store: Store) => {
     setConfirmDialog({
       open: true,
       title: 'Khôi phục hoạt động',
-      description: `Bạn có chắc chn muốn khôi phục hoạt động cơ sở "${store.name}"?`,
+      description: `Bạn có chắc chắn muốn khôi phục hoạt động cơ sở "${store.name}"?`,
       variant: 'default',
-      onConfirm: () => {
-        setStores(prev =>
-          prev.map(s => (s.id === store.id ? { ...s, status: 'active' as FacilityStatus } : s))
-        );
-        toast.success('Khôi phục cơ sở thành công');
+      onConfirm: async () => {
+        if (!store.merchantId) {
+          toast.error('Không tìm thấy ID cơ sở để cập nhật');
+          return;
+        }
+        try {
+          await updateMerchantStatus(store.merchantId, 'active');
+          setStores(prev =>
+            prev.map(s => (s.id === store.id ? { ...s, status: 'active' as FacilityStatus } : s))
+          );
+          toast.success('Khôi phục cơ sở thành công');
+          loadStats();
+        } catch (error: any) {
+          toast.error('Lỗi khi khôi phục cơ sở: ' + error.message);
+        }
       },
     });
   };
@@ -512,64 +550,58 @@ export default function StoresListPage() {
     });
   };
 
-  const handleApproveConfirm = (reason: string, verifyText: string) => {
+  const handleApproveConfirm = async (reason: string, verifyText: string) => {
     const store = stores.find(s => s.id === approveDialog.storeId);
-    if (!store) return;
+    if (!store || !store.merchantId) {
+      toast.error('Không tìm thấy ID cơ sở để cập nhật');
+      return;
+    }
 
-    // Update store status to active
-    setStores(prev =>
-      prev.map(s => (s.id === approveDialog.storeId ? { ...s, status: 'active' as FacilityStatus } : s))
-    );
+    try {
+      await updateMerchantStatus(store.merchantId, 'active');
 
-    // Audit log
-    console.log('✅ Approval Audit Log:', {
-      storeId: approveDialog.storeId,
-      storeName: approveDialog.storeName,
-      action: 'approve',
-      oldStatus: store.status,
-      newStatus: 'active',
-      reason,
-      verifyText,
-      timestamp: new Date().toISOString(),
-      performedBy: 'Current User',
-    });
+      // Update local state
+      setStores(prev =>
+        prev.map(s => (s.id === approveDialog.storeId ? { ...s, status: 'active' as FacilityStatus } : s))
+      );
 
-    toast.success(`Đã phê duyệt cửa hàng "${approveDialog.storeName}"`, {
-      description: 'Cửa hàng đã chuyển sang trạng thái "Đang hoạt động"',
-      duration: 5000,
-    });
+      toast.success(`Đã phê duyệt cửa hàng "${approveDialog.storeName}"`, {
+        description: 'Cửa hàng đã chuyển sang trạng thái "Đang hoạt động"',
+        duration: 5000,
+      });
 
-    setApproveDialog({ open: false, storeId: 0, storeName: '' });
+      setApproveDialog({ open: false, storeId: 0, storeName: '' });
+      loadStats();
+    } catch (error: any) {
+      toast.error('Lỗi khi phê duyệt cửa hàng: ' + error.message);
+    }
   };
 
-  const handleRejectConfirm = (reason: string, verifyText: string) => {
+  const handleRejectConfirm = async (reason: string, verifyText: string) => {
     const store = stores.find(s => s.id === rejectDialog.storeId);
-    if (!store) return;
+    if (!store || !store.merchantId) {
+      toast.error('Không tìm thấy ID cơ sở để cập nhật');
+      return;
+    }
 
-    // Update store status to rejected
-    setStores(prev =>
-      prev.map(s => (s.id === rejectDialog.storeId ? { ...s, status: 'rejected' as FacilityStatus } : s))
-    );
+    try {
+      await updateMerchantStatus(store.merchantId, 'rejected');
 
-    // Audit log
-    console.log('❌ Rejection Audit Log:', {
-      storeId: rejectDialog.storeId,
-      storeName: rejectDialog.storeName,
-      action: 'reject',
-      oldStatus: store.status,
-      newStatus: 'rejected',
-      reason,
-      verifyText,
-      timestamp: new Date().toISOString(),
-      performedBy: 'Current User',
-    });
+      // Update local state
+      setStores(prev =>
+        prev.map(s => (s.id === rejectDialog.storeId ? { ...s, status: 'rejected' as FacilityStatus } : s))
+      );
 
-    toast.error(`Đã từ chối phê duyệt cửa hàng "${rejectDialog.storeName}"`, {
-      description: 'Cửa hàng đã chuyển sang trạng thái "Từ chối phê duyệt"',
-      duration: 5000,
-    });
+      toast.error(`Đã từ chối phê duyệt cửa hàng "${rejectDialog.storeName}"`, {
+        description: 'Cửa hàng đã chuyển sang trạng thái "Từ chối phê duyệt"',
+        duration: 5000,
+      });
 
-    setRejectDialog({ open: false, storeId: 0, storeName: '' });
+      setRejectDialog({ open: false, storeId: 0, storeName: '' });
+      loadStats();
+    } catch (error: any) {
+      toast.error('Lỗi khi từ chối phê duyệt cửa hàng: ' + error.message);
+    }
   };
 
   // No client-side filtering needed for Stores anymore as it's handled by API
@@ -624,44 +656,37 @@ export default function StoresListPage() {
 
     // Apply bulk changes
     if (actionType !== 'export') {
-      setStores(prev =>
-        prev.map(store => {
-          if (!validStoreIds.includes(store.id)) return store;
+      try {
+        const updatePromises = validStoreIds.map(async (id) => {
+          const store = stores.find(s => s.id === id);
+          if (!store?.merchantId) return null;
 
           let newStatus: FacilityStatus = store.status;
           switch (actionType) {
-            case 'approve':
-              newStatus = 'active';
-              break;
-            case 'reject':
-              newStatus = 'pending';
-              break;
-            case 'suspend':
-              newStatus = 'suspended';
-              break;
-            case 'activate':
-              newStatus = 'active';
-              break;
-            case 'close':
-              newStatus = 'closed';
-              break;
+            case 'approve': newStatus = 'active'; break;
+            case 'reject': newStatus = 'rejected'; break;
+            case 'suspend': newStatus = 'suspended'; break;
+            case 'activate': newStatus = 'active'; break;
+            case 'close': newStatus = 'refuse'; break;
           }
 
-          // Audit log (in production, send to backend)
-          console.log('📋 Audit Log:', {
-            storeId: store.id,
-            storeName: store.name,
-            action: actionType,
-            oldStatus: store.status,
-            newStatus,
-            reason,
-            timestamp: new Date().toISOString(),
-            performedBy: 'Current User', // In production, get from auth context
-          });
+          await updateMerchantStatus(store.merchantId, newStatus);
+          return { id, newStatus };
+        });
 
-          return { ...store, status: newStatus };
-        })
-      );
+        const results = await Promise.all(updatePromises);
+
+        setStores(prev =>
+          prev.map(store => {
+            const updateResult = results.find(r => r?.id === store.id);
+            if (!updateResult) return store;
+            return { ...store, status: updateResult.newStatus };
+          })
+        );
+        loadStats();
+      } catch (error: any) {
+        toast.error('Lỗi khi cập nhật hàng loạt: ' + error.message);
+      }
     }
 
     // Success feedback
@@ -769,7 +794,7 @@ export default function StoresListPage() {
         );
         break;
 
-      case 'closed':
+      case 'refuse':
         // Ngừng hoạt động: Xem chi tiết, Lịch sử và Xóa (3 actions - show all)
         actions.push(
           CommonActions.view(() => navigate(`/registry/stores/${store.id}`)),
@@ -1068,26 +1093,26 @@ export default function StoresListPage() {
           />
           <SummaryCard
             label="Ngừng hoạt động"
-            value={stats.closed}
+            value={stats.refuse}
             icon={CircleX}
             variant="neutral"
-            active={activeFilter === 'closed'}
+            active={activeFilter === 'refuse'}
             onClick={() => {
-              setActiveFilter('closed');
-              setStatusFilter('closed'); // Sync với filter dropdown
+              setActiveFilter('refuse');
+              setStatusFilter('refuse'); // Sync với filter dropdown
               setCurrentPage(1);
             }}
           />
-          {stats.other > 0 && (
+          {stats.rejected > 0 && (
             <SummaryCard
-              label="Khác"
-              value={stats.other}
-              icon={AlertTriangle}
-              variant="warning"
-              active={activeFilter === 'other'}
+              label="Từ chối"
+              value={stats.rejected}
+              icon={CircleX}
+              variant="danger"
+              active={activeFilter === 'rejected'}
               onClick={() => {
-                setActiveFilter('other');
-                setStatusFilter('other'); // Fixed: Use 'other' instead of 'all'
+                setActiveFilter('rejected');
+                setStatusFilter('rejected');
                 setCurrentPage(1);
               }}
             />
@@ -1178,7 +1203,7 @@ export default function StoresListPage() {
               <SelectItem value="active">Đang hoạt động</SelectItem>
               <SelectItem value="suspended">Tạm ngưng</SelectItem>
               <SelectItem value="rejected">Từ chối phê duyệt</SelectItem>
-              <SelectItem value="closed">Ngừng hoạt động</SelectItem>
+              <SelectItem value="refuse">Ngừng hoạt động</SelectItem>
             </SelectContent>
           </Select>
 
@@ -1517,6 +1542,44 @@ export default function StoresListPage() {
         open={pendingUpdatesDialogOpen}
         onClose={() => setPendingUpdatesDialogOpen(false)}
       />
+
+      {/* Close Store (Refuse) Reason Dialog */}
+      {closeReasonDialog.open && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
+            <h2 className="text-lg font-semibold mb-4">Ngừng hoạt động cơ sở</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Cơ sở: <strong>{closeReasonDialog.store?.name}</strong>
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">Lý do ngừng hoạt động</label>
+              <textarea
+                value={closeReasonDialog.reason}
+                onChange={(e) =>
+                  setCloseReasonDialog({ ...closeReasonDialog, reason: e.target.value })
+                }
+                placeholder="Vui lòng nhập lý do..."
+                className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                rows={4}
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setCloseReasonDialog({ open: false, store: null, reason: '' })}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() => handleCloseConfirm(closeReasonDialog.reason)}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+              >
+                Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

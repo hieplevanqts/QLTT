@@ -18,8 +18,13 @@ import {
   TrendingUp,
   CheckCircle2,
   Edit,
-  Trash2,
-  Activity
+  Activity,
+  Play,
+  StopCircle,
+  XCircle,
+  PauseCircle,
+  RotateCcw,
+  FileSearch,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +33,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { mockStores, Store } from '@/utils/data/mockStores';
 import { getProvinceByCode, getDistrictByName, getWardByCode } from '@/utils/data/vietnamLocations';
 import { fetchProvinceById, fetchWardById } from '@/utils/api/locationsApi';
-import { fetchStoreById, fetchMerchantLicenses, upsertMerchantLicense } from '@/utils/api/storesApi';
+import { fetchStoreById, fetchMerchantLicenses, upsertMerchantLicense, updateMerchantStatus } from '@/utils/api/storesApi';
 import { generateLegalDocuments, LegalDocumentData } from '@/utils/data/mockLegalDocuments';
 import { LegalDocumentItem, ApprovalStatus } from '@/components/ui-kit/LegalDocumentItem';
 import { DocumentUploadDialog } from '@/components/ui-kit/DocumentUploadDialog';
@@ -46,7 +51,6 @@ import { RiskAssessment } from '@/components/ui-kit/RiskAssessment';
 import { getRiskAssessmentByStoreId } from '@/utils/data/mockRiskAssessment';
 import { ImageGallery } from '@/components/ui-kit/ImageGallery';
 import { ApproveDialog, RejectDialog } from '@/components/ui-kit/ApprovalDialogs';
-import { FacilityStatus } from '@/components/ui-kit/FacilityStatusBadge';
 import { uploadFile } from '@/utils/api/storageApi';
 import { buildLicensePayload, DOCUMENT_TYPE_TO_KEY } from '@/utils/licenseHelper';
 import styles from './StoreDetailPage.module.css';
@@ -63,8 +67,6 @@ export default function StoreDetailPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [idCardDialogOpen, setIdCardDialogOpen] = useState(false);
-  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editingDocument, setEditingDocument] = useState<LegalDocumentData | null>(null);
   const [currentDocumentType, setCurrentDocumentType] = useState<string | null>(null);
   const [legalDocuments, setLegalDocuments] = useState<LegalDocumentData[]>([]);
@@ -72,6 +74,12 @@ export default function StoreDetailPage() {
   // Approval Dialog states
   const [approveDialog, setApproveDialog] = useState(false);
   const [rejectDialog, setRejectDialog] = useState(false);
+
+  // State for close (refuse) reason dialog
+  const [closeReasonDialog, setCloseReasonDialog] = useState<{
+    open: boolean;
+    reason: string;
+  }>({ open: false, reason: '' });
 
   // Store data from API
   const [store, setStore] = useState<Store | null>(null);
@@ -178,9 +186,9 @@ export default function StoreDetailPage() {
       try {
         // Fetch province by ID if store has province_id or province (UUID)
         if (store.province && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(store.province)) {
-          const prov = await fetchProvinceById(store.province);
-          if (prov) {
-            setProvinceName(prov.name);
+          const pName = await fetchProvinceById(store.province);
+          if (pName) {
+            setProvinceName(pName.name);
           }
         }
 
@@ -565,7 +573,7 @@ export default function StoreDetailPage() {
       const payload = {
         p_merchant_id: store.merchantId,
         p_id: documentId,
-        p_license_type: doc.type === 'cccd' || doc.type === 'CCCD / CMND chủ hộ' ? 'CCCD / CMND chủ hộ' : (doc.title || ''),
+        p_license_type: doc.type === 'cccd' || doc.type === 'CCCD / CMND chủ hộ' ? 'CCCD / CMND chủ hộ' : (doc.title ?? ''),
         p_license_number: rawLicense.license_number || doc.documentNumber || '',
         p_issued_date: rawLicense.issued_date || '',
         p_expiry_date: rawLicense.expiry_date || '2099-12-31',
@@ -583,7 +591,6 @@ export default function StoreDetailPage() {
 
       toast.success('Đã phê duyệt hồ sơ');
       await loadMerchantLicenses(); // Reload to update state
-      setViewDialogOpen(false);
       setSelectedDocument(null);
     } catch (error) {
       console.error('❌ Error approving document:', error);
@@ -627,6 +634,46 @@ export default function StoreDetailPage() {
     }
   };
 
+  /**
+   * 🏪 Handle Store Status Change
+   * Standardizes status transitions using the updateMerchant RPC
+   */
+  const handleUpdateStatus = async (newStatus: string, successMessage: string) => {
+    if (!store?.merchantId) {
+      toast.error('Không tìm thấy ID cơ sở');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      console.log(`📤 Updating store status to: ${newStatus}`);
+      await updateMerchantStatus(store.merchantId, newStatus);
+
+      toast.success(successMessage);
+
+      // Re-fetch store data to refresh UI
+      const updatedStore = await fetchStoreById(id || '');
+      if (updatedStore) setStore(updatedStore);
+    } catch (error: any) {
+      console.error('❌ Error updating store status:', error);
+      toast.error('Lỗi khi cập nhật trạng thái cơ sở', {
+        description: error.message
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleApproveStore = async () => {
+    await handleUpdateStatus('active', 'Đã phê duyệt cơ sở thành công');
+    setApproveDialog(false);
+  };
+
+  const handleRejectStore = async () => {
+    await handleUpdateStatus('rejected', 'Đã từ chối phê duyệt cơ sở');
+    setRejectDialog(false);
+  };
+
   // Calculate data quality
   const confidence = store.isVerified ? 95 : 75;
   const precision = store.gpsCoordinates ? 98 : 60;
@@ -650,15 +697,24 @@ export default function StoreDetailPage() {
 
   // Helper function to get status badge class and text
   const getStatusBadge = (status: string) => {
-    const statusMapping = {
+    const statusMapping: Record<string, { class: string; text: string }> = {
       'active': { class: styles.statusActive, text: 'Đang hoạt động' },
       'processing': { class: styles.statusProcessing, text: 'Đang xử lý' },
       'pending': { class: styles.statusPending, text: 'Chờ duyệt' },
       'suspended': { class: styles.statusSuspended, text: 'Tạm ngừng hoạt động' },
-      'inactive': { class: styles.statusInactive, text: 'Ngừng hoạt động' },
+      'rejected': { class: styles.statusSuspended, text: 'Từ chối phê duyệt' },
+      'refuse': { class: styles.statusInactive, text: 'Ngừng hoạt động' },
     };
     return statusMapping[status] || null;
   };
+
+  if (isLoadingStore || !store) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.loading}>Đang tải dữ liệu...</div>
+      </div>
+    );
+  }
 
   // Get status from store data
   const statusBadge = store.status ? getStatusBadge(store.status) : null;
@@ -694,38 +750,6 @@ export default function StoreDetailPage() {
   };
 
 
-  // Handle delete store (only available for closed status)
-  const handleDeleteStore = () => {
-    // Show confirmation dialog
-    if (!confirm(`Bạn có chắc chắn muốn xóa cơ sở "${store.name}"? Hành động này không thể hoàn tác.`)) {
-      return;
-    }
-
-    try {
-      // Load current stores from localStorage
-      const savedStores = localStorage.getItem('mappa_stores');
-      let currentStores = savedStores ? JSON.parse(savedStores) : mockStores;
-
-      // Remove store from array
-      currentStores = currentStores.filter((s: any) => s.id !== store.id);
-
-      // Save back to localStorage
-      localStorage.setItem('mappa_stores', JSON.stringify(currentStores));
-
-      // Show success message
-      toast.success('Đã xóa cơ sở', {
-        description: `Cơ sở "${store.name}" đã được xóa khỏi hệ thống`,
-      });
-
-      // Navigate back to stores list
-      navigate('/registry/stores');
-    } catch (error) {
-      console.error('Error deleting store:', error);
-      toast.error('Lỗi khi xóa cơ sở', {
-        description: 'Vui lòng thử lại sau',
-      });
-    }
-  };
 
   return (
     <div className={styles.container}>
@@ -742,34 +766,102 @@ export default function StoreDetailPage() {
             Quay lại
           </Button>
 
-          <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate(`/registry/full-edit/${store.id}`)}
-              className={styles.editButton}
-            >
-              <Edit size={16} />
-              Chỉnh sửa đầy đủ
-            </Button>
+          {/* Status-specific action buttons */}
+          <div className="flex gap-2">
+            {store.status === 'pending' && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setRejectDialog(true)}
+                  className={styles.statusBtnDanger}
+                >
+                  <XCircle size={16} />
+                  Từ chối duyệt
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => setApproveDialog(true)}
+                  className={styles.statusBtnSuccess}
+                >
+                  <CheckCircle2 size={16} />
+                  Phê duyệt
+                </Button>
+              </>
+            )}
 
-            {/* Show delete button only for closed stores */}
-            {store.status === 'closed' && (
+            {store.status === 'active' && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (confirm('Bạn có chắc chắn muốn tạm ngưng hoạt động cơ sở này?')) {
+                      handleUpdateStatus('suspended', 'Đã chuyển trạng thái cơ sở sang Tạm ngưng');
+                    }
+                  }}
+                  className={styles.statusBtnWarning}
+                >
+                  <PauseCircle size={16} />
+                  Tạm ngưng
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setCloseReasonDialog({ open: true, reason: '' })}
+                  className={styles.statusBtnDanger}
+                >
+                  <StopCircle size={16} />
+                  Đóng cửa
+                </Button>
+              </>
+            )}
+
+            {store.status === 'suspended' && (
               <Button
-                variant="destructive"
                 size="sm"
-                onClick={handleDeleteStore}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--spacing-2)'
-                }}
+                onClick={() => handleUpdateStatus('active', 'Đã kích hoạt lại hoạt động cơ sở')}
+                className={styles.statusBtnSuccess}
               >
-                <Trash2 size={16} />
-                Xóa cơ sở
+                <Play size={16} />
+                Kích hoạt lại
+              </Button>
+            )}
+
+            {store.status === 'refuse' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleUpdateStatus('active', 'Đã tái kích hoạt cơ sở từ trạng thái Ngừng hoạt động')}
+                className={styles.statusBtnPrimary}
+              >
+                <RotateCcw size={16} />
+                Mở cửa lại
+              </Button>
+            )}
+
+            {store.status === 'rejected' && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleUpdateStatus('pending', 'Đã chuyển trạng thái về Chờ duyệt để xem xét lại')}
+                className={styles.statusBtnWarning}
+              >
+                <FileSearch size={16} />
+                Xem xét lại
               </Button>
             )}
           </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(`/registry/full-edit/${store.id}`)}
+            className={styles.editButton}
+          >
+            <Edit size={16} />
+            Chỉnh sửa đầy đủ
+          </Button>
         </div>
 
         <div className={styles.headerContent}>
@@ -935,7 +1027,7 @@ export default function StoreDetailPage() {
           </div>
           <div className={styles.statLabel}>Phản ánh</div>
           <div className={styles.statValue}>{complaints.length}</div>
-          <div className={`${styles.statMeta} ${styles.statWarning}`}>{complaints.filter(c => !c.resolved).length} chưa xử lý</div>
+          <div className={`${styles.statMeta} ${styles.statWarning}`}>{complaints.filter(c => c.status !== 'resolved').length} chưa xử lý</div>
         </div>
 
         {/* Rủi ro */}
@@ -1419,6 +1511,62 @@ export default function StoreDetailPage() {
         isSaving={isSaving}
         onSave={handleSaveIDCard}
       />
+
+      {/* Approval Dialogs */}
+      <ApproveDialog
+        open={approveDialog}
+        onOpenChange={setApproveDialog}
+        storeName={store.name}
+        onConfirm={handleApproveStore}
+      />
+
+      <RejectDialog
+        open={rejectDialog}
+        onOpenChange={setRejectDialog}
+        storeName={store.name}
+        onConfirm={handleRejectStore}
+      />
+
+      {/* Close Store (Refuse) Reason Dialog */}
+      {closeReasonDialog.open && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
+            <h2 className="text-lg font-semibold mb-4">Ngừng hoạt động cơ sở</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Cơ sở: <strong>{store?.name}</strong>
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">Lý do ngừng hoạt động</label>
+              <textarea
+                value={closeReasonDialog.reason}
+                onChange={(e) =>
+                  setCloseReasonDialog({ ...closeReasonDialog, reason: e.target.value })
+                }
+                placeholder="Vui lòng nhập lý do..."
+                className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                rows={4}
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setCloseReasonDialog({ open: false, reason: '' })}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() => {
+                  handleUpdateStatus('refuse', 'Đã xác nhận cơ sở Ngừng hoạt động');
+                  setCloseReasonDialog({ open: false, reason: '' });
+                }}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+              >
+                Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
