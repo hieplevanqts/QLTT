@@ -30,7 +30,6 @@ import { useSupabaseLead } from '@/hooks/useSupabaseLeads';
 import { StatusBadge } from '@/components/lead-risk/StatusBadge';
 import { UrgencyBadge } from '@/components/lead-risk/UrgencyBadge';
 import { SLATimer } from '@/components/lead-risk/SLATimer';
-import { OutcomeModal } from '@/components/OutcomeModal';
 import { StoreRiskProfile } from '@/components/StoreRiskProfile';
 import { EscalationPanel } from '@/components/EscalationPanel';
 import { AuditTrail } from '@/components/AuditTrail';
@@ -38,7 +37,6 @@ import { Breadcrumb } from '@/components/Breadcrumb';
 import AssignLeadSidebar from '@/components/lead-risk/AssignLeadSidebar';
 import AssignLeadModal from '@/components/lead-risk/AssignLeadModal';
 import { getSupabaseClient } from '@/utils/supabaseClient';
-import { projectId, publicAnonKey } from '@/utils/supabase/info';
 import type { LeadUrgency, LeadConfidence, LeadCategory } from '@/utils/data/lead-risk/types';
 import styles from './LeadDetail.module.css';
 

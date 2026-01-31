@@ -17,7 +17,7 @@ import DatePicker from '@/components/DatePicker';
 import styles from './AssignLeadModal.module.css';
 import type { Lead } from '@/utils/data/lead-risk/types';
 import { getSupabaseClient } from '@/utils/supabaseClient';
-import { projectId, publicAnonKey } from '/utils/supabase/info';
+
 
 interface Merchant {
   id: string;
@@ -93,7 +93,7 @@ export default function AssignLeadModal({
   // Fetch merchants from Supabase
   useEffect(() => {
     const fetchMerchants = async () => {
-      const supabase = getSupabaseClient(projectId, publicAnonKey);
+      const supabase = getSupabaseClient();
       const { data, error } = await supabase
         .from('merchants')
         .select('id, business_name');
