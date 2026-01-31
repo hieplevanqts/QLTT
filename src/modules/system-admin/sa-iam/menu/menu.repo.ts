@@ -31,6 +31,7 @@ type PermissionRow = {
   module_id?: string | null;
   module?: string | null;
   permission_type?: string | null;
+  category?: string | null;
   resource?: string | null;
   action?: string | null;
   status?: number | string | null;
@@ -47,7 +48,7 @@ type RoleRow = {
 
 const safeArray = <T,>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : []);
 
-const normalizeRoute = (value: string | null | undefined) => {
+const normalizePath = (value: string | null | undefined) => {
   if (!value) return null;
   const trimmed = value.trim();
   if (!trimmed) return null;
@@ -58,21 +59,22 @@ const mapMenuRow = (row: any): MenuRecord => {
   const isActive =
     row.is_active !== undefined
       ? Boolean(row.is_active)
-      : row.status !== undefined
-        ? row.status
-        : "ACTIVE";
+      : row.is_visible !== undefined
+        ? Boolean(row.is_visible)
+        : row.status !== undefined
+          ? Boolean(row.status === 1 || String(row.status).toLowerCase() === "active")
+          : true;
 
   return {
     _id: row._id ?? row.id,
     code: row.code ?? "",
-    label: row.label ?? row.name ?? "",
+    name: row.name ?? row.label ?? "",
     parent_id: row.parent_id ?? null,
     module_id: row.module_id ?? null,
-    route_path: row.route_path ?? row.path ?? null,
+    path: row.path ?? row.route_path ?? null,
     icon: row.icon ?? null,
-    sort_order: Number(row.sort_order ?? row.order_index ?? row.order ?? 0),
-    status: row.status ?? isActive,
-    is_visible: row.is_visible ?? row.is_active ?? true,
+    order_index: Number(row.order_index ?? row.sort_order ?? row.order ?? 0),
+    is_active: isActive,
     meta: row.meta ?? null,
     created_at: row.created_at ?? null,
     updated_at: row.updated_at ?? null,
@@ -110,188 +112,165 @@ const mapPermissionRow = (row: PermissionRow) => ({
 });
 
 let modulesCache: ReturnType<typeof mapModuleRow>[] | null = null;
-let permissionsCache: ReturnType<typeof mapPermissionRow>[] | null = null;
 
 const isMissingRelationError = (message: string) =>
   message.includes("Could not find the table") ||
   message.includes("does not exist") ||
   message.includes("schema cache");
 
-const listMenusViaView = async (): Promise<MenuRecord[] | null> => {
-  const runQuery = async (orderField?: string | null, labelField?: string | null) => {
-    let query = supabase.from("v_menus_full").select("*");
-    if (orderField) {
-      query = query.order(orderField, { ascending: true });
-    }
-    if (labelField) {
-      query = query.order(labelField, { ascending: true });
-    }
-    return query;
-  };
+const MENU_VIEW_FIELDS =
+  "_id, code, name, path, icon, parent_id, module_id, order_index, is_active, updated_at, module_code, module_name, module_group, permission_ids, permission_codes";
+const MENU_TABLE_FIELDS =
+  "_id, code, name, path, icon, parent_id, module_id, order_index, is_active, updated_at";
 
-  let response = await runQuery("sort_order", "label");
-  if (response.error) {
-    if (isMissingRelationError(response.error.message)) {
-      return null;
-    }
-
-    if (response.error.message.includes("sort_order") || response.error.message.includes("label")) {
-      response = await runQuery("order_index", "name");
-    }
-
-    if (response.error && (response.error.message.includes("order_index") || response.error.message.includes("name"))) {
-      response = await runQuery(null, null);
-    }
-
-    if (response.error) {
-      throw new Error(`menu select failed: ${response.error.message}`);
-    }
-  }
-
-  return safeArray<any>(response.data).map(mapMenuRow);
+type MenuQueryMeta = {
+  source: string;
+  select: string;
+  filters: Record<string, unknown>;
+  order: string[];
 };
 
-const listMenusFallback = async (): Promise<MenuRecord[]> => {
-  const runQuery = async (withDeletedFilter: boolean, orderField?: string | null, labelField?: string | null) => {
-    let query = supabase.from("menus").select("*");
-    if (orderField) {
-      query = query.order(orderField, { ascending: true });
-    }
-    if (labelField) {
-      query = query.order(labelField, { ascending: true });
-    }
-    if (withDeletedFilter) {
-      query = query.is("deleted_at", null);
-    }
-    return query;
+const logMenuQueryError = (meta: MenuQueryMeta, error: any) => {
+  console.log("[menus] query error", meta.source);
+  console.log(error);
+  console.log("message", error?.message);
+  console.log("details", error?.details);
+  console.log("hint", error?.hint);
+  console.log("code", error?.code);
+  console.log("query", {
+    select: meta.select,
+    filters: meta.filters,
+    order: meta.order,
+  });
+};
+
+const applyMenuFilters = <T>(
+  query: T,
+  params: MenuListParams,
+  meta: MenuQueryMeta,
+  options?: { allowModuleGroup?: boolean },
+) => {
+  const search = params.search?.trim();
+  const status = params.status ?? "all";
+  const moduleGroup = params.moduleGroup?.trim();
+  const moduleId = params.moduleId?.trim();
+
+  const filters: Record<string, unknown> = {};
+
+  if (search) {
+    const escaped = search.replace(/,/g, "\\,");
+    filters.search = search;
+    // @ts-expect-error supabase query builder typing
+    query = query.or(`code.ilike.%${escaped}%,name.ilike.%${escaped}%,path.ilike.%${escaped}%`);
+  }
+
+  if (status !== "all") {
+    const isActive = status === "active";
+    filters.is_active = isActive;
+    // @ts-expect-error supabase query builder typing
+    query = query.eq("is_active", isActive);
+  }
+
+  if (moduleId) {
+    filters.module_id = moduleId;
+    // @ts-expect-error supabase query builder typing
+    query = query.eq("module_id", moduleId);
+  }
+
+  if (moduleGroup && options?.allowModuleGroup) {
+    filters.module_group = moduleGroup;
+    // @ts-expect-error supabase query builder typing
+    query = query.eq("module_group", moduleGroup);
+  }
+
+  meta.filters = filters;
+  return query;
+};
+
+const applyMenuOrdering = <T>(query: T, meta: MenuQueryMeta) => {
+  meta.order = ["parent_id.asc.nullsfirst", "order_index.asc", "name.asc"];
+  // @ts-expect-error supabase query builder typing
+  query = query.order("parent_id", { ascending: true, nullsFirst: true });
+  // @ts-expect-error supabase query builder typing
+  query = query.order("order_index", { ascending: true });
+  // @ts-expect-error supabase query builder typing
+  query = query.order("name", { ascending: true });
+  return query;
+};
+
+const listMenusViaView = async (params: MenuListParams): Promise<MenuRecord[] | null> => {
+  const meta: MenuQueryMeta = {
+    source: "v_menus_full",
+    select: MENU_VIEW_FIELDS,
+    filters: {},
+    order: [],
   };
 
-  const attempts: Array<[boolean, string | null, string | null]> = [
-    [true, "sort_order", "label"],
-    [false, "sort_order", "label"],
-    [true, "order_index", "name"],
-    [false, "order_index", "name"],
-    [true, null, null],
-    [false, null, null],
-  ];
+  let query = supabase.from("v_menus_full").select(MENU_VIEW_FIELDS);
+  query = applyMenuFilters(query, params, meta, { allowModuleGroup: true });
+  query = applyMenuOrdering(query, meta);
 
-  let menuRows: any[] = [];
-  let lastError: string | null = null;
-  for (const [withDeleted, orderField, labelField] of attempts) {
-    const { data, error } = await runQuery(withDeleted, orderField, labelField);
-    if (!error) {
-      menuRows = safeArray<any>(data);
-      lastError = null;
-      break;
+  const { data, error } = await query;
+  if (error) {
+    if (isMissingRelationError(error.message)) {
+      return null;
     }
-
-    lastError = error.message;
-    if (!error.message.includes("column") && !error.message.includes("does not exist")) {
-      break;
-    }
+    logMenuQueryError(meta, error);
+    throw new Error(`menus select failed: ${error.message}`);
   }
 
-  if (lastError) {
-    throw new Error(`menus select failed: ${lastError}`);
+  return safeArray<any>(data).map(mapMenuRow);
+};
+
+const listMenusFallback = async (params: MenuListParams): Promise<MenuRecord[]> => {
+  const meta: MenuQueryMeta = {
+    source: "menus",
+    select: MENU_TABLE_FIELDS,
+    filters: {},
+    order: [],
+  };
+
+  let query = supabase.from("menus").select(MENU_TABLE_FIELDS);
+  query = applyMenuFilters(query, params, meta);
+  query = applyMenuOrdering(query, meta);
+
+  const { data, error } = await query;
+  if (error) {
+    logMenuQueryError(meta, error);
+    throw new Error(`menus select failed: ${error.message}`);
   }
 
-  if (menuRows.length === 0) return [];
-
-  const menuIds = menuRows.map((row: any) => row._id ?? row.id).filter(Boolean);
-
-  const { data: mappings, error: mappingError } = await supabase
-    .from("menu_permissions")
-    .select("menu_id, permission_id")
-    .in("menu_id", menuIds);
-
-  if (mappingError) {
-    throw new Error(`menu permissions select failed: ${mappingError.message}`);
+  const rawRows = safeArray<any>(data);
+  let modules: ReturnType<typeof mapModuleRow>[] = [];
+  try {
+    modules = await menuRepo.listModules();
+  } catch {
+    modules = [];
   }
 
-  const permissionIds = safeArray<any>(mappings).map((m) => m.permission_id).filter(Boolean);
-
-  let permissionsById = new Map<string, ReturnType<typeof mapPermissionRow>>();
-  if (permissionIds.length > 0) {
-    const { data: permissions, error: permissionsError } = await supabase
-      .from("permissions")
-      .select("*")
-      .in("_id", permissionIds);
-    if (permissionsError) {
-      throw new Error(`permissions select failed: ${permissionsError.message}`);
-    }
-    permissionsById = new Map(
-      safeArray<PermissionRow>(permissions).map((row) => {
-        const mapped = mapPermissionRow(row);
-        return [mapped._id, mapped] as const;
-      }),
-    );
-  }
-
-  const modules = await menuRepo.listModules();
   const modulesById = new Map(modules.map((mod) => [mod._id, mod] as const));
-
-  const permsByMenu = new Map<string, string[]>();
-  const permCodesByMenu = new Map<string, string[]>();
-  safeArray<any>(mappings).forEach((row) => {
-    const menuId = row.menu_id;
-    const permId = row.permission_id;
-    if (!menuId || !permId) return;
-    const perms = permsByMenu.get(menuId) ?? [];
-    if (!perms.includes(permId)) perms.push(permId);
-    permsByMenu.set(menuId, perms);
-
-    const perm = permissionsById.get(permId);
-    if (perm?.code) {
-      const codes = permCodesByMenu.get(menuId) ?? [];
-      if (!codes.includes(perm.code)) codes.push(perm.code);
-      permCodesByMenu.set(menuId, codes);
-    }
-  });
-
-  return menuRows.map((row: any) => {
-    const menuId = row._id ?? row.id;
+  let rows = rawRows.map((row) => {
     const module = modulesById.get(row.module_id ?? "");
     return mapMenuRow({
       ...row,
       module_code: module?.code ?? null,
       module_name: module?.name ?? null,
       module_group: module?.group ?? null,
-      permission_ids: permsByMenu.get(menuId) ?? [],
-      permission_codes: permCodesByMenu.get(menuId) ?? [],
     });
   });
-};
 
-const applyFilters = (items: MenuRecord[], params: MenuListParams) => {
-  const search = params.search?.trim().toLowerCase();
-  const status = params.status ?? "all";
-  const moduleGroup = params.moduleGroup?.trim();
-  const moduleId = params.moduleId?.trim();
+  if (params.moduleGroup) {
+    rows = rows.filter((menu) => menu.module_group === params.moduleGroup);
+  }
 
-  return items.filter((item) => {
-    if (search) {
-      const haystack = `${item.code} ${item.label} ${item.route_path ?? ""}`.toLowerCase();
-      if (!haystack.includes(search)) return false;
-    }
-
-    if (status !== "all") {
-      const isActive = String(item.status) === "ACTIVE" || String(item.status) === "1";
-      if (status === "active" && !isActive) return false;
-      if (status === "inactive" && isActive) return false;
-    }
-
-    if (moduleGroup && item.module_group !== moduleGroup) return false;
-    if (moduleId && item.module_id !== moduleId) return false;
-
-    return true;
-  });
+  return rows;
 };
 
 export const menuRepo = {
   async listMenus(params: MenuListParams = {}): Promise<MenuRecord[]> {
-    const viaView = await listMenusViaView();
-    const items = viaView ?? (await listMenusFallback());
-    return applyFilters(items, params);
+    const viaView = await listMenusViaView(params);
+    const items = viaView ?? (await listMenusFallback(params));
+    return items;
   },
 
   async getMenuTree(params: MenuListParams = {}) {
@@ -299,137 +278,155 @@ export const menuRepo = {
     return buildMenuTree(items);
   },
 
+  async getMenuById(menuId: string): Promise<MenuRecord | null> {
+    const viewMeta: MenuQueryMeta = {
+      source: "v_menus_full",
+      select: MENU_VIEW_FIELDS,
+      filters: { _id: menuId },
+      order: [],
+    };
+
+    const { data: viewData, error: viewError } = await supabase
+      .from("v_menus_full")
+      .select(MENU_VIEW_FIELDS)
+      .eq("_id", menuId)
+      .maybeSingle();
+
+    if (viewError) {
+      if (!isMissingRelationError(viewError.message)) {
+        logMenuQueryError(viewMeta, viewError);
+        throw new Error(`menus select failed: ${viewError.message}`);
+      }
+    } else if (viewData) {
+      return mapMenuRow(viewData);
+    }
+
+    const tableMeta: MenuQueryMeta = {
+      source: "menus",
+      select: MENU_TABLE_FIELDS,
+      filters: { _id: menuId },
+      order: [],
+    };
+
+    const { data, error } = await supabase
+      .from("menus")
+      .select(MENU_TABLE_FIELDS)
+      .eq("_id", menuId)
+      .maybeSingle();
+
+    if (error) {
+      logMenuQueryError(tableMeta, error);
+      throw new Error(`menus select failed: ${error.message}`);
+    }
+
+    return data ? mapMenuRow(data) : null;
+  },
+
   async createMenu(payload: MenuPayload): Promise<MenuRecord> {
-    const normalizedRoute = normalizeRoute(payload.route_path ?? null);
-    const legacyPayload = {
+    const normalizedPath = normalizePath(payload.path ?? null);
+    const insertPayload = {
       code: payload.code?.trim(),
-      name: payload.label?.trim(),
-      path: normalizedRoute,
+      name: payload.name?.trim(),
+      path: normalizedPath,
       icon: payload.icon ?? null,
       parent_id: payload.parent_id ?? null,
       module_id: payload.module_id ?? null,
-      order_index: payload.sort_order ?? 0,
-      is_active:
-        payload.is_visible === false
-          ? false
-          : payload.status === "INACTIVE" || payload.status === 0
-            ? false
-            : true,
+      order_index: payload.order_index ?? 0,
+      is_active: payload.is_active ?? true,
     };
 
-    const modernPayload = {
-      code: payload.code?.trim(),
-      label: payload.label?.trim(),
-      parent_id: payload.parent_id ?? null,
-      module_id: payload.module_id ?? null,
-      route_path: normalizedRoute,
-      icon: payload.icon ?? null,
-      sort_order: payload.sort_order ?? 0,
-      status: payload.status ?? "ACTIVE",
-      is_visible: payload.is_visible ?? true,
-      meta: payload.meta ?? {},
-    };
+    const { data, error } = await supabase
+      .from("menus")
+      .insert([insertPayload])
+      .select(MENU_TABLE_FIELDS)
+      .single();
 
-    const attemptInsert = async (data: Record<string, unknown>) =>
-      supabase.from("menus").insert([data]).select("*").single();
-
-    let response = await attemptInsert(legacyPayload);
-    if (response.error && response.error.message.includes("column")) {
-      response = await attemptInsert(modernPayload);
+    if (error) {
+      throw new Error(`menu insert failed: ${error.message}`);
     }
 
-    if (response.error) {
-      throw new Error(`menu insert failed: ${response.error.message}`);
-    }
-
-    return mapMenuRow(response.data);
+    return mapMenuRow(data);
   },
 
   async updateMenu(menuId: string, payload: Partial<MenuPayload>): Promise<MenuRecord> {
-    const normalizedRoute = payload.route_path !== undefined ? normalizeRoute(payload.route_path) : undefined;
-
-    const legacyPayload: Record<string, unknown> = {
+    const normalizedPath = payload.path !== undefined ? normalizePath(payload.path) : undefined;
+    const updatePayload: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
     };
-    if (payload.code !== undefined) legacyPayload.code = payload.code?.trim();
-    if (payload.label !== undefined) legacyPayload.name = payload.label?.trim();
-    if (payload.parent_id !== undefined) legacyPayload.parent_id = payload.parent_id ?? null;
-    if (payload.module_id !== undefined) legacyPayload.module_id = payload.module_id ?? null;
-    if (normalizedRoute !== undefined) legacyPayload.path = normalizedRoute;
-    if (payload.icon !== undefined) legacyPayload.icon = payload.icon ?? null;
-    if (payload.sort_order !== undefined) legacyPayload.order_index = payload.sort_order ?? 0;
-    if (payload.status !== undefined || payload.is_visible !== undefined) {
-      legacyPayload.is_active =
-        payload.is_visible === false
-          ? false
-          : payload.status === "INACTIVE" || payload.status === 0
-            ? false
-            : true;
+
+    if (payload.code !== undefined) updatePayload.code = payload.code?.trim();
+    if (payload.name !== undefined) updatePayload.name = payload.name?.trim();
+    if (payload.parent_id !== undefined) updatePayload.parent_id = payload.parent_id ?? null;
+    if (payload.module_id !== undefined) updatePayload.module_id = payload.module_id ?? null;
+    if (normalizedPath !== undefined) updatePayload.path = normalizedPath;
+    if (payload.icon !== undefined) updatePayload.icon = payload.icon ?? null;
+    if (payload.order_index !== undefined) updatePayload.order_index = payload.order_index ?? 0;
+    if (payload.is_active !== undefined) updatePayload.is_active = payload.is_active ?? true;
+
+    const { data, error } = await supabase
+      .from("menus")
+      .update(updatePayload)
+      .eq("_id", menuId)
+      .select(MENU_TABLE_FIELDS);
+
+    if (error) {
+      throw new Error(`menu update failed: ${error.message}`);
     }
 
-    const modernPayload: Record<string, unknown> = {
-      updated_at: new Date().toISOString(),
-    };
-    if (payload.code !== undefined) modernPayload.code = payload.code?.trim();
-    if (payload.label !== undefined) modernPayload.label = payload.label?.trim();
-    if (payload.parent_id !== undefined) modernPayload.parent_id = payload.parent_id ?? null;
-    if (payload.module_id !== undefined) modernPayload.module_id = payload.module_id ?? null;
-    if (normalizedRoute !== undefined) modernPayload.route_path = normalizedRoute;
-    if (payload.icon !== undefined) modernPayload.icon = payload.icon ?? null;
-    if (payload.sort_order !== undefined) modernPayload.sort_order = payload.sort_order ?? 0;
-    if (payload.status !== undefined) modernPayload.status = payload.status;
-    if (payload.is_visible !== undefined) modernPayload.is_visible = payload.is_visible ?? true;
-    if (payload.meta !== undefined) modernPayload.meta = payload.meta ?? {};
-
-    const attemptUpdate = async (data: Record<string, unknown>) =>
-      supabase.from("menus").update(data).eq("_id", menuId).select("*").single();
-
-    let response = await attemptUpdate(legacyPayload);
-    if (response.error && response.error.message.includes("column")) {
-      response = await attemptUpdate(modernPayload);
+    const rows = safeArray<any>(data);
+    if (rows.length > 0) {
+      return mapMenuRow(rows[0]);
     }
 
-    if (response.error) {
-      throw new Error(`menu update failed: ${response.error.message}`);
+    const fresh = await menuRepo.getMenuById(menuId);
+    if (!fresh) {
+      throw new Error("menu update failed: Không tìm thấy menu hoặc không có quyền cập nhật.");
     }
 
-    return mapMenuRow(response.data);
+    const expected: Array<[keyof MenuRecord, unknown]> = [];
+    if (payload.code !== undefined) expected.push(["code", payload.code?.trim() ?? ""]);
+    if (payload.name !== undefined) expected.push(["name", payload.name?.trim() ?? ""]);
+    if (payload.parent_id !== undefined) expected.push(["parent_id", payload.parent_id ?? null]);
+    if (payload.module_id !== undefined) expected.push(["module_id", payload.module_id ?? null]);
+    if (normalizedPath !== undefined) expected.push(["path", normalizedPath]);
+    if (payload.icon !== undefined) expected.push(["icon", payload.icon ?? null]);
+    if (payload.order_index !== undefined) expected.push(["order_index", payload.order_index ?? 0]);
+    if (payload.is_active !== undefined) expected.push(["is_active", payload.is_active ?? true]);
+
+    const mismatch = expected.find(([key, value]) => fresh[key] !== value);
+    if (mismatch) {
+      throw new Error("menu update failed: Không thể cập nhật (kiểm tra quyền hoặc RLS).");
+    }
+
+    return fresh;
   },
 
   async softDeleteMenu(menuId: string): Promise<void> {
-    const attempt = async (payload: Record<string, unknown>) =>
-      supabase.from("menus").update(payload).eq("_id", menuId);
-
-    let response = await attempt({ deleted_at: new Date().toISOString(), status: "INACTIVE" });
-    if (response.error && response.error.message.includes("deleted_at")) {
-      response = await attempt({ is_active: false });
-    }
-    if (response.error) {
-      throw new Error(`menu delete failed: ${response.error.message}`);
+    const { error } = await supabase
+      .from("menus")
+      .update({ is_active: false })
+      .eq("_id", menuId);
+    if (error) {
+      throw new Error(`menu delete failed: ${error.message}`);
     }
   },
 
   async moveMenu(params: MenuMoveParams): Promise<void> {
-    const trySelect = async (withDeletedFilter: boolean, fields: string) => {
-      let query = supabase.from("menus").select(fields);
-      if (withDeletedFilter) {
-        query = query.is("deleted_at", null);
-      }
-      return query;
-    };
+    const { data, error } = await supabase
+      .from("menus")
+      .select("_id, parent_id, order_index, name")
+      .order("parent_id", { ascending: true, nullsFirst: true })
+      .order("order_index", { ascending: true })
+      .order("name", { ascending: true });
 
-    let selectResponse = await trySelect(true, "_id, parent_id, sort_order, label");
-    if (selectResponse.error && selectResponse.error.message.includes("column")) {
-      selectResponse = await trySelect(false, "_id, parent_id, order_index, name");
-    }
-    if (selectResponse.error) {
-      throw new Error(`menus select failed: ${selectResponse.error.message}`);
+    if (error) {
+      throw new Error(`menus select failed: ${error.message}`);
     }
 
-    const rows = safeArray<any>(selectResponse.data).map((row) => ({
+    const rows = safeArray<any>(data).map((row) => ({
       ...row,
-      sort_order: row.sort_order ?? row.order_index ?? 0,
-      label: row.label ?? row.name ?? "",
+      order_index: row.order_index ?? 0,
+      name: row.name ?? "",
     }));
     const dragRow = rows.find((row) => (row._id ?? row.id) === params.dragId);
     if (!dragRow) return;
@@ -451,42 +448,31 @@ export const menuRepo = {
         return withoutDrag.map((row, idx) => ({
           _id: row._id ?? row.id,
           parent_id: parentId,
-          sort_order: (idx + 1) * 10,
+          order_index: (idx + 1) * 10,
         }));
       }
 
       return siblings.map((row, idx) => ({
         _id: row._id ?? row.id,
         parent_id: parentId,
-        sort_order: (idx + 1) * 10,
+        order_index: (idx + 1) * 10,
       }));
     };
 
-    const updates: Array<{ _id: string; parent_id: string | null; sort_order: number }> = [];
+    const updates: Array<{ _id: string; parent_id: string | null; order_index: number }> = [];
 
     if (oldParentId !== newParentId) {
       updates.push(...reorder(oldParentId, false));
     }
     updates.push(...reorder(newParentId, true, params.targetIndex));
 
-    const deduped = new Map<string, { _id: string; parent_id: string | null; sort_order: number }>();
+    const deduped = new Map<string, { _id: string; parent_id: string | null; order_index: number }>();
     updates.forEach((row) => deduped.set(row._id, row));
 
     const payload = Array.from(deduped.values());
     if (payload.length === 0) return;
 
-    let upsertResponse = await supabase
-      .from("menus")
-      .upsert(payload, { onConflict: "_id" });
-
-    if (upsertResponse.error && upsertResponse.error.message.includes("sort_order")) {
-      const legacyPayload = payload.map((row) => ({
-        _id: row._id,
-        parent_id: row.parent_id,
-        order_index: row.sort_order,
-      }));
-      upsertResponse = await supabase.from("menus").upsert(legacyPayload, { onConflict: "_id" });
-    }
+    const upsertResponse = await supabase.from("menus").upsert(payload, { onConflict: "_id" });
 
     if (upsertResponse.error) {
       throw new Error(`menu move failed: ${upsertResponse.error.message}`);

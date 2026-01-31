@@ -247,13 +247,55 @@ export async function fetchUserInfo(token: string): Promise<User | null> {
     } catch (error) {
       console.warn('⚠️ Failed to fetch user role name:', error);
     }
+
+    // Fetch profile details from v_user_profile/users table
+    let profileDetails: Partial<User> | null = null;
+    try {
+      profileDetails = await fetchUserProfileDetails(userData.id, token, {
+        email: userData.email,
+        username: userData.user_metadata?.username,
+      });
+    } catch (error) {
+      console.warn('⚠️ Failed to fetch user profile details:', error);
+    }
+
+    let roleCodes: string[] = [];
+    const profileRoleCodes = normalizeToArray((profileDetails as any)?.role_codes);
+    if (profileRoleCodes.length > 0) {
+      roleCodes = profileRoleCodes;
+    } else {
+      try {
+        roleCodes = await fetchUserRoleCodes(userData.id, token);
+      } catch (error) {
+        console.warn('⚠️ Failed to fetch user role codes:', error);
+      }
+    }
     
+    const profileRoleNames = normalizeToArray((profileDetails as any)?.role_names);
+
     return {
       id: userData.id,
-      email: userData.email,
-      name: userData.user_metadata?.name || userData.user_metadata?.full_name || userData.email,
-      roleDisplay: roleDisplay || userData.user_metadata?.roleDisplay || undefined,
+      email: profileDetails?.email || userData.email,
+      name:
+        (profileDetails as any)?.full_name ||
+        userData.user_metadata?.name ||
+        userData.user_metadata?.full_name ||
+        userData.email,
+      roleDisplay: roleDisplay || (profileRoleNames.length > 0 ? profileRoleNames.join(', ') : undefined) || userData.user_metadata?.roleDisplay || undefined,
+      roleCodes: roleCodes.length > 0 ? roleCodes : undefined,
+      roleCode: roleCodes[0] || undefined,
+      role_names: (profileDetails as any)?.role_names,
+      username: (profileDetails as any)?.username || userData.user_metadata?.username || userData.email,
+      full_name: (profileDetails as any)?.full_name || userData.user_metadata?.full_name,
+      phone: (profileDetails as any)?.phone,
+      department_id: (profileDetails as any)?.department_id,
+      department_name: (profileDetails as any)?.department_name,
+      department_level: (profileDetails as any)?.department_level,
+      department_code: (profileDetails as any)?.department_code,
+      cap_quan_ly: (profileDetails as any)?.cap_quan_ly,
+      don_vi_cong_tac_departments: (profileDetails as any)?.don_vi_cong_tac_departments,
       ...userData.user_metadata,
+      ...profileDetails,
     };
   } catch (error: any) {
     console.error('Error fetching user info:', error);
@@ -266,6 +308,210 @@ export async function fetchUserInfo(token: string): Promise<User | null> {
     }
     return null;
   }
+}
+
+async function fetchUserRoleCodes(userId: string, token: string): Promise<string[]> {
+  try {
+    if (!AUTH_API_BASE_URL) {
+      return [];
+    }
+
+    const headers = {
+      'Content-Type': 'application/json',
+      apikey: apiKey,
+      Authorization: `Bearer ${token}`,
+    };
+
+    const userRolesUrl = `${AUTH_API_BASE_URL}/rest/v1/user_roles?user_id=eq.${userId}&select=role_id`;
+    const userRolesResponse = await axios.get<{ role_id: string }[]>(userRolesUrl, { headers });
+    const roleIds = userRolesResponse.data?.map((row) => row.role_id).filter(Boolean) || [];
+    if (roleIds.length === 0) {
+      return [];
+    }
+
+    const rolesUrl = `${AUTH_API_BASE_URL}/rest/v1/roles?_id=in.(${roleIds.join(',')})&select=code`;
+    const rolesResponse = await axios.get<{ code: string }[]>(rolesUrl, { headers });
+    return rolesResponse.data?.map((row) => row.code).filter(Boolean) || [];
+  } catch (error: any) {
+    console.error('Error fetching user role codes:', error);
+    return [];
+  }
+}
+
+async function fetchUserProfileDetails(
+  userId: string,
+  token: string,
+  identifiers?: { email?: string | null; username?: string | null }
+): Promise<Partial<User> | null> {
+  try {
+    if (!AUTH_API_BASE_URL) {
+      return null;
+    }
+
+    const headers = {
+      'Content-Type': 'application/json',
+      apikey: apiKey,
+      Authorization: `Bearer ${token}`,
+    };
+
+    const selectFields = '_id,username,full_name,email,phone,department_id';
+    const viewFields = 'user_id,email,full_name,cap_quan_ly,role_codes,role_names,don_vi_cong_tac_departments';
+    let row: any = null;
+    let viewRow: any = null;
+
+    try {
+      const viewUrl = `${AUTH_API_BASE_URL}/rest/v1/v_user_profile?user_id=eq.${userId}&select=${viewFields}`;
+      const viewResponse = await axios.get<any[]>(viewUrl, { headers });
+      viewRow = viewResponse.data?.[0] ?? null;
+      if (import.meta.env.DEV) {
+        console.debug('[profile] v_user_profile by user_id', userId, viewRow);
+      }
+    } catch (error: any) {
+      if (import.meta.env.DEV) {
+        console.error('[profile] v_user_profile by user_id error', {
+          message: error?.message,
+          status: error?.response?.status,
+          data: error?.response?.data,
+        });
+      }
+    }
+
+    if (!viewRow && identifiers?.email) {
+      const email = encodeURIComponent(identifiers.email);
+      try {
+        const viewByEmailUrl = `${AUTH_API_BASE_URL}/rest/v1/v_user_profile?email=eq.${email}&select=${viewFields}`;
+        const viewByEmailResponse = await axios.get<any[]>(viewByEmailUrl, { headers });
+        viewRow = viewByEmailResponse.data?.[0] ?? null;
+        if (import.meta.env.DEV) {
+          console.debug('[profile] v_user_profile by email', identifiers.email, viewRow);
+        }
+      } catch (error: any) {
+        if (import.meta.env.DEV) {
+          console.error('[profile] v_user_profile by email error', {
+            message: error?.message,
+            status: error?.response?.status,
+            data: error?.response?.data,
+          });
+        }
+      }
+    }
+
+    try {
+      const userUrl = `${AUTH_API_BASE_URL}/rest/v1/users?_id=eq.${userId}&select=${selectFields}`;
+      const userResponse = await axios.get<any[]>(userUrl, { headers });
+      row = userResponse.data?.[0];
+    } catch (error: any) {
+      if (import.meta.env.DEV) {
+        console.error('[profile] users by id error', {
+          message: error?.message,
+          status: error?.response?.status,
+          data: error?.response?.data,
+        });
+      }
+    }
+
+    if (!row && identifiers?.email) {
+      try {
+        const email = encodeURIComponent(identifiers.email);
+        const byEmailUrl = `${AUTH_API_BASE_URL}/rest/v1/users?email=eq.${email}&select=${selectFields}`;
+        const byEmailResponse = await axios.get<any[]>(byEmailUrl, { headers });
+        row = byEmailResponse.data?.[0];
+      } catch (error: any) {
+        if (import.meta.env.DEV) {
+          console.error('[profile] users by email error', {
+            message: error?.message,
+            status: error?.response?.status,
+            data: error?.response?.data,
+          });
+        }
+      }
+    }
+
+    if (!row && identifiers?.username) {
+      try {
+        const username = encodeURIComponent(identifiers.username);
+        const byUsernameUrl = `${AUTH_API_BASE_URL}/rest/v1/users?username=eq.${username}&select=${selectFields}`;
+        const byUsernameResponse = await axios.get<any[]>(byUsernameUrl, { headers });
+        row = byUsernameResponse.data?.[0];
+      } catch (error: any) {
+        if (import.meta.env.DEV) {
+          console.error('[profile] users by username error', {
+            message: error?.message,
+            status: error?.response?.status,
+            data: error?.response?.data,
+          });
+        }
+      }
+    }
+
+    let departmentName = row?.department_name ?? null;
+    let departmentLevel = row?.department_level ?? null;
+    let departmentCode = null;
+    const departmentsArray = normalizeToArray(viewRow?.don_vi_cong_tac_departments);
+    if (!departmentName && departmentsArray.length > 0) {
+      departmentName = departmentsArray.join(', ');
+    }
+
+    if (!departmentName || departmentLevel == null || !departmentCode) {
+      const departmentUserId = row?._id ?? userId;
+      const deptUrl = `${AUTH_API_BASE_URL}/rest/v1/department_users?user_id=eq.${departmentUserId}&select=department_id,departments(_id,name,code,level)`;
+      const deptResponse = await axios.get<any[]>(deptUrl, { headers });
+      const deptRow = deptResponse.data?.[0]?.departments;
+      if (deptRow) {
+        departmentName = departmentName ?? deptRow.name ?? null;
+        departmentLevel = departmentLevel ?? deptRow.level ?? null;
+        departmentCode = deptRow.code ?? departmentCode;
+      }
+    }
+
+    if (!row && !viewRow) {
+      return null;
+    }
+
+    const roleCodes = normalizeToArray(viewRow?.role_codes);
+    const roleNames = normalizeToArray(viewRow?.role_names);
+
+    return {
+      id: row?._id ?? row?.id ?? viewRow?.user_id ?? userId,
+      username: row?.username ?? null,
+      full_name: row?.full_name ?? viewRow?.full_name ?? null,
+      email: row?.email ?? viewRow?.email ?? null,
+      phone: row?.phone ?? null,
+      department_id: row?.department_id ?? null,
+      department_name: departmentName ?? null,
+      department_level: departmentLevel ?? null,
+      department_code: departmentCode ?? null,
+      cap_quan_ly: viewRow?.cap_quan_ly ?? null,
+      role_codes: roleCodes.length > 0 ? roleCodes : undefined,
+      role_names: roleNames.length > 0 ? roleNames : undefined,
+      don_vi_cong_tac_departments: departmentsArray.length > 0 ? departmentsArray : undefined,
+    };
+  } catch (error: any) {
+    if (import.meta.env.DEV) {
+      console.error('Error fetching user profile details:', {
+        message: error?.message,
+        status: error?.response?.status,
+        data: error?.response?.data,
+      });
+    } else {
+      console.error('Error fetching user profile details:', error);
+    }
+    return null;
+  }
+}
+
+function normalizeToArray(value: any): string[] {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  return [];
 }
 
 /**

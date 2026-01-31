@@ -9,8 +9,14 @@ export interface User {
   [key: string]: any;
 }
 
+export interface Department {
+  id: string;
+  name?: string;
+}
+
 interface AuthState {
   user: User | null;
+  department: Department | null;
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -20,6 +26,7 @@ interface AuthState {
 
 const initialState: AuthState = {
   user: null,
+  department: null,
   token: null,
   isAuthenticated: false,
   isLoading: false,
@@ -39,6 +46,7 @@ const authSlice = createSlice({
       state.isLoading = false;
       state.token = action.payload.access_token;
       state.user = action.payload.user || null;
+      state.department = action.payload.user?.department || null;
       state.isAuthenticated = true;
       state.error = null;
     },

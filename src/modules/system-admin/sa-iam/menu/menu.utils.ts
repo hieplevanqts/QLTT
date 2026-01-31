@@ -5,16 +5,17 @@ const ACTIVE_STATUS = new Set(["ACTIVE", "active", "1", "true"]);
 export const isMenuActive = (status: MenuStatusValue) => {
   if (status === null || status === undefined) return true;
   if (typeof status === "boolean") return status;
+  if (typeof status === "number") return status === 1;
   return ACTIVE_STATUS.has(String(status));
 };
 
-export const sortMenuNodes = <T extends { sort_order?: number | null; label?: string | null }>(
+export const sortMenuNodes = <T extends { order_index?: number | null; name?: string | null }>(
   left: T,
   right: T,
 ) => {
-  const order = (left.sort_order ?? 0) - (right.sort_order ?? 0);
+  const order = (left.order_index ?? 0) - (right.order_index ?? 0);
   if (order !== 0) return order;
-  return (left.label ?? "").localeCompare(right.label ?? "");
+  return (left.name ?? "").localeCompare(right.name ?? "");
 };
 
 export const buildMenuTree = (items: MenuRecord[]): MenuTreeNode[] => {
@@ -63,7 +64,7 @@ export const filterMenuTreeByPermissions = (
   permissionCodes: Set<string>,
 ): MenuTreeNode[] => {
   const filterNode = (node: MenuTreeNode): MenuTreeNode | null => {
-    const allowedSelf = isMenuActive(node.status) && node.is_visible && hasAnyPermission(node, permissionCodes);
+    const allowedSelf = isMenuActive(node.is_active) && hasAnyPermission(node, permissionCodes);
     const filteredChildren = node.children
       .map(filterNode)
       .filter((child): child is MenuTreeNode => Boolean(child));

@@ -30,7 +30,7 @@ export const MenuTree: React.FC<MenuTreeProps> = ({
 }) => {
   return (
     <Space direction="vertical" style={{ width: "100%" }} size={8}>
-      <Input.Search placeholder="Tìm theo mã/nhãn/route..." onSearch={onSearch} allowClear />
+      <Input.Search placeholder="Tìm theo mã/tên/path..." onSearch={onSearch} allowClear />
       <Space wrap>
         <Select
           placeholder="Tất cả trạng thái"

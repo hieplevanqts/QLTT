@@ -28,7 +28,7 @@ import { StatusBadge } from "@/components/lead-risk/StatusBadge";
 import { SLATimer } from "@/components/lead-risk/SLATimer";
 import { LeadFormModal } from "@/components/lead-risk/LeadFormModal";
 import { DeleteConfirmModal } from "@/components/lead-risk/DeleteConfirmModal";
-import { ConfirmationDialog } from "@/components/lead-risk/ConfirmationDialog";
+import { ConfirmationDialog as ConfirmationDialogComponent } from "@/components/lead-risk/ConfirmationDialog";
 import { AddNoteModal } from "@/components/lead-risk/AddNoteModal";
 import { UpdateSLAModal } from "@/components/lead-risk/UpdateSLAModal";
 import { RejectLeadModal } from "@/components/lead-risk/RejectLeadModal";
@@ -201,6 +201,36 @@ const getAllowedActions = (
     default:
       return ["view"];
   }
+};
+
+// Helper to translate source/category values
+const getSourceLabel = (source: string): string => {
+  const labels: Record<string, string> = {
+    // Sources from types
+    app: 'Mobile App',
+    hotline: 'Hotline 1800',
+    import: 'Import hàng loạt',
+    field: 'Hiện trường',
+    tip: 'Nguồn tin ẩn danh',
+    system: 'Tự động phát hiện',
+    social: 'Mạng xã hội',
+
+    // Additional sources from Filter options
+    website: 'Website/Portal',
+    email: 'Email',
+    inspection: 'Kiểm tra trực tiếp',
+    authority: 'Công an/Chính quyền',
+    other: 'Nguồn khác',
+
+    // Categories (just in case)
+    counterfeit: 'Hàng giả',
+    smuggling: 'Buôn lậu',
+    illegal_trading: 'Kinh doanh bất hợp pháp',
+    food_safety: 'An toàn thực phẩm',
+    price_fraud: 'Gian lận giá cả',
+    unlicensed: 'Không giấy phép',
+  };
+  return labels[source] || source;
 };
 
 export default function LeadInbox() {
@@ -1177,7 +1207,7 @@ export default function LeadInbox() {
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h1 className={styles.title}>Xử lý nguồn tin hằng ngày</h1>
+          <h1 className={styles.title}>Xử lý nguồn tin hằng ngày 123</h1>
           <p className={styles.subtitle}>
             Xử lý nguồn tin hàng ngày
           </p>
@@ -2011,7 +2041,7 @@ export default function LeadInbox() {
                   </td>
                   <td>
                     <div className={styles.leadTitle}>
-                      {lead.title}
+                      {getSourceLabel(lead.source)}
                     </div>
                   </td>
                   <td>
@@ -2156,7 +2186,7 @@ export default function LeadInbox() {
         onRemoveItem={handleRemoveFromWatchlist}
         onViewDetails={handleViewWatchlistItemDetails}
       />
-      <ConfirmationDialog
+      <ConfirmationDialogComponent
         isOpen={confirmDialog.isOpen}
         onClose={() =>
           setConfirmDialog({ ...confirmDialog, isOpen: false })

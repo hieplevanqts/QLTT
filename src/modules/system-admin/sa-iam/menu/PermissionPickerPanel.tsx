@@ -96,10 +96,10 @@ export default function PermissionPickerPanel({
     null,
   );
 
-  const isGroupMenu = !menu?.route_path;
+  const isGroupMenu = !menu?.path;
   const suggestedResource = React.useMemo(
-    () => normalizeRouteResource(menu?.route_path),
-    [menu?.route_path],
+    () => normalizeRouteResource(menu?.path),
+    [menu?.path],
   );
 
   React.useEffect(() => {

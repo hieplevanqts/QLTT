@@ -44,9 +44,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/components/ui/utils';
 import { useLayout } from '../contexts/LayoutContext';
-import { useAuth } from '../contexts/AuthContext'; // 🔥 NEW: Import useAuth for permissions
-import { useMenuRegistry } from '../hooks/useMenuRegistry';
-import { buildMenuTree, filterMenuTree, type MenuNode } from '../utils/menuRegistry';
+import { useRuntimeMenu } from '@/shared/menu/useRuntimeMenu';
+import { getMenuFallbackEnabled } from '@/shared/menu/menuCache';
+import { type MenuNode } from '../utils/menuRegistry';
 import mappaLogo from '../assets/79505e63e97894ec2d06837c57cf53a19680f611.png';
 
 // 🔥 NEW: Permission code mapping (from Insert.sql lines 39-46)
@@ -239,8 +239,8 @@ const menuTreeToModules = (nodes: MenuNode[]) => {
     const submenuItems =
       node.children.length > 0
         ? (node.path === '/admin' || node.label === 'Quản trị'
-            ? buildAdminSubmenu(node.children)
-            : node.children.map((child) => toSubmenuItem(child)))
+          ? buildAdminSubmenu(node.children)
+          : node.children.map((child) => toSubmenuItem(child)))
         : [];
     return {
       path: node.path || '',
@@ -269,35 +269,8 @@ export default function VerticalSidebar({
     location.pathname.startsWith('/plans') || location.pathname.startsWith('/inspections')
   );
   const { setLayoutMode } = useLayout();
-  const { user } = useAuth(); // 🔥 NEW: Get user with permissions
-  const { menus } = useMenuRegistry();
-
-  // 🔥 NEW: Get user permission codes
-  const userPermissionCodes = user?.permissions || [];
-  
-  // 🔥 DEBUG: Log permissions and menu data
-  React.useEffect(() => {
-    console.log('🔍 VerticalSidebar - Debug Menu & Permissions:', {
-      userPermissions: userPermissionCodes,
-      userRoleCode: user?.roleCode,
-      menusCount: menus?.length || 0,
-      menus: menus,
-    });
-  }, [userPermissionCodes, user?.roleCode, menus]);
-  
-  // 🔥 NEW: Helper function to check if user has permission for a menu item
-  const hasPermission = (permissionCode: string | undefined): boolean => {
-    if (!permissionCode || permissionCode === '') return true; // No permission required = always visible
-    
-    // 🔥 FIX: If user has no permissions at all, show all menus (fallback for development/testing)
-    // In production, you might want to be more strict
-    if (userPermissionCodes.length === 0) {
-      console.warn('⚠️ User has no permissions - showing all menus (fallback mode)');
-      return true; // Show all menus if user has no permissions
-    }
-    
-    return userPermissionCodes.includes(permissionCode);
-  };
+  const { tree, loading } = useRuntimeMenu();
+  const fallbackEnabled = getMenuFallbackEnabled();
   const isPathActive = React.useCallback(
     (path?: string | null) => {
       if (!path) return false;
@@ -315,42 +288,12 @@ export default function VerticalSidebar({
     [location.pathname, location.search],
   );
 
-  const registryTree = React.useMemo(() => (menus ? buildMenuTree(menus) : []), [menus]);
-  const filteredRegistryTree = React.useMemo(
-    () => {
-      const filtered = filterMenuTree(registryTree, userPermissionCodes, user?.roleCode);
-      console.log('🔍 VerticalSidebar - Filtered Registry Tree:', {
-        originalCount: registryTree.length,
-        filteredCount: filtered.length,
-        userPermissions: userPermissionCodes,
-        userRoleCode: user?.roleCode,
-      });
-      return filtered;
-    },
-    [registryTree, userPermissionCodes, user?.roleCode],
-  );
-  const registryModules = React.useMemo(() => menuTreeToModules(filteredRegistryTree), [filteredRegistryTree]);
-  
-  // 🔥 FIX: Merge registry modules with mappa modules to ensure all menus are displayed
-  // Registry modules take priority, but we also include mappa modules that aren't in registry
-  const mappaModulesFiltered = mappaModules.filter(module => hasPermission(module.permissionCode));
-  const registryPaths = new Set(registryModules.map(m => m.path));
-  const additionalMappaModules = mappaModulesFiltered.filter(m => !registryPaths.has(m.path));
+  const runtimeModules = React.useMemo(() => menuTreeToModules(tree), [tree]);
   const visibleModules = React.useMemo(() => {
-    const merged = [...registryModules, ...additionalMappaModules].sort((a, b) => {
-      // Sort by order if available, otherwise maintain original order
-      const aOrder = mappaModules.find(m => m.path === a.path)?.order ?? 999;
-      const bOrder = mappaModules.find(m => m.path === b.path)?.order ?? 999;
-      return aOrder - bOrder;
-    });
-    console.log('🔍 VerticalSidebar - Visible Modules:', {
-      registryModulesCount: registryModules.length,
-      additionalMappaModulesCount: additionalMappaModules.length,
-      totalVisible: merged.length,
-      visiblePaths: merged.map(m => m.path),
-    });
-    return merged;
-  }, [registryModules, additionalMappaModules]);
+    if (runtimeModules.length > 0) return runtimeModules;
+    return fallbackEnabled ? mappaModules : [];
+  }, [runtimeModules, fallbackEnabled]);
+  const showEmptyState = !loading && visibleModules.length === 0 && !fallbackEnabled;
 
   // Mock permissions - In real app, this would come from user context/auth
   const userPermissions = {
@@ -388,7 +331,7 @@ export default function VerticalSidebar({
         <DropdownMenu open={quickActionsOpen} onOpenChange={setQuickActionsOpen}>
           <DropdownMenuTrigger asChild>
             <Button
-              className={cn('w-full gap-2 cursor-pointer', collapsed ? 'px-0' : '')}
+              className={cn('w-full gap-2 cursor-pointer !text-white', collapsed ? 'px-0' : '')}
               size={collapsed ? 'icon' : 'sm'}
             >
               <Plus className="h-4 w-4" />
@@ -408,7 +351,7 @@ export default function VerticalSidebar({
                 </Link>
               </DropdownMenuItem>
             )}
-            
+
             {userPermissions.canImportFacilityData && (
               <DropdownMenuItem asChild>
                 <Link to="/stores/import" style={{ cursor: 'pointer' }}>
@@ -416,7 +359,7 @@ export default function VerticalSidebar({
                 </Link>
               </DropdownMenuItem>
             )}
-            
+
             {userPermissions.canCreateRisk && (
               <DropdownMenuItem asChild>
                 <Link to="/leads/create-risk" style={{ cursor: 'pointer' }}>
@@ -424,7 +367,7 @@ export default function VerticalSidebar({
                 </Link>
               </DropdownMenuItem>
             )}
-            
+
             {userPermissions.canCreateFeedback && (
               <DropdownMenuItem asChild>
                 <Link to="/leads/create-feedback" style={{ cursor: 'pointer' }}>
@@ -432,7 +375,7 @@ export default function VerticalSidebar({
                 </Link>
               </DropdownMenuItem>
             )}
-            
+
             {userPermissions.canCreateInspectionPlan && (
               <DropdownMenuItem asChild>
                 <Link to="/plans/create-new" style={{ cursor: 'pointer' }}>
@@ -440,7 +383,7 @@ export default function VerticalSidebar({
                 </Link>
               </DropdownMenuItem>
             )}
-            
+
             {userPermissions.canCreateInspectionRound && (
               <DropdownMenuItem asChild>
                 <a href="/plans/create-round" style={{ cursor: 'pointer' }}>
@@ -448,7 +391,7 @@ export default function VerticalSidebar({
                 </a>
               </DropdownMenuItem>
             )}
-            
+
             {userPermissions.canCreateInspectionSession && (
               <DropdownMenuItem asChild>
                 <a href="/tasks/create" style={{ cursor: 'pointer' }}>
@@ -462,13 +405,18 @@ export default function VerticalSidebar({
 
       {/* Navigation Menu */}
       <nav className="flex-1 p-2 overflow-y-auto">
-        {visibleModules.map((module) => { // 🔥 FIX: Use filtered modules instead of all modules
+        {showEmptyState ? (
+          <div className="px-4 py-3 text-sm text-muted-foreground">
+            Tài khoản chưa được gán vai trò hoặc chưa có quyền hiển thị menu.
+          </div>
+        ) : (
+          visibleModules.map((module) => {
           const Icon = module.icon;
           const isAdminMenu = module.path === '/admin';
-          
+
           // Special logic for active state
           let isActive = false;
-          
+
           if (module.path === '/plans') {
             // "Kế hoạch tác nghiệp" menu cha KHÔNG active khi ở submenu
             isActive = false;
@@ -491,7 +439,7 @@ export default function VerticalSidebar({
             // Normal modules - active when path matches
             isActive = location.pathname === module.path || location.pathname.startsWith(module.path + '/');
           }
-          
+
           // Special handling for "Kế hoạch tác nghiệp" with submenu
           if (module.path === '/plans') {
             // When collapsed, show as dropdown menu
@@ -518,14 +466,14 @@ export default function VerticalSidebar({
                         <div className="font-medium">Kế hoạch kiểm tra</div>
                       </Link>
                     </DropdownMenuItem>
-                    
+
                     <DropdownMenuItem asChild>
                       <Link to="/plans/inspection-rounds" className="flex items-center gap-3 cursor-pointer">
                         <ClipboardCheck className="h-4 w-4" />
                         <div className="font-medium">Đợt kiểm tra</div>
                       </Link>
                     </DropdownMenuItem>
-                    
+
                     <DropdownMenuItem asChild>
                       <Link to="/plans/inspection-session" className="flex items-center gap-3 cursor-pointer">
                         <KanbanSquare className="h-4 w-4" />
@@ -536,7 +484,7 @@ export default function VerticalSidebar({
                 </DropdownMenu>
               );
             }
-            
+
             // When expanded, show collapsible submenu
             return (
               <div key={module.path} className="mb-1">
@@ -560,7 +508,7 @@ export default function VerticalSidebar({
                     )}
                   />
                 </div>
-                
+
                 {/* Submenu items */}
                 {plansSubmenuOpen && (
                   <div className="ml-4 mt-1 space-y-1">
@@ -577,7 +525,7 @@ export default function VerticalSidebar({
                         <span>Kế hoạch kiểm tra</span>
                       </div>
                     </Link>
-                    
+
                     <Link to="/plans/inspection-rounds">
                       <div
                         className={cn(
@@ -591,7 +539,7 @@ export default function VerticalSidebar({
                         <span>Đợt kiểm tra</span>
                       </div>
                     </Link>
-                    
+
                     <Link to="/plans/inspection-session">
                       <div
                         className={cn(
@@ -610,11 +558,11 @@ export default function VerticalSidebar({
               </div>
             );
           }
-          
+
           // If module has submenu (for lead-risk)
           if ((module as any).hasSubmenu && (module as any).submenu) {
             const isOpen = submenuOpen === module.path;
-            
+
             // If collapsed, show as dropdown
             if (collapsed) {
               return (
@@ -663,7 +611,7 @@ export default function VerticalSidebar({
                                 ? "flex items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
                                 : "cursor-pointer",
                               isItemActive &&
-                                (isAdminMenu ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary")
+                              (isAdminMenu ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary")
                             )}
                           >
                             {ItemIcon && <ItemIcon className="h-4 w-4" />}
@@ -676,7 +624,7 @@ export default function VerticalSidebar({
                 </DropdownMenu>
               );
             }
-            
+
             // If expanded, show inline submenu
             return (
               <div key={module.path}>
@@ -693,14 +641,14 @@ export default function VerticalSidebar({
                     <Icon className="h-5 w-5 shrink-0" />
                     <span className="text-sm">{module.label}</span>
                   </div>
-                  <ChevronDown 
+                  <ChevronDown
                     className={cn(
                       "h-4 w-4 transition-transform",
                       isOpen && "rotate-180"
-                    )} 
+                    )}
                   />
                 </button>
-                
+
                 {isOpen && (
                   <div className="ml-8 mb-2 space-y-1">
                     {(module as any).submenu.map((item: any, index: number) => {
@@ -760,7 +708,8 @@ export default function VerticalSidebar({
               </div>
             </Link>
           );
-        })}
+          })
+        )}
       </nav>
 
       {/* Layout Mode Toggle */}

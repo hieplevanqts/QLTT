@@ -36,6 +36,7 @@ import { AuditTrail } from '@/components/AuditTrail';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import AssignLeadSidebar from '@/components/lead-risk/AssignLeadSidebar';
 import AssignLeadModal from '@/components/lead-risk/AssignLeadModal';
+import { ConfirmationDialog } from '@/components/lead-risk/ConfirmationDialog';
 import { getSupabaseClient } from '@/utils/supabaseClient';
 import type { LeadUrgency, LeadConfidence, LeadCategory } from '@/utils/data/lead-risk/types';
 import styles from './LeadDetail.module.css';
@@ -1315,6 +1316,7 @@ export default function LeadDetail() {
           onAssign={async (data) => {
             console.log('👤 [LeadDetail] Assigning lead:', lead.code, 'with data:', data);
 
+            const supabase = getSupabaseClient();
             try {
               // Step 1: Insert into map_inspection_sessions table and get the new session ID
               const { data: sessionData, error: sessionError } = await supabase

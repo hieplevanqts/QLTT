@@ -32,11 +32,15 @@ const hasPermission = (node: MenuItem, permissions: string[]) => {
   if (!node.permissionsAny || node.permissionsAny.length === 0) {
     return true;
   }
-  // 🔥 FIX: If user has no permissions, show all menus (fallback for development/testing)
-  // This allows menu to work even if permissions haven't been set up yet
+  // Allow fallback show-all only in DEV with explicit flag.
   if (permissions.length === 0) {
-    console.warn('⚠️ User has no permissions - showing all menu items (fallback mode)');
-    return true; // Show all menus if user has no permissions
+    const fallbackEnabled =
+      import.meta.env.DEV && import.meta.env.VITE_ENABLE_MENU_FALLBACK === "true";
+    if (fallbackEnabled) {
+      console.warn('⚠️ User has no permissions - showing all menu items (fallback mode)');
+      return true;
+    }
+    return false;
   }
   return node.permissionsAny.some((perm) => permissions.includes(perm));
 };
@@ -56,6 +60,9 @@ export const filterMenuTree = (nodes: MenuNode[], permissions: string[], roleCod
   };
   
   const filterNode = (node: MenuNode, isChildOfAdmin: boolean = false): MenuNode | null => {
+    if (node.isEnabled === false) {
+      return null;
+    }
     // 🔥 FIX: Skip permission check for children of "Quản trị" menu
     const isAdminChild = isChildOfAdmin || isAdminMenu(node);
     const skipPermissionCheck = isChildOfAdmin; // Children of admin menu don't need permission check
