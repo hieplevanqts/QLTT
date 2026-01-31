@@ -36,8 +36,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true,
     // Disable checkout/payment features to avoid "No checkout popup config found" error
     flowType: 'pkce',
-    // Set redirect URL to current origin
-    redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
   },
   global: {
     headers: {

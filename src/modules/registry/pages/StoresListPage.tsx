@@ -874,7 +874,7 @@ export default function StoresListPage() {
       label: 'Địa bàn',
       sortable: true,
       width: '110px', // Reduced slightly for balance
-      render: (store) => store.jurisdiction,
+      render: (store) => store.ward || '—',
     },
     {
       key: 'status',
