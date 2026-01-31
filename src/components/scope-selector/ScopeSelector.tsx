@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { useQLTTScope } from '@/contexts/QLTTScopeContext';
-import { useAppDispatch } from '@/hooks/useAppStore';
+import { useAppDispatch, useAppSelector } from '@/hooks/useAppStore';
 import { setScope } from '@/store/slices/qlttScopeSlice';
 import styles from './ScopeSelector.module.css';
+import { RootState } from '@/store/rootReducer';
+
+
 
 export function ScopeSelector() {
   const {
@@ -14,6 +17,8 @@ export function ScopeSelector() {
     availableAreas,
     isLoading,
   } = useQLTTScope();
+  // Get user from Redux instead of AuthContext
+    const { user } = useAppSelector((state: RootState) => state.auth);
   
   // Redux dispatch and selector for Redux store
   const dispatch = useAppDispatch();
@@ -28,6 +33,35 @@ export function ScopeSelector() {
     setSelectedTeam(scope.teamId || '');
     setSelectedArea(scope.areaId || '');
   }, [scope.divisionId, scope.teamId, scope.areaId]);
+
+  // Enforce user department/team restrictions
+  useEffect(() => {
+    if (user) {
+      const userDeptId = (user as any)?.app_metadata?.department?.id;
+
+      if (userDeptId && !isLoading) {
+        // Check if userDeptId matches a division
+        const isDivision = availableDivisions.some((d: any) => d.id === userDeptId);
+        if (isDivision) {
+          if (scope.divisionId !== userDeptId) {
+            const newScope = { ...scope, divisionId: userDeptId };
+            setContextScope(newScope);
+            dispatch(setScope(newScope));
+          }
+        } else {
+          // Check if userDeptId matches a team (if teams are loaded)
+          const isTeam = availableTeams.some((t: any) => t.id === userDeptId);
+          if (isTeam) {
+            if (scope.teamId !== userDeptId) {
+              const newScope = { ...scope, teamId: userDeptId };
+              setContextScope(newScope);
+              dispatch(setScope(newScope));
+            }
+          }
+        }
+      }
+    }
+  }, [user, availableDivisions, availableTeams, isLoading, scope, setContextScope, dispatch]);
 
   // Restore saved division from localStorage
   useEffect(() => {
@@ -124,8 +158,10 @@ export function ScopeSelector() {
    
   };
 
-  const isDivisionDisabled = isLoading;
-  const isTeamDisabled = isLoading || !selectedDivision;
+  const userDeptId = (user as any)?.app_metadata?.department?.id;
+
+  const isDivisionDisabled = isLoading || !!userDeptId;
+  const isTeamDisabled = isLoading || !selectedDivision || (!!userDeptId && scope.teamId === userDeptId);
   const isAreaDisabled = isLoading || !selectedTeam;
   
 
@@ -189,7 +225,3 @@ export function ScopeSelector() {
     </div>
   );
 }
-
-
-
-
