@@ -1,6 +1,7 @@
-import { Button, Col, Row, Space, Typography, message } from "antd";
+import { Button, Col, Row, Space, message } from "antd";
 import type { DataNode, TreeProps } from "antd/es/tree";
 import * as React from "react";
+import PageHeader from "@/layouts/PageHeader";
 import { MenuDetailTabs } from "../components/MenuDetailTabs";
 import { MenuTree } from "../components/MenuTree";
 import { useMenuDetail } from "../hooks/useMenuDetail";
@@ -8,16 +9,16 @@ import { useMenuTree } from "../hooks/useMenuTree";
 import { usePermissionPicker } from "../hooks/usePermissionPicker";
 import { menuService } from "../services/supabase/menu.service";
 import type { MenuRecord } from "../menu.types";
-
-const { Title, Text } = Typography;
+import styles from "./MenuAdminPage.module.css";
+import { clearAllMenuCache, emitMenuUpdated } from "@/shared/menu/menuCache";
 
 const toTreeData = (nodes: MenuRecord[]): DataNode[] =>
   nodes.map((node: any) => ({
     key: node._id,
     title: (
       <span>
-        {node.label}
-        {node.route_path ? <span style={{ marginLeft: 8, color: "#1677ff" }}>{node.route_path}</span> : null}
+        {node.name}
+        {node.path ? <span style={{ marginLeft: 8, color: "#1677ff" }}>{node.path}</span> : null}
       </span>
     ),
     children: node.children ? toTreeData(node.children) : undefined,
@@ -28,12 +29,12 @@ const buildPreviewTree = (nodes: any[], rolePermIds: Set<string>) => {
     const children = (node.children ?? []).map(walk).filter(Boolean);
     const permissionIds: string[] = node.permission_ids ?? [];
     const hasPermission = permissionIds.length === 0 || permissionIds.some((id) => rolePermIds.has(id));
-    const visible = node.is_visible !== false && hasPermission;
-    if (node.route_path) {
-      return visible ? { ...node, children } : null;
-    }
+    const visible = node.is_active !== false && hasPermission;
     if (children.length > 0) {
       return { ...node, children };
+    }
+    if (node.path) {
+      return visible ? { ...node, children } : null;
     }
     return null;
   };
@@ -41,9 +42,9 @@ const buildPreviewTree = (nodes: any[], rolePermIds: Set<string>) => {
   return nodes.map(walk).filter(Boolean);
 };
 
-const getSuggestedResource = (routePath?: string | null) => {
-  if (!routePath) return "";
-  const cleaned = routePath.split("?")[0].split("#")[0];
+const getSuggestedResource = (path?: string | null) => {
+  if (!path) return "";
+  const cleaned = path.split("?")[0].split("#")[0];
   const segments = cleaned.split("/").filter(Boolean);
   if (segments.length === 0) return "";
   return segments[segments.length - 1] ?? "";
@@ -86,8 +87,8 @@ const MenuAdminPage: React.FC = () => {
     if (current?.module_id) {
       setFilters((prev) => ({ ...prev, moduleId: current.module_id }));
     }
-    if (current?.route_path && smartRouteOnly) {
-      const suggested = getSuggestedResource(current.route_path);
+    if (current?.path && smartRouteOnly) {
+      const suggested = getSuggestedResource(current.path);
       if (suggested) {
         setFilters((prev) => ({
           ...prev,
@@ -150,7 +151,8 @@ const MenuAdminPage: React.FC = () => {
   };
 
   const notifyMenuUpdated = () => {
-    window.dispatchEvent(new Event("mappa:menu-refresh"));
+    clearAllMenuCache();
+    emitMenuUpdated();
   };
 
   const isDescendant = React.useCallback(
@@ -186,7 +188,7 @@ const MenuAdminPage: React.FC = () => {
 
     const siblings = flatMenus
       .filter((menu) => (menu.parent_id ?? null) === dropParentId && menu._id !== dragId)
-      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+      .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
 
     let targetIndex = siblings.findIndex((menu) => menu._id === dropId);
     if (targetIndex === -1) {
@@ -249,114 +251,139 @@ const MenuAdminPage: React.FC = () => {
   }, [treeSearch, treeStatus, treeGroup, treeModule]);
 
   return (
-    <Space direction="vertical" style={{ width: "100%" }} size={16}>
-      <Space align="center" style={{ width: "100%", justifyContent: "space-between" }}>
-        <div>
-          <Title level={3} style={{ marginBottom: 0 }}>
-            Quản lý Menu
-          </Title>
-          <Text type="secondary">Quản trị cây menu, quyền hiển thị và preview theo vai trò</Text>
-        </div>
-        <Space>
-          <Button onClick={handleRefresh}>Làm mới</Button>
-          <Button type="primary">Thêm menu</Button>
-        </Space>
-      </Space>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        breadcrumbs={[
+          { label: "Trang chủ", href: "/" },
+          { label: "Quản trị hệ thống", href: "/system-admin" },
+          { label: "IAM", href: "/system-admin/iam" },
+          { label: "Menu" },
+        ]}
+        title="Quản lý Menu"
+        subtitle="Quản trị cây menu, quyền hiển thị và preview theo vai trò"
+        actions={
+          <Space>
+            <Button onClick={handleRefresh}>Làm mới</Button>
+            <Button type="primary">Thêm menu</Button>
+          </Space>
+        }
+      />
 
-      <Row gutter={16}>
+      <div className="px-6 pb-8">
+        <Row gutter={16}>
         <Col span={7}>
-          <MenuTree
-            treeData={toTreeData(treeMenus)}
-            loading={loading}
-            selectedKeys={selectedMenuId ? [selectedMenuId] : []}
-            moduleOptions={modules.map((mod) => ({ label: mod.name, value: mod._id }))}
-            moduleGroupOptions={Array.from(new Set(modules.map((mod) => mod.group).filter(Boolean))).map(
-              (group) => ({ label: String(group), value: String(group) }),
-            )}
-            onSelect={handleTreeSelect}
-            onSearch={setTreeSearch}
-            onFilterStatus={setTreeStatus}
-            onFilterGroup={setTreeGroup}
-            onFilterModule={setTreeModule}
-            onDrop={handleDrop}
-          />
+          <div className={`${styles.panel} ${styles.treePanel}`}>
+            <div className={styles.panelHeader}>
+              <span className={styles.panelTitle}>Cây menu</span>
+              <span className={styles.panelHint}>{treeMenus.length} mục</span>
+            </div>
+            <MenuTree
+              treeData={toTreeData(treeMenus)}
+              loading={loading}
+              selectedKeys={selectedMenuId ? [selectedMenuId] : []}
+              moduleOptions={modules.map((mod) => ({ label: mod.name, value: mod._id }))}
+              moduleGroupOptions={Array.from(new Set(modules.map((mod) => mod.group).filter(Boolean))).map(
+                (group) => ({ label: String(group), value: String(group) }),
+              )}
+              onSelect={handleTreeSelect}
+              onSearch={setTreeSearch}
+              onFilterStatus={setTreeStatus}
+              onFilterGroup={setTreeGroup}
+              onFilterModule={setTreeModule}
+              onDrop={handleDrop}
+            />
+          </div>
         </Col>
         <Col span={17}>
-          <MenuDetailTabs
-            menu={selectedMenu}
-            modules={modules}
-            saving={saving}
-            onSaveMenu={async (payload) => {
-              await saveMenu(payload);
-              await refreshMenus({
-                search: treeSearch || undefined,
-                status: treeStatus !== "all" ? treeStatus : undefined,
-                moduleGroup: treeGroup !== "all" ? treeGroup : undefined,
-                moduleId: treeModule !== "all" ? treeModule : undefined,
-              });
-              notifyMenuUpdated();
-            }}
-            assignedPermissions={assignedPermissions}
-            pickerData={pickerData}
-            pickerLoading={pickerLoading}
-            pickerTotal={pickerTotal}
-            pickerPage={filters.page}
-            pickerPageSize={filters.pageSize}
-            pickerSelectedIds={selectedIds}
-            pickerFilters={filters}
-            onPickerFilterChange={(next) =>
-              setFilters((prev) => ({
-                ...prev,
-                ...next,
-              }))
-            }
-            onPickerSelect={setSelectedIds}
-            onPickerPageChange={(page, pageSize) =>
-              setFilters((prev) => ({ ...prev, page, pageSize }))
-            }
-            onAssignSelected={handleAssignSelected}
-            onRemoveAssigned={handleRemoveAssigned}
-            previewTreeData={toTreeData(buildPreviewTree(treeMenus, new Set(previewPermissionIds)))}
-            previewRoles={roles}
-            previewRoleId={previewRoleId}
-            onPreviewRoleChange={setPreviewRoleId}
-            historyData={historyRows}
-            historyLoading={historyLoading}
-            smartRouteOnly={smartRouteOnly}
-            suggestedResource={getSuggestedResource(selectedMenu?.route_path)}
-            onToggleSmartRoute={(value) => {
-              setSmartRouteOnly(value);
-              if (value && selectedMenu?.route_path) {
-                const suggested = getSuggestedResource(selectedMenu.route_path);
+          <div className={`${styles.panel} ${styles.detailPanel}`}>
+            <div className={styles.panelHeader}>
+              <span className={styles.panelTitle}>Chi tiết menu</span>
+              <span className={styles.panelHint}>
+                {selectedMenu ? `${selectedMenu.code}` : "Chưa chọn menu"}
+              </span>
+            </div>
+            <MenuDetailTabs
+              menu={selectedMenu}
+              modules={modules}
+              saving={saving}
+              onSaveMenu={async (payload) => {
+                try {
+                  await saveMenu(payload);
+                  await refreshMenus({
+                    search: treeSearch || undefined,
+                    status: treeStatus !== "all" ? treeStatus : undefined,
+                    moduleGroup: treeGroup !== "all" ? treeGroup : undefined,
+                    moduleId: treeModule !== "all" ? treeModule : undefined,
+                  });
+                  notifyMenuUpdated();
+                  message.success("Đã lưu thay đổi.");
+                } catch (err) {
+                  message.error(err instanceof Error ? err.message : "Không thể cập nhật menu.");
+                }
+              }}
+              assignedPermissions={assignedPermissions}
+              pickerData={pickerData}
+              pickerLoading={pickerLoading}
+              pickerTotal={pickerTotal}
+              pickerPage={filters.page}
+              pickerPageSize={filters.pageSize}
+              pickerSelectedIds={selectedIds}
+              pickerFilters={filters}
+              onPickerFilterChange={(next) =>
                 setFilters((prev) => ({
                   ...prev,
-                  resource: suggested || prev.resource,
+                  ...next,
+                }))
+              }
+              onPickerSelect={setSelectedIds}
+              onPickerPageChange={(page, pageSize) =>
+                setFilters((prev) => ({ ...prev, page, pageSize }))
+              }
+              onAssignSelected={handleAssignSelected}
+              onRemoveAssigned={handleRemoveAssigned}
+              previewTreeData={toTreeData(buildPreviewTree(treeMenus, new Set(previewPermissionIds)))}
+              previewRoles={roles}
+              previewRoleId={previewRoleId}
+              onPreviewRoleChange={setPreviewRoleId}
+              historyData={historyRows}
+              historyLoading={historyLoading}
+              smartRouteOnly={smartRouteOnly}
+              suggestedResource={getSuggestedResource(selectedMenu?.path)}
+              onToggleSmartRoute={(value) => {
+                setSmartRouteOnly(value);
+                if (value && selectedMenu?.path) {
+                  const suggested = getSuggestedResource(selectedMenu.path);
+                  setFilters((prev) => ({
+                    ...prev,
+                    resource: suggested || prev.resource,
+                    search: prev.search || suggested,
+                    page: 1,
+                  }));
+                }
+                if (!value) {
+                  setFilters((prev) => ({
+                    ...prev,
+                    resource: undefined,
+                    page: 1,
+                  }));
+                }
+              }}
+              onApplySuggested={() => {
+                const suggested = getSuggestedResource(selectedMenu?.path);
+                if (!suggested) return;
+                setFilters((prev) => ({
+                  ...prev,
+                  resource: suggested,
                   search: prev.search || suggested,
                   page: 1,
                 }));
-              }
-              if (!value) {
-                setFilters((prev) => ({
-                  ...prev,
-                  resource: undefined,
-                  page: 1,
-                }));
-              }
-            }}
-            onApplySuggested={() => {
-              const suggested = getSuggestedResource(selectedMenu?.route_path);
-              if (!suggested) return;
-              setFilters((prev) => ({
-                ...prev,
-                resource: suggested,
-                search: prev.search || suggested,
-                page: 1,
-              }));
-            }}
-          />
+              }}
+            />
+          </div>
         </Col>
-      </Row>
-    </Space>
+        </Row>
+      </div>
+    </div>
   );
 };
 

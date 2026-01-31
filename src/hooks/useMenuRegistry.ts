@@ -39,17 +39,17 @@ export const useMenuRegistry = () => {
         return query;
       };
 
-      let response = await runQuery("sort_order", "label");
+      let response = await runQuery("order_index", "name");
       if (response.error) {
         if (isMissingRelationError(response.error.message)) {
           return null;
         }
 
-        if (response.error.message.includes("sort_order") || response.error.message.includes("label")) {
-          response = await runQuery("order_index", "name");
+        if (response.error.message.includes("order_index") || response.error.message.includes("name")) {
+          response = await runQuery("sort_order", "label");
         }
 
-        if (response.error && (response.error.message.includes("order_index") || response.error.message.includes("name"))) {
+        if (response.error && (response.error.message.includes("sort_order") || response.error.message.includes("label"))) {
           response = await runQuery(null, null);
         }
 
@@ -61,17 +61,26 @@ export const useMenuRegistry = () => {
       const rows = response.data || [];
       if (rows.length === 0) return [];
 
-      return rows.map((row: any) => ({
-        id: row._id ?? row.id,
-        label: row.label ?? row.name ?? "",
-        path: row.route_path ?? row.path ?? null,
-        icon: row.icon ?? undefined,
-        order: row.sort_order ?? row.order_index ?? row.order ?? 0,
-        parentId: row.parent_id ?? null,
-        moduleId: row.module_id ?? null,
-        permissionsAny: Array.isArray(row.permission_codes) ? row.permission_codes : [],
-        isEnabled: row.is_visible ?? row.is_active ?? true,
-      }));
+      return rows.map((row: any) => {
+        const isEnabled =
+          row.is_active !== undefined
+            ? Boolean(row.is_active)
+            : row.is_visible !== undefined
+              ? Boolean(row.is_visible)
+              : true;
+
+        return {
+          id: row._id ?? row.id,
+          label: row.label ?? row.name ?? "",
+          path: row.route_path ?? row.path ?? null,
+          icon: row.icon ?? undefined,
+          order: row.sort_order ?? row.order_index ?? row.order ?? 0,
+          parentId: row.parent_id ?? null,
+          moduleId: row.module_id ?? null,
+          permissionsAny: Array.isArray(row.permission_codes) ? row.permission_codes : [],
+          isEnabled,
+        };
+      });
     };
 
     const loadMenuVersion = async (): Promise<string | null> => {
@@ -123,8 +132,10 @@ export const useMenuRegistry = () => {
       void loadMenus();
     })();
     window.addEventListener("mappa:menu-refresh", handleRefresh);
+    window.addEventListener("mappa:menu-updated", handleRefresh);
     return () => {
       window.removeEventListener("mappa:menu-refresh", handleRefresh);
+      window.removeEventListener("mappa:menu-updated", handleRefresh);
     };
   }, [menus]);
 

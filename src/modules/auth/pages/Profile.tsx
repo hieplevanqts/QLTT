@@ -17,27 +17,112 @@ import {
 import { Card, CardContent, CardHeader } from '@/components/ui-kit/Card/Card';
 import { Button } from '@/components/ui/button';
 import PageHeader from '@/layouts/PageHeader';
-import { useAppSelector } from '@/hooks/useAppStore';
+import { useAppDispatch, useAppSelector } from '@/hooks/useAppStore';
 import { RootState } from '@/store/rootReducer';
+import { fetchUserInfoRequest } from '@/store/slices/authSlice';
 import styles from './Profile.module.css';
 
 export default function Profile() {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   // Get user from Redux instead of AuthContext
-  const { user } = useAppSelector((state: RootState) => state.auth);
+  const { user, token } = useAppSelector((state: RootState) => state.auth);
   const [showAllPermissions, setShowAllPermissions] = useState(false);
 
-  // Fallback to mock data if user not loaded
-  const userInfo = user || {
-    username: 'demo.user',
-    fullName: 'Nguyễn Văn A',
-    role: 'thanhtra' as const,
-    roleDisplay: 'Thanh tra viên',
-    position: 'Thanh tra viên',
-    department: 'Chi cục QLTT Quận 1',
-    provinceName: 'TP. Hồ Chí Minh',
-    teamName: 'Đội 1',
+  React.useEffect(() => {
+    if (token) {
+      dispatch(fetchUserInfoRequest(token));
+      return;
+    }
+    dispatch(fetchUserInfoRequest());
+  }, [dispatch, token]);
+
+  const getLevelFromCode = (code?: string | null) => {
+    if (!code) return null;
+    const trimmed = code.trim();
+    if (trimmed.length < 2 || trimmed.length % 2 !== 0) return null;
+    return trimmed.length / 2;
   };
+
+  // Fallback to mock data if user not loaded
+  const getLevelLabel = (
+    level?: string | number | null,
+    departmentName?: string | null,
+    departmentCode?: string | null
+  ) => {
+    if (typeof level === 'string') {
+      if (level === 'cuc') return 'Cục';
+      if (level === 'chicuc') return 'Chi cục';
+      if (level === 'doi') return 'Đội';
+    }
+    if (typeof level === 'number') {
+      if (level === 1) return 'Cục';
+      if (level === 2) return 'Chi cục';
+      if (level === 3) return 'Đội';
+    }
+    if (!level) {
+      const inferredLevel = getLevelFromCode(departmentCode);
+      if (inferredLevel === 1) return 'Cục';
+      if (inferredLevel === 2) return 'Chi cục';
+      if (inferredLevel === 3) return 'Đội';
+    }
+    if (departmentName) {
+      const lower = departmentName.toLowerCase();
+      if (lower.includes('cục')) return 'Cục';
+      if (lower.includes('chi cục')) return 'Chi cục';
+      if (lower.includes('đội')) return 'Đội';
+    }
+    return 'Chưa xác định';
+  };
+
+  const normalizeArray = (value: any): string[] => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
+    if (typeof value === 'string') {
+      return value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+    return [];
+  };
+
+  const userInfo = user
+    ? {
+        username: user.username || user.email || '',
+        email: user.email || '',
+        fullName: user.full_name || user.name || user.email || '',
+        roleDisplay:
+          user.roleDisplay ||
+          (Array.isArray(user.role_names) ? user.role_names.join(', ') : user.role_names) ||
+          user.primary_role_name ||
+          user.position ||
+          'Người dùng',
+        department:
+          user.department_name ||
+          (normalizeArray(user.don_vi_cong_tac_departments).join(', ') || '') ||
+          user.department ||
+          'Chưa cập nhật',
+        departmentLevel: user.department_level ?? user.level ?? null,
+        departmentCode: (user.department_code ?? user.departmentCode) || null,
+        managementLevel: user.cap_quan_ly || null,
+        phone: user.phone || '',
+        provinceName: user.provinceName || '',
+        teamName: user.teamName || '',
+      }
+    : {
+        username: 'demo.user',
+        email: '',
+        fullName: 'Nguyễn Văn A',
+        roleDisplay: 'Thanh tra viên',
+        department: 'Chi cục QLTT Quận 1',
+        departmentLevel: null,
+        departmentCode: null,
+        managementLevel: null,
+        phone: '',
+        provinceName: 'TP. Hồ Chí Minh',
+        teamName: 'Đội 1',
+      };
 
   // Get initials for avatar
   const getInitials = (name: string = "") => {
@@ -128,12 +213,12 @@ export default function Profile() {
                 <InfoRow 
                   icon={<Mail size={18} />} 
                   label="Email" 
-                  value={userInfo.username || 'Chưa có email'} 
+                  value={userInfo.email || userInfo.username || 'Chưa có email'} 
                 />
                 <InfoRow 
                   icon={<Phone size={18} />} 
                   label="Số điện thoại" 
-                  value="Chưa cập nhật"
+                  value={userInfo.phone || 'Chưa cập nhật'}
                   editable
                 />
                 <InfoRow 
@@ -162,9 +247,8 @@ export default function Profile() {
                   icon={<Building2 size={18} />} 
                   label="Cấp quản lý" 
                   value={
-                    userInfo.level === 'cuc' ? 'Cục' :
-                    userInfo.level === 'chicuc' ? 'Chi cục' :
-                    userInfo.level === 'doi' ? 'Đội' : 'Chưa xác định'
+                    userInfo.managementLevel ||
+                    getLevelLabel(userInfo.departmentLevel, userInfo.department, userInfo.departmentCode)
                   } 
                 />
                 <InfoRow 

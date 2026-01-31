@@ -20,6 +20,8 @@ import {
   fetchUserPermissions,
   getStoredToken,
 } from '../../utils/api/authApi';
+import { supabase } from '@/api/supabaseClient';
+import { tokenStorage } from '@/utils/storage/tokenStorage';
 
 function* handleLogin(action: PayloadAction<{ email: string; password: string }>): Generator<any, any, any> {
   try {
@@ -33,6 +35,21 @@ function* handleLogin(action: PayloadAction<{ email: string; password: string }>
       yield call(storeToken, response.access_token, response.expires_in, response.refresh_token);
     } else {
       console.warn('⚠️ AuthSaga: No access_token in login response');
+    }
+
+    // Sync Supabase client session for DB views that rely on auth.uid()
+    if (response.access_token) {
+      try {
+        const refreshToken = response.refresh_token || (yield call([tokenStorage, tokenStorage.getRefreshToken]));
+        if (refreshToken) {
+          yield call([supabase.auth, supabase.auth.setSession], {
+            access_token: response.access_token,
+            refresh_token: refreshToken,
+          });
+        }
+      } catch (error) {
+        console.warn('⚠️ AuthSaga: Failed to set Supabase session', error);
+      }
     }
 
     // Fetch full user info after login
@@ -109,6 +126,21 @@ function* handleRestoreSession(): Generator<any, any, any> {
       const userWithPermissions = session.user 
         ? { ...session.user, permissions }
         : null;
+
+      // Sync Supabase client session for DB views that rely on auth.uid()
+      if (session.token) {
+        try {
+          const refreshToken = yield call([tokenStorage, tokenStorage.getRefreshToken]);
+          if (refreshToken) {
+            yield call([supabase.auth, supabase.auth.setSession], {
+              access_token: session.token,
+              refresh_token: refreshToken,
+            });
+          }
+        } catch (error) {
+          console.warn('⚠️ AuthSaga: Failed to set Supabase session', error);
+        }
+      }
 
       console.log('✅ AuthSaga: Dispatching restoreSessionSuccess');
       yield put(restoreSessionSuccess({

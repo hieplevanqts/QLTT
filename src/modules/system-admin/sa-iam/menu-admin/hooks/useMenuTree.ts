@@ -30,13 +30,13 @@ export const useMenuTree = (): UseMenuTreeState => {
       setLoading(true);
       try {
         const [menuRows, moduleRows] = await Promise.all([
-          menuService.listMenus({
+          menuService.listMenusAdmin({
             search: params?.search,
             moduleId: params?.moduleId,
             moduleGroup: params?.moduleGroup,
             status: params?.status,
           }),
-          menuService.listModules(),
+          menuService.getModules(),
         ]);
         setFlatMenus(menuRows);
         setModules(moduleRows);

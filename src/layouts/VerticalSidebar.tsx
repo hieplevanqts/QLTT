@@ -44,9 +44,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/components/ui/utils';
 import { useLayout } from '../contexts/LayoutContext';
-import { useAuth } from '../contexts/AuthContext'; // 🔥 NEW: Import useAuth for permissions
-import { useMenuRegistry } from '../hooks/useMenuRegistry';
-import { buildMenuTree, filterMenuTree, type MenuNode } from '../utils/menuRegistry';
+import { useRuntimeMenu } from '@/shared/menu/useRuntimeMenu';
+import { getMenuFallbackEnabled } from '@/shared/menu/menuCache';
+import { type MenuNode } from '../utils/menuRegistry';
 import mappaLogo from '../assets/79505e63e97894ec2d06837c57cf53a19680f611.png';
 
 // 🔥 NEW: Permission code mapping (from Insert.sql lines 39-46)
@@ -269,35 +269,8 @@ export default function VerticalSidebar({
     location.pathname.startsWith('/plans') || location.pathname.startsWith('/inspections')
   );
   const { setLayoutMode } = useLayout();
-  const { user } = useAuth(); // 🔥 NEW: Get user with permissions
-  const { menus } = useMenuRegistry();
-
-  // 🔥 NEW: Get user permission codes
-  const userPermissionCodes = user?.permissions || [];
-
-  // 🔥 DEBUG: Log permissions and menu data
-  React.useEffect(() => {
-    console.log('🔍 VerticalSidebar - Debug Menu & Permissions:', {
-      userPermissions: userPermissionCodes,
-      userRoleCode: user?.roleCode,
-      menusCount: menus?.length || 0,
-      menus: menus,
-    });
-  }, [userPermissionCodes, user?.roleCode, menus]);
-
-  // 🔥 NEW: Helper function to check if user has permission for a menu item
-  const hasPermission = (permissionCode: string | undefined): boolean => {
-    if (!permissionCode || permissionCode === '') return true; // No permission required = always visible
-
-    // 🔥 FIX: If user has no permissions at all, show all menus (fallback for development/testing)
-    // In production, you might want to be more strict
-    if (userPermissionCodes.length === 0) {
-      console.warn('⚠️ User has no permissions - showing all menus (fallback mode)');
-      return true; // Show all menus if user has no permissions
-    }
-
-    return userPermissionCodes.includes(permissionCode);
-  };
+  const { tree, loading } = useRuntimeMenu();
+  const fallbackEnabled = getMenuFallbackEnabled();
   const isPathActive = React.useCallback(
     (path?: string | null) => {
       if (!path) return false;
@@ -315,42 +288,12 @@ export default function VerticalSidebar({
     [location.pathname, location.search],
   );
 
-  const registryTree = React.useMemo(() => (menus ? buildMenuTree(menus) : []), [menus]);
-  const filteredRegistryTree = React.useMemo(
-    () => {
-      const filtered = filterMenuTree(registryTree, userPermissionCodes, user?.roleCode);
-      console.log('🔍 VerticalSidebar - Filtered Registry Tree:', {
-        originalCount: registryTree.length,
-        filteredCount: filtered.length,
-        userPermissions: userPermissionCodes,
-        userRoleCode: user?.roleCode,
-      });
-      return filtered;
-    },
-    [registryTree, userPermissionCodes, user?.roleCode],
-  );
-  const registryModules = React.useMemo(() => menuTreeToModules(filteredRegistryTree), [filteredRegistryTree]);
-
-  // 🔥 FIX: Merge registry modules with mappa modules to ensure all menus are displayed
-  // Registry modules take priority, but we also include mappa modules that aren't in registry
-  const mappaModulesFiltered = mappaModules.filter(module => hasPermission(module.permissionCode));
-  const registryPaths = new Set(registryModules.map(m => m.path));
-  const additionalMappaModules = mappaModulesFiltered.filter(m => !registryPaths.has(m.path));
+  const runtimeModules = React.useMemo(() => menuTreeToModules(tree), [tree]);
   const visibleModules = React.useMemo(() => {
-    const merged = [...registryModules, ...additionalMappaModules].sort((a, b) => {
-      // Sort by order if available, otherwise maintain original order
-      const aOrder = mappaModules.find(m => m.path === a.path)?.order ?? 999;
-      const bOrder = mappaModules.find(m => m.path === b.path)?.order ?? 999;
-      return aOrder - bOrder;
-    });
-    console.log('🔍 VerticalSidebar - Visible Modules:', {
-      registryModulesCount: registryModules.length,
-      additionalMappaModulesCount: additionalMappaModules.length,
-      totalVisible: merged.length,
-      visiblePaths: merged.map(m => m.path),
-    });
-    return merged;
-  }, [registryModules, additionalMappaModules]);
+    if (runtimeModules.length > 0) return runtimeModules;
+    return fallbackEnabled ? mappaModules : [];
+  }, [runtimeModules, fallbackEnabled]);
+  const showEmptyState = !loading && visibleModules.length === 0 && !fallbackEnabled;
 
   // Mock permissions - In real app, this would come from user context/auth
   const userPermissions = {
@@ -462,7 +405,12 @@ export default function VerticalSidebar({
 
       {/* Navigation Menu */}
       <nav className="flex-1 p-2 overflow-y-auto">
-        {visibleModules.map((module) => { // 🔥 FIX: Use filtered modules instead of all modules
+        {showEmptyState ? (
+          <div className="px-4 py-3 text-sm text-muted-foreground">
+            Tài khoản chưa được gán vai trò hoặc chưa có quyền hiển thị menu.
+          </div>
+        ) : (
+          visibleModules.map((module) => {
           const Icon = module.icon;
           const isAdminMenu = module.path === '/admin';
 
@@ -760,7 +708,8 @@ export default function VerticalSidebar({
               </div>
             </Link>
           );
-        })}
+          })
+        )}
       </nav>
 
       {/* Layout Mode Toggle */}

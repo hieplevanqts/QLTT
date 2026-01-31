@@ -1,16 +1,15 @@
-export type MenuStatusValue = string | number | null | undefined;
+export type MenuStatusValue = boolean | string | number | null | undefined;
 
 export type MenuRecord = {
   _id: string;
   code: string;
-  label: string;
+  name: string;
   parent_id: string | null;
   module_id: string | null;
-  route_path: string | null;
+  path: string | null;
   icon: string | null;
-  sort_order: number;
-  status: MenuStatusValue;
-  is_visible: boolean;
+  order_index: number;
+  is_active: boolean;
   meta?: Record<string, unknown> | null;
   created_at?: string | null;
   updated_at?: string | null;
@@ -39,14 +38,13 @@ export type MenuMoveParams = {
 
 export type MenuPayload = {
   code: string;
-  label: string;
+  name: string;
   parent_id?: string | null;
   module_id?: string | null;
-  route_path?: string | null;
+  path?: string | null;
   icon?: string | null;
-  sort_order?: number | null;
-  status?: string | number | null;
-  is_visible?: boolean | null;
+  order_index?: number | null;
+  is_active?: boolean | null;
   meta?: Record<string, unknown> | null;
 };
 

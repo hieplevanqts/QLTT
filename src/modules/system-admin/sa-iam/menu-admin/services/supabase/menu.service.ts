@@ -12,9 +12,12 @@ import type {
 } from "../../menu.types";
 
 export interface MenuService {
+  listMenusAdmin: (params?: { search?: string; moduleId?: string; moduleGroup?: string; status?: string }) => Promise<MenuRecord[]>;
   listMenus: (params?: { search?: string; moduleId?: string; moduleGroup?: string; status?: string }) => Promise<MenuRecord[]>;
   getMenuTree: (params?: { search?: string; moduleId?: string; status?: string }) => Promise<MenuRecord[]>;
+  getModules: () => Promise<ModuleRecord[]>;
   listModules: () => Promise<ModuleRecord[]>;
+  getMenuById: (menuId: string) => Promise<MenuRecord | null>;
   listPermissions: (filters: PermissionFilter) => Promise<PagedResult<PermissionRecord>>;
   listPermissionsByIds: (ids: string[]) => Promise<PermissionRecord[]>;
   listMenuPermissions: (menuId: string) => Promise<MenuPermissionRecord[]>;
@@ -30,6 +33,14 @@ export interface MenuService {
 }
 
 export const menuService: MenuService = {
+  async listMenusAdmin(params) {
+    return menuRepo.listMenus({
+      search: params?.search,
+      status: params?.status as any,
+      moduleId: params?.moduleId,
+      moduleGroup: params?.moduleGroup,
+    });
+  },
   async listMenus(params) {
     return menuRepo.listMenus({
       search: params?.search,
@@ -42,7 +53,7 @@ export const menuService: MenuService = {
     const tree = await menuRepo.getMenuTree();
     return tree;
   },
-  async listModules() {
+  async getModules() {
     const rows = await menuRepo.listModules();
     return rows.map((row) => ({
       _id: row._id,
@@ -50,6 +61,12 @@ export const menuService: MenuService = {
       name: row.name,
       group: row.group ?? null,
     }));
+  },
+  async listModules() {
+    return menuService.getModules();
+  },
+  async getMenuById(menuId: string) {
+    return menuRepo.getMenuById(menuId);
   },
   async listPermissions(filters) {
     return menuRepo.listPermissions(filters);
@@ -116,27 +133,25 @@ export const menuService: MenuService = {
   async createMenu(payload) {
     return menuRepo.createMenu({
       code: payload.code ?? "",
-      label: payload.label ?? "",
+      name: payload.name ?? "",
       parent_id: payload.parent_id ?? null,
       module_id: payload.module_id ?? null,
-      route_path: payload.route_path ?? null,
+      path: payload.path ?? null,
       icon: payload.icon ?? null,
-      sort_order: payload.sort_order ?? 0,
-      status: payload.status ?? "ACTIVE",
-      is_visible: payload.is_visible ?? true,
+      order_index: payload.order_index ?? 0,
+      is_active: payload.is_active ?? true,
     });
   },
   async updateMenu(_menuId, payload) {
     return menuRepo.updateMenu(_menuId, {
       code: payload.code,
-      label: payload.label,
+      name: payload.name,
       parent_id: payload.parent_id,
       module_id: payload.module_id,
-      route_path: payload.route_path,
+      path: payload.path,
       icon: payload.icon,
-      sort_order: payload.sort_order,
-      status: payload.status,
-      is_visible: payload.is_visible,
+      order_index: payload.order_index,
+      is_active: payload.is_active,
       meta: payload.meta ?? undefined,
     });
   },
