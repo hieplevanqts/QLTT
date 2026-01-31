@@ -11,7 +11,7 @@ const MENU_SELECT =
   "_id, code, name, path, icon, parent_id, module_id, order_index, is_active, permission_codes, module_code, module_name, module_group";
 
 const mapMenuRow = (row: any): RuntimeMenuItem => ({
-  id: row._id ?? row.id ?? "",
+  id: row._id ?? "",
   label: row.name ?? row.label ?? "",
   path: row.path ?? row.route_path ?? null,
   icon: row.icon ?? undefined,

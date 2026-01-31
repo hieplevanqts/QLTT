@@ -42,6 +42,9 @@ export const useMenuDetail = (menuId?: string): UseMenuDetailState => {
       try {
         const updated = await menuService.updateMenu(menuId, payload);
         setMenu(updated);
+      } catch (err) {
+        console.error("[menus] update failed", { menuId, payload, err });
+        throw err;
       } finally {
         setSaving(false);
       }

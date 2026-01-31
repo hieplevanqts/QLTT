@@ -66,7 +66,7 @@ const mapMenuRow = (row: any): MenuRecord => {
           : true;
 
   return {
-    _id: row._id ?? row.id,
+    _id: row._id ?? "",
     code: row.code ?? "",
     name: row.name ?? row.label ?? "",
     parent_id: row.parent_id ?? null,
@@ -88,7 +88,7 @@ const mapMenuRow = (row: any): MenuRecord => {
 };
 
 const mapModuleRow = (row: ModuleRow) => ({
-  _id: row._id ?? row.id ?? "",
+  _id: row._id ?? "",
   key: row.key ?? row.code ?? "",
   code: row.code ?? row.key ?? "",
   name: row.name ?? row.code ?? row.key ?? "",
@@ -98,7 +98,7 @@ const mapModuleRow = (row: ModuleRow) => ({
 });
 
 const mapPermissionRow = (row: PermissionRow) => ({
-  _id: row._id ?? row.id ?? "",
+  _id: row._id ?? "",
   code: row.code ?? "",
   name: row.name ?? row.code ?? "",
   description: row.description ?? null,
@@ -142,6 +142,16 @@ const logMenuQueryError = (meta: MenuQueryMeta, error: any) => {
     filters: meta.filters,
     order: meta.order,
   });
+};
+
+const logMenuMutationError = (action: string, payload: Record<string, unknown>, error: any) => {
+  console.log(`[menus] ${action} error`);
+  console.log(error);
+  console.log("message", error?.message);
+  console.log("details", error?.details);
+  console.log("hint", error?.hint);
+  console.log("code", error?.code);
+  console.log("payload", payload);
 };
 
 const applyMenuFilters = <T>(
@@ -322,6 +332,28 @@ export const menuRepo = {
     return data ? mapMenuRow(data) : null;
   },
 
+  async getMenuByIdTable(menuId: string): Promise<MenuRecord | null> {
+    const meta: MenuQueryMeta = {
+      source: "menus",
+      select: MENU_TABLE_FIELDS,
+      filters: { _id: menuId },
+      order: [],
+    };
+
+    const { data, error } = await supabase
+      .from("menus")
+      .select(MENU_TABLE_FIELDS)
+      .eq("_id", menuId)
+      .maybeSingle();
+
+    if (error) {
+      logMenuQueryError(meta, error);
+      throw new Error(`menus select failed: ${error.message}`);
+    }
+
+    return data ? mapMenuRow(data) : null;
+  },
+
   async createMenu(payload: MenuPayload): Promise<MenuRecord> {
     const normalizedPath = normalizePath(payload.path ?? null);
     const insertPayload = {
@@ -363,24 +395,41 @@ export const menuRepo = {
     if (payload.order_index !== undefined) updatePayload.order_index = payload.order_index ?? 0;
     if (payload.is_active !== undefined) updatePayload.is_active = payload.is_active ?? true;
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("menus")
       .update(updatePayload)
-      .eq("_id", menuId)
-      .select(MENU_TABLE_FIELDS);
+      .eq("_id", menuId);
 
     if (error) {
+      logMenuMutationError("updateMenu", { menuId, ...updatePayload }, error);
       throw new Error(`menu update failed: ${error.message}`);
     }
 
-    const rows = safeArray<any>(data);
-    if (rows.length > 0) {
-      return mapMenuRow(rows[0]);
+    if (import.meta.env.DEV) {
+      console.info("[menus] update ok, refetch via view", { menuId });
     }
 
     const fresh = await menuRepo.getMenuById(menuId);
     if (!fresh) {
-      throw new Error("menu update failed: Không tìm thấy menu hoặc không có quyền cập nhật.");
+      return {
+        _id: menuId,
+        code: payload.code?.trim() ?? "",
+        name: payload.name?.trim() ?? "",
+        parent_id: payload.parent_id ?? null,
+        module_id: payload.module_id ?? null,
+        path: normalizedPath ?? null,
+        icon: payload.icon ?? null,
+        order_index: payload.order_index ?? 0,
+        is_active: payload.is_active ?? true,
+        permission_ids: [],
+        permission_codes: [],
+        module_code: null,
+        module_name: null,
+        module_group: null,
+        meta: null,
+        created_at: null,
+        updated_at: new Date().toISOString(),
+      };
     }
 
     const expected: Array<[keyof MenuRecord, unknown]> = [];
@@ -412,15 +461,86 @@ export const menuRepo = {
   },
 
   async moveMenu(params: MenuMoveParams): Promise<void> {
-    const { data, error } = await supabase
-      .from("menus")
-      .select("_id, parent_id, order_index, name")
-      .order("parent_id", { ascending: true, nullsFirst: true })
-      .order("order_index", { ascending: true })
-      .order("name", { ascending: true });
+    const loadRows = async (fields: string, orderBy: string[]) => {
+      let query = supabase.from("menus").select(fields);
+      orderBy.forEach((field) => {
+        const isParent = field === "parent_id";
+        // @ts-expect-error supabase query builder typing
+        query = query.order(field, { ascending: true, nullsFirst: isParent });
+      });
+      return query;
+    };
+
+    const primaryOrder = ["parent_id", "order_index", "name"];
+    const { data, error } = await loadRows("_id, parent_id, order_index, name", primaryOrder);
 
     if (error) {
-      throw new Error(`menus select failed: ${error.message}`);
+      const needsLegacyOrder = error.message.includes("order_index") || error.message.includes("name");
+      if (!needsLegacyOrder) {
+        throw new Error(`menus select failed: ${error.message}`);
+      }
+      const fallback = await loadRows("_id, parent_id, sort_order, label", ["parent_id", "sort_order", "label"]);
+      if (fallback.error) {
+        throw new Error(`menus select failed: ${fallback.error.message}`);
+      }
+      const legacyRows = safeArray<any>(fallback.data).map((row) => ({
+        ...row,
+        order_index: row.sort_order ?? 0,
+        name: row.label ?? "",
+      }));
+      const rows = legacyRows;
+      const dragRow = rows.find((row) => row._id === params.dragId);
+      if (!dragRow) return;
+      const oldParentId = dragRow.parent_id ?? null;
+      const newParentId = params.dropParentId ?? null;
+
+      const reorder = (parentId: string | null, includeDrag: boolean, targetIndex = 0) => {
+        const siblings = rows
+          .filter((row) => (row.parent_id ?? null) === parentId)
+          .filter((row) => includeDrag || row._id !== params.dragId)
+          .sort(sortMenuNodes);
+
+        if (includeDrag) {
+          const dragNode = siblings.find((row) => row._id === params.dragId) ?? dragRow;
+          const withoutDrag = siblings.filter((row) => row._id !== params.dragId);
+          const index = Math.max(0, Math.min(targetIndex, withoutDrag.length));
+          withoutDrag.splice(index, 0, { ...dragNode, parent_id: parentId });
+          return withoutDrag.map((row, idx) => ({
+            _id: row._id,
+            parent_id: parentId,
+            order_index: (idx + 1) * 10,
+          }));
+        }
+
+        return siblings.map((row, idx) => ({
+          _id: row._id,
+          parent_id: parentId,
+          order_index: (idx + 1) * 10,
+        }));
+      };
+
+      const updates: Array<{ _id: string; parent_id: string | null; order_index: number }> = [];
+      if (oldParentId !== newParentId) {
+        updates.push(...reorder(oldParentId, false));
+      }
+      updates.push(...reorder(newParentId, true, params.targetIndex));
+      const deduped = new Map<string, { _id: string; parent_id: string | null; order_index: number }>();
+      updates.forEach((row) => deduped.set(row._id, row));
+      const payload = Array.from(deduped.values());
+      if (payload.length === 0) return;
+
+      const upsertResponse = await supabase.from("menus").upsert(
+        payload.map((row) => ({
+          _id: row._id,
+          parent_id: row.parent_id,
+          sort_order: row.order_index,
+        })),
+        { onConflict: "_id" },
+      );
+      if (upsertResponse.error) {
+        throw new Error(`menu move failed: ${upsertResponse.error.message}`);
+      }
+      return;
     }
 
     const rows = safeArray<any>(data).map((row) => ({
@@ -428,7 +548,7 @@ export const menuRepo = {
       order_index: row.order_index ?? 0,
       name: row.name ?? "",
     }));
-    const dragRow = rows.find((row) => (row._id ?? row.id) === params.dragId);
+    const dragRow = rows.find((row) => row._id === params.dragId);
     if (!dragRow) return;
 
     const oldParentId = dragRow.parent_id ?? null;
@@ -437,23 +557,23 @@ export const menuRepo = {
     const reorder = (parentId: string | null, includeDrag: boolean, targetIndex = 0) => {
       const siblings = rows
         .filter((row) => (row.parent_id ?? null) === parentId)
-        .filter((row) => includeDrag || (row._id ?? row.id) !== params.dragId)
+        .filter((row) => includeDrag || row._id !== params.dragId)
         .sort(sortMenuNodes);
 
       if (includeDrag) {
-        const dragNode = siblings.find((row) => (row._id ?? row.id) === params.dragId) ?? dragRow;
-        const withoutDrag = siblings.filter((row) => (row._id ?? row.id) !== params.dragId);
+        const dragNode = siblings.find((row) => row._id === params.dragId) ?? dragRow;
+        const withoutDrag = siblings.filter((row) => row._id !== params.dragId);
         const index = Math.max(0, Math.min(targetIndex, withoutDrag.length));
         withoutDrag.splice(index, 0, { ...dragNode, parent_id: parentId });
         return withoutDrag.map((row, idx) => ({
-          _id: row._id ?? row.id,
+          _id: row._id,
           parent_id: parentId,
           order_index: (idx + 1) * 10,
         }));
       }
 
       return siblings.map((row, idx) => ({
-        _id: row._id ?? row.id,
+        _id: row._id,
         parent_id: parentId,
         order_index: (idx + 1) * 10,
       }));
@@ -648,7 +768,7 @@ export const menuRepo = {
     }
 
     return rows.map((row) => ({
-      _id: row._id ?? row.id ?? "",
+      _id: row._id ?? "",
       code: row.code ?? "",
       name: row.name ?? row.code ?? "",
       status: row.status ?? null,

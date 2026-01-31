@@ -14,7 +14,7 @@ export type RoleUserAssignmentResult = {
 };
 
 const mapLiteUser = (row: any): RoleUserLite => ({
-  id: row._id ?? row.id,
+  id: row._id ?? "",
   username: row.username ?? null,
   full_name: row.full_name ?? null,
   email: row.email ?? null,
