@@ -4,6 +4,7 @@ import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft, AlertCircle, FileText, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import styles from './PlanCreate.module.css';
+import { cn } from '@/components/ui/utils';
 import DateRangePicker, { DateRange } from '@/components/ui-kit/DateRangePicker';
 
 import { usePlans } from '@/contexts/PlansContext';
@@ -478,20 +479,25 @@ export function PlanCreate() {
     <div className={styles.page}>
       {/* Header */}
       <div className={styles.header}>
-        <button onClick={handleCancel} className={styles.backButton}>
-          <ArrowLeft size={20} />
-        </button>
         <div className={styles.headerContent}>
-          <h1 className={styles.title}>
-            {isEditMode 
-              ? `Chỉnh sửa ${editingPlan?.name || 'kế hoạch'} (${getPlanTypeLabel(activeTab)})`
-              : 'Tạo kế hoạch kiểm tra'}
-          </h1>
-          <p className={styles.subtitle}>
-            {isEditMode 
-              ? 'Cập nhật thông tin kế hoạch kiểm tra' 
-              : 'Lập kế hoạch kiểm tra định kỳ, chuyên đề hoặc đột xuất'}
-          </p>
+          <button onClick={handleCancel} className={styles.backButton} title="Quay lại">
+            <ArrowLeft size={20} />
+          </button>
+          <div className={styles.headerIcon}>
+            <FileText size={32} />
+          </div>
+          <div className={styles.headerText}>
+            <h1 className={styles.title}>
+              {isEditMode 
+                ? `Chỉnh sửa ${editingPlan?.name || 'kế hoạch'}`
+                : 'Thiết lập kế hoạch kiểm tra mới'}
+            </h1>
+            <p className={styles.subtitle}>
+              {isEditMode 
+                ? 'Cập nhật thông tin chi tiết của kế hoạch kiểm tra' 
+                : 'Vui lòng cung cấp đầy đủ thông tin để khởi tạo kế hoạch kiểm tra. Hệ thống sẽ tự động liên kết dữ liệu liên quan.'}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -499,19 +505,19 @@ export function PlanCreate() {
       {!isEditMode && (
         <div className={styles.tabs}>
           <button
-            className={`${styles.tab} ${activeTab === 'periodic' ? styles.tabActive : ''}`}
+            className={cn(styles.tab, activeTab === 'periodic' && styles.tabActive)}
             onClick={() => handleTabChange('periodic')}
           >
             Định kỳ
           </button>
           <button
-            className={`${styles.tab} ${activeTab === 'thematic' ? styles.tabActive : ''}`}
+            className={cn(styles.tab, activeTab === 'thematic' && styles.tabActive)}
             onClick={() => handleTabChange('thematic')}
           >
             Chuyên đề
           </button>
           <button
-            className={`${styles.tab} ${activeTab === 'urgent' ? styles.tabActive : ''}`}
+            className={cn(styles.tab, activeTab === 'urgent' && styles.tabActive)}
             onClick={() => handleTabChange('urgent')}
           >
             Đột xuất
@@ -519,393 +525,375 @@ export function PlanCreate() {
         </div>
       )}
 
-      {/* Form */}
+      {/* Form Container */}
       <div className={styles.container}>
-        <form onSubmit={handleSubmit} className={styles.form}>
-          {/* Mã kế hoạch */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              Mã kế hoạch <span className={styles.required}>*</span>
-            </label>
-            <input
-              type="text"
-              className={`${styles.input} ${errors.code ? styles.inputError : ''}`}
-              value={formData.code}
-              onChange={(e) => handleChange('code', e.target.value)}
-              placeholder="Ví dụ: KHKT-2025-01-01-12345"
-            />
-            {errors.code && (
-              <span className={styles.errorText}>
-                <AlertCircle size={14} />
-                {errors.code}
-              </span>
-            )}
-          </div>
-
-          {/* Tiêu đề kế hoạch */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              Tiêu đề kế hoạch <span className={styles.required}>*</span>
-            </label>
-            <input
-              type="text"
-              className={`${styles.input} ${errors.title ? styles.inputError : ''}`}
-              value={formData.title}
-              onChange={(e) => handleChange('title', e.target.value)}
-              placeholder="Ví dụ: Kế hoạch kiểm tra định kỳ Quý I/2025"
-            />
-            {errors.title && (
-              <span className={styles.errorText}>
-                <AlertCircle size={14} />
-                {errors.title}
-              </span>
-            )}
-          </div>
-
-          {/* Năm kế hoạch (only for periodic) */}
-          {activeTab === 'periodic' && (
-            <div className={styles.formGroup}>
-              <label className={styles.label}>
-                Năm kế hoạch <span className={styles.required}>*</span>
-              </label>
-              <select
-                className={`${styles.select} ${errors.year ? styles.inputError : ''}`}
-                value={formData.year}
-                onChange={(e) => handleChange('year', e.target.value)}
-              >
-                <option value="">Chọn năm</option>
-                <option value="2024">2024</option>
-                <option value="2025">2025</option>
-                <option value="2026">2026</option>
-                <option value="2027">2027</option>
-              </select>
-              {errors.year && (
-                <span className={styles.errorText}>
-                  <AlertCircle size={14} />
-                  {errors.year}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Quý/Tháng (only for periodic) */}
-          {activeTab === 'periodic' && (
-            <div className={styles.formGroup}>
-              <label className={styles.label}>
-                Quý/Tháng <span className={styles.required}>*</span>
-              </label>
-              <select
-                className={`${styles.select} ${errors.quarter ? styles.inputError : ''}`}
-                value={formData.quarter}
-                onChange={(e) => handleChange('quarter', e.target.value)}
-              >
-                <option value="">Chọn quý hoặc tháng...</option>
-                <option value="Q1">Quý I (Tháng 1-3)</option>
-                <option value="Q2">Quý II (Tháng 4-6)</option>
-                <option value="Q3">Quý III (Tháng 7-9)</option>
-                <option value="Q4">Quý IV (Tháng 10-12)</option>
-              </select>
-              {errors.quarter && (
-                <span className={styles.errorText}>
-                  <AlertCircle size={14} />
-                  {errors.quarter}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Thời gian thực hiện */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              Thời gian thực hiện <span className={styles.required}>*</span>
-            </label>
-            <DateRangePicker
-              value={dateRange}
-              onChange={handleDateRangeChange}
-              placeholder="Chọn ngày bắt đầu - ngày kết thúc"
-            />
-            {(errors.startDate || errors.endDate) && (
-              <span className={styles.errorText}>
-                <AlertCircle size={14} />
-                {errors.startDate || errors.endDate}
-              </span>
-            )}
-          </div>
-
-          {/* Location Selection */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              Khu vực kiểm tra <span className={styles.required}>*</span>
-            </label>
-            <div className={styles.formRow}>
-              {/* Province */}
-              <select
-                className={`${styles.select} ${errors.provinceId ? styles.inputError : ''}`}
-                value={formData.provinceId}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  handleChange('provinceId', val);
-                  handleChange('wardId', ''); // Reset ward
-                }}
-              >
-                <option value="">Chọn Tỉnh/Thành phố</option>
-                {provinces.map(p => (
-                  <option key={p._id} value={p._id}>{p.name}</option>
-                ))}
-              </select>
-              
-              {/* Ward */}
-              <select
-                className={`${styles.select} ${errors.wardId ? styles.inputError : ''}`}
-                value={formData.wardId}
-                onChange={(e) => handleChange('wardId', e.target.value)}
-                disabled={!formData.provinceId}
-              >
-                <option value="">Chọn Phường/Xã</option>
-                {wards.map(w => (
-                  <option key={w._id} value={w._id}>{w.name}</option>
-                ))}
-              </select>
-            </div>
+        <div className={styles.formContent}>
+          <form id="plan-create-form" onSubmit={handleSubmit} className={styles.form}>
             
-            {(errors.provinceId || errors.wardId) && (
-              <span className={styles.errorText}>
-                <AlertCircle size={14} />
-                {errors.provinceId || errors.wardId}
-              </span>
-            )}
-          </div>
-
-          {/* Đơn vị chủ trì */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              Đơn vị chủ trì <span className={styles.required}>*</span>
-            </label>
-            <select
-              className={`${styles.select} ${errors.responsibleUnit ? styles.inputError : ''}`}
-              value={formData.responsibleUnitId || formData.responsibleUnit}
-              onChange={(e) => {
-                const unitId = e.target.value;
-                const unit = managingUnits.find(u => u.id === unitId);
-                setFormData(prev => ({
-                  ...prev,
-                  responsibleUnit: unit ? unit.name : unitId,
-                  responsibleUnitId: unitId
-                }));
-                // Clear error
-                if (errors.responsibleUnit) {
-                  setErrors(prev => {
-                    const newErrors = { ...prev };
-                    delete newErrors.responsibleUnit;
-                    return newErrors;
-                  });
-                }
-              }}
-            >
-              <option value="">Chọn đơn vị...</option>
-              {managingUnits.length > 0 ? (
-                managingUnits.map(unit => (
-                  <option key={unit.id} value={unit.id}>{unit.name}</option>
-                ))
-              ) : (
-                <>
-                  <option value="Sở Công Thương">Sở Công Thương</option>
-                  <option value="Thanh tra Sở">Thanh tra Sở</option>
-                  <option value="Chi cục QLTT">Chi cục QLTT</option>
-                  <option value="Phòng Quản lý thị trường">Phòng Quản lý thị trường</option>
-                </>
-              )}
-            </select>
-            {errors.responsibleUnit && (
-              <span className={styles.errorText}>
-                <AlertCircle size={14} />
-                {errors.responsibleUnit}
-              </span>
-            )}
-          </div>
-
-          {/* Đơn vị phối hợp */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              Đơn vị phối hợp
-            </label>
-            <input
-              type="text"
-              className={styles.input}
-              value={formData.cooperatingUnits}
-              onChange={(e) => handleChange('cooperatingUnits', e.target.value)}
-              placeholder="Ví dụ: Sở Công Thương, Chi cục QLTT"
-            />
-          </div>
-
-          {/* M03 - Quyết định giao quyền */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              Quyết định giao quyền (M03)
-              <span className={styles.helpText}> - Tùy chọn</span>
-            </label>
-            {selectedM03 ? (
-              <div className={styles.selectedDecision}>
-                <div className={styles.selectedDecisionContent}>
-                  <FileText size={20} className={styles.selectedDecisionIcon} />
-                  <div className={styles.selectedDecisionInfo}>
-                    <div className={styles.selectedDecisionCode}>{selectedM03.code}</div>
-                    <div className={styles.selectedDecisionTitle}>{selectedM03.title}</div>
-                  </div>
+            {/* Section 1: Basic Info */}
+            <div className={styles.section}>
+              <div className={styles.formRow}>
+                <div className={styles.formField}>
+                  <label className={styles.label}>
+                    Mã kế hoạch <span className={styles.required}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className={cn(styles.input, errors.code && styles.inputError)}
+                    value={formData.code}
+                    onChange={(e) => handleChange('code', e.target.value)}
+                    placeholder="Ví dụ: KHKT-2025-01..."
+                  />
+                  {errors.code && (
+                    <span className={styles.errorText}>
+                      <AlertCircle size={14} />
+                      {errors.code}
+                    </span>
+                  )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedM03(null)}
-                  className={styles.removeButton}
-                >
-                  ×
-                </button>
+
+                {activeTab === 'periodic' && (
+                  <div className={styles.formField}>
+                    <label className={styles.label}>
+                      Năm kế hoạch <span className={styles.required}>*</span>
+                    </label>
+                    <select
+                      className={cn(styles.select, errors.year && styles.inputError)}
+                      value={formData.year}
+                      onChange={(e) => handleChange('year', e.target.value)}
+                    >
+                      <option value="">Chọn năm</option>
+                      <option value="2024">2024</option>
+                      <option value="2025">2025</option>
+                      <option value="2026">2026</option>
+                      <option value="2027">2027</option>
+                    </select>
+                    {errors.year && (
+                      <span className={styles.errorText}><AlertCircle size={14} />{errors.year}</span>
+                    )}
+                  </div>
+                )}
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowM03Modal(true)}
-                className={styles.selectButton}
-              >
-                <FileText size={16} />
-                Chọn từ hệ thống INS
-              </button>
-            )}
-          </div>
 
-          {/* Mức độ ưu tiên */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              Mức độ ưu tiên
-            </label>
-            <select
-              className={styles.select}
-              value={formData.priority}
-              onChange={(e) => handleChange('priority', e.target.value as Priority)}
-            >
-              <option value="low">Thấp</option>
-              <option value="medium">Trung bình</option>
-              <option value="high">Cao</option>
-              <option value="critical">Khẩn cấp</option>
-            </select>
-          </div>
-
-          {/* Mô tả kế hoạch */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              Mô tả kế hoạch
-            </label>
-            <textarea
-              className={styles.textarea}
-              value={formData.description}
-              onChange={(e) => handleChange('description', e.target.value)}
-              placeholder="Nhập mô tả chi tiết về kế hoạch kiểm tra"
-              rows={4}
-            />
-          </div>
-
-          {/* Mục tiêu kiểm tra */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              Mục tiêu kiểm tra
-            </label>
-            <textarea
-              className={styles.textarea}
-              value={formData.objectives}
-              onChange={(e) => handleChange('objectives', e.target.value)}
-              placeholder="Nhập các mục tiêu cụ thể của kế hoạch kiểm tra"
-              rows={4}
-            />
-          </div>
-
-          {/* Tài liệu đính kèm */}
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              Tài liệu đính kèm
-              <span className={styles.helpText}> - Tùy chọn (Chọn nhiều file)</span>
-            </label>
-            <div className={styles.fileUploadContainer}>
-              <input
-                type="file"
-                id="plan-attachments"
-                multiple
-                className={styles.fileInput}
-                onChange={(e) => {
-                  if (e.target.files) {
-                    const newFiles = Array.from(e.target.files);
-                    setAttachments(prev => [...prev, ...newFiles]);
-                  }
-                }}
-              />
-              <label htmlFor="plan-attachments" className={styles.fileLabel}>
-                <Upload size={20} />
-                <span>Chọn tài liệu hoặc kéo thả vào đây</span>
-              </label>
+              <div className={styles.formField}>
+                <label className={styles.label}>
+                  Tiêu đề kế hoạch <span className={styles.required}>*</span>
+                </label>
+                <input
+                  type="text"
+                  className={cn(styles.input, errors.title && styles.inputError)}
+                  value={formData.title}
+                  onChange={(e) => handleChange('title', e.target.value)}
+                  placeholder="Ví dụ: Kế hoạch kiểm tra định kỳ Quý I/2026"
+                />
+                {errors.title && (
+                  <span className={styles.errorText}><AlertCircle size={14} />{errors.title}</span>
+                )}
+              </div>
             </div>
-            
-            {attachments.length > 0 && (
-              <div className={styles.fileList}>
-                {attachments.map((file, index) => (
-                  <div key={`${file.name}-${index}`} className={styles.fileItem}>
-                    <div className={styles.fileInfo}>
-                      <FileText size={16} className={styles.fileIcon} />
-                      <span className={styles.fileName}>{file.name}</span>
-                      <span className={styles.fileSize}>({(file.size / 1024).toFixed(1)} KB)</span>
+
+            {/* Section 2: Timing & Target */}
+            <div className={styles.section}>
+              <div className={styles.formRow}>
+                {activeTab === 'periodic' && (
+                  <div className={styles.formField}>
+                    <label className={styles.label}>
+                      Quý / Tháng <span className={styles.required}>*</span>
+                    </label>
+                    <select
+                      className={cn(styles.select, errors.quarter && styles.inputError)}
+                      value={formData.quarter}
+                      onChange={(e) => handleChange('quarter', e.target.value)}
+                    >
+                      <option value="">Chọn quý hoặc tháng...</option>
+                      <option value="Q1">Quý I (Tháng 1-3)</option>
+                      <option value="Q2">Quý II (Tháng 4-6)</option>
+                      <option value="Q3">Quý III (Tháng 7-9)</option>
+                      <option value="Q4">Quý IV (Tháng 10-12)</option>
+                    </select>
+                    {errors.quarter && (
+                      <span className={styles.errorText}><AlertCircle size={14} />{errors.quarter}</span>
+                    )}
+                  </div>
+                )}
+
+                <div className={styles.formField}>
+                  <label className={styles.label}>
+                    Thời gian thực hiện <span className={styles.required}>*</span>
+                  </label>
+                  <DateRangePicker
+                    value={dateRange}
+                    onChange={handleDateRangeChange}
+                    placeholder="Chọn khoảng thời gian"
+                  />
+                  {(errors.startDate || errors.endDate) && (
+                    <span className={styles.errorText}>
+                      <AlertCircle size={14} />
+                      {errors.startDate || errors.endDate}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className={styles.formField}>
+                <label className={styles.label}>
+                  Khu vực kiểm tra <span className={styles.required}>*</span>
+                </label>
+                <div className={styles.formRow}>
+                  <select
+                    className={cn(styles.select, errors.provinceId && styles.inputError)}
+                    value={formData.provinceId}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      handleChange('provinceId', val);
+                      handleChange('wardId', '');
+                    }}
+                  >
+                    <option value="">Chọn Tỉnh/Thành phố</option>
+                    {provinces.map(p => (
+                      <option key={p._id} value={p._id}>{p.name}</option>
+                    ))}
+                  </select>
+                  
+                  <select
+                    className={cn(styles.select, errors.wardId && styles.inputError)}
+                    value={formData.wardId}
+                    onChange={(e) => handleChange('wardId', e.target.value)}
+                    disabled={!formData.provinceId}
+                  >
+                    <option value="">Chọn Phường/Xã</option>
+                    {wards.map(w => (
+                      <option key={w._id} value={w._id}>{w.name}</option>
+                    ))}
+                  </select>
+                </div>
+                {(errors.provinceId || errors.wardId) && (
+                  <span className={styles.errorText}><AlertCircle size={14} />{errors.provinceId || errors.wardId}</span>
+                )}
+              </div>
+            </div>
+
+            {/* Section 3: Responsibilities */}
+            <div className={styles.section}>
+              <div className={styles.formRow}>
+                <div className={styles.formField}>
+                  <label className={styles.label}>
+                    Đơn vị chủ trì <span className={styles.required}>*</span>
+                  </label>
+                  <select
+                    className={cn(styles.select, errors.responsibleUnit && styles.inputError)}
+                    value={formData.responsibleUnitId || formData.responsibleUnit}
+                    onChange={(e) => {
+                      const unitId = e.target.value;
+                      const unit = managingUnits.find(u => u.id === unitId);
+                      setFormData(prev => ({
+                        ...prev,
+                        responsibleUnit: unit ? unit.name : unitId,
+                        responsibleUnitId: unitId
+                      }));
+                      if (errors.responsibleUnit) {
+                        setErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.responsibleUnit;
+                          return newErrors;
+                        });
+                      }
+                    }}
+                  >
+                    <option value="">Chọn đơn vị...</option>
+                    {managingUnits.length > 0 ? (
+                      managingUnits.map(unit => (
+                        <option key={unit.id} value={unit.id}>{unit.name}</option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="Sở Công Thương">Sở Công Thương</option>
+                        <option value="Thanh tra Sở">Thanh tra Sở</option>
+                        <option value="Chi cục QLTT">Chi cục QLTT</option>
+                      </>
+                    )}
+                  </select>
+                  {errors.responsibleUnit && (
+                    <span className={styles.errorText}><AlertCircle size={14} />{errors.responsibleUnit}</span>
+                  )}
+                </div>
+
+                <div className={styles.formField}>
+                  <label className={styles.label}>Mức độ ưu tiên</label>
+                  <select
+                    className={styles.select}
+                    value={formData.priority}
+                    onChange={(e) => handleChange('priority', e.target.value as Priority)}
+                  >
+                    <option value="low">Thấp</option>
+                    <option value="medium">Trung bình</option>
+                    <option value="high">Cao</option>
+                    <option value="critical">Khẩn cấp</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className={styles.formField}>
+                <label className={styles.label}>Đơn vị phối hợp</label>
+                <input
+                  type="text"
+                  className={styles.input}
+                  value={formData.cooperatingUnits}
+                  onChange={(e) => handleChange('cooperatingUnits', e.target.value)}
+                  placeholder="Ví dụ: Sở Công Thương, Chi cục QLTT..."
+                />
+              </div>
+            </div>
+
+            {/* Section 4: External Documents (M03) */}
+            <div className={styles.section}>
+              <div className={styles.formField}>
+                <label className={styles.label}>
+                  Quyết định giao quyền (Mẫu số 03)
+                  <span className={styles.helpText}> - Tùy chọn</span>
+                </label>
+                {selectedM03 ? (
+                  <div className={styles.selectedDecision}>
+                    <div className={styles.selectedDecisionContent}>
+                      <FileText size={20} className={styles.selectedDecisionIcon} />
+                      <div className={styles.selectedDecisionInfo}>
+                        <div className={styles.selectedDecisionCode}>{selectedM03.code}</div>
+                        <div className={styles.selectedDecisionTitle}>{selectedM03.title}</div>
+                      </div>
                     </div>
                     <button
                       type="button"
-                      className={styles.removeFileButton}
-                      onClick={() => setAttachments(prev => prev.filter((_, i) => i !== index))}
+                      onClick={() => setSelectedM03(null)}
+                      className={styles.removeButton}
                     >
-                      <X size={14} />
+                      <X size={18} />
                     </button>
                   </div>
-                ))}
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowM03Modal(true)}
+                    className={styles.selectButton}
+                  >
+                    <FileText size={16} />
+                    Chọn từ hệ thống INS
+                  </button>
+                )}
               </div>
-            )}
-          </div>
+            </div>
 
-          {/* Form Actions */}
-          <div className={styles.actions}>
-            <button
-              type="button"
-              onClick={handleCancel}
-              className={styles.cancelButton}
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              className={styles.submitButton}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <div className={styles.spinner}></div>
-                  Đang xử lý...
-                </>
-              ) : (
-                <>
-                  <FileText size={18} />
-                  {isEditMode ? 'Cập nhật kế hoạch' : 'Tạo kế hoạch'}
-                </>
-              )}
-            </button>
-          </div>
-        </form>
+            {/* Section 5: Description & Attachments */}
+            <div className={styles.section}>
+              <div className={styles.formField}>
+                <label className={styles.label}>Mục tiêu kiểm tra</label>
+                <textarea
+                  className={styles.textarea}
+                  value={formData.objectives}
+                  onChange={(e) => handleChange('objectives', e.target.value)}
+                  placeholder="Nhập các mục tiêu cụ thể của kế hoạch này..."
+                  rows={4}
+                />
+              </div>
+
+              <div className={styles.formField}>
+                <label className={styles.label}>Mô tả kế hoạch</label>
+                <textarea
+                  className={styles.textarea}
+                  value={formData.description}
+                  onChange={(e) => handleChange('description', e.target.value)}
+                  placeholder="Mô tả tóm tắt nội dung, phạm vi hoặc các lưu ý đặc biệt..."
+                  rows={4}
+                />
+              </div>
+
+              <div className={styles.formField}>
+                <label className={styles.label}>Tài liệu đính kèm</label>
+                <div className={styles.fileUploadContainer}>
+                  <input
+                    type="file"
+                    id="plan-attachments"
+                    multiple
+                    className={styles.fileInput}
+                    onChange={(e) => {
+                      if (e.target.files) {
+                        setAttachments(prev => [...prev, ...Array.from(e.target.files!)]);
+                      }
+                    }}
+                  />
+                  <label htmlFor="plan-attachments" className={styles.fileLabel}>
+                    <Upload size={24} />
+                    <span>Kéo thả hoặc nhấn để tải lên tài liệu</span>
+                    <span className={styles.helpTextSmall}>Hỗ trợ PDF, DOCX, XLSX (Tối đa 10MB)</span>
+                  </label>
+
+                  {attachments.length > 0 && (
+                    <div className={styles.fileList}>
+                      {attachments.map((file, index) => (
+                        <div key={index} className={styles.fileItem}>
+                          <div className={styles.fileInfo}>
+                            <FileText size={16} className={styles.fileIcon} />
+                            <span className={styles.fileName}>{file.name}</span>
+                            <span className={styles.fileSize}>({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                          </div>
+                          <button
+                            type="button"
+                            className={styles.removeFileButton}
+                            onClick={() => setAttachments(prev => prev.filter((_, i) => i !== index))}
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
 
-      {/* M03 Modal */}
-      <SelectInsDecisionModal
-        open={showM03Modal}
-        onOpenChange={setShowM03Modal}
-        documentCode="M03"
-        documentName="Quyết định giao quyền ban hành quyết định kiểm tra"
-        onSelect={(decision) => {
-          setSelectedM03(decision);
-          toast.success(`Đã chọn ${decision.code}`);
-        }}
-      />
+      {/* Footer Actions */}
+      <div className={styles.footer}>
+        <div className={styles.footerButtons}>
+          <button type="button" onClick={handleCancel} className={styles.cancelButton}>
+            Hủy bỏ
+          </button>
+          <button 
+            type="submit" 
+            form="plan-create-form" 
+            className={styles.submitButton}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <div className={styles.spinner} />
+                Đang xử lý...
+              </>
+            ) : (
+              <>
+                <FileText size={20} />
+                {isEditMode ? 'Cập nhật kế hoạch' : 'Khởi tạo kế hoạch'}
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Modal */}
+      {showM03Modal && (
+        <SelectInsDecisionModal
+          open={showM03Modal}
+          onOpenChange={setShowM03Modal}
+          documentCode="M03"
+          documentName="Quyết định giao quyền ban hành quyết định kiểm tra"
+          onSelect={(decision) => {
+            setSelectedM03(decision);
+            toast.success(`Đã chọn ${decision.code}`);
+            setShowM03Modal(false);
+          }}
+        />
+      )}
     </div>
   );
 }

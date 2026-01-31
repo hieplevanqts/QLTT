@@ -20,6 +20,7 @@ import {
   FileDown, 
   BarChart3, 
   ClipboardCheck, 
+  LayoutGrid,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '@/layouts/PageHeader';
@@ -38,6 +39,7 @@ import ActionColumn, { Action } from '@/components/patterns/ActionColumn';
 import TableFooter from '@/components/ui-kit/TableFooter';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { getStatusProps } from '@/utils/status-badge-helper';
+import { cn } from '@/components/ui/utils';
 import { type Plan } from '@/utils/data/kehoach-mock-data';
 import styles from './PlansList.module.css';
 import {
@@ -58,6 +60,7 @@ import { M08ReportModal } from '@/components/plans/M08ReportModal';
 import DateRangePicker, { DateRange } from '@/components/ui-kit/DateRangePicker';
 import { useSupabasePlans } from '@/hooks/useSupabasePlans';
 import { updatePlanApi, deletePlanApi } from '@/utils/api/plansApi';
+import PlanCalendarView from '@/components/plans/PlanCalendarView';
 
 export function PlansList() {
   const navigate = useNavigate();
@@ -70,6 +73,7 @@ export function PlansList() {
   const [searchValue, setSearchValue] = useState('');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'table' | 'calendar'>('table');
   
   // Filter states
   const [planTypeFilter, setPlanTypeFilter] = useState<string>('periodic'); // Default to first tab
@@ -378,6 +382,15 @@ export function PlansList() {
   // Define table columns
   const columns: Column<Plan>[] = [
     {
+      key: 'stt',
+      label: 'STT',
+      width: '60px',
+      className: 'text-center',
+      render: (_, index) => (
+        <div className="text-center">{(currentPage - 1) * pageSize + index + 1}</div>
+      ),
+    },
+    {
       key: 'code',
       label: 'Mã kế hoạch',
       sortable: true,
@@ -493,6 +506,7 @@ export function PlansList() {
   // Reset to page 1 when filters change
   React.useEffect(() => {
     setCurrentPage(1);
+    setSelectedRows(new Set());
   }, [planTypeFilter, statusFilter, priorityFilter, searchValue, activeFilter]);
 
 
@@ -581,7 +595,24 @@ export function PlansList() {
         ]}
         title="Kế hoạch kiểm tra"
         actions={
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div className={styles.viewToggle}>
+              <button 
+                className={cn(styles.toggleBtn, viewMode === 'table' && styles.active)}
+                onClick={() => setViewMode('table')}
+                title="Xem dạng bảng"
+              >
+                <LayoutGrid size={18} />
+              </button>
+              <button 
+                className={cn(styles.toggleBtn, viewMode === 'calendar' && styles.active)}
+                onClick={() => setViewMode('calendar')}
+                title="Xem dạng lịch"
+              >
+                <Calendar size={18} />
+              </button>
+            </div>
+
             <Button variant="outline" size="sm" onClick={() => {
               setSearchValue('');
               setPlanTypeFilter('periodic');
@@ -758,44 +789,52 @@ export function PlansList() {
         />
       )}
 
-      {/* Data Table */}
-      <div className={styles.tableContainer}>
-        <Card>
-          <CardContent className={styles.tableCard}>
-            {filteredData.length === 0 ? (
-              <EmptyState
-                icon={ClipboardList}
-                title="Không tìm thấy kế hoạch"
-                description="Không có kế hoạch nào phù hợp với bộ lọc hiện tại"
-              />
-            ) : (
-              <>
-                <DataTable
-                  columns={columns}
-                  data={paginatedData}
-                  selectable={true}
-                  selectedRows={selectedRows}
-                  onSelectRow={handleSelectRow}
-                  onSelectAll={handleSelectAll}
-                  getRowId={(plan) => plan.id}
-                />
-                
-                {/* QLTT Standard: Footer with Pagination */}
-                <TableFooter
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  totalRecords={filteredData.length}
-                  pageSize={pageSize}
-                  onPageChange={setCurrentPage}
-                  onPageSizeChange={(size) => {
-                    setPageSize(size);
-                    setCurrentPage(1);
-                  }}
-                />
-              </>
-            )}
-          </CardContent>
-        </Card>
+      {/* Data Content (Table or Calendar) */}
+      <div className={styles.mainContent}>
+        {viewMode === 'table' ? (
+          <div className={styles.tableContainer}>
+            <Card>
+              <CardContent className={styles.tableCard}>
+                {filteredData.length === 0 ? (
+                  <EmptyState
+                    icon={ClipboardList}
+                    title="Không tìm thấy kế hoạch"
+                    description="Không có kế hoạch nào phù hợp với bộ lọc hiện tại"
+                  />
+                ) : (
+                  <>
+                    <DataTable
+                      columns={columns}
+                      data={paginatedData}
+                      selectable={true}
+                      selectedRows={selectedRows}
+                      onSelectRow={handleSelectRow}
+                      onSelectAll={handleSelectAll}
+                      getRowId={(plan) => plan.id}
+                    />
+                    
+                    {/* QLTT Standard: Footer with Pagination */}
+                    <TableFooter
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      totalRecords={filteredData.length}
+                      pageSize={pageSize}
+                      onPageChange={setCurrentPage}
+                      onPageSizeChange={(size) => {
+                        setPageSize(size);
+                        setCurrentPage(1);
+                      }}
+                    />
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          <div className={styles.tableContainer}>
+            <PlanCalendarView plans={filteredData} />
+          </div>
+        )}
       </div>
 
       {/* Modals */}
@@ -837,7 +876,7 @@ export function PlansList() {
             isOpen={modalState.type === 'reject'} 
             onClose={closeModal}
             plan={modalState.plan}
-            onConfirm={async (reason) => {
+            onConfirm={async (_reason) => {
               if (modalState.plan) {
                 try {
                   // In a real app, we might want to save the reason too
@@ -889,7 +928,7 @@ export function PlansList() {
             isOpen={modalState.type === 'pause'} 
             onClose={closeModal}
             plan={modalState.plan}
-            onConfirm={async (reason) => {
+            onConfirm={async (_reason) => {
               if (modalState.plan) {
                 try {
                   await updatePlanApi(modalState.plan.id, { status: 'paused' });
@@ -957,7 +996,7 @@ export function PlansList() {
             isOpen={modalState.type === 'cancel'}
             onClose={closeModal}
             plan={modalState.plan}
-            onConfirm={async (reason) => {
+            onConfirm={async (_reason) => {
               if (modalState.plan) {
                 try {
                   await updatePlanApi(modalState.plan.id, { status: 'cancelled' });

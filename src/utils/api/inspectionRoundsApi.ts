@@ -28,6 +28,10 @@ export interface InspectionRoundResponse {
   created_at: string;
   priority: number;
   attachments?: any; // JSON field
+  map_inspection_plans?: {
+    plan_name: string;
+    code: string;
+  };
   [key: string]: any;
 }
 
@@ -82,8 +86,8 @@ function mapRowToRound(row: InspectionRoundResponse): InspectionRound {
     code: row.campaign_code || (row._id ? row._id.substring(0, 8).toUpperCase() : ''),
     campaign_code: row.campaign_code,
     planId: row.plan_id,
-    planCode: decisionMeta.planCode || '',
-    planName: decisionMeta.planName || '', 
+    planCode: decisionMeta.planCode || row.map_inspection_plans?.code || '',
+    planName: decisionMeta.planName || row.map_inspection_plans?.plan_name || '', 
     quarter: calculateQuarter(start),
     type: 'routine', 
     status: mapRoundStatus(row.campaign_status),
@@ -127,7 +131,7 @@ function mapRowToRound(row: InspectionRoundResponse): InspectionRound {
 
 export async function fetchInspectionRoundsApi(planId?: string): Promise<InspectionRound[]> {
   try {
-    let url = `${SUPABASE_REST_URL}/map_inspection_campaigns?select=*&order=created_at.desc`;
+    let url = `${SUPABASE_REST_URL}/map_inspection_campaigns?select=*,map_inspection_plans(plan_name,code)&order=created_at.desc`;
     if (planId) {
       url += `&plan_id=eq.${planId}`;
     }
@@ -145,7 +149,7 @@ export async function fetchInspectionRoundsApi(planId?: string): Promise<Inspect
 
 export async function fetchInspectionRoundByIdApi(id: string): Promise<InspectionRound | null> {
   try {
-    const url = `${SUPABASE_REST_URL}/map_inspection_campaigns?_id=eq.${id}&select=*`;
+    const url = `${SUPABASE_REST_URL}/map_inspection_campaigns?_id=eq.${id}&select=*,map_inspection_plans(plan_name,code)`;
     const response = await fetch(url, { method: 'GET', headers: getHeaders() });
     
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);

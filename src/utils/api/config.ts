@@ -22,15 +22,9 @@ export const getHeaders = () => {
   let token = apiKey;
   
   try {
-    // Try to get Supabase session from localStorage
-    const storageKey = `sb-${projectId}-auth-token`;
-    const sessionData = localStorage.getItem(storageKey);
-    
-    if (sessionData) {
-      const session = JSON.parse(sessionData);
-      if (session?.access_token) {
-        token = session.access_token;
-      }
+    const customToken = localStorage.getItem('mappa_auth_access_token');
+    if (customToken) {
+      token = customToken;
     }
   } catch (error) {
     console.warn('Error reading auth token from localStorage:', error);

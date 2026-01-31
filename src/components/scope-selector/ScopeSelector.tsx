@@ -143,12 +143,6 @@ console.log('department',department)
     setSelectedTeam('');
     setSelectedArea('');
 
-    if (divisionId) {
-        localStorage.setItem('division_id', divisionId);
-    } else {
-        localStorage.removeItem('division_id');
-    }
-
     const newScope = {
       divisionId,
       teamId: null,

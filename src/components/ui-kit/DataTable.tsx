@@ -16,12 +16,14 @@ export interface Column<T> {
   key: string;
   label: string;
   sortable?: boolean;
-  render?: (item: T) => ReactNode;
+  render?: (item: T, index: number) => ReactNode;
   width?: string; // Fixed width (e.g., '140px', '200px')
   sticky?: 'left' | 'right'; // Sticky position
   className?: string; // Additional className
   truncate?: boolean; // Enable text truncation with ellipsis
 }
+
+
 
 interface DataTableProps<T> {
   columns: Column<T>[];
@@ -85,10 +87,10 @@ export function DataTableComponent<T>({
   };
 
   // Helper to render cell content with tooltip for truncated text
-  const renderCellContent = (column: Column<T>, item: T): ReactNode => {
+  const renderCellContent = (column: Column<T>, item: T, index: number): ReactNode => {
     try {
       const content = column.render
-        ? column.render(item)
+        ? column.render(item, index)
         : String((item as any)[column.key] ?? '');
 
       // Safety check: ensure content is a valid ReactNode
@@ -196,7 +198,7 @@ export function DataTableComponent<T>({
                       className={getCellClassName(column)}
                       style={getCellStyle(column)}
                     >
-                      {renderCellContent(column, item)}
+                      {renderCellContent(column, item, index)}
                     </TableCell>
                   ))}
                 </TableRow>

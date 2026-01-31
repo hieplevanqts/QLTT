@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, PlayCircle } from 'lucide-react';
+import { X, PlayCircle, CheckCircle } from 'lucide-react';
 import styles from './TaskActionModals.module.css';
 import type { InspectionTask } from '../../data/inspection-tasks-mock-data';
 
@@ -86,6 +86,59 @@ export function DeployTaskModal({ isOpen, onClose, task, onConfirm }: DeployTask
         >
           <PlayCircle size={18} />
           Triển khai
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+// Complete Task Modal
+interface CompleteTaskModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  task: InspectionTask | null;
+  onConfirm: () => void;
+}
+
+export function CompleteTaskModal({ isOpen, onClose, task, onConfirm }: CompleteTaskModalProps) {
+  if (!task) return null;
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <div className={styles.modalHeader}>
+        <div className={styles.modalIconWrapper} style={{ background: '#005cb6' }}>
+          <CheckCircle size={24} color="white" />
+        </div>
+        <div className={styles.modalHeaderContent}>
+          <h3 className={styles.modalTitle}>Xác nhận hoàn thành</h3>
+          <p className={styles.modalSubtitle}>Phiên: {task.title}</p>
+        </div>
+        <button className={styles.closeButton} onClick={onClose}>
+          <X size={20} />
+        </button>
+      </div>
+
+      <div className={styles.modalBody}>
+        <div className={styles.infoBox} style={{ background: '#005cb615', borderColor: '#005cb6', color: '#005cb6' }}>
+          <p>Phiên làm việc sẽ được chuyển sang trạng thái <strong>"Đã hoàn thành"</strong>. Bạn sẽ có thể xuất biên bản kiểm tra và báo cáo tổng hợp.</p>
+        </div>
+        <p className="mt-4 text-sm text-balance text-muted-foreground">Bạn có chắc chắn muốn hoàn thành phiên làm việc này? Mọi thông tin sau khi hoàn thành sẽ được lưu trữ hồ sơ.</p>
+      </div>
+
+      <div className={styles.modalFooter}>
+        <button className={styles.cancelButton} onClick={onClose}>
+          Hủy
+        </button>
+        <button 
+          className={styles.primaryButton} 
+          onClick={() => {
+            onConfirm();
+            onClose();
+          }}
+          style={{ background: '#005cb6' }}
+        >
+          <CheckCircle size={18} />
+          Hoàn thành
         </button>
       </div>
     </Modal>

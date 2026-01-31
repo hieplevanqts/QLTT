@@ -67,6 +67,7 @@ export interface InspectionRound {
   passedCount?: number;
   warningCount?: number;
   violationCount?: number;
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
   
   // Metadata
   createdBy: string;
@@ -118,6 +119,7 @@ export const mockInspectionRounds: InspectionRound[] = [
     passedCount: 8,
     warningCount: 3,
     violationCount: 1,
+    priority: 'high',
     createdBy: 'Nguyễn Văn An',
     createdAt: '2026-01-02',
     notes: 'Tập trung kiểm tra các siêu thị và chợ truyền thống',
@@ -142,6 +144,7 @@ export const mockInspectionRounds: InspectionRound[] = [
     passedCount: 2,
     warningCount: 1,
     violationCount: 0,
+    priority: 'urgent',
     createdBy: 'Phạm Minh',
     createdAt: '2026-01-06',
   },
@@ -166,6 +169,7 @@ export const mockInspectionRounds: InspectionRound[] = [
     teamSize: 3,
     totalTargets: 30,
     inspectedTargets: 0,
+    priority: 'medium',
     createdBy: 'Lê Minh',
     createdAt: '2026-01-05',
   },
