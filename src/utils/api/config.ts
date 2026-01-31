@@ -34,6 +34,7 @@ export const getHeaders = () => {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`,
     'apikey': apiKey,
-    'Prefer': 'return=representation'
+    'Prefer': 'return=representation',
+    'Cache-Control': 'max-age=60'
   };
 };

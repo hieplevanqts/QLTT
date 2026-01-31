@@ -25,116 +25,46 @@ export async function fetchMerchants(
   businessTypes?: string[],
   departmentIds?: string[],
   provinceId?: string,
-  wardId?: string
+  wardId?: string,
+  targetDepartmentPath?: string
 ): Promise<Restaurant[]> {
 
-  try {
-    // Build query - simple select without nested joins
-    let url = `${SUPABASE_REST_URL}/merchants?limit=1000&order=created_at.desc&select=latitude,longitude,_id,status`;
-    
-    // if (provinceId) {
-    //   url += `&province_id=eq.${provinceId}`;
-    // }
-    
-    // if (wardId) {
-    //   url += `&ward_id=eq.${wardId}`;
-    // }
-    
-    // 🔥 Filter by status if provided (direct field filter)
-    // status field: 'active', 'pending', 'suspended', 'rejected'
+try {
+    const baseUrl = `${SUPABASE_REST_URL}/merchant_filter_view`;
+    const params = new URLSearchParams();
+    params.append('select', '_id,business_name,address,business_type,latitude,longitude,status');
+    params.append('limit', '1000');
+    params.append('order', '_id.desc');
+    const pathFilter = targetDepartmentPath ? `${targetDepartmentPath}*` : 'QT*';
+    params.append('department_path', `like.${pathFilter}`);
     if (statusCodes && statusCodes.length > 0) {
-      const statusFilter = statusCodes.map(code => `status.eq.${code}`).join(',');
-      url += `&or=(${statusFilter})`;
+      params.append('status', `in.(${statusCodes.join(',')})`);
     }
-    
-    // 🔥 Filter by business_type if provided (direct field filter)
     if (businessTypes && businessTypes.length > 0) {
-      const typeFilter = businessTypes.map(type => `business_type.eq.${encodeURIComponent(type)}`).join(',');
-      url += `&or=(${typeFilter})`;
+      params.append('business_type', `in.(${businessTypes.join(',')})`);
     }
-    
-    // 🔥 NEW: Filter by department_id if provided
-    if (departmentIds && departmentIds.length > 0) {
-      const deptFilter = departmentIds.map(id => `department_id.eq.${id}`).join(',');
-      url += `&or=(${deptFilter})`;
-    }
-    
-
-    console.log('🔍 fetchMerchants API call:', url);
-
-    const response = await fetch(url, {
-      method: 'GET',
+    const finalUrl = `${baseUrl}?${params.toString()}`;
+    const response = await axios.get(finalUrl, {
       headers: getHeaders()
     });
+    const data = response.data;
+    return data.map((m: any) => ({
+      id: m._id,
+      name: m.business_name,
+      address: m.address,
+      businessType: m.business_type,
+      lat: m.latitude,
+      lng: m.longitude,
+      category: mapMerchantStatusToCategory(m.status),
+      merchant_staff: m.merchant_staff, 
+      merchant_law_docs: m.merchant_law_docs, 
+      status: m.status
+    }));
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Fetch failed:', response.status, response.statusText);
-      console.error('Error details:', errorText);
-      throw new Error(`Failed to fetch merchants: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-
-    // Transform Supabase data to Restaurant interface
-    const merchants = data
-      .map((merchant: any, index: number): Restaurant => {
-        const lat = parseFloat(merchant.latitude);
-        const lng = parseFloat(merchant.longitude);
-
-        if (isNaN(lat) || isNaN(lng)) {
-          console.error('❌ Invalid coordinates:', { lat: merchant.latitude, lng: merchant.longitude });
-        }
-
-        // business_type is a direct text field
-        const businessType = merchant.business_type || 'Doanh nghiệp';
-
-        // Map merchant status to category for color coding
-        // status: 'active', 'pending', 'suspended', 'rejected'
-        const category = mapMerchantStatusToCategory(merchant.status);
-        
-        // Get human-readable status name
-        const statusName = getMerchantStatusName(merchant.status);
-
-        // Debug log for first merchant
-        if (index === 0) {
-          console.log({
-            business_name: merchant.business_name,
-            owner_name: merchant.owner_name,
-            business_type: merchant.business_type,
-            status: merchant.status,
-            license_status: merchant.license_status,
-            mapped_category: category,
-            statusName: statusName
-          });
-        }
-
-        return {
-          id: merchant._id || merchant.id || `merchant-${Math.random()}`,
-          name: merchant.business_name || 'Unnamed Merchant',
-          address: merchant.address || '',
-          lat: lat, // 🔥 FIX: Don't convert NaN to 0, let it be NaN so MerchantsLayer can filter it out
-          lng: lng, // 🔥 FIX: Don't convert NaN to 0, let it be NaN so MerchantsLayer can filter it out
-          type: businessType,
-          businessType: businessType,
-          category: category,
-          province: merchant.province || '',
-          district: merchant.district || '',
-          ward: merchant.ward || '',
-          hotline: merchant.owner_phone || undefined,
-          taxCode: merchant.tax_code || undefined,
-          status: merchant.status || undefined,
-          statusName: statusName || undefined,
-        };
-      });
-
-    return merchants;
-
-  } catch (error: any) {
-    console.error('❌ Error in fetchMerchants:', error);
+  } catch (error) {
+    console.error('Error in fetchMerchantsMinimal:', error);
     throw error;
   }
-
 
 
 }
