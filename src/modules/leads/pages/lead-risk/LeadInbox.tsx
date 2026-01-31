@@ -2232,7 +2232,7 @@ export default function LeadInbox() {
           );
 
           try {
-            const supabase = getSupabaseClient();
+            const supabase = supabaseClient;
             let successCount = 0;
             let errorCount = 0;
 
