@@ -223,6 +223,9 @@ export function DocumentViewDialog({
                       sex: 'sex',
                       nationality: 'nationality',
                       placeOfOrigin: 'place_of_origin',
+                      businessName: 'business_name',
+                      ownerName: 'owner_name',
+                      expiryDate: 'expiry_date',
                     };
 
                     const dbKey = dbKeyMap[field.key];

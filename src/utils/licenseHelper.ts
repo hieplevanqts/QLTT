@@ -6,10 +6,11 @@ export const LICENSE_FIELDS: Record<string, string[]> = {
         'permanent_address', 'sex', 'nationality', 'place_of_origin', 'file_url', 'file_url_2'
     ],
     BUSINESS_LICENSE: [
-        'license_number', 'issued_date', 'issued_by_name', 'business_field', 'file_url'
+        'license_number', 'issued_date', 'expiry_date', 'issued_by_name',
+        'business_field', 'business_name', 'owner_name', 'permanent_address', 'file_url'
     ],
     FOOD_SAFETY: [
-        'license_number', 'issued_date', 'expired_date', 'issued_by_name',
+        'license_number', 'issued_date', 'expiry_date', 'issued_by_name',
         'activity_scope', 'file_url'
     ],
     RENT_CONTRACT: [
@@ -17,11 +18,11 @@ export const LICENSE_FIELDS: Record<string, string[]> = {
         'rent_start_date', 'rent_end_date', 'property_address', 'file_url'
     ],
     PROFESSIONAL_LICENSE: [
-        'license_number', 'issued_date', 'expired_date', 'issued_by_name',
+        'license_number', 'issued_date', 'expiry_date', 'issued_by_name',
         'activity_scope', 'file_url'
     ],
     FIRE_PREVENTION: [
-        'license_number', 'issued_date', 'expired_date', 'issued_by_name',
+        'license_number', 'issued_date', 'expiry_date', 'issued_by_name',
         'inspection_result', 'file_url'
     ]
 };
@@ -30,7 +31,7 @@ export const LICENSE_FIELDS: Record<string, string[]> = {
 export const FIELD_SOURCE_MAPPING: Record<string, string[]> = {
     license_number: ['licenseNumber', 'certificateNumber', 'contractNumber', 'idNumber'],
     issued_date: ['issueDate'],
-    expired_date: ['expiryDate'],
+    expiry_date: ['expiryDate'],
     issued_by_name: ['issuingAuthority', 'issuePlace'],
     issued_by: ['issuePlace'],
     holder_name: ['fullName'],
@@ -47,6 +48,8 @@ export const FIELD_SOURCE_MAPPING: Record<string, string[]> = {
     sex: ['sex'],
     nationality: ['nationality'],
     place_of_origin: ['placeOfOrigin'],
+    business_name: ['businessName'],
+    owner_name: ['ownerName'],
 };
 
 // Maps UI document types to LICENSE_FIELDS keys

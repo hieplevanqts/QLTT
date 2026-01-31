@@ -43,7 +43,7 @@ function mapStatus(status: string | null | undefined) {
  * @returns Array of stores mapped from merchants data
  */
 export async function fetchStores(
-  limit: number = 10000,
+  limit: number = 20,
   offset: number = 0,
   filters?: {
     status?: string;
@@ -53,8 +53,9 @@ export async function fetchStores(
     hasViolations?: boolean;
     hasComplaints?: boolean;
     riskLevel?: string;
+    search?: string;
   }
-): Promise<Store[]> {
+): Promise<{ data: Store[]; total: number }> {
   try {
     // Build base URL with pagination (supports unlimited records)
     let url = `${SUPABASE_REST_URL}/merchants?limit=${limit}&offset=${offset}&order=created_at.desc&select=*`;
@@ -80,10 +81,19 @@ export async function fetchStores(
       url += `&risk_level=eq.${riskLevelNum}`;
     }
 
+    // Search filter
+    if (filters?.search) {
+      const searchTerms = encodeURIComponent(`*${filters.search}*`);
+      url += `&or=(business_name.ilike.${searchTerms},address.ilike.${searchTerms})`;
+    }
+
     // Fetch from API
     const response = await fetch(url, {
       method: 'GET',
-      headers: getHeaders(),
+      headers: {
+        ...getHeaders(),
+        'Prefer': 'count=exact'
+      },
     });
 
     if (!response.ok) {
@@ -94,7 +104,9 @@ export async function fetchStores(
     }
 
     const data = await response.json();
-    console.log('✅ Fetched merchants data:', data.length, 'records');
+    const total = parseInt(response.headers.get('content-range')?.split('/')?.[1] || '0', 10);
+
+    console.log('✅ Fetched merchants data:', data.length, '/', total, 'records');
     if (filters?.province_id) {
       console.log('📍 Filtered by province_id:', filters.province_id);
     }
@@ -190,7 +202,7 @@ export async function fetchStores(
     });
 
     console.log('✅ Successfully mapped', stores.length, 'stores');
-    return stores;
+    return { data: stores, total };
   } catch (error: any) {
     console.error('❌ Error fetching stores:', error);
     throw error;
@@ -220,24 +232,35 @@ export async function fetchStoresStats(filters?: {
       url += `&district=eq.${encodeURIComponent(filters.district)}`;
     }
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: getHeaders(),
-    });
+    // Optimization: Just get counts by status using count=exact and limit=0
+    const fetchStatusCount = async (status: string) => {
+      const statusUrl = `${SUPABASE_REST_URL}/merchants?select=*&status=eq.${status}&limit=1`;
+      const res = await fetch(statusUrl, {
+        method: 'GET',
+        headers: { ...getHeaders(), 'Prefer': 'count=exact' },
+      });
+      const range = res.headers.get('content-range');
+      return parseInt(range?.split('/')?.[1] || '0', 10);
+    };
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch store stats: ${response.status}`);
-    }
+    const fetchTotalCount = async () => {
+      const totalUrl = `${SUPABASE_REST_URL}/merchants?select=*&limit=1`;
+      const res = await fetch(totalUrl, {
+        method: 'GET',
+        headers: { ...getHeaders(), 'Prefer': 'count=exact' },
+      });
+      const range = res.headers.get('content-range');
+      return parseInt(range?.split('/')?.[1] || '0', 10);
+    };
 
-    const data = await response.json();
-
-    // Count by status
-    const total = data.length;
-    const active = data.filter((m: any) => m.status === 'active').length;
-    const pending = data.filter((m: any) => m.status === 'pending').length;
-    const suspended = data.filter((m: any) => m.status === 'suspended').length;
-    const closed = data.filter((m: any) => m.status === 'closed').length;
-    const rejected = data.filter((m: any) => m.status === 'rejected').length;
+    const [total, active, pending, suspended, closed, rejected] = await Promise.all([
+      fetchTotalCount(),
+      fetchStatusCount('active'),
+      fetchStatusCount('pending'),
+      fetchStatusCount('suspended'),
+      fetchStatusCount('closed'),
+      fetchStatusCount('rejected'),
+    ]);
 
     console.log('✅ Store stats:', { total, active, pending, suspended, closed, rejected });
 
@@ -348,8 +371,8 @@ export async function createMerchant(data: {
   p_license_status?: string;
   p_tax_code: string;
   p_business_type: string;
-  p_province_id: string;
-  p_ward_id: string;
+  p_province_id: string | null;
+  p_ward_id: string | null;
   p_address: string;
   p_latitude: number;
   p_longitude: number;
@@ -365,7 +388,7 @@ export async function createMerchant(data: {
   p_owner_phone_2?: string;
   p_owner_birth_year?: number;
   p_owner_identity_no?: string;
-  p_owner_email?: string;
+  p_owner_email?: string | null;
 }): Promise<any> {
   try {
     const url = `${SUPABASE_REST_URL}/rpc/create_merchant_full`;

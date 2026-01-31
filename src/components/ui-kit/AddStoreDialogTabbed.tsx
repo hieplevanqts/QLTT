@@ -61,6 +61,7 @@ import {
 } from '@/utils/data/vietnamLocations';
 import { fetchProvinces, fetchWardsByProvince, type ProvinceApiData, type WardApiData } from '@/utils/api/locationsApi';
 import { INDUSTRIES, searchIndustries } from '@/utils/data/industries';
+import { extractDocumentData } from '@/utils/api/ocrApi';
 import { toast } from 'sonner';
 import styles from './AddStoreDialogTabbed.module.css';
 import comboboxStyles from './IndustryCombobox.module.css';
@@ -216,49 +217,42 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
       selectedWardName || '',
       selectedProvinceName || ''
     ].filter(part => part.trim());
-    
+
     return parts.join(', ');
   };
 
   const fullAddressForMap = buildFullAddress();
 
-  // Mock OCR extraction
-  const mockExtractData = async (file: File): Promise<ExtractedData> => {
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
+  // Real OCR Integration
+  const handleExtractData = async (file: File) => {
+    try {
+      // Determine document type based on filename or just assume GPKD for this flow
+      // The user specifically asked for GPKD OCR integration here
+      const result = await extractDocumentData(file, 'business-license');
 
-    // Mock extracted data based on file name
-    const fileName = file.name.toLowerCase();
+      if (result.success && result.data) {
+        const ocrData = result.data;
 
-    if (fileName.includes('business') || fileName.includes('license') || fileName.includes('gpkd')) {
-      return {
-        business_name: 'Công ty TNHH Thương mại Dịch vụ ABC',
-        taxCode: '0123456789',
-        industryName: 'Bán lẻ thực phẩm',
-        establishedDate: '2020-01-15',
-        operationStatus: 'active',
-        businessArea: '150',
-        businessPhone: '0901234567',
-        email: 'contact@abc.com.vn',
-        registeredAddress: '123 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM',
-      };
-    } else if (fileName.includes('cmnd') || fileName.includes('cccd') || fileName.includes('id')) {
-      return {
-        ownerName: 'Nguyễn Văn A',
-        ownerBirthYear: '1985',
-        ownerIdNumber: '001085012345',
-        ownerPhone: '0912345678',
-      };
+        // Map OCR fields to NewStoreData structure
+        const extracted: ExtractedData = {
+          business_name: ocrData.businessName,
+          taxCode: ocrData.licenseNumber,
+          establishedDate: ocrData.issueDate,
+          ownerName: ocrData.ownerName,
+          ownerIdNumber: ocrData.ownerIdCard,
+          ownerBirthYear: ocrData.ownerDob ? ocrData.ownerDob.split('/').pop() : undefined,
+          registeredAddress: ocrData.address,
+          // Note: industryName mapping might need more logic if we want to match INDUSTRIES list
+          industryName: ocrData.businessScope,
+        };
+
+        return extracted;
+      }
+      throw new Error(result.message || 'Trích xuất dữ liệu thất bại');
+    } catch (error) {
+      console.error('OCR API Error:', error);
+      throw error;
     }
-
-    // Default mock data
-    return {
-      business_name: 'Cửa hàng tiện lợi Tiến Hùng',
-      taxCode: '0987654321',
-      industryName: 'Bán lẻ hàng hóa tổng hợp',
-      ownerName: 'Trần Thị B',
-      ownerPhone: '0923456789',
-    };
   };
 
   // Handle file upload
@@ -305,7 +299,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
     setUploadedFile(file);
 
     try {
-      const extractedData = await mockExtractData(file);
+      const extractedData = await handleExtractData(file);
 
       // Auto-fill form data
       const newFormData = { ...formData };
@@ -965,10 +959,10 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
               {renderFieldWithIndicator(
                 'email',
                 'Email chủ hộ',
-                <Input 
+                <Input
                   id="email"
                   type="email"
-                  value={formData.email || '' }
+                  value={formData.email || ''}
                   onChange={(e) => handleFieldChange('email', e.target.value)}
                   placeholder="Nhập email"
                 />
@@ -1095,10 +1089,10 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                   <MapPin className="w-4 h-4 flex-shrink-0" style={{ flexShrink: 0 }} />
                   <span style={{ lineHeight: '1' }}>Định vị trên bản đồ</span>
                 </Label>
-                
+
                 {/* Hidden input for full address (for map search) */}
                 <input type="hidden" value={fullAddressForMap} />
-                
+
                 <MapLocationPicker
                   address={fullAddressForMap || formData.registeredAddress || ''}
                   latitude={formData.latitude}
@@ -1115,7 +1109,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
               </div>
 
               {/* Latitude / Longitude Display */}
-              <div className="mt-6 grid grid-cols-2 gap-4">
+              {/* <div className="mt-6 grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="latitude">Vĩ độ</Label>
                   <Input
@@ -1151,7 +1145,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                     </p>
                   )}
                 </div>
-              </div>
+              </div> */}
             </div>
           )}
         </div>
@@ -1159,6 +1153,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
         {/* Footer */}
         <DialogFooter>
           <Button
+            className='mr-3'
             type="button"
             variant="outline"
             onClick={() => {

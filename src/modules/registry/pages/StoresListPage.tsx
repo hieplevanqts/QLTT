@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Plus,
   Download,
@@ -10,22 +10,20 @@ import {
   CirclePause,
   CircleX,
   Upload,
-  History,
-  FileText,
   CheckCircle2,
   XCircle,
   Pause,
   Play,
   StopCircle,
-  Filter,
-  X,
   Bell,
   AlertTriangle,
   Map,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '@/layouts/PageHeader';
-import EmptyState from '@/components/ui-kit/EmptyState';
+import { ExportDialog, ExportOptions } from '@/components/ui-kit/ExportDialog';
+import { ImportDialog } from '@/components/ui-kit/ImportDialog';
+import { AddStoreDialog, NewStoreData } from '@/components/ui-kit/AddStoreDialog';
 import DataTable, { Column } from '@/components/ui-kit/DataTable';
 import { SearchInput } from '@/components/ui-kit/SearchInput';
 import { Button } from '@/components/ui/button';
@@ -40,29 +38,23 @@ import {
 } from '@/components/ui/select';
 import SummaryCard from '@/components/patterns/SummaryCard';
 import BulkActionBar, { BulkAction } from '@/components/patterns/BulkActionBar';
-import FilterActionBar from '@/components/patterns/FilterActionBar';
 import ActionColumn, { CommonActions, Action } from '@/components/patterns/ActionColumn';
 import FacilityStatusBadge, { FacilityStatus } from '@/components/ui-kit/FacilityStatusBadge';
 import TableFooter from '@/components/ui-kit/TableFooter';
 import { ConfirmDialog, ConfirmVariant } from '@/components/ui-kit/ConfirmDialog';
 import { RiskDialog, RiskLevel } from '@/components/ui-kit/RiskDialog';
 import { QuickEditDialog, QuickEditData } from '@/components/ui-kit/QuickEditDialog';
-import { ImportDialog } from '@/components/ui-kit/ImportDialog';
-import { ExportDialog, ExportOptions } from '@/components/ui-kit/ExportDialog';
-import { AddStoreDialog, NewStoreData } from '@/components/ui-kit/AddStoreDialog';
 import { AddStoreDialogTabbed, NewStoreData as NewStoreDataTabbed } from '@/components/ui-kit/AddStoreDialogTabbed';
 import { AdvancedFilterPopup, AdvancedFilters } from '@/components/ui-kit/AdvancedFilterPopup';
 import { adminUnitsService, type ProvinceRecord } from '@/modules/system-admin/sa-master-data/services/adminUnits.service';
 import { ApproveDialog, RejectDialog } from '@/components/ui-kit/ApprovalDialogs';
-import { mockStores, Store, addStore } from '@/utils/data/mockStores';
-import { getProvinceByCode, getDistrictByName, getWardByCode } from '@/utils/data/vietnamLocations';
-import { generateLegalDocuments } from '@/utils/data/mockLegalDocuments';
-import { LegalDocumentItem, LegalDocument } from '@/components/ui-kit/LegalDocumentItem';
+import { Store, addStore } from '@/utils/data/mockStores';
+import { LegalDocument } from '@/components/ui-kit/LegalDocumentItem';
 import { LegalDocumentDialog } from '@/components/ui-kit/LegalDocumentDialog';
 import { BulkActionModal, BulkActionType } from '@/components/ui-kit/BulkActionModal';
 import { StoreImportDialog } from '@/components/ui-kit/StoreImportDialog';
-import { exportStoresToCSV, exportStoresPackage } from '@/utils/exportStoresCSV';
-import { downloadStoreImportTemplate, downloadExcelTemplate, parseImportFile, type ParsedStoreRow, type ValidationError } from '@/utils/importTemplate';
+import { exportStoresPackage } from '@/utils/exportStoresCSV';
+import { downloadExcelTemplate, parseImportFile } from '@/utils/importTemplate';
 import { getViolationsByStoreId } from '@/utils/data/mockViolations';
 import { getComplaintsByStoreId } from '@/utils/data/mockComplaints';
 import { PendingUpdatesDialog } from '@/components/ui-kit/PendingUpdatesDialog';
@@ -71,21 +63,61 @@ import { fetchStores, fetchStoresStats, createMerchant } from '@/utils/api/store
 import styles from './StoresListPage.module.css';
 
 export default function StoresListPage() {
-  // Router
+  // Router & Search Params
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // State management
-  const [searchValue, setSearchValue] = useState('');
+  // Helper to get param with default
+  const getParam = (key: string, defaultValue: string) => searchParams.get(key) || defaultValue;
+
+  // State management initialized from URL
+  const [searchValue, setSearchValue] = useState(getParam('q', ''));
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
-  const [activeFilter, setActiveFilter] = useState<string | null>('active'); // Default to 'active'
+  const [activeFilter, setActiveFilter] = useState<string | null>(getParam('status', 'all') === 'all' ? null : getParam('status', 'all'));
 
   // Filter states
-  const [jurisdictionFilter, setJurisdictionFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('active'); // Default to 'active'
+  const [jurisdictionFilter, setJurisdictionFilter] = useState<string>(getParam('province', 'all'));
+  const [statusFilter, setStatusFilter] = useState<string>(getParam('status', 'all'));
+  const [debouncedSearchValue, setDebouncedSearchValue] = useState(getParam('q', ''));
 
   // Pagination states
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [currentPage, setCurrentPage] = useState(parseInt(getParam('page', '1'), 10));
+  const [pageSize, setPageSize] = useState(parseInt(getParam('size', '20'), 10));
+  const [totalRecords, setTotalRecords] = useState(0);
+
+  // Sync state to URL
+  useEffect(() => {
+    const params: Record<string, string> = {};
+    if (currentPage > 1) params.page = currentPage.toString();
+    if (pageSize !== 20) params.size = pageSize.toString();
+    if (statusFilter !== 'all') params.status = statusFilter;
+    if (jurisdictionFilter !== 'all') params.province = jurisdictionFilter;
+    if (debouncedSearchValue) params.q = debouncedSearchValue;
+
+    setSearchParams(params, { replace: true });
+  }, [currentPage, pageSize, statusFilter, jurisdictionFilter, debouncedSearchValue, setSearchParams]);
+
+  // Sync state FROM URL when searchParams change (handling back/forward browser buttons)
+  useEffect(() => {
+    const page = parseInt(getParam('page', '1'), 10);
+    const status = getParam('status', 'all');
+    const province = getParam('province', 'all');
+    const query = getParam('q', '');
+
+    if (page !== currentPage) setCurrentPage(page);
+    if (status !== statusFilter) setStatusFilter(status);
+    if (province !== jurisdictionFilter) setJurisdictionFilter(province);
+    if (query !== searchValue) setSearchValue(query);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  // Debounce search value
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchValue(searchValue);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchValue]);
 
   // Dialog states
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -164,26 +196,59 @@ export default function StoresListPage() {
   const [provinces, setProvinces] = useState<ProvinceRecord[]>([]);
   const [isLoadingProvinces, setIsLoadingProvinces] = useState(true);
 
-  // Load stores from API on component mount
+  // Stats state
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    pending: 0,
+    suspended: 0,
+    closed: 0,
+    rejected: 0,
+    other: 0,
+  });
+
+  // Fetch stats separately or when filters change if needed
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const data = await fetchStoresStats();
+        setStats({
+          ...data,
+          other: data.rejected // Map rejected to other if needed, or keep separate
+        });
+      } catch (error) {
+        console.error('Error loading stats:', error);
+      }
+    };
+    loadStats();
+  }, []);
+
+  // Load stores from API when pagination or filters change
   useEffect(() => {
     const loadStores = async () => {
       try {
         setIsLoadingStores(true);
         setStoreError(null);
-        console.log('📥 Fetching stores from API...');
+        console.log('📥 Fetching stores from API...', { currentPage, pageSize, statusFilter, debouncedSearchValue });
 
-        // Build filters object with province_id if selected
-        const filters = jurisdictionFilter && jurisdictionFilter !== 'all'
-          ? { province_id: jurisdictionFilter }
-          : undefined;
+        const offset = (currentPage - 1) * pageSize;
+        const filters: any = {};
 
-        const data = await fetchStores(10000, 0, filters);
-        console.log('Successfully loaded', data.length, 'stores from API');
-        if (filters?.province_id) {
-          console.log('📍 Filtered by province_id:', filters.province_id);
+        if (statusFilter && statusFilter !== 'all') {
+          filters.status = statusFilter;
+        }
+        if (jurisdictionFilter && jurisdictionFilter !== 'all') {
+          filters.province_id = jurisdictionFilter;
+        }
+        if (debouncedSearchValue) {
+          filters.search = debouncedSearchValue;
         }
 
+        const { data, total } = await fetchStores(pageSize, offset, filters);
+        console.log('Successfully loaded', data.length, '/', total, 'stores from API');
+
         setStores(data);
+        setTotalRecords(total);
 
         // Save to localStorage for offline backup
         try {
@@ -195,21 +260,16 @@ export default function StoresListPage() {
         console.error('Error loading stores:', error);
         setStoreError(error.message || 'Failed to load stores');
 
-        // Try to load from localStorage as fallback
+        // Fallback handling...
         try {
           const savedStores = localStorage.getItem(STORES_STORAGE_KEY);
           if (savedStores) {
             const parsedStores = JSON.parse(savedStores);
-            console.warn('⚠️ Loaded stores from localStorage fallback');
             setStores(parsedStores);
-          } else {
-            // Use mock data as last resort
-            console.warn('⚠️ Using mock data as last resort');
-            setStores(mockStores);
+            setTotalRecords(parsedStores.length);
           }
-        } catch (fallbackError) {
-          console.error('Fallback error:', fallbackError);
-          setStores(mockStores);
+        } catch (e) {
+          console.error('Fallback error:', e);
         }
       } finally {
         setIsLoadingStores(false);
@@ -217,7 +277,7 @@ export default function StoresListPage() {
     };
 
     loadStores();
-  }, [jurisdictionFilter]);
+  }, [currentPage, pageSize, statusFilter, jurisdictionFilter, debouncedSearchValue]);
 
   // Load provinces from API on component mount
   useEffect(() => {
@@ -512,81 +572,10 @@ export default function StoresListPage() {
     setRejectDialog({ open: false, storeId: 0, storeName: '' });
   };
 
-  // Calculate summary stats
-  const stats = {
-    total: stores.length,
-    active: stores.filter(s => s.status === 'active').length,
-    pending: stores.filter(s => s.status === 'pending').length,
-    suspended: stores.filter(s => s.status === 'suspended').length,
-    closed: stores.filter(s => s.status === 'closed').length,
-    other: stores.filter(s =>
-      s.status !== 'active' &&
-      s.status !== 'pending' &&
-      s.status !== 'suspended' &&
-      s.status !== 'closed'
-    ).length,
-    highRisk: stores.filter(s => s.riskLevel === 'high').length,
-  };
-
-  // Filter and paginate data
-  const filteredData = useMemo(() => {
-    let filtered = stores;
-
-    // Note: province_id filtering is now done at API level (fetchStores)
-    // so we don't need to filter again on the client side
-
-    // Handle status filter - including "other" category
-    if (statusFilter !== 'all') {
-      if (statusFilter === 'other') {
-        // "Other" is a group of statuses that are not in the main categories
-        filtered = filtered.filter(s =>
-          s.status !== 'active' &&
-          s.status !== 'pending' &&
-          s.status !== 'suspended' &&
-          s.status !== 'closed'
-        );
-      } else {
-        // Normal status filter (active, pending, suspended, closed, etc.)
-        filtered = filtered.filter(s => s.status === statusFilter);
-      }
-    }
-
-    if (searchValue) {
-      filtered = filtered.filter(s =>
-        s.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-        s.address.toLowerCase().includes(searchValue.toLowerCase())
-      );
-    }
-    if (activeFilter) {
-      if (activeFilter === 'highRisk') {
-        filtered = filtered.filter(s => s.riskLevel === 'high');
-      } else if (activeFilter === 'other') {
-        // Filter for "other" statuses (not active, pending, suspended, closed)
-        filtered = filtered.filter(s =>
-          s.status !== 'active' &&
-          s.status !== 'pending' &&
-          s.status !== 'suspended' &&
-          s.status !== 'closed'
-        );
-      } else {
-        filtered = filtered.filter(s => s.status === activeFilter);
-      }
-    }
-
-    // Apply advanced filter if present
-    if (advancedFilter) {
-      filtered = applyAdvancedFilter(filtered, advancedFilter);
-    }
-
-    return filtered;
-  }, [statusFilter, searchValue, activeFilter, advancedFilter, stores]);
-
-  const paginatedData = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize;
-    return filteredData.slice(startIndex, startIndex + pageSize);
-  }, [filteredData, currentPage, pageSize]);
-
-  const totalPages = Math.ceil(filteredData.length / pageSize);
+  // No client-side filtering needed for Stores anymore as it's handled by API
+  const filteredData = stores;
+  const paginatedData = stores;
+  const totalPages = Math.ceil(totalRecords / pageSize);
 
   // Get selected stores objects
   const selectedStores = useMemo(() => {
@@ -799,7 +788,6 @@ export default function StoresListPage() {
       key: 'stt',
       label: 'STT',
       width: '60px',
-      align: 'center',
       render: (store: Store) => {
         // Find index from paginatedData
         const index = paginatedData.findIndex(s => s.id === store.id);
@@ -901,11 +889,6 @@ export default function StoresListPage() {
       setSelectedRows(new Set());
     }
   };
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [jurisdictionFilter, statusFilter, searchValue, activeFilter]);
 
   // Sync activeFilter when statusFilter changes from dropdown
   useEffect(() => {
@@ -1056,6 +1039,7 @@ export default function StoresListPage() {
             onClick={() => {
               setActiveFilter('active');
               setStatusFilter('active'); // Sync với filter dropdown
+              setCurrentPage(1);
             }}
           />
           <SummaryCard
@@ -1067,6 +1051,7 @@ export default function StoresListPage() {
             onClick={() => {
               setActiveFilter('pending');
               setStatusFilter('pending'); // Sync với filter dropdown
+              setCurrentPage(1);
             }}
           />
           <SummaryCard
@@ -1078,6 +1063,7 @@ export default function StoresListPage() {
             onClick={() => {
               setActiveFilter('suspended');
               setStatusFilter('suspended'); // Sync với filter dropdown
+              setCurrentPage(1);
             }}
           />
           <SummaryCard
@@ -1089,6 +1075,7 @@ export default function StoresListPage() {
             onClick={() => {
               setActiveFilter('closed');
               setStatusFilter('closed'); // Sync với filter dropdown
+              setCurrentPage(1);
             }}
           />
           {stats.other > 0 && (
@@ -1101,6 +1088,7 @@ export default function StoresListPage() {
               onClick={() => {
                 setActiveFilter('other');
                 setStatusFilter('other'); // Fixed: Use 'other' instead of 'all'
+                setCurrentPage(1);
               }}
             />
           )}
@@ -1113,6 +1101,7 @@ export default function StoresListPage() {
             onClick={() => {
               setActiveFilter(null);
               setStatusFilter('all'); // Sync với filter dropdown
+              setCurrentPage(1);
             }}
           />
         </div>
@@ -1151,7 +1140,14 @@ export default function StoresListPage() {
           />
 
           {/* 2. Địa bàn */}
-          <Select value={jurisdictionFilter} onValueChange={setJurisdictionFilter} disabled={isLoadingProvinces}>
+          <Select
+            value={jurisdictionFilter}
+            onValueChange={(val) => {
+              setJurisdictionFilter(val);
+              setCurrentPage(1);
+            }}
+            disabled={isLoadingProvinces}
+          >
             <SelectTrigger style={{ width: '200px', border: '1px solid #e5e7eb' }}>
               <SelectValue placeholder={isLoadingProvinces ? 'Đang tải...' : 'Chọn địa bàn'} />
             </SelectTrigger>
@@ -1166,7 +1162,13 @@ export default function StoresListPage() {
           </Select>
 
           {/* 3. Trạng thái */}
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select
+            value={statusFilter}
+            onValueChange={(val) => {
+              setStatusFilter(val);
+              setCurrentPage(1);
+            }}
+          >
             <SelectTrigger style={{ width: '200px', border: '1px solid #e5e7eb' }}>
               <SelectValue placeholder="Chọn trạng thái" />
             </SelectTrigger>
@@ -1259,7 +1261,7 @@ export default function StoresListPage() {
               <TableFooter
                 currentPage={currentPage}
                 totalPages={totalPages}
-                totalRecords={filteredData.length}
+                totalRecords={totalRecords}
                 pageSize={pageSize}
                 onPageChange={setCurrentPage}
                 onPageSizeChange={(size) => {
@@ -1381,23 +1383,23 @@ export default function StoresListPage() {
               p_license_status: 'valid',
               p_tax_code: data.taxCode || '',
               p_business_type: data.industryName || 'retail',
-              p_province_id: data.province || null,  // UUID field - use null not ""
-              p_ward_id: data.ward || null,          // UUID field - use null not ""
+              p_province_id: data.province || null,
+              p_ward_id: data.ward || null,
               p_address: data.registeredAddress || '',
               p_latitude: data.latitude || 0,
               p_longitude: data.longitude || 0,
               p_status: data.status || 'pending',
-              p_established_date: data.establishedDate || null,
-              p_fax: data.fax || null,
+              p_established_date: data.establishedDate || undefined,
+              p_fax: data.fax || undefined,
               p_department_id: '0c081448-e64b-4d8e-a332-b79f743823c7',
-              p_note: data.notes || null,
-              p_business_phone: data.businessPhone || null,
-              p_business_email: data.email || null,
-              p_website: data.website || null,
-              p_store_area: data.area_name || null,  // Will use area_name from API response
-              p_owner_phone_2: data.ownerPhone2 || null,
-              p_owner_birth_year: data.ownerBirthYear ? parseInt(data.ownerBirthYear) : null,
-              p_owner_identity_no: data.ownerIdNumber || null,
+              p_note: data.notes || undefined,
+              p_business_phone: data.businessPhone || undefined,
+              p_business_email: data.email || undefined,
+              p_website: data.website || undefined,
+              p_store_area: data.area_name ? parseFloat(data.area_name) : undefined,
+              p_owner_phone_2: data.ownerPhone2 || undefined,
+              p_owner_birth_year: data.ownerBirthYear ? parseInt(data.ownerBirthYear) : undefined,
+              p_owner_identity_no: data.ownerIdNumber || undefined,
               p_owner_email: null,
             };
 
@@ -1425,6 +1427,7 @@ export default function StoresListPage() {
               status: (data.status || 'pending') as FacilityStatus,
               riskLevel: 'none',
               lastInspection: 'Chưa kiểm tra',
+              area_name: result?.area_name || '0',
               latitude: data.latitude,
               longitude: data.longitude,
               gpsCoordinates: data.latitude && data.longitude
@@ -1435,7 +1438,7 @@ export default function StoresListPage() {
               industryName: data.industryName,
               establishedDate: data.establishedDate,
               operationStatus: data.operationStatus,
-              businessArea: result?.area_name || data.businessArea || null,  // Use area_name from API response
+              businessArea: result?.area_name || data.businessArea || undefined,  // Use area_name from API response
               businessPhone: data.businessPhone,
               email: data.email,
               website: data.website,
@@ -1443,7 +1446,7 @@ export default function StoresListPage() {
               notes: data.notes,
               // Tab 2: Thông tin chủ hộ
               ownerName: data.ownerName,
-              ownerBirthYear: data.ownerBirthYear,
+              ownerBirthYear: data.ownerBirthYear ? parseInt(data.ownerBirthYear) : undefined,
               ownerIdNumber: data.ownerIdNumber,
               ownerPhone: data.ownerPhone,
               // Tab 3: Địa chỉ

@@ -1,7 +1,9 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { X, Upload, FileText, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { X, Upload, FileText, AlertCircle, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { getDocumentTypeById } from '@/utils/data/documentTypes';
+import { extractDocumentData } from '@/utils/api/ocrApi';
 import styles from './DocumentUploadDialog.module.css';
 
 export interface DocumentField {
@@ -53,6 +55,7 @@ export function DocumentUploadDialog({
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractionComplete, setExtractionComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastExtractedFile, setLastExtractedFile] = useState<File | string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load editing document data when dialog opens
@@ -61,9 +64,15 @@ export function DocumentUploadDialog({
       // Pre-fill form with existing document data
       const existingFields: Record<string, any> = {};
 
-      // Extract all uploaded data fields
+      // Extract all uploaded data fields and map snake_case to camelCase where needed
       if (editingDocument.uploadedData) {
         Object.assign(existingFields, editingDocument.uploadedData);
+
+        // Explicit mapping for GPKD specialized fields
+        if (editingDocument.uploadedData.business_name) existingFields.businessName = editingDocument.uploadedData.business_name;
+        if (editingDocument.uploadedData.owner_name) existingFields.ownerName = editingDocument.uploadedData.owner_name;
+        if (editingDocument.uploadedData.business_field) existingFields.businessScope = editingDocument.uploadedData.business_field;
+        if (editingDocument.uploadedData.permanent_address) existingFields.address = editingDocument.uploadedData.permanent_address;
       }
 
       // Map top-level fields to form field keys
@@ -113,6 +122,7 @@ export function DocumentUploadDialog({
       const allPossibleFields = [
         'fullName', 'issuePlace', 'address',
         'businessScope', 'scope',
+        'businessName', 'ownerName',
         'lessor', 'lessee', 'monthlyRent',
         'inspectionResult'
       ];
@@ -139,9 +149,20 @@ export function DocumentUploadDialog({
     }
   }, [open, editingDocument, documentType]);
 
-  // Real OCR Integration (Mocked in ocrApi.ts)
-  const handleExtractData = async (fileToExtract: File) => {
+  // Real OCR Integration
+  const handleExtractData = async (fileToExtract: File | null) => {
+    if (!fileToExtract) {
+      toast.error('Vui lòng upload ảnh giấy phép kinh doanh trước khi trích xuất');
+      return;
+    }
+
     if (!documentType?.id) return;
+
+    // Avoid redundant calls if the file hasn't changed
+    if ((fileToExtract === lastExtractedFile) && extractionComplete) {
+      toast.info('Thông tin đã được trích xuất cho ảnh này');
+      return;
+    }
 
     setIsExtracting(true);
     setExtractionComplete(false);
@@ -150,15 +171,17 @@ export function DocumentUploadDialog({
       const result = await extractDocumentData(fileToExtract, documentType.id);
 
       if (result.success && result.data) {
+        // Map data: Merge and overwrite existing fields to align with CCCD logic
         setFormData((prev) => ({ ...prev, ...result.data }));
         setExtractionComplete(true);
+        setLastExtractedFile(fileToExtract);
         toast.success(result.message || 'Đã trích xuất thông tin thành công');
       } else {
-        // Don't show error toast for silent auto-extraction failures, only log
-        console.warn('OCR Extraction failed:', result.message);
+        toast.error(result.message || 'Không thể trích xuất thông tin từ giấy phép. Vui lòng kiểm tra ảnh rõ nét và thử lại.');
       }
     } catch (err) {
       console.error('Error invoking OCR API:', err);
+      toast.error('Không thể kết nối đến dịch vụ trích xuất. Vui lòng thử lại sau.');
     } finally {
       setIsExtracting(false);
     }
@@ -193,9 +216,6 @@ export function DocumentUploadDialog({
     } else {
       setFilePreview(null);
     }
-
-    // Auto-extract data
-    handleExtractData(selectedFile);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -308,12 +328,21 @@ export function DocumentUploadDialog({
                       className={styles.extractButton}
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (file) handleExtractData(file);
+                        handleExtractData(file);
                       }}
-                      disabled={isExtracting}
+                      disabled={isExtracting || (!file && !filePreview)}
                     >
-                      {isExtracting ? <Loader2 size={14} className="animate-spin mr-1" /> : <Sparkles size={14} className="mr-1" />}
-                      Trích xuất AI
+                      {isExtracting ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin mr-1" />
+                          <span>Đang trích xuất...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles size={14} className="mr-1" />
+                          <span>Trích xuất AI</span>
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -342,7 +371,7 @@ export function DocumentUploadDialog({
           {isExtracting && (
             <div className={styles.extractionStatus}>
               <Loader2 size={16} className={styles.spinner} />
-              <span>Đang trích xuất thông tin...</span>
+              <span>Đang trích xuất thông tin giấy phép kinh doanh...</span>
             </div>
           )}
 

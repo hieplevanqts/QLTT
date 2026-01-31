@@ -1,7 +1,9 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, Upload, FileText, AlertCircle, CheckCircle2, Loader2, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getDocumentTypeById } from '@/utils/data/documentTypes';
+import { callOcrCccdApi } from '@/utils/api/ocrApi';
+import { toast } from 'sonner';
 import styles from './IDCardUploadDialog.module.css';
 
 export interface IDCardData {
@@ -123,21 +125,28 @@ export function IDCardUploadDialog({
     }
   }, [open, editingDocument]);
 
-  // Mock OCR extraction from both sides
-  const mockExtractData = useCallback((_frontFile: File, _backFile?: File): Promise<Record<string, any>> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          idNumber: '001234567890',
-          fullName: 'Nguyễn Văn A',
-          dateOfBirth: '1990-05-15',
-          issueDate: '2023-01-10',
-          issuePlace: 'Cục Cảnh sát ĐKQL cư trú và DLQG về dân cư',
-          address: '123 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM',
-        });
-      }, 1500);
-    });
-  }, []);
+  // OCR extraction from both sides
+  const handleExtractData = async (front: File, back: File) => {
+    setIsExtracting(true);
+    setExtractionComplete(false);
+
+    try {
+      const result = await callOcrCccdApi(front, back);
+
+      if (result.success && result.data) {
+        setFormData((prev) => ({ ...prev, ...result.data }));
+        setExtractionComplete(true);
+        toast.success(result.message || 'Đã trích xuất thông tin thành công');
+      } else {
+        toast.error(result.message || 'Không thể trích xuất dữ liệu');
+      }
+    } catch (err) {
+      console.error('OCR Extraction failed:', err);
+      toast.error('Lỗi khi gọi dịch vụ nhận diện');
+    } finally {
+      setIsExtracting(false);
+    }
+  };
 
   // Handle file validation
   const validateFile = (file: File): string | null => {
@@ -178,17 +187,12 @@ export function IDCardUploadDialog({
     }
 
     // Auto-extract if both files are present
-    if (backFile || backFilePreview) {
-      setIsExtracting(true);
-      try {
-        const extractedData = await mockExtractData(file, backFile || undefined);
-        setFormData((prev) => ({ ...prev, ...extractedData }));
-        setExtractionComplete(true);
-        setTimeout(() => setExtractionComplete(false), 3000);
-      } catch (err) {
-        console.error('Extraction failed:', err);
-      } finally {
-        setIsExtracting(false);
+    if (backFile || backFilePreview !== DEFAULT_CCCD_IMAGE) {
+      // If we have an existing back file but not a new File object, we can't do OCR 
+      // unless we fetch the existing one as a File, which is complex.
+      // So only auto-extract if both are new Files.
+      if (file && backFile) {
+        handleExtractData(file, backFile);
       }
     }
   };
@@ -216,17 +220,9 @@ export function IDCardUploadDialog({
     }
 
     // Auto-extract if both files are present
-    if (frontFile || frontFilePreview) {
-      setIsExtracting(true);
-      try {
-        const extractedData = await mockExtractData(frontFile || new File([], 'temp'), file);
-        setFormData((prev) => ({ ...prev, ...extractedData }));
-        setExtractionComplete(true);
-        setTimeout(() => setExtractionComplete(false), 3000);
-      } catch (err) {
-        console.error('Extraction failed:', err);
-      } finally {
-        setIsExtracting(false);
+    if (frontFile || frontFilePreview !== DEFAULT_CCCD_IMAGE) {
+      if (frontFile && file) {
+        handleExtractData(frontFile, file);
       }
     }
   };
