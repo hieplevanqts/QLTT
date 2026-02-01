@@ -32,7 +32,7 @@ export async function fetchMerchants(
 try {
     const baseUrl = `${SUPABASE_REST_URL}/merchant_filter_view`;
     const params = new URLSearchParams();
-    params.append('select', '_id,business_name,address,business_type,latitude,longitude,status');
+    params.append('select', '_id,business_name,address,business_type,latitude,longitude,status,category_ids');
     params.append('limit', '1000');
     params.append('order', '_id.desc');
     const pathFilter = targetDepartmentPath ? `${targetDepartmentPath}*` : 'QT*';
