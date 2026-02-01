@@ -16,20 +16,35 @@ import {
   ClipboardCheck,
   BarChart3,
   Eye,
-  RefreshCw,
   Trash2,
   Upload,
+  XCircle,
+  RefreshCw,
+  Play,
+  RotateCcw,
+  Paperclip,
+  Table,
 } from 'lucide-react';
 
 import styles from './InspectionRoundDetail.module.css';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { getStatusProps } from '@/utils/status-badge-helper';
-import { CreateSessionDialog } from '@/components/inspections/CreateSessionDialog';
+import CreateTaskModal, { type CreateTaskFormData } from '@/components/tasks/CreateTaskModal';
 import { InsFormDetailDialog } from '@/components/inspections/InsFormDetailDialog';
 import TaskDetailModal from '@/components/tasks/TaskDetailModal';
 import { type InspectionTask } from '@/utils/data/inspection-tasks-mock-data';
+import { CancelTaskModal, DeployTaskModal, CompleteTaskModal } from '@/components/tasks/TaskActionModals';
+import ReopenTaskModal from '@/components/tasks/ReopenTaskModal';
+import AttachEvidenceModal from '@/components/tasks/AttachEvidenceModal';
+import InspectionResultModal from '@/components/sessions/InspectionResultModal';
+import { Form06Modal } from '@/components/tasks/Form06Modal';
+import { Form10Modal } from '@/components/tasks/Form10Modal';
+import { Form11Modal } from '@/components/tasks/Form11Modal';
+import DataTable, { type Column } from '@/components/ui-kit/DataTable';
+import ActionColumn, { type Action } from '@/components/patterns/ActionColumn';
+import EmptyState from '@/components/ui-kit/EmptyState';
 
-import { fetchInspectionSessionsApi, createInspectionSessionApi } from '@/utils/api/inspectionSessionsApi';
+import { fetchInspectionSessionsApi, createInspectionSessionApi, updateInspectionSessionApi } from '@/utils/api/inspectionSessionsApi';
 import { useSupabaseInspectionRound } from '@/hooks/useSupabaseInspectionRound';
 import { toast } from 'sonner';
 import { useEffect } from 'react';
@@ -235,6 +250,26 @@ export default function InspectionRoundDetail() {
   const [selectedInsForm, setSelectedInsForm] = useState<{ code: string; type: string; name: string } | null>(null);
   const [selectedTask, setSelectedTask] = useState<InspectionTask | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<any | null>(null);
+  const [taskModalState, setTaskModalState] = useState<{
+    type: 'cancel' | 'deploy' | 'complete' | null;
+    task: any | null;
+  }>({ type: null, task: null });
+
+  // Additional modal states for full parity with TaskBoard
+  const [isReopenModalOpen, setIsReopenModalOpen] = useState(false);
+  const [isAttachEvidenceModalOpen, setIsAttachEvidenceModalOpen] = useState(false);
+  const [isEnterResultsModalOpen, setIsEnterResultsModalOpen] = useState(false);
+  const [isForm06ModalOpen, setIsForm06ModalOpen] = useState(false);
+  const [isForm10ModalOpen, setIsForm10ModalOpen] = useState(false);
+  const [isForm11ModalOpen, setIsForm11ModalOpen] = useState(false);
+  
+  // We need a separate state for the task being acted upon by these new modals
+  // reusing selectedTask might conflict with View Detail, so let's check.
+  // View Detail uses setSelectedTask + setIsDetailModalOpen.
+  // We can reuse selectedTask for these action modals if we are careful, 
+  // or use a separate 'actionTask' state like TaskBoard to be safe.
+  const [actionTask, setActionTask] = useState<any | null>(null);
 
 
   useEffect(() => {
@@ -243,17 +278,30 @@ export default function InspectionRoundDetail() {
       try {
         const data = await fetchInspectionSessionsApi(roundId);
         // Map API sessions to match the UI format if needed
-        const mapped = data.map(s => ({
-          id: s.id,
-          storeCode: s.id.substring(0, 6).toUpperCase(),
-          storeName: s.merchantName,
-          address: s.merchantAddress,
-          inspector: s.userName,
-          date: s.startTime ? s.startTime.split('T')[0] : s.deadlineTime.split('T')[0],
-          time: s.startTime ? s.startTime.split('T')[1]?.substring(0, 5) : '09:00',
-          status: s.status === 'not_started' ? 'scheduled' : s.status,
-          violationCount: 0, // Need to fetch from somewhere else if available
-        }));
+        // Map API sessions to match the UI format if needed
+        const mapped = data.map(s => {
+          return {
+            id: s.id,
+            code: s.id,
+            title: s.name,
+            roundId: roundId,
+            planName: 'Kế hoạch năm 2025', // Should be fetched or passed
+            targetName: s.merchantName,
+            targetAddress: s.merchantAddress,
+            assignee: { name: s.userName || 'Chưa phân công' },
+            dueDate: s.startTime || s.deadlineTime,
+            status: s.status, // Use direct status from API mapping
+            type: s.type || 'proactive',
+            priority: 'medium',
+            roundName: 'Đợt kiểm tra hiện tại',
+            description: s.description || s.note, // Prioritize description
+            merchantId: s.merchantId,
+            merchantName: s.merchantName, // Ensure merchantName is passed if needed as targetName fallback
+            assigneeId: s.userId, // Map userId to assigneeId if used, though modal uses userId or assignee.id
+            userId: s.userId,
+            startDate: s.startTime,
+          };
+        });
         setSessions(mapped);
       } catch (err) {
         console.error('Error fetching sessions:', err);
@@ -264,50 +312,93 @@ export default function InspectionRoundDetail() {
     loadSessions();
   }, [roundId]);
 
-  const handleCreateSession = async (sessionData: {
-    storeId: string;
-    storeName: string;
-    storeAddress: string;
-    inspectorId: string | null;
-    inspectorName: string | null;
-    startDate: string;
-    endDate: string;
-    notes: string;
-  }) => {
+  const handleCreateTask = async (formData: CreateTaskFormData, taskId?: string) => {
     try {
-      const newSession = await createInspectionSessionApi({
-        campaign_id: roundId,
-        merchant_id: sessionData.storeId,
-        user_id: sessionData.inspectorId || null,
-        start_time: sessionData.startDate,
-        deadline_time: sessionData.endDate,
-        note: sessionData.notes,
-        name: `Kiểm tra ${sessionData.storeName}`,
-        type: 'passive',
-        status: 1, // not_started
-      });
+      // API expects numeric status. Map string to number.
+      // 1: not_started, 2: in_progress, 3: completed, 4: closed, 5: reopened, 6: cancelled
+      const statusMap: Record<string, number> = {
+        'not_started': 1,
+        'in_progress': 2,
+        'completed': 3,
+        'closed': 4,
+        'reopened': 5,
+        'cancelled': 6
+      };
 
-      if (newSession) {
-        toast.success('Đã tạo phiên làm việc thành công');
-        // Refresh session list
-        const updatedSessions = await fetchInspectionSessionsApi(roundId!);
-        const mapped = updatedSessions.map(s => ({
-          id: s.id,
-          storeCode: s.id.substring(0, 6).toUpperCase(),
-          storeName: s.merchantName,
-          address: s.merchantAddress,
-          inspector: s.userName,
-          date: s.startTime ? s.startTime.split('T')[0] : s.deadlineTime.split('T')[0],
-          time: s.startTime ? s.startTime.split('T')[1]?.substring(0, 5) : '09:00',
-          status: s.status === 'not_started' ? 'scheduled' : s.status,
-          violationCount: 0,
-        }));
-        setSessions(mapped);
-        setShowCreateDialog(false);
+      if (taskId) {
+        // UPDATE MODE
+        await updateInspectionSessionApi(taskId, {
+          campaign_id: formData.roundId,
+          merchant_id: formData.merchantId,
+          user_id: formData.assigneeId || null,
+          start_time: formData.startDate,
+          deadline_time: formData.dueDate,
+          description: formData.description,
+          note: '', // Clear note or keep separate if needed, but user wants description
+          name: formData.title,
+          status: statusMap[formData.status] || 1, 
+          priority: formData.priority === 'urgent' ? 4 : 
+                    formData.priority === 'high' ? 3 : 
+                    formData.priority === 'low' ? 1 : 2,
+        });
+        toast.success(`Đã cập nhật phiên làm việc "${formData.title}"`);
+      } else {
+        // CREATE MODE
+        await createInspectionSessionApi({
+          campaign_id: formData.roundId,
+          merchant_id: formData.merchantId,
+          user_id: formData.assigneeId || null,
+          start_time: formData.startDate,
+          deadline_time: formData.dueDate,
+          description: formData.description, // Save to description
+          note: '',
+          name: formData.title,
+          type: 'proactive',
+          status: statusMap[formData.status] || 1, 
+          priority: formData.priority === 'urgent' ? 4 : 
+                    formData.priority === 'high' ? 3 : 
+                    formData.priority === 'low' ? 1 : 2,
+        });
+        toast.success(`Đã tạo phiên làm việc "${formData.title}" thành công`);
       }
+
+      // Refresh session list
+      const updatedSessions = await fetchInspectionSessionsApi(roundId!);
+      const mapped = updatedSessions.map(s => {
+        // Map to InspectionTask-like structure for DataTable
+        return {
+          id: s.id,
+          code: s.id,
+          title: s.name,
+          roundId: roundId,
+          planName: 'Kế hoạch năm 2025', // Should be fetched or passed
+          targetName: s.merchantName,
+          targetAddress: s.merchantAddress,
+          assignee: { name: s.userName || 'Chưa phân công' },
+          dueDate: s.startTime || s.deadlineTime,
+          status: s.status, // Use direct status from API mapping
+          type: s.type || 'proactive',
+          priority: 'medium', // Default if missing
+          roundName: 'Đợt kiểm tra hiện tại',
+
+          // Preserve other fields needed for edit
+          description: s.description || s.note,
+          merchantId: s.merchantId,
+          userId: s.userId,
+          startDate: s.startTime,
+        };
+      });
+      setSessions(mapped);
+      setShowCreateDialog(false);
+      setEditingTask(null);
+      
+      // Also refresh if action modals update status
+      setTaskModalState({ type: null, task: null });
+      setActionTask(null);
+      
     } catch (err) {
-      console.error('Error creating session:', err);
-      toast.error('Không thể tạo phiên làm việc');
+      console.error('Error saving session:', err);
+      toast.error('Có lỗi xảy ra khi lưu thông tin');
     }
   };
 
@@ -362,22 +453,409 @@ export default function InspectionRoundDetail() {
   };
 
   const handleViewDetail = (session: any) => {
-    // Adapter to convert local session data to InspectionTask format for modal
     const task: any = {
-      id: session.id,
-      code: session.id,
-      title: `Kiểm tra ${session.storeName}`,
-      roundName: data?.name || 'Đợt kiểm tra',
-      status: session.status === 'scheduled' ? 'not_started' : session.status,
-      targetName: session.storeName,
-      targetAddress: session.address,
-      dueDate: session.date,
-      assignee: { name: session.inspector },
-      description: `Phiên làm việc tại ${session.storeName} (${session.storeCode})`,
+      ...session, // session already mapped
     };
     setSelectedTask(task);
     setIsDetailModalOpen(true);
   };
+
+  const loadSessions = async () => {
+      if (!roundId) return;
+      try {
+        const data = await fetchInspectionSessionsApi(roundId);
+        const mapped = data.map(s => {
+          return {
+            id: s.id,
+            code: s.id,
+            title: s.name,
+            roundId: roundId,
+            planName: 'Kế hoạch năm 2025', 
+            targetName: s.merchantName,
+            targetAddress: s.merchantAddress,
+            assignee: { name: s.userName || 'Chưa phân công' },
+            dueDate: s.startTime || s.deadlineTime,
+            status: s.status, 
+            type: s.type || 'proactive',
+            priority: 'medium',
+            roundName: 'Đợt kiểm tra hiện tại',
+            description: s.description || s.note, 
+            merchantId: s.merchantId,
+            merchantName: s.merchantName,
+            assigneeId: s.userId, 
+            userId: s.userId,
+            startDate: s.startTime,
+            createdAt: s.createdAt, // Needed for date checks if any
+          };
+        });
+        setSessions(mapped);
+      } catch (err) {
+        console.error('Error fetching sessions:', err);
+      }
+  };
+
+  // Reusable Refresh Handler
+  const handleRefreshList = () => {
+      loadSessions();
+  };
+
+  // Handlers for new actions
+  const handleStartTask = (task: any) => {
+    setTaskModalState({ type: 'deploy', task });
+  };
+  
+  const handleCompleteTask = (task: any) => {
+    setTaskModalState({ type: 'complete', task });
+  };
+
+  const handleCancelTask = (task: any) => {
+      setTaskModalState({ type: 'cancel', task });
+  };
+
+  const handleReopen = (task: any) => {
+    setActionTask(task);
+    setIsReopenModalOpen(true);
+  };
+
+  const handleAttachEvidence = (task: any) => {
+    setActionTask(task);
+    setIsAttachEvidenceModalOpen(true);
+  };
+
+  const handleEnterResults = (task: any) => {
+    setActionTask(task);
+    setIsEnterResultsModalOpen(true);
+  };
+
+  const handleCloseTask = async (task: any) => {
+    try {
+        await updateInspectionSessionApi(task.id, { status: 4 }); // 4 = closed
+        toast.success(`Đã đóng phiên làm việc "${task.title}"`);
+        handleRefreshList();
+    } catch (error) {
+        toast.error('Không thể đóng phiên làm việc');
+    }
+  };
+
+  // Define columns matching TaskBoard exactly
+  const columns: Column<any>[] = [
+    {
+      key: 'title',
+      label: 'Tên nhiệm vụ',
+      sortable: true,
+      render: (task) => (
+        <div>
+          <div style={{ fontWeight: 500 }}>{task?.title || 'N/A'}</div>
+          <div style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>{task?.targetName || ''}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'roundId',
+      label: 'Đợt kiểm tra',
+      sortable: true,
+      render: (task) => (
+        <div>
+          <div style={{ fontWeight: 500 }}>{task?.roundId || 'N/A'}</div>
+          {task?.planName && (
+            <div style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>{task.planName}</div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'targetName',
+      label: 'Tên cửa hàng',
+      sortable: true,
+      render: (task) => task?.targetName || 'N/A',
+    },
+    {
+      key: 'status',
+      label: 'Trạng thái',
+      sortable: true,
+      render: (task) => task?.status ? <StatusBadge {...getStatusProps('task', task.status)} size="sm" /> : <span>-</span>,
+    },
+    {
+      key: 'type',
+      label: 'Loại',
+      sortable: true,
+      render: (task) => task?.type ? <StatusBadge {...getStatusProps('sessionType', task.type)} size="sm" /> : <span>--</span>,
+    },
+    {
+      key: 'priority',
+      label: 'Ưu tiên',
+      sortable: true,
+      render: (task) => task?.priority ? <StatusBadge {...getStatusProps('priority', task.priority)} size="sm" /> : <span>-</span>,
+    },
+    {
+      key: 'assignee',
+      label: 'Người thực hiện',
+      sortable: true,
+      render: (task) => task?.assignee?.name || 'N/A',
+    },
+    {
+      key: 'dueDate',
+      label: 'Hạn hoàn thành',
+      sortable: true,
+      render: (task) => {
+        if (!task?.dueDate) return <span>-</span>;
+        const dueDate = new Date(task.dueDate);
+        const today = new Date();
+        const isOverdue = dueDate < today && task.status !== 'completed';
+        
+        return (
+          <span style={isOverdue ? { color: 'var(--destructive)' } : {}}>
+            {dueDate.toLocaleDateString('vi-VN')}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'actions',
+      label: 'Thao tác',
+      sortable: false,
+      sticky: 'right',
+      width: '170px',
+      render: (task) => {
+        const actions: any[] = [];
+
+        // Helper to add Cancel Action
+        const addCancelAction = () => {
+          actions.push({
+            label: 'Hủy',
+            icon: <XCircle size={16} />,
+            priority: 1,
+            variant: 'destructive',
+            onClick: () => handleCancelTask(task),
+          });
+        };
+
+        switch (task.status) {
+          case 'not_started':
+            // Chưa bắt đầu: Xem chi tiết, Chỉnh sửa, Bắt đầu, Hủy
+            actions.push(
+              {
+                label: 'Xem chi tiết',
+                icon: <Eye size={16} />,
+                onClick: () => handleViewDetail(task),
+                priority: 10,
+              },
+              {
+                label: 'Chỉnh sửa',
+                icon: <Edit size={16} />,
+                onClick: () => {
+                  setEditingTask(task);
+                  setShowCreateDialog(true);
+                },
+                priority: 9,
+              },
+              {
+                label: 'Bắt đầu',
+                icon: <Play size={16} />,
+                onClick: () => handleStartTask(task),
+                priority: 8,
+              }
+            );
+            addCancelAction();
+            break;
+
+          case 'in_progress':
+            // Đang thực hiện: Xem chi tiết, Chỉnh sửa, Nhập kết quả, Đính kèm chứng cứ, Hủy
+            actions.push(
+              {
+                label: 'Xem chi tiết',
+                icon: <Eye size={16} />,
+                onClick: () => handleViewDetail(task),
+                priority: 11,
+              },
+              {
+                label: 'Chỉnh sửa',
+                icon: <Edit size={16} />,
+                onClick: () => {
+                    setEditingTask(task);
+                    setShowCreateDialog(true);
+                },
+                priority: 9,
+              },
+              {
+                label: 'Nhập kết quả',
+                icon: <FileText size={16} />,
+                onClick: () => handleEnterResults(task),
+                priority: 8,
+              },
+              {
+                label: 'Đính kèm chứng cứ',
+                icon: <Paperclip size={16} />,
+                onClick: () => handleAttachEvidence(task),
+                priority: 7,
+              },
+              {
+                label: 'Hoàn thành',
+                icon: <CheckCircle size={16} />,
+                onClick: () => handleCompleteTask(task),
+                priority: 10,
+              }
+            );
+            addCancelAction();
+            break;
+
+          case 'completed':
+            // Hoàn thành: Xem chi tiết, Biên bản kiểm tra, Bảng kê, Phụ lục, Chỉnh sửa, Mở lại, Đóng
+            actions.push(
+              {
+                label: 'Xem chi tiết',
+                icon: <Eye size={16} />,
+                onClick: () => handleViewDetail(task),
+                priority: 10,
+              },
+              {
+                label: 'Biên bản kiểm tra',
+                icon: <FileText size={16} />,
+                onClick: () => {
+                  setActionTask(task);
+                  setIsForm06ModalOpen(true);
+                },
+                priority: 9,
+              },
+              {
+                label: 'Bảng kê',
+                icon: <Table size={16} />,
+                onClick: () => {
+                  setActionTask(task);
+                  setIsForm10ModalOpen(true);
+                },
+                priority: 8,
+              },
+              {
+                label: 'Phụ lục',
+                icon: <FileText size={16} />,
+                onClick: () => {
+                  setActionTask(task);
+                  setIsForm11ModalOpen(true);
+                },
+                priority: 7,
+              },
+              {
+                label: 'Chỉnh sửa',
+                icon: <Edit size={16} />,
+                onClick: () => {
+                    setEditingTask(task);
+                    setShowCreateDialog(true);
+                },
+                priority: 6,
+              },
+              {
+                label: 'Mở lại',
+                icon: <RotateCcw size={16} />,
+                onClick: () => handleReopen(task),
+                priority: 5,
+              },
+              {
+                label: 'Đóng',
+                icon: <XCircle size={16} />,
+                onClick: () => handleCloseTask(task),
+                priority: 4,
+              }
+            );
+            break;
+
+          case 'closed':
+          case 'cancelled':
+            // Đã đóng/Hủy: Xem chi tiết, Mở lại
+            actions.push(
+              {
+                label: 'Xem chi tiết',
+                icon: <Eye size={16} />,
+                onClick: () => handleViewDetail(task),
+                priority: 10,
+              },
+              {
+                label: 'Mở lại',
+                icon: <RotateCcw size={16} />,
+                onClick: () => handleReopen(task),
+                priority: 9,
+              }
+            );
+             if (task.status === 'closed') {
+                 actions.push(
+                   {
+                     label: 'Biên bản kiểm tra',
+                     icon: <FileText size={16} />,
+                     onClick: () => {
+                       setActionTask(task);
+                       setIsForm06ModalOpen(true);
+                     },
+                     priority: 8,
+                   },
+                   {
+                     label: 'Bảng kê',
+                     icon: <Table size={16} />,
+                     onClick: () => {
+                       setActionTask(task);
+                       setIsForm10ModalOpen(true);
+                     },
+                     priority: 7,
+                   },
+                   {
+                     label: 'Phụ lục',
+                     icon: <FileText size={16} />,
+                     onClick: () => {
+                       setActionTask(task);
+                       setIsForm11ModalOpen(true);
+                     },
+                     priority: 6,
+                   }
+                );
+             }
+            break;
+
+            case 'reopened':
+                 // Reopened: usually similiar to In Progress + Cancel
+                 actions.push(
+                     {
+                        label: 'Xem chi tiết',
+                        icon: <Eye size={16} />,
+                        onClick: () => handleViewDetail(task),
+                        priority: 10,
+                     },
+                     {
+                        label: 'Chỉnh sửa',
+                        icon: <Edit size={16} />,
+                         onClick: () => {
+                            setEditingTask(task);
+                            setShowCreateDialog(true);
+                        },
+                        priority: 9,
+                     },
+                     {
+                        label: 'Bắt đầu',
+                        icon: <Play size={16} />,
+                        onClick: () => handleStartTask(task),
+                        priority: 8,
+                     }
+                 );
+                 addCancelAction();
+                 break;
+
+          default:
+            // Fallback
+             actions.push({
+                label: 'Xem chi tiết',
+                icon: <Eye size={16} />,
+                onClick: () => handleViewDetail(task),
+                priority: 10,
+             });
+        }
+
+        return (
+          <ActionColumn
+            style={{ justifyContent: 'flex-start' }}
+            actions={actions}
+          />
+        );
+      },
+    },
+  ];
 
   return (
     <div className={styles.container}>
@@ -607,7 +1085,10 @@ export default function InspectionRoundDetail() {
             <div className={styles.infoContent}>
               <h2 className={styles.sectionTitle}>Thao tác nhanh</h2>
               <div className={styles.actionButtons}>
-                <button className={styles.actionButton} onClick={() => setShowCreateDialog(true)}>
+                <button className={styles.actionButton} onClick={() => {
+                  setEditingTask(null);
+                  setShowCreateDialog(true);
+                }}>
                   <Plus size={20} />
                   <div>
                     <div className={styles.actionButtonTitle}>Tạo phiên kiểm tra</div>
@@ -657,94 +1138,25 @@ export default function InspectionRoundDetail() {
             </div>
 
             {/* Sessions Table */}
-            <div className={styles.sessionsTable}>
-              <table>
-                <thead>
-                  <tr>
-                    <th style={{ width: '60px' }}>STT</th>
-                    <th style={{ width: '100px' }}>Mã phiên</th>
-                    <th>Cửa hàng</th>
-                    <th>Địa chỉ</th>
-                    <th style={{ width: '140px' }}>Thanh tra viên</th>
-                    <th style={{ width: '160px' }}>Ngày giờ</th>
-                    <th style={{ width: '120px' }}>Trạng thái</th>
-                    <th style={{ width: '100px' }}>Vi phạm</th>
-                    <th style={{ width: '100px' }}>Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sessions.map((session, index) => (
-
-                    <tr key={session.id}>
-                      <td className={styles.textCenter}>{index + 1}</td>
-                      <td>
-                        <span className={styles.sessionCode}>{session.id}</span>
-                      </td>
-                      <td>
-                        <div className={styles.storeInfo}>
-                          <div className={styles.storeName}>{session.storeName}</div>
-                          <div className={styles.storeCode}>{session.storeCode}</div>
-                        </div>
-                      </td>
-                      <td className={styles.addressCell}>{session.address}</td>
-                      <td>{session.inspector}</td>
-                      <td>
-                        <div className={styles.dateTimeCell}>
-                          <div className={styles.dateText}>
-                            {new Date(session.date).toLocaleDateString('vi-VN')}
-                          </div>
-                          <div className={styles.timeText}>{session.time}</div>
-                        </div>
-                      </td>
-                      <td>
-                        <StatusBadge {...getStatusProps('round', session.status as any)} size="sm" />
-                      </td>
-                      <td className={styles.textCenter}>
-                        {session.violationCount > 0 ? (
-                          <span className={styles.violationBadge}>
-                            {session.violationCount}
-                          </span>
-                        ) : (
-                          <span className={styles.noViolation}>0</span>
-                        )}
-                      </td>
-                      <td>
-                        <div className={styles.actionCell}>
-                          <button 
-                            className={styles.iconButton} 
-                            title="Xem chi tiết"
-                            onClick={() => handleViewDetail(session)}
-                          >
-                            <Eye size={16} />
-                          </button>
-                          <button className={styles.iconButton} title="Sửa">
-                            <Edit size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            {/* Sessions Table using DataTable */}
+            <div className={styles.sessionsTable} style={{ overflow: 'visible' }}>
+              {sessions.length > 0 ? (
+                <DataTable
+                  columns={columns}
+                  data={sessions}
+                  getRowId={(s) => s.id}
+                />
+              ) : (
+                <EmptyState
+                  icon={<ClipboardCheck size={48} />}
+                  title="Chưa có phiên kiểm tra"
+                  description="Tạo phiên kiểm tra mới cho đợt này"
+                />
+              )}
             </div>
 
             {/* Table Footer with Pagination */}
-            <div className={styles.tableFooter}>
-              <div className={styles.footerInfo}>
-                Hiển thị <strong>1-{sessions.length}</strong> trong tổng số <strong>{sessions.length}</strong> phiên
-              </div>
-              <div className={styles.pagination}>
-                <button className={styles.paginationButton} disabled>
-                  Trước
-                </button>
-                <button className={`${styles.paginationButton} ${styles.paginationActive}`}>
-                  1
-                </button>
-                <button className={styles.paginationButton} disabled>
-                  Sau
-                </button>
-              </div>
-            </div>
+
           </div>
         )}
 
@@ -859,15 +1271,18 @@ export default function InspectionRoundDetail() {
         )}
       </div>
 
-      {/* Create Session Dialog */}
-      <CreateSessionDialog
-        open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
-        roundName={data.name}
-        leadUnitId={data.leadUnitId}
-        provinceId={data.provinceId}
-        wardId={data.wardId}
-        onCreateSession={handleCreateSession}
+      {/* Create Task Modal */}
+      <CreateTaskModal
+        isOpen={showCreateDialog}
+        onClose={() => {
+          setShowCreateDialog(false);
+          setEditingTask(null);
+        }}
+        onSubmit={handleCreateTask}
+        defaultRoundId={roundId}
+        defaultPlanId={data?.planId}
+        task={editingTask}
+        taskId={editingTask?.id}
       />
 
       {/* InsForm Detail Dialog */}
@@ -891,12 +1306,141 @@ export default function InspectionRoundDetail() {
           content: {},
         } : null}
       />
-      {isDetailModalOpen && (
-        <TaskDetailModal
-          task={selectedTask}
-          isOpen={isDetailModalOpen}
-          onClose={() => setIsDetailModalOpen(false)}
-        />
+      
+      <TaskDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        task={selectedTask}
+        onEdit={(task) => {
+          setIsDetailModalOpen(false);
+          setEditingTask(task);
+          setShowCreateDialog(true);
+        }}
+      />
+
+      {/* Action Modals - Full Set */}
+      {taskModalState.task && (
+        <>
+          <DeployTaskModal
+            isOpen={taskModalState.type === 'deploy'}
+            onClose={() => setTaskModalState({ type: null, task: null })}
+            task={taskModalState.task}
+            onConfirm={(date) => {
+               // Update status to in_progress (2)
+               updateInspectionSessionApi(taskModalState.task.id, { status: 2, start_time: date })
+                 .then(() => {
+                   toast.success('Đã bắt đầu phiên kiểm tra');
+                   handleRefreshList();
+                 })
+                 .catch(() => toast.error('Lỗi khi bắt đầu phiên'));
+               setTaskModalState({ type: null, task: null });
+            }}
+          />
+          <CancelTaskModal
+            isOpen={taskModalState.type === 'cancel'}
+            onClose={() => setTaskModalState({ type: null, task: null })}
+            task={taskModalState.task}
+             onConfirm={() => {
+               // Update status to cancelled (6)
+               updateInspectionSessionApi(taskModalState.task.id, { status: 6, note: 'Đã hủy bởi người dùng' })
+                 .then(() => {
+                   toast.success('Đã hủy phiên kiểm tra');
+                   handleRefreshList();
+                 })
+                 .catch(() => toast.error('Lỗi khi hủy phiên'));
+               setTaskModalState({ type: null, task: null });
+            }}
+          />
+          <CompleteTaskModal
+            isOpen={taskModalState.type === 'complete'}
+            onClose={() => setTaskModalState({ type: null, task: null })}
+            task={taskModalState.task}
+            onConfirm={() => {
+                // Update status to completed (3)
+               updateInspectionSessionApi(taskModalState.task.id, { status: 3 })
+                 .then(() => {
+                   toast.success('Đã hoàn thành phiên kiểm tra');
+                   handleRefreshList();
+                 })
+                 .catch(() => toast.error('Lỗi khi hoàn thành phiên'));
+               setTaskModalState({ type: null, task: null });
+            }}
+          />
+        </>
+      )}
+
+      {/* Other Action Modals */}
+      {actionTask && (
+        <>
+          <ReopenTaskModal
+            isOpen={isReopenModalOpen}
+            onClose={() => setIsReopenModalOpen(false)}
+            taskTitle={actionTask.title}
+            taskId={actionTask.id}
+            onReopen={(reason) => {
+               // Call API to reopen (5)
+               updateInspectionSessionApi(actionTask.id, { status: 5, note: reason })
+                 .then(() => {
+                   toast.success(`Đã mở lại phiên làm việc "${actionTask.title}"`);
+                   handleRefreshList();
+                 })
+                 .catch(() => toast.error('Không thể mở lại phiên làm việc'));
+                setIsReopenModalOpen(false);
+                setActionTask(null);
+            }}
+          />
+          <AttachEvidenceModal
+            isOpen={isAttachEvidenceModalOpen}
+            onClose={() => setIsAttachEvidenceModalOpen(false)}
+            taskTitle={actionTask.title}
+            taskId={actionTask.id}
+            onSubmit={(files) => {
+                 // Mock submission
+                 toast.success(`Đã đính kèm ${files.length} tập tin`);
+                 handleRefreshList();
+                 setIsAttachEvidenceModalOpen(false);
+            }}
+          />
+          <InspectionResultModal
+            isOpen={isEnterResultsModalOpen}
+            onClose={() => setIsEnterResultsModalOpen(false)}
+            session={{
+                id: actionTask.id,
+                code: actionTask.code || actionTask.id,
+                title: actionTask.title,
+                date: actionTask.startDate || new Date().toISOString()
+            }}
+            onSave={(data) => {
+                toast.success('Đã lưu kết quả (Mock)');
+                setIsEnterResultsModalOpen(false);
+            }}
+            onComplete={(data) => {
+                 // Update status to completed (3)
+                 updateInspectionSessionApi(actionTask.id, { status: 3 })
+                   .then(() => {
+                     toast.success('Đã hoàn thành phiên kiểm tra');
+                     handleRefreshList();
+                   })
+                   .catch(() => toast.error('Lỗi khi hoàn thành phiên'));
+                setIsEnterResultsModalOpen(false);
+            }}
+          />
+          <Form06Modal
+            open={isForm06ModalOpen}
+            onClose={() => setIsForm06ModalOpen(false)}
+            task={actionTask}
+          />
+          <Form10Modal
+            open={isForm10ModalOpen}
+            onClose={() => setIsForm10ModalOpen(false)}
+            task={actionTask}
+          />
+          <Form11Modal
+            open={isForm11ModalOpen}
+            onClose={() => setIsForm11ModalOpen(false)}
+            task={actionTask}
+          />
+        </>
       )}
     </div>
   );

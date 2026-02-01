@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, PlayCircle, CheckCircle } from 'lucide-react';
+import { X, PlayCircle, CheckCircle, XCircle } from 'lucide-react';
 import styles from './TaskActionModals.module.css';
 import type { InspectionTask } from '../../data/inspection-tasks-mock-data';
 
@@ -139,6 +139,59 @@ export function CompleteTaskModal({ isOpen, onClose, task, onConfirm }: Complete
         >
           <CheckCircle size={18} />
           Hoàn thành
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+// Cancel Task Modal
+interface CancelTaskModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  task: InspectionTask | null;
+  onConfirm: () => void;
+}
+
+export function CancelTaskModal({ isOpen, onClose, task, onConfirm }: CancelTaskModalProps) {
+  if (!task) return null;
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <div className={styles.modalHeader}>
+        <div className={styles.modalIconWrapper} style={{ background: '#DC2626' }}>
+          <XCircle size={24} color="white" />
+        </div>
+        <div className={styles.modalHeaderContent}>
+          <h3 className={styles.modalTitle}>Hủy phiên làm việc</h3>
+          <p className={styles.modalSubtitle}>Phiên: {task.title}</p>
+        </div>
+        <button className={styles.closeButton} onClick={onClose}>
+          <X size={20} />
+        </button>
+      </div>
+
+      <div className={styles.modalBody}>
+        <div className={styles.infoBox} style={{ background: '#DC262615', borderColor: '#DC2626', color: '#DC2626' }}>
+          <p>Phiên làm việc sẽ được chuyển sang trạng thái <strong>"Đã hủy"</strong>.</p>
+        </div>
+        <p className="mt-4 text-sm text-balance text-muted-foreground">Bạn có chắc chắn muốn hủy phiên làm việc này không?</p>
+      </div>
+
+      <div className={styles.modalFooter}>
+        <button className={styles.cancelButton} onClick={onClose}>
+          Đóng
+        </button>
+        <button 
+          className={styles.primaryButton} 
+          onClick={() => {
+            onConfirm();
+            onClose();
+          }}
+          style={{ background: '#DC2626' }}
+        >
+          <XCircle size={18} />
+          Xác nhận hủy
         </button>
       </div>
     </Modal>

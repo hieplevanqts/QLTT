@@ -8,7 +8,8 @@ export type TaskStatus =
   | 'pending_approval'   // Chờ duyệt
   | 'completed'          // Hoàn thành
   | 'cancelled'          // Đã hủy
-  | 'closed';            // Đã đóng
+  | 'closed'             // Đã đóng
+  | 'reopened';          // Mở lại
 
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 

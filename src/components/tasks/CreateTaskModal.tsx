@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, AlertCircle, FileText } from 'lucide-react';
 import { cn } from '../ui/utils';
 import styles from './CreateTaskModal.module.css';
-import { TaskPriority, TaskStatus } from '../../data/inspection-tasks-mock-data';
+import { TaskPriority, TaskStatus } from '@/utils/data/inspection-tasks-mock-data';
 import DateRangePicker from '@/components/ui-kit/DateRangePicker';
 import { fetchPlansApi } from '@/utils/api/plansApi';
 import { fetchInspectionRoundsApi } from '@/utils/api/inspectionRoundsApi';
@@ -18,6 +18,8 @@ interface CreateTaskModalProps {
   onSubmit: (taskData: CreateTaskFormData, taskId?: string) => void;
   task?: any | null; // Data of the task to edit
   taskId?: string; // ID of the task to edit
+  defaultRoundId?: string;
+  defaultPlanId?: string;
 }
 
 export interface CreateTaskFormData {
@@ -57,15 +59,15 @@ const getTodayDate = () => {
   return `${year}-${month}-${day}`;
 };
 
-export function CreateTaskModal({ isOpen, onClose, onSubmit, task, taskId }: CreateTaskModalProps) {
+export function CreateTaskModal({ isOpen, onClose, onSubmit, task, taskId, defaultRoundId, defaultPlanId }: CreateTaskModalProps) {
   // Set giá trị mặc định ngay từ đầu
   const [formData, setFormData] = useState<CreateTaskFormData>({
     title: '',
     description: '',
     targetName: '',
     merchantId: '',
-    roundId: '',
-    planId: '',
+    roundId: defaultRoundId || '',
+    planId: defaultPlanId || '',
     assigneeId: '',
     priority: 'medium', // Mặc định Trung bình
     status: 'not_started', // Mặc định Chưa bắt đầu
@@ -115,12 +117,23 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, task, taskId }: Cre
     }
   }, [isOpen, formData.roundId, rounds]);
 
+  // Sync defaults when opening in Create Mode
+  useEffect(() => {
+    if (isOpen && !task) {
+      setFormData(prev => ({
+        ...prev,
+        roundId: defaultRoundId || '',
+        planId: defaultPlanId || ''
+      }));
+    }
+  }, [isOpen, task, defaultRoundId, defaultPlanId]);
+
   // Populate data when in edit mode
   useEffect(() => {
     if (isOpen && task) {
       setFormData({
         title: task.title || '',
-        description: task.description || '',
+        description: task.description || task.note || '', // Prioritize description
         targetName: task.targetName || task.merchantName || '',
         merchantId: task.merchantId || task.merchant_id || '',
         roundId: task.roundId || '',
@@ -169,9 +182,10 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, task, taskId }: Cre
     try {
       setLoadingPlans(true);
       const allPlans = await fetchPlansApi();
-      // Filter only approved plans
-      const approvedPlans = allPlans.filter(plan => plan.status === 'approved');
-      setPlans(approvedPlans);
+      // Filter applicable plans (approved, active)
+      const validStatuses = ['approved', 'active', 'in_progress'];
+      const applicablePlans = allPlans.filter(plan => validStatuses.includes(plan.status));
+      setPlans(applicablePlans);
     } catch (error) {
       console.error('Error fetching plans:', error);
       setPlans([]);
@@ -193,13 +207,22 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, task, taskId }: Cre
         allRounds = await fetchInspectionRoundsApi();
       }
       
-      // Filter only approved rounds
-      const approvedRounds = allRounds.filter(round => round.status === 'approved');
-      setRounds(approvedRounds);
+      // Filter applicable rounds
+      // Allow draft, approved, active, in_progress, paused
+      const validStatuses = ['draft', 'approved', 'active', 'in_progress', 'paused'];
+      const applicableRounds = allRounds.filter(round => validStatuses.includes(round.status));
+      setRounds(applicableRounds);
       
       // Reset roundId if current selection is not in the new list
-      if (formData.roundId && !approvedRounds.find(r => r.id === formData.roundId)) {
-        setFormData(prev => ({ ...prev, roundId: '' }));
+      // But preserve if it matches defaultRoundId (to support pre-filling even if status is weird)
+      const found = applicableRounds.find(r => r.id === formData.roundId);
+      if (formData.roundId && !found) {
+        // If default is set but not found in list, we might want to fetch that specific round and add it?
+        // For now, just clear if not found, unless it matches default (which might imply we need to trust the caller)
+        // However, if it's not in the list, the Select won't show it properly anyway.
+        if (formData.roundId !== defaultRoundId) {
+             setFormData(prev => ({ ...prev, roundId: '' }));
+        }
       }
     } catch (error) {
       console.error('Error fetching rounds:', error);
@@ -289,8 +312,8 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, task, taskId }: Cre
       description: '',
       targetName: '',
       merchantId: '',
-      roundId: '',
-      planId: '',
+      roundId: defaultRoundId || '', // Reset to default
+      planId: defaultPlanId || '', // Reset to default
       assigneeId: '',
       priority: 'medium', // Reset về mặc định
       status: 'not_started', // Reset về mặc định
@@ -534,6 +557,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, task, taskId }: Cre
                     value={formData.status}
                     onChange={(e) => handleChange('status', e.target.value as any)}
                     className={styles.select}
+                    disabled
                   >
                     {STATUS_OPTIONS.map(opt => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>

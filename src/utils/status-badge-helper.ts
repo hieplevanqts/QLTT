@@ -49,7 +49,8 @@ const taskStatusMap: Record<TaskStatus, { label: string; variant: string }> = {
   pending_approval: { label: 'Chờ duyệt', variant: 'pending_approval' },
   completed: { label: 'Hoàn thành', variant: 'completed' },
   cancelled: { label: 'Đã hủy', variant: 'cancelled' },
-  closed: { label: 'Đã đóng', variant: 'closed' }
+  closed: { label: 'Đã đóng', variant: 'closed' },
+  reopened: { label: 'Mở lại', variant: 'reopened' }
 };
 
 // SLA Status Mapping
