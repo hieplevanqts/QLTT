@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { useQLTTScope } from '../../../contexts/QLTTScopeContext';
-import { useAppDispatch } from '../../hooks';
+import { useAppDispatch, useAppSelector } from '../../hooks';
 import { setScope } from '../../../store/slices/qlttScopeSlice';
 import styles from './ScopeSelector.module.css';
 
@@ -17,6 +17,7 @@ export function ScopeSelector() {
   
   // Redux dispatch and selector for Redux store
   const dispatch = useAppDispatch();
+  const authUser = useAppSelector((state) => state.auth.user);
   
   const [selectedDivision, setSelectedDivision] = useState<string>('');
   const [selectedTeam, setSelectedTeam] = useState<string>('');
@@ -34,6 +35,42 @@ export function ScopeSelector() {
     setSelectedTeam(scope.teamId || '');
     setSelectedArea(scope.areaId || '');
   }, [effectiveDivisionId, scope.teamId, scope.areaId]);
+
+  // Prefer division from auth user department when scope is empty
+  useEffect(() => {
+    if (isLoading || scope.divisionId || scope.teamId || scope.areaId) return;
+
+    const userDepartmentId =
+      (authUser as any)?.app_metadata?.department?.id
+      || (authUser as any)?.departmentInfo?.id
+      || null;
+
+    if (!userDepartmentId) return;
+
+    const divisionExists = availableDivisions.some((d: any) => d.id === userDepartmentId);
+    if (!divisionExists) return;
+
+    const newScope = {
+      divisionId: userDepartmentId,
+      teamId: null,
+      areaId: null,
+      province: null,
+      ward: null,
+    };
+
+    localStorage.setItem('division_id', userDepartmentId);
+    setContextScope(newScope);
+    dispatch(setScope(newScope));
+  }, [
+    authUser,
+    isLoading,
+    availableDivisions,
+    scope.divisionId,
+    scope.teamId,
+    scope.areaId,
+    setContextScope,
+    dispatch,
+  ]);
 
   // Restore saved division from localStorage
   useEffect(() => {
