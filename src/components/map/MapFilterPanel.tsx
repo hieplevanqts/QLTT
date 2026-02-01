@@ -72,7 +72,7 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
       category: true,
       location: false,
       businessType: true,
-      department: false
+      department: true
     });
 
     if (!isOpen) return null;

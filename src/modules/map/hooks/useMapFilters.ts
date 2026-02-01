@@ -48,15 +48,32 @@ export const useMapFilters = ({
 }: UseMapFiltersProps) => {
   const dispatch = useAppDispatch();
 
-  const handleFilterChange = useCallback((category: keyof CategoryFilter) => {
-    const newFilters = {
-      ...filters,
-      [category]: !filters[category]
-    };
+  // const handleFilterChange = useCallback((category: keyof CategoryFilter) => {
+  //   const newFilters = {
+  //     ...filters,
+  //     [category]: !filters[category]
+  //   };
     
-    dispatch(setFilters(newFilters));
-    dispatch(setPendingFilters(newFilters));
-  }, [filters, dispatch]);
+  //   dispatch(setFilters(newFilters));
+  //   dispatch(setPendingFilters(newFilters));
+  // }, [filters, dispatch]);
+
+  const handleFilterChange = (key: keyof CategoryFilter) => {
+  const isCurrentlySelected = pendingFilters[key];
+
+  const nextFilters: CategoryFilter = Object.keys(pendingFilters).reduce((acc, k) => {
+    acc[k] = false; // reset all
+    return acc;
+  }, {} as CategoryFilter);
+
+  // Nếu chưa chọn thì bật nó, nếu đã chọn thì để all false (cho phép bỏ chọn hết)
+  if (!isCurrentlySelected) {
+    nextFilters[key] = true;
+  }
+
+  dispatch(setPendingFilters(nextFilters));
+};
+
 
   const handleBusinessTypeFilterChange = useCallback((key: string) => {
     const newFilters = {

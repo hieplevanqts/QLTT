@@ -335,6 +335,8 @@ export default function MapPage() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const urlLimit = urlParams.get('limit');
+    console.log('urlLimit', urlLimit);
+    
     if (urlLimit) {
       const parsedLimit = parseInt(urlLimit, 10);
       if (!isNaN(parsedLimit) && parsedLimit > 0) {
@@ -496,7 +498,7 @@ export default function MapPage() {
             categoryIds: businessTypeFiltersArray && businessTypeFiltersArray.length > 0 ? businessTypeFiltersArray : undefined, // 🔥 NEW: Pass category IDs to options
             province: selectedProvince || undefined,
             ward: selectedWard || undefined,
-            limit: limit, // 🔥 NEW: Pass limit from Redux store
+            limit:limit,
             targetDepartmentPath: divisionPath
           }
         );
