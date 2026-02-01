@@ -225,6 +225,17 @@
   margin-top: 4px;
 }
 
+.dropZone {
+  position: relative;
+}
+
+.dropZone.dragOver .fileLabel {
+  background: #f0f9ff;
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: scale(1.01);
+}
+
 .fileInput {
   display: none;
 }

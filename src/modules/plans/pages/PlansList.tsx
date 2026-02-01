@@ -333,6 +333,12 @@ export function PlansList() {
         // Hoàn thành: Báo cáo, Tải đề xuất
         actions.push(
           {
+            label: 'Phiên làm việc',
+            icon: <Calendar size={16} />,
+            onClick: () => navigate(`/plans/inspection-session?planId=${encodeURIComponent(plan.id)}`),
+            priority: 10,
+          },
+          {
             label: 'Báo cáo (M08)',
             icon: <BarChart3 size={16} />,
             onClick: () => {
@@ -426,7 +432,7 @@ export function PlansList() {
     },
     {
       key: 'leadUnit',
-      label: 'Đơn vị chủ trì',
+      label: 'Đơn vị thực hiện',
       sortable: true,
       width: '180px',
       render: (plan) => (
@@ -618,10 +624,10 @@ export function PlansList() {
               setStatusFilter('all');
               setPriorityFilter('all');
               setDateRangeFilter({ startDate: null, endDate: null });
-              setActiveFilter(null);
+              refetch();
               toast.success('Đã tải lại dữ liệu');
             }}>
-              <RefreshCw size={16} />
+              <RefreshCw size={16} className="mr-2" />
               Tải lại
             </Button>
             <Button variant="outline" size="sm" onClick={() => toast.success('Xuất dữ liệu thành công')}>
@@ -910,11 +916,11 @@ export function PlansList() {
             isOpen={modalState.type === 'deploy'} 
             onClose={closeModal}
             plan={modalState.plan}
-            onConfirm={async (startDate) => {
+            onConfirm={async () => {
               if (modalState.plan) {
                 try {
-                  await updatePlanApi(modalState.plan.id, { status: 'active', startDate });
-                  toast.success(`Đã triển khai kế hoạch "${modalState.plan?.name}" từ ${startDate}`);
+                  await updatePlanApi(modalState.plan.id, { status: 'active' });
+                  toast.success(`Đã triển khai kế hoạch "${modalState.plan?.name}"`);
                   closeModal();
                   refetch();
                 } catch (error: any) {

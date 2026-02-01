@@ -61,8 +61,6 @@ import styles from "./LeadInbox.module.css";
 type FilterType =
   | "all"
   | "new"
-  | "in_verification"
-  | "verify_paused"
   | "in_progress"
   | "process_paused"
   | "resolved"
@@ -94,26 +92,6 @@ const STATUS_CONFIG = [
     detailLabel: "Cần xử lý",
     getDetailValue: () => null,
     detailColor: "var(--primary)",
-  },
-  {
-    key: "in_verification" as const,
-    label: "Đang xác minh",
-    icon: CheckCircle2,
-    iconColor: "rgba(180, 83, 9, 1)",
-    bgColor: "rgba(254, 243, 199, 1)",
-    detailLabel: "Đang kiểm tra",
-    getDetailValue: () => null,
-    detailColor: "rgba(180, 83, 9, 1)",
-  },
-  {
-    key: "verify_paused" as const,
-    label: "Tạm dừng xác minh",
-    icon: CheckCircle2,
-    iconColor: "rgba(180, 83, 9, 1)",
-    bgColor: "rgba(254, 243, 199, 1)",
-    detailLabel: "Tạm dừng",
-    getDetailValue: () => null,
-    detailColor: "rgba(180, 83, 9, 1)",
   },
   {
     key: "in_progress" as const,
@@ -153,25 +131,7 @@ const getAllowedActions = (
 ): LeadAction[] => {
   switch (status) {
     case "new":
-      return ["view", "start_verification"];
-    case "in_verification":
-      return [
-        "view",
-        "add_evidence",
-        "assign",
-        "reject",
-        "hold",
-        "cancel",
-      ];
-    case "verify_paused":
-      return [
-        "view",
-        "add_evidence",
-        "assign",
-        "reject",
-        "hold",
-        "cancel",
-      ];
+      return ["view", "assign", "reject", "cancel"];
     case "in_progress":
       return [
         "view",
@@ -426,10 +386,7 @@ export default function LeadInbox() {
     (l) => l.status === "new",
   ).length;
 
-  // Group verifying statuses
-  const inVerificationLeads = allLeads.filter(
-    (l) => ["in_verification", "verifying", "verify_paused"].includes(l.status),
-  ).length;
+
 
   // Group processing statuses
   const inProgressLeads = allLeads.filter(
@@ -689,205 +646,7 @@ export default function LeadInbox() {
     }
   };
 
-  // Update lead status to "verifying" (in_verification)
-  const handleUpdateStatusToVerification = async (
-    lead: Lead,
-  ) => {
-    try {
-      const supabase = supabaseClient;
-
-      console.log(
-        `🔄 [LeadInbox] Updating status for lead ${lead.code} from "new" to "verifying"`,
-      );
-
-      // Update status to 'verifying' directly in Supabase
-      // Frontend will map 'verifying' → "Đang xác minh" automatically via StatusBadge
-      const { data, error } = await supabase
-        .from("leads")
-        .update({
-          status: "verifying",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("_id", lead._id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error(
-          "❌ [LeadInbox] Failed to update status:",
-          error,
-        );
-        toast.error("Lỗi khi cập nhật trạng thái", {
-          description: error.message,
-        });
-        return;
-      }
-
-      console.log(
-        '✅ [LeadInbox] Status updated successfully to "verifying"',
-      );
-      console.log("📊 [LeadInbox] Updated data:", data);
-
-      // ✅ Show SUCCESS toast (green)
-      toast.success(
-        'Đã chuyển sang trạng thái "Đang xác minh"',
-        {
-          description: `Lead ${lead.code} đã được cập nhật trạng thái.`,
-          duration: 3000,
-        },
-      );
-
-      // IMPORTANT: Clear status filter to show updated lead
-      // (Lead với status 'verifying' sẽ không hiển thị nếu filter = ['new'])
-      console.log(
-        "🔄 [LeadInbox] Clearing status filter to show updated lead...",
-      );
-      setSelectedStatuses([]);
-
-      // Force refetch data to update UI
-      console.log(
-        "🔄 [LeadInbox] Refetching data to update UI...",
-      );
-      await refetch();
-      console.log("✅ [LeadInbox] Data refetched successfully");
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "Lỗi không xác định";
-      console.error(
-        "❌ [LeadInbox] Error updating status:",
-        errorMessage,
-      );
-      toast.error("Lỗi hệ thống", {
-        description: errorMessage,
-      });
-    }
-  };
-
-  // Pause verification (in_verification → verify_paused)
-  const handlePauseVerification = async (lead: Lead) => {
-    try {
-      const supabase = supabaseClient;
-
-      console.log(
-        `⏸️ [LeadInbox] Pausing verification for lead ${lead.code}`,
-      );
-
-      const { data, error } = await supabase
-        .from("leads")
-        .update({
-          status: "verify_paused",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("_id", lead._id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error(
-          "❌ [LeadInbox] Failed to pause verification:",
-          error,
-        );
-        toast.error("Lỗi khi tạm dừng xác minh", {
-          description: error.message,
-        });
-        return;
-      }
-
-      console.log(
-        "✅ [LeadInbox] Verification paused successfully",
-      );
-
-      toast.success("Đã tạm dừng xác minh", {
-        description: `Lead ${lead.code} đã được tạm dừng.`,
-        duration: 3000,
-      });
-
-      // Clear filter and refetch
-      setSelectedStatuses([]);
-      await refetch();
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "Lỗi không xác định";
-      console.error(
-        "❌ [LeadInbox] Error pausing verification:",
-        errorMessage,
-      );
-      toast.error("Lỗi hệ thống", {
-        description: errorMessage,
-      });
-    }
-  };
-
-  // Resume verification (verify_paused → verifying)
-  const handleResumeVerification = async (lead: Lead) => {
-    try {
-      const supabase = supabaseClient;
-
-      console.log(
-        `▶️ [LeadInbox] Resuming verification for lead ${lead.code}`,
-      );
-      console.log(
-        `🔍 [LeadInbox] Current status: "${lead.status}" → Target status: "verifying"`,
-      );
-
-      const updatePayload = {
-        status: "verifying",
-        updated_at: new Date().toISOString(),
-      };
-
-      console.log(
-        `📤 [LeadInbox] Sending update payload to Supabase:`,
-        updatePayload,
-      );
-
-      const { data, error } = await supabase
-        .from("leads")
-        .update(updatePayload)
-        .eq("_id", lead._id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error(
-          "❌ [LeadInbox] Failed to resume verification:",
-          error,
-        );
-        toast.error("Lỗi khi tiếp tục xác minh", {
-          description: error.message,
-        });
-        return;
-      }
-
-      console.log(
-        "✅ [LeadInbox] Verification resumed successfully",
-      );
-
-      toast.success("Đã tiếp tục xác minh", {
-        description: `Lead ${lead.code} đã được tiếp tục xác minh.`,
-        duration: 3000,
-      });
-
-      // Clear filter and refetch
-      setSelectedStatuses([]);
-      await refetch();
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "Lỗi không xác định";
-      console.error(
-        "❌ [LeadInbox] Error resuming verification:",
-        errorMessage,
-      );
-      toast.error("Lỗi hệ thống", {
-        description: errorMessage,
-      });
-    }
-  };
+  // [Removed verification logic]
 
   // Pause processing (in_progress → process_paused)
   const handlePauseProcessing = async (lead: Lead) => {
@@ -1072,7 +831,7 @@ export default function LeadInbox() {
   // Reject lead (any status → rejected)
   const handleRejectLead = async (lead: Lead, reason: string) => {
     try {
-      const supabase = getSupabaseClient();
+      const supabase = supabaseClient;
 
       console.log(
         `🚫 [LeadInbox] Rejecting lead ${lead.code} with reason: "${reason}"`,
@@ -1138,63 +897,7 @@ export default function LeadInbox() {
       case "view":
         navigate(`/lead-risk/lead/${lead._id}`);
         break;
-      case "start_verification":
-        // Show confirmation dialog
-        setConfirmDialog({
-          isOpen: true,
-          title: "Bắt đầu xác minh",
-          message:
-            'Bạn có chắc muốn chuyển lead này sang trạng thái "Đang xác minh"?',
-          confirmText: "Xác nhận",
-          type: "info",
-          leadCode: lead.code,
-          onConfirm: () => {
-            handleUpdateStatusToVerification(lead);
-            setConfirmDialog({
-              ...confirmDialog,
-              isOpen: false,
-            });
-          },
-        });
-        break;
-      case "pause_verification":
-        // Show confirmation dialog
-        setConfirmDialog({
-          isOpen: true,
-          title: "Tạm dừng xác minh",
-          message:
-            "Bạn có chắc muốn tạm dừng xác minh lead này?",
-          confirmText: "Xác nhận",
-          type: "warning",
-          leadCode: lead.code,
-          onConfirm: () => {
-            handlePauseVerification(lead);
-            setConfirmDialog({
-              ...confirmDialog,
-              isOpen: false,
-            });
-          },
-        });
-        break;
-      case "resume_verification":
-        // Show confirmation dialog
-        setConfirmDialog({
-          isOpen: true,
-          title: "Tiếp tục xác minh",
-          message:
-            "Bạn có chắc muốn tiếp tục xác minh lead này?",
-          confirmText: "Xác nhận",
-          type: "success",
-          leadCode: lead.code,
-          onConfirm: () => {
-            handleResumeVerification(lead);
-            setConfirmDialog({
-              ...confirmDialog,
-              isOpen: false,
-            });
-          },
-        });
-        break;
+
       case "pause_processing":
         // Show confirmation dialog
         setConfirmDialog({
@@ -1301,7 +1004,7 @@ export default function LeadInbox() {
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h1 className={styles.title}>Xử lý nguồn tin hằng ngày 123</h1>
+          <h1 className={styles.title}>Xử lý nguồn tin hằng ngày</h1>
           <p className={styles.subtitle}>
             Xử lý nguồn tin hàng ngày
           </p>
@@ -1532,34 +1235,7 @@ export default function LeadInbox() {
           </div>
         </div>
 
-        <div
-          className={styles.statCard}
-          onClick={() => {
-            setSelectedStatuses(["in_verification", "verifying", "verify_paused"]);
-            setSelectedAssignments([]);
-          }}
-        >
-          <div
-            className={styles.statIcon}
-            style={{
-              backgroundColor: "rgba(254, 243, 199, 1)",
-              color: "rgba(180, 83, 9, 1)",
-            }}
-          >
-            <AlertCircle size={24} />
-          </div>
-          <div className={styles.statContent}>
-            <div className={styles.statValue}>
-              {inVerificationLeads}
-            </div>
-            <div className={styles.statLabel}>
-              Đang xác minh
-            </div>
-            <div className={styles.statDetail}>
-              Đang kiểm tra thông tin
-            </div>
-          </div>
-        </div>
+
 
         <div
           className={styles.statCard}
@@ -1581,7 +1257,7 @@ export default function LeadInbox() {
             <div className={styles.statValue}>
               {inProgressLeads}
             </div>
-            <div className={styles.statLabel}>Đang xử lý</div>
+            <div className={styles.statLabel}>Đang xử lý / Tạm dừng xử lý</div>
             <div className={styles.statDetail}>
               Đang thực hiện
             </div>
@@ -1636,7 +1312,7 @@ export default function LeadInbox() {
             <div className={styles.statValue}>
               {cancelledLeads}
             </div>
-            <div className={styles.statLabel}>Đã hủy</div>
+            <div className={styles.statLabel}>Đã hủy / Từ chối</div>
             <div className={styles.statDetail}>
               Lead đã bị hủy
             </div>
@@ -1650,11 +1326,7 @@ export default function LeadInbox() {
           label="Trạng thái"
           options={[
             { value: "new", label: "Mới", count: newLeads },
-            {
-              value: "in_verification",
-              label: "Đang xác minh",
-              count: inVerificationLeads, // Includes verifying & paused
-            },
+
             {
               value: "in_progress",
               label: "Đang xử lý",
@@ -1821,7 +1493,7 @@ export default function LeadInbox() {
 
               const performBulkUpdate = async (targetStatus: LeadStatus) => {
                 try {
-                  const supabase = getSupabaseClient();
+                  const supabase = supabaseClient;
                   const { error } = await supabase
                     .from("leads")
                     .update({ status: targetStatus, updated_at: new Date().toISOString() })
@@ -1855,17 +1527,39 @@ export default function LeadInbox() {
               switch (status) {
                 case "new":
                   return (
-                    <button
-                      className={styles.bulkButton}
-                      onClick={() => openBulkConfirm(
-                        "Bắt đầu xác minh",
-                        `Bạn có chắc muốn chuyển ${selectedLeads.size} leads đang chọn sang trạng thái "Đang xác minh"?`,
-                        "verifying",
-                        "info"
-                      )}
-                    >
-                      <Play size={16} /> Bắt đầu xác minh
-                    </button>
+                    <>
+                      <button
+                        className={styles.bulkButton}
+                        onClick={() => {
+                          setCurrentLead(null);
+                          setIsAssignModalOpen(true);
+                        }}
+                      >
+                        <UserPlus size={16} /> Giao việc
+                      </button>
+                      <button
+                        className={styles.bulkButtonDanger}
+                        onClick={() => openBulkConfirm(
+                          "Từ chối leads",
+                          `Bạn có chắc muốn từ chối ${selectedLeads.size} leads đang chọn?`,
+                          "rejected",
+                          "danger"
+                        )}
+                      >
+                        <XCircle size={16} /> Từ chối
+                      </button>
+                      <button
+                        className={styles.bulkButtonDanger}
+                        onClick={() => openBulkConfirm(
+                          "Hủy bỏ leads",
+                          `Bạn có chắc muốn hủy bỏ ${selectedLeads.size} leads đang chọn? Hành động này không thể hoàn tác.`,
+                          "cancelled",
+                          "danger"
+                        )}
+                      >
+                        <Ban size={16} /> Hủy bỏ
+                      </button>
+                    </>
                   );
 
                 case "verifying": // Đang xác minh

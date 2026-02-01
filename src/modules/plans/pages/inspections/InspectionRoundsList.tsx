@@ -689,6 +689,11 @@ export function InspectionRoundsList() {
 
 
   const handleRefresh = async () => {
+    setSearchValue('');
+    setPlanFilter('all');
+    setPriorityFilter('all');
+    setDateRange({ startDate: null, endDate: null });
+    setActiveFilter(null);
     await refetch();
     toast.success('Đã làm mới dữ liệu');
   };

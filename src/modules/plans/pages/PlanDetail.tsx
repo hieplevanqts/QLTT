@@ -876,7 +876,7 @@ export function PlanDetail() {
                   onClick={() => openModal('sendApproval', plan)}
                 >
                   <Send size={18} />
-                  Trình duyệt
+                  Gửi duyệt
                 </button>
                 <button 
                   className={styles.deleteButton}
@@ -1020,7 +1020,7 @@ export function PlanDetail() {
                   </div>
 
                   <div className={styles.infoField}>
-                    <div className={styles.infoLabel}>Đơn vị chịu trách nhiệm</div>
+                    <div className={styles.infoLabel}>Đơn vị thực hiện</div>
                     <div className={styles.infoValue}>
                       <Building2 size={16} className={styles.infoIcon} />
                       {plan.responsibleUnit}
@@ -1051,8 +1051,36 @@ export function PlanDetail() {
                   </div>
 
                   <div className={`${styles.infoField} ${styles.infoFieldFull}`}>
-                    <div className={styles.infoLabel}>Chủ đề kiểm tra</div>
-                    <div className={styles.infoValue}>{plan.topic}</div>
+                    <div className={styles.infoLabel}>Tiêu đề kế hoạch</div>
+                    <div className={styles.infoValue}>{plan.name}</div>
+                  </div>
+
+                  <div className={styles.infoField}>
+                    <div className={styles.infoLabel}>Loại kế hoạch</div>
+                    <div className={styles.infoValue}>
+                       <StatusBadge {...getStatusProps('planType', plan.planType)} size="sm" />
+                    </div>
+                  </div>
+
+                  <div className={styles.infoField}>
+                    <div className={styles.infoLabel}>Thời gian thực hiện</div>
+                    <div className={styles.infoValue}>
+                        {(plan.startDate && plan.endDate) ? (
+                          <>
+                           {new Date(plan.startDate).toLocaleDateString('vi-VN')} - {new Date(plan.endDate).toLocaleDateString('vi-VN')}
+                          </>
+                        ) : '--'}
+                    </div>
+                  </div>
+
+                  <div className={styles.infoField}>
+                    <div className={styles.infoLabel}>Đơn vị phối hợp</div>
+                    <div className={styles.infoValue}>{plan.coordinatingUnit || '--'}</div>
+                  </div>
+
+                  <div className={`${styles.infoField} ${styles.infoFieldFull}`}>
+                    <div className={styles.infoLabel}>Mô tả kế hoạch</div>
+                    <div className={styles.infoValue}>{plan.topic || '--'}</div>
                   </div>
 
                   <div className={`${styles.infoField} ${styles.infoFieldFull}`}>
@@ -1334,11 +1362,13 @@ export function PlanDetail() {
             isOpen={modalState.type === 'deploy'} 
             onClose={closeModal}
             plan={modalState.plan}
-            onConfirm={async (startDate: string) => {
+            onConfirm={async () => {
               if (modalState.plan) {
                 try {
-                  await updatePlanApi(modalState.plan.id, { status: 'active', startDate });
-                  toast.success(`Đã triển khai kế hoạch "${modalState.plan?.name}" từ ${startDate}`);
+                  // Only update status to 'active'. 
+                  // Ignoring startDate from modal to avoid "check_plan_dates" constraint violation (startDate > endDate)
+                  await updatePlanApi(modalState.plan.id, { status: 'active' });
+                  toast.success(`Đã triển khai kế hoạch "${modalState.plan?.name}"`);
                   closeModal();
                   refetch();
                 } catch (error: any) {

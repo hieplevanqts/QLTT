@@ -613,7 +613,6 @@ export default function RiskDashboard() {
               <div className={styles.headerCell} style={{ flex: '0 0 120px', textAlign: 'center' }}>Điểm rủi ro</div>
               <div className={styles.headerCell} style={{ flex: '0 0 110px', textAlign: 'center' }}>Tổng nguồn tin</div>
               <div className={styles.headerCell} style={{ flex: '0 0 120px', textAlign: 'center' }}>Đang xử lý</div>
-              <div className={styles.headerCell} style={{ flex: '0 0 140px', textAlign: 'center' }}>Xu hướng</div>
               <div className={styles.headerCell} style={{ flex: '0 0 130px', textAlign: 'center' }}>Cập nhật cuối</div>
               <div className={styles.headerCell} style={{ flex: '0 0 110px', textAlign: 'center' }}>Trạng thái</div>
               <div className={styles.headerCell} style={{ flex: '0 0 140px', textAlign: 'center' }}>Thao tác</div>
@@ -654,16 +653,6 @@ export default function RiskDashboard() {
                       <span className={styles.activeCount}>{profile.activeLeads}</span>
                     </div>
 
-                    <div className={styles.riskCell} style={{ flex: '0 0 140px', justifyContent: 'center' }}>
-                      <div className={styles.trendBadge} data-direction={profile.trendDirection}>
-                        {profile.trendDirection === 'increasing' && <TrendingUp size={14} />}
-                        {profile.trendDirection === 'decreasing' && <TrendingDown size={14} />}
-                        <span>
-                          {profile.monthOverMonthChange > 0 ? '+' : ''}
-                          {profile.monthOverMonthChange.toFixed(1)}%
-                        </span>
-                      </div>
-                    </div>
 
                     <div className={styles.riskCell} style={{ flex: '0 0 130px', justifyContent: 'center' }}>
                       <span className={styles.lastUpdate}>
