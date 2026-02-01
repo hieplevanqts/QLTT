@@ -247,6 +247,16 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
     return null;
   }, [userDepartment, userLevel, userDepartmentId, user?.departmentInfo?.parent_id, user?.departmentInfo?.code, allDivisions]);
 
+  const standaloneDivision = useMemo(() => {
+    if (!userDepartmentId || departments.length !== 1) return null;
+    const onlyDepartment = departments[0];
+    if (onlyDepartment.id !== userDepartmentId) return null;
+    const hasParent = Boolean(onlyDepartment.parent_id);
+    const hasChild = departments.some((dept) => dept.parent_id === onlyDepartment.id);
+    if (hasParent || hasChild) return null;
+    return onlyDepartment;
+  }, [departments, userDepartmentId]);
+
   const locks: ScopeLocks = useMemo(
     () => ({
       division: Boolean(userLevel && userLevel >= 2),
@@ -256,6 +266,9 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
   );
 
   const availableDivisions = useMemo(() => {
+    if (standaloneDivision) {
+      return [standaloneDivision];
+    }
     if (!userLevel || userLevel <= 1) {
       return allDivisions;
     }
@@ -267,7 +280,7 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
       return allDivisions.filter((dept) => dept.id === userDivisionId);
     }
     return [];
-  }, [allDivisions, userLevel, userDepartment, userDepartmentId, userDivisionId]);
+  }, [allDivisions, userLevel, userDepartment, userDepartmentId, userDivisionId, standaloneDivision]);
 
   const availableTeams = useMemo(() => {
     if (!scope.divisionId) return [];
@@ -321,6 +334,15 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
   }, [scope.teamId, departmentAreasByDepartment, areasById, wardsById, provincesById]);
 
   const buildDefaultScope = (): QLTTScope => {
+    if (standaloneDivision) {
+      return {
+        divisionId: standaloneDivision.id,
+        teamId: null,
+        areaId: null,
+        province: null,
+        ward: null,
+      };
+    }
     if (userLevel === 2) {
       return {
         divisionId: userDepartment?.id || userDepartmentId,

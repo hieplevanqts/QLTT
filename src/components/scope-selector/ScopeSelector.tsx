@@ -33,7 +33,7 @@ export function ScopeSelector() {
   const [selectedArea, setSelectedArea] = useState<string>('');
 
   const fallbackDivisionId =
-    !scope.divisionId && scope.teamId && availableDivisions.length === 1
+    !scope.divisionId && availableDivisions.length === 1
       ? availableDivisions[0].id
       : null;
   const effectiveDivisionId = scope.divisionId || fallbackDivisionId;
@@ -163,7 +163,7 @@ export function ScopeSelector() {
     dispatch,
   ]);
 
-  // Ensure division is active when only team is provided
+  // Ensure division is active when only one division exists
   useEffect(() => {
     if (isLoading || !fallbackDivisionId) return;
 
