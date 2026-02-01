@@ -7,7 +7,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9998;
+  z-index: 200;
   padding: var(--spacing-4);
   animation: fadeIn 0.2s ease;
   overflow-y: auto;
@@ -16,7 +16,7 @@
 
 /* Ensure Select dropdown appears above dialog */
 .overlay :global([data-radix-select-content]) {
-  z-index: 9999 !important;
+  z-index: 201 !important;
 }
 
 @keyframes fadeIn {

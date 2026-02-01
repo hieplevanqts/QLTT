@@ -1,9 +1,10 @@
 /* Table Wrapper - Enable horizontal scroll */
 .tableWrapper {
-  position: relative;
   width: 100%;
   overflow-x: auto;
+  overflow-y: visible;
   border-radius: var(--radius-lg);
+  /* Remove position: relative to allow sticky to work properly */
 }
 
 /* Force table to use fixed layout for consistent column widths */
@@ -31,6 +32,22 @@
   overflow-wrap: break-word;
 }
 
+/* Sticky header */
+.tableWrapper thead {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--background);
+}
+
+.tableWrapper thead th {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--background);
+  border-bottom: 2px solid var(--border);
+}
+
 /* Sticky columns */
 .stickyLeft {
   position: sticky;
@@ -44,4 +61,11 @@
   right: 0;
   z-index: 10;
   background: var(--card);
+}
+
+/* Combine sticky header with sticky columns */
+.tableWrapper thead .stickyLeft,
+.tableWrapper thead .stickyRight {
+  background: var(--background);
+  z-index: 21; /* Higher than regular sticky header to ensure it's above when both are applied */
 }

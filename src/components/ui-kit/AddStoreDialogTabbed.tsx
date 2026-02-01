@@ -570,11 +570,22 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
     inputElement: React.ReactNode
   ) => {
     const isAutoFilled = fieldMetadata[field]?.isAutoFilled && !fieldMetadata[field]?.isManuallyEdited;
+    
+    // Split label to separate required asterisk
+    const labelParts = label.split(' *');
+    const isRequired = label.endsWith(' *');
 
     return (
       <div className="space-y-2">
         <Label htmlFor={field} className="flex items-center gap-2">
-          {label}
+          {isRequired ? (
+            <>
+              {labelParts[0]}
+              <span style={{ color: 'var(--destructive)', fontWeight: '600' }}> *</span>
+            </>
+          ) : (
+            label
+          )}
           {isAutoFilled && (
             <TooltipProvider>
               <Tooltip>
@@ -752,7 +763,8 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
               {/* Industry Name - Searchable Select (Combobox) - Select2 Style */}
               <div className="space-y-2">
                 <Label htmlFor="industryName" className="flex items-center gap-2">
-                  Tên ngành kinh doanh *
+                  Tên ngành kinh doanh
+                  <span style={{ color: 'var(--destructive)', fontWeight: '600' }}> *</span>
                   {fieldMetadata['industryName']?.isAutoFilled && !fieldMetadata['industryName']?.isManuallyEdited && (
                     <TooltipProvider>
                       <Tooltip>
