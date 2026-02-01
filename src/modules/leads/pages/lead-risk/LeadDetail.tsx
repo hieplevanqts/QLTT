@@ -508,13 +508,15 @@ export default function LeadDetail() {
     <>
       <div className={styles.container}>
         {/* Breadcrumb */}
-        <Breadcrumb
-          items={[
-            { label: 'Nguồn tin, Rủi ro', path: '/lead-risk/inbox' },
-            { label: 'Xử lý nguồn tin hằng ngày', path: '/lead-risk/inbox' },
-            { label: lead.code },
-          ]}
-        />
+        <div className='mt-4'>
+          <Breadcrumb
+            items={[
+              { label: 'Nguồn tin, Rủi ro', path: '/lead-risk/inbox' },
+              { label: 'Xử lý nguồn tin hằng ngày', path: '/lead-risk/inbox' },
+              { label: lead.code },
+            ]}
+          />
+        </div>
 
         {/* Header */}
         <div className={styles.header}>

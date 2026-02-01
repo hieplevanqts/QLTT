@@ -49,7 +49,7 @@ interface LeadActionMenuProps {
 const getAllowedActions = (status: LeadStatus): LeadAction[] => {
   switch (status) {
     case 'new':
-      return ['view', 'start_verification'];
+      return ['view', 'assign', 'reject', 'cancel'];
     case 'verifying':
     case 'in_verification':
       return ['view', 'assign', 'pause_verification', 'reject'];
@@ -199,68 +199,70 @@ export function LeadActionMenu({ status, onAction }: LeadActionMenuProps) {
   };
 
   return (
-    <div className={styles.container} ref={menuRef}>
-      <div className={styles.quickButtons}>
-        {quickActions.map((action) => {
-          const config = actionConfig[action];
-          const Icon = config.icon;
-          return (
-            <button
-              key={action}
-              className={`${styles.quickButton} ${config.variant ? styles[`quickButton${config.variant.charAt(0).toUpperCase() + config.variant.slice(1)}`] : ''}`}
-              onClick={() => handleAction(action)}
-              onMouseEnter={(e) => handleMouseEnter(e, config.label)}
-              onMouseLeave={handleMouseLeave}
-              aria-label={config.label}
-            >
-              <Icon size={16} />
-            </button>
-          );
-        })}
-
-        {menuActions.length > 0 && (
-          <button
-            className={styles.menuButton}
-            onClick={() => setIsOpen(!isOpen)}
-            onMouseEnter={(e) => handleMouseEnter(e, "Thêm")}
-            onMouseLeave={handleMouseLeave}
-            ref={buttonRef}
-            aria-label="Thêm tùy chọn"
-          >
-            <MoreVertical size={16} />
-          </button>
-        )}
-      </div>
-
-      {isOpen && menuActions.length > 0 && (
-        <div className={showAbove ? styles.dropdownAbove : styles.dropdown} style={{ top: menuPosition.top, left: menuPosition.left }}>
-          {menuActions.map((action) => {
+    <div className="action-button">
+      <div className={styles.container} ref={menuRef}>
+        <div className={styles.quickButtons}>
+          {quickActions.map((action) => {
             const config = actionConfig[action];
             const Icon = config.icon;
             return (
               <button
                 key={action}
-                className={`${styles.menuItem} ${config.variant ? styles[`menuItem${config.variant.charAt(0).toUpperCase() + config.variant.slice(1)}`] : ''}`}
+                className={`${styles.quickButton} ${config.variant ? styles[`quickButton${config.variant.charAt(0).toUpperCase() + config.variant.slice(1)}`] : ''}`}
                 onClick={() => handleAction(action)}
+                onMouseEnter={(e) => handleMouseEnter(e, config.label)}
+                onMouseLeave={handleMouseLeave}
+                aria-label={config.label}
               >
                 <Icon size={16} />
-                <span>{config.label}</span>
               </button>
             );
           })}
-        </div>
-      )}
 
-      {/* Portal Tooltip */}
-      {tooltip && createPortal(
-        <div
-          className={styles.fixedTooltip}
-          style={{ top: tooltip.y, left: tooltip.x }}
-        >
-          {tooltip.label}
-        </div>,
-        document.body
-      )}
+          {menuActions.length > 0 && (
+            <button
+              className={styles.menuButton}
+              onClick={() => setIsOpen(!isOpen)}
+              onMouseEnter={(e) => handleMouseEnter(e, "Thêm")}
+              onMouseLeave={handleMouseLeave}
+              ref={buttonRef}
+              aria-label="Thêm tùy chọn"
+            >
+              <MoreVertical size={16} />
+            </button>
+          )}
+        </div>
+
+        {isOpen && menuActions.length > 0 && (
+          <div className={showAbove ? styles.dropdownAbove : styles.dropdown} style={{ top: menuPosition.top, left: menuPosition.left }}>
+            {menuActions.map((action) => {
+              const config = actionConfig[action];
+              const Icon = config.icon;
+              return (
+                <button
+                  key={action}
+                  className={`${styles.menuItem} ${config.variant ? styles[`menuItem${config.variant.charAt(0).toUpperCase() + config.variant.slice(1)}`] : ''}`}
+                  onClick={() => handleAction(action)}
+                >
+                  <Icon size={16} />
+                  <span>{config.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Portal Tooltip */}
+        {tooltip && createPortal(
+          <div
+            className={styles.fixedTooltip}
+            style={{ top: tooltip.y, left: tooltip.x }}
+          >
+            {tooltip.label}
+          </div>,
+          document.body
+        )}
+      </div>
     </div>
   );
 }
