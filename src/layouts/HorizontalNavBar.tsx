@@ -46,6 +46,7 @@ import { useLayout } from '../contexts/LayoutContext';
 import { useRuntimeMenu } from '@/shared/menu/useRuntimeMenu';
 import { getMenuFallbackEnabled } from '@/shared/menu/menuCache';
 import { type MenuNode } from '../utils/menuRegistry';
+import { useIamIdentity } from '@/shared/iam/useIamIdentity';
 
 interface HorizontalNavBarProps {
   mobileMenuOpen: boolean;
@@ -261,6 +262,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
   const { setLayoutMode } = useLayout();
   const [mobileSubmenuOpen, setMobileSubmenuOpen] = React.useState<string | null>(null);
   const { tree, loading } = useRuntimeMenu();
+  const { roleCodes, loading: identityLoading } = useIamIdentity();
   const fallbackEnabled = getMenuFallbackEnabled();
   const isPathActive = React.useCallback(
     (path?: string | null) => {
@@ -284,6 +286,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
     if (runtimeModules.length > 0) return runtimeModules;
     return fallbackEnabled ? mappaModules : [];
   }, [runtimeModules, fallbackEnabled]);
+  const showNoRoleBanner = !identityLoading && roleCodes.length === 0;
   const showEmptyState = !loading && visibleModules.length === 0 && !fallbackEnabled;
 
   // Mock permissions - In real app, this would come from user context/auth
@@ -302,6 +305,11 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
       {/* Desktop Navigation */}
       <nav className="hidden md:flex h-14 bg-card border-b border-border items-center px-6 gap-1">
         {/* Main MAPPA Modules */}
+        {showNoRoleBanner && (
+          <span className="mr-4 text-sm font-medium text-amber-700">
+            Tài khoản chưa được gán vai trò
+          </span>
+        )}
         {showEmptyState ? (
           <span className="text-sm text-muted-foreground">
             Tài khoản chưa được gán vai trò hoặc chưa có quyền hiển thị menu.
@@ -559,6 +567,11 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
             </div>
 
             <nav className="p-2 overflow-y-auto">
+              {showNoRoleBanner && (
+                <div className="px-4 py-3 text-sm font-medium text-amber-700">
+                  Tài khoản chưa được gán vai trò
+                </div>
+              )}
               {showEmptyState ? (
                 <div className="px-4 py-3 text-sm text-muted-foreground">
                   Tài khoản chưa được gán vai trò hoặc chưa có quyền hiển thị menu.

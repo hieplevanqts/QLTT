@@ -14,6 +14,27 @@
 /* Profile Header Card */
 .profileHeaderCard {
   margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+  background: var(--profile-header-bg, #fff);
+  border-color: var(--profile-header-border, var(--border));
+}
+
+.profileHeaderCard::after {
+  content: '';
+  position: absolute;
+  top: -120px;
+  right: -120px;
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(
+    circle at 30% 30%,
+    var(--profile-header-accent-strong, rgba(232, 243, 255, 0.9)) 0%,
+    var(--profile-header-accent-soft, rgba(232, 243, 255, 0.45)) 45%,
+    rgba(232, 243, 255, 0) 70%
+  );
+  pointer-events: none;
+  z-index: 0;
 }
 
 .profileHeader {
@@ -21,6 +42,71 @@
   align-items: flex-start;
   gap: 24px;
   padding: 8px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.roleDefault {
+  --profile-header-bg: #ffffff;
+  --profile-header-border: var(--border);
+  --profile-header-accent-strong: rgba(232, 243, 255, 0.9);
+  --profile-header-accent-soft: rgba(232, 243, 255, 0.45);
+}
+
+.roleSuperAdmin {
+  --profile-header-bg: #fff6ef;
+  --profile-header-border: #f7d3b8;
+  --profile-header-accent-strong: rgba(255, 227, 205, 0.9);
+  --profile-header-accent-soft: rgba(255, 227, 205, 0.45);
+}
+
+.roleAdmin {
+  --profile-header-bg: #f2f6ff;
+  --profile-header-border: #cfdcff;
+  --profile-header-accent-strong: rgba(208, 225, 255, 0.9);
+  --profile-header-accent-soft: rgba(208, 225, 255, 0.45);
+}
+
+.roleManager {
+  --profile-header-bg: #eefaf4;
+  --profile-header-border: #c7ead8;
+  --profile-header-accent-strong: rgba(194, 235, 214, 0.9);
+  --profile-header-accent-soft: rgba(194, 235, 214, 0.45);
+}
+
+.roleLeader {
+  --profile-header-bg: #fff7ed;
+  --profile-header-border: #f6d5a8;
+  --profile-header-accent-strong: rgba(255, 226, 190, 0.9);
+  --profile-header-accent-soft: rgba(255, 226, 190, 0.45);
+}
+
+.roleHeader {
+  --profile-header-bg: #f5f3ff;
+  --profile-header-border: #ddd6fe;
+  --profile-header-accent-strong: rgba(224, 214, 255, 0.9);
+  --profile-header-accent-soft: rgba(224, 214, 255, 0.45);
+}
+
+.roleUser {
+  --profile-header-bg: #f8fafc;
+  --profile-header-border: #e2e8f0;
+  --profile-header-accent-strong: rgba(225, 233, 241, 0.9);
+  --profile-header-accent-soft: rgba(225, 233, 241, 0.45);
+}
+
+.roleViewer {
+  --profile-header-bg: #f0f9ff;
+  --profile-header-border: #cfe8ff;
+  --profile-header-accent-strong: rgba(203, 232, 255, 0.9);
+  --profile-header-accent-soft: rgba(203, 232, 255, 0.45);
+}
+
+.roleMerchant {
+  --profile-header-bg: #fff1f2;
+  --profile-header-border: #fbcfe8;
+  --profile-header-accent-strong: rgba(251, 207, 232, 0.9);
+  --profile-header-accent-soft: rgba(251, 207, 232, 0.45);
 }
 
 .avatarSection {
@@ -119,6 +205,11 @@
 
 .infoCard {
   height: 100%;
+}
+
+.superAdminCard {
+  background: #fff9e6;
+  border: 1px solid #ffe08a;
 }
 
 /* Info List */

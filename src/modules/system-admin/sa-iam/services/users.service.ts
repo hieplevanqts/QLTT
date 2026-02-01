@@ -10,6 +10,7 @@ export type UserRoleInfo = {
 };
 
 export type UserRecord = {
+  _id: string;
   id: string;
   username?: string | null;
   full_name?: string | null;
@@ -23,6 +24,7 @@ export type UserRecord = {
   department_id?: string | null;
   department_name?: string | null;
   department_level?: number | null;
+  department_path?: string | null;
   roles: UserRoleInfo[];
   primary_role_code?: string | null;
   primary_role_name?: string | null;
@@ -43,7 +45,11 @@ export type UserListParams = {
   roleId?: string | null;
   departmentId?: string | null;
   scopeDepartmentId?: string | null;
+  scopeDepartmentPath?: string | null;
   scopeLevel?: number | null;
+  viewerUserId?: string | null;
+  isSuperAdmin?: boolean;
+  isAdmin?: boolean;
   page?: number;
   pageSize?: number;
   sortBy?: string;
@@ -75,6 +81,8 @@ const mapStatusFilter = (value: UserListParams["status"]) => {
   return 2;
 };
 
+const uniq = (items: string[]) => Array.from(new Set(items));
+
 const requestAdmin = async <T>(path: string, options?: RequestInit): Promise<T> => {
   const response = await fetch(`${API_BASE}${path}`, options);
   if (!response.ok) {
@@ -86,7 +94,8 @@ const requestAdmin = async <T>(path: string, options?: RequestInit): Promise<T> 
 };
 
 const mapRow = (row: any): UserRecord => ({
-  id: row._id ?? "",
+  _id: row._id ?? row.id ?? "",
+  id: row._id ?? row.id ?? "",
   username: row.username ?? null,
   full_name: row.full_name ?? null,
   email: row.email ?? null,
@@ -99,6 +108,7 @@ const mapRow = (row: any): UserRecord => ({
   department_id: row.department_id ?? row.departmentId ?? null,
   department_name: row.department_name ?? null,
   department_level: row.department_level ?? null,
+  department_path: row.department_path ?? row.departmentPath ?? null,
   roles: Array.isArray(row.roles) ? row.roles : [],
   primary_role_code: row.primary_role_code ?? null,
   primary_role_name: row.primary_role_name ?? null,
@@ -110,6 +120,7 @@ export type DepartmentScopeRecord = {
   name: string;
   code?: string | null;
   level?: number | null;
+  path?: string | null;
   order_index?: number | null;
   is_active?: boolean | null;
 };
@@ -120,6 +131,7 @@ const mapDepartmentRow = (row: any): DepartmentScopeRecord => ({
   name: row.name ?? "",
   code: row.code ?? null,
   level: row.level ?? null,
+  path: row.path ?? null,
   order_index: row.order_index ?? null,
   is_active: row.is_active ?? null,
 });
@@ -167,6 +179,97 @@ const computeScopeDepartments = (
   return [root, ...descendants];
 };
 
+const resolveSortColumn = (sortBy?: string) => {
+  const mapping: Record<string, string> = {
+    username: "username",
+    full_name: "full_name",
+    email: "email",
+    phone: "phone",
+    status: "status",
+    last_login_at: "lastLoginAt",
+    created_at: "created_at",
+    updated_at: "updated_at",
+  };
+  if (sortBy && mapping[sortBy]) return mapping[sortBy];
+  return "created_at";
+};
+
+const fetchDepartmentsByIds = async (departmentIds: string[]) => {
+  if (departmentIds.length === 0) return new Map<string, DepartmentScopeRecord>();
+  const { data, error } = await supabase
+    .from("departments")
+    .select("_id, parent_id, name, code, level, path, order_index, is_active")
+    .in("_id", departmentIds);
+
+  if (error) {
+    throw new Error(`departments select failed: ${error.message}`);
+  }
+
+  return new Map((data || []).map((row: any) => [row._id ?? row.id, mapDepartmentRow(row)]));
+};
+
+const fetchDepartmentsByPath = async (scopePath: string) => {
+  const { data, error } = await supabase
+    .from("departments")
+    .select("_id, parent_id, name, code, level, path, order_index, is_active")
+    .like("path", `${scopePath}%`)
+    .order("level", { ascending: true })
+    .order("order_index", { ascending: true })
+    .order("name", { ascending: true });
+
+  if (error) {
+    throw new Error(`departments scope select failed: ${error.message}`);
+  }
+
+  return (data || []).map(mapDepartmentRow);
+};
+
+const fetchUserIdsByRole = async (roleId: string) => {
+  const { data, error } = await supabase
+    .from("user_roles")
+    .select("user_id")
+    .eq("role_id", roleId);
+
+  if (error) {
+    throw new Error(`user roles select failed: ${error.message}`);
+  }
+
+  return (data || []).map((row: any) => String(row.user_id)).filter(Boolean);
+};
+
+const fetchUserRolesByUserIds = async (userIds: string[]) => {
+  if (userIds.length === 0) return new Map<string, UserRoleInfo[]>();
+  const { data, error } = await supabase
+    .from("user_roles")
+    .select("user_id, role_id, is_primary, roles(_id, code, name, status)")
+    .in("user_id", userIds);
+
+  if (error) {
+    throw new Error(`user roles select failed: ${error.message}`);
+  }
+
+  const roleMap = new Map<string, UserRoleInfo[]>();
+
+  (data || []).forEach((row: any) => {
+    const userId = String(row.user_id);
+    if (!userId) return;
+    const role = row.roles;
+    const roleId = String(row.role_id ?? role?._id ?? "");
+    if (!roleId) return;
+    const record: UserRoleInfo = {
+      role_id: roleId,
+      code: role?.code ?? roleId,
+      name: role?.name ?? roleId,
+      is_primary: row.is_primary ?? false,
+    };
+    const list = roleMap.get(userId) ?? [];
+    list.push(record);
+    roleMap.set(userId, list);
+  });
+
+  return roleMap;
+};
+
 export const usersService = {
   async listUsers(params: UserListParams): Promise<UserListResult> {
     const {
@@ -175,69 +278,154 @@ export const usersService = {
       roleId,
       departmentId,
       scopeDepartmentId,
+      scopeDepartmentPath,
       scopeLevel,
+      viewerUserId,
+      isSuperAdmin,
+      isAdmin,
       page = 1,
       pageSize = 10,
       sortBy = "created_at",
       sortDir = "desc",
     } = params;
 
-    const primaryRpc = await supabase.rpc("rpc_iam_users_search", {
-      p_q: q?.trim() || null,
-      p_status: mapStatusFilter(status),
-      p_role_id: roleId || null,
-      p_department_id: departmentId || null,
-      p_scope_department_id: scopeDepartmentId || null,
-      p_scope_level: scopeLevel ?? null,
-      p_sort_by: sortBy,
-      p_sort_dir: sortDir,
-      p_page: page,
-      p_page_size: pageSize,
+    const isSuper = Boolean(isSuperAdmin);
+    const isScopedAdmin = Boolean(isAdmin) && !isSuper;
+    const isSelfOnly = !isSuper && !isScopedAdmin;
+
+    let allowedDepartmentIds: string[] | null = null;
+    if (isScopedAdmin) {
+      if (scopeDepartmentPath != null) {
+        const scopedDepartments = await fetchDepartmentsByPath(scopeDepartmentPath);
+        allowedDepartmentIds = scopedDepartments
+          .filter((dept) => dept.is_active !== false)
+          .map((dept) => dept.id);
+      } else if (scopeDepartmentId && scopeLevel) {
+        const cacheKey = `scope:${scopeDepartmentId}:${scopeLevel}`;
+        const scopeDepartments =
+          departmentScopeCache.get(cacheKey) ||
+          (await usersService.listDepartmentScope(scopeDepartmentId, scopeLevel));
+        if (!departmentScopeCache.has(cacheKey)) {
+          departmentScopeCache.set(cacheKey, scopeDepartments);
+        }
+        allowedDepartmentIds = scopeDepartments
+          .filter((dept) => dept.is_active !== false)
+          .map((dept) => dept.id);
+      } else {
+        allowedDepartmentIds = [];
+      }
+
+      if (!allowedDepartmentIds || allowedDepartmentIds.length === 0) {
+        return { data: [], total: 0 };
+      }
+    }
+
+    if (isSelfOnly && !viewerUserId) {
+      return { data: [], total: 0 };
+    }
+
+    let roleUserIds: string[] | null = null;
+    if (roleId) {
+      roleUserIds = uniq(await fetchUserIdsByRole(roleId));
+      if (roleUserIds.length === 0) {
+        return { data: [], total: 0 };
+      }
+    }
+
+    const trimmedQuery = q?.trim();
+    const statusValue = mapStatusFilter(status);
+
+    let query = supabase
+      .from("users")
+      .select(
+        "_id, username, full_name, email, phone, status, \"lastLoginAt\", created_at, updated_at, note, department_id, \"departmentId\"",
+        { count: "exact" },
+      );
+
+    if (statusValue != null) {
+      query = query.eq("status", statusValue);
+    }
+
+    if (trimmedQuery) {
+      query = query.or(
+        `username.ilike.%${trimmedQuery}%,full_name.ilike.%${trimmedQuery}%,email.ilike.%${trimmedQuery}%`,
+      );
+    }
+
+    if (roleUserIds) {
+      query = query.in("_id", roleUserIds);
+    }
+
+    if (isSelfOnly && viewerUserId) {
+      query = query.eq("_id", viewerUserId);
+    }
+
+    if (isScopedAdmin && allowedDepartmentIds) {
+      query = query.in("department_id", allowedDepartmentIds);
+    }
+
+    if (departmentId) {
+      query = query.eq("department_id", departmentId);
+    }
+
+    query = query.order(resolveSortColumn(sortBy), {
+      ascending: sortDir === "asc",
     });
 
-    const missingScopedRpc =
-      primaryRpc.error && primaryRpc.error.message.includes("rpc_iam_users_search");
-    const fallbackRpc = missingScopedRpc
-      ? await supabase.rpc("rpc_users_search", {
-          p_q: q?.trim() || null,
-          p_status: mapStatusFilter(status),
-          p_role_id: roleId || null,
-          p_sort_by: sortBy,
-          p_sort_dir: sortDir,
-          p_page: page,
-          p_page_size: pageSize,
-        })
-      : primaryRpc;
+    const rangeFrom = Math.max(0, (page - 1) * pageSize);
+    const rangeTo = Math.max(rangeFrom, rangeFrom + pageSize - 1);
+    query = query.range(rangeFrom, rangeTo);
 
-    if (fallbackRpc.error) {
-      throw new Error(`users select failed: ${fallbackRpc.error.message}`);
+    const { data, error, count } = await query;
+
+    if (error) {
+      throw new Error(`users select failed: ${error.message}`);
     }
 
-    let rows = (fallbackRpc.data || []).map(mapRow);
-    let total =
-      fallbackRpc.data && fallbackRpc.data.length > 0
-        ? Number(fallbackRpc.data[0].total_count)
-        : 0;
+    const rows = data || [];
+    const userIds = rows
+      .map((row: any) => String(row._id ?? row.id ?? ""))
+      .filter(Boolean);
+    const departmentIds = rows
+      .map((row: any) => row.department_id ?? row.departmentId ?? null)
+      .filter(Boolean) as string[];
 
-    if (missingScopedRpc && scopeDepartmentId && scopeLevel) {
-      const cacheKey = `${scopeDepartmentId}:${scopeLevel}`;
-      const scopeDepartments =
-        departmentScopeCache.get(cacheKey) ||
-        (await usersService.listDepartmentScope(scopeDepartmentId, scopeLevel));
-      if (!departmentScopeCache.has(cacheKey)) {
-        departmentScopeCache.set(cacheKey, scopeDepartments);
-      }
+    const [departmentMap, roleMap] = await Promise.all([
+      fetchDepartmentsByIds(uniq(departmentIds)),
+      fetchUserRolesByUserIds(userIds),
+    ]);
 
-      let allowed = scopeDepartments;
-      if (departmentId) {
-        allowed = computeScopeDepartments(scopeDepartments, departmentId, 2);
-      }
-      const allowedIds = new Set(allowed.map((dept) => dept.id));
-      rows = rows.filter((row) => row.department_id && allowedIds.has(row.department_id));
-      total = rows.length;
-    }
+    const mapped = rows.map((row: any) => {
+      const id = String(row._id ?? row.id ?? "");
+      const roles = roleMap.get(id) ?? [];
+      const primary = roles.find((role) => role.is_primary);
+      const departmentIdValue = row.department_id ?? row.departmentId ?? null;
+      const department = departmentIdValue
+        ? departmentMap.get(departmentIdValue)
+        : undefined;
+      return {
+        _id: id,
+        id,
+        username: row.username ?? null,
+        full_name: row.full_name ?? null,
+        email: row.email ?? null,
+        phone: row.phone ?? null,
+        status: Number(row.status) as UserStatusValue,
+        last_login_at: row.last_login_at ?? row.lastLoginAt ?? null,
+        created_at: row.created_at ?? null,
+        updated_at: row.updated_at ?? null,
+        note: row.note ?? null,
+        department_id: departmentIdValue,
+        department_name: department?.name ?? row.department_name ?? null,
+        department_level: department?.level ?? row.department_level ?? null,
+        department_path: department?.path ?? row.department_path ?? row.departmentPath ?? null,
+        roles,
+        primary_role_code: primary?.code ?? null,
+        primary_role_name: primary?.name ?? null,
+      } as UserRecord;
+    });
 
-    return { data: rows, total };
+    return { data: mapped, total: count ?? mapped.length };
   },
 
   async getUserById(id: string): Promise<UserRecord | null> {
@@ -272,38 +460,125 @@ export const usersService = {
     return mapRow(data);
   },
 
-  async updateUser(id: string, payload: UserPayload): Promise<UserRecord> {
+  async updateUser(
+    id: string,
+    payload: UserPayload,
+    opts?: { actorIsSuperAdmin?: boolean },
+  ): Promise<UserRecord> {
+    if (!id) {
+      throw new Error("Thiếu mã người dùng để cập nhật.");
+    }
+    if (opts?.actorIsSuperAdmin) {
+      try {
+        const data = await requestAdmin<any>(`/system-admin/admin/users/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload ?? {}),
+        });
+        return mapRow(data);
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.warn("[iam] admin update API failed, fallback to direct update", error);
+        }
+        // Fallback to direct update when admin API is unavailable.
+      }
+    }
     const { default_password, ...rest } = payload;
     const updatePayload: Record<string, unknown> = {
-      ...rest,
-      departmentId: rest.department_id ?? null,
-      metadata: default_password ? { defaultPassword: default_password } : undefined,
       updated_at: new Date().toISOString(),
+    };
+
+    if (rest.username != null) updatePayload.username = rest.username;
+    if (rest.full_name != null) updatePayload.full_name = rest.full_name;
+    if (rest.email != null) updatePayload.email = rest.email;
+    if (rest.phone != null) updatePayload.phone = rest.phone;
+    if (rest.status != null) updatePayload.status = rest.status;
+    if (rest.note != null) updatePayload.note = rest.note;
+
+    if (Object.prototype.hasOwnProperty.call(rest, "department_id")) {
+      updatePayload.department_id = rest.department_id ?? null;
+      updatePayload.departmentId = rest.department_id ?? null;
+    }
+
+    const nextPassword = default_password?.trim();
+    if (nextPassword) {
+      updatePayload.metadata = { defaultPassword: nextPassword };
+    }
+
+    const pickSingleRow = (data: any) => {
+      if (Array.isArray(data)) {
+        if (data.length === 1) return data[0];
+        if (data.length === 0) return null;
+        return undefined;
+      }
+      return data ?? null;
     };
 
     let response = await supabase
       .from("users")
       .update(updatePayload)
       .eq("_id", id)
-      .select("*")
-      .single();
+      .select("*");
 
-    if (response.error && rest.department_id && response.error.message.includes("department_id")) {
+    if (response.error) {
+      const message = response.error.message || "";
       const retryPayload = { ...updatePayload };
-      delete retryPayload.department_id;
-      response = await supabase
-        .from("users")
-        .update(retryPayload)
-        .eq("_id", id)
-        .select("*")
-        .single();
+      let shouldRetry = false;
+      if (message.includes("department_id")) {
+        delete retryPayload.department_id;
+        shouldRetry = true;
+      }
+      if (message.includes("departmentId")) {
+        delete retryPayload.departmentId;
+        shouldRetry = true;
+      }
+      if (message.includes("metadata")) {
+        delete retryPayload.metadata;
+        shouldRetry = true;
+      }
+      if (shouldRetry) {
+        response = await supabase
+          .from("users")
+          .update(retryPayload)
+          .eq("_id", id)
+          .select("*");
+      }
     }
 
     if (response.error) {
       throw new Error(`user update failed: ${response.error.message}`);
     }
 
-    return mapRow(response.data);
+    const row = pickSingleRow(response.data);
+    if (row === null) {
+      if (!opts?.actorIsSuperAdmin) {
+        throw new Error("Bạn không có quyền cập nhật người dùng thuộc đơn vị khác.");
+      }
+      const fallback = await supabase
+        .from("users")
+        .select("*")
+        .eq("_id", id)
+        .maybeSingle();
+      if (!fallback.error && fallback.data) {
+        return mapRow(fallback.data);
+      }
+      if (import.meta.env.DEV) {
+        console.warn("[iam] updateUser: no data returned after update", {
+          id,
+          error: fallback.error,
+        });
+      }
+      return mapRow({
+        _id: id,
+        id,
+        status: payload.status ?? 1,
+        ...payload,
+      });
+    }
+    if (!row) {
+      throw new Error("Không thể xác định dữ liệu người dùng sau khi cập nhật.");
+    }
+    return mapRow(row);
   },
 
   async setUserStatus(id: string, status: UserStatusValue): Promise<void> {
@@ -343,6 +618,7 @@ export const usersService = {
     const { data, error } = await supabase
       .from("roles")
       .select("_id, code, name, status, is_system, sort_order")
+      .eq("status", 1)
       .order("sort_order", { ascending: true })
       .order("code", { ascending: true });
 
@@ -360,8 +636,28 @@ export const usersService = {
     }));
   },
 
-  async listDepartmentScope(scopeDepartmentId: string | null, scopeLevel: number | null): Promise<DepartmentScopeRecord[]> {
+  async listDepartmentScope(
+    scopeDepartmentId: string | null,
+    scopeLevel: number | null,
+    scopeDepartmentPath?: string | null,
+  ): Promise<DepartmentScopeRecord[]> {
+    if (scopeDepartmentPath != null) {
+      const cacheKey = `path:${scopeDepartmentPath}`;
+      if (departmentScopeCache.has(cacheKey)) {
+        return departmentScopeCache.get(cacheKey) || [];
+      }
+      const scoped = await fetchDepartmentsByPath(scopeDepartmentPath);
+      const filtered = scoped.filter((dept) => dept.is_active !== false);
+      departmentScopeCache.set(cacheKey, filtered);
+      return filtered;
+    }
+
     if (!scopeDepartmentId || !scopeLevel) return [];
+    const cacheKey = `scope:${scopeDepartmentId}:${scopeLevel}`;
+    if (departmentScopeCache.has(cacheKey)) {
+      return departmentScopeCache.get(cacheKey) || [];
+    }
+
     const rpcResult = await supabase.rpc("rpc_my_department_scope", {
       p_scope_department_id: scopeDepartmentId,
       p_scope_level: scopeLevel,
@@ -370,7 +666,7 @@ export const usersService = {
     if (rpcResult.error && rpcResult.error.message.includes("rpc_my_department_scope")) {
       const fallback = await supabase
         .from("departments")
-        .select("_id, parent_id, name, code, level, order_index, is_active")
+        .select("_id, parent_id, name, code, level, path, order_index, is_active")
         .order("level", { ascending: true })
         .order("order_index", { ascending: true })
         .order("name", { ascending: true });
@@ -381,14 +677,18 @@ export const usersService = {
 
       const mapped = (fallback.data || []).map(mapDepartmentRow);
       const scoped = computeScopeDepartments(mapped, scopeDepartmentId, scopeLevel);
-      return scoped.filter((dept) => dept.is_active !== false);
+      const filtered = scoped.filter((dept) => dept.is_active !== false);
+      departmentScopeCache.set(cacheKey, filtered);
+      return filtered;
     }
 
     if (rpcResult.error) {
       throw new Error(`departments scope select failed: ${rpcResult.error.message}`);
     }
 
-    return (rpcResult.data || []).map(mapDepartmentRow);
+    const mapped = (rpcResult.data || []).map(mapDepartmentRow);
+    departmentScopeCache.set(cacheKey, mapped);
+    return mapped;
   },
 
   async setUserRoles(userId: string, roleIds: string[], primaryRoleId?: string | null): Promise<void> {

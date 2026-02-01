@@ -9,6 +9,7 @@ import {
   Button,
   Card,
   Checkbox,
+  Alert,
   Form,
   Dropdown,
   Input,
@@ -35,11 +36,12 @@ import {
   MoreOutlined,
 } from "@ant-design/icons";
 
-import { PermissionGate, EmptyState, usePermissions } from "../../_shared";
+import { PermissionGate, EmptyState } from "../../_shared";
 import PageHeader from "@/layouts/PageHeader";
 import AppTable from "@/components/data-table/AppTable";
 import { getColumnSearchProps } from "@/components/data-table/columnSearch";
-import { useAuth } from "@/contexts/AuthContext";
+import { useIamIdentity } from "@/shared/iam/useIamIdentity";
+import { supabase } from "@/api/supabaseClient";
 import {
   usersService,
   type DepartmentScopeRecord,
@@ -73,21 +75,26 @@ const statusLabel = (status: UserStatusValue) => {
   return "Khóa";
 };
 
-const inferScopeLevelFromCode = (code?: string | null): number | null => {
-  if (!code) return null;
-  const trimmed = code.trim();
-  if (trimmed.length === 2) return 1; // "QT" -> Cap Cuc
-  if (trimmed.length >= 4 && trimmed.length % 2 === 0) {
-    const inferred = trimmed.length / 2;
-    if (inferred === 1 || inferred === 2 || inferred === 3) return inferred;
-  }
+const PERM_USER_READ = "system-admin.user.read";
+const PERM_USER_CREATE = "system-admin.user.create";
+const PERM_USER_UPDATE = "system-admin.user.update";
+const PERM_USER_LOCK = "system-admin.user.lock.update";
+const PERM_USER_ROLES_UPDATE = "system-admin.user_roles.update";
+const PERM_USER_RESET_PASSWORD = "system-admin.user.reset_password.update";
+const PERM_USER_DELETE = "system-admin.user.delete";
+
+const inferScopeLevelFromPath = (path?: string | null): number | null => {
+  if (!path) return null;
+  const segments = path.split(".").filter(Boolean);
+  const inferred = segments.length;
+  if (inferred === 1 || inferred === 2 || inferred === 3) return inferred;
   return null;
 };
 
-const normalizeScopeLevel = (level?: number | null, code?: string | null) => {
+const normalizeScopeLevel = (level?: number | null, path?: string | null) => {
   if (level === 1 || level === 2 || level === 3) return level;
   if (level === 0) return 1;
-  return inferScopeLevelFromCode(code);
+  return inferScopeLevelFromPath(path);
 };
 
 const buildDepartmentTreeData = (departments: DepartmentScopeRecord[]) => {
@@ -129,8 +136,17 @@ const buildDepartmentTreeData = (departments: DepartmentScopeRecord[]) => {
 
 export default function UsersPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { hasPermission } = usePermissions();
+  const {
+    userId: iamUserId,
+    roleCodes: iamRoleCodes,
+    isSuperAdmin,
+    isAdmin,
+    departmentId,
+    departmentPath,
+    departmentLevel,
+    loading: identityLoading,
+    hasPerm,
+  } = useIamIdentity();
   const searchInput = React.useRef<InputRef>(null);
   const [columnSearchText, setColumnSearchText] = React.useState("");
   const [searchedColumn, setSearchedColumn] = React.useState("");
@@ -139,13 +155,10 @@ export default function UsersPage() {
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<"all" | "active" | "inactive" | "locked">("all");
   const [roleFilter, setRoleFilter] = React.useState<string>("all");
-  const scopeLevel = normalizeScopeLevel(
-    user?.departmentInfo?.level ?? null,
-    user?.departmentInfo?.code ?? null,
-  );
-  // Only send scope to RPC when the level is valid; otherwise it can filter everything out.
-  const scopeDepartmentId = scopeLevel ? user?.departmentInfo?.id ?? null : null;
-  const isScopeCuc = scopeLevel === 1;
+  const scopeLevel = normalizeScopeLevel(departmentLevel ?? null, departmentPath ?? null);
+  const scopeDepartmentId = scopeLevel ? departmentId ?? null : null;
+  const scopeDepartmentPath = isSuperAdmin ? null : departmentPath ?? null;
+  const listScopePath = isSuperAdmin ? "" : departmentPath ?? null;
   const isScopeChiCuc = scopeLevel === 2;
   const isScopeDoi = scopeLevel === 3;
   const [departmentFilter, setDepartmentFilter] = React.useState<string>("all");
@@ -155,14 +168,81 @@ export default function UsersPage() {
   const [sortField, setSortField] = React.useState<string | null>(null);
   const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("desc");
 
-  const canCreate = hasPermission("sa.iam.user.create");
-  const canUpdate = hasPermission("sa.iam.user.update");
-  const canDelete = hasPermission("sa.iam.user.delete");
+  const permissionCodesToCheck = React.useMemo(
+    () => [
+      PERM_USER_READ,
+      PERM_USER_CREATE,
+      PERM_USER_UPDATE,
+      PERM_USER_LOCK,
+      PERM_USER_ROLES_UPDATE,
+      PERM_USER_RESET_PASSWORD,
+      PERM_USER_DELETE,
+    ],
+    [],
+  );
+  const [availablePermissionCodes, setAvailablePermissionCodes] = React.useState<Set<string>>(
+    new Set(),
+  );
+  const [permissionsChecked, setPermissionsChecked] = React.useState(false);
+
+  React.useEffect(() => {
+    let mounted = true;
+    if (permissionCodesToCheck.length === 0) return () => undefined;
+    const loadPermissionCodes = async () => {
+      const { data, error } = await supabase
+        .from("permissions")
+        .select("code")
+        .in("code", permissionCodesToCheck)
+        .eq("status", 1);
+      if (error) {
+        if (import.meta.env.DEV) {
+          console.warn("[iam] permissions lookup failed", error);
+        }
+        if (mounted) {
+          setPermissionsChecked(false);
+        }
+        return;
+      }
+      const found = new Set(
+        (data || []).map((row: any) => String(row.code).toLowerCase()).filter(Boolean),
+      );
+      if (mounted) {
+        setAvailablePermissionCodes(found);
+        setPermissionsChecked(true);
+      }
+      if (import.meta.env.DEV) {
+        permissionCodesToCheck.forEach((code) => {
+          if (!found.has(code.toLowerCase())) {
+            console.warn(`[iam] missing permission code in DB: ${code}`);
+          }
+        });
+      }
+    };
+    void loadPermissionCodes();
+    return () => {
+      mounted = false;
+    };
+  }, [permissionCodesToCheck]);
+
+  const isPermissionMissing = React.useCallback(
+    (code: string) => {
+      if (!code) return false;
+      if (!permissionsChecked) return false;
+      return !availablePermissionCodes.has(code.toLowerCase());
+    },
+    [availablePermissionCodes, permissionsChecked],
+  );
+
+  const canManageUsers = isSuperAdmin || isAdmin;
+  const canCreate = canManageUsers && hasPerm(PERM_USER_CREATE);
+  const canUpdate = canManageUsers && hasPerm(PERM_USER_UPDATE);
+  const canDelete = canManageUsers && hasPerm(PERM_USER_DELETE);
 
   const [loading, setLoading] = React.useState(false);
   const [users, setUsers] = React.useState<UserRecord[]>([]);
   const [total, setTotal] = React.useState(0);
   const [roles, setRoles] = React.useState<RoleOption[]>([]);
+  const showNoRoleBanner = !identityLoading && iamRoleCodes.length === 0;
 
   const [formOpen, setFormOpen] = React.useState(false);
   const [editingUser, setEditingUser] = React.useState<UserRecord | null>(null);
@@ -215,19 +295,23 @@ export default function UsersPage() {
   }, []);
 
   const loadDepartmentScope = React.useCallback(async () => {
-    if (!scopeDepartmentId || !scopeLevel) {
+    if (listScopePath == null && (!scopeDepartmentId || !scopeLevel)) {
       setDepartmentScope([]);
       return;
     }
     try {
-      const result = await usersService.listDepartmentScope(scopeDepartmentId, scopeLevel);
+      const result = await usersService.listDepartmentScope(
+        scopeDepartmentId,
+        scopeLevel,
+        listScopePath,
+      );
       setDepartmentScope(result);
     } catch (err) {
       const messageText =
         err instanceof Error ? err.message : "Không thể tải danh sách đơn vị quản lý.";
       Modal.error({ title: "Lỗi tải đơn vị", content: messageText });
     }
-  }, [scopeDepartmentId, scopeLevel]);
+  }, [listScopePath, scopeDepartmentId, scopeLevel]);
 
   const loadUsers = React.useCallback(async () => {
     setLoading(true);
@@ -239,7 +323,11 @@ export default function UsersPage() {
         departmentId:
           departmentFilter === "all" ? (isScopeDoi ? scopeDepartmentId : null) : departmentFilter,
         scopeDepartmentId,
+        scopeDepartmentPath,
         scopeLevel,
+        viewerUserId: iamUserId,
+        isSuperAdmin,
+        isAdmin,
         page,
         pageSize,
         sortBy: sortField || undefined,
@@ -257,10 +345,14 @@ export default function UsersPage() {
     debouncedSearch,
     departmentFilter,
     isScopeDoi,
+    isAdmin,
+    isSuperAdmin,
+    iamUserId,
     page,
     pageSize,
     roleFilter,
     scopeDepartmentId,
+    scopeDepartmentPath,
     scopeLevel,
     sortField,
     sortOrder,
@@ -307,7 +399,9 @@ export default function UsersPage() {
     try {
       const values = await form.validateFields();
       if (editingUser) {
-        await usersService.updateUser(editingUser.id, values);
+        await usersService.updateUser(editingUser.id, values, {
+          actorIsSuperAdmin: isSuperAdmin,
+        });
       } else {
         await usersService.createUser(values);
       }
@@ -359,6 +453,79 @@ export default function UsersPage() {
     }
   };
 
+  const isTargetSuperAdmin = React.useCallback((record: UserRecord) => {
+    return (record.roles || []).some(
+      (role) => (role.code || "").toLowerCase() === "super-admin",
+    );
+  }, []);
+
+  const isRecordInScope = React.useCallback(
+    (record: UserRecord) => {
+      if (isSuperAdmin) return true;
+      const isSelf = iamUserId ? record.id === iamUserId : false;
+      if (isSelf) return true;
+      if (isAdmin) {
+        if (!departmentPath || !record.department_path) return false;
+        return record.department_path.startsWith(departmentPath);
+      }
+      return false;
+    },
+    [departmentPath, iamUserId, isAdmin, isSuperAdmin],
+  );
+
+  const getActionScopeReason = React.useCallback(
+    (record: UserRecord) => {
+      if (!isSuperAdmin && isTargetSuperAdmin(record)) {
+        return "Bạn không thể thao tác tài khoản Super Admin.";
+      }
+      if (!isRecordInScope(record)) {
+        return "Bạn không có quyền thao tác người dùng thuộc đơn vị khác.";
+      }
+      return null;
+    },
+    [isRecordInScope, isSuperAdmin, isTargetSuperAdmin],
+  );
+
+  const getPermissionReason = React.useCallback(
+    (code: string, allowed: boolean) => {
+      if (allowed || !code) return null;
+      if (isPermissionMissing(code)) {
+        return `Thiếu quyền: ${code}`;
+      }
+      return `Bạn thiếu quyền ${code} để thực hiện thao tác này.`;
+    },
+    [isPermissionMissing],
+  );
+
+  const renderIconButton = (
+    options: {
+      title: string;
+      icon: React.ReactNode;
+      onClick?: () => void;
+      disabled?: boolean;
+      danger?: boolean;
+    },
+    reason?: string | null,
+  ) => {
+    const { title, icon, onClick, disabled, danger } = options;
+    const tooltipTitle = reason ?? title;
+    const button = (
+      <Button
+        type="text"
+        size="small"
+        icon={icon}
+        onClick={onClick}
+        disabled={disabled}
+        danger={danger}
+      />
+    );
+    return (
+      <Tooltip title={tooltipTitle}>
+        {disabled ? <span>{button}</span> : button}
+      </Tooltip>
+    );
+  };
+
   return (
     <PermissionGate permission="sa.iam.user.read">
       <div className="flex flex-col gap-6">
@@ -379,9 +546,18 @@ export default function UsersPage() {
         />
 
         <div className="px-6 pb-8">
+          {showNoRoleBanner && (
+            <Alert
+              type="warning"
+              showIcon
+              message="Tài khoản chưa được gán vai trò"
+              style={{ marginBottom: 16 }}
+            />
+          )}
           <Card>
             <AppTable<UserRecord>
-              rowKey="id"
+              rowKey="_id"
+              bordered
               loading={loading}
               dataSource={users}
               locale={{ emptyText: <EmptyState title="Không có dữ liệu" message="Chưa có người dùng nào." /> }}
@@ -446,6 +622,7 @@ export default function UsersPage() {
                 current: page,
                 pageSize,
                 total,
+                showSizeChanger: true,
                 onChange: (nextPage, nextPageSize) => {
                   setPage(nextPage);
                   setPageSize(nextPageSize);
@@ -583,66 +760,94 @@ export default function UsersPage() {
                   key: "actions",
                   width: 180,
                   fixed: "right",
-                  render: (_: unknown, record: UserRecord) => (
-                    <Space>
-                      <Tooltip title="Xem chi tiết">
-                        <Button
-                          type="text"
-                          size="small"
-                          icon={<EyeOutlined />}
-                          onClick={() => navigate(`/system-admin/iam/users/${record.id}`)}
-                        />
-                      </Tooltip>
-                      <Tooltip title="Gán vai trò">
-                        <Button
-                          type="text"
-                          size="small"
-                          icon={<TeamOutlined />}
-                          disabled={!canUpdate}
-                          onClick={() => openRolesModal(record)}
-                        />
-                      </Tooltip>
-                      <Tooltip title="Chỉnh sửa">
-                        <Button
-                          type="text"
-                          size="small"
-                          icon={<EditOutlined />}
-                          disabled={!canUpdate}
-                          onClick={() => openEditModal(record)}
-                        />
-                      </Tooltip>
-                      <Popconfirm
-                        title="Xóa người dùng?"
-                        description="Thao tác này sẽ ẩn người dùng khỏi danh sách."
-                        okText="Xóa"
-                        cancelText="Hủy"
-                        onConfirm={() => handleDeleteUser(record)}
-                        disabled={!canDelete}
-                      >
-                        <Tooltip title="Xóa">
-                          <Button
-                            type="text"
-                            size="small"
-                            danger
-                            icon={<DeleteOutlined />}
-                            disabled={!canDelete}
-                          />
-                        </Tooltip>
-                      </Popconfirm>
-                      <Tooltip title={record.status === 2 ? "Mở khóa" : "Khóa tài khoản"}>
-                        <Button
-                          type="text"
-                          size="small"
-                          icon={record.status === 2 ? <UnlockOutlined /> : <LockOutlined />}
-                          disabled={!canUpdate}
-                          onClick={() => handleToggleStatus(record)}
-                        />
-                      </Tooltip>
-                      <Dropdown menu={getMoreActions(record)}>
-                        <Button type="text" size="small" icon={<MoreOutlined />} />
-                      </Dropdown>
-                    </Space>
-                  ),
+                  render: (_: unknown, record: UserRecord) => {
+                    const scopeReason = getActionScopeReason(record);
+                    const canViewByPerm = hasPerm(PERM_USER_READ);
+                    const canAssignByPerm = hasPerm(PERM_USER_ROLES_UPDATE);
+                    const canEditByPerm = hasPerm(PERM_USER_UPDATE);
+                    const canDeleteByPerm = hasPerm(PERM_USER_DELETE);
+                    const canLockByPerm =
+                      hasPerm(PERM_USER_LOCK) ||
+                      (isPermissionMissing(PERM_USER_LOCK) && hasPerm(PERM_USER_UPDATE));
+
+                    const viewReason = scopeReason ?? getPermissionReason(PERM_USER_READ, canViewByPerm);
+                    const assignReason =
+                      scopeReason ?? getPermissionReason(PERM_USER_ROLES_UPDATE, canAssignByPerm);
+                    const editReason = scopeReason ?? getPermissionReason(PERM_USER_UPDATE, canEditByPerm);
+                    const deleteReason =
+                      scopeReason ?? getPermissionReason(PERM_USER_DELETE, canDeleteByPerm);
+                    const lockReason = scopeReason ?? getPermissionReason(PERM_USER_LOCK, canLockByPerm);
+
+                    const canView = !viewReason;
+                    const canAssign = !assignReason;
+                    const canEditAction = !editReason;
+                    const canDeleteAction = !deleteReason;
+                    const canToggle = !lockReason;
+
+                    return (
+                      <Space>
+                        {renderIconButton(
+                          {
+                            title: "Xem chi tiết",
+                            icon: <EyeOutlined />,
+                            onClick: () => navigate(`/system-admin/iam/users/${record.id}`),
+                            disabled: !canView,
+                          },
+                          viewReason,
+                        )}
+                        {renderIconButton(
+                          {
+                            title: "Gán vai trò",
+                            icon: <TeamOutlined />,
+                            onClick: () => openRolesModal(record),
+                            disabled: !canAssign,
+                          },
+                          assignReason,
+                        )}
+                        {renderIconButton(
+                          {
+                            title: "Chỉnh sửa",
+                            icon: <EditOutlined />,
+                            onClick: () => openEditModal(record),
+                            disabled: !canEditAction,
+                          },
+                          editReason,
+                        )}
+                        <Popconfirm
+                          title="Xóa người dùng?"
+                          description="Thao tác này sẽ ẩn người dùng khỏi danh sách."
+                          okText="Xóa"
+                          cancelText="Hủy"
+                          onConfirm={() => handleDeleteUser(record)}
+                          disabled={!canDeleteAction}
+                        >
+                          <span>
+                            {renderIconButton(
+                              {
+                                title: "Xóa",
+                                icon: <DeleteOutlined />,
+                                disabled: !canDeleteAction,
+                                danger: true,
+                              },
+                              deleteReason,
+                            )}
+                          </span>
+                        </Popconfirm>
+                        {renderIconButton(
+                          {
+                            title: record.status === 2 ? "Mở khóa" : "Khóa tài khoản",
+                            icon: record.status === 2 ? <UnlockOutlined /> : <LockOutlined />,
+                            onClick: () => handleToggleStatus(record),
+                            disabled: !canToggle,
+                          },
+                          lockReason,
+                        )}
+                        <Dropdown menu={getMoreActions(record)}>
+                          <Button type="text" size="small" icon={<MoreOutlined />} />
+                        </Dropdown>
+                      </Space>
+                    );
+                  },
                 },
               ]}
               scroll={{ x: "max-content" }}
@@ -732,6 +937,7 @@ export default function UsersPage() {
           open={rolesModalOpen}
           user={rolesTarget}
           roles={roles}
+          canAssignSuperAdmin={isSuperAdmin}
           onClose={() => {
             setRolesModalOpen(false);
             setRolesTarget(null);
@@ -747,11 +953,19 @@ type UserRolesModalProps = {
   open: boolean;
   user: UserRecord | null;
   roles: RoleOption[];
+  canAssignSuperAdmin: boolean;
   onClose: () => void;
   onSave: (roleIds: string[], primaryRoleId?: string | null) => void;
 };
 
-function UserRolesModal({ open, user, roles, onClose, onSave }: UserRolesModalProps) {
+function UserRolesModal({
+  open,
+  user,
+  roles,
+  canAssignSuperAdmin,
+  onClose,
+  onSave,
+}: UserRolesModalProps) {
   const [selectedRoles, setSelectedRoles] = React.useState<string[]>([]);
   const [primaryRoleId, setPrimaryRoleId] = React.useState<string | null>(null);
 
@@ -769,10 +983,22 @@ function UserRolesModal({ open, user, roles, onClose, onSave }: UserRolesModalPr
     setPrimaryRoleId(null);
   }, [open]);
 
-  const roleOptions = roles.map((role) => ({
-    label: `${role.code} - ${role.name}`,
-    value: role.id,
-  }));
+  const roleOptions = roles.map((role) => {
+    const isSuperAdminRole = (role.code || "").toLowerCase() === "super-admin";
+    const disabled = isSuperAdminRole && !canAssignSuperAdmin;
+    const label = disabled ? (
+      <Tooltip title="Chỉ Super Admin mới được gán quyền Super Admin.">
+        <span>{`${role.code} - ${role.name}`}</span>
+      </Tooltip>
+    ) : (
+      `${role.code} - ${role.name}`
+    );
+    return {
+      label,
+      value: role.id,
+      disabled,
+    };
+  });
 
   const handleSave = () => {
     onSave(selectedRoles, primaryRoleId);
@@ -788,7 +1014,7 @@ function UserRolesModal({ open, user, roles, onClose, onSave }: UserRolesModalPr
       cancelText="Hủy"
       width={680}
     >
-      <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+      <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
         <div>
           <Typography.Text strong>Vai trò</Typography.Text>
           <Checkbox.Group
@@ -804,7 +1030,7 @@ function UserRolesModal({ open, user, roles, onClose, onSave }: UserRolesModalPr
             value={primaryRoleId}
             onChange={(event) => setPrimaryRoleId(event.target.value)}
           >
-            <Space direction="vertical">
+            <Space orientation="vertical">
               {selectedRoles.map((roleId) => {
                 const role = roles.find((item) => item.id === roleId);
                 return (

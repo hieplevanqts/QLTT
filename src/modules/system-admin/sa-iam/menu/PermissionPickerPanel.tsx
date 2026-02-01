@@ -233,11 +233,11 @@ export default function PermissionPickerPanel({
   ];
 
   return (
-    <Space direction="vertical" style={{ width: "100%" }} size={12}>
+    <Space orientation="vertical" style={{ width: "100%" }} size={12}>
       {isGroupMenu ? (
         <Alert
           type="info"
-          message="Nhóm menu không gắn quyền hiển thị."
+          title="Nhóm menu không gắn quyền hiển thị."
           description="Menu nhóm sẽ tự hiển thị khi có ít nhất 1 menu con được phép."
           showIcon
         />
@@ -246,14 +246,14 @@ export default function PermissionPickerPanel({
           {!selectedPermissionId && (
             <Alert
               type="warning"
-              message="Menu trang chưa có quyền hiển thị (READ/PAGE)."
+              title="Menu trang chưa có quyền hiển thị (READ/PAGE)."
               showIcon
             />
           )}
           {moduleMismatch && !allowCrossModule && (
             <Alert
               type="error"
-              message="Quyền thuộc phân hệ khác với menu. Bật 'Cho phép ngoại lệ' để lưu."
+              title="Quyền thuộc phân hệ khác với menu. Bật 'Cho phép ngoại lệ' để lưu."
               showIcon
             />
           )}

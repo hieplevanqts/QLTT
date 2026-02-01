@@ -525,7 +525,7 @@ export default function MenusPage() {
               </Space>
             }
           >
-            <Space direction="vertical" style={{ width: "100%" }} size={12}>
+            <Space orientation="vertical" style={{ width: "100%" }} size={12}>
               <Input.Search
                 placeholder="Tìm theo mã/tên/path..."
                 value={treeSearch}

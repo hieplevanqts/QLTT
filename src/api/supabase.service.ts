@@ -275,7 +275,7 @@ export const UserService = {
   async updateLastLogin(id: string): Promise<void> {
     const { error } = await getSupabase()
       .from('users')
-      .update({ last_login_at: new Date().toISOString() })
+      .update({ lastLoginAt: new Date().toISOString() })
       .eq('_id', id);
 
     if (error) handleError(error);

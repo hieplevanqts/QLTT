@@ -322,7 +322,7 @@ export default function PermissionsPage() {
 
         <div className="px-6 pb-8">
           <Card>
-              <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+              <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
               <Space wrap>
                 <Tag.CheckableTag
                   checked={filters.category === "PAGE"}
@@ -688,12 +688,12 @@ export default function PermissionsPage() {
       <Drawer
         title="Chi tiết quyền"
         placement="right"
-        width={420}
+        size={420}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
       >
         {viewPermission ? (
-          <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+          <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
             <Typography.Title level={5} style={{ margin: 0 }}>
               {viewPermission.name}
             </Typography.Title>

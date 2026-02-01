@@ -261,13 +261,6 @@ export async function fetchUserInfo(token: string): Promise<User | null> {
 
     const userData = response.data;
     
-    // Fetch user role name
-    let roleDisplay: string | null = null;
-    try {
-      roleDisplay = await fetchUserRoleName(userData.id, token);
-    } catch (error) {
-    }
-
     // Fetch profile details from v_user_profile/users table
     let profileDetails: Partial<User> | null = null;
     try {
@@ -277,6 +270,8 @@ export async function fetchUserInfo(token: string): Promise<User | null> {
       });
     } catch (error) {
     }
+
+    const profileRoleNames = normalizeToArray((profileDetails as any)?.role_names);
 
     let roleCodes: string[] = [];
     const profileRoleCodes = normalizeToArray((profileDetails as any)?.role_codes);
@@ -288,18 +283,21 @@ export async function fetchUserInfo(token: string): Promise<User | null> {
       } catch (error) {
       }
     }
-    
-    const profileRoleNames = normalizeToArray((profileDetails as any)?.role_names);
+  
+    const roleDisplay =
+      profileRoleNames.length > 0
+        ? profileRoleNames.join(', ')
+        : userData.user_metadata?.roleDisplay || undefined;
 
     return {
       id: userData.id,
-      // email: profileDetails?.email || userData.email,
-      // name:
-      //   (profileDetails as any)?.full_name ||
-      //   userData.user_metadata?.name ||
-      //   userData.user_metadata?.full_name ||
-      //   userData.email,
-      // roleDisplay: roleDisplay || (profileRoleNames.length > 0 ? profileRoleNames.join(', ') : undefined) || userData.user_metadata?.roleDisplay || undefined,
+      email: profileDetails?.email || userData.email,
+      name:
+        (profileDetails as any)?.full_name ||
+        userData.user_metadata?.name ||
+        userData.user_metadata?.full_name ||
+        userData.email,
+      roleDisplay,
       roleCodes: roleCodes.length > 0 ? roleCodes : undefined,
       roleCode: roleCodes[0] || undefined,
       role_names: (profileDetails as any)?.role_names,
@@ -344,16 +342,10 @@ async function fetchUserRoleCodes(userId: string, token: string): Promise<string
       Authorization: `Bearer ${token}`,
     };
 
-    const userRolesUrl = `${AUTH_API_BASE_URL}/rest/v1/user_roles?user_id=eq.${userId}&select=role_id`;
-    const userRolesResponse = await axios.get<{ role_id: string }[]>(userRolesUrl, { headers });
-    const roleIds = userRolesResponse.data?.map((row) => row.role_id).filter(Boolean) || [];
-    if (roleIds.length === 0) {
-      return [];
-    }
-
-    const rolesUrl = `${AUTH_API_BASE_URL}/rest/v1/roles?_id=in.(${roleIds.join(',')})&select=code`;
-    const rolesResponse = await axios.get<{ code: string }[]>(rolesUrl, { headers });
-    return rolesResponse.data?.map((row) => row.code).filter(Boolean) || [];
+    const viewUrl = `${AUTH_API_BASE_URL}/rest/v1/v_user_profile?user_id=eq.${userId}&select=role_codes`;
+    const viewResponse = await axios.get<any[]>(viewUrl, { headers });
+    const roleCodes = normalizeToArray(viewResponse.data?.[0]?.role_codes);
+    return roleCodes;
   } catch (error: any) {
     return [];
   }
@@ -376,7 +368,7 @@ async function fetchUserProfileDetails(
     };
 
     const selectFields = '_id,username,full_name,email,phone,department_id';
-    const viewFields = 'user_id,email,full_name,cap_quan_ly,role_codes,role_names,don_vi_cong_tac_departments';
+    const viewFields = 'user_id,email,full_name,cap_quan_ly,role_codes,role_names,don_vi_cong_tac_departments,is_super_admin';
     let row: any = null;
     let viewRow: any = null;
 
@@ -481,6 +473,7 @@ async function fetchUserProfileDetails(
       department_level: departmentLevel ?? null,
       department_code: departmentCode ?? null,
       cap_quan_ly: viewRow?.cap_quan_ly ?? null,
+      is_super_admin: viewRow?.is_super_admin ?? null,
       role_codes: roleCodes.length > 0 ? roleCodes : undefined,
       role_names: roleNames.length > 0 ? roleNames : undefined,
       don_vi_cong_tac_departments: departmentsArray.length > 0 ? departmentsArray : undefined,
@@ -517,9 +510,8 @@ export async function fetchUserRoleName(userId: string, token: string): Promise<
       return null;
     }
 
-    // Get user_roles
-    const userRolesUrl = `${AUTH_API_BASE_URL}/rest/v1/user_roles?user_id=eq.${userId}&select=role_id&limit=1`;
-    const userRolesResponse = await axios.get<{ role_id: string }[]>(userRolesUrl, {
+    const viewUrl = `${AUTH_API_BASE_URL}/rest/v1/v_user_profile?user_id=eq.${userId}&select=role_names`;
+    const viewResponse = await axios.get<any[]>(viewUrl, {
       headers: {
         'Content-Type': 'application/json',
         apikey: apiKey,
@@ -527,23 +519,8 @@ export async function fetchUserRoleName(userId: string, token: string): Promise<
       },
     });
 
-    const roleIds = userRolesResponse.data?.map(ur => ur.role_id) || [];
-    
-    if (roleIds.length === 0) {
-      return null;
-    }
-
-    // Get role name from roles table
-    const rolesUrl = `${AUTH_API_BASE_URL}/rest/v1/roles?_id=eq.${roleIds[0]}&select=name`;
-    const rolesResponse = await axios.get<{ name: string }[]>(rolesUrl, {
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: apiKey,
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    return rolesResponse.data?.[0]?.name || null;
+    const roleNames = normalizeToArray(viewResponse.data?.[0]?.role_names);
+    return roleNames.length > 0 ? roleNames.join(', ') : null;
   } catch (error: any) {
     return null;
   }

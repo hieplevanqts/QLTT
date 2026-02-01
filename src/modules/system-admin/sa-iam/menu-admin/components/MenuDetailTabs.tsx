@@ -109,7 +109,7 @@ export const MenuDetailTabs: React.FC<MenuDetailTabsProps> = ({
           label: "Thông tin",
           children: (
             <Form form={form} layout="vertical" onFinish={handleSubmit}>
-              <Space direction="vertical" style={{ width: "100%" }} size={12}>
+              <Space orientation="vertical" style={{ width: "100%" }} size={12}>
                 <Space style={{ width: "100%" }} size={16} align="start">
                   <Form.Item
                     label="Mã menu"
@@ -266,7 +266,7 @@ export const MenuDetailTabs: React.FC<MenuDetailTabsProps> = ({
           key: "preview",
           label: "Preview theo vai trò",
           children: (
-            <Space direction="vertical" style={{ width: "100%" }} size={12}>
+            <Space orientation="vertical" style={{ width: "100%" }} size={12}>
               <Select
                 placeholder="Chọn vai trò để preview"
                 value={previewRoleId}
@@ -286,7 +286,7 @@ export const MenuDetailTabs: React.FC<MenuDetailTabsProps> = ({
           key: "advanced",
           label: "Nâng cao",
           children: (
-            <Space direction="vertical" style={{ width: "100%" }} size={12}>
+            <Space orientation="vertical" style={{ width: "100%" }} size={12}>
               <Input.TextArea
                 value={metaText}
                 onChange={(event) => setMetaText(event.target.value)}

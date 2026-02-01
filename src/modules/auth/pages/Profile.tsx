@@ -87,16 +87,71 @@ export default function Profile() {
     return [];
   };
 
+  const permissionPalette = [
+    { bg: '#EAF2FF', border: '#CFE0FF', text: '#1D4ED8' },
+    { bg: '#ECFDF3', border: '#C7F0D8', text: '#15803D' },
+    { bg: '#FFF7ED', border: '#FED7AA', text: '#9A3412' },
+    { bg: '#FDF2F8', border: '#FBCFE8', text: '#BE185D' },
+    { bg: '#F0F9FF', border: '#CFE8FF', text: '#0369A1' },
+    { bg: '#F4F3FF', border: '#E0E7FF', text: '#4F46E5' },
+    { bg: '#F1F5F9', border: '#CBD5E1', text: '#334155' },
+    { bg: '#FEEFF5', border: '#FACFE0', text: '#9F1239' },
+    { bg: '#F0FDF4', border: '#BBF7D0', text: '#166534' },
+    { bg: '#FFFBEB', border: '#FDE68A', text: '#92400E' },
+    { bg: '#F5F3FF', border: '#DDD6FE', text: '#5B21B6' },
+    { bg: '#EFF6FF', border: '#BFDBFE', text: '#1E40AF' },
+  ];
+
+  const hashString = (value: string) => {
+    let hash = 0;
+    for (let i = 0; i < value.length; i += 1) {
+      hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+    }
+    return hash;
+  };
+
+  const getPermissionTone = (value: string, index: number) => {
+    const paletteIndex = (hashString(value) + index) % permissionPalette.length;
+    return permissionPalette[paletteIndex];
+  };
+
+  const userPermissions = normalizeArray(
+    (user as any)?.permission_codes ?? (user as any)?.permissions ?? (user as any)?.permissionCodes
+  );
+  const userRoleCodes = normalizeArray(
+    (user as any)?.role_codes ?? (user as any)?.roleCodes ?? (user as any)?.roles
+  );
+  const primaryRoleCodeRaw =
+    (user as any)?.roleCode ??
+    (user as any)?.primary_role_code ??
+    userRoleCodes[0] ??
+    '';
+  const primaryRoleCode = String(primaryRoleCodeRaw).toLowerCase();
+
+  const roleClassMap: Record<string, string> = {
+    'super-admin': styles.roleSuperAdmin,
+    admin: styles.roleAdmin,
+    manager: styles.roleManager,
+    leader: styles.roleLeader,
+    header: styles.roleHeader,
+    head: styles.roleHeader,
+    user: styles.roleUser,
+    viewer: styles.roleViewer,
+    merchant: styles.roleMerchant,
+  };
+  const roleHeaderClass = roleClassMap[primaryRoleCode] || styles.roleDefault;
+
   const userInfo = user
     ? {
         username: user.username || user.email || '',
         email: user.email || '',
         fullName: user.full_name || user.name || user.email || '',
         roleDisplay:
-          user.roleDisplay ||
           (Array.isArray(user.role_names) ? user.role_names.join(', ') : user.role_names) ||
+          user.roleDisplay ||
           user.primary_role_name ||
           user.position ||
+          (user.is_super_admin ? 'Quản trị hệ thống' : '') ||
           'Người dùng',
         department:
           user.department_name ||
@@ -104,11 +159,14 @@ export default function Profile() {
           user.department ||
           'Chưa cập nhật',
         departmentLevel: user.department_level ?? user.level ?? null,
-        departmentCode: (user.department_code ?? user.departmentCode) || null,
+        departmentCode: (user.department_code ?? user.departmentCode ?? user.department_path) || null,
         managementLevel: user.cap_quan_ly || null,
         phone: user.phone || '',
         provinceName: user.provinceName || '',
         teamName: user.teamName || '',
+        isSuperAdmin: Boolean(user.is_super_admin),
+        permissions: userPermissions,
+        roleCodes: userRoleCodes,
       }
     : {
         username: 'demo.user',
@@ -122,6 +180,9 @@ export default function Profile() {
         phone: '',
         provinceName: 'TP. Hồ Chí Minh',
         teamName: 'Đội 1',
+        isSuperAdmin: false,
+        permissions: [],
+        roleCodes: [],
       };
 
   // Get initials for avatar
@@ -164,7 +225,7 @@ export default function Profile() {
 
       <div className={styles.contentContainer}>
         {/* Profile Header Card */}
-        <Card className={styles.profileHeaderCard}>
+        <Card className={`${styles.profileHeaderCard} ${roleHeaderClass}`}>
           <CardContent>
             <div className={styles.profileHeader}>
               {/* Avatar Section */}
@@ -247,8 +308,10 @@ export default function Profile() {
                   icon={<Building2 size={18} />} 
                   label="Cấp quản lý" 
                   value={
-                    userInfo.managementLevel ||
-                    getLevelLabel(userInfo.departmentLevel, userInfo.department, userInfo.departmentCode)
+                    (userInfo.managementLevel &&
+                    !/^(member|staff|user)$/i.test(String(userInfo.managementLevel))
+                      ? String(userInfo.managementLevel)
+                      : getLevelLabel(userInfo.departmentLevel, userInfo.department, userInfo.departmentCode))
                   } 
                 />
                 <InfoRow 
@@ -264,11 +327,22 @@ export default function Profile() {
                       Quyền truy cập
                     </div>
                     <div className={styles.permissionsList}>
-                      {(showAllPermissions ? userInfo.permissions : userInfo.permissions.slice(0, 5)).map((perm, index) => (
-                        <span key={index} className={styles.permissionBadge}>
-                          {perm}
-                        </span>
-                      ))}
+                      {(showAllPermissions ? userInfo.permissions : userInfo.permissions.slice(0, 5)).map((perm, index) => {
+                        const tone = getPermissionTone(perm, index);
+                        return (
+                          <span
+                            key={perm}
+                            className={styles.permissionBadge}
+                            style={{
+                              backgroundColor: tone.bg,
+                              borderColor: tone.border,
+                              color: tone.text,
+                            }}
+                          >
+                            {perm}
+                          </span>
+                        );
+                      })}
                     </div>
                     {userInfo.permissions.length > 5 && (
                       <Button
