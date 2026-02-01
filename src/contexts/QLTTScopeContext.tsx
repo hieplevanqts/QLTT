@@ -263,6 +263,13 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
     ?? getDepartmentLevelFromCode(user?.departmentInfo?.code)
     ?? effectiveUserDepartment?.level
     ?? getDepartmentLevelFromCode(effectiveUserDepartment?.code);
+  const effectiveUserLevel = useMemo(() => {
+    if (userLevel) return userLevel;
+    if (effectiveUserDepartment) {
+      return effectiveUserDepartment.parent_id ? 3 : 2;
+    }
+    return userLevel;
+  }, [userLevel, effectiveUserDepartment]);
 
   const userStandaloneDivision = useMemo(() => {
     if (!userDepartmentId || !effectiveUserDepartment) return null;
@@ -276,10 +283,10 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
     if (userStandaloneDivision) {
       return userStandaloneDivision.id;
     }
-    if (userLevel === 2) {
+    if (effectiveUserLevel === 2) {
       return effectiveUserDepartment?.id || userDepartmentId;
     }
-    if (userLevel && userLevel >= 3) {
+    if (effectiveUserLevel && effectiveUserLevel >= 3) {
       return effectiveUserDepartment?.parent_id
         || user?.departmentInfo?.parent_id
         || findDivisionIdByTeamCode(effectiveUserDepartment?.code || user?.departmentInfo?.code)
@@ -289,7 +296,7 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
   }, [
     userStandaloneDivision,
     effectiveUserDepartment,
-    userLevel,
+    effectiveUserLevel,
     userDepartmentId,
     user?.departmentInfo?.parent_id,
     user?.departmentInfo?.code,
@@ -298,28 +305,28 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
 
   const locks: ScopeLocks = useMemo(
     () => ({
-      division: Boolean(userLevel && userLevel >= 2),
-      team: Boolean(userLevel && userLevel >= 3),
+      division: Boolean(effectiveUserLevel && effectiveUserLevel >= 2),
+      team: Boolean(effectiveUserLevel && effectiveUserLevel >= 3),
     }),
-    [userLevel],
+    [effectiveUserLevel],
   );
 
   const availableDivisions = useMemo(() => {
     if (userStandaloneDivision) {
       return [userStandaloneDivision];
     }
-    if (!userLevel || userLevel <= 1) {
+    if (!effectiveUserLevel || effectiveUserLevel <= 1) {
       return allDivisions;
     }
-    if (userLevel === 2) {
+    if (effectiveUserLevel === 2) {
       const divisionId = effectiveUserDepartment?.id || userDepartmentId;
       return divisionId ? allDivisions.filter((dept) => dept.id === divisionId) : [];
     }
-    if (userLevel >= 3 && userDivisionId) {
+    if (effectiveUserLevel >= 3 && userDivisionId) {
       return allDivisions.filter((dept) => dept.id === userDivisionId);
     }
     return [];
-  }, [allDivisions, userLevel, effectiveUserDepartment, userDepartmentId, userDivisionId, userStandaloneDivision]);
+  }, [allDivisions, effectiveUserLevel, effectiveUserDepartment, userDepartmentId, userDivisionId, userStandaloneDivision]);
 
   const availableTeams = useMemo(() => {
     if (!scope.divisionId) return [];
@@ -335,11 +342,11 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
       return false;
     });
 
-    if (userLevel && userLevel >= 3 && userDepartment) {
+    if (effectiveUserLevel && effectiveUserLevel >= 3 && userDepartment) {
       return teamsInDivision.filter((team) => team.id === userDepartment.id);
     }
     return teamsInDivision;
-  }, [allTeams, scope.divisionId, userLevel, userDepartment, departmentsById]);
+  }, [allTeams, scope.divisionId, effectiveUserLevel, userDepartment, departmentsById]);
 
   const departmentAreasByDepartment = useMemo(() => {
     const map = new Map<string, string[]>();
@@ -382,7 +389,7 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
         ward: null,
       };
     }
-    if (userLevel === 2) {
+    if (effectiveUserLevel === 2) {
       return {
         divisionId: effectiveUserDepartment?.id || userDepartmentId,
         teamId: null,
@@ -392,7 +399,7 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
       };
     }
 
-    if (userLevel && userLevel >= 3) {
+    if (effectiveUserLevel && effectiveUserLevel >= 3) {
       return {
         divisionId: userDepartment?.parent_id
           || user?.departmentInfo?.parent_id
@@ -439,7 +446,7 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
     console.log('🔄 QLTTScopeContext: Using default scope:', defaultScope);
     setScope(defaultScope);
     setHasInitialized(true);
-  }, [user, isLoading, hasInitialized, userDepartment, userLevel]);
+  }, [user, isLoading, hasInitialized, userDepartment, effectiveUserLevel]);
 
   const handleSetScope = (newScope: QLTTScope) => {
     console.log('🔄 QLTTScopeContext: handleSetScope called with:', newScope);
@@ -468,7 +475,7 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
     return parts.length > 0 ? parts.join(' / ') : 'Toàn quốc';
   };
 
-  const canChangeScope = Boolean(userLevel && userLevel <= 2);
+  const canChangeScope = Boolean(effectiveUserLevel && effectiveUserLevel <= 2);
 
   return (
     <QLTTScopeContext.Provider
