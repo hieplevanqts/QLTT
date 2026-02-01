@@ -70,9 +70,9 @@ export async function fetchMerchants(
 
     // 🔥 NEW: Filter by category IDs via category_merchants join
     if (shouldFilterByCategory) {
-      const categoryFilter = validCategoryIds.length === 1
-        ? `category_merchants.category_id=eq.${validCategoryIds[0]}`
-        : `category_merchants.category_id=in.(${validCategoryIds.join(',')})`;
+      // 🔥 NOTE: category_id is stored as uuid[] in category_merchants
+      // Use overlap operator (ov) for array columns.
+      const categoryFilter = `category_merchants.category_id=ov.{${validCategoryIds.join(',')}}`;
       url += `&${categoryFilter}`;
     }
     
