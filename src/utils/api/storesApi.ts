@@ -230,7 +230,12 @@ export async function fetchStoresStats(filters?: {
   try {
     // Helper function to build query string with filters
     const buildCountUrl = (additionalStatus?: string) => {
-      let url = `${SUPABASE_REST_URL}/merchants?select=status`;
+      let url = `${SUPABASE_REST_URL}/merchant_filter_view_ext?select=status`;
+
+      // Department path filter - MUST be first to match fetchStores logic
+      if (department_path) {
+        url += `&department_path=like.${encodeURIComponent(department_path)}*`;
+      }
 
       // Apply all filters to ensure stats match the list view
       if (filters?.province_id) {
@@ -242,10 +247,6 @@ export async function fetchStoresStats(filters?: {
       if (filters?.search) {
         const searchTerms = encodeURIComponent(`*${filters.search}*`);
         url += `&or=(business_name.ilike.${searchTerms},tax_code.ilike.${searchTerms},address.ilike.${searchTerms})`;
-      }
-      // Department path filter
-      if (department_path) {
-        url += `&department_path=like.${encodeURIComponent(department_path)}*`;
       }
       
       // Add status filter if provided
@@ -482,6 +483,7 @@ export async function updateMerchant(
     p_owner_birth_year?: number;
     p_owner_identity_no?: string;
     p_owner_email?: string;
+    p_delete_at?: string | null;
   }
 ): Promise<any> {
   try {
@@ -515,6 +517,7 @@ export async function updateMerchant(
       p_tax_code: data.p_tax_code ?? null,
       p_ward_id: data.p_ward_id ?? null,
       p_website: data.p_website ?? null,
+      p_delete_at : data.p_delete_at ?? null,
     };
 
     const response = await fetch(url, {
@@ -657,7 +660,21 @@ export async function upsertMerchantLicense(data: {
   try {
     const url = `${SUPABASE_REST_URL}/rpc/upsert_merchant_license`;
 
-    const body = JSON.stringify(data);
+    // Sanitize date fields - convert empty strings to undefined to avoid PostgreSQL date parsing errors
+    const sanitizedData = { ...data };
+    const dateFields: (keyof typeof data)[] = ['p_issued_date', 'p_expiry_date', 'p_rent_start_date', 'p_rent_end_date'];
+    dateFields.forEach(field => {
+      if (sanitizedData[field] === '') {
+        sanitizedData[field] = undefined;
+      }
+    });
+
+    // Ensure required fields have default values
+    if (!sanitizedData.p_issued_by) {
+      sanitizedData.p_issued_by = ''; // Database requires non-null value
+    }
+
+    const body = JSON.stringify(sanitizedData);
     console.log('📦 [upsertMerchantLicense] Request body:', body);
 
     const response = await fetch(url, {

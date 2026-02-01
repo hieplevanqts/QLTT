@@ -775,15 +775,18 @@ export default function StoreDetailPage() {
 
 
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate(`/registry/full-edit/${store.id}`)}
-            className={styles.editButton}
-          >
-            <Edit size={16} />
-            Chỉnh sửa
-          </Button>
+          {/* Only show edit button for active and pending statuses */}
+          {(store.status === 'active' || store.status === 'pending') && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/registry/full-edit/${store.id}`)}
+              className={styles.editButton}
+            >
+              <Edit size={16} />
+              Chỉnh sửa
+            </Button>
+          )}
         </div>
 
         <div className={styles.headerContent}>
@@ -1051,34 +1054,6 @@ export default function StoreDetailPage() {
                     </span>
                     <span className={styles.infoValue}>{store.businessPhone || store.phone || 'Chưa có thông tin'}</span>
                   </div>
-
-                  <div className={styles.infoRowInline}>
-                    <Building2 size={14} />
-                    <span className={styles.infoLabel}>Diện tích cửa hàng :</span>
-                    <span className={styles.infoValue}>{store.businessArea ? `${store.businessArea} m²` : 'Chưa có thông tin'}</span>
-                  </div>
-
-                  <div className={styles.infoRowInline}>
-                    <Mail size={14} />
-                    <span className={styles.infoLabel}>Email :</span>
-                    <span className={styles.infoValue}>{store.email || 'Chưa có thông tin'}</span>
-                  </div>
-
-                  {store.website && (
-                    <div className={styles.infoRowInline}>
-                      <ExternalLink size={14} />
-                      <span className={styles.infoLabel}>Website :</span>
-                      <span className={styles.infoValue}>{store.website}</span>
-                    </div>
-                  )}
-
-                  {store.fax && (
-                    <div className={styles.infoRowInline}>
-                      <Phone size={14} />
-                      <span className={styles.infoLabel}>Fax :</span>
-                      <span className={styles.infoValue}>{store.fax}</span>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -1090,7 +1065,7 @@ export default function StoreDetailPage() {
                   <div className={styles.infoRowInline}>
                     <User size={14} />
                     <span className={styles.infoLabel}>
-                      Tên Chủ cơ sở<span className={styles.required}>*</span> :
+                      Tên Chủ cơ sở :
                     </span>
                     <span className={styles.infoValue}>{store.ownerName || 'Chưa có thông tin'}</span>
                   </div>
@@ -1098,7 +1073,7 @@ export default function StoreDetailPage() {
                   <div className={styles.infoRowInline}>
                     <Calendar size={14} />
                     <span className={styles.infoLabel}>
-                      Năm sinh chủ hộ<span className={styles.required}>*</span> :
+                      Năm sinh chủ hộ :
                     </span>
                     <span className={styles.infoValue}>{store.ownerBirthYear || 'Chưa có thông tin'}</span>
                   </div>
@@ -1110,7 +1085,7 @@ export default function StoreDetailPage() {
                   <div className={styles.infoRowInline}>
                     <FileText size={14} />
                     <span className={styles.infoLabel}>
-                      Số CMTND / CCCD / ĐDCN<span className={styles.required}>*</span> :
+                      Số CMTND / CCCD / ĐDCN :
                     </span>
                     <span className={styles.infoValue}>{store.ownerIdNumber || 'Chưa có thông tin'}</span>
                   </div>

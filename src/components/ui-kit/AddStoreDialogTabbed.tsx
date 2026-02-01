@@ -73,19 +73,14 @@ export interface NewStoreData {
   industryName: string;
   establishedDate?: string; // Optional
   operationStatus: string;
-  businessArea?: string; // Optional
-  businessPhone?: string; // Optional
-  email?: string;
-  website?: string;
-  fax?: string;
+  businessPhone: string; // Required
   notes?: string;
 
-  // Tab 2: Thông tin chủ hộ (All optional)
+  // Tab 2: Thông tin chủ hộ
   ownerName?: string;
   ownerBirthYear?: string;
   ownerIdNumber?: string;
-  ownerPhone?: string;
-  ownerPhone2?: string;
+  ownerPhone: string; // Required
   area_name?: string;
   // Tab 3: Địa chỉ (All optional)
   registeredAddress?: string;
@@ -109,10 +104,7 @@ interface ExtractedData {
   industryName?: string;
   establishedDate?: string;
   operationStatus?: string;
-  businessArea?: string;
   businessPhone?: string;
-  email?: string;
-  website?: string;
   ownerName?: string;
   ownerBirthYear?: string;
   ownerIdNumber?: string;
@@ -455,12 +447,18 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
     if (!formData.operationStatus?.trim()) {
       newErrors.operationStatus = 'Vui lòng chọn tình trạng hoạt động';
     }
-    // businessPhone, ownerPhone, ownerName - optional fields
-    // Chỉ validate format nếu có nhập
-    if (formData.businessPhone && !isValidPhoneNumber(formData.businessPhone)) {
+    
+    // businessPhone - bắt buộc
+    if (!formData.businessPhone?.trim()) {
+      newErrors.businessPhone = 'Vui lòng nhập số điện thoại hộ kinh doanh';
+    } else if (!isValidPhoneNumber(formData.businessPhone)) {
       newErrors.businessPhone = 'Số điện thoại không hợp lệ';
     }
-    if (formData.ownerPhone && !isValidPhoneNumber(formData.ownerPhone)) {
+    
+    // ownerPhone - bắt buộc
+    if (!formData.ownerPhone?.trim()) {
+      newErrors.ownerPhone = 'Vui lòng nhập số điện thoại chủ cơ sở';
+    } else if (!isValidPhoneNumber(formData.ownerPhone)) {
       newErrors.ownerPhone = 'Số điện thoại không hợp lệ';
     }
 
@@ -503,23 +501,18 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
     const submissionData: NewStoreData = {
       business_name: formData.business_name!,
       taxCode: formData.taxCode!,
-      fax: formData.fax,
       industryName: formData.industryName!,
       establishedDate: formData.establishedDate,
       operationStatus: formData.operationStatus!,
-      businessArea: formData.businessArea,
-      businessPhone: formData.businessPhone,
-      email: formData.email,
-      website: formData.website,
+      businessPhone: formData.businessPhone!,
       notes: formData.notes,
       ownerName: formData.ownerName,
       ownerBirthYear: formData.ownerBirthYear,
       ownerIdNumber: formData.ownerIdNumber,
-      ownerPhone: formData.ownerPhone,
-      ownerPhone2: formData.ownerPhone2,
+      ownerPhone: formData.ownerPhone!,
       registeredAddress: formData.registeredAddress,
       province: selectedProvince || undefined,
-      jurisdiction: selectedProvince ? '' : undefined,
+      jurisdiction: undefined,
       ward: selectedWard || undefined,
       headquarterAddress: formData.headquarterAddress,
       productionAddress: formData.productionAddress,
@@ -684,7 +677,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
           >
             <FileText className="w-4 h-4" />
             <span>Thông tin cơ sở</span>
-            {Object.keys(errors).some(k => ['name', 'taxCode', 'industryName', 'operationStatus', 'businessArea', 'businessPhone'].includes(k)) && (
+            {Object.keys(errors).some(k => ['business_name', 'taxCode', 'industryName', 'operationStatus', 'businessPhone'].includes(k)) && (
               <XCircle className="w-3 h-3 text-red-500" />
             )}
           </button>
@@ -849,39 +842,22 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
               )}
 
               {renderFieldWithIndicator(
-                'businessArea',
-                'Diện tích cửa hàng (m²)',
-                <Input
-                  id="businessArea"
-                  type="number"
-                  value={formData.businessArea || ''}
-                  onChange={(e) => handleFieldChange('businessArea', e.target.value)}
-                  placeholder="Nhập diện tích"
-                />
-              )}
-
-              {renderFieldWithIndicator(
                 'businessPhone',
-                'SĐT hộ kinh doanh',
-                <Input
-                  id="businessPhone"
-                  type="tel"
-                  value={formData.businessPhone || ''}
-                  onChange={(e) => handleFieldChange('businessPhone', e.target.value)}
-                  placeholder="Nhập số điện thoại"
-                />
-              )}
-
-              {renderFieldWithIndicator(
-                'email',
-                'Email',
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email || ''}
-                  onChange={(e) => handleFieldChange('email', e.target.value)}
-                  placeholder="Nhập email"
-                />
+                'SĐT hộ kinh doanh *',
+                <>
+                  <Input
+                    id="businessPhone"
+                    type="tel"
+                    value={formData.businessPhone || ''}
+                    onChange={(e) => handleFieldChange('businessPhone', e.target.value)}
+                    placeholder="Nhập số điện thoại"
+                    className={errors.businessPhone ? 'border-red-500' : ''}
+                  />
+                  {errors.businessPhone && (
+                    <p className="text-sm text-red-500 mt-1">{errors.businessPhone}</p>
+                  )}
+                </>,
+                true
               )}
 
               <div className="space-y-2 col-span-2">
@@ -938,40 +914,21 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
 
               {renderFieldWithIndicator(
                 'ownerPhone',
-                'Số điện thoại chủ cơ sở',
-                <Input
-                  id="ownerPhone"
-                  type="tel"
-                  className='placeholder:text-gray-500'
-                  value={formData.ownerPhone || ''}
-                  onChange={(e) => handleFieldChange('ownerPhone', e.target.value)}
-                  placeholder="Nhập số điện thoại"
-                />
-              )}
-
-              {renderFieldWithIndicator(
-                'ownerName',
-                'Tên chủ cơ sở',
-                <Input
-                  id="ownerName"
-                  type="text"
-                  className='placeholder:text-gray-500'
-                  value={formData.ownerName || ''}
-                  onChange={(e) => handleFieldChange('ownerName', e.target.value)}
-                  placeholder="Nhập tên chủ cơ sở"
-                />
-              )}
-
-              {renderFieldWithIndicator(
-                'email',
-                'Email chủ hộ',
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email || ''}
-                  onChange={(e) => handleFieldChange('email', e.target.value)}
-                  placeholder="Nhập email"
-                />
+                'Số điện thoại chủ cơ sở *',
+                <>
+                  <Input
+                    id="ownerPhone"
+                    type="tel"
+                    className={`placeholder:text-gray-500 ${errors.ownerPhone ? 'border-red-500' : ''}`}
+                    value={formData.ownerPhone || ''}
+                    onChange={(e) => handleFieldChange('ownerPhone', e.target.value)}
+                    placeholder="Nhập số điện thoại"
+                  />
+                  {errors.ownerPhone && (
+                    <p className="text-sm text-red-500 mt-1">{errors.ownerPhone}</p>
+                  )}
+                </>,
+                true
               )}
             </div>
           )}
@@ -1108,12 +1065,47 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                   latitude={formData.latitude}
                   longitude={formData.longitude}
                   onLocationChange={(location) => {
+                    // Update coordinates and address
                     setFormData(prev => ({
                       ...prev,
                       latitude: location.latitude,
                       longitude: location.longitude,
                       registeredAddress: location.address || prev.registeredAddress,
                     }));
+                    
+                    // Auto-select province/ward from reverse geocoding result
+                    if (location.province) {
+                      // Find province by name
+                      const provinceMatch = apiProvinces.find(
+                        p => p.name.toLowerCase().includes(location.province?.toLowerCase() || '') ||
+                             location.province?.toLowerCase().includes(p.name.toLowerCase())
+                      );
+                      if (provinceMatch) {
+                        setSelectedProvince(provinceMatch._id);
+                        setSelectedProvinceName(provinceMatch.name);
+                        loadWardsByProvince(provinceMatch._id);
+                      }
+                    }
+                    
+                    // Auto-select ward after province is set
+                    if (location.ward && location.province) {
+                      setTimeout(() => {
+                        const provinceMatch = apiProvinces.find(
+                          p => p.name.toLowerCase().includes(location.province?.toLowerCase() || '') ||
+                               location.province?.toLowerCase().includes(p.name.toLowerCase())
+                        );
+                        if (provinceMatch) {
+                          const wardMatch = apiWards.find(
+                            w => w.name.toLowerCase().includes(location.ward?.toLowerCase() || '') ||
+                                 location.ward?.toLowerCase().includes(w.name.toLowerCase())
+                          );
+                          if (wardMatch) {
+                            setSelectedWard(wardMatch._id);
+                            setSelectedWardName(wardMatch.name);
+                          }
+                        }
+                      }, 50);
+                    }
                   }}
                 />
               </div>

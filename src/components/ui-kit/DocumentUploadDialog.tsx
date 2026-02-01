@@ -51,6 +51,7 @@ export function DocumentUploadDialog({
   const [file, setFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(existingFileUrl || null);
   const [formData, setFormData] = useState<Record<string, any>>(existingData || {});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isDragging, setIsDragging] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractionComplete, setExtractionComplete] = useState(false);
@@ -73,6 +74,19 @@ export function DocumentUploadDialog({
         if (editingDocument.uploadedData.owner_name) existingFields.ownerName = editingDocument.uploadedData.owner_name;
         if (editingDocument.uploadedData.business_field) existingFields.businessScope = editingDocument.uploadedData.business_field;
         if (editingDocument.uploadedData.permanent_address) existingFields.address = editingDocument.uploadedData.permanent_address;
+
+        // Parse notes JSON if present
+        if (typeof editingDocument.uploadedData.notes === 'string') {
+          try {
+            const parsed = JSON.parse(editingDocument.uploadedData.notes);
+            const notesFields = parsed?.fields || parsed;
+            if (notesFields && typeof notesFields === 'object') {
+              Object.assign(existingFields, notesFields);
+            }
+          } catch {
+            // ignore non-JSON notes
+          }
+        }
       }
 
       // Map top-level fields to form field keys
@@ -239,20 +253,40 @@ export function DocumentUploadDialog({
 
   const handleFieldChange = (key: string, value: any) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
+    // Clear error for this field when user starts typing
+    if (fieldErrors[key]) {
+      setFieldErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[key];
+        return newErrors;
+      });
+    }
   };
 
   const handleSave = () => {
     // Validate required fields
-    const missingFields = documentType?.fields
-      .filter((field) => field.required && !formData[field.key])
-      .map((field) => field.label);
+    const newErrors: Record<string, string> = {};
+    documentType?.fields.forEach((field) => {
+      if (field.required && !formData[field.key]) {
+        newErrors[field.key] = `${field.label} là bắt buộc`;
+      }
+    });
 
-    if (missingFields && missingFields.length > 0) {
-      setError(`Vui lòng điền đầy đủ: ${missingFields.join(', ')}`);
+    if (Object.keys(newErrors).length > 0) {
+      setFieldErrors(newErrors);
+      toast.error(`Vui lòng điền đầy đủ thông tin bắt buộc`);
       return;
     }
 
-    onSave({ file, fields: formData });
+    // Sanitize date fields - convert empty strings to null to avoid PostgreSQL date parsing errors
+    const sanitizedData = { ...formData };
+    documentType?.fields.forEach((field) => {
+      if (field.type === 'date' && sanitizedData[field.key] === '') {
+        sanitizedData[field.key] = null;
+      }
+    });
+
+    onSave({ file, fields: sanitizedData });
     onOpenChange(false);
   };
 
@@ -396,21 +430,31 @@ export function DocumentUploadDialog({
                     {field.required && <span className={styles.required}>*</span>}
                   </label>
                   {field.type === 'textarea' ? (
-                    <textarea
-                      className={styles.textarea}
-                      value={formData[field.key] || ''}
-                      onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                      placeholder={field.placeholder}
-                      rows={3}
-                    />
+                    <>
+                      <textarea
+                        className={`${styles.textarea} ${fieldErrors[field.key] ? 'border-red-500' : ''}`}
+                        value={formData[field.key] || ''}
+                        onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                        placeholder={field.placeholder}
+                        rows={3}
+                      />
+                      {fieldErrors[field.key] && (
+                        <p className="text-sm text-red-500 mt-1">{fieldErrors[field.key]}</p>
+                      )}
+                    </>
                   ) : (
-                    <input
-                      type={field.type}
-                      className={styles.input}
-                      value={formData[field.key] || ''}
-                      onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                      placeholder={field.placeholder}
-                    />
+                    <>
+                      <input
+                        type={field.type}
+                        className={`${styles.input} ${fieldErrors[field.key] ? 'border-red-500' : ''}`}
+                        value={formData[field.key] || ''}
+                        onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                        placeholder={field.placeholder}
+                      />
+                      {fieldErrors[field.key] && (
+                        <p className="text-sm text-red-500 mt-1">{fieldErrors[field.key]}</p>
+                      )}
+                    </>
                   )}
                 </div>
               ))}
