@@ -250,7 +250,6 @@ export default function LeadInbox() {
     );
     console.log("📊 [LeadInbox] State:", {
       selectedStatuses,
-      selectedStatuses,
       selectedSources,
       searchQuery,
       selectedAssignments,
