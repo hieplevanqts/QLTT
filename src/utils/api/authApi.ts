@@ -293,13 +293,13 @@ export async function fetchUserInfo(token: string): Promise<User | null> {
 
     return {
       id: userData.id,
-      email: profileDetails?.email || userData.email,
-      name:
-        (profileDetails as any)?.full_name ||
-        userData.user_metadata?.name ||
-        userData.user_metadata?.full_name ||
-        userData.email,
-      roleDisplay: roleDisplay || (profileRoleNames.length > 0 ? profileRoleNames.join(', ') : undefined) || userData.user_metadata?.roleDisplay || undefined,
+      // email: profileDetails?.email || userData.email,
+      // name:
+      //   (profileDetails as any)?.full_name ||
+      //   userData.user_metadata?.name ||
+      //   userData.user_metadata?.full_name ||
+      //   userData.email,
+      // roleDisplay: roleDisplay || (profileRoleNames.length > 0 ? profileRoleNames.join(', ') : undefined) || userData.user_metadata?.roleDisplay || undefined,
       roleCodes: roleCodes.length > 0 ? roleCodes : undefined,
       roleCode: roleCodes[0] || undefined,
       role_names: (profileDetails as any)?.role_names,
@@ -312,6 +312,11 @@ export async function fetchUserInfo(token: string): Promise<User | null> {
       department_code: (profileDetails as any)?.department_code,
       cap_quan_ly: (profileDetails as any)?.cap_quan_ly,
       don_vi_cong_tac_departments: (profileDetails as any)?.don_vi_cong_tac_departments,
+      email: userData.email,
+      name: userData.user_metadata?.name || userData.user_metadata?.full_name || userData.email,
+      roleDisplay: roleDisplay || userData.user_metadata?.roleDisplay || undefined,
+      app_metadata: userData.app_metadata,
+      user_metadata: userData.user_metadata,
       ...userData.user_metadata,
       ...profileDetails,
     };

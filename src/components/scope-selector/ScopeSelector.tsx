@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { MapPin } from 'lucide-react';
 import { useQLTTScope } from '@/contexts/QLTTScopeContext';
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppStore';
@@ -20,7 +20,7 @@ export function ScopeSelector() {
   } = useQLTTScope();
   // Get user from Redux instead of AuthContext
     const { user,department } = useAppSelector((state: RootState) => state.auth);
-  
+  console.log('user',user)
   // Redux dispatch and selector for Redux store
   const dispatch = useAppDispatch();
   const authUser = useAppSelector((state) => state.auth.user);
