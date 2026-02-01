@@ -63,14 +63,14 @@ export async function fetchStores(
     hasComplaints?: boolean;
     riskLevel?: string;
     search?: string;
-    // Optional Supabase style filter for department path, e.g. 'like.QT*'
-    department_path?: string;
-  }
+  },
+  department_path?: string,
 ): Promise<{ data: Store[]; total: number }> {
   try {
     // Build base URL with pagination (supports unlimited records)
     // Join with wards table to get ward name
-    let url = `${SUPABASE_REST_URL}/merchants?limit=${limit}&offset=${offset}&order=created_at.desc&select=*,wards(_id,name)`;
+    // let url = `${SUPABASE_REST_URL}/merchants?limit=${limit}&offset=${offset}&order=created_at.desc&select=*,wards(_id,name)`;
+    let url = `${SUPABASE_REST_URL}/merchant_filter_view_ext?limit=${limit}&offset=${offset}&order=created_at.desc&select=*,wards(_id,name)&department_path=like.${encodeURIComponent(department_path)}*`;
 
     // Apply filters if provided
     if (filters?.status) {

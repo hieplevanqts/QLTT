@@ -271,7 +271,7 @@ const departmentPath = user?.app_metadata?.department?.path ;
           filters.businessType = businessTypeFilter;
         }
 
-        const { data, total } = await fetchStores(pageSize, offset, filters);
+        const { data, total } = await fetchStores(pageSize, offset, filters, departmentPath);
 
         setStores(data);
         setTotalRecords(total);
@@ -393,14 +393,11 @@ const departmentPath = user?.app_metadata?.department?.path ;
         p_store_area: data.businessArea ? parseFloat(data.businessArea) : undefined,
         p_business_phone: data.businessPhone,
         p_business_email: data.email,
-        p_website: data.website,
-        p_fax: data.fax,
         p_note: data.notes,
         p_owner_name: data.ownerName,
         p_owner_birth_year: data.ownerBirthYear ? parseInt(data.ownerBirthYear) : undefined,
         p_owner_identity_no: data.ownerIdNumber,
         p_owner_phone: data.ownerPhone,
-        p_owner_phone_2: data.ownerPhone2,
         p_address: data.registeredAddress,
         p_province_id: data.province,
         p_ward_id: data.ward,
@@ -421,14 +418,11 @@ const departmentPath = user?.app_metadata?.department?.path ;
           businessArea: data.businessArea || s.businessArea,
           businessPhone: data.businessPhone || s.businessPhone,
           email: data.email || s.email,
-          website: data.website || s.website,
-          fax: data.fax || s.fax,
           notes: data.notes || s.notes,
           ownerName: data.ownerName || s.ownerName,
           ownerBirthYear: data.ownerBirthYear ? parseInt(data.ownerBirthYear) : s.ownerBirthYear,
           ownerIdNumber: data.ownerIdNumber || s.ownerIdNumber,
           ownerPhone: data.ownerPhone || s.ownerPhone,
-          ownerPhone2: data.ownerPhone2 || s.ownerPhone2,
           address: data.registeredAddress || s.address,
           provinceCode: data.province || s.provinceCode,
           wardCode: data.ward || s.wardCode,
@@ -1116,10 +1110,12 @@ const departmentPath = user?.app_metadata?.department?.path ;
                 {getTotalPendingCount()}
               </Badge>
             </Button>
-            <Button size="sm" onClick={() => setAddDialogOpen(true)}>
-              <Plus size={16} />
-              Thêm mới
-            </Button>
+            {user?.permissions?.includes('store.create') && (
+              <Button size="sm" onClick={() => setAddDialogOpen(true)}>
+                <Plus size={16} />
+                Thêm mới
+              </Button>
+            )}
           </>
         }
       />
