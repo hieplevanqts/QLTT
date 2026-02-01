@@ -269,7 +269,7 @@ export async function fetchMerchantStats(
 
 export async function fetchMerchantDetail(merchantId: string, licenseType: string = 'Giấy phép kinh doanh'): Promise<any> {
   try {
-    const url = `${SUPABASE_REST_URL}/merchants?id=eq.${merchantId}&select=*,merchant_licenses!merchant_licenses_merchant_id_fkey!inner(*)&merchant_licenses.license_type=ilike.*${encodeURIComponent(licenseType)}*`;
+    const url = `${SUPABASE_REST_URL}/merchants?or=(id.eq.${merchantId},_id.eq.${merchantId})&select=*,merchant_licenses!merchant_licenses_merchant_id_fkey!inner(*)&merchant_licenses.license_type=ilike.*${encodeURIComponent(licenseType)}*`;
     
     console.log('🔍 fetchMerchantDetail API call (axios):', url);
 
