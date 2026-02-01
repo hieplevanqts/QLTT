@@ -141,13 +141,6 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
     markersRef.current = [];
     selectedMarkerRef.current = null;
 
-    // 🔥 DEBUG: Log restaurants count
-    console.log('🗺️ LeafletMap updateMarkers:', {
-      showWardBoundaries,
-      showMerchants,
-      restaurantsCount: filteredRestaurants.length,
-      restaurants: filteredRestaurants.slice(0, 3).map(r => ({ id: r.id, name: r.name, lat: r.lat, lng: r.lng }))
-    });
 
     // 🔥 FIX: Render department markers ONLY when showWardBoundaries is true AND showMerchants is false
     // Department markers should NOT appear on merchants layer

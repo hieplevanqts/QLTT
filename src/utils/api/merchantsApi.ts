@@ -41,7 +41,7 @@ try {
       params.append('status', `in.(${statusCodes.join(',')})`);
     }
     if (businessTypes && businessTypes.length > 0) {
-      params.append('business_type', `in.(${businessTypes.join(',')})`);
+      params.append('category_ids', `in.(${businessTypes.join(',')})`);
     }
     const finalUrl = `${baseUrl}?${params.toString()}`;
     const response = await axios.get(finalUrl, {
