@@ -1,14 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { MapPin } from 'lucide-react';
-<<<<<<< HEAD:src/components/scope-selector/ScopeSelector.tsx
 import { useQLTTScope } from '@/contexts/QLTTScopeContext';
 import { useAppDispatch, useAppSelector } from '@/hooks/useAppStore';
 import { setScope } from '@/store/slices/qlttScopeSlice';
-=======
-import { useQLTTScope } from '../../../contexts/QLTTScopeContext';
-import { useAppDispatch, useAppSelector } from '../../hooks';
-import { setScope } from '../../../store/slices/qlttScopeSlice';
->>>>>>> 857eb34736dfd0bdfda89a37468e78c27b447fa6:src/app/components/scope-selector/ScopeSelector.tsx
 import styles from './ScopeSelector.module.css';
 import { RootState } from '@/store/rootReducer';
 import { fetchDepartmentById } from '@/utils/api/departmentsApi';
