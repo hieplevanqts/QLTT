@@ -47,8 +47,8 @@ import FacilityStatusBadge, { FacilityStatus } from '@/components/ui-kit/Facilit
 import TableFooter from '@/components/ui-kit/TableFooter';
 import { ConfirmDialog, ConfirmVariant } from '@/components/ui-kit/ConfirmDialog';
 import { RiskDialog, RiskLevel } from '@/components/ui-kit/RiskDialog';
-import { QuickEditDialog, QuickEditData } from '@/components/ui-kit/QuickEditDialog';
 import { AddStoreDialogTabbed, NewStoreData as NewStoreDataTabbed } from '@/components/ui-kit/AddStoreDialogTabbed';
+import { EditStoreDialogTabbed, EditStoreData } from '@/components/ui-kit/EditStoreDialogTabbed';
 import { AdvancedFilterPopup, AdvancedFilters } from '@/components/ui-kit/AdvancedFilterPopup';
 import { adminUnitsService, type ProvinceRecord } from '@/modules/system-admin/sa-master-data/services/adminUnits.service';
 import { ApproveDialog, RejectDialog } from '@/components/ui-kit/ApprovalDialogs';
@@ -376,52 +376,72 @@ const departmentPath = user?.app_metadata?.department?.path ;
     setEditDialog({ open: true, store });
   };
 
-  const handleEditConfirm = (data: QuickEditData) => {
-    // Create approval request (mock)
-    const approvalRequest = {
-      id: Date.now(),
-      storeId: editDialog.store?.id,
-      storeName: editDialog.store?.name,
-      type: 'quick-edit',
-      changedFields: Object.keys(data).filter(key =>
-        key !== 'changeReason' && data[key as keyof QuickEditData] !== (editDialog.store as any)?.[key]
-      ),
-      newData: data,
-      changeReason: data.changeReason,
-      status: 'pending',
-      submittedAt: new Date().toISOString(),
-      submittedBy: 'Current User', // In production, get from auth context
-    };
+  const handleEditConfirm = async (data: EditStoreData) => {
+    const store = editDialog.store;
+    if (!store || !store.merchantId) {
+      toast.error('Không tìm thấy ID cơ sở để cập nhật');
+      return;
+    }
 
+    try {
+      // Call API to update merchant
+      const updatePayload = {
+        p_business_name: data.business_name,
+        p_tax_code: data.taxCode || '',
+        p_business_type: data.industryName || '',
+        p_established_date: data.establishedDate,
+        p_store_area: data.businessArea ? parseFloat(data.businessArea) : undefined,
+        p_business_phone: data.businessPhone,
+        p_business_email: data.email,
+        p_website: data.website,
+        p_fax: data.fax,
+        p_note: data.notes,
+        p_owner_name: data.ownerName,
+        p_owner_birth_year: data.ownerBirthYear ? parseInt(data.ownerBirthYear) : undefined,
+        p_owner_identity_no: data.ownerIdNumber,
+        p_owner_phone: data.ownerPhone,
+        p_owner_phone_2: data.ownerPhone2,
+        p_address: data.registeredAddress,
+        p_province_id: data.province,
+        p_ward_id: data.ward,
+        p_latitude: data.latitude,
+        p_longitude: data.longitude,
+      };
 
-    // In production:
-    // - Save to approval queue
-    // - Show pending badge on store
-    // - Send notification to approver
+      await updateMerchant(store.merchantId, updatePayload);
 
-    // For now, just update the store data immediately (for demo)
-    // In production, data only updates after approval
-    setStores(prev =>
-      prev.map(s => (s.id === editDialog.store?.id ? {
-        ...s,
-        name: data.name,
-        phone: data.phone,
-        email: data.email,
-        notes: data.notes,
-        tags: data.tags,
-        // Add pending approval indicator
-        hasPendingApproval: true,
-        pendingApprovalType: 'quick-edit',
-      } : s))
-    );
+      // Update local state
+      setStores(prev =>
+        prev.map(s => (s.id === store.id ? {
+          ...s,
+          name: data.business_name,
+          taxCode: data.taxCode || s.taxCode,
+          businessType: data.industryName || s.businessType,
+          establishedDate: data.establishedDate || s.establishedDate,
+          businessArea: data.businessArea || s.businessArea,
+          businessPhone: data.businessPhone || s.businessPhone,
+          email: data.email || s.email,
+          website: data.website || s.website,
+          fax: data.fax || s.fax,
+          notes: data.notes || s.notes,
+          ownerName: data.ownerName || s.ownerName,
+          ownerBirthYear: data.ownerBirthYear ? parseInt(data.ownerBirthYear) : s.ownerBirthYear,
+          ownerIdNumber: data.ownerIdNumber || s.ownerIdNumber,
+          ownerPhone: data.ownerPhone || s.ownerPhone,
+          ownerPhone2: data.ownerPhone2 || s.ownerPhone2,
+          address: data.registeredAddress || s.address,
+          provinceCode: data.province || s.provinceCode,
+          wardCode: data.ward || s.wardCode,
+          latitude: data.latitude ?? s.latitude,
+          longitude: data.longitude ?? s.longitude,
+        } : s))
+      );
 
-    toast.success(
-      'Thay đổi đã được gửi và đang chờ phê duyệt',
-      {
-        description: 'Bạn sẽ nhận được thông báo khi yêu cầu được xử lý.',
-        duration: 5000,
-      }
-    );
+      toast.success('Cập nhật cơ sở thành công');
+      setEditDialog({ open: false, store: null });
+    } catch (error: any) {
+      toast.error('Lỗi khi cập nhật cơ sở: ' + error.message);
+    }
   };
 
   const handleAssignRisk = (store: Store) => {
@@ -769,13 +789,15 @@ const departmentPath = user?.app_metadata?.department?.path ;
 
     switch (store.status) {
       case 'pending':
-        // Chờ duyệt: Xem chi tiết, Chỉnh sửa, Phê duyệt, Từ chối, Xóa
+        // Chờ duyệt: Xem chi tiết, (Chỉnh sửa vào menu), Phê duyệt, Từ chối (icon ngoài), Xóa
+        // We want edit to go into the ellipsis menu — lower its priority for this row instance
+        const editAction = { ...CommonActions.edit(() => handleEdit(store)), priority: 1 };
         actions.push(
           CommonActions.view(() => navigate(`/registry/stores/${store.id}`)),
-          CommonActions.edit(() => handleEdit(store)),
+          editAction,
           CommonActions.approve(() => handleApprove(store.id)),
-          // Reject is separate from delete; opens reject confirmation dialog
-          CommonActions.reject ? CommonActions.reject(() => handleReject(store.id)) : { label: 'Từ chối', onClick: () => handleReject(store.id), separator: false },
+          // Show reject as a top-level destructive icon
+          CommonActions.reject(() => handleReject(store.id)),
           { ...CommonActions.delete(() => handleDelete(store)), separator: true }
         );
         break;
@@ -1342,13 +1364,11 @@ const departmentPath = user?.app_metadata?.department?.path ;
         onConfirm={handleRiskConfirm}
       />
 
-      <QuickEditDialog
+      <EditStoreDialogTabbed
         open={editDialog.open}
         onOpenChange={(open) => setEditDialog({ ...editDialog, open })}
         store={editDialog.store}
-        onConfirm={handleEditConfirm}
-        onApprove={handleApprove}
-        onReject={handleReject}
+        onSubmit={handleEditConfirm}
       />
 
       <StoreImportDialog
@@ -1563,7 +1583,7 @@ const departmentPath = user?.app_metadata?.department?.path ;
 
       {/* Close Store (Refuse) Reason Dialog */}
       {closeReasonDialog.open && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+        <div className="fixed inset-0 z-[200] bg-black/50 flex items-center justify-center">
           <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
             <h2 className="text-lg font-semibold mb-4">Ngừng hoạt động cơ sở</h2>
             <p className="text-sm text-gray-600 mb-4">

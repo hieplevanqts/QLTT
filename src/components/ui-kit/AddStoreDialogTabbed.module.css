@@ -111,6 +111,37 @@
   color: var(--text-primary);
 }
 
+/* ===== DIALOG FOOTER ===== */
+.dialogFooter {
+  display: flex;
+  gap: var(--spacing-4);
+  justify-content: flex-end;
+  padding-top: var(--spacing-6);
+}
+
+.dialogFooter button {
+  font-weight: var(--font-weight-medium);
+}
+
+/* Button Cancel (outline variant) */
+.dialogFooter button[type="button"]:first-child {
+  color: #000 !important;
+  background-color: white !important;
+  border-color: var(--border) !important;
+  transition: all 0.2s ease;
+}
+
+.dialogFooter button[type="button"]:first-child:hover {
+  color: white !important;
+  background-color: var(--destructive) !important;
+  border-color: var(--destructive) !important;
+}
+
+/* Button Submit (primary variant) */
+.dialogFooter button[type="button"]:last-child {
+  color: white !important;
+}
+
 /* ===== UPLOAD SECTION (Clean Style) ===== */
 .uploadSection {
   display: flex;
@@ -375,6 +406,14 @@
   color: var(--text-primary);
   margin-bottom: var(--spacing-2);
   display: block;
+}
+
+/* Required field asterisk (*) styling - Red color */
+.formGrid label span,
+.addressTab label span,
+.tabContent label span {
+  color: var(--destructive) !important;
+  font-weight: var(--font-weight-semibold);
 }
 
 /* ===== ERROR MESSAGE ===== */
