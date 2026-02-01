@@ -34,7 +34,7 @@ import { getProvinceNames } from '@/utils/data/vietnamLocations';
 import { fetchPointStatuses, PointStatus, buildFilterObjectFromStatuses } from '@/utils/api/pointStatusApi';
 import { fetchCategories, Category } from '@/utils/api/categoriesApi';
 import { fetchMerchants, fetchMerchantStats, MerchantStats } from '@/utils/api/merchantsApi';
-import { fetchMarketManagementTeams, Department } from '@/utils/api/departmentsApi';
+import { fetchMarketManagementTeams, Department, fetchDepartmentById } from '@/utils/api/departmentsApi';
 import { officersData, Officer, teamsData } from '@/utils/data/officerTeamData';
 import { useAppSelector, useAppDispatch } from '@/hooks/useAppStore';
 import { usePermissions } from '@/modules/system-admin/_shared/usePermissions';
@@ -458,13 +458,26 @@ export default function MapPage() {
         // Calculate business type filters array for category_merchants join
         const businessTypeFiltersArray = calculateBusinessTypeFiltersArray(businessTypeFilters, categories);
         
+        // Fetch division path if divisionId exists
+        let divisionPath = '';
+        if (divisionId) {
+          try {
+            const division = await fetchDepartmentById(divisionId);
+            if (division) {
+              divisionPath = division.path;
+            }
+          } catch (error) {
+            console.error('Error fetching division path:', error);
+          }
+        }
+
         const merchants = await fetchMerchants(
           merchantStatusCodes.length > 0 ? merchantStatusCodes : undefined,
           businessTypes,
           departmentIdsToFilter,
           teamId,
           divisionId || '',
-          departments.map(d => d.id), // departmentIds: string[]
+          divisionPath,
           businessTypeFiltersArray,
           {
             statusCodes: merchantStatusCodes.length > 0 ? merchantStatusCodes : undefined, // 🔥 FIX: Pass statusCodes to options
@@ -473,7 +486,8 @@ export default function MapPage() {
             categoryIds: businessTypeFiltersArray && businessTypeFiltersArray.length > 0 ? businessTypeFiltersArray : undefined, // 🔥 NEW: Pass category IDs to options
             province: selectedProvince || undefined,
             ward: selectedWard || undefined,
-            limit: limit // 🔥 NEW: Pass limit from Redux store
+            limit: limit, // 🔥 NEW: Pass limit from Redux store
+            targetDepartmentPath: divisionPath
           }
         );
         

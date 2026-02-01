@@ -26,6 +26,7 @@ export function ScopeSelector() {
   
   const deptInfoRef = useRef<any>(null);
   const [isTeamMember, setIsTeamMember] = useState<boolean>(false);
+  const [isValidUserScope, setIsValidUserScope] = useState<boolean>(false);
   
   const [selectedDivision, setSelectedDivision] = useState<string>('');
   const [selectedTeam, setSelectedTeam] = useState<string>('');
@@ -49,69 +50,75 @@ export function ScopeSelector() {
                            (user as any)?.department_id ||
                            (user as any)?.divisionId ||
                            (user as any)?.division_id;
-console.log('user',user)
-console.log('department',department)
+
         if (userDeptId) {
           try {
-            let dept = deptInfoRef.current;
-            
-            if (!dept || dept.id !== userDeptId) {
-              // Check if userDeptId matches a division (optimization)
-              // const foundInDivisions = availableDivisions.find((d: any) => d.id == userDeptId);
-              
-              // if (foundInDivisions) {
-              //   dept = foundInDivisions;
-              // } else {
-                
-                
-                
-              // }
-              dept = await fetchDepartmentById(userDeptId);
-              
-              
-              if (dept) {
-                deptInfoRef.current = dept;
-              }
-            }
+            // (2) Call API lấy department theo _id = department của user
+            const userDept = await fetchDepartmentById(userDeptId);
 
-            if (dept) {
+            if (userDept) {
+              let divisionIdToSet = userDept._id;
+              let teamIdToSet = null;
+              let isMember = false;
+
+              // (1) Call API lấy department theo parent_id = department của user (nếu có)
+              if (userDept.parent_id) {
+                const parentDept = await fetchDepartmentById(userDept.parent_id);
+                
+                if (parentDept) {
+                  // Cả 2 đều có giá trị -> Active bình thường (User là Team Member)
+                  divisionIdToSet = parentDept._id;
+                  teamIdToSet = userDept._id;
+                  isMember = true;
+                } else {
+                  // (1) không có giá trị -> Đưa giá trị (2) thay cho (1) (User là Division Member hoặc root)
+                  divisionIdToSet = userDept._id;
+                  teamIdToSet = null;
+                  isMember = false;
+                }
+              } else {
+                // Không có parent -> Đưa giá trị (2) thay cho (1)
+                divisionIdToSet = userDept._id;
+                teamIdToSet = null;
+                isMember = false;
+              }
+
+              // Apply scope changes
+              setIsTeamMember(isMember);
+              setIsValidUserScope(true);
+
               let newScope = { ...scope };
               let hasChanges = false;
 
-              if (dept.parent_id) {
-                // User is Team Member -> Division = Parent, Team = Self
-                setIsTeamMember(true);
-                if (scope.divisionId !== dept.parent_id) {
-                  newScope.divisionId = dept._id;
-                  hasChanges = false;
-                }
-                if (scope.teamId !== userDeptId) {
-                  newScope.teamId = userDeptId;
-                  hasChanges = true;
-                }
-              } else {
-                // User is Division Member -> Division = Self
-                setIsTeamMember(false);
-                if (scope.divisionId !== userDeptId) {
-                  newScope.divisionId = userDeptId;
-                  newScope.teamId = null; // Reset team when switching to assigned division
-                  hasChanges = true;
-                }
+              if (scope.divisionId !== divisionIdToSet) {
+                newScope.divisionId = divisionIdToSet;
+                // Reset team if division changes and user is not a team member (Division Manager view)
+                if (!isMember) newScope.teamId = null;
+                hasChanges = true;
+              }
+
+              if (isMember && scope.teamId !== teamIdToSet) {
+                newScope.teamId = teamIdToSet;
+                hasChanges = true;
               }
 
               if (hasChanges) {
                 setContextScope(newScope);
                 dispatch(setScope(newScope));
               }
+            } else {
+              // Trường hợp cả 2 đều không tồn tại (userDept fetch fail) -> Không active, không disable
+              setIsValidUserScope(false);
             }
           } catch (error) {
             console.error('Error enforcing user scope:', error);
+            setIsValidUserScope(false);
           }
         }
       }
     };
     enforceUserScope();
-  }, [user, isLoading, scope, setContextScope, dispatch, availableDivisions]);
+  }, [user, isLoading, scope, setContextScope, dispatch]);
 
   // Restore saved division from localStorage
   useEffect(() => {
@@ -207,8 +214,8 @@ console.log('department',department)
                      (user as any)?.divisionId ||
                      (user as any)?.division_id;
 
-  const isDivisionDisabled = isLoading || !!userDeptId;
-  const isTeamDisabled = isLoading || !selectedDivision || (!!userDeptId && isTeamMember) || availableTeams.length === 0;
+  const isDivisionDisabled = isLoading || (!!userDeptId && isValidUserScope);
+  const isTeamDisabled = isLoading || !selectedDivision || (!!userDeptId && isValidUserScope && isTeamMember) || availableTeams.length === 0;
   const isAreaDisabled = isLoading || !selectedTeam;
   
 

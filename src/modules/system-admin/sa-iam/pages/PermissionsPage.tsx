@@ -15,6 +15,7 @@ import {
   Popconfirm,
   Select,
   Space,
+  Switch,
   Table,
   Tag,
   Tooltip,
@@ -37,9 +38,9 @@ import {
   permissionsService,
   type PermissionRecord,
   type PermissionStatusValue,
-  type PermissionModuleOption,
 } from "../services/permissions.service";
 import PermissionRolesModal from "./PermissionRolesModal";
+import { usePermissionsList } from "../hooks/usePermissionsList";
 
 type FormMode = "create" | "edit";
 
@@ -73,16 +74,64 @@ const parseMetaText = (metaText?: string) => {
   }
 };
 
+const CATEGORY_TOOLTIP = {
+  PAGE: "Dùng để quyết định HIỂN THỊ menu/trang. Chuẩn: <module>.page.read",
+  FEATURE: "Dùng cho thao tác trong trang (CRUD/Export/...). Không quyết định hiển thị menu.",
+};
+
+const MODULE_TOOLTIP =
+  "Phân hệ (namespace) của quyền. Nên khớp modules.code và route prefix.";
+const ACTION_TOOLTIP =
+  "Hành động thực thi. Không nên đặt READ cho các quyền như Export/Restore.";
+const LEGACY_TOOLTIP =
+  "Trường legacy để tương thích dữ liệu cũ. UI mới ưu tiên module/category/action/resource.";
+
+const ACTION_OPTIONS = [
+  "READ",
+  "CREATE",
+  "UPDATE",
+  "DELETE",
+  "EXPORT",
+  "IMPORT",
+  "RESTORE",
+  "ASSIGN",
+  "APPROVE",
+  "REJECT",
+];
+
+const isNormalizedPermission = (permission: PermissionRecord) => {
+  const module = (permission.module ?? "").trim();
+  const resource = (permission.resource ?? "").trim();
+  const action = (permission.action ?? "").trim();
+  const code = (permission.code ?? "").trim();
+
+  if (!permission.module_id || !module || !resource || !action) return false;
+  if (resource.endsWith(".")) return false;
+  if (module && resource.startsWith(`${module}.`)) return false;
+
+  const regex = /^[a-z0-9-]+(\.[a-z0-9_.-]+)+\.[a-z]+$/;
+  if (!regex.test(code)) return false;
+  if (code !== code.toLowerCase()) return false;
+
+  return true;
+};
+
 export default function PermissionsPage() {
-  const [loading, setLoading] = React.useState(false);
-  const [permissions, setPermissions] = React.useState<PermissionRecord[]>([]);
-  const [total, setTotal] = React.useState(0);
-  const [page, setPage] = React.useState(1);
-  const [pageSize, setPageSize] = React.useState(10);
-  const [searchText, setSearchText] = React.useState("");
-  const [statusFilter, setStatusFilter] = React.useState<"all" | "active" | "inactive">("all");
-  const [moduleFilter, setModuleFilter] = React.useState<string>("all");
-  const [moduleOptions, setModuleOptions] = React.useState<PermissionModuleOption[]>([]);
+  const {
+    filters,
+    setFilters,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    loading,
+    rawPermissions,
+    total,
+    modules,
+    legacyTypes,
+    actions,
+    refreshPermissions,
+  } = usePermissionsList();
 
   const [modalOpen, setModalOpen] = React.useState(false);
   const [formMode, setFormMode] = React.useState<FormMode>("create");
@@ -95,53 +144,7 @@ export default function PermissionsPage() {
   const [rolesModalOpen, setRolesModalOpen] = React.useState(false);
   const [rolesPermission, setRolesPermission] = React.useState<PermissionRecord | null>(null);
 
-  const loadModules = React.useCallback(async () => {
-    try {
-      const options = await permissionsService.listPermissionModules();
-      setModuleOptions(options);
-    } catch (err) {
-      const messageText = err instanceof Error ? err.message : "Không thể tải phân hệ.";
-      message.error(messageText);
-    }
-  }, []);
-
-  const loadPermissions = React.useCallback(async () => {
-    setLoading(true);
-    try {
-      const selectedModule =
-        moduleOptions.find((item) => item.id === moduleFilter) ??
-        moduleOptions.find((item) => item.code === moduleFilter);
-      const moduleId = moduleFilter === "all" ? undefined : selectedModule?.id ?? moduleFilter;
-      const moduleCode = moduleFilter === "all" ? undefined : selectedModule?.code;
-      const result = await permissionsService.listPermissions({
-        q: searchText,
-        status: statusFilter,
-        moduleId,
-        moduleCode,
-        page,
-        pageSize,
-      });
-      setPermissions(result.data);
-      setTotal(result.total);
-    } catch (err) {
-      const messageText = err instanceof Error ? err.message : "Không thể tải danh mục quyền.";
-      message.error(messageText);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, pageSize, searchText, statusFilter, moduleFilter, moduleOptions]);
-
-  React.useEffect(() => {
-    void loadPermissions();
-  }, [loadPermissions]);
-
-  React.useEffect(() => {
-    void loadModules();
-  }, [loadModules]);
-
-  React.useEffect(() => {
-    setPage(1);
-  }, [searchText, statusFilter, moduleFilter]);
+  const moduleOptions = modules;
 
   const openCreate = () => {
     setFormMode("create");
@@ -225,7 +228,7 @@ export default function PermissionsPage() {
         message.success("Đã cập nhật quyền.");
       }
       setModalOpen(false);
-      await loadPermissions();
+      await refreshPermissions();
     } catch (err) {
       const messageText = err instanceof Error ? err.message : "Không thể lưu quyền.";
       message.error(messageText);
@@ -238,7 +241,7 @@ export default function PermissionsPage() {
     try {
       await permissionsService.togglePermissionStatus(permission.id, nextStatus(permission.status));
       message.success("Đã cập nhật trạng thái.");
-      await loadPermissions();
+      await refreshPermissions();
     } catch (err) {
       const messageText = err instanceof Error ? err.message : "Không thể cập nhật trạng thái.";
       message.error(messageText);
@@ -259,16 +262,39 @@ export default function PermissionsPage() {
     { value: "all", label: "Tất cả phân hệ" },
     ...moduleOptions.map((option) => ({
       value: option.id,
-      label: `${option.code} - ${option.name}`,
+      label: `${option.code} - ${option.name}${option.group ? ` (${option.group})` : ""}`,
     })),
+  ];
+
+  const legacyTypeOptions = [
+    { value: "all", label: "Tất cả legacy" },
+    ...legacyTypes.map((item) => ({ value: item.code, label: item.code })),
+  ];
+
+  const actionOptions = [
+    { value: "all", label: "Tất cả hành động" },
+    ...Array.from(
+      new Set([
+        ...ACTION_OPTIONS,
+        ...actions.map((item) => item.code).filter(Boolean),
+      ]),
+    ).map((action) => ({ value: action, label: action })),
   ];
 
   const moduleLabel = (permission: PermissionRecord) => {
     const option =
       moduleOptions.find((item) => item.id === permission.module_id) ??
-      moduleOptions.find((item) => item.code === permission.permission_type);
-    return option ? `${option.code} - ${option.name}` : permission.permission_type || "-";
+      moduleOptions.find((item) => item.code === permission.module);
+    if (option) return `${option.code} - ${option.name}`;
+    return permission.module ?? permission.permission_type ?? "-";
   };
+
+  const filteredPermissions = React.useMemo(() => {
+    if (!filters.unnormalizedOnly) return rawPermissions;
+    return rawPermissions.filter((perm) => !isNormalizedPermission(perm));
+  }, [rawPermissions, filters.unnormalizedOnly]);
+
+  const filteredCount = filteredPermissions.length;
 
   return (
     <PermissionGate permission="sa.iam.permission.read">
@@ -284,7 +310,7 @@ export default function PermissionsPage() {
           subtitle="Quản lý danh mục quyền và phân quyền trong hệ thống"
           actions={
             <Space>
-              <Button icon={<ReloadOutlined />} onClick={() => loadPermissions()}>
+              <Button icon={<ReloadOutlined />} onClick={() => refreshPermissions()}>
                 Làm mới
               </Button>
               <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
@@ -296,19 +322,45 @@ export default function PermissionsPage() {
 
         <div className="px-6 pb-8">
           <Card>
-            <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+              <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+              <Space wrap>
+                <Tag.CheckableTag
+                  checked={filters.category === "PAGE"}
+                  onChange={(checked) =>
+                    setFilters((prev) => ({ ...prev, category: checked ? "PAGE" : "all" }))
+                  }
+                >
+                  PAGE
+                </Tag.CheckableTag>
+                <Tag.CheckableTag
+                  checked={filters.category === "FEATURE"}
+                  onChange={(checked) =>
+                    setFilters((prev) => ({ ...prev, category: checked ? "FEATURE" : "all" }))
+                  }
+                >
+                  FEATURE
+                </Tag.CheckableTag>
+                <Tag.CheckableTag
+                  checked={filters.unnormalizedOnly}
+                  onChange={(checked) =>
+                    setFilters((prev) => ({ ...prev, unnormalizedOnly: checked }))
+                  }
+                >
+                  Chưa chuẩn
+                </Tag.CheckableTag>
+              </Space>
               <Space wrap style={{ width: "100%", justifyContent: "space-between" }}>
                 <Space wrap>
-                  <Input
-                    placeholder="Tìm theo mã, tên quyền..."
-                    value={searchText}
-                    onChange={(event) => setSearchText(event.target.value)}
+                  <Input.Search
+                    placeholder="Tìm theo mã quyền, tên quyền, resource, action..."
+                    value={filters.search}
+                    onChange={(event) => setFilters((prev) => ({ ...prev, search: event.target.value }))}
                     allowClear
-                    style={{ width: 260 }}
+                    style={{ width: 300 }}
                   />
                   <Select
-                    value={statusFilter}
-                    onChange={(value) => setStatusFilter(value)}
+                    value={filters.status}
+                    onChange={(value) => setFilters((prev) => ({ ...prev, status: value }))}
                     style={{ width: 160 }}
                     options={[
                       { value: "all", label: "Tất cả trạng thái" },
@@ -316,22 +368,84 @@ export default function PermissionsPage() {
                       { value: "inactive", label: "Ngừng" },
                     ]}
                   />
-                  <Select
-                    value={moduleFilter}
-                    onChange={(value) => setModuleFilter(value)}
-                    style={{ width: 220 }}
-                    options={moduleOptionsForFilter}
-                  />
+                  <Tooltip title={CATEGORY_TOOLTIP.PAGE + " / " + CATEGORY_TOOLTIP.FEATURE}>
+                    <Select
+                      value={filters.category}
+                      onChange={(value) => setFilters((prev) => ({ ...prev, category: value }))}
+                      style={{ width: 200 }}
+                      options={[
+                        { value: "all", label: "Tất cả loại" },
+                        { value: "PAGE", label: "PAGE (Hiển thị menu)" },
+                        { value: "FEATURE", label: "FEATURE (Tính năng)" },
+                      ]}
+                    />
+                  </Tooltip>
+                  <Tooltip title={ACTION_TOOLTIP}>
+                    <Select
+                      value={filters.action}
+                      onChange={(value) => setFilters((prev) => ({ ...prev, action: value }))}
+                      style={{ width: 160 }}
+                      options={actionOptions}
+                      showSearch
+                    />
+                  </Tooltip>
+                  <Tooltip title={MODULE_TOOLTIP}>
+                    <Select
+                      value={filters.moduleId}
+                      onChange={(value) => setFilters((prev) => ({ ...prev, moduleId: value }))}
+                      style={{ width: 240 }}
+                      options={moduleOptionsForFilter}
+                      showSearch
+                    />
+                  </Tooltip>
+                  <Tooltip title={LEGACY_TOOLTIP}>
+                    <Select
+                      value={filters.permissionType}
+                      onChange={(value) => setFilters((prev) => ({ ...prev, permissionType: value }))}
+                      style={{ width: 180 }}
+                      options={legacyTypeOptions}
+                      showSearch
+                      placeholder="Loại legacy"
+                    />
+                  </Tooltip>
+                  <Tooltip title="Chỉ hiển thị các quyền chưa có module/resource/action chuẩn hoặc code chưa khớp mẫu.">
+                    <Switch
+                      checked={filters.unnormalizedOnly}
+                      onChange={(checked) => setFilters((prev) => ({ ...prev, unnormalizedOnly: checked }))}
+                      checkedChildren="Chưa chuẩn"
+                      unCheckedChildren="Đã chuẩn"
+                    />
+                  </Tooltip>
+                  <Button
+                    onClick={() =>
+                      setFilters({
+                        search: "",
+                        status: "all",
+                        category: "all",
+                        action: "all",
+                        moduleId: "all",
+                        permissionType: "all",
+                        unnormalizedOnly: false,
+                      })
+                    }
+                  >
+                    Đặt lại lọc
+                  </Button>
+                  <Button icon={<ReloadOutlined />} onClick={() => refreshPermissions()}>
+                    Làm mới
+                  </Button>
                 </Space>
                 <Typography.Text type="secondary">
-                  Tổng: <strong>{total}</strong> quyền
+                  Đang lọc: <strong>{filteredCount}</strong> / Tổng: <strong>{total}</strong>
                 </Typography.Text>
               </Space>
 
               <Table
                 rowKey="id"
                 loading={loading}
-                dataSource={permissions}
+                dataSource={filteredPermissions}
+                bordered
+                rowClassName={(record: PermissionRecord) => (record.status === 0 ? "opacity-70" : "")}
                 pagination={{
                   current: page,
                   pageSize,
@@ -348,33 +462,99 @@ export default function PermissionsPage() {
                     title: "Mã quyền",
                     dataIndex: "code",
                     key: "code",
-                    width: 180,
-                    render: (value: string) => <span style={{ fontWeight: 600 }}>{value}</span>,
+                    width: 200,
+                    render: (value: string) => (
+                      <Typography.Text code copyable={{ text: value }}>
+                        {value}
+                      </Typography.Text>
+                    ),
                   },
                   {
                     title: "Tên quyền",
                     dataIndex: "name",
                     key: "name",
+                    render: (value: string, record: PermissionRecord) =>
+                      record.description ? (
+                        <Tooltip title={record.description}>
+                          <span>{value}</span>
+                        </Tooltip>
+                      ) : (
+                        value
+                      ),
                   },
                   {
-                    title: "Phân hệ/nhóm",
+                    title: (
+                      <Tooltip title={MODULE_TOOLTIP}>
+                        <span>Phân hệ</span>
+                      </Tooltip>
+                    ),
                     key: "module",
                     width: 220,
                     render: (_: unknown, record: PermissionRecord) => moduleLabel(record),
                   },
                   {
-                    title: "Mô tả",
-                    dataIndex: "description",
-                    key: "description",
-                    render: (value?: string) => value || "-",
-                    ellipsis: true,
+                    title: (
+                      <Tooltip title={`${CATEGORY_TOOLTIP.PAGE} ${CATEGORY_TOOLTIP.FEATURE}`}>
+                        <span>Loại</span>
+                      </Tooltip>
+                    ),
+                    key: "category",
+                    width: 140,
+                    render: (_: unknown, record: PermissionRecord) => {
+                      const category = String(record.category ?? "").toUpperCase();
+                      if (!category) return <Tag>—</Tag>;
+                      const color = category === "PAGE" ? "blue" : "gold";
+                      return (
+                        <Tooltip title={CATEGORY_TOOLTIP[category as "PAGE" | "FEATURE"] ?? ""}>
+                          <Tag color={color}>{category}</Tag>
+                        </Tooltip>
+                      );
+                    },
                   },
                   {
-                    title: "Số vai trò",
-                    dataIndex: "role_count",
-                    key: "role_count",
+                    title: "Resource",
+                    dataIndex: "resource",
+                    key: "resource",
+                    width: 200,
+                    render: (value: string | null, record: PermissionRecord) =>
+                      value ? (
+                        value
+                      ) : (
+                        <Space size={4}>
+                          <span>—</span>
+                          {!isNormalizedPermission(record) && <Tag color="orange">Chưa chuẩn</Tag>}
+                        </Space>
+                      ),
+                  },
+                  {
+                    title: (
+                      <Tooltip title={ACTION_TOOLTIP}>
+                        <span>Action</span>
+                      </Tooltip>
+                    ),
+                    dataIndex: "action",
+                    key: "action",
+                    width: 120,
+                    render: (value?: string | null) => (value ? <Tag>{value}</Tag> : <Tag>—</Tag>),
+                  },
+                  {
+                    title: (
+                      <Tooltip title={LEGACY_TOOLTIP}>
+                        <span>Legacy</span>
+                      </Tooltip>
+                    ),
+                    dataIndex: "permission_type",
+                    key: "permission_type",
+                    width: 140,
+                    render: (value?: string | null) => (value ? <Tag>{value}</Tag> : <Tag>—</Tag>),
+                  },
+                  {
+                    title: "Mặc định",
+                    dataIndex: "is_default",
+                    key: "is_default",
                     width: 110,
-                    render: (value?: number | null) => value ?? 0,
+                    render: (value?: boolean | null) =>
+                      value ? <Tag color="geekblue">Có</Tag> : <Tag>—</Tag>,
                   },
                   {
                     title: "Trạng thái",

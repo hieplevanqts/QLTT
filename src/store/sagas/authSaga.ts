@@ -34,7 +34,6 @@ function* handleLogin(action: PayloadAction<{ email: string; password: string }>
     if (response.access_token) {
       yield call(storeToken, response.access_token, response.expires_in, response.refresh_token);
     } else {
-      console.warn('⚠️ AuthSaga: No access_token in login response');
     }
 
     // Sync Supabase client session for DB views that rely on auth.uid()
@@ -48,7 +47,6 @@ function* handleLogin(action: PayloadAction<{ email: string; password: string }>
           });
         }
       } catch (error) {
-        console.warn('⚠️ AuthSaga: Failed to set Supabase session', error);
       }
     }
 
@@ -64,7 +62,6 @@ function* handleLogin(action: PayloadAction<{ email: string; password: string }>
       try {
         permissions = yield call(fetchUserPermissions, userInfo.id, response.access_token);
       } catch (error) {
-        console.error('Error fetching permissions:', error);
         // Don't block login if permissions fetch fails
       }
     }
@@ -92,7 +89,6 @@ function* handleLogin(action: PayloadAction<{ email: string; password: string }>
 
 function* handleRestoreSession(): Generator<any, any, any> {
   try {
-    console.log('🔄 AuthSaga: handleRestoreSession started');
     const session = yield call(restoreSession);
     
     if (session) {
@@ -102,10 +98,8 @@ function* handleRestoreSession(): Generator<any, any, any> {
           const userInfo = yield call(fetchUserInfoApi, session.token);
           if (userInfo) {
             session.user = userInfo;
-            console.log('✅ AuthSaga: User info fetched:', userInfo.id);
           }
         } catch (error) {
-          console.warn('⚠️ AuthSaga: Failed to fetch user info during restore:', error);
         }
       }
 
@@ -113,11 +107,8 @@ function* handleRestoreSession(): Generator<any, any, any> {
       let permissions: string[] = [];
       if (session.user?.id && session.token) {
         try {
-          console.log('🔄 AuthSaga: Fetching permissions for user:', session.user.id);
           permissions = yield call(fetchUserPermissions, session.user.id, session.token);
-          console.log('✅ AuthSaga: Permissions fetched:', permissions.length, 'permissions');
         } catch (error) {
-          console.warn('⚠️ AuthSaga: Error fetching permissions:', error);
           // Don't block restore if permissions fetch fails
         }
       }
@@ -138,11 +129,9 @@ function* handleRestoreSession(): Generator<any, any, any> {
             });
           }
         } catch (error) {
-          console.warn('⚠️ AuthSaga: Failed to set Supabase session', error);
         }
       }
 
-      console.log('✅ AuthSaga: Dispatching restoreSessionSuccess');
       yield put(restoreSessionSuccess({
         token: session.token,
         user: userWithPermissions,
@@ -150,13 +139,11 @@ function* handleRestoreSession(): Generator<any, any, any> {
       
       // Fetch user info in background to refresh (even if we already have it)
       if (session.token && session.user?.id) {
-        console.log('🔄 AuthSaga: Triggering background user info refresh');
         yield put(fetchUserInfoRequest(session.token));
       }
     } else {
       // Even if restoreSession returned null, check if token exists in storage
       // This handles edge cases where restoreSession fails but token is still valid
-      console.log('⚠️ AuthSaga: restoreSession returned null, checking storage...');
       try {
         const storedToken = yield call(getStoredToken);
         if (storedToken) {
@@ -172,12 +159,10 @@ function* handleRestoreSession(): Generator<any, any, any> {
           yield put(restoreSessionFailure());
         }
       } catch (error) {
-        console.error('❌ AuthSaga: Error checking storage:', error);
         yield put(restoreSessionFailure());
       }
     }
   } catch (error: any) {
-    console.error('❌ AuthSaga: Error in handleRestoreSession:', error);
     yield put(restoreSessionFailure());
   }
 }
@@ -205,7 +190,6 @@ function* handleFetchUserInfo(action: PayloadAction<string | undefined>): Genera
         try {
           permissions = yield call(fetchUserPermissions, userInfo.id, token);
         } catch (error) {
-          console.error('Error fetching permissions:', error);
         }
       }
 
@@ -218,7 +202,6 @@ function* handleFetchUserInfo(action: PayloadAction<string | undefined>): Genera
       yield put(fetchUserInfoFailure());
     }
   } catch (error: any) {
-    console.error('Error fetching user info:', error);
     yield put(fetchUserInfoFailure());
   }
 }

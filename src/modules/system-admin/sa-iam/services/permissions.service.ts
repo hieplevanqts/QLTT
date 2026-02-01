@@ -8,6 +8,11 @@ export type PermissionRecord = {
   name: string;
   description?: string | null;
   module_id?: string | null;
+  module?: string | null;
+  resource?: string | null;
+  action?: string | null;
+  category?: "PAGE" | "FEATURE" | string | null;
+  is_default?: boolean | null;
   permission_type?: string | null;
   status: PermissionStatusValue;
   sort_order?: number | null;
@@ -22,6 +27,9 @@ export type PermissionListParams = {
   status?: "all" | "active" | "inactive";
   moduleId?: string;
   moduleCode?: string;
+  category?: "PAGE" | "FEATURE" | "all";
+  action?: string;
+  permissionType?: string;
   page?: number;
   pageSize?: number;
 };
@@ -46,6 +54,15 @@ export type PermissionModuleOption = {
   id: string;
   code: string;
   name: string;
+  group?: string | null;
+};
+
+export type PermissionActionOption = {
+  code: string;
+};
+
+export type PermissionLegacyTypeOption = {
+  code: string;
 };
 
 export type PermissionRoleRecord = {
@@ -67,11 +84,16 @@ export type PermissionRoleListResult = {
 };
 
 const mapRow = (row: any): PermissionRecord => ({
-  id: row._id ?? row.id,
+  id: row._id ?? "",
   code: row.code,
   name: row.name,
   description: row.description ?? null,
   module_id: row.module_id ?? null,
+  module: row.module ?? null,
+  resource: row.resource ?? null,
+  action: row.action ?? null,
+  category: row.category ?? null,
+  is_default: row.is_default ?? null,
   permission_type: row.permission_type ?? null,
   status: Number(row.status) as PermissionStatusValue,
   sort_order: row.sort_order ?? null,
@@ -103,8 +125,9 @@ export const permissionsService = {
 
       const search = params.q?.trim();
       if (search) {
+        const escaped = search.replace(/,/g, "\\,");
         query = query.or(
-          `code.ilike.%${search}%,name.ilike.%${search}%,description.ilike.%${search}%`,
+          `code.ilike.%${escaped}%,name.ilike.%${escaped}%,description.ilike.%${escaped}%,resource.ilike.%${escaped}%,action.ilike.%${escaped}%,module.ilike.%${escaped}%,permission_type.ilike.%${escaped}%`,
         );
       }
 
@@ -113,14 +136,28 @@ export const permissionsService = {
         query = query.eq("status", statusFilter);
       }
 
+      if (params.category && params.category !== "all") {
+        query = query.eq("category", params.category);
+      }
+
+      if (params.action) {
+        query = query.eq("action", params.action);
+      }
+
+      if (params.permissionType) {
+        query = query.eq("permission_type", params.permissionType);
+      }
+
       const moduleId = params.moduleId?.trim();
       const moduleCode = params.moduleCode?.trim();
       if (moduleId && moduleCode) {
-        query = query.or(`module_id.eq.${moduleId},permission_type.eq.${moduleCode}`);
+        query = query.or(
+          `module_id.eq.${moduleId},module.eq.${moduleCode},permission_type.eq.${moduleCode}`,
+        );
       } else if (moduleId) {
         query = query.eq("module_id", moduleId);
       } else if (moduleCode) {
-        query = query.eq("permission_type", moduleCode);
+        query = query.or(`module.eq.${moduleCode},permission_type.eq.${moduleCode}`);
       }
 
       return query;
@@ -213,34 +250,59 @@ export const permissionsService = {
   },
 
   async listPermissionModules(): Promise<PermissionModuleOption[]> {
-    const trySelect = async (idField: "_id" | "id") => {
-      const { data, error } = await supabase
-        .from("modules")
-        .select(`${idField}, code, name`)
-        .order("order_index", { ascending: true });
+    const { data, error } = await supabase
+      .from("modules")
+      .select("_id, code, name, \"group\", sort_order, order_index")
+      .order("sort_order", { ascending: true })
+      .order("order_index", { ascending: true })
+      .order("code", { ascending: true });
 
-      if (error) {
-        throw error;
-      }
-
-      return (data || []).map((row: any) => ({
-        id: row[idField],
-        code: row.code,
-        name: row.name,
-      }));
-    };
-
-    try {
-      return await trySelect("id");
-    } catch (_err) {
-      try {
-        return await trySelect("_id");
-      } catch (err) {
-        throw new Error(
-          err instanceof Error ? err.message : "Không thể tải danh sách phân hệ.",
-        );
-      }
+    if (error) {
+      throw new Error(error.message || "Không thể tải danh sách phân hệ.");
     }
+
+    return (data || []).map((row: any) => ({
+      id: row._id ?? "",
+      code: row.code,
+      name: row.name,
+      group: row.group ?? null,
+    }));
+  },
+
+  async listPermissionActions(): Promise<PermissionActionOption[]> {
+    const { data, error } = await supabase
+      .from("permissions")
+      .select("action");
+
+    if (error) {
+      return [];
+    }
+
+    const unique = Array.from(
+      new Set((data || []).map((row: any) => row.action).filter(Boolean)),
+    ) as string[];
+
+    return unique.map((code) => ({ code }));
+  },
+
+  async listPermissionLegacyTypes(): Promise<PermissionLegacyTypeOption[]> {
+    const { data, error } = await supabase
+      .from("permission_actions")
+      .select("code")
+      .order("code", { ascending: true });
+
+    if (!error) {
+      return (data || []).map((row: any) => ({ code: row.code }));
+    }
+
+    const fallback = await supabase.from("permissions").select("permission_type");
+    if (fallback.error) {
+      return [];
+    }
+    const unique = Array.from(
+      new Set((fallback.data || []).map((row: any) => row.permission_type).filter(Boolean)),
+    ) as string[];
+    return unique.map((code) => ({ code }));
   },
 
   async listRolesByPermission(

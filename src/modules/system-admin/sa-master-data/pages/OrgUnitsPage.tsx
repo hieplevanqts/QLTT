@@ -918,7 +918,7 @@ export default function OrgUnitsPage() {
                   </Space>
                 }
               >
-                <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+                <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
                   <Input
                     placeholder="Tìm đơn vị..."
                     value={searchText}
@@ -943,7 +943,7 @@ export default function OrgUnitsPage() {
             <Col flex="auto">
               <Card
                 title="Thông tin đơn vị"
-                bodyStyle={{ minHeight: 520 }}
+                styles={{ body: { minHeight: 520 } }}
                 extra={
                   selectedUnit ? (
                     <Space>
@@ -977,7 +977,7 @@ export default function OrgUnitsPage() {
                         key: "info",
                         label: "Thông tin",
                         children: (
-                          <Space direction="vertical" size="large" style={{ width: "100%" }}>
+                          <Space orientation="vertical" size="large" style={{ width: "100%" }}>
                             <div>
                               <Typography.Title level={4} style={{ marginBottom: 4 }}>
                                 {selectedUnit.name}
@@ -1032,7 +1032,7 @@ export default function OrgUnitsPage() {
                         key: "areas",
                         label: "Địa bàn",
                         children: (
-                          <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+                          <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
                             {!canManageSelectedUnit && (
                               <Alert
                                 type="warning"
@@ -1050,7 +1050,7 @@ export default function OrgUnitsPage() {
                             )}
 
                             {isChiCuc && (
-                              <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+                              <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
                                 <Typography.Text strong>Chi cục phụ trách tỉnh/TP</Typography.Text>
                                 <Select
                                   placeholder="Chọn tỉnh/TP"
@@ -1096,7 +1096,7 @@ export default function OrgUnitsPage() {
                             )}
 
                             {isTeam && (
-                              <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+                              <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
                                 {!selectedProvince ? (
                                   <Alert
                                     type="warning"
@@ -1138,7 +1138,7 @@ export default function OrgUnitsPage() {
                                     </Radio.Group>
 
                                     {teamMode === "ALL_PROVINCE" ? (
-                                      <Space direction="vertical" size="small">
+                                      <Space orientation="vertical" size="small">
                                         <Typography.Text type="secondary">
                                           Phạm vi: {selectedProvince.name}
                                         </Typography.Text>
@@ -1152,7 +1152,7 @@ export default function OrgUnitsPage() {
                                         </Button>
                                       </Space>
                                     ) : (
-                                      <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+                                      <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
                                         <Select
                                           mode="multiple"
                                           showSearch
@@ -1204,7 +1204,7 @@ export default function OrgUnitsPage() {
       <Drawer
         title={drawerMode === "create" ? "Thêm đơn vị" : "Chỉnh sửa đơn vị"}
         placement="right"
-        width={420}
+        size={420}
         open={drawerOpen}
         onClose={closeDrawer}
         destroyOnClose
@@ -1313,7 +1313,7 @@ export default function OrgUnitsPage() {
             <Spin />
           </div>
         ) : coordData ? (
-          <Space direction="vertical" size="small" style={{ width: "100%" }}>
+          <Space orientation="vertical" size="small" style={{ width: "100%" }}>
             <Typography.Text>Vĩ độ: {coordData.lat.toFixed(6)}</Typography.Text>
             <Typography.Text>Kinh độ: {coordData.lng.toFixed(6)}</Typography.Text>
             <Space wrap>

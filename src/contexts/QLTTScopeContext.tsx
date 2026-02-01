@@ -140,21 +140,7 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
             .select('id:_id, code, name'),
         ]);
 
-        if (departmentsError) {
-          console.error('❌ QLTTScopeContext: Failed to load departments:', departmentsError);
-        }
-        if (departmentAreasError) {
-          console.error('❌ QLTTScopeContext: Failed to load department_areas:', departmentAreasError);
-        }
-        if (areasError) {
-          console.error('❌ QLTTScopeContext: Failed to load areas:', areasError);
-        }
-        if (wardsError) {
-          console.error('❌ QLTTScopeContext: Failed to load wards:', wardsError);
-        }
-        if (provincesError) {
-          console.error('❌ QLTTScopeContext: Failed to load provinces:', provincesError);
-        }
+      
 
         if (!isMounted) return;
 
@@ -189,7 +175,7 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
           name: province.name,
         })));
       } catch (error: any) {
-        console.error('❌ QLTTScopeContext: Failed to load scope data:', error);
+       
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -375,7 +361,7 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
       const savedScopeStr = localStorage.getItem('mappa-scope');
       if (savedScopeStr) {
         const savedScope = JSON.parse(savedScopeStr) as QLTTScope;
-        console.log('🔄 QLTTScopeContext: Loading scope from localStorage:', savedScope);
+       
         // Validate saved scope structure
         if (savedScope && typeof savedScope === 'object') {
           setScope(savedScope);
@@ -384,24 +370,24 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch (error) {
-      console.error('❌ QLTTScopeContext: Failed to load scope from localStorage:', error);
+     
     }
     
     // If no saved scope or error, use default scope
     const defaultScope = buildDefaultScope();
-    console.log('🔄 QLTTScopeContext: Using default scope:', defaultScope);
+   
     setScope(defaultScope);
     setHasInitialized(true);
   }, [user, isLoading, hasInitialized, userDepartment, userLevel]);
 
   const handleSetScope = (newScope: QLTTScope) => {
-    console.log('🔄 QLTTScopeContext: handleSetScope called with:', newScope);
+    
     setScope(newScope);
     try {
       localStorage.setItem('mappa-scope', JSON.stringify(newScope));
-      console.log('✅ QLTTScopeContext: Scope saved to localStorage');
+      
     } catch (error) {
-      console.error('❌ QLTTScopeContext: Failed to save scope to localStorage:', error);
+      
     }
   };
 

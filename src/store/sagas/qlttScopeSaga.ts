@@ -84,13 +84,11 @@ function* fetchScopeData(): Generator<any, any, any> {
     );
 
     if (departmentsError) {
-      console.error('❌ QLTTScopeSaga: Failed to load departments:', departmentsError);
       yield put(setError('Failed to load departments'));
       return;
     }
 
     if (areasError) {
-      console.error('❌ QLTTScopeSaga: Failed to load areas:', areasError);
       yield put(setError('Failed to load areas'));
       return;
     }
@@ -140,11 +138,9 @@ function* fetchScopeData(): Generator<any, any, any> {
     });
 
     // Store this for later use if needed
-    console.log('✅ QLTTScopeSaga: Scope data loaded successfully');
     yield put(setIsLoading(false));
     yield put(setError(null));
   } catch (error: any) {
-    console.error('❌ QLTTScopeSaga: Failed to fetch scope data:', error);
     yield put(setError(error.message || 'Failed to load scope data'));
     yield put(setIsLoading(false));
   }
@@ -156,7 +152,6 @@ function* initializeScopeFromStorage(): Generator<any, any, any> {
     yield put(loadScopeFromStorage());
     yield put(setHasInitialized(true));
   } catch (error: any) {
-    console.error('❌ QLTTScopeSaga: Failed to initialize scope from storage:', error);
     yield put(setError('Failed to initialize scope'));
   }
 }

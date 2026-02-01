@@ -73,9 +73,7 @@ const qlttScopeSlice = createSlice({
       // Save to localStorage
       try {
         localStorage.setItem('mappa-scope', JSON.stringify(action.payload));
-        console.log('✅ QLTTScopeSlice: Scope saved to localStorage:', action.payload);
       } catch (error) {
-        console.error('❌ QLTTScopeSlice: Failed to save scope to localStorage:', error);
       }
     },
 
@@ -84,9 +82,7 @@ const qlttScopeSlice = createSlice({
       state.scope = { ...state.scope, ...action.payload };
       try {
         localStorage.setItem('mappa-scope', JSON.stringify(state.scope));
-        console.log('✅ QLTTScopeSlice: Scope updated and saved:', state.scope);
       } catch (error) {
-        console.error('❌ QLTTScopeSlice: Failed to save scope:', error);
       }
     },
 
@@ -95,9 +91,7 @@ const qlttScopeSlice = createSlice({
       state.scope = initialState.scope;
       try {
         localStorage.removeItem('mappa-scope');
-        console.log('✅ QLTTScopeSlice: Scope reset and localStorage cleared');
       } catch (error) {
-        console.error('❌ QLTTScopeSlice: Failed to clear localStorage:', error);
       }
     },
 
@@ -149,11 +143,9 @@ const qlttScopeSlice = createSlice({
           const savedScope = JSON.parse(savedScopeStr) as QLTTScope;
           if (savedScope && typeof savedScope === 'object') {
             state.scope = savedScope;
-            console.log('🔄 QLTTScopeSlice: Scope loaded from localStorage:', savedScope);
           }
         }
       } catch (error) {
-        console.error('❌ QLTTScopeSlice: Failed to load scope from localStorage:', error);
         state.error = 'Failed to load scope from storage';
       }
     },

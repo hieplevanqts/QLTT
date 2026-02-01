@@ -31,8 +31,10 @@ if (!supabaseAnonKey || supabaseAnonKey === 'undefined' || supabaseAnonKey === '
 // Create Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: true,
-    autoRefreshToken: true,
+    // We manage refresh + persistence via custom token storage to avoid
+    // duplicate refresh token usage (causes "Invalid Refresh Token: Already Used").
+    persistSession: false,
+    autoRefreshToken: false,
     detectSessionInUrl: true,
     // Disable checkout/payment features to avoid "No checkout popup config found" error
     flowType: 'pkce',

@@ -5,6 +5,7 @@
 
 import axios from 'axios';
 import { apiKey } from './config';
+import { supabase } from '@/api/supabaseClient';
 
 // Base URL for auth API - can be configured via environment variable
 // Default to Supabase if not specified, or use custom auth API URL
@@ -56,7 +57,6 @@ export async function login(credentials: LoginCredentials): Promise<LoginRespons
     // Try to add expires_in parameter if provided (Supabase may ignore this)
     if (credentials.expiresIn) {
       url += `&expires_in=${credentials.expiresIn}`;
-      console.log('🔧 Login: Attempting to set custom expires_in:', credentials.expiresIn, 'seconds');
     }
     
     // Supabase Auth expects JSON body { email, password }
@@ -86,13 +86,8 @@ export async function login(credentials: LoginCredentials): Promise<LoginRespons
     if (loginResponse.expires_in) {
       const expiresInMinutes = Math.round(loginResponse.expires_in / 60);
       const expiresInHours = (loginResponse.expires_in / 3600).toFixed(2);
-      console.log('🔑 Login Response:', {
-        hasAccessToken: !!loginResponse.access_token,
-        hasRefreshToken: !!loginResponse.refresh_token,
-        expiresIn: `${loginResponse.expires_in}s (${expiresInMinutes} minutes / ${expiresInHours} hours)`,
-      });
+      
     } else {
-      console.warn('⚠️ Login Response: No expires_in provided');
     }
     
     return loginResponse;
@@ -133,7 +128,6 @@ export async function logout(): Promise<void> {
 export async function storeToken(token: string, expiresIn?: number, refreshToken?: string): Promise<void> {
   // Validate expiresIn
   if (expiresIn && expiresIn < 60) {
-    console.warn('⚠️ StoreToken: expiresIn is very short:', expiresIn, 'seconds. This might cause premature logout.');
   }
   
   await tokenStorage.setToken(token, expiresIn);
@@ -144,11 +138,29 @@ export async function storeToken(token: string, expiresIn?: number, refreshToken
   }
 }
 
+let refreshInFlight: Promise<LoginResponse | null> | null = null;
+
+async function syncSupabaseSession(accessToken: string, refreshToken?: string | null): Promise<void> {
+  if (!refreshToken) return;
+  try {
+    await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+  } catch (error) {
+    console.warn('⚠️ Sync Supabase session failed:', error);
+  }
+}
+
 /**
  * Refresh access token using refresh token
  */
 export async function refreshAccessToken(): Promise<LoginResponse | null> {
-  try {
+  if (refreshInFlight) {
+    return await refreshInFlight;
+  }
+
+  const refreshPromise = (async () => {
     const refreshToken = await tokenStorage.getRefreshToken();
     
     if (!refreshToken) {
@@ -181,15 +193,24 @@ export async function refreshAccessToken(): Promise<LoginResponse | null> {
         response.data.expires_in,
         response.data.refresh_token
       );
+      await syncSupabaseSession(response.data.access_token, response.data.refresh_token || refreshToken);
     }
 
     return response.data;
+  })();
+
+  refreshInFlight = refreshPromise;
+  try {
+    return await refreshPromise;
   } catch (error: any) {
-    console.error('❌ RefreshToken: Error refreshing token:', error);
     // Don't logout on refresh failure - let the app continue with existing token
     // Only logout if token is actually expired (handled by restoreSession)
     // This prevents premature logout when refresh fails but token is still valid
     return null;
+  } finally {
+    if (refreshInFlight === refreshPromise) {
+      refreshInFlight = null;
+    }
   }
 }
 
@@ -245,7 +266,6 @@ export async function fetchUserInfo(token: string): Promise<User | null> {
     try {
       roleDisplay = await fetchUserRoleName(userData.id, token);
     } catch (error) {
-      console.warn('⚠️ Failed to fetch user role name:', error);
     }
 
     // Fetch profile details from v_user_profile/users table
@@ -256,7 +276,6 @@ export async function fetchUserInfo(token: string): Promise<User | null> {
         username: userData.user_metadata?.username,
       });
     } catch (error) {
-      console.warn('⚠️ Failed to fetch user profile details:', error);
     }
 
     let roleCodes: string[] = [];
@@ -267,7 +286,6 @@ export async function fetchUserInfo(token: string): Promise<User | null> {
       try {
         roleCodes = await fetchUserRoleCodes(userData.id, token);
       } catch (error) {
-        console.warn('⚠️ Failed to fetch user role codes:', error);
       }
     }
     
@@ -298,7 +316,6 @@ export async function fetchUserInfo(token: string): Promise<User | null> {
       ...profileDetails,
     };
   } catch (error: any) {
-    console.error('Error fetching user info:', error);
     if (error.response?.status === 401) {
       // Check if token is actually expired before logging out
       const expired = await isTokenExpired(0);
@@ -333,7 +350,6 @@ async function fetchUserRoleCodes(userId: string, token: string): Promise<string
     const rolesResponse = await axios.get<{ code: string }[]>(rolesUrl, { headers });
     return rolesResponse.data?.map((row) => row.code).filter(Boolean) || [];
   } catch (error: any) {
-    console.error('Error fetching user role codes:', error);
     return [];
   }
 }
@@ -364,15 +380,10 @@ async function fetchUserProfileDetails(
       const viewResponse = await axios.get<any[]>(viewUrl, { headers });
       viewRow = viewResponse.data?.[0] ?? null;
       if (import.meta.env.DEV) {
-        console.debug('[profile] v_user_profile by user_id', userId, viewRow);
       }
     } catch (error: any) {
       if (import.meta.env.DEV) {
-        console.error('[profile] v_user_profile by user_id error', {
-          message: error?.message,
-          status: error?.response?.status,
-          data: error?.response?.data,
-        });
+        
       }
     }
 
@@ -383,15 +394,10 @@ async function fetchUserProfileDetails(
         const viewByEmailResponse = await axios.get<any[]>(viewByEmailUrl, { headers });
         viewRow = viewByEmailResponse.data?.[0] ?? null;
         if (import.meta.env.DEV) {
-          console.debug('[profile] v_user_profile by email', identifiers.email, viewRow);
         }
       } catch (error: any) {
         if (import.meta.env.DEV) {
-          console.error('[profile] v_user_profile by email error', {
-            message: error?.message,
-            status: error?.response?.status,
-            data: error?.response?.data,
-          });
+          
         }
       }
     }
@@ -402,11 +408,7 @@ async function fetchUserProfileDetails(
       row = userResponse.data?.[0];
     } catch (error: any) {
       if (import.meta.env.DEV) {
-        console.error('[profile] users by id error', {
-          message: error?.message,
-          status: error?.response?.status,
-          data: error?.response?.data,
-        });
+        
       }
     }
 
@@ -418,11 +420,7 @@ async function fetchUserProfileDetails(
         row = byEmailResponse.data?.[0];
       } catch (error: any) {
         if (import.meta.env.DEV) {
-          console.error('[profile] users by email error', {
-            message: error?.message,
-            status: error?.response?.status,
-            data: error?.response?.data,
-          });
+          
         }
       }
     }
@@ -435,11 +433,7 @@ async function fetchUserProfileDetails(
         row = byUsernameResponse.data?.[0];
       } catch (error: any) {
         if (import.meta.env.DEV) {
-          console.error('[profile] users by username error', {
-            message: error?.message,
-            status: error?.response?.status,
-            data: error?.response?.data,
-          });
+          
         }
       }
     }
@@ -488,13 +482,8 @@ async function fetchUserProfileDetails(
     };
   } catch (error: any) {
     if (import.meta.env.DEV) {
-      console.error('Error fetching user profile details:', {
-        message: error?.message,
-        status: error?.response?.status,
-        data: error?.response?.data,
-      });
+      
     } else {
-      console.error('Error fetching user profile details:', error);
     }
     return null;
   }
@@ -551,7 +540,6 @@ export async function fetchUserRoleName(userId: string, token: string): Promise<
 
     return rolesResponse.data?.[0]?.name || null;
   } catch (error: any) {
-    console.error('Error fetching user role name:', error);
     return null;
   }
 }
@@ -611,7 +599,6 @@ export async function fetchUserPermissions(userId: string, token: string): Promi
 
     return permissionsResponse.data?.map(p => p.code).filter(Boolean) || [];
   } catch (error: any) {
-    console.error('Error fetching user permissions:', error);
     // Return empty array on error, don't block login
     return [];
   }
@@ -622,7 +609,6 @@ export async function fetchUserPermissions(userId: string, token: string): Promi
  */
 export async function restoreSession(): Promise<{ token: string; user: User | null } | null> {
   try {
-    console.log('🔄 RestoreSession: Starting session restore...');
     let token = await getStoredToken();
     
     if (!token) {
@@ -650,7 +636,6 @@ export async function restoreSession(): Promise<{ token: string; user: User | nu
     try {
       user = await fetchUserInfo(token);
     } catch (error: any) {
-      console.warn('⚠️ RestoreSession: Failed to fetch user info, but token is valid. Will fetch later.', error?.response?.status, error?.message);
       // Don't fail restore if user info fetch fails - token is still valid
       // User info can be fetched later via fetchUserInfoRequest
       // Return token anyway so user can stay authenticated
@@ -658,7 +643,6 @@ export async function restoreSession(): Promise<{ token: string; user: User | nu
     
     return { token, user };
   } catch (error: any) {
-    console.error('❌ RestoreSession: Error restoring session:', error?.message || error);
     // Try to get token anyway - might be a network issue
     try {
       const token = await getStoredToken();

@@ -219,7 +219,6 @@ export default function StoresListPage() {
       const data = await fetchStoresStats();
       setStats(data);
     } catch (error) {
-      console.error('Error loading stats:', error);
     }
   }, []);
 
@@ -233,7 +232,6 @@ export default function StoresListPage() {
       try {
         setIsLoadingStores(true);
         setStoreError(null);
-        console.log('📥 Fetching stores from API...', { currentPage, pageSize, statusFilter, debouncedSearchValue });
 
         const offset = (currentPage - 1) * pageSize;
         const filters: any = {};
@@ -249,7 +247,6 @@ export default function StoresListPage() {
         }
 
         const { data, total } = await fetchStores(pageSize, offset, filters);
-        console.log('Successfully loaded', data.length, '/', total, 'stores from API');
 
         setStores(data);
         setTotalRecords(total);
@@ -258,10 +255,8 @@ export default function StoresListPage() {
         try {
           localStorage.setItem(STORES_STORAGE_KEY, JSON.stringify(data));
         } catch (e) {
-          console.warn('Could not save to localStorage:', e);
         }
       } catch (error: any) {
-        console.error('Error loading stores:', error);
         setStoreError(error.message || 'Failed to load stores');
 
         // Fallback handling...
@@ -273,7 +268,6 @@ export default function StoresListPage() {
             setTotalRecords(parsedStores.length);
           }
         } catch (e) {
-          console.error('Fallback error:', e);
         }
       } finally {
         setIsLoadingStores(false);
@@ -288,14 +282,11 @@ export default function StoresListPage() {
     const loadProvinces = async () => {
       try {
         setIsLoadingProvinces(true);
-        console.log('📥 Fetching provinces from API...');
 
         const data = await adminUnitsService.listProvinces();
-        console.log('Successfully loaded', data.length, 'provinces from API');
 
         setProvinces(data);
       } catch (error: any) {
-        console.error('Error loading provinces:', error);
         // Fallback to hardcoded list if API fails
         setProvinces([
           { id: '1', code: 'HCM', name: 'Quận 1' },
@@ -316,7 +307,6 @@ export default function StoresListPage() {
     try {
       localStorage.setItem(STORES_STORAGE_KEY, JSON.stringify(stores));
     } catch (error) {
-      console.error('Error saving stores to localStorage:', error);
     }
   }, [stores]);
 
@@ -385,7 +375,6 @@ export default function StoresListPage() {
       submittedBy: 'Current User', // In production, get from auth context
     };
 
-    console.log('📝 Approval Request Created:', approvalRequest);
 
     // In production:
     // - Save to approval queue
@@ -700,7 +689,6 @@ export default function StoresListPage() {
     };
 
     if (actionType === 'export') {
-      console.log('📥 Exporting stores:', selectedStores);
       toast.success(`Xuất ${processedCount} cơ sở thành công`);
     } else {
       toast.success(
@@ -841,7 +829,6 @@ export default function StoresListPage() {
       render: (store) => {
         // Debug log to verify ownerPhone exists
         if (store.id === 1) {
-          console.log('Store 1 data:', { ownerName: store.ownerName, ownerPhone: store.ownerPhone });
         }
         return (
           <div>
@@ -1346,7 +1333,6 @@ export default function StoresListPage() {
               state: { importResult: result }
             });
           } catch (error: any) {
-            console.error('Import failed:', error);
             toast.error(error.message || 'Có lỗi xảy ra khi xử lý file');
           }
         }}
@@ -1358,7 +1344,6 @@ export default function StoresListPage() {
         totalRecords={stores.length}
         selectedCount={selectedRows.size}
         onExport={(options: ExportOptions) => {
-          console.log('Export with options:', options);
           toast.success('Xuất dữ liệu thành công');
         }}
       />
@@ -1368,7 +1353,6 @@ export default function StoresListPage() {
         onOpenChange={setAddDialogOpen}
         onSubmit={async (data: NewStoreDataTabbed) => {
           try {
-            console.log('📝 AddStoreDialogTabbed submitted data:', data);
 
             // Validate required fields
             if (!data.business_name) {
@@ -1428,12 +1412,10 @@ export default function StoresListPage() {
               p_owner_email: null,
             };
 
-            console.log('📤 Sending API payload:', apiPayload);
 
             // Call API to create merchant
             const result = await createMerchant(apiPayload);
 
-            console.log('✅ Merchant created via API:', result);
 
             // Create local Store object for display
             const numericId = Math.random() * 1000000 | 0;
@@ -1484,7 +1466,6 @@ export default function StoresListPage() {
               isVerified: false,
             };
 
-            console.log('✅ New store object:', newStore);
 
             // Add to global store registry
             addStore(newStore);
@@ -1501,7 +1482,6 @@ export default function StoresListPage() {
               description: 'Cửa hàng mới đã được thêm vào hệ thống',
             });
           } catch (error: any) {
-            console.error('❌ Error creating merchant:', error);
             toast.error('Lỗi khi thêm cửa hàng', {
               description: error.message || 'Vui lòng thử lại',
             });

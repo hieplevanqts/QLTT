@@ -28,8 +28,9 @@ export function initSupabase(supabaseUrl: string, supabaseKey: string): Supabase
   if (!supabaseClient) {
     supabaseClient = createClient(supabaseUrl, supabaseKey, {
       auth: {
-        persistSession: true,
-        autoRefreshToken: true,
+        // Keep in sync with primary supabase client to avoid refresh token conflicts.
+        persistSession: false,
+        autoRefreshToken: false,
       },
     });
   }
