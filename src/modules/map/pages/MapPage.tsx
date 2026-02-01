@@ -453,6 +453,10 @@ export default function MapPage() {
         const activeFilterCodes = Object.keys(filters).filter(key => filters[key] === true);
         const merchantStatusCodes = mapStatusCodesToMerchantStatus(activeFilterCodes);
         
+        // Calculate business types filter
+        const activeBusinessTypes = Object.keys(businessTypeFilters).filter(key => businessTypeFilters[key] === true);
+        const businessTypes = calculateBusinessTypes(activeBusinessTypes, categories);
+        
         // Calculate department IDs to filter
         const departmentIdsToFilter = calculateDepartmentIdsToFilter(
           departmentFilters,
@@ -479,11 +483,22 @@ export default function MapPage() {
 
         const merchants = await fetchMerchants(
           merchantStatusCodes.length > 0 ? merchantStatusCodes : undefined,
-          undefined,
+          businessTypes,
           departmentIdsToFilter,
-          selectedProvince || undefined,
-          selectedWard || undefined,
-          businessTypeFiltersArray && businessTypeFiltersArray.length > 0 ? businessTypeFiltersArray : undefined
+          teamId,
+          divisionId || '',
+          divisionPath,
+          businessTypeFiltersArray,
+          {
+            statusCodes: merchantStatusCodes.length > 0 ? merchantStatusCodes : undefined, // 🔥 FIX: Pass statusCodes to options
+            businessTypes: businessTypes,
+            departmentIds: departmentIdsToFilter,
+            categoryIds: businessTypeFiltersArray && businessTypeFiltersArray.length > 0 ? businessTypeFiltersArray : undefined, // 🔥 NEW: Pass category IDs to options
+            province: selectedProvince || undefined,
+            ward: selectedWard || undefined,
+            limit: limit, // 🔥 NEW: Pass limit from Redux store
+            targetDepartmentPath: divisionPath
+          }
         );
         
         setRestaurants(merchants);
