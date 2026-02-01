@@ -455,20 +455,12 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
     if (!formData.operationStatus?.trim()) {
       newErrors.operationStatus = 'Vui lòng chọn tình trạng hoạt động';
     }
-    if (!formData.businessPhone?.trim()) {
-      newErrors.businessPhone = 'Vui lòng nhập số điện thoại hộ kinh doanh';
-    } else if (!isValidPhoneNumber(formData.businessPhone)) {
+    // businessPhone, ownerPhone, ownerName - optional fields
+    // Chỉ validate format nếu có nhập
+    if (formData.businessPhone && !isValidPhoneNumber(formData.businessPhone)) {
       newErrors.businessPhone = 'Số điện thoại không hợp lệ';
     }
-    // businessArea, email, website, fax - optional
-
-    // Tab 2: Thông tin chủ cơ sở - Validate required fields (*)
-    if (!formData.ownerName?.trim()) {
-      newErrors.ownerName = 'Vui lòng nhập tên chủ cơ sở';
-    }
-    if (!formData.ownerPhone?.trim()) {
-      newErrors.ownerPhone = 'Vui lòng nhập số điện thoại chủ cơ sở';
-    } else if (!isValidPhoneNumber(formData.ownerPhone)) {
+    if (formData.ownerPhone && !isValidPhoneNumber(formData.ownerPhone)) {
       newErrors.ownerPhone = 'Số điện thoại không hợp lệ';
     }
 
@@ -870,7 +862,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
 
               {renderFieldWithIndicator(
                 'businessPhone',
-                'SĐT hộ kinh doanh *',
+                'SĐT hộ kinh doanh',
                 <Input
                   id="businessPhone"
                   type="tel"
@@ -946,7 +938,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
 
               {renderFieldWithIndicator(
                 'ownerPhone',
-                'Số điện thoại chủ cơ sở *',
+                'Số điện thoại chủ cơ sở',
                 <Input
                   id="ownerPhone"
                   type="tel"
@@ -959,7 +951,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
 
               {renderFieldWithIndicator(
                 'ownerName',
-                'Tên chủ cơ sở *',
+                'Tên chủ cơ sở',
                 <Input
                   id="ownerName"
                   type="text"

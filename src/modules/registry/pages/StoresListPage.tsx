@@ -231,11 +231,26 @@ const departmentPath = user?.app_metadata?.department?.path ;
   // Fetch stats separately or when filters change if needed
   const loadStats = useCallback(async () => {
     try {
-      const data = await fetchStoresStats();
+      const filters: any = {};
+
+      if (statusFilter && statusFilter !== 'all') {
+        filters.status = statusFilter;
+      }
+      if (jurisdictionFilter && jurisdictionFilter !== 'all') {
+        filters.province_id = jurisdictionFilter;
+      }
+      if (debouncedSearchValue) {
+        filters.search = debouncedSearchValue;
+      }
+      if (businessTypeFilter && businessTypeFilter !== 'all') {
+        filters.businessType = businessTypeFilter;
+      }
+
+      const data = await fetchStoresStats(filters, departmentPath);
       setStats(data);
     } catch (error) {
     }
-  }, []);
+  }, [statusFilter, jurisdictionFilter, debouncedSearchValue, businessTypeFilter, departmentPath]);
 
   useEffect(() => {
     loadStats();
@@ -1110,12 +1125,10 @@ const departmentPath = user?.app_metadata?.department?.path ;
                 {getTotalPendingCount()}
               </Badge>
             </Button>
-            {user?.permissions?.includes('store.create') && (
-              <Button size="sm" onClick={() => setAddDialogOpen(true)}>
-                <Plus size={16} />
-                Thêm mới
-              </Button>
-            )}
+            <Button size="sm" onClick={() => setAddDialogOpen(true)}>
+              <Plus size={16} />
+              Thêm mới
+            </Button>
           </>
         }
       />
@@ -1430,7 +1443,7 @@ const departmentPath = user?.app_metadata?.department?.path ;
       <ExportDialog
         open={exportDialogOpen}
         onOpenChange={setExportDialogOpen}
-        totalRecords={stores.length}
+        totalRecords={totalRecords}
         selectedCount={selectedRows.size}
         onExport={(options: ExportOptions) => {
           toast.success('Xuất dữ liệu thành công');
