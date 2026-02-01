@@ -60,13 +60,12 @@ export const useMapFilters = ({
 
   const handleBusinessTypeFilterChange = useCallback((key: string) => {
     const newFilters = {
-      ...businessTypeFilters,
-      [key]: !businessTypeFilters[key]
+      ...pendingBusinessTypeFilters,
+      [key]: !pendingBusinessTypeFilters[key]
     };
     
-    dispatch(setBusinessTypeFilters(newFilters));
     dispatch(setPendingBusinessTypeFilters(newFilters));
-  }, [businessTypeFilters, dispatch]);
+  }, [pendingBusinessTypeFilters, dispatch]);
 
   const handleBusinessTypeFiltersChange = useCallback((selectedIds: string[]) => {
     const newFilters: { [key: string]: boolean } = {};
@@ -75,19 +74,21 @@ export const useMapFilters = ({
         newFilters[id] = true;
       }
     });
-    dispatch(setBusinessTypeFilters(newFilters));
     dispatch(setPendingBusinessTypeFilters(newFilters));
   }, [dispatch]);
 
   const handleBusinessTypeToggleAll = useCallback((checked: boolean) => {
     const newFilters: { [key: string]: boolean } = {};
-    Object.keys(businessTypeFilters).forEach(key => {
+    const categoryIds = categories.map((cat) => cat.id).filter(Boolean);
+    const keys = categoryIds.length > 0
+      ? categoryIds
+      : Object.keys(pendingBusinessTypeFilters);
+    keys.forEach(key => {
       newFilters[key] = checked;
     });
     
-    dispatch(setBusinessTypeFilters(newFilters));
     dispatch(setPendingBusinessTypeFilters(newFilters));
-  }, [businessTypeFilters, dispatch]);
+  }, [categories, pendingBusinessTypeFilters, dispatch]);
 
   const handleDepartmentFilterChange = useCallback((departmentId: string) => {
     const newFilters = {
