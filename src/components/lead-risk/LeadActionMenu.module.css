@@ -1,3 +1,7 @@
+:global(.action-button) svg {
+  stroke: black !important;
+}
+
 .container {
   position: relative;
   display: inline-block;
