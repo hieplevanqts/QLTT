@@ -137,6 +137,20 @@
   background-color: var(--color-success-dark, #059669);
 }
 
+.rejectIconButton {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  color: var(--color-danger, #dc2626);
+  border-color: var(--color-danger, #dc2626);
+  font-weight: var(--font-weight-medium);
+}
+
+.rejectIconButton:hover:not(:disabled) {
+  background-color: rgba(220, 38, 38, 0.1);
+  border-color: var(--color-danger, #dc2626);
+}
+
 .rejectButton {
   font-weight: var(--font-weight-medium);
 }

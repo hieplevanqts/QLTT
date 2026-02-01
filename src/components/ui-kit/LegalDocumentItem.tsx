@@ -1,4 +1,4 @@
-import { FileText, Home, Shield, ChevronRight, Upload, Edit } from 'lucide-react';
+import { FileText, Home, Shield, ChevronRight, Upload, Edit, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import styles from './LegalDocumentItem.module.css';
@@ -33,6 +33,8 @@ interface LegalDocumentItemProps {
   onClick?: () => void;
   onUploadClick?: (docType: string) => void;
   onEditClick?: (doc: any) => void;
+  onApprove?: (docId: string) => void;
+  onReject?: (docId: string) => void;
 }
 
 const getDocumentIcon = (type: string) => {
@@ -54,7 +56,7 @@ const getDocumentIcon = (type: string) => {
   }
 };
 
-export function LegalDocumentItem({ document, onClick, onUploadClick, onEditClick }: LegalDocumentItemProps) {
+export function LegalDocumentItem({ document, onClick, onUploadClick, onEditClick, onApprove, onReject }: LegalDocumentItemProps) {
   const Icon = getDocumentIcon(document.type);
   const isMissing = document.status === 'missing';
 
@@ -138,7 +140,7 @@ export function LegalDocumentItem({ document, onClick, onUploadClick, onEditClic
             Tải lên
           </Button>
         ) : (
-          <>
+          <div className={styles.actionButtons}>
             {onEditClick && (
               <Button
                 size="sm"
@@ -153,8 +155,43 @@ export function LegalDocumentItem({ document, onClick, onUploadClick, onEditClic
                 Cập nhật hồ sơ
               </Button>
             )}
+            
+            {/* Phê duyệt/Từ chối buttons */}
+            {document.approvalStatus === 'pending' && (
+              <div className={styles.approvalActions}>
+                {onApprove && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className={styles.approveButton}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onApprove?.(document.id);
+                    }}
+                  >
+                    <CheckCircle2 size={16} />
+                    Phê duyệt
+                  </Button>
+                )}
+                {onReject && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className={styles.rejectButton}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onReject?.(document.id);
+                    }}
+                  >
+                    <XCircle size={16} />
+                    Từ chối
+                  </Button>
+                )}
+              </div>
+            )}
+            
             <ChevronRight size={20} className={styles.chevron} />
-          </>
+          </div>
         )}
       </div>
     </div>

@@ -22,7 +22,8 @@ interface ApproveDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   storeName: string;
-  onConfirm: (reason: string, verifyText: string) => void;
+  onConfirm: () => void;
+  onRejectClick?: () => void;
 }
 
 export function ApproveDialog({
@@ -30,20 +31,14 @@ export function ApproveDialog({
   onOpenChange,
   storeName,
   onConfirm,
+  onRejectClick,
 }: ApproveDialogProps) {
-  const [reason, setReason] = useState('');
-  const [verifyText, setVerifyText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const expectedVerifyText = 'PHÊ DUYỆT';
-  const canSubmit = reason.trim().length >= 10 && verifyText === expectedVerifyText;
-
   const handleSubmit = async () => {
-    if (!canSubmit) return;
-
     setIsSubmitting(true);
     try {
-      await onConfirm(reason, verifyText);
+      await onConfirm();
       handleClose();
     } finally {
       setIsSubmitting(false);
@@ -51,10 +46,13 @@ export function ApproveDialog({
   };
 
   const handleClose = () => {
-    setReason('');
-    setVerifyText('');
     setIsSubmitting(false);
     onOpenChange(false);
+  };
+
+  const handleReject = () => {
+    handleClose();
+    onRejectClick?.();
   };
 
   return (
@@ -74,63 +72,19 @@ export function ApproveDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className={styles.formContent}>
-          {/* Reason Input */}
-          <div className={styles.formField}>
-            <Label htmlFor="approve-reason" className={styles.label}>
-              Lý do phê duyệt <span className={styles.required}>*</span>
-            </Label>
-            <Textarea
-              id="approve-reason"
-              placeholder="Nhập lý do phê duyệt (tối thiểu 10 ký tự)..."
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className={styles.textarea}
-              rows={4}
-            />
-            <div className={styles.helperText}>
-              {reason.trim().length}/10 ký tự tối thiểu
-            </div>
-          </div>
-
-          {/* Verification Input */}
-          <div className={styles.formField}>
-            <Label htmlFor="approve-verify" className={styles.label}>
-              Xác nhận <span className={styles.required}>*</span>
-            </Label>
-            <div className={styles.verifyBox}>
-              <AlertTriangle size={16} className={styles.warningIcon} />
-              <span>
-                Nhập <strong>{expectedVerifyText}</strong> để xác nhận
-              </span>
-            </div>
-            <Input
-              id="approve-verify"
-              type="text"
-              placeholder="Nhập PHÊ DUYỆT"
-              value={verifyText}
-              onChange={(e) => setVerifyText(e.target.value)}
-              className={styles.verifyInput}
-            />
-            {verifyText && verifyText !== expectedVerifyText && (
-              <div className={styles.errorText}>
-                Văn bản xác nhận không khớp
-              </div>
-            )}
-          </div>
-        </div>
-
         <DialogFooter className={styles.footer}>
           <Button
             variant="outline"
-            onClick={handleClose}
+            onClick={handleReject}
             disabled={isSubmitting}
+            className={styles.rejectIconButton}
           >
-            Hủy
+            <XCircle size={16} />
+            Từ chối
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!canSubmit || isSubmitting}
+            disabled={isSubmitting}
             className={styles.approveButton}
           >
             {isSubmitting ? 'Đang xử lý...' : 'Xác nhận phê duyệt'}
@@ -149,7 +103,7 @@ interface RejectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   storeName: string;
-  onConfirm: (reason: string, verifyText: string) => void;
+  onConfirm: (reason: string) => void;
 }
 
 export function RejectDialog({
@@ -159,18 +113,16 @@ export function RejectDialog({
   onConfirm,
 }: RejectDialogProps) {
   const [reason, setReason] = useState('');
-  const [verifyText, setVerifyText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const expectedVerifyText = 'TỪ CHỐI';
-  const canSubmit = reason.trim().length >= 10 && verifyText === expectedVerifyText;
+  const canSubmit = reason.trim().length >= 10;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
 
     setIsSubmitting(true);
     try {
-      await onConfirm(reason, verifyText);
+      await onConfirm(reason);
       handleClose();
     } finally {
       setIsSubmitting(false);
@@ -179,7 +131,6 @@ export function RejectDialog({
 
   const handleClose = () => {
     setReason('');
-    setVerifyText('');
     setIsSubmitting(false);
     onOpenChange(false);
   };
@@ -218,32 +169,6 @@ export function RejectDialog({
             <div className={styles.helperText}>
               {reason.trim().length}/10 ký tự tối thiểu
             </div>
-          </div>
-
-          {/* Verification Input */}
-          <div className={styles.formField}>
-            <Label htmlFor="reject-verify" className={styles.label}>
-              Xác nhận <span className={styles.required}>*</span>
-            </Label>
-            <div className={styles.verifyBox}>
-              <AlertTriangle size={16} className={styles.warningIcon} />
-              <span>
-                Nhập <strong>{expectedVerifyText}</strong> để xác nhận
-              </span>
-            </div>
-            <Input
-              id="reject-verify"
-              type="text"
-              placeholder="Nhập TỪ CHỐI"
-              value={verifyText}
-              onChange={(e) => setVerifyText(e.target.value)}
-              className={styles.verifyInput}
-            />
-            {verifyText && verifyText !== expectedVerifyText && (
-              <div className={styles.errorText}>
-                Văn bản xác nhận không khớp
-              </div>
-            )}
           </div>
         </div>
 

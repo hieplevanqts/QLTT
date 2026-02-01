@@ -1384,6 +1384,8 @@ export default function StoreDetailPage() {
                 onClick={() => setSelectedDocument(doc)}
                 onUploadClick={handleUploadClick}
                 onEditClick={handleEditDocument}
+                onApprove={handleApproveDocument}
+                onReject={handleRejectDocument}
               />
             ))}
           </div>

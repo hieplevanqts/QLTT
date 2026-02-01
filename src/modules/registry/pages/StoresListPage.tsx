@@ -539,7 +539,7 @@ export default function StoresListPage() {
     });
   };
 
-  const handleApproveConfirm = async (reason: string, verifyText: string) => {
+  const handleApproveConfirm = async () => {
     const store = stores.find(s => s.id === approveDialog.storeId);
     if (!store || !store.merchantId) {
       toast.error('Không tìm thấy ID cơ sở để cập nhật');
@@ -566,7 +566,7 @@ export default function StoresListPage() {
     }
   };
 
-  const handleRejectConfirm = async (reason: string, verifyText: string) => {
+  const handleRejectConfirm = async (reason: string) => {
     const store = stores.find(s => s.id === rejectDialog.storeId);
     if (!store || !store.merchantId) {
       toast.error('Không tìm thấy ID cơ sở để cập nhật');
@@ -752,11 +752,11 @@ export default function StoresListPage() {
     switch (store.status) {
       case 'pending':
       case 'rejected':
-        // Chờ duyệt & Từ chối phê duyệt: Xem chi tiết, Chỉnh sửa, Xóa (3 actions - show all)
+        // Chờ duyệt & Từ chối phê duyệt: Xem chi tiết, Chỉnh sửa, Phê duyệt (thay vì Xóa)
         actions.push(
           CommonActions.view(() => navigate(`/registry/stores/${store.id}`)),
           CommonActions.edit(() => handleEdit(store)),
-          CommonActions.delete(() => handleDelete(store))
+          CommonActions.approve(() => handleApprove(store.id))
         );
         break;
 
@@ -861,7 +861,7 @@ export default function StoresListPage() {
       label: 'Địa bàn',
       sortable: true,
       width: '110px', // Reduced slightly for balance
-      render: (store) => store.jurisdiction,
+      render: (store) => store.ward || '—',
     },
     {
       key: 'status',
@@ -1509,6 +1509,10 @@ export default function StoresListPage() {
         onOpenChange={(open) => setApproveDialog({ ...approveDialog, open })}
         storeName={approveDialog.storeName}
         onConfirm={handleApproveConfirm}
+        onRejectClick={() => {
+          setApproveDialog({ open: false, storeId: 0, storeName: '' });
+          setRejectDialog({ ...rejectDialog, open: true });
+        }}
       />
 
       <RejectDialog

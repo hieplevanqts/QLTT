@@ -67,7 +67,8 @@ export async function fetchStores(
 ): Promise<{ data: Store[]; total: number }> {
   try {
     // Build base URL with pagination (supports unlimited records)
-    let url = `${SUPABASE_REST_URL}/merchants?limit=${limit}&offset=${offset}&order=created_at.desc&select=*`;
+    // Join with wards table to get ward name
+    let url = `${SUPABASE_REST_URL}/merchants?limit=${limit}&offset=${offset}&order=created_at.desc&select=*,wards(_id,name)`;
 
     // Apply filters if provided
     if (filters?.status) {
@@ -145,7 +146,7 @@ export async function fetchStores(
         provinceCode: merchant.province_id || '',
         jurisdiction: merchant.district || 'Quận 1',
         jurisdictionCode: merchant.province_id || '',
-        ward: merchant.ward || '',
+        ward: merchant.wards?.name || '',  // Get ward name from joined wards table
         wardCode: merchant.ward_id || '',
         managementUnit: `Chi cục QLTT ${merchant.district || 'Quận 1'}`,
 

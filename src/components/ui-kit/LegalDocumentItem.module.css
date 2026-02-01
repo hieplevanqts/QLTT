@@ -145,6 +145,18 @@
   gap: var(--spacing-2);
 }
 
+.actionButtons {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.approvalActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
 .chevron {
   color: var(--muted-foreground);
   transition: transform 0.2s ease;
@@ -184,4 +196,38 @@
   background: var(--muted);
   border-color: var(--primary);
   color: var(--primary);
+}
+
+.approveButton {
+  gap: var(--spacing-2);
+  background: rgba(34, 197, 94, 0.1);
+  /* Green light */
+  color: rgba(22, 163, 74, 1);
+  /* Green dark */
+  border: 1px solid rgba(22, 163, 74, 0.3);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  transition: all 0.2s ease;
+}
+
+.approveButton:hover {
+  background: rgba(34, 197, 94, 0.2);
+  border-color: rgba(22, 163, 74, 1);
+}
+
+.rejectButton {
+  gap: var(--spacing-2);
+  background: rgba(239, 68, 68, 0.1);
+  /* Red light */
+  color: rgba(220, 38, 38, 1);
+  /* Red dark */
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  transition: all 0.2s ease;
+}
+
+.rejectButton:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(220, 38, 38, 1);
 }
