@@ -248,7 +248,18 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
   const userDepartment = userDepartmentId ? departmentsById.get(userDepartmentId) : undefined;
   const userLevel = user?.departmentInfo?.level ?? getDepartmentLevelFromCode(user?.departmentInfo?.code);
 
+  const userStandaloneDivision = useMemo(() => {
+    if (!userDepartmentId || !userDepartment) return null;
+    const hasParent = Boolean(userDepartment.parent_id);
+    const hasChild = departments.some((dept) => dept.parent_id === userDepartmentId);
+    if (hasParent || hasChild) return null;
+    return userDepartment;
+  }, [departments, userDepartment, userDepartmentId]);
+
   const userDivisionId = useMemo(() => {
+    if (userStandaloneDivision) {
+      return userStandaloneDivision.id;
+    }
     if (userLevel === 2) {
       return userDepartment?.id || userDepartmentId;
     }
@@ -259,17 +270,15 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
         || null;
     }
     return null;
-  }, [userDepartment, userLevel, userDepartmentId, user?.departmentInfo?.parent_id, user?.departmentInfo?.code, allDivisions]);
-
-  const standaloneDivision = useMemo(() => {
-    if (!userDepartmentId || departments.length !== 1) return null;
-    const onlyDepartment = departments[0];
-    if (onlyDepartment.id !== userDepartmentId) return null;
-    const hasParent = Boolean(onlyDepartment.parent_id);
-    const hasChild = departments.some((dept) => dept.parent_id === onlyDepartment.id);
-    if (hasParent || hasChild) return null;
-    return onlyDepartment;
-  }, [departments, userDepartmentId]);
+  }, [
+    userStandaloneDivision,
+    userDepartment,
+    userLevel,
+    userDepartmentId,
+    user?.departmentInfo?.parent_id,
+    user?.departmentInfo?.code,
+    allDivisions,
+  ]);
 
   const locks: ScopeLocks = useMemo(
     () => ({
@@ -280,8 +289,8 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
   );
 
   const availableDivisions = useMemo(() => {
-    if (standaloneDivision) {
-      return [standaloneDivision];
+    if (userStandaloneDivision) {
+      return [userStandaloneDivision];
     }
     if (!userLevel || userLevel <= 1) {
       return allDivisions;
@@ -294,7 +303,7 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
       return allDivisions.filter((dept) => dept.id === userDivisionId);
     }
     return [];
-  }, [allDivisions, userLevel, userDepartment, userDepartmentId, userDivisionId, standaloneDivision]);
+  }, [allDivisions, userLevel, userDepartment, userDepartmentId, userDivisionId, userStandaloneDivision]);
 
   const availableTeams = useMemo(() => {
     if (!scope.divisionId) return [];
@@ -348,9 +357,9 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
   }, [scope.teamId, departmentAreasByDepartment, areasById, wardsById, provincesById]);
 
   const buildDefaultScope = (): QLTTScope => {
-    if (standaloneDivision) {
+    if (userStandaloneDivision) {
       return {
-        divisionId: standaloneDivision.id,
+        divisionId: userStandaloneDivision.id,
         teamId: null,
         areaId: null,
         province: null,
