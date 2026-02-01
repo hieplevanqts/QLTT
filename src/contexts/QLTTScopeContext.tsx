@@ -244,22 +244,57 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
     return division?.id || null;
   };
 
-  const userDepartmentId = user?.departmentInfo?.id || null;
+  const metadataDepartment = useMemo(() => {
+    const department = (user as any)?.app_metadata?.department;
+    if (!department?.id) return null;
+    return {
+      id: department.id,
+      name: department.name || user?.departmentInfo?.name || 'Đơn vị',
+      parent_id: null,
+    } as ScopeDepartment;
+  }, [user, user?.departmentInfo?.name]);
+
+  const metadataDepartmentId = metadataDepartment?.id || null;
+  const userDepartmentId = user?.departmentInfo?.id || metadataDepartmentId || null;
   const userDepartment = userDepartmentId ? departmentsById.get(userDepartmentId) : undefined;
-  const userLevel = user?.departmentInfo?.level ?? getDepartmentLevelFromCode(user?.departmentInfo?.code);
+  const effectiveUserDepartment = userDepartment || metadataDepartment;
+  const userLevel =
+    user?.departmentInfo?.level
+    ?? getDepartmentLevelFromCode(user?.departmentInfo?.code)
+    ?? effectiveUserDepartment?.level
+    ?? getDepartmentLevelFromCode(effectiveUserDepartment?.code);
+
+  const userStandaloneDivision = useMemo(() => {
+    if (!userDepartmentId || !effectiveUserDepartment) return null;
+    const hasParent = Boolean(effectiveUserDepartment.parent_id);
+    const hasChild = departments.some((dept) => dept.parent_id === userDepartmentId);
+    if (hasParent || hasChild) return null;
+    return effectiveUserDepartment;
+  }, [departments, effectiveUserDepartment, userDepartmentId]);
 
   const userDivisionId = useMemo(() => {
+    if (userStandaloneDivision) {
+      return userStandaloneDivision.id;
+    }
     if (userLevel === 2) {
-      return userDepartment?.id || userDepartmentId;
+      return effectiveUserDepartment?.id || userDepartmentId;
     }
     if (userLevel && userLevel >= 3) {
-      return userDepartment?.parent_id
+      return effectiveUserDepartment?.parent_id
         || user?.departmentInfo?.parent_id
-        || findDivisionIdByTeamCode(userDepartment?.code || user?.departmentInfo?.code)
+        || findDivisionIdByTeamCode(effectiveUserDepartment?.code || user?.departmentInfo?.code)
         || null;
     }
     return null;
-  }, [userDepartment, userLevel, userDepartmentId, user?.departmentInfo?.parent_id, user?.departmentInfo?.code, allDivisions]);
+  }, [
+    userStandaloneDivision,
+    effectiveUserDepartment,
+    userLevel,
+    userDepartmentId,
+    user?.departmentInfo?.parent_id,
+    user?.departmentInfo?.code,
+    allDivisions,
+  ]);
 
   const locks: ScopeLocks = useMemo(
     () => ({
@@ -270,18 +305,21 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
   );
 
   const availableDivisions = useMemo(() => {
+    if (userStandaloneDivision) {
+      return [userStandaloneDivision];
+    }
     if (!userLevel || userLevel <= 1) {
       return allDivisions;
     }
     if (userLevel === 2) {
-      const divisionId = userDepartment?.id || userDepartmentId;
+      const divisionId = effectiveUserDepartment?.id || userDepartmentId;
       return divisionId ? allDivisions.filter((dept) => dept.id === divisionId) : [];
     }
     if (userLevel >= 3 && userDivisionId) {
       return allDivisions.filter((dept) => dept.id === userDivisionId);
     }
     return [];
-  }, [allDivisions, userLevel, userDepartment, userDepartmentId, userDivisionId]);
+  }, [allDivisions, userLevel, effectiveUserDepartment, userDepartmentId, userDivisionId, userStandaloneDivision]);
 
   const availableTeams = useMemo(() => {
     if (!scope.divisionId) return [];
@@ -335,9 +373,18 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
   }, [scope.teamId, departmentAreasByDepartment, areasById, wardsById, provincesById]);
 
   const buildDefaultScope = (): QLTTScope => {
+    if (userStandaloneDivision) {
+      return {
+        divisionId: userStandaloneDivision.id,
+        teamId: null,
+        areaId: null,
+        province: null,
+        ward: null,
+      };
+    }
     if (userLevel === 2) {
       return {
-        divisionId: userDepartment?.id || userDepartmentId,
+        divisionId: effectiveUserDepartment?.id || userDepartmentId,
         teamId: null,
         areaId: null,
         province: null,

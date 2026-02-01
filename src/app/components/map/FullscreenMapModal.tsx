@@ -288,6 +288,7 @@ export function FullscreenMapModal({
             selectedDistrict={selectedDistrict}
             selectedWard={selectedWard}
             restaurants={filteredRestaurants}  // 🔥 FIX: Pass filtered restaurants to LeafletMap
+            showMerchants={true}
             onPointClick={onPointClick}
           />
 
