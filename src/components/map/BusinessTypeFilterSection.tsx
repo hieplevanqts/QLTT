@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Search, X, Plus, Minus, Store, Coffee, Utensils, Soup, UtensilsCrossed } from 'lucide-react';
 import styles from './MapFilterPanel.module.css';
 import { Category } from '../../../utils/api/categoriesApi';
@@ -11,6 +11,7 @@ interface BusinessTypeFilterSectionProps {
   businessTypeFilters: BusinessTypeFilter;
   categories: Category[];
   onBusinessTypeFilterChange: (type: string) => void;
+  onBusinessTypeFiltersChange?: (selectedIds: string[]) => void;
 }
 
 export const BusinessTypeFilterSection: React.FC<BusinessTypeFilterSectionProps> = ({
@@ -19,6 +20,7 @@ export const BusinessTypeFilterSection: React.FC<BusinessTypeFilterSectionProps>
   businessTypeFilters,
   categories,
   onBusinessTypeFilterChange,
+  onBusinessTypeFiltersChange,
 }) => {
   const [categorySearchInput, setCategorySearchInput] = useState('');
   const [showCategoryAutocomplete, setShowCategoryAutocomplete] = useState(false);
@@ -32,7 +34,7 @@ export const BusinessTypeFilterSection: React.FC<BusinessTypeFilterSectionProps>
     'Quán phở': { icon: Soup, color: '#34d399' }
   };
 
-  const businessTypeData = (categories || []).map(cat => {
+  const businessTypeData = useMemo(() => (categories || []).map(cat => {
     const categoryId = (cat as any)._id || cat.id;
     return {
       key: categoryId,
@@ -40,13 +42,16 @@ export const BusinessTypeFilterSection: React.FC<BusinessTypeFilterSectionProps>
       icon: businessTypeIconMap[cat.name]?.icon || Store,
       color: businessTypeIconMap[cat.name]?.color || '#9ca3af'
     };
-  });
+  }), [categories]);
 
   // Sync selectedCategoryIds with businessTypeFilters
   useEffect(() => {
+    const allCategoryIds = businessTypeData.map(item => item.key).filter(Boolean);
     const activeIds = Object.keys(businessTypeFilters || {}).filter(key => businessTypeFilters[key] === true);
-    setSelectedCategoryIds(activeIds);
-  }, [businessTypeFilters]);
+    const isAllSelected = allCategoryIds.length > 0
+      && allCategoryIds.every((id) => businessTypeFilters[id] === true);
+    setSelectedCategoryIds(isAllSelected ? [] : activeIds);
+  }, [businessTypeFilters, businessTypeData]);
 
   // Filter categories for autocomplete
   const filteredCategoriesForAutocomplete = categorySearchInput.trim()
@@ -63,10 +68,24 @@ export const BusinessTypeFilterSection: React.FC<BusinessTypeFilterSectionProps>
   });
 
   // Handle category selection
+  const applySelection = (nextSelectedIds: string[]) => {
+    if (onBusinessTypeFiltersChange) {
+      onBusinessTypeFiltersChange(nextSelectedIds);
+    } else {
+      const added = nextSelectedIds.find((id) => !selectedCategoryIds.includes(id));
+      const removed = selectedCategoryIds.find((id) => !nextSelectedIds.includes(id));
+      const targetId = added || removed;
+      if (targetId) {
+        onBusinessTypeFilterChange(targetId);
+      }
+    }
+    setSelectedCategoryIds(nextSelectedIds);
+  };
+
   const handleCategorySelect = (categoryId: string) => {
     if (!selectedCategoryIds.includes(categoryId)) {
-      setSelectedCategoryIds([...selectedCategoryIds, categoryId]);
-      onBusinessTypeFilterChange(categoryId);
+      const nextSelectedIds = [...selectedCategoryIds, categoryId];
+      applySelection(nextSelectedIds);
     }
     setCategorySearchInput('');
     setShowCategoryAutocomplete(false);
@@ -74,8 +93,8 @@ export const BusinessTypeFilterSection: React.FC<BusinessTypeFilterSectionProps>
 
   // Handle category removal
   const handleCategoryRemove = (categoryId: string) => {
-    setSelectedCategoryIds(selectedCategoryIds.filter(id => id !== categoryId));
-    onBusinessTypeFilterChange(categoryId);
+    const nextSelectedIds = selectedCategoryIds.filter(id => id !== categoryId);
+    applySelection(nextSelectedIds);
   };
 
   return (
