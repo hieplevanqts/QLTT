@@ -418,7 +418,7 @@ export default function FullEditRegistryPage() {
       <PageHeader
         breadcrumbs={[
           { label: 'Trang chủ', href: '/' },
-          { label: 'Cơ sở & Địa bàn', href: '/registry/stores' },
+          { label: 'Cơ sở quản lý', href: '/registry/stores' },
           { label: originalStore.name, href: `/registry/stores/${id}` },
           { label: 'Chỉnh sửa đầy đủ' },
         ]}

@@ -1,5 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '@/hooks/useAppStore';
+import type { RootState } from '@/store/store';
 import { 
   Building2, 
   Users, 
@@ -16,6 +18,11 @@ import { Button } from '@/components/ui/button';
 import styles from './RegistryHomePage.module.css';
 
 export default function RegistryHomePage() {
+  // Redux State - Get user and department info
+  const dispatch = useAppDispatch();
+  const { user, department } = useAppSelector((state: RootState) => state.auth);
+  const departmentId = department?.id;
+
   const navigate = useNavigate();
 
   const quickActions = [

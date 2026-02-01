@@ -10,6 +10,7 @@ import {
   FileText,
   History,
   CheckCircle2,
+  XCircle,
   EllipsisVertical,
 } from 'lucide-react';
 import {
@@ -121,6 +122,13 @@ export const CommonActions = {
     icon: <CheckCircle2 size={16} />,
     onClick,
     priority: 8, // High priority for pending approvals
+  }),
+  reject: (onClick: () => void): Action => ({
+    label: 'Từ chối',
+    icon: <XCircle size={16} />,
+    onClick,
+    variant: 'destructive' as const,
+    priority: 8, // Same priority as approve so it can surface in top actions for pending rows
   }),
   delete: (onClick: () => void): Action => ({
     label: 'Xóa',

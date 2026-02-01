@@ -9,7 +9,7 @@
 ```tsx
 - Tổng quan (/overview) - LayoutDashboard icon
 - Bản đồ điều hành (/map) - Map icon
-- Cơ sở & Địa bàn (/stores) - Building2 icon
+- Cơ sở quản lý (/stores) - Building2 icon
 - Nguồn tin / Risk (/leads) - TriangleAlert icon
 - Kế hoạch tác nghiệp (/plans) - ClipboardList icon
 - Nhiệm vụ hiện trường (/tasks) - MapPin icon

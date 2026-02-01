@@ -2303,7 +2303,7 @@ function Text39() {
   return (
     <div className="flex-[1_0_0] h-[42px] min-h-px min-w-px relative" data-name="Text">
       <div className="bg-clip-padding border-0 border-[transparent] border-solid relative size-full">
-        <p className="absolute font-['Inter:Regular',sans-serif] font-normal leading-[21px] left-0 not-italic text-[#101828] text-[14px] top-0 w-[52px] whitespace-pre-wrap">{`Cơ sở & Địa bàn`}</p>
+        <p className="absolute font-['Inter:Regular',sans-serif] font-normal leading-[21px] left-0 not-italic text-[#101828] text-[14px] top-0 w-[52px] whitespace-pre-wrap">{`Cơ sở quản lý`}</p>
       </div>
     </div>
   );
@@ -4045,7 +4045,7 @@ function Text93() {
   return (
     <div className="flex-[1_0_0] h-[42px] min-h-px min-w-px relative" data-name="Text">
       <div className="bg-clip-padding border-0 border-[transparent] border-solid relative size-full">
-        <p className="absolute font-['Inter:Regular',sans-serif] font-normal leading-[21px] left-0 not-italic text-[#101828] text-[14px] top-0 w-[52px] whitespace-pre-wrap">{`Cơ sở & Địa bàn`}</p>
+        <p className="absolute font-['Inter:Regular',sans-serif] font-normal leading-[21px] left-0 not-italic text-[#101828] text-[14px] top-0 w-[52px] whitespace-pre-wrap">{`Cơ sở quản lý`}</p>
       </div>
     </div>
   );
