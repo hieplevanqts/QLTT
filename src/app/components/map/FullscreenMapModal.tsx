@@ -34,6 +34,7 @@ interface FullscreenMapModalProps {
   onPointClick?: (point: Restaurant) => void;
   onFilterChange: (key: string) => void;  // Dynamic key instead of keyof
   onBusinessTypeFilterChange: (type: string) => void;
+  onBusinessTypeFiltersChange?: (selectedIds: string[]) => void;
   onBusinessTypeToggleAll: (checked: boolean) => void;  // 🔥 NEW: Toggle all business types
   onProvinceChange: (province: string) => void;
   onDistrictChange: (district: string) => void;
@@ -60,6 +61,7 @@ export function FullscreenMapModal({
   onPointClick,
   onFilterChange,
   onBusinessTypeFilterChange,
+  onBusinessTypeFiltersChange,
   onBusinessTypeToggleAll,  // 🔥 NEW: Toggle all business types
   onProvinceChange,
   onDistrictChange,
@@ -288,6 +290,7 @@ export function FullscreenMapModal({
             selectedDistrict={selectedDistrict}
             selectedWard={selectedWard}
             restaurants={filteredRestaurants}  // 🔥 FIX: Pass filtered restaurants to LeafletMap
+            showMerchants={true}
             onPointClick={onPointClick}
           />
 
@@ -304,6 +307,7 @@ export function FullscreenMapModal({
             selectedWard={selectedWard}
             onFilterChange={onFilterChange}
             onBusinessTypeFilterChange={onBusinessTypeFilterChange}
+            onBusinessTypeFiltersChange={onBusinessTypeFiltersChange}
             onBusinessTypeToggleAll={onBusinessTypeToggleAll}  // 🔥 NEW: Toggle all business types
             onProvinceChange={onProvinceChange}
             onDistrictChange={onDistrictChange}

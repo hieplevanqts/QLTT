@@ -13,6 +13,7 @@ import axios from 'axios';
  * @param options - Filtering options object
  * @param options.statusCodes - Optional array of status codes ('active', 'pending', 'suspended', 'rejected')
  * @param options.businessTypes - Optional array of business types to filter by
+ * @param options.categoryIds - Optional array of category IDs to filter by
  * @param options.departmentIds - Optional array of department IDs to filter by
  * @param options.province - Optional province name to filter by
  * @param options.district - Optional district name to filter by
@@ -25,12 +26,19 @@ export async function fetchMerchants(
   businessTypes?: string[],
   departmentIds?: string[],
   provinceId?: string,
-  wardId?: string
+  wardId?: string,
+  categoryIds?: string[]
 ): Promise<Restaurant[]> {
 
   try {
-    // Build query - simple select without nested joins
-    let url = `${SUPABASE_REST_URL}/merchants?limit=10000&order=created_at.desc&select=*`;
+    const validCategoryIds = (categoryIds || []).filter((id) => id && id !== 'undefined' && id !== 'null');
+    const shouldFilterByCategory = validCategoryIds.length > 0;
+    const selectClause = shouldFilterByCategory
+      ? '*,category_merchants!inner(category_id)'
+      : '*';
+
+    // Build query - include category join only when needed
+    let url = `${SUPABASE_REST_URL}/merchants?limit=10000&order=created_at.desc&select=${selectClause}`;
     
     if (provinceId) {
       url += `&province_id=eq.${provinceId}`;
@@ -48,7 +56,8 @@ export async function fetchMerchants(
     }
     
     // 🔥 Filter by business_type if provided (direct field filter)
-    if (businessTypes && businessTypes.length > 0) {
+    // Skip this when categoryIds are provided to avoid mixing name-based filtering.
+    if (!shouldFilterByCategory && businessTypes && businessTypes.length > 0) {
       const typeFilter = businessTypes.map(type => `business_type.eq.${encodeURIComponent(type)}`).join(',');
       url += `&or=(${typeFilter})`;
     }
@@ -57,6 +66,14 @@ export async function fetchMerchants(
     if (departmentIds && departmentIds.length > 0) {
       const deptFilter = departmentIds.map(id => `department_id.eq.${id}`).join(',');
       url += `&or=(${deptFilter})`;
+    }
+
+    // 🔥 NEW: Filter by category IDs via category_merchants join
+    if (shouldFilterByCategory) {
+      // 🔥 NOTE: category_id is stored as uuid[] in category_merchants
+      // Use overlap operator (ov) for array columns.
+      const categoryFilter = `category_merchants.category_id=ov.{${validCategoryIds.join(',')}}`;
+      url += `&${categoryFilter}`;
     }
     
 

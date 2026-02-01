@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import PageHeader from '../layouts/PageHeader';
 import { Button } from '../app/components/ui/button';
 import { MapPin, SlidersHorizontal, BarChart3 } from 'lucide-react';
@@ -220,15 +220,25 @@ export default function MapPage() {
     async function loadCategories() {
       try {
         const cats = await fetchCategories();
+        const normalizedCategories = (cats || [])
+          .map((cat: any) => {
+            const id = cat.id || cat._id || '';
+            const name = cat.name || cat.code || 'Không xác định';
+            const code = cat.code || '';
+            return { ...cat, id, name, code } as Category;
+          })
+          .filter((cat) => cat.id && cat.id !== 'undefined' && cat.id !== 'null');
         
-        setCategories(cats);
+        setCategories(normalizedCategories);
         
         // 🔥 FIX: Initialize businessTypeFilters with ALL categories enabled (= "Tất cả")
-        if (cats.length > 0) {
+        if (normalizedCategories.length > 0) {
           isInitializingFiltersRef.current = true; // 🔥 FIX: Mark as initializing
           const initialBusinessTypeFilters: { [key: string]: boolean } = {};
-          cats.forEach((cat) => {
-            initialBusinessTypeFilters[cat.id] = true;  // 🔥 ALL categories enabled by default
+          normalizedCategories.forEach((cat) => {
+            if (cat.id) {
+              initialBusinessTypeFilters[cat.id] = true;  // 🔥 ALL categories enabled by default
+            }
           });
           dispatch(setBusinessTypeFilters(initialBusinessTypeFilters));
           dispatch(setPendingBusinessTypeFilters(initialBusinessTypeFilters));  // 🔥 Sync pending
@@ -442,10 +452,6 @@ export default function MapPage() {
         const activeFilterCodes = Object.keys(filters).filter(key => filters[key] === true);
         const merchantStatusCodes = mapStatusCodesToMerchantStatus(activeFilterCodes);
         
-        // Calculate business types filter
-        const activeBusinessTypes = Object.keys(businessTypeFilters).filter(key => businessTypeFilters[key] === true);
-        const businessTypes = calculateBusinessTypes(activeBusinessTypes, categories);
-        
         // Calculate department IDs to filter
         const departmentIdsToFilter = calculateDepartmentIdsToFilter(
           departmentFilters,
@@ -459,21 +465,11 @@ export default function MapPage() {
         
         const merchants = await fetchMerchants(
           merchantStatusCodes.length > 0 ? merchantStatusCodes : undefined,
-          businessTypes,
+          undefined,
           departmentIdsToFilter,
-          teamId,
-          divisionId || '',
-          departments.map(d => d.id), // departmentIds: string[]
-          businessTypeFiltersArray,
-          {
-            statusCodes: merchantStatusCodes.length > 0 ? merchantStatusCodes : undefined, // 🔥 FIX: Pass statusCodes to options
-            businessTypes: businessTypes,
-            departmentIds: departmentIdsToFilter,
-            categoryIds: businessTypeFiltersArray && businessTypeFiltersArray.length > 0 ? businessTypeFiltersArray : undefined, // 🔥 NEW: Pass category IDs to options
-            province: selectedProvince || undefined,
-            ward: selectedWard || undefined,
-            limit: limit // 🔥 NEW: Pass limit from Redux store
-          }
+          selectedProvince || undefined,
+          selectedWard || undefined,
+          businessTypeFiltersArray && businessTypeFiltersArray.length > 0 ? businessTypeFiltersArray : undefined
         );
         
         setRestaurants(merchants);
@@ -753,6 +749,7 @@ export default function MapPage() {
   const {
     handleFilterChange,
     handleBusinessTypeFilterChange,
+    handleBusinessTypeFiltersChange,
     handleBusinessTypeToggleAll,
     handleDepartmentFilterChange,
     handleDepartmentToggleAll,
@@ -1142,6 +1139,7 @@ export default function MapPage() {
                 filteredCount={filteredRestaurants.length}
                 onFilterChange={handleFilterChange}  // 🔥 Updates pending filters
                 onBusinessTypeFilterChange={handleBusinessTypeFilterChange}  // 🔥 Updates pending filters
+                onBusinessTypeFiltersChange={handleBusinessTypeFiltersChange}
                 onBusinessTypeToggleAll={handleBusinessTypeToggleAll}
                 onDepartmentFilterChange={handleDepartmentFilterChange}  // 🔥 NEW: Department filter change
                 onDepartmentToggleAll={handleDepartmentToggleAll}  // 🔥 NEW: Toggle all departments
@@ -1219,6 +1217,7 @@ export default function MapPage() {
         onPointClick={handlePointClick}
         onFilterChange={handleFilterChange}
         onBusinessTypeFilterChange={handleBusinessTypeFilterChange}
+        onBusinessTypeFiltersChange={handleBusinessTypeFiltersChange}
         onBusinessTypeToggleAll={handleBusinessTypeToggleAll}
         onProvinceChange={(province) => {
           dispatch(setSelectedProvince(province));
