@@ -146,7 +146,7 @@ import { RegistrySavedViews } from '../registry-components';
 <RegistrySavedViews
   views={[
     { id: '1', name: 'Cơ sở rủi ro cao', filters: {...}, isDefault: true },
-    { id: '2', name: 'Chờ xác minh Q1', filters: {...} },
+    { id: '2', name: 'Chờ duyệt Q1', filters: {...} },
   ]}
   currentView="1"
   onViewChange={(viewId) => applyFilters(views[viewId].filters)}

@@ -73,7 +73,7 @@ export default function RegistryHomePage() {
       trendUp: true,
     },
     {
-      label: 'Chờ xác minh',
+      label: 'Chờ duyệt',
       value: '45',
       trend: '-8%',
       trendUp: false,

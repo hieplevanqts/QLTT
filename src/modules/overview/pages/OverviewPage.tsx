@@ -64,7 +64,7 @@ export default function OverviewPage() {
       color: 'text-chart-1',
     },
     {
-      title: 'Chứng cứ chờ duyệt',
+      title: 'Chứng cứ Chờ duyệt',
       value: '23',
       change: '+7',
       trend: 'up',

@@ -771,7 +771,7 @@ export function AddStoreDialog({ open, onOpenChange, onSubmit }: AddStoreDialogP
     // Validate Step 3 - Owner info (all fields required)
     if (currentStep === 3) {
       if (!formData.ownerName) {
-        toast.error('Vui lòng nhập tên chủ hộ kinh doanh');
+        toast.error('Vui lòng nhập tên Chủ cơ sở');
         return;
       }
       

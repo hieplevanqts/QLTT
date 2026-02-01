@@ -455,7 +455,7 @@ export default function StoreDetailPage() {
       await upsertMerchantLicense(rpcPayload);
 
       toast.success(editingDocument ? `Đã cập nhật ${docTypeName}` : `Đã tải lên ${docTypeName}`, {
-        description: editingDocument ? 'Hồ sơ đã được lưu và chuyển về trạng thái chờ duyệt' : 'Hồ sơ đang chờ phê duyệt',
+        description: editingDocument ? 'Hồ sơ đã được lưu và chuyển về trạng thái Chờ duyệt' : 'Hồ sơ đang chờ phê duyệt',
       });
 
       setUploadDialogOpen(false);
@@ -1052,7 +1052,7 @@ export default function StoreDetailPage() {
           </div>
           <div className={styles.statLabel}>Theo dõi</div>
           <div className={styles.statValue} style={{ fontSize: 'var(--text-base)' }}>
-            {store.isVerified ? 'Đã xác minh' : 'Chờ xác minh'}
+            {store.isVerified ? 'Đã xác minh' : 'Chờ duyệt'}
           </div>
           <div className={styles.statMeta}>20/11/2024</div>
         </div>
@@ -1168,7 +1168,7 @@ export default function StoreDetailPage() {
                   <div className={styles.infoRowInline}>
                     <User size={14} />
                     <span className={styles.infoLabel}>
-                      Tên chủ hộ kinh doanh<span className={styles.required}>*</span> :
+                      Tên Chủ cơ sở<span className={styles.required}>*</span> :
                     </span>
                     <span className={styles.infoValue}>{store.ownerName || 'Chưa có thông tin'}</span>
                   </div>

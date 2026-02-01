@@ -276,7 +276,7 @@ export default function EvidenceReviewQueuePage() {
               <ShieldCheck size={24} />
             </div>
             <div className={styles.statContent}>
-              <p className={styles.statLabel}>Tổng số chờ duyệt</p>
+              <p className={styles.statLabel}>Tổng số Chờ duyệt</p>
               <h3 className={styles.statValue}>{stats.total}</h3>
             </div>
           </div>
@@ -450,7 +450,7 @@ export default function EvidenceReviewQueuePage() {
         <div className={styles.tableContainer}>
           <div className={styles.tableHeader}>
             <h2 className={styles.sectionTitle}>
-              Danh sách chờ duyệt ({filteredItems.length})
+              Danh sách Chờ duyệt ({filteredItems.length})
             </h2>
           </div>
 

@@ -47,7 +47,7 @@ const MOCK_NOTIFICATIONS: Notification[] = [
   {
     id: '5',
     type: 'file-pending',
-    title: 'Hồ sơ chờ duyệt',
+    title: 'Hồ sơ Chờ duyệt',
     message: 'Hồ sơ pháp lý HS-2026-15 đang chờ phê duyệt',
     timestamp: '3 giờ trước',
     read: true,

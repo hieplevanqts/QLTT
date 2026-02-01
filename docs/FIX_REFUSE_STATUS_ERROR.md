@@ -82,7 +82,7 @@ Kỳ vọng: ✅ Success response với `new_status: 'refuse'`
 | Code | Vietnamese | Meaning |
 |------|-----------|---------|
 | `active` | Đang hoạt động | Operating normally |
-| `pending` | Chờ xác minh | Waiting for approval |
+| `pending` | Chờ duyệt | Waiting for approval |
 | `suspended` | Tạm ngưng | Temporarily suspended |
 | `rejected` | Từ chối phê duyệt | Application rejected |
 | `refuse` | Ngừng hoạt động | **Permanently closed (NEW)** |

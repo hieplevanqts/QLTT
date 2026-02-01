@@ -825,7 +825,7 @@ export default function StoresListPage() {
     },
     {
       key: 'ownerName',
-      label: 'Chủ hộ kinh doanh',
+      label: 'Chủ cơ sở',
       sortable: true,
       width: '190px', // Adjusted for better balance
       render: (store) => {
@@ -1199,16 +1199,16 @@ export default function StoresListPage() {
             <SearchableSelect
               value={businessTypeFilter}
               onValueChange={(val) => { setBusinessTypeFilter(val || 'all'); setCurrentPage(1); }}
-              options={[{ value: 'all', label: 'Tất cả loại hình' }, ...BUSINESS_TYPES.map(bt => ({ value: bt.value, label: bt.label }))]}
+              options={[{ value: 'all', label: 'Tất cả ngành nghề' }, ...BUSINESS_TYPES.map(bt => ({ value: bt.value, label: bt.label }))]}
               placeholder="Chọn loại hình kinh doanh"
               width="200px"
             />
           </div>
 
-          {/* 4. Tên cơ sở (medium width) */}
-          <div style={{ width: '280px', flexShrink: 0 }}>
+          {/* 4. Tìm kiếm (tên cơ sở hoặc mã số thuế) */}
+          <div style={{ width: '300px', flexShrink: 0 }}>
             <SearchInput
-              placeholder="Tên cơ sở"
+              placeholder="Tên cơ sở hoặc mã số thuế"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
             />
@@ -1378,18 +1378,18 @@ export default function StoresListPage() {
               toast.error('Vui lòng nhập địa chỉ');
               return;
             }
-            if (!data.province) {
-              toast.error('Vui lòng chọn tỉnh/thành phố');
-              return;
-            }
-            if (!data.ward) {
-              toast.error('Vui lòng chọn phường/xã');
-              return;
-            }
-            if (!data.latitude || !data.longitude) {
-              toast.error('Vui lòng chọn vị trí trên bản đồ');
-              return;
-            }
+            // if (!data.province) {
+            //   toast.error('Vui lòng chọn tỉnh/thành phố');
+            //   return;
+            // }
+            // if (!data.ward) {
+            //   toast.error('Vui lòng chọn phường/xã');
+            //   return;
+            // }
+            // if (!data.latitude || !data.longitude) {
+            //   toast.error('Vui lòng chọn vị trí trên bản đồ');
+            //   return;
+            // }
 
             // Get district name from code - districtName is already provided in data
             const districtName = data.jurisdiction || 'Quận 1';

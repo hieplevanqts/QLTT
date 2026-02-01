@@ -258,7 +258,7 @@ export function AdvancedFilterModalV2({
                     <SelectContent>
                       <SelectItem value="all">Tất cả</SelectItem>
                       <SelectItem value="active">Đang hoạt động</SelectItem>
-                      <SelectItem value="pending">Chờ xác minh</SelectItem>
+                      <SelectItem value="pending">Chờ duyệt</SelectItem>
                       <SelectItem value="suspended">Tạm ngưng</SelectItem>
                       <SelectItem value="closed">Ngừng hoạt động</SelectItem>
                     </SelectContent>

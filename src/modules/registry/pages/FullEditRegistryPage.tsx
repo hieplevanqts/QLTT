@@ -63,7 +63,7 @@ const INDUSTRY_CATEGORIES = [
 // Operation status options - match FacilityStatus types
 const OPERATION_STATUS_OPTIONS = [
   { value: 'active', label: 'Đang hoạt động' },
-  { value: 'pending', label: 'Chờ xác minh' },
+  { value: 'pending', label: 'Chờ duyệt' },
   { value: 'underInspection', label: 'Đang xử lý kiểm tra' },
   { value: 'suspended', label: 'Tạm ngưng hoạt động' },
   { value: 'rejected', label: 'Từ chối phê duyệt' },

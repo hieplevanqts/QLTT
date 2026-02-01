@@ -92,7 +92,7 @@ export const REGISTRY_FILTER_FIELDS: FilterField[] = [
     operators: ['equals', 'notEquals', 'in', 'notIn'],
     options: [
       { value: 'active', label: 'Đang hoạt động' },
-      { value: 'pending', label: 'Chờ xác minh' },
+      { value: 'pending', label: 'Chờ duyệt' },
       { value: 'suspended', label: 'Tạm ngừng' },
       { value: 'closed', label: 'Ngừng hoạt động' },
     ],

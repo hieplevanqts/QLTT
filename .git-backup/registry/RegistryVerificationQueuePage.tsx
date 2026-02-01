@@ -5,7 +5,7 @@ export default function RegistryVerificationQueuePage() {
   return (
     <RegistryPlaceholderPage
       title="Hàng đợi xác minh"
-      description="Danh sách các cơ sở chờ xác minh thông tin"
+      description="Danh sách các cơ sở Chờ duyệt thông tin"
       breadcrumbLabel="Xác minh hồ sơ"
     />
   );

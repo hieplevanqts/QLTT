@@ -173,7 +173,7 @@ export default function MapPage() {
   
   // 🔥 NEW: Map layer toggles
   const [showMapPoints, setShowMapPoints] = useState(false);  // MapPoint layer (tạm ẩn)
-  const [showMerchants, setShowMerchants] = useState(true);  // Merchant layer (hiển thị với tên "Chủ Hộ Kinh Doanh")
+  const [showMerchants, setShowMerchants] = useState(true);  // Merchant layer (hiển thị với tên "Chủ cơ sở")
   // 🔥 FIX: Default to false on initial load - Merchants layer is the default, Officers layer can be enabled manually
   const [showOfficers, setShowOfficers] = useState(false);  // Officers layer (Cán bộ quản lý)
   
@@ -956,8 +956,8 @@ export default function MapPage() {
                 }}
               >
                 {/* Tạm ẩn map_points layer */}
-                {/* <option value="mappoint">📍 Chủ hộ kinh doanh</option> */}
-                <option value="merchant">📍 Chủ hộ kinh doanh</option>
+                {/* <option value="mappoint">📍 Chủ cơ sở</option> */}
+                <option value="merchant">📍 Chủ cơ sở</option>
                 <option value="officers">👮 Cán bộ quản lý</option>
               </select>
             </div>

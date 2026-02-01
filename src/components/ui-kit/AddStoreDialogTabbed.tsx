@@ -58,6 +58,7 @@ import {
 import { fetchProvinces, fetchWardsByProvince, type ProvinceApiData, type WardApiData } from '@/utils/api/locationsApi';
 import { INDUSTRIES } from '@/utils/data/industries';
 import { extractDocumentData } from '@/utils/api/ocrApi';
+import { useAddressAutoMapper } from '@/hooks/useAddressAutoMapper';
 import { toast } from 'sonner';
 import styles from './AddStoreDialogTabbed.module.css';
 import comboboxStyles from './IndustryCombobox.module.css';
@@ -162,6 +163,11 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
   const [selectedWard, setSelectedWard] = useState('');
   const [selectedProvinceName, setSelectedProvinceName] = useState('');
   const [selectedWardName, setSelectedWardName] = useState('');
+  
+  // Track if auto-mapping should be skipped
+  const [skipAddressMapping, setSkipAddressMapping] = useState(false);
+  // Store the last OCR address for auto-mapping
+  const [lastOcrAddress, setLastOcrAddress] = useState<string | undefined>();
 
   // Fetch location data on mount
   useEffect(() => {
@@ -198,6 +204,8 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
     } finally {
       setLoadingWards(false);
     }
+    
+    return;
   };
 
   // Get wards from API (already filtered by province)
@@ -218,6 +226,46 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
   };
 
   const fullAddressForMap = buildFullAddress();
+
+  // Auto-map OCR address to province/ward
+  useAddressAutoMapper({
+    ocrData: lastOcrAddress ? { address: lastOcrAddress } : undefined,
+    provinces: apiProvinces,
+    wards: apiWards,
+    formData,
+    skipMapping: skipAddressMapping,
+    onAddressMatch: (result) => {
+      // Auto-select province
+      setSelectedProvince(result.provinceId);
+      setSelectedProvinceName(result.provinceName);
+      
+      // Load wards for this province and auto-select ward
+      loadWardsByProvince(result.provinceId).then(() => {
+        // Set ward in next tick to ensure wards are loaded
+        setTimeout(() => {
+          setSelectedWard(result.wardId);
+          setSelectedWardName(result.wardName);
+        }, 0);
+      });
+      
+      // Set the street address
+      setFormData(prev => ({
+        ...prev,
+        registeredAddress: result.streetAddress,
+      }));
+      
+      console.log('✅ [AddStoreDialogTabbed] Address auto-mapped successfully');
+    },
+    onAddressMatchFail: (error, fullAddress) => {
+      // Fallback: show full OCR address in the text field
+      console.log('⚠️ [AddStoreDialogTabbed] Address auto-mapping failed:', error);
+      setFormData(prev => ({
+        ...prev,
+        registeredAddress: fullAddress,
+      }));
+      // Don't show error toast - silent fallback as per requirements
+    },
+  });
 
   // Real OCR Integration
   const handleExtractData = async (file: File) => {
@@ -313,6 +361,14 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
 
       setFormData(newFormData);
       setFieldMetadata(prev => ({ ...prev, ...newMetadata }));
+      
+      // Store the OCR address for auto-mapping
+      if (extractedData.registeredAddress) {
+        setLastOcrAddress(extractedData.registeredAddress);
+      }
+      
+      // Reset skip flag when new OCR data arrives
+      setSkipAddressMapping(false);
 
       toast.success(
         <div>
@@ -391,7 +447,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {};
 
-    // Tab 1: Thông tin HKD
+    // Tab 1: Thông tin HKD - Chỉ validate required fields (*)
     if (!formData.business_name?.trim()) {
       newErrors.business_name = 'Vui lòng nhập tên cơ sở kinh doanh';
     }
@@ -404,28 +460,14 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
     if (!formData.operationStatus?.trim()) {
       newErrors.operationStatus = 'Vui lòng chọn tình trạng hoạt động';
     }
-    if (formData.businessArea && !/^\d+$/.test(formData.businessArea)) {
-      newErrors.businessArea = 'Diện tích phải là số';
-    }
-    if (formData.businessPhone && !/^\d+$/.test(formData.businessPhone)) {
-      newErrors.businessPhone = 'Số điện thoại phải là số';
-    }
+    // businessArea, businessPhone, email, website, fax - optional, không validate
+    // Chỉ validate format nếu có nhập
 
-    // Tab 2: Thông tin chủ hộ
-    if (formData.ownerName && !formData.ownerName.trim()) {
-      newErrors.ownerName = 'Vui lòng nhập tên chủ hộ';
-    }
-    if (formData.ownerBirthYear && !/^\d+$/.test(formData.ownerBirthYear)) {
-      newErrors.ownerBirthYear = 'Năm sinh phải là số';
-    }
-    if (formData.ownerIdNumber && !formData.ownerIdNumber.trim()) {
-      newErrors.ownerIdNumber = 'Vui lòng nhập số CMTND/CCCD';
-    }
-    if (formData.ownerPhone && !/^\d+$/.test(formData.ownerPhone)) {
-      newErrors.ownerPhone = 'Số điện thoại phải là số';
-    }
+    // Tab 2: Thông tin chủ hộ - Không có field required
+    // Tất cả optional fields, không validate
 
-    // Tab 3: Địa chỉ (All optional - no validation)
+    // Tab 3: Địa chỉ - Không validate province, ward, location map
+    // registeredAddress, province, ward, latitude, longitude - tất cả optional
 
     setErrors(newErrors);
 
@@ -433,7 +475,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
     if (Object.keys(newErrors).length > 0) {
       const errorFields = Object.keys(newErrors);
 
-      const businessFields = ['name', 'taxCode', 'industryName', 'operationStatus', 'businessArea', 'businessPhone'];
+      const businessFields = ['business_name', 'taxCode', 'industryName', 'operationStatus'];
       const ownerFields = ['ownerName', 'ownerBirthYear', 'ownerIdNumber', 'ownerPhone'];
       const addressFields = ['registeredAddress', 'province', 'ward'];
 
@@ -892,7 +934,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
             <div className={styles.formGrid}>
               {renderFieldWithIndicator(
                 'ownerName',
-                'Tên chủ hộ kinh doanh',
+                'Tên Chủ cơ sở',
                 <Input
                   id="ownerName"
                   value={formData.ownerName || ''}
@@ -982,6 +1024,8 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                       setSelectedWard('');
                       setSelectedWardName('');
                       loadWardsByProvince(value);
+                      // Mark that user has manually edited (prevent auto-mapper override)
+                      setSkipAddressMapping(true);
                       if (errors.province) {
                         setErrors(prev => {
                           const newErrors = { ...prev };
@@ -1018,6 +1062,8 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                       const wardData = wards.find(w => w._id === value);
                       setSelectedWard(value);
                       setSelectedWardName(wardData?.name || '');
+                      // Mark that user has manually edited (prevent auto-mapper override)
+                      setSkipAddressMapping(true);
                       if (errors.ward) {
                         setErrors(prev => {
                           const newErrors = { ...prev };
