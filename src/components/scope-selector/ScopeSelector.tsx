@@ -33,11 +33,16 @@ export function ScopeSelector() {
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [selectedArea, setSelectedArea] = useState<string>('');
 
+  const userDivisionId =
+    (authUser as any)?.app_metadata?.department?.id
+    || (authUser as any)?.departmentInfo?.id
+    || null;
+
   const fallbackDivisionId =
     !scope.divisionId && availableDivisions.length === 1
       ? availableDivisions[0].id
       : null;
-  const effectiveDivisionId = scope.divisionId || fallbackDivisionId;
+  const effectiveDivisionId = scope.divisionId || userDivisionId || fallbackDivisionId;
 
   // Sync local state with scope context
   useEffect(() => {
@@ -51,9 +56,7 @@ export function ScopeSelector() {
     if (isLoading || scope.divisionId || scope.teamId || scope.areaId) return;
 
     const userDepartmentId =
-      (authUser as any)?.app_metadata?.department?.id
-      || (authUser as any)?.departmentInfo?.id
-      || null;
+      userDivisionId;
 
     if (!userDepartmentId) return;
 
@@ -78,6 +81,7 @@ export function ScopeSelector() {
     scope.divisionId,
     scope.teamId,
     scope.areaId,
+    userDivisionId,
     setContextScope,
     dispatch,
   ]);
