@@ -96,6 +96,11 @@
   color: rgba(102, 112, 133, 1);
 }
 
+.reopened {
+  background: rgba(247, 162, 59, 0.15); /* Orange background similar to paused or warning */
+  color: rgba(194, 120, 3, 1);       /* Orange text */
+}
+
 /* SLA Status Variants */
 .on_track {
   background: rgba(15, 202, 122, 0.1);

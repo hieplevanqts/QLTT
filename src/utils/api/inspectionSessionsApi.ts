@@ -32,7 +32,7 @@ export interface InspectionSession {
   id: string;
   campaignId: string | null;
   campaignName?: string;
-  status: 'not_started' | 'in_progress' | 'completed' | 'closed' | 'cancelled';
+  status: 'not_started' | 'in_progress' | 'completed' | 'closed' | 'cancelled' | 'reopened';
   startTime: string | null;
   endTime: string | null;
   name: string;
@@ -58,7 +58,8 @@ function mapSessionStatus(status: number): InspectionSession['status'] {
     2: 'in_progress',
     3: 'completed',
     4: 'closed',
-    5: 'cancelled'
+    5: 'reopened',
+    6: 'cancelled'
   };
   return mapping[status] || 'not_started';
 }

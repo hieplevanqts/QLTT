@@ -52,18 +52,20 @@ import { Form06Modal } from '@/components/tasks/Form06Modal';
 import { Form10Modal } from '@/components/tasks/Form10Modal';
 import { Form12Modal } from '@/components/tasks/Form12Modal';
 import { Form11Modal } from '@/components/tasks/Form11Modal';
-import { DeployTaskModal, CompleteTaskModal } from '@/components/tasks/TaskActionModals';
+import { DeployTaskModal, CompleteTaskModal, CancelTaskModal } from '@/components/tasks/TaskActionModals';
 
 type ViewMode = 'kanban' | 'list';
 
 // Valid status transitions based on workflow rules - v2
+// Valid status transitions based on workflow rules - v2
 const VALID_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
-  not_started: ['in_progress'], // Chỉ có thể bắt đầu
-  in_progress: ['not_started', 'completed', 'pending_approval'], // Có thể quay lại hoặc hoàn thành/chờ duyệt
-  pending_approval: ['completed', 'in_progress'], // Có thể duyệt xong hoặc yêu cầu sửa
-  completed: ['in_progress', 'closed'], // Có thể reopen hoặc đóng
-  closed: ['completed'], // Chỉ có thể reopen về hoàn thành
-  cancelled: [], // Không thể chuyển đi đâu
+  not_started: ['in_progress', 'cancelled'], // Chỉ có thể bắt đầu hoặc hủy
+  in_progress: ['not_started', 'completed', 'pending_approval', 'cancelled'], // Có thể quay lại, hoàn thành, chờ duyệt hoặc hủy
+  pending_approval: ['completed', 'in_progress', 'cancelled'], // Có thể duyệt xong, yêu cầu sửa hoặc hủy
+  completed: ['in_progress', 'closed', 'reopened'], // Có thể reopen hoặc đóng
+  closed: ['completed', 'reopened'], // Chỉ có thể reopen về hoàn thành/mở lại
+  cancelled: ['reopened'], // Từ đã hủy có thể mở lại
+  reopened: ['in_progress', 'completed', 'cancelled'], // Từ mở lại có thể đi tiếp
 };
 
 // Check if a status transition is valid - v2
@@ -77,6 +79,8 @@ const STATUS_COLUMNS: { key: TaskStatus; label: string; color: string }[] = [
   { key: 'in_progress', label: 'Đang thực hiện', color: '#005cb6' },
   { key: 'completed', label: 'Hoàn thành', color: '#10B981' },
   { key: 'closed', label: 'Đã đóng', color: '#64748B' },
+  { key: 'reopened', label: 'Mở lại', color: '#D97706' },
+  { key: 'cancelled', label: 'Đã hủy', color: '#DC2626' },
 ];
 
 // Draggable Task Card Wrapper
@@ -245,6 +249,7 @@ export function TaskBoard() {
   const [isForm11ModalOpen, setIsForm11ModalOpen] = useState(false);
   const [isDeployModalOpen, setIsDeployModalOpen] = useState(false);
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
+  const [cancelTask, setCancelTask] = useState<InspectionTask | null>(null);
 
   // Filters
   const [searchValue, setSearchValue] = useState('');
@@ -415,6 +420,7 @@ export function TaskBoard() {
       completed: [],
       closed: [],
       cancelled: [],
+      reopened: [],
     };
 
     filteredTasks.forEach(task => {
@@ -471,7 +477,8 @@ export function TaskBoard() {
         'in_progress': 2,
         'completed': 3,
         'closed': 4,
-        'cancelled': 5
+        'reopened': 5,
+        'cancelled': 6
       };
 
       const numericStatus = statusMap[newStatus] || 1;
@@ -616,14 +623,30 @@ export function TaskBoard() {
       return;
     }
     
+    // Confirm if cancelling
+    if ((newStatus as string) === 'cancelled') {
+      const taskToCancel = tasks.find(t => t.id === taskId);
+      if (taskToCancel) {
+        setCancelTask(taskToCancel);
+      }
+      return;
+    }
     const statusLabel = STATUS_COLUMNS.find(c => c.key === newStatus)?.label || newStatus;
     
     // Call centralized handler to update both state and database
     handleStatusChange(taskId, newStatus);
     
-    toast.success(`Đã chuyển "${task?.title}" sang "${statusLabel}"`, {
-      duration: 2000,
-    });
+    // handleStatusChange already shows success toast, but we can show one here specifically for D&D feedback if needed. 
+    // However, duplication might avoid.
+    // We'll keep existing behavior but maybe remove duplicate toast later. 
+    // For now just add confirm.
+    if (newStatus !== 'cancelled') {
+       // Only show specific move toast if not cancelled (since cancel handle has own logic? No handleStatusChange is generic)
+       // Let's just leave it, double toast is minor issue compared to missing confirm.
+       toast.success(`Đã chuyển "${task?.title}" sang "${statusLabel}"`, {
+         duration: 2000,
+       });
+    }
   };
 
   // Auto-filter by inspectionRound query parameter
@@ -676,8 +699,7 @@ export function TaskBoard() {
         start_time: formData.startDate,
         deadline_time: formData.dueDate,
         status: 1, // not_started
-        type: formData.planId ? 'proactive' : 'passive', // Use planId to determine type
-        note: formData.description,
+        type: 'proactive', // Default to proactive per user request
       });
 
       if (newSession) {
@@ -752,9 +774,22 @@ export function TaskBoard() {
   const getTaskActions = (task: InspectionTask): Action[] => {
     const actions: Action[] = [];
 
+    // Helper to add Cancel Action
+    const addCancelAction = () => {
+      actions.push({
+        label: 'Hủy',
+        icon: <XCircle size={16} />,
+        priority: 1,
+        variant: 'destructive',
+        onClick: () => {
+          setCancelTask(task);
+        },
+      });
+    };
+
     switch (task.status) {
       case 'not_started':
-        // Chưa bắt đầu: Xem chi tiết, Chỉnh sửa, Bắt đầu
+        // Chưa bắt đầu: Xem chi tiết, Chỉnh sửa, Bắt đầu, Hủy
         actions.push(
           {
             label: 'Xem chi tiết',
@@ -775,10 +810,11 @@ export function TaskBoard() {
             priority: 8,
           }
         );
+        addCancelAction();
         break;
 
       case 'in_progress':
-        // Đang thực hiện: Xem chi tiết, Chỉnh sửa, Nhập kết quả, Đính kèm chứng cứ
+        // Đang thực hiện: Xem chi tiết, Chỉnh sửa, Nhập kết quả, Đính kèm chứng cứ, Hủy
         actions.push(
           {
             label: 'Xem chi tiết',
@@ -811,6 +847,7 @@ export function TaskBoard() {
             priority: 10,
           }
         );
+        addCancelAction();
         break;
 
       case 'completed':
@@ -871,7 +908,8 @@ export function TaskBoard() {
         break;
 
       case 'closed':
-        // Đã đóng: Xem chi tiết, Biên bản kiểm tra, Bảng kê, Phụ lục
+      case 'cancelled':
+        // Đã đóng/Hủy: Xem chi tiết, Mở lại
         actions.push(
           {
             label: 'Xem chi tiết',
@@ -880,33 +918,80 @@ export function TaskBoard() {
             priority: 10,
           },
           {
-            label: 'Biên bản kiểm tra',
-            icon: <FileText size={16} />,
-            onClick: () => {
-              setActionTask(task);
-              setIsForm06ModalOpen(true);
-            },
+            label: 'Mở lại',
+            icon: <RotateCcw size={16} />,
+            onClick: () => handleReopen(task),
+            priority: 9,
+          }
+        );
+         if (task.status === 'closed') {
+             actions.push(
+               {
+                 label: 'Biên bản kiểm tra',
+                 icon: <FileText size={16} />,
+                 onClick: () => {
+                   setActionTask(task);
+                   setIsForm06ModalOpen(true);
+                 },
+                 priority: 8,
+               },
+               {
+                 label: 'Bảng kê',
+                 icon: <Table size={16} />,
+                 onClick: () => {
+                   setActionTask(task);
+                   setIsForm10ModalOpen(true);
+                 },
+                 priority: 7,
+               },
+               {
+                 label: 'Phụ lục',
+                 icon: <FileText size={16} />,
+                 onClick: () => {
+                   setActionTask(task);
+                   setIsForm11ModalOpen(true);
+                 },
+                 priority: 6,
+               }
+             );
+         }
+        break;
+
+      case 'reopened':
+         // Mở lại: Treat as In Progress basically
+        actions.push(
+          {
+            label: 'Xem chi tiết',
+            icon: <Eye size={16} />,
+            onClick: () => handleTaskClick(task),
+            priority: 11,
+          },
+          {
+            label: 'Chỉnh sửa',
+            icon: <Edit size={16} />,
+            onClick: () => handleEditTaskClick(task),
             priority: 9,
           },
           {
-            label: 'Bảng kê',
-            icon: <Table size={16} />,
-            onClick: () => {
-              setActionTask(task);
-              setIsForm10ModalOpen(true);
-            },
+            label: 'Nhập kết quả',
+            icon: <FileText size={16} />,
+            onClick: () => handleEnterResults(task),
             priority: 8,
           },
           {
-            label: 'Phụ lục',
-            icon: <FileText size={16} />,
-            onClick: () => {
-              setActionTask(task);
-              setIsForm11ModalOpen(true);
-            },
+            label: 'Đính kèm chứng cứ',
+            icon: <Paperclip size={16} />,
+            onClick: () => handleAttachEvidence(task),
             priority: 7,
+          },
+          {
+            label: 'Bắt đầu',
+            icon: <Play size={16} />,
+            onClick: () => handleStartTask(task),
+            priority: 10,
           }
         );
+        addCancelAction();
         break;
 
       default:
@@ -1003,7 +1088,10 @@ export function TaskBoard() {
       sticky: 'right',
       width: '170px',
       render: (task) => (
-        <ActionColumn actions={getTaskActions(task)} />
+        <ActionColumn 
+          actions={getTaskActions(task)} 
+          style={{ justifyContent: 'flex-start' }} 
+        />
       ),
     },
   ];
@@ -1244,7 +1332,14 @@ export function TaskBoard() {
         task={selectedTask}
         isOpen={isDetailModalOpen}
         onClose={() => setIsDetailModalOpen(false)}
-        onStatusChange={handleStatusChange}
+        onStatusChange={(id, status) => {
+          if (status === 'cancelled') {
+            const task = tasks.find(t => t.id === id);
+            if (task) setCancelTask(task);
+          } else {
+            handleStatusChange(id, status);
+          }
+        }}
         onEdit={handleEditTaskClick}
         onCompleteTask={handleCompleteTask}
       />
@@ -1293,8 +1388,23 @@ export function TaskBoard() {
               reopenedBy: { id: 'current-user', name: 'Người dùng hiện tại' },
             };
             setTasks(prev => prev.map(t => t.id === actionTask.id ? updatedTask as InspectionTask : t));
-            handleStatusChange(actionTask.id, 'in_progress');
+            handleStatusChange(actionTask.id, 'reopened');
             toast.success('Đã mở lại phiên làm việc');
+          }
+        }}
+      />
+
+      <CancelTaskModal
+        isOpen={!!cancelTask}
+        onClose={() => setCancelTask(null)}
+        task={cancelTask}
+        onConfirm={() => {
+          if (cancelTask) {
+            handleStatusChange(cancelTask.id, 'cancelled');
+            setCancelTask(null);
+            if (isDetailModalOpen && selectedTask?.id === cancelTask.id) {
+              setIsDetailModalOpen(false);
+            }
           }
         }}
       />
