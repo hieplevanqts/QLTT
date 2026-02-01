@@ -140,9 +140,23 @@ function mapRowToPlan(row: PlanResponse): Plan | null {
 
 // --- API Functions ---
 
+import { store } from '@/store/store';
+
 export async function fetchPlansApi(): Promise<Plan[]> {
   try {
-    const url = `${SUPABASE_REST_URL}/map_inspection_plans?select=*,departments(name)&order=created_at.desc`;
+    const state = store.getState();
+    // User requested to use app_metadata.path instead of department_code
+    const path = state.auth.user?.app_metadata?.department?.path || '';
+    
+    // Switch to v_plans_by_department and filter by department_path
+    // We remove departments(name) embedding as it likely won't work on a view unless manually defined.
+    // We assume the view 'v_plans_by_department' contains the necessary department name fields (e.g. owner_dept).
+    let url = `${SUPABASE_REST_URL}/v_plans_by_department?select=*&order=created_at.desc`;
+    
+    if (path) {
+      url += `&department_path=like.${path}*`;
+    }
+
     const response = await fetch(url, { method: 'GET', headers: getHeaders() });
     
     if (!response.ok) {
