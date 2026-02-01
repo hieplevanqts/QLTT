@@ -9,6 +9,7 @@ import {
   CirclePlay,
   FileText,
   History,
+  CheckCircle2,
   EllipsisVertical,
 } from 'lucide-react';
 import {
@@ -112,6 +113,12 @@ export const CommonActions = {
     icon: <CirclePause size={16} />,
     onClick,
     priority: 3, // Lower priority - potentially dangerous
+  }),
+  approve: (onClick: () => void): Action => ({
+    label: 'Phê duyệt',
+    icon: <CheckCircle2 size={16} />,
+    onClick,
+    priority: 8, // High priority for pending approvals
   }),
   delete: (onClick: () => void): Action => ({
     label: 'Xóa',
