@@ -23,7 +23,6 @@ interface ApproveDialogProps {
   onOpenChange: (open: boolean) => void;
   storeName: string;
   onConfirm: () => void;
-  onRejectClick?: () => void;
 }
 
 export function ApproveDialog({
@@ -31,7 +30,6 @@ export function ApproveDialog({
   onOpenChange,
   storeName,
   onConfirm,
-  onRejectClick,
 }: ApproveDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -48,11 +46,6 @@ export function ApproveDialog({
   const handleClose = () => {
     setIsSubmitting(false);
     onOpenChange(false);
-  };
-
-  const handleReject = () => {
-    handleClose();
-    onRejectClick?.();
   };
 
   return (
@@ -82,15 +75,6 @@ export function ApproveDialog({
         </div>
 
         <DialogFooter className={styles.footer}>
-          <Button
-            variant="outline"
-            onClick={handleReject}
-            disabled={isSubmitting}
-            className={styles.rejectIconButton}
-          >
-            <XCircle size={16} />
-            Từ chối
-          </Button>
           <Button
             onClick={handleSubmit}
             disabled={isSubmitting}

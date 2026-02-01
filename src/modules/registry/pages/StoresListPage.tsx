@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '@/hooks/useAppStore';
+import type { RootState } from '@/store/store';
 import {
   Plus,
   Download,
@@ -65,6 +67,14 @@ import { fetchStores, fetchStoresStats, createMerchant, updateMerchant, updateMe
 import styles from './StoresListPage.module.css';
 
 export default function StoresListPage() {
+  // Redux State - Get user and department info
+  const dispatch = useAppDispatch();
+  const { user, department } = useAppSelector((state: RootState) => state.auth);
+  console.log('User:', user);
+  const departmentId = user?.department_id;
+const departmentPath = user?.app_metadata?.department?.path ;
+    console.log('Department Path:', departmentPath);
+    
   // Router & Search Params
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -250,6 +260,13 @@ export default function StoresListPage() {
         if (debouncedSearchValue) {
           filters.search = debouncedSearchValue;
         }
+        // If user has a department path (e.g. "QT.QT01"), filter by its root code like "QT*"
+        if (departmentPath) {
+          const root = String(departmentPath).split('.')[0];
+          if (root) {
+            filters.department_path = `like.${root}*`;
+          }
+        }
         if (businessTypeFilter && businessTypeFilter !== 'all') {
           filters.businessType = businessTypeFilter;
         }
@@ -283,7 +300,7 @@ export default function StoresListPage() {
     };
 
     loadStores();
-  }, [currentPage, pageSize, statusFilter, jurisdictionFilter, debouncedSearchValue, businessTypeFilter]);
+  }, [currentPage, pageSize, statusFilter, jurisdictionFilter, debouncedSearchValue, businessTypeFilter, departmentPath]);
 
   // Load provinces from API on component mount
   useEffect(() => {
@@ -752,12 +769,22 @@ export default function StoresListPage() {
 
     switch (store.status) {
       case 'pending':
-      case 'rejected':
-        // Chờ duyệt & Từ chối phê duyệt: Xem chi tiết, Chỉnh sửa, Phê duyệt, Xóa
+        // Chờ duyệt: Xem chi tiết, Chỉnh sửa, Phê duyệt, Từ chối, Xóa
         actions.push(
           CommonActions.view(() => navigate(`/registry/stores/${store.id}`)),
           CommonActions.edit(() => handleEdit(store)),
           CommonActions.approve(() => handleApprove(store.id)),
+          // Reject is separate from delete; opens reject confirmation dialog
+          CommonActions.reject ? CommonActions.reject(() => handleReject(store.id)) : { label: 'Từ chối', onClick: () => handleReject(store.id), separator: false },
+          { ...CommonActions.delete(() => handleDelete(store)), separator: true }
+        );
+        break;
+
+      case 'rejected':
+        // Từ chối phê duyệt: Xem chi tiết, Chỉnh sửa, Xóa
+        actions.push(
+          CommonActions.view(() => navigate(`/registry/stores/${store.id}`)),
+          CommonActions.edit(() => handleEdit(store)),
           { ...CommonActions.delete(() => handleDelete(store)), separator: true }
         );
         break;
@@ -1392,7 +1419,7 @@ export default function StoresListPage() {
             // }
 
             // Get district name from code - districtName is already provided in data
-            const districtName = data.jurisdiction || 'Quận 1';
+            const districtName = data.jurisdiction || '-';
 
             // Prepare API payload matching create_merchant_full RPC parameters
             // IMPORTANT: Send ALL parameters with null for empty optional fields
@@ -1411,7 +1438,7 @@ export default function StoresListPage() {
               p_status: data.status || 'pending',
               p_established_date: data.establishedDate || undefined,
               p_fax: data.fax || undefined,
-              p_department_id: '0c081448-e64b-4d8e-a332-b79f743823c7',
+              p_department_id: departmentId || undefined,
               p_note: data.notes || undefined,
               p_business_phone: data.businessPhone || undefined,
               p_business_email: data.email || undefined,
@@ -1520,10 +1547,6 @@ export default function StoresListPage() {
         onOpenChange={(open) => setApproveDialog({ ...approveDialog, open })}
         storeName={approveDialog.storeName}
         onConfirm={handleApproveConfirm}
-        onRejectClick={() => {
-          setApproveDialog({ open: false, storeId: 0, storeName: '' });
-          setRejectDialog({ ...rejectDialog, open: true });
-        }}
       />
 
       <RejectDialog

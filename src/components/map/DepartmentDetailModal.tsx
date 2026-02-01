@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { X, Building2, MapPin, Users, FileText, AlertCircle, DollarSign, MessageSquare, GraduationCap, BarChart3, Phone, Mail } from 'lucide-react';
+import { useAppDispatch, useAppSelector } from '@/hooks/useAppStore';
+import type { RootState } from '@/store/store';
 import { fetchDepartmentById } from '@/utils/api/departmentsApi';
 import { DepartmentAreasResponse, getUsersByDepartment, getDepartmentsByWard, DepartmentUser, DepartmentByWard } from '@/utils/api/departmentAreasApi';
 import { fetchDepartmentAreas } from '@/utils/api/departmentAreasApi';
@@ -16,6 +18,10 @@ interface DepartmentDetailModalProps {
 }
 
 export function DepartmentDetailModal({ isOpen, onClose, departmentId, departmentData }: DepartmentDetailModalProps) {
+  // Redux State - Get user and department info
+  const { user, department: authDepartment } = useAppSelector((state: RootState) => state.auth);
+  const userDepartmentId = authDepartment?.id;
+  
   const [department, setDepartment] = useState<any>(null);
   const [areas, setAreas] = useState<DepartmentAreasResponse | null>(null);
   const [users, setUsers] = useState<DepartmentUser[]>([]);

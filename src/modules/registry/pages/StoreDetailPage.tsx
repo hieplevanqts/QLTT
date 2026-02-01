@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '@/hooks/useAppStore';
+import type { RootState } from '@/store/store';
 import { toast } from 'sonner';
 import {
   ArrowLeft,
@@ -60,6 +62,11 @@ import styles from './StoreDetailPage.module.css';
 // Constants moved to ../utils/licenseHelper
 
 export default function StoreDetailPage() {
+  // Redux State - Get user and department info
+  const dispatch = useAppDispatch();
+  const { user, department } = useAppSelector((state: RootState) => state.auth);
+  const departmentId = department?.id;
+
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();

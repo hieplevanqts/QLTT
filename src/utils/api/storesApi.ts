@@ -63,6 +63,8 @@ export async function fetchStores(
     hasComplaints?: boolean;
     riskLevel?: string;
     search?: string;
+    // Optional Supabase style filter for department path, e.g. 'like.QT*'
+    department_path?: string;
   }
 ): Promise<{ data: Store[]; total: number }> {
   try {
@@ -95,6 +97,11 @@ export async function fetchStores(
     if (filters?.search) {
       const searchTerms = encodeURIComponent(`*${filters.search}*`);
       url += `&or=(business_name.ilike.${searchTerms},tax_code.ilike.${searchTerms},address.ilike.${searchTerms})`;
+    }
+
+    // Department path filter (Supabase 'like' syntax expected in caller)
+    if (filters?.department_path) {
+      url += `&department_path=${encodeURIComponent(filters.department_path)}`;
     }
 
     // Fetch from API
