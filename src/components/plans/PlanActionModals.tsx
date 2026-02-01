@@ -255,16 +255,12 @@ interface DeployModalProps {
   isOpen: boolean;
   onClose: () => void;
   plan: Plan;
-  onConfirm: (startDate: string) => void;
+  onConfirm: () => void;
 }
 
 export function DeployModal({ isOpen, onClose, plan, onConfirm }: DeployModalProps) {
-  const [startDate, setStartDate] = useState('');
-
   const handleSubmit = () => {
-    if (!startDate) return;
-    onConfirm(startDate);
-    setStartDate('');
+    onConfirm();
     onClose();
   };
 
@@ -284,21 +280,13 @@ export function DeployModal({ isOpen, onClose, plan, onConfirm }: DeployModalPro
       </div>
 
       <div className={styles.modalBody}>
-        <div className={styles.formGroup}>
-          <label className={styles.formLabel}>
-            Ngày bắt đầu thực hiện <span className={styles.required}>*</span>
-          </label>
-          <input
-            type="date"
-            className={styles.input}
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
-        </div>
-
         <div className={styles.infoBox} style={{ background: '#10B98115', borderColor: '#10B981' }}>
           <p>Kế hoạch sẽ được chuyển sang trạng thái <strong>"Đang thực hiện"</strong></p>
         </div>
+        
+        <p className={styles.modalDescription}>
+          Bạn có chắc chắn muốn triển khai kế hoạch này không?
+        </p>
       </div>
 
       <div className={styles.modalFooter}>
@@ -308,7 +296,6 @@ export function DeployModal({ isOpen, onClose, plan, onConfirm }: DeployModalPro
         <button 
           className={styles.primaryButton} 
           onClick={handleSubmit}
-          disabled={!startDate}
           style={{ background: '#10B981' }}
         >
           <PlayCircle size={18} />

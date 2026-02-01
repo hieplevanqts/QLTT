@@ -79,6 +79,7 @@ export function PlanCreate() {
     priority: 'medium' as Priority,
     provinceId: '', // For UI selection
     wardId: '',     // For UI selection
+    reason: '',     // Lý do phát sinh cho kiểm tra đột xuất
   });
 
   const [attachments, setAttachments] = useState<File[]>([]);
@@ -322,6 +323,10 @@ export function PlanCreate() {
       newErrors.quarter = 'Vui lòng chọn quý hoặc tháng';
     }
 
+    if (activeTab === 'urgent' && !formData.reason.trim()) {
+      newErrors.reason = 'Vui lòng nhập lý do phát sinh';
+    }
+
     if (!formData.title.trim()) {
       newErrors.title = 'Vui lòng nhập tiêu đề kế hoạch';
     }
@@ -386,6 +391,11 @@ export function PlanCreate() {
         priority: formData.priority,
         attachments: uploadedAttachments.length > 0 ? uploadedAttachments : undefined,
       };
+
+      // Reset status to pending_approval if currently approved
+      if (fetchedPlan?.status === 'approved') {
+          updates.status = 'pending_approval';
+      }
       
       try {
         await updatePlanApi(planId, updates);
@@ -617,6 +627,8 @@ export function PlanCreate() {
                   </div>
                 )}
 
+
+
                 <div className={styles.formField}>
                   <label className={styles.label}>
                     Thời gian thực hiện <span className={styles.required}>*</span>
@@ -678,7 +690,7 @@ export function PlanCreate() {
               <div className={styles.formRow}>
                 <div className={styles.formField}>
                   <label className={styles.label}>
-                    Đơn vị chủ trì <span className={styles.required}>*</span>
+                    Đơn vị thực hiện <span className={styles.required}>*</span>
                   </label>
                   <select
                     className={cn(styles.select, errors.responsibleUnit && styles.inputError)}
@@ -743,6 +755,24 @@ export function PlanCreate() {
                   placeholder="Ví dụ: Sở Công Thương, Chi cục QLTT..."
                 />
               </div>
+
+              {activeTab === 'urgent' && (
+                <div className={styles.formField}>
+                  <label className={styles.label}>
+                    Lý do phát sinh <span className={styles.required}>*</span>
+                  </label>
+                   <input
+                    type="text"
+                    className={cn(styles.input, errors.reason && styles.inputError)}
+                    value={formData.reason}
+                    onChange={(e) => handleChange('reason', e.target.value)}
+                    placeholder="Nhập lý do kiểm tra đột xuất..."
+                  />
+                  {errors.reason && (
+                    <span className={styles.errorText}><AlertCircle size={14} />{errors.reason}</span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Section 4: External Documents (M03) */}
@@ -809,6 +839,28 @@ export function PlanCreate() {
               <div className={styles.formField}>
                 <label className={styles.label}>Tài liệu đính kèm</label>
                 <div className={styles.fileUploadContainer}>
+                  <div
+                    className={styles.dropZone}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      e.currentTarget.classList.add(styles.dragOver);
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      e.currentTarget.classList.remove(styles.dragOver);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      e.currentTarget.classList.remove(styles.dragOver);
+                      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                         setAttachments(prev => [...prev, ...Array.from(e.dataTransfer.files)]);
+                         toast.success(`Đã thêm ${e.dataTransfer.files.length} tệp tin`);
+                      }
+                    }}
+                  >
                   <input
                     type="file"
                     id="plan-attachments"
@@ -825,6 +877,7 @@ export function PlanCreate() {
                     <span>Kéo thả hoặc nhấn để tải lên tài liệu</span>
                     <span className={styles.helpTextSmall}>Hỗ trợ PDF, DOCX, XLSX (Tối đa 10MB)</span>
                   </label>
+                  </div>
 
                   {attachments.length > 0 && (
                     <div className={styles.fileList}>
