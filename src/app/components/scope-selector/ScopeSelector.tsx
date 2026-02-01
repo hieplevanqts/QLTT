@@ -13,6 +13,7 @@ export function ScopeSelector() {
     availableTeams,
     availableAreas,
     isLoading,
+    locks,
   } = useQLTTScope();
   
   // Redux dispatch and selector for Redux store
@@ -227,9 +228,9 @@ export function ScopeSelector() {
    
   };
 
-  const isDivisionDisabled = isLoading;
-  const isTeamDisabled = isLoading || !scope.divisionId;
-  const isAreaDisabled = isLoading || !scope.teamId;
+  const isDivisionDisabled = isLoading || locks.division;
+  const isTeamDisabled = isLoading || locks.team || !scope.divisionId;
+  const isAreaDisabled = isLoading || locks.team || !scope.teamId;
   
 
   return (
