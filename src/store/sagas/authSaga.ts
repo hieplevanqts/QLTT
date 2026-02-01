@@ -21,7 +21,7 @@ import {
 } from '../../utils/api/authApi';
 import { supabase } from '@/api/supabaseClient';
 import { tokenStorage } from '@/utils/storage/tokenStorage';
-import { getIamIdentity } from '@/shared/iam/iam.service';
+import { getIamIdentity } from '@/shared/iam/iamIdentity.service';
 
 function* handleLogin(action: PayloadAction<{ email: string; password: string }>): Generator<any, any, any> {
   try {

@@ -28,24 +28,24 @@ const hashRoleCodes = (roleCodes: string[]) => roleCodes.filter(Boolean).sort().
 export const useRuntimeMenu = (): RuntimeMenuState => {
   const { user: authUser } = useAuth();
   const reduxUser = useAppSelector((state: RootState) => state.auth.user);
-  const { identity } = useIamIdentity();
+  const iam = useIamIdentity();
   const user = reduxUser ?? authUser;
-  const userId = identity?.userId ?? (user as any)?._id ?? (user as any)?.id ?? null;
+  const userId = iam.userId ?? (user as any)?._id ?? (user as any)?.id ?? null;
   const [loading, setLoading] = React.useState(false);
   const [tree, setTree] = React.useState<MenuNode[]>([]);
   const [flatMenus, setFlatMenus] = React.useState<RuntimeMenuItem[]>([]);
   const [menuVersion, setMenuVersion] = React.useState<string | null>(null);
   const [hasRoles, setHasRoles] = React.useState(false);
 
-  const permissionHash = React.useMemo(
-    () =>
-      identity?.permissionCodes
-        ? [...identity.permissionCodes].sort().join("|")
-        : user?.permissions
-          ? [...user.permissions].sort().join("|")
-          : "",
-    [identity?.permissionCodes, user?.permissions],
-  );
+  const permissionHash = React.useMemo(() => {
+    if (iam.permissionCodes.length > 0) {
+      return [...iam.permissionCodes].sort().join("|");
+    }
+    if (user?.permissions) {
+      return [...user.permissions].sort().join("|");
+    }
+    return "";
+  }, [iam.permissionCodes, user?.permissions]);
 
   const refresh = React.useCallback(
     async (opts?: { force?: boolean }) => {
@@ -60,8 +60,8 @@ export const useRuntimeMenu = (): RuntimeMenuState => {
       setLoading(true);
       try {
         const roleCodes =
-          identity?.roleCodes && identity.roleCodes.length > 0
-            ? identity.roleCodes
+          iam.roleCodes.length > 0
+            ? iam.roleCodes
             : user?.roleCodes && user.roleCodes.length > 0
               ? user.roleCodes
               : user?.roleCode
@@ -101,7 +101,7 @@ export const useRuntimeMenu = (): RuntimeMenuState => {
         setLoading(false);
       }
     },
-    [identity?.roleCodes, userId, user?.roleCode, user?.roleCodes],
+    [iam.roleCodes, userId, user?.roleCode, user?.roleCodes],
   );
 
   React.useEffect(() => {

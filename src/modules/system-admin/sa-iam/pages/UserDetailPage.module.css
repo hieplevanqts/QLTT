@@ -3,15 +3,20 @@
  */
 
 /* ============================================
-   DETAIL CARDS
+   LAYOUT
    ============================================ */
-.detailContainer {
+.detailGrid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
+  align-items: start;
 }
 
-.detailCard {
+/* ============================================
+   CARDS
+   ============================================ */
+.infoCard,
+.rolesCard {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
@@ -19,26 +24,47 @@
   box-shadow: var(--elevation-sm);
 }
 
-.detailCard h3 {
-  margin: 0 0 20px 0;
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cardHeader h3 {
+  margin: 0;
   font-family: 'Inter', sans-serif;
   font-size: var(--text-lg);
   font-weight: var(--font-weight-semibold);
   color: var(--foreground);
 }
 
-.detailRow {
+/* ============================================
+   INFO GRID
+   ============================================ */
+.infoGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.infoRow {
   display: flex;
   align-items: flex-start;
-  padding: 12px 0;
+  gap: 12px;
+  padding: 10px 0;
   border-bottom: 1px solid var(--border);
 }
 
-.detailRow:last-child {
+.infoRow:last-child {
   border-bottom: none;
+  padding-bottom: 0;
 }
 
-.detailLabel {
+.label {
   flex: 0 0 180px;
   font-family: 'Inter', sans-serif;
   font-size: var(--text-sm);
@@ -46,7 +72,7 @@
   color: var(--muted-foreground);
 }
 
-.detailValue {
+.value {
   flex: 1;
   font-family: 'Inter', sans-serif;
   font-size: var(--text-sm);
@@ -54,46 +80,140 @@
 }
 
 /* ============================================
-   USER HEADER
+   STATUS BADGES
    ============================================ */
-.userHeader {
+.statusActive,
+.statusInactive,
+.statusLocked {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+.statusActive {
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.1);
+}
+
+.statusInactive {
+  color: #ea580c;
+  background: rgba(234, 88, 12, 0.1);
+}
+
+.statusLocked {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.1);
+}
+
+/* ============================================
+   ROLES LIST
+   ============================================ */
+.rolesList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.roleCard {
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 24px;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-  border-radius: var(--radius-card);
-  margin-bottom: 24px;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: all 150ms ease;
 }
 
-.userHeaderAvatar {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
+.roleCard:hover {
+  background: var(--card);
+  border-color: var(--primary);
+}
+
+.roleInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.roleName {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+}
+
+.roleCode {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--primary);
+}
+
+.roleType {
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: #FFFFFF;
-  font-family: 'Inter', sans-serif;
-  font-size: var(--text-2xl);
-  font-weight: var(--font-weight-bold);
-  border: 3px solid rgba(255, 255, 255, 0.3);
 }
 
-.userHeaderInfo h2 {
-  margin: 0 0 8px 0;
+.typeCustom {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: calc(var(--radius) - 2px);
   font-family: 'Inter', sans-serif;
-  font-size: var(--text-2xl);
-  font-weight: var(--font-weight-bold);
-  color: #FFFFFF;
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  color: #7c3aed;
+  background: rgba(124, 58, 237, 0.1);
+  white-space: nowrap;
 }
 
-.userHeaderInfo p {
+.emptyRoles {
+  padding: 20px;
+  text-align: center;
+  background: var(--muted);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
+
+.emptyRoles p {
   margin: 0;
   font-family: 'Inter', sans-serif;
-  font-size: var(--text-base);
-  color: rgba(255, 255, 255, 0.9);
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+/* ============================================
+   DANGER ZONE
+   ============================================ */
+.dangerZone {
+  margin-top: 24px;
+  padding: 20px;
+  background: rgba(217, 45, 32, 0.06);
+  border: 1px solid rgba(217, 45, 32, 0.2);
+  border-radius: var(--radius-card);
+}
+
+.dangerZone h3 {
+  margin: 0 0 8px 0;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--foreground);
+}
+
+.dangerZone p {
+  margin: 0 0 16px 0;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
 }
 
 /* ============================================
@@ -156,21 +276,49 @@
   cursor: not-allowed;
 }
 
+.buttonDanger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--destructive);
+  background: transparent;
+  border: 1px solid var(--destructive);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+
+.buttonDanger:hover:not(:disabled) {
+  background: rgba(217, 45, 32, 0.1);
+}
+
+.buttonDanger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ============================================
    RESPONSIVE
    ============================================ */
+@media (max-width: 1024px) {
+  .detailGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 768px) {
-  .detailRow {
+  .infoRow {
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
   }
 
-  .detailLabel {
+  .label {
     flex: none;
-  }
-
-  .userHeader {
-    flex-direction: column;
-    text-align: center;
   }
 }

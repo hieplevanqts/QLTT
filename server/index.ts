@@ -861,6 +861,127 @@ app.post('/system-admin/admin/users', async (req, res) => {
   }
 });
 
+app.put('/system-admin/admin/users/:id', async (req, res) => {
+  try {
+    const userId = (req.params.id || '').trim();
+    if (!userId) {
+      res.status(400).json({ code: 'INVALID_PAYLOAD', message: 'user id is required.' });
+      return;
+    }
+
+    const email = (req.body?.email as string | undefined)?.trim();
+    const username = (req.body?.username as string | undefined)?.trim();
+    const fullName = (req.body?.full_name as string | undefined)?.trim();
+    const phone = (req.body?.phone as string | undefined)?.trim();
+    const statusRaw = req.body?.status;
+    const departmentIdRaw = (req.body?.department_id as string | undefined)?.trim();
+    const defaultPassword = (req.body?.default_password as string | undefined)?.trim();
+    const note = (req.body?.note as string | undefined)?.trim();
+
+    const adminClient = getSupabaseAdmin();
+
+    const authUpdates: Record<string, unknown> = {};
+    const userMetadata: Record<string, unknown> = {};
+    if (email) {
+      authUpdates.email = email;
+      authUpdates.email_confirm = true;
+    }
+    if (username) userMetadata.username = username;
+    if (fullName) userMetadata.full_name = fullName;
+    if (Object.keys(userMetadata).length > 0) {
+      authUpdates.user_metadata = userMetadata;
+    }
+
+    if (Object.keys(authUpdates).length > 0) {
+      const authResult = await adminClient.auth.admin.updateUserById(userId, authUpdates);
+      if (authResult.error) {
+        res.status(400).json({ code: 'AUTH_UPDATE_FAILED', message: authResult.error.message });
+        return;
+      }
+    }
+
+    let mergedMetadata: Record<string, unknown> | undefined;
+    if (defaultPassword || note) {
+      const metaResult = await adminClient
+        .from('users')
+        .select('metadata')
+        .eq('_id', userId)
+        .maybeSingle();
+      const baseMeta =
+        metaResult.data && typeof metaResult.data.metadata === 'object' && metaResult.data.metadata
+          ? metaResult.data.metadata
+          : {};
+      mergedMetadata = { ...baseMeta };
+      if (defaultPassword) mergedMetadata.defaultPassword = defaultPassword;
+      if (note) mergedMetadata.note = note;
+    }
+
+    const updatePayload: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (email != null) updatePayload.email = email || null;
+    if (username != null) updatePayload.username = username || null;
+    if (fullName != null) updatePayload.full_name = fullName || null;
+    if (phone != null) updatePayload.phone = phone || null;
+    if (statusRaw != null) updatePayload.status = typeof statusRaw === 'number' ? statusRaw : Number(statusRaw);
+    if (Object.prototype.hasOwnProperty.call(req.body ?? {}, 'department_id')) {
+      updatePayload.department_id = departmentIdRaw || null;
+      updatePayload.departmentId = departmentIdRaw || null;
+    }
+    if (note != null) updatePayload.note = note || null;
+    if (mergedMetadata) updatePayload.metadata = mergedMetadata;
+
+    let updateResult = await adminClient
+      .from('users')
+      .update(updatePayload)
+      .eq('_id', userId)
+      .select('*')
+      .maybeSingle();
+
+    if (updateResult.error) {
+      const message = updateResult.error.message || '';
+      const retryPayload = { ...updatePayload };
+      let shouldRetry = false;
+      if (message.includes('department_id')) {
+        delete retryPayload.department_id;
+        shouldRetry = true;
+      }
+      if (message.includes('departmentId')) {
+        delete retryPayload.departmentId;
+        shouldRetry = true;
+      }
+      if (message.includes('metadata')) {
+        delete retryPayload.metadata;
+        shouldRetry = true;
+      }
+
+      if (shouldRetry) {
+        updateResult = await adminClient
+          .from('users')
+          .update(retryPayload)
+          .eq('_id', userId)
+          .select('*')
+          .maybeSingle();
+      }
+    }
+
+    if (updateResult.error) {
+      res.status(400).json({ code: 'PROFILE_UPDATE_FAILED', message: updateResult.error.message });
+      return;
+    }
+
+    if (!updateResult.data) {
+      res.status(404).json({ code: 'USER_NOT_FOUND', message: 'User not found.' });
+      return;
+    }
+
+    res.json(updateResult.data);
+  } catch (error: any) {
+    res.status(500).json({ code: 'ADMIN_USER_UPDATE_FAILED', message: error.message });
+  }
+});
+
 ensureSystemAdminDirs().then(() => {
   app.listen(PORT, () => {
     // eslint-disable-next-line no-console

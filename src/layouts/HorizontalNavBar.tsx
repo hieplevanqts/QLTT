@@ -262,7 +262,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
   const { setLayoutMode } = useLayout();
   const [mobileSubmenuOpen, setMobileSubmenuOpen] = React.useState<string | null>(null);
   const { tree, loading } = useRuntimeMenu();
-  const { identity, loading: identityLoading } = useIamIdentity();
+  const { roleCodes, loading: identityLoading } = useIamIdentity();
   const fallbackEnabled = getMenuFallbackEnabled();
   const isPathActive = React.useCallback(
     (path?: string | null) => {
@@ -286,7 +286,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
     if (runtimeModules.length > 0) return runtimeModules;
     return fallbackEnabled ? mappaModules : [];
   }, [runtimeModules, fallbackEnabled]);
-  const showNoRoleBanner = !identityLoading && !!identity && identity.roleCodes.length === 0;
+  const showNoRoleBanner = !identityLoading && roleCodes.length === 0;
   const showEmptyState = !loading && visibleModules.length === 0 && !fallbackEnabled;
 
   // Mock permissions - In real app, this would come from user context/auth

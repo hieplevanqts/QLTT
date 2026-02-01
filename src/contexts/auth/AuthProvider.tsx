@@ -6,7 +6,7 @@ import {
   clearIamIdentityCache,
   getIamIdentity,
   type IamIdentity,
-} from "@/shared/iam/iam.service";
+} from "@/shared/iam/iamIdentity.service";
 
 type ProviderProps = {
   children: React.ReactNode;
@@ -74,4 +74,3 @@ export const IamAuthProvider = ({ children }: ProviderProps) => {
     </IamIdentityContext.Provider>
   );
 };
-

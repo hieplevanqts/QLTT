@@ -41,6 +41,7 @@ import {
 import PageHeader from "@/layouts/PageHeader";
 import { PermissionGate } from "../../_shared";
 import { useAuth } from "../../../../contexts/AuthContext";
+import { useIamIdentity } from "@/shared/iam/useIamIdentity";
 import { orgUnitsService, type OrgUnitPayload, type OrgUnitRecord } from "../services/orgUnits.service";
 import {
   unitAreaAssignmentsService,
@@ -263,6 +264,8 @@ const geocodeWithOsm = async (address: string, email?: string): Promise<GeocodeR
 
 export default function OrgUnitsPage() {
   const { user } = useAuth();
+  const { isSuperAdmin: iamIsSuperAdmin, roleCodes: iamRoleCodes, departmentId: iamDepartmentId } =
+    useIamIdentity();
   const [loading, setLoading] = React.useState(false);
   const [geoLoading, setGeoLoading] = React.useState(false);
   const [units, setUnits] = React.useState<OrgUnitRecord[]>([]);
@@ -294,9 +297,19 @@ export default function OrgUnitsPage() {
     [units, selectedId],
   );
 
-  const userDepartmentId = user?.departmentInfo?.id ?? null;
-  const userLevel =
-    user?.departmentInfo?.level ?? getLevelFromCode(user?.departmentInfo?.code);
+  const userDepartmentId = iamDepartmentId ?? user?.departmentInfo?.id ?? null;
+  const roleCodes = React.useMemo(() => {
+    if (iamRoleCodes && iamRoleCodes.length > 0) {
+      return iamRoleCodes.map((code) => String(code).toLowerCase());
+    }
+    if (!user) return [] as string[];
+    if (Array.isArray(user.roleCodes)) {
+      return user.roleCodes.map((code) => String(code).toLowerCase());
+    }
+    if (user.roleCode) return [String(user.roleCode).toLowerCase()];
+    return [] as string[];
+  }, [iamRoleCodes, user]);
+  const isSuperAdmin = iamIsSuperAdmin || roleCodes.includes("super-admin");
 
   const selectedLevel = selectedUnit?.level ?? getLevelFromCode(selectedUnit?.code);
   const parentUnit = selectedUnit?.parent_id
@@ -305,13 +318,14 @@ export default function OrgUnitsPage() {
 
   const canManageSelectedUnit = React.useMemo(() => {
     if (!selectedUnit) return false;
-    if (userLevel === 1) return true;
-    if (!userDepartmentId || !userLevel) return false;
-    if (userLevel === 2) {
-      return selectedUnit.id === userDepartmentId || selectedUnit.parent_id === userDepartmentId;
-    }
+    if (isSuperAdmin) return true;
+    if (!userDepartmentId) return false;
     return selectedUnit.id === userDepartmentId;
-  }, [selectedUnit, userDepartmentId, userLevel]);
+  }, [isSuperAdmin, selectedUnit, userDepartmentId]);
+
+  const canCreateRoot = isSuperAdmin;
+  const canCreateChild =
+    isSuperAdmin || (selectedUnit ? selectedUnit.id === userDepartmentId : false);
 
   const parentOptions = React.useMemo(() => {
     if (!selectedUnit) {
@@ -447,6 +461,10 @@ export default function OrgUnitsPage() {
   }, [loadAreaTabData]);
 
   const openCreateRoot = () => {
+    if (!canCreateRoot) {
+      message.warning("Bạn chỉ được thao tác trong phạm vi đơn vị của mình.");
+      return;
+    }
     setDrawerMode("create");
     setParentForCreate(null);
     form.resetFields();
@@ -461,6 +479,10 @@ export default function OrgUnitsPage() {
 
   const openCreateChild = () => {
     if (!selectedUnit) return;
+    if (!canCreateChild) {
+      message.warning("Bạn chỉ được thao tác trong phạm vi đơn vị của mình.");
+      return;
+    }
     setDrawerMode("create");
     setParentForCreate(selectedUnit);
     form.resetFields();
@@ -477,6 +499,10 @@ export default function OrgUnitsPage() {
 
   const openEdit = () => {
     if (!selectedUnit) return;
+    if (!canManageSelectedUnit) {
+      message.warning("Bạn chỉ được thao tác trong phạm vi đơn vị của mình.");
+      return;
+    }
       setDrawerMode("edit");
       setParentForCreate(null);
       form.resetFields();
@@ -600,6 +626,10 @@ export default function OrgUnitsPage() {
 
   const handleSubmit = async () => {
     try {
+      if (drawerMode === "edit" && selectedUnit && !canManageSelectedUnit) {
+        message.warning("Bạn chỉ được thao tác trong phạm vi đơn vị của mình.");
+        return;
+      }
       const values = await form.validateFields();
       const parentId =
         parentForCreate?.id ??
@@ -652,6 +682,10 @@ export default function OrgUnitsPage() {
 
   const handleToggleStatus = async () => {
     if (!selectedUnit) return;
+    if (!canManageSelectedUnit) {
+      message.warning("Bạn chỉ được thao tác trong phạm vi đơn vị của mình.");
+      return;
+    }
     try {
       setLoading(true);
       await orgUnitsService.toggleStatus(selectedUnit.id, !selectedUnit.is_active);
@@ -904,14 +938,19 @@ export default function OrgUnitsPage() {
                 title="Cây đơn vị"
                 extra={
                   <Space>
-                    <Button onClick={openCreateRoot} icon={<PlusOutlined />} size="small">
+                    <Button
+                      onClick={openCreateRoot}
+                      icon={<PlusOutlined />}
+                      size="small"
+                      disabled={!canCreateRoot}
+                    >
                       Thêm đơn vị
                     </Button>
                     <Button
                       onClick={openCreateChild}
                       icon={<PlusOutlined />}
                       size="small"
-                      disabled={!selectedUnit}
+                      disabled={!selectedUnit || !canCreateChild}
                     >
                       Thêm đơn vị con
                     </Button>
@@ -947,7 +986,11 @@ export default function OrgUnitsPage() {
                 extra={
                   selectedUnit ? (
                     <Space>
-                      <Button icon={<EditOutlined />} onClick={openEdit}>
+                      <Button
+                        icon={<EditOutlined />}
+                        onClick={openEdit}
+                        disabled={!canManageSelectedUnit}
+                      >
                         Sửa
                       </Button>
                       <Popconfirm
@@ -960,7 +1003,11 @@ export default function OrgUnitsPage() {
                         cancelText="Hủy"
                         onConfirm={handleToggleStatus}
                       >
-                        <Button danger={Boolean(selectedUnit.is_active)} icon={<StopOutlined />}>
+                        <Button
+                          danger={Boolean(selectedUnit.is_active)}
+                          icon={<StopOutlined />}
+                          disabled={!canManageSelectedUnit}
+                        >
                           {selectedUnit.is_active ? "Ngừng" : "Kích hoạt"}
                         </Button>
                       </Popconfirm>
