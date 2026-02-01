@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { useQLTTScope } from '../../../contexts/QLTTScopeContext';
 import { useAppDispatch, useAppSelector } from '../../hooks';
@@ -23,16 +23,34 @@ export function ScopeSelector() {
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [selectedArea, setSelectedArea] = useState<string>('');
 
-  const userDivisionId =
-    (authUser as any)?.app_metadata?.department?.id
-    || (authUser as any)?.departmentInfo?.id
-    || null;
+  const userDivision = useMemo(() => {
+    const id =
+      (authUser as any)?.app_metadata?.department?.id
+      || (authUser as any)?.departmentInfo?.id
+      || null;
+    if (!id) return null;
+    const name =
+      (authUser as any)?.app_metadata?.department?.name
+      || (authUser as any)?.departmentInfo?.name
+      || 'Đơn vị';
+    return { id, name };
+  }, [authUser]);
+
+  const divisionOptions = useMemo(() => {
+    if (!userDivision) return availableDivisions;
+    const exists = availableDivisions.some((division) => division.id === userDivision.id);
+    return exists ? availableDivisions : [...availableDivisions, userDivision];
+  }, [availableDivisions, userDivision]);
 
   const fallbackDivisionId =
-    !scope.divisionId && availableDivisions.length === 1
-      ? availableDivisions[0].id
+    !scope.divisionId && divisionOptions.length === 1
+      ? divisionOptions[0].id
       : null;
-  const effectiveDivisionId = scope.divisionId || userDivisionId || fallbackDivisionId;
+  const userDivisionId = userDivision?.id || null;
+  const hasUserDivisionOption = Boolean(
+    userDivisionId && divisionOptions.some((division) => division.id === userDivisionId),
+  );
+  const effectiveDivisionId = scope.divisionId || (hasUserDivisionOption ? userDivisionId : null) || fallbackDivisionId;
 
   // Sync local state with scope context
   useEffect(() => {
@@ -43,35 +61,31 @@ export function ScopeSelector() {
 
   // Prefer division from auth user department when scope is empty
   useEffect(() => {
-    if (isLoading || scope.divisionId || scope.teamId || scope.areaId) return;
+    if (isLoading || !userDivisionId) return;
+    if (scope.divisionId === userDivisionId) return;
+    if (scope.teamId || scope.areaId) return;
 
-    const userDepartmentId =
-      userDivisionId;
-
-    if (!userDepartmentId) return;
-
-    const divisionExists = availableDivisions.some((d: any) => d.id === userDepartmentId);
+    const divisionExists = divisionOptions.some((d: any) => d.id === userDivisionId);
     if (!divisionExists) return;
 
     const newScope = {
-      divisionId: userDepartmentId,
+      divisionId: userDivisionId,
       teamId: null,
       areaId: null,
       province: null,
       ward: null,
     };
 
-    localStorage.setItem('division_id', userDepartmentId);
+    localStorage.setItem('division_id', userDivisionId);
     setContextScope(newScope);
     dispatch(setScope(newScope));
   }, [
-    authUser,
     isLoading,
-    availableDivisions,
+    userDivisionId,
+    divisionOptions,
     scope.divisionId,
     scope.teamId,
     scope.areaId,
-    userDivisionId,
     setContextScope,
     dispatch,
   ]);
@@ -80,14 +94,15 @@ export function ScopeSelector() {
   useEffect(() => {
     if (
       !isLoading
-      && availableDivisions.length > 0
+      && divisionOptions.length > 0
       && !scope.divisionId
       && !scope.teamId
       && !scope.areaId
+      && !userDivisionId
     ) {
         const savedDivisionId = localStorage.getItem('division_id');
         if (savedDivisionId) {
-            const divisionExists = availableDivisions.some((d: any) => d.id === savedDivisionId);
+            const divisionExists = divisionOptions.some((d: any) => d.id === savedDivisionId);
             if (divisionExists) {
                 const newScope = {
                     divisionId: savedDivisionId,
@@ -105,10 +120,12 @@ export function ScopeSelector() {
     }
   }, [
     availableDivisions,
+    divisionOptions,
     isLoading,
     scope.divisionId,
     scope.teamId,
     scope.areaId,
+    userDivisionId,
     setContextScope,
     dispatch,
   ]);
@@ -211,8 +228,8 @@ export function ScopeSelector() {
   };
 
   const isDivisionDisabled = isLoading;
-  const isTeamDisabled = isLoading || !selectedDivision;
-  const isAreaDisabled = isLoading || !selectedTeam;
+  const isTeamDisabled = isLoading || !scope.divisionId;
+  const isAreaDisabled = isLoading || !scope.teamId;
   
 
   return (
@@ -233,7 +250,7 @@ export function ScopeSelector() {
           onMouseDown={(e) => e.stopPropagation()}
         >
           <option value="">Tất cả chi cục</option>
-          {availableDivisions.map((division, index) => (
+          {divisionOptions.map((division, index) => (
             <option key={`${division.id || 'div'}-${index}`} value={division.id}>
               {division.name}
             </option>
