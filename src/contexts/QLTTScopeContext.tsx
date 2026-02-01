@@ -230,9 +230,14 @@ export function QLTTScopeProvider({ children }: { children: ReactNode }) {
     return division?.id || null;
   };
 
-  const userDepartmentId = user?.departmentInfo?.id || null;
+  const metadataDepartmentId = user?.app_metadata?.department?.id || null;
+  const userDepartmentId = user?.departmentInfo?.id || metadataDepartmentId || null;
   const userDepartment = userDepartmentId ? departmentsById.get(userDepartmentId) : undefined;
-  const userLevel = user?.departmentInfo?.level ?? getDepartmentLevelFromCode(user?.departmentInfo?.code);
+  const userLevel =
+    user?.departmentInfo?.level
+    ?? getDepartmentLevelFromCode(user?.departmentInfo?.code)
+    ?? userDepartment?.level
+    ?? getDepartmentLevelFromCode(userDepartment?.code);
 
   const userStandaloneDivision = useMemo(() => {
     if (!userDepartmentId || !userDepartment) return null;
