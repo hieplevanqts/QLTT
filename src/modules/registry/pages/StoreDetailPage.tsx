@@ -782,7 +782,7 @@ export default function StoreDetailPage() {
             className={styles.editButton}
           >
             <Edit size={16} />
-            Chỉnh sửa đầy đủ
+            Chỉnh sửa
           </Button>
         </div>
 

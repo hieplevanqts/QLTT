@@ -1,17 +1,19 @@
 .bulkActionBar {
   background: hsl(250 90% 95%);
   border: 1px solid hsl(250 80% 85%);
-  border-radius: var(--radius);
-  box-shadow: var(--elevation-sm);
+  border-radius: 0;
+  box-shadow: none;
   padding: 12px 20px;
   display: flex;
   align-items: center;
   gap: 16px;
 
   animation: slideDown 0.3s ease;
-  margin-bottom: 16px;
-  margin-left: 24px;
-  margin-right: 24px;
+  margin-bottom: 0;
+  margin-left: 0;
+  margin-right: 0;
+  border-bottom: 1px solid hsl(250 80% 85%);
+  width: 100%;
 }
 
 @keyframes slideDown {

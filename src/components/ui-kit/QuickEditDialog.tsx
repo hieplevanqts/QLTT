@@ -326,7 +326,7 @@ export function QuickEditDialog({
             <p className="font-medium text-blue-900 mb-1">Chỉnh sửa nhanh</p>
             <p className="text-blue-700">
               Cập nhật thông tin cơ bản của cơ sở. Để chỉnh sửa địa chỉ, tọa độ hoặc loại hình, vui lòng sử dụng{' '}
-              <strong>Chỉnh sửa đầy đủ</strong>.
+              <strong>Chỉnh sửa</strong>.
             </p>
           </div>
         </div>

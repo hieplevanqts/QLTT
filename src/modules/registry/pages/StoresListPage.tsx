@@ -641,6 +641,81 @@ const departmentPath = user?.app_metadata?.department?.path ;
     return stores.filter(store => selectedRows.has(store.id));
   }, [stores, selectedRows]);
 
+  /**
+   * Define allowed actions per status
+   * Only show actions when ALL selected stores have the SAME status
+   */
+  const ACTION_RULES: Record<FacilityStatus, BulkActionType[]> = {
+    pending: ['approve', 'reject'],
+    active: ['suspend'],
+    suspended: ['activate', 'close'],
+    refuse: [],
+    rejected: [],
+    underInspection: [], // No changes allowed while under inspection
+  };
+
+  /**
+   * Get bulk actions based on selected stores status
+   * Returns empty array if stores have different statuses
+   */
+  const getAvailableBulkActions = useMemo(() => {
+    if (selectedStores.length === 0) return [];
+
+    // Check if all selected stores have the same status
+    const firstStatus = selectedStores[0].status;
+    const allSameStatus = selectedStores.every(store => store.status === firstStatus);
+
+    if (!allSameStatus) {
+      // Different statuses - show no actions
+      return [];
+    }
+
+    // All same status - get allowed actions for this status
+    const allowedActions = ACTION_RULES[firstStatus] || [];
+    return allowedActions;
+  }, [selectedStores]);
+
+  // Bulk actions configuration - filtered based on selected stores
+  const bulkActions: BulkAction[] = useMemo(() => {
+    const allActions: Record<BulkActionType, BulkAction> = {
+      approve: {
+        label: 'Phê duyệt',
+        onClick: () => handleBulkAction('approve'),
+        variant: 'default',
+        icon: <CheckCircle2 size={16} />,
+      },
+      reject: {
+        label: 'Từ chối',
+        onClick: () => handleBulkAction('reject'),
+        variant: 'secondary',
+        icon: <XCircle size={16} />,
+      },
+      suspend: {
+        label: 'Tạm dừng hoạt động',
+        onClick: () => handleBulkAction('suspend'),
+        variant: 'secondary',
+        icon: <Pause size={16} />,
+      },
+      activate: {
+        label: 'Kích hoạt lại',
+        onClick: () => handleBulkAction('activate'),
+        variant: 'default',
+        icon: <Play size={16} />,
+      },
+      close: {
+        label: 'Ngừng hoạt động',
+        onClick: () => handleBulkAction('close'),
+        variant: 'destructive',
+        icon: <StopCircle size={16} />,
+      },
+    };
+
+    // Return only the actions that are available for the current selection
+    return getAvailableBulkActions
+      .map(actionType => allActions[actionType as BulkActionType])
+      .filter(Boolean);
+  }, [getAvailableBulkActions]);
+
   // Bulk action handlers
   const handleBulkAction = (actionType: BulkActionType) => {
     setBulkActionModal({
@@ -719,8 +794,8 @@ const departmentPath = user?.app_metadata?.department?.path ;
     // Success feedback
     const actionLabels: Record<BulkActionType, string> = {
       approve: 'phê duyệt',
-      reject: 'từ chi',
-      suspend: 'tạm ngừng',
+      reject: 'từ chối',
+      suspend: 'tạm dừng',
       activate: 'kích hoạt lại',
       close: 'ngừng hoạt động',
       export: 'xuất',
@@ -742,46 +817,6 @@ const departmentPath = user?.app_metadata?.department?.path ;
     setBulkActionModal({ open: false, actionType: 'export', loading: false });
     setSelectedRows(new Set());
   };
-
-  // Bulk actions configuration
-  const bulkActions: BulkAction[] = [
-    {
-      label: 'Xuất CSV',
-      onClick: () => handleBulkAction('export'),
-      variant: 'secondary',
-      icon: <Download size={16} />,
-    },
-    {
-      label: 'Phê duyệt',
-      onClick: () => handleBulkAction('approve'),
-      variant: 'default',
-      icon: <CheckCircle2 size={16} />,
-    },
-    {
-      label: 'Từ chối',
-      onClick: () => handleBulkAction('reject'),
-      variant: 'secondary',
-      icon: <XCircle size={16} />,
-    },
-    {
-      label: 'Tạm ngừng',
-      onClick: () => handleBulkAction('suspend'),
-      variant: 'secondary',
-      icon: <Pause size={16} />,
-    },
-    {
-      label: 'Kích hoạt lại',
-      onClick: () => handleBulkAction('activate'),
-      variant: 'default',
-      icon: <Play size={16} />,
-    },
-    {
-      label: 'Ngừng hoạt động',
-      onClick: () => handleBulkAction('close'),
-      variant: 'destructive',
-      icon: <StopCircle size={16} />,
-    },
-  ];
 
   // Get actions for a store based on its status
   const getStoreActions = (store: Store): Action[] => {
