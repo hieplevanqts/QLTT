@@ -29,7 +29,7 @@ export const MenuTree: React.FC<MenuTreeProps> = ({
   onFilterGroup,
 }) => {
   return (
-    <Space direction="vertical" style={{ width: "100%" }} size={8}>
+    <Space orientation="vertical" style={{ width: "100%" }} size={8}>
       <Input.Search placeholder="Tìm theo mã/tên/path..." onSearch={onSearch} allowClear />
       <Space wrap>
         <Select

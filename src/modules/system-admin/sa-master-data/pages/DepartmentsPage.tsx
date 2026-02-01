@@ -436,7 +436,7 @@ export default function DepartmentsPage() {
               Chưa xác định đơn vị quản lý. Vui lòng chọn phạm vi ở thanh trên hoặc kiểm tra lại đơn vị của tài khoản.
             </Typography.Text>
           ) : (
-          <Space direction="vertical" style={{ width: "100%" }} size="middle">
+          <Space orientation="vertical" style={{ width: "100%" }} size="middle">
             <Space wrap style={{ width: "100%", justifyContent: "space-between" }}>
               <Space wrap>
                 <Input.Search
@@ -499,7 +499,7 @@ export default function DepartmentsPage() {
         <Drawer
           open={drawerOpen}
           onClose={handleCloseDrawer}
-          width={560}
+          size={560}
           title={drawerMode === "create" ? "Thêm phòng ban" : "Chỉnh sửa phòng ban"}
           extra={
             <Space>
@@ -555,7 +555,7 @@ export default function DepartmentsPage() {
                       key: "members",
                       label: `Thành viên (${members.length})`,
                       children: (
-                        <Space direction="vertical" style={{ width: "100%" }} size="middle">
+                        <Space orientation="vertical" style={{ width: "100%" }} size="middle">
                           <Space style={{ width: "100%", justifyContent: "space-between" }}>
                             <Typography.Text type="secondary">
                               Danh sách người dùng trong phòng ban
@@ -588,7 +588,7 @@ export default function DepartmentsPage() {
           cancelText="Hủy"
           title="Thêm thành viên"
         >
-          <Space direction="vertical" style={{ width: "100%" }}>
+          <Space orientation="vertical" style={{ width: "100%" }}>
             <Typography.Text>
               Chọn người dùng thuộc cùng đơn vị quản lý để thêm vào phòng ban.
             </Typography.Text>

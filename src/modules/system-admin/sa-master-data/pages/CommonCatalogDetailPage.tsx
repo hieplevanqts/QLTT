@@ -337,7 +337,7 @@ export default function CommonCatalogDetailPage() {
       });
 
       return (
-        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+        <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
           <Input
             placeholder="Tìm mục..."
             value={searchText}
@@ -380,7 +380,7 @@ export default function CommonCatalogDetailPage() {
     }
 
     return (
-      <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+      <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
         <Input
           placeholder="Tìm mục..."
           value={searchText}
@@ -433,7 +433,7 @@ export default function CommonCatalogDetailPage() {
 
         <div className="px-6 pb-8">
           <Card>
-            <Space direction="vertical" size="large" style={{ width: "100%" }}>
+            <Space orientation="vertical" size="large" style={{ width: "100%" }}>
               <Descriptions bordered size="small" column={2}>
                 <Descriptions.Item label="Khóa">{catalog?.key || "-"}</Descriptions.Item>
                 <Descriptions.Item label="Trạng thái">
@@ -453,7 +453,7 @@ export default function CommonCatalogDetailPage() {
                     {!selectedItem ? (
                       <Empty description="Chọn một mục bên trái để xem chi tiết." />
                     ) : (
-                      <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+                      <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
                         <Descriptions bordered size="small" column={2}>
                           <Descriptions.Item label="Mã">{selectedItem.code}</Descriptions.Item>
                           <Descriptions.Item label="Tên">{selectedItem.name}</Descriptions.Item>
@@ -515,10 +515,10 @@ export default function CommonCatalogDetailPage() {
       <Drawer
         title={drawerMode === "create" ? "Thêm mục" : "Chỉnh sửa mục"}
         placement="right"
-        width={420}
+        size={420}
         open={drawerOpen}
         onClose={closeDrawer}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Button onClick={closeDrawer}>Hủy</Button>

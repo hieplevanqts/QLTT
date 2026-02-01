@@ -121,6 +121,11 @@
   height: 100%;
 }
 
+.superAdminCard {
+  background: #fff9e6;
+  border: 1px solid #ffe08a;
+}
+
 /* Info List */
 .infoList {
   display: flex;

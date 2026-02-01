@@ -94,7 +94,7 @@ export default function RoleUsersModal({ open, role, onClose, onAssignUsers }: R
         </Button>,
       ]}
     >
-      <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+      <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
         <Space wrap style={{ width: "100%", justifyContent: "space-between" }}>
           <Space wrap>
             <Input.Search

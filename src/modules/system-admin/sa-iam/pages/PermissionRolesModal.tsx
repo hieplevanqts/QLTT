@@ -88,7 +88,7 @@ export default function PermissionRolesModal({
         </Button>,
       ]}
     >
-      <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+      <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
         <Space wrap style={{ width: "100%", justifyContent: "space-between" }}>
           <Input.Search
             placeholder="Tìm theo mã, tên vai trò..."

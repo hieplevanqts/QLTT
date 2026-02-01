@@ -259,7 +259,7 @@ export default function RolesPage() {
 
         <div className="px-6 pb-8">
           <Card>
-            <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+            <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
               <Space wrap style={{ width: "100%", justifyContent: "space-between" }}>
                 <Space wrap>
                   <Input
@@ -526,12 +526,12 @@ export default function RolesPage() {
       <Drawer
         title="Chi tiết vai trò"
         placement="right"
-        width={420}
+        size={420}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
       >
         {viewRole ? (
-          <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+          <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
             <Typography.Title level={5} style={{ margin: 0 }}>
               {viewRole.name}
             </Typography.Title>

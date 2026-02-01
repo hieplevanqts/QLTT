@@ -48,6 +48,7 @@ import { useRuntimeMenu } from '@/shared/menu/useRuntimeMenu';
 import { getMenuFallbackEnabled } from '@/shared/menu/menuCache';
 import { type MenuNode } from '../utils/menuRegistry';
 import mappaLogo from '../assets/79505e63e97894ec2d06837c57cf53a19680f611.png';
+import { useIamIdentity } from '@/shared/iam/useIamIdentity';
 
 // 🔥 NEW: Permission code mapping (from Insert.sql lines 39-46)
 const PERMISSION_MAP: { [path: string]: string } = {
@@ -270,6 +271,7 @@ export default function VerticalSidebar({
   );
   const { setLayoutMode } = useLayout();
   const { tree, loading } = useRuntimeMenu();
+  const { identity, loading: identityLoading } = useIamIdentity();
   const fallbackEnabled = getMenuFallbackEnabled();
   const isPathActive = React.useCallback(
     (path?: string | null) => {
@@ -293,6 +295,7 @@ export default function VerticalSidebar({
     if (runtimeModules.length > 0) return runtimeModules;
     return fallbackEnabled ? mappaModules : [];
   }, [runtimeModules, fallbackEnabled]);
+  const showNoRoleBanner = !identityLoading && !!identity && identity.roleCodes.length === 0;
   const showEmptyState = !loading && visibleModules.length === 0 && !fallbackEnabled;
 
   // Mock permissions - In real app, this would come from user context/auth
@@ -405,6 +408,11 @@ export default function VerticalSidebar({
 
       {/* Navigation Menu */}
       <nav className="flex-1 p-2 overflow-y-auto">
+        {showNoRoleBanner && (
+          <div className="px-4 py-3 text-sm font-medium text-amber-700">
+            Tài khoản chưa được gán vai trò
+          </div>
+        )}
         {showEmptyState ? (
           <div className="px-4 py-3 text-sm text-muted-foreground">
             Tài khoản chưa được gán vai trò hoặc chưa có quyền hiển thị menu.

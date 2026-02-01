@@ -439,7 +439,7 @@ export default function RolePermissionsPage() {
           const moduleIds = permissionIndex.perModule[record.moduleKey] || [];
           const selectedCount = moduleIds.filter((id) => assignedIds.has(id)).length;
           return (
-            <Space direction="vertical" size={2}>
+            <Space orientation="vertical" size={2}>
               <Typography.Text strong>{record.moduleLabel}</Typography.Text>
               <Typography.Text type="secondary">{selectedCount}/{moduleIds.length} quyền</Typography.Text>
               <Space size={4}>
@@ -481,7 +481,7 @@ export default function RolePermissionsPage() {
     },
     ...ACTIONS.map((action) => ({
       title: (
-        <Space direction="vertical" size={2} align="center">
+        <Space orientation="vertical" size={2} align="center">
           <span>{action.label}</span>
           <Checkbox
             checked={(permissionIndex.perAction[action.key] || []).length > 0 && (permissionIndex.perAction[action.key] || []).every((id) => assignedIds.has(id))}
@@ -546,7 +546,7 @@ export default function RolePermissionsPage() {
           <div className="grid grid-cols-12 gap-6">
             <div className="col-span-12 xl:col-span-3">
               <Card title="Vai trò">
-                <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+                <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
                   <Input placeholder="Tìm theo mã, tên vai trò..." value={rolesSearch} onChange={(event) => setRolesSearch(event.target.value)} allowClear />
                   <Select value={rolesStatusFilter} onChange={(value) => setRolesStatusFilter(value)} options={[{ value: "all", label: "Tất cả trạng thái" }, { value: "active", label: "Hoạt động" }, { value: "inactive", label: "Ngừng" }]} />
                   <Table
@@ -575,10 +575,10 @@ export default function RolePermissionsPage() {
 
             <div className="col-span-12 xl:col-span-9">
               <Card title="Ma trận quyền" extra={selectedRole ? <Typography.Text type="secondary"> Vai trò: <strong>{selectedRole.name}</strong> </Typography.Text> : null}>
-                {!selectedRole ? <Alert type="info" message="Chọn một vai trò bên trái để bắt đầu phân quyền." /> : (
-                  <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-                    {isRoleInactive && <Alert type="warning" message="Vai trò đang ngừng. Không thể chỉnh sửa phân quyền." />}
-                    {isDirty && <Alert type="warning" message="Có thay đổi chưa lưu." showIcon />}
+                {!selectedRole ? <Alert type="info" title="Chọn một vai trò bên trái để bắt đầu phân quyền." /> : (
+                  <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
+                    {isRoleInactive && <Alert type="warning" title="Vai trò đang ngừng. Không thể chỉnh sửa phân quyền." />}
+                    {isDirty && <Alert type="warning" title="Có thay đổi chưa lưu." showIcon />}
                     <Space wrap style={{ width: "100%", justifyContent: "space-between" }}>
                       <Space wrap>
                         <Input placeholder="Tìm theo mã, tên quyền..." value={searchText} onChange={(event) => setSearchText(event.target.value)} allowClear style={{ width: 260 }} />

@@ -93,10 +93,11 @@ export default function Profile() {
         email: user.email || '',
         fullName: user.full_name || user.name || user.email || '',
         roleDisplay:
-          user.roleDisplay ||
           (Array.isArray(user.role_names) ? user.role_names.join(', ') : user.role_names) ||
+          user.roleDisplay ||
           user.primary_role_name ||
           user.position ||
+          (user.is_super_admin ? 'Quản trị hệ thống' : '') ||
           'Người dùng',
         department:
           user.department_name ||
@@ -104,11 +105,12 @@ export default function Profile() {
           user.department ||
           'Chưa cập nhật',
         departmentLevel: user.department_level ?? user.level ?? null,
-        departmentCode: (user.department_code ?? user.departmentCode) || null,
+        departmentCode: (user.department_code ?? user.departmentCode ?? user.department_path) || null,
         managementLevel: user.cap_quan_ly || null,
         phone: user.phone || '',
         provinceName: user.provinceName || '',
         teamName: user.teamName || '',
+        isSuperAdmin: Boolean(user.is_super_admin),
       }
     : {
         username: 'demo.user',
@@ -122,6 +124,7 @@ export default function Profile() {
         phone: '',
         provinceName: 'TP. Hồ Chí Minh',
         teamName: 'Đội 1',
+        isSuperAdmin: false,
       };
 
   // Get initials for avatar
@@ -203,7 +206,7 @@ export default function Profile() {
         {/* Information Grid */}
         <div className={styles.infoGrid}>
           {/* Personal Information Card */}
-          <Card className={styles.infoCard}>
+          <Card className={`${styles.infoCard} ${userInfo.isSuperAdmin ? styles.superAdminCard : ''}`}>
             <CardHeader 
               title="Thông tin cá nhân"
               description="Thông tin cơ bản về tài khoản của bạn"
@@ -247,8 +250,10 @@ export default function Profile() {
                   icon={<Building2 size={18} />} 
                   label="Cấp quản lý" 
                   value={
-                    userInfo.managementLevel ||
-                    getLevelLabel(userInfo.departmentLevel, userInfo.department, userInfo.departmentCode)
+                    (userInfo.managementLevel &&
+                    !/^(member|staff|user)$/i.test(String(userInfo.managementLevel))
+                      ? String(userInfo.managementLevel)
+                      : getLevelLabel(userInfo.departmentLevel, userInfo.department, userInfo.departmentCode))
                   } 
                 />
                 <InfoRow 

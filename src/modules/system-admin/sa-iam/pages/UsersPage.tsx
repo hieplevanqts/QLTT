@@ -788,7 +788,7 @@ function UserRolesModal({ open, user, roles, onClose, onSave }: UserRolesModalPr
       cancelText="Hủy"
       width={680}
     >
-      <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+      <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
         <div>
           <Typography.Text strong>Vai trò</Typography.Text>
           <Checkbox.Group
@@ -804,7 +804,7 @@ function UserRolesModal({ open, user, roles, onClose, onSave }: UserRolesModalPr
             value={primaryRoleId}
             onChange={(event) => setPrimaryRoleId(event.target.value)}
           >
-            <Space direction="vertical">
+            <Space orientation="vertical">
               {selectedRoles.map((roleId) => {
                 const role = roles.find((item) => item.id === roleId);
                 return (

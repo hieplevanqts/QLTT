@@ -258,7 +258,7 @@ export default function RolePermissionsMatrixPage() {
       },
       {
         title: (
-          <Space direction="vertical" size={4} align="center">
+          <Space orientation="vertical" size={4} align="center">
             <span style={{ fontSize: '11px', fontWeight: 800 }}>TẤT CẢ</span>
             <Checkbox className="custom-cb-size" checked={isAllChecked} onChange={(e) => handleSelectAllHeader(e.target.checked)} />
           </Space>
@@ -291,7 +291,7 @@ export default function RolePermissionsMatrixPage() {
 
       return {
         title: (
-          <Space direction="vertical" size={4} align="center">
+          <Space orientation="vertical" size={4} align="center">
             <span style={{ fontSize: '12px', fontWeight: 800 }}>{(act?.name || "N/A").toUpperCase()}</span>
             <Checkbox 
               className="custom-cb-size" 

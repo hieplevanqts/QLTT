@@ -1037,7 +1037,7 @@ export default function OrgUnitsPage() {
                               <Alert
                                 type="warning"
                                 showIcon
-                                message="Bạn chỉ được thao tác trong phạm vi đơn vị của mình."
+                                title="Bạn chỉ được thao tác trong phạm vi đơn vị của mình."
                               />
                             )}
 
@@ -1045,7 +1045,7 @@ export default function OrgUnitsPage() {
                               <Alert
                                 type="info"
                                 showIcon
-                                message="Địa bàn chỉ áp dụng cho Chi cục (cấp 2) và Đội (cấp 3)."
+                                title="Địa bàn chỉ áp dụng cho Chi cục (cấp 2) và Đội (cấp 3)."
                               />
                             )}
 
@@ -1101,7 +1101,7 @@ export default function OrgUnitsPage() {
                                   <Alert
                                     type="warning"
                                     showIcon
-                                    message="Chi cục chưa thiết lập tỉnh/TP. Vui lòng cấu hình ở chi cục cha trước."
+                                    title="Chi cục chưa thiết lập tỉnh/TP. Vui lòng cấu hình ở chi cục cha trước."
                                   />
                                 ) : (
                                   <>
@@ -1207,7 +1207,7 @@ export default function OrgUnitsPage() {
         size={420}
         open={drawerOpen}
         onClose={closeDrawer}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Button onClick={closeDrawer}>Hủy</Button>
