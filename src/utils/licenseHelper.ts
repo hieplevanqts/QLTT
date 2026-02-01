@@ -80,6 +80,20 @@ export const buildLicensePayload = (
         p_notes: dataFields.notes || '', // Common field
     };
 
+    // Persist full form data into notes as JSON for fields not stored in core columns
+    const extraFields: Record<string, any> = { ...dataFields };
+    const hasExtra = Object.keys(extraFields).some((key) => {
+        if (key === 'notes') return false;
+        const val = extraFields[key];
+        return val !== undefined && val !== null && val !== '';
+    });
+    if (hasExtra) {
+        payload.p_notes = JSON.stringify({
+            notes: typeof dataFields.notes === 'string' ? dataFields.notes : '',
+            fields: extraFields,
+        });
+    }
+
     // Map fields based on configuration
     allowedFields.forEach((field: string) => {
         // 1. Direct p_ mapping
