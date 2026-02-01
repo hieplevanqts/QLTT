@@ -749,6 +749,7 @@ export default function MapPage() {
   const {
     handleFilterChange,
     handleBusinessTypeFilterChange,
+    handleBusinessTypeFiltersChange,
     handleBusinessTypeToggleAll,
     handleDepartmentFilterChange,
     handleDepartmentToggleAll,
@@ -1138,6 +1139,7 @@ export default function MapPage() {
                 filteredCount={filteredRestaurants.length}
                 onFilterChange={handleFilterChange}  // 🔥 Updates pending filters
                 onBusinessTypeFilterChange={handleBusinessTypeFilterChange}  // 🔥 Updates pending filters
+                onBusinessTypeFiltersChange={handleBusinessTypeFiltersChange}
                 onBusinessTypeToggleAll={handleBusinessTypeToggleAll}
                 onDepartmentFilterChange={handleDepartmentFilterChange}  // 🔥 NEW: Department filter change
                 onDepartmentToggleAll={handleDepartmentToggleAll}  // 🔥 NEW: Toggle all departments
@@ -1215,6 +1217,7 @@ export default function MapPage() {
         onPointClick={handlePointClick}
         onFilterChange={handleFilterChange}
         onBusinessTypeFilterChange={handleBusinessTypeFilterChange}
+        onBusinessTypeFiltersChange={handleBusinessTypeFiltersChange}
         onBusinessTypeToggleAll={handleBusinessTypeToggleAll}
         onProvinceChange={(province) => {
           dispatch(setSelectedProvince(province));

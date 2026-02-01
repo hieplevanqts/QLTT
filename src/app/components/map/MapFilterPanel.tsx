@@ -28,6 +28,7 @@ interface MapFilterPanelProps {
   selectedWard?: string;
   onFilterChange: (key: keyof CategoryFilter) => void;
   onBusinessTypeFilterChange: (type: string) => void;
+  onBusinessTypeFiltersChange?: (selectedIds: string[]) => void;
   onBusinessTypeToggleAll: (checked: boolean) => void;
   onDepartmentFilterChange: (departmentId: string) => void;
   onDepartmentToggleAll: (checked: boolean) => void;
@@ -56,6 +57,7 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
     selectedWard,
     onFilterChange, 
     onBusinessTypeFilterChange,
+    onBusinessTypeFiltersChange,
     onBusinessTypeToggleAll,
     onDepartmentFilterChange,
     onDepartmentToggleAll,
@@ -135,6 +137,7 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
             businessTypeFilters={businessTypeFilters}
             categories={categories}
             onBusinessTypeFilterChange={onBusinessTypeFilterChange}
+            onBusinessTypeFiltersChange={onBusinessTypeFiltersChange}
           />
         </div>
 
