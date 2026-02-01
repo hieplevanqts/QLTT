@@ -71,8 +71,11 @@ export const usePermissionsList = () => {
       const moduleOption =
         modules.find((item) => item.id === filters.moduleId) ??
         modules.find((item) => item.code === filters.moduleId);
-      const moduleId = filters.moduleId === "all" ? undefined : moduleOption?.id ?? filters.moduleId;
-      const moduleCode = filters.moduleId === "all" ? undefined : moduleOption?.code;
+      const moduleId = filters.moduleId === "all" ? undefined : moduleOption?.id;
+      const moduleCode =
+        filters.moduleId === "all"
+          ? undefined
+          : moduleOption?.code ?? (moduleId ? undefined : filters.moduleId);
 
       const result = await permissionsService.listPermissions({
         q: hasValue(debouncedSearch) ? debouncedSearch : undefined,

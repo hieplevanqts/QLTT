@@ -44,7 +44,11 @@ export type PermissionPayload = {
   name: string;
   description?: string | null;
   module_id: string;
+  module?: string | null;
   permission_type: string;
+  category?: "PAGE" | "FEATURE" | string | null;
+  resource?: string | null;
+  action?: string | null;
   status: PermissionStatusValue;
   sort_order?: number | null;
   meta?: Record<string, unknown> | null;
@@ -114,6 +118,8 @@ export const permissionsService = {
     const pageSize = params.pageSize ?? 10;
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
+    const isUuid = (value?: string | null) =>
+      Boolean(value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value));
 
     const buildQuery = (source: "v_permissions_stats" | "permissions") => {
       let query = supabase
@@ -149,12 +155,17 @@ export const permissionsService = {
       }
 
       const moduleId = params.moduleId?.trim();
-      const moduleCode = params.moduleCode?.trim();
-      if (moduleId && moduleCode) {
+      let moduleCode = params.moduleCode?.trim();
+      const moduleIdIsUuid = isUuid(moduleId);
+      if (moduleId && !moduleIdIsUuid && !moduleCode) {
+        moduleCode = moduleId;
+      }
+
+      if (moduleIdIsUuid && moduleCode) {
         query = query.or(
           `module_id.eq.${moduleId},module.eq.${moduleCode},permission_type.eq.${moduleCode}`,
         );
-      } else if (moduleId) {
+      } else if (moduleIdIsUuid && moduleId) {
         query = query.eq("module_id", moduleId);
       } else if (moduleCode) {
         query = query.or(`module.eq.${moduleCode},permission_type.eq.${moduleCode}`);

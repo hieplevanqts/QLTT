@@ -1,9 +1,11 @@
 import React from "react";
-import { Button, Input, Modal, Space, Tag, Transfer, Typography, message } from "antd";
+import { Button, Input, Space, Tag, Transfer, Typography, message } from "antd";
 import type { TransferDirection, TransferItem } from "antd/es/transfer";
 
 import type { RoleRecord } from "../services/roles.service";
 import { roleUsersService, type RoleUserLite } from "../services/roleUsers.service";
+import { CenteredModalShell } from "@/components/overlays/CenteredModalShell";
+import { EnterpriseModalHeader } from "@/components/overlays/EnterpriseModalHeader";
 
 type RoleUserAssignmentModalProps = {
   open: boolean;
@@ -22,6 +24,8 @@ const statusTag = (status: number) => {
   if (status === 2) return <Tag color="red">Khóa</Tag>;
   return <Tag>Không rõ</Tag>;
 };
+
+const roleStatusLabel = (status?: number | null) => (status === 1 ? "Hoạt động" : "Ngừng");
 
 const toTransferItem = (user: RoleUserLite): TransferUserItem => {
   const username = user.username || "(không có username)";
@@ -116,21 +120,34 @@ export default function RoleUserAssignmentModal({ open, role, onClose, onSaved }
   };
 
   return (
-    <Modal
+    <CenteredModalShell
       open={open}
-      onCancel={onClose}
-      title={role ? `Gán người dùng cho vai trò: ${role.name}` : "Gán người dùng"}
+      onClose={onClose}
       width={980}
-      centered
-      destroyOnHidden
-      footer={[
-        <Button key="cancel" onClick={onClose} disabled={saving}>
-          Hủy
-        </Button>,
-        <Button key="save" type="primary" onClick={handleSave} loading={saving} disabled={!hasChanges || loading}>
-          Lưu thay đổi
-        </Button>,
-      ]}
+      header={
+        <EnterpriseModalHeader
+          title={role ? `Gán người dùng cho vai trò: ${role.name}` : "Gán người dùng"}
+          badgeStatus={role?.status === 1 ? "success" : "default"}
+          statusLabel={role ? roleStatusLabel(role.status) : undefined}
+          code={role?.code}
+          moduleTag="iam"
+        />
+      }
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button onClick={onClose} disabled={saving}>
+            Đóng
+          </Button>
+          <Button
+            type="primary"
+            onClick={handleSave}
+            loading={saving}
+            disabled={!hasChanges || loading}
+          >
+            Lưu thay đổi
+          </Button>
+        </div>
+      }
     >
       <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
         <Space style={{ width: "100%", justifyContent: "space-between" }} wrap>
@@ -171,6 +188,6 @@ export default function RoleUserAssignmentModal({ open, role, onClose, onSaved }
           disabled={loading || saving}
         />
       </Space>
-    </Modal>
+    </CenteredModalShell>
   );
 }

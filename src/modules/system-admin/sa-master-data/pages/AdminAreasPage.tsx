@@ -9,7 +9,6 @@ import {
   Form,
   Input,
   InputNumber,
-  Modal,
   Row,
   Select,
   Space,
@@ -26,6 +25,8 @@ import { SaveOutlined } from "@ant-design/icons";
 import PageHeader from "@/layouts/PageHeader";
 import { PermissionGate } from "../../_shared";
 import { useAuth } from "../../../../contexts/AuthContext";
+import { CenteredModalShell } from "@/components/overlays/CenteredModalShell";
+import { EnterpriseModalHeader } from "@/components/overlays/EnterpriseModalHeader";
 import {
   adminUnitsService,
   type AdminUnitCoordinates,
@@ -964,14 +965,21 @@ export default function AdminAreasPage() {
         </div>
       </div>
 
-      <Modal
-        title="Cập nhật tọa độ"
+      <CenteredModalShell
+        header={<EnterpriseModalHeader title="Cập nhật tọa độ" moduleTag="master-data" />}
         open={coordModalOpen}
-        onCancel={() => setCoordModalOpen(false)}
-        onOk={handleSaveCoordinates}
-        okText="Lưu"
-        cancelText="Hủy"
-        confirmLoading={coordSaving}
+        onClose={() => setCoordModalOpen(false)}
+        width={520}
+        footer={
+          <Space>
+            <Button onClick={() => setCoordModalOpen(false)} disabled={coordSaving}>
+              Đóng
+            </Button>
+            <Button type="primary" onClick={handleSaveCoordinates} loading={coordSaving}>
+              Lưu
+            </Button>
+          </Space>
+        }
       >
         <Form layout="vertical" form={coordForm}>
           <Form.Item
@@ -989,7 +997,7 @@ export default function AdminAreasPage() {
             <InputNumber style={{ width: "100%" }} />
           </Form.Item>
         </Form>
-      </Modal>
+      </CenteredModalShell>
     </PermissionGate>
   );
 }

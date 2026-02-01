@@ -1,13 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Download, Upload, Eye, Edit, FileText, RefreshCw, History, AlertCircle, CheckCircle2 } from 'lucide-react';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '../ui/sheet';
-import { Button } from '../ui/button';
+import { CenteredModalShell } from '../overlays/CenteredModalShell';
+import { EnterpriseModalHeader } from '../overlays/EnterpriseModalHeader';
 import styles from './PlanDocumentDrawer.module.css';
 import { useDocumentChecklist } from '../../../hooks/useDocumentChecklist';
 import { getStatusLabel, getStatusColor } from '../../../types/ins-documents';
@@ -186,95 +180,104 @@ export function PlanDocumentDrawer({
   const visibleDocuments = documents.filter(doc => doc.visible);
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[600px] sm:max-w-[600px] p-0 flex flex-col">
-        <SheetHeader className={styles.header}>
-          <SheetTitle className={styles.headerTitle}>Hồ sơ biểu mẫu (INS)</SheetTitle>
-          <SheetDescription>Quản lý biểu mẫu cho kế hoạch</SheetDescription>
+    <CenteredModalShell
+      header={
+        <EnterpriseModalHeader
+          title="Hồ sơ biểu mẫu (INS)"
+          code={plan.id}
+          moduleTag="plans"
+        />
+      }
+      open={open}
+      onClose={() => onOpenChange(false)}
+      width={720}
+    >
+      <div className={styles.header}>
+        <div className="text-sm text-muted-foreground">Quản lý biểu mẫu cho kế hoạch</div>
 
-          {/* Plan Info */}
-          <div className={styles.planInfo}>
-            <div className={styles.planInfoRow}>
-              <span className={styles.planInfoLabel}>Kế hoạch:</span>
-              <span className={styles.planInfoValue}>{plan.name}</span>
-            </div>
-            <div className={styles.planInfoRow}>
-              <span className={styles.planInfoLabel}>Mã:</span>
-              <span className={styles.planInfoValue}>{plan.id}</span>
-            </div>
-            <div className={styles.planInfoRow}>
-              <span className={styles.planInfoLabel}>Trạng thái:</span>
-              <span className={styles.planInfoValue}>{plan.status}</span>
+        {/* Plan Info */}
+        <div className={styles.planInfo}>
+          <div className={styles.planInfoRow}>
+            <span className={styles.planInfoLabel}>Kế hoạch:</span>
+            <span className={styles.planInfoValue}>{plan.name}</span>
+          </div>
+          <div className={styles.planInfoRow}>
+            <span className={styles.planInfoLabel}>Mã:</span>
+            <span className={styles.planInfoValue}>{plan.id}</span>
+          </div>
+          <div className={styles.planInfoRow}>
+            <span className={styles.planInfoLabel}>Trạng thái:</span>
+            <span className={styles.planInfoValue}>{plan.status}</span>
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className={styles.controls}>
+          {/* Plan Type Control */}
+          <div className={styles.controlGroup}>
+            <label className={styles.controlLabel}>Loại kế hoạch</label>
+            <div className={styles.toggleGroup}>
+              <button
+                className={`${styles.toggleButton} ${planTypeControl === 'periodic' ? styles.active : ''}`}
+                onClick={() => setPlanTypeControl('periodic')}
+              >
+                Định kỳ
+              </button>
+              <button
+                className={`${styles.toggleButton} ${planTypeControl === 'thematic' ? styles.active : ''}`}
+                onClick={() => setPlanTypeControl('thematic')}
+              >
+                Chuyên đề
+              </button>
+              <button
+                className={`${styles.toggleButton} ${planTypeControl === 'urgent' ? styles.active : ''}`}
+                onClick={() => setPlanTypeControl('urgent')}
+              >
+                Đột xuất
+              </button>
             </div>
           </div>
 
-          {/* Controls */}
-          <div className={styles.controls}>
-            {/* Plan Type Control */}
-            <div className={styles.controlGroup}>
-              <label className={styles.controlLabel}>Loại kế hoạch</label>
-              <div className={styles.toggleGroup}>
-                <button
-                  className={`${styles.toggleButton} ${planTypeControl === 'periodic' ? styles.active : ''}`}
-                  onClick={() => setPlanTypeControl('periodic')}
-                >
-                  Định kỳ
-                </button>
-                <button
-                  className={`${styles.toggleButton} ${planTypeControl === 'thematic' ? styles.active : ''}`}
-                  onClick={() => setPlanTypeControl('thematic')}
-                >
-                  Chuyên đề
-                </button>
-                <button
-                  className={`${styles.toggleButton} ${planTypeControl === 'urgent' ? styles.active : ''}`}
-                  onClick={() => setPlanTypeControl('urgent')}
-                >
-                  Đột xuất
-                </button>
-              </div>
-            </div>
-
-            {/* Authorization Control */}
-            <div className={styles.controlGroup}>
-              <label className={styles.controlLabel}>Có sử dụng ủy quyền?</label>
-              <div className={styles.toggleGroup}>
-                <button
-                  className={`${styles.toggleButton} ${!hasAuthorization ? styles.active : ''}`}
-                  onClick={() => setHasAuthorization(false)}
-                >
-                  No
-                </button>
-                <button
-                  className={`${styles.toggleButton} ${hasAuthorization ? styles.active : ''}`}
-                  onClick={() => setHasAuthorization(true)}
-                >
-                  Yes
-                </button>
-              </div>
+          {/* Authorization Control */}
+          <div className={styles.controlGroup}>
+            <label className={styles.controlLabel}>Có sử dụng ủy quyền?</label>
+            <div className={styles.toggleGroup}>
+              <button
+                className={`${styles.toggleButton} ${!hasAuthorization ? styles.active : ''}`}
+                onClick={() => setHasAuthorization(false)}
+              >
+                No
+              </button>
+              <button
+                className={`${styles.toggleButton} ${hasAuthorization ? styles.active : ''}`}
+                onClick={() => setHasAuthorization(true)}
+              >
+                Yes
+              </button>
             </div>
           </div>
+        </div>
 
-          {/* Banner */}
-          {missingRequiredDocs.length > 0 ? (
-            <div className={styles.banner}>
-              <AlertCircle size={18} className={styles.bannerIcon} />
-              <div className={styles.bannerText}>
-                <strong>Thiếu biểu mẫu bắt buộc:</strong> {missingRequiredDocs.join(', ')}
-              </div>
+        {/* Banner */}
+        {missingRequiredDocs.length > 0 ? (
+          <div className={styles.banner}>
+            <AlertCircle size={18} className={styles.bannerIcon} />
+            <div className={styles.bannerText}>
+              <strong>Thiếu biểu mẫu bắt buộc:</strong> {missingRequiredDocs.join(', ')}
             </div>
-          ) : validation.allRequiredComplete ? (
-            <div className={`${styles.banner} ${styles.successBanner}`}>
-              <CheckCircle2 size={18} className={styles.bannerIcon} />
-              <div className={styles.bannerText}>
-                <strong>Đã đủ biểu mẫu bắt buộc</strong>
-              </div>
+          </div>
+        ) : validation.allRequiredComplete ? (
+          <div className={`${styles.banner} ${styles.successBanner}`}>
+            <CheckCircle2 size={18} className={styles.bannerIcon} />
+            <div className={styles.bannerText}>
+              <strong>Đã đủ biểu mẫu bắt buộc</strong>
             </div>
-          ) : null}
-        </SheetHeader>
+          </div>
+        ) : null}
+      </div>
 
-        {/* Document List */}
-        <div className={styles.content} style={{ flex: 1, overflowY: 'auto' }}>
+      {/* Document List */}
+      <div className={styles.content}>
           {visibleDocuments.length === 0 ? (
             <div className={styles.emptyState}>
               Không có biểu mẫu nào cần hiển thị với cấu hình hiện tại
@@ -327,16 +330,15 @@ export function PlanDocumentDrawer({
           )}
         </div>
 
-        {/* Footer */}
-        {onViewLogClick && (
-          <div className={styles.footer}>
-            <button className={styles.footerLink} onClick={onViewLogClick}>
-              <History size={14} />
-              Xem lịch sử đồng bộ INS
-            </button>
-          </div>
-        )}
-      </SheetContent>
-    </Sheet>
+      {/* Footer */}
+      {onViewLogClick && (
+        <div className={styles.footer}>
+          <button className={styles.footerLink} onClick={onViewLogClick}>
+            <History size={14} />
+            Xem lịch sử đồng bộ INS
+          </button>
+        </div>
+      )}
+    </CenteredModalShell>
   );
 }

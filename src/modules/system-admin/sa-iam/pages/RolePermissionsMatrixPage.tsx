@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useCallback } from "react";
 import {
   Table, Checkbox, Button, notification, Space, Typography,
-  Spin, Layout, Input, Tag, Divider, Empty, Modal, Form, Popconfirm
+  Spin, Layout, Input, Tag, Divider, Empty, Form, Popconfirm
 } from "antd";
 import {
   SaveOutlined, SearchOutlined, ReloadOutlined,
@@ -13,6 +13,8 @@ import { useParams, useNavigate } from "react-router-dom";
 
 import { rolesService, type RoleRecord } from "../services/roles.service";
 import { rolePermissionsService } from "../services/rolePermissions.service";
+import { CenteredModalShell } from "@/components/overlays/CenteredModalShell";
+import { EnterpriseModalHeader } from "@/components/overlays/EnterpriseModalHeader";
 
 const { Text, Title } = Typography;
 const { Sider, Content } = Layout;
@@ -387,12 +389,16 @@ export default function RolePermissionsMatrixPage() {
         )}
       </Content>
 
-      <Modal
-        title="Quản lý các loại Quyền (Actions)"
+      <CenteredModalShell
         open={isActionModalOpen}
-        onCancel={() => setIsActionModalOpen(false)}
-        footer={null}
-        width={700}
+        onClose={() => setIsActionModalOpen(false)}
+        width={720}
+        header={
+          <EnterpriseModalHeader
+            title="Quản lý các loại Quyền (Actions)"
+            moduleTag="iam"
+          />
+        }
       >
         <Form form={form} layout="vertical" onFinish={handlePermissionActionSubmit} style={{ background: '#f9f9f9', padding: 20, borderRadius: 8, marginBottom: 20 }}>
           <div style={{ display: 'flex', gap: 16 }}>
@@ -431,7 +437,7 @@ export default function RolePermissionsMatrixPage() {
             }
           ]}
         />
-      </Modal>
+      </CenteredModalShell>
 
       <style>{`
         .custom-cb-size { transform: scale(1.4); }

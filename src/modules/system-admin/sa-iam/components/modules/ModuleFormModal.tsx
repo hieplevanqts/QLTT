@@ -1,7 +1,9 @@
 import React from "react";
-import { Form, Input, InputNumber, Modal, Select } from "antd";
+import { Form, Input, InputNumber, Select, Button } from "antd";
 
 import type { ModulePayload, ModuleRecord } from "../../services/modules.service";
+import { CenteredModalShell } from "@/components/overlays/CenteredModalShell";
+import { EnterpriseModalHeader } from "@/components/overlays/EnterpriseModalHeader";
 
 type ModuleFormModalProps = {
   open: boolean;
@@ -74,16 +76,41 @@ export function ModuleFormModal({
   const isEditing = Boolean(initialValues);
 
   return (
-    <Modal
-      title={isEditing ? "Cập nhật phân hệ" : "Thêm phân hệ"}
+    <CenteredModalShell
       open={open}
-      onCancel={onCancel}
-      onOk={handleOk}
-      okText={isEditing ? "Lưu" : "Tạo"}
-      cancelText="Hủy"
-      confirmLoading={loading}
-      destroyOnHidden
-      centered
+      onClose={onCancel}
+      width={760}
+      header={
+        <EnterpriseModalHeader
+          title={isEditing ? "Cập nhật phân hệ" : "Thêm phân hệ"}
+          badgeStatus={
+            isEditing
+              ? initialValues?.status === 1
+                ? "success"
+                : "default"
+              : "default"
+          }
+          statusLabel={
+            isEditing
+              ? initialValues?.status === 1
+                ? "Hoạt động"
+                : "Ngừng"
+              : undefined
+          }
+          code={isEditing ? initialValues?.key ?? undefined : undefined}
+          moduleTag="system-admin"
+        />
+      }
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button onClick={onCancel} disabled={loading}>
+            Đóng
+          </Button>
+          <Button type="primary" onClick={handleOk} loading={loading}>
+            {isEditing ? "Lưu" : "Tạo"}
+          </Button>
+        </div>
+      }
     >
       <Form form={form} layout="vertical" disabled={loading}>
         <Form.Item
@@ -134,7 +161,7 @@ export function ModuleFormModal({
           <Select options={STATUS_OPTIONS} />
         </Form.Item>
       </Form>
-    </Modal>
+    </CenteredModalShell>
   );
 }
 

@@ -3,9 +3,10 @@
  * Side drawer for create/update forms
  */
 
-import React, { useEffect } from 'react';
-import { X } from 'lucide-react';
+import React from 'react';
 import styles from './FormDrawer.module.css';
+import { CenteredModalShell } from '@/components/overlays/CenteredModalShell';
+import { EnterpriseModalHeader } from '@/components/overlays/EnterpriseModalHeader';
 
 interface FormDrawerProps {
   open: boolean;
@@ -32,26 +33,6 @@ export function FormDrawer({
   loading = false,
   footerActions
 }: FormDrawerProps) {
-  useEffect(() => {
-    if (open) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [open]);
-
-  if (!open) return null;
-
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && !loading) {
-      onClose();
-    }
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (onSubmit && !loading) {
@@ -59,38 +40,45 @@ export function FormDrawer({
     }
   };
 
-  return (
+  const footerContent = footerActions || (
     <>
-      <div className={styles.overlay} onClick={handleOverlayClick} />
-      <div className={styles.drawer}>
-        <div className={styles.header}>
-          <div className={styles.headerContent}>
-            <h2 className={styles.title}>{title}</h2>
-            {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
-          </div>
-          <button className={styles.closeButton} onClick={onClose} disabled={loading}>
-            <X size={20} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          <div className={styles.body}>{children}</div>
-
-          <div className={styles.footer}>
-            {footerActions || (
-              <>
-                <button type="button" className={styles.buttonCancel} onClick={onClose} disabled={loading}>
-                  {cancelLabel}
-                </button>
-                <button type="submit" className={styles.buttonPrimary} disabled={loading}>
-                  {loading ? 'Đang xử lý...' : submitLabel}
-                </button>
-              </>
-            )}
-          </div>
-        </form>
-      </div>
+      <button type="button" className={styles.buttonCancel} onClick={onClose} disabled={loading}>
+        {cancelLabel}
+      </button>
+      <button
+        type="button"
+        className={styles.buttonPrimary}
+        onClick={() => {
+          if (onSubmit && !loading) onSubmit();
+        }}
+        disabled={loading}
+      >
+        {loading ? 'Đang xử lý...' : submitLabel}
+      </button>
     </>
+  );
+
+  return (
+    <CenteredModalShell
+      header={
+        <EnterpriseModalHeader
+          title={
+            <div className={styles.headerContent}>
+              <div className={styles.title}>{title}</div>
+              {subtitle && <div className={styles.subtitle}>{subtitle}</div>}
+            </div>
+          }
+        />
+      }
+      open={open}
+      onClose={onClose}
+      width={900}
+      footer={<div className={styles.footer}>{footerContent}</div>}
+    >
+      <form onSubmit={handleSubmit}>
+        <div className={styles.body}>{children}</div>
+      </form>
+    </CenteredModalShell>
   );
 }
 
