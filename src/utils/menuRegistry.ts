@@ -52,6 +52,7 @@ const hasRole = (node: MenuItem, roleCode?: string) => {
 };
 
 export const filterMenuTree = (nodes: MenuNode[], permissions: string[], roleCode?: string): MenuNode[] => {
+  const isSuperAdmin = roleCode?.toLowerCase() === 'super-admin';
   // 🔥 Helper: Check if node is "Quản trị" menu
   const isAdminMenu = (node: MenuNode): boolean => {
     return node.path === '/admin' || 
@@ -67,8 +68,8 @@ export const filterMenuTree = (nodes: MenuNode[], permissions: string[], roleCod
     const isAdminChild = isChildOfAdmin || isAdminMenu(node);
     const skipPermissionCheck = isChildOfAdmin; // Children of admin menu don't need permission check
     
-    const permissionCheck = skipPermissionCheck ? true : hasPermission(node, permissions);
-    const roleCheck = hasRole(node, roleCode);
+    const permissionCheck = isSuperAdmin ? true : (skipPermissionCheck ? true : hasPermission(node, permissions));
+    const roleCheck = isSuperAdmin ? true : hasRole(node, roleCode);
     const enabledCheck = node.isEnabled !== false;
     const allowed = enabledCheck && permissionCheck && roleCheck;
     

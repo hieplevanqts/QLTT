@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useLayout } from '../contexts/LayoutContext';
 import { useAppSelector, useAppDispatch } from '@/hooks/useAppStore';
+import { usePermissions } from '@/modules/system-admin/_shared/usePermissions';
 import { RootState } from '../store/rootReducer';
 import { logout } from '../store/slices/authSlice';
 import { logout as logoutApi } from '../utils/api/authApi';
@@ -31,8 +32,8 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
   // Get user from Redux instead of AuthContext
   const { user } = useAppSelector((state: RootState) => state.auth);
   
-  // Check if user has TV_VIEW permission
-  const hasTvViewPermission = user?.permissions?.includes('TV_VIEW') || false;
+  const { hasPermission } = usePermissions();
+  const hasTvViewPermission = hasPermission('TV_VIEW');
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('light');
   const [language, setLanguage] = useState<'vi' | 'en'>('vi');
   const [showNotifications, setShowNotifications] = useState(false);
@@ -167,6 +168,19 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {/* TV Mode - Only show if user has TV_VIEW permission */}
+          {hasTvViewPermission && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="cursor-pointer hover:bg-transparent"
+              onClick={() => navigate('/tv')}
+              title="Chế độ TV"
+            >
+              <Monitor className="h-5 w-5" style={{ color: '#005cb6' }} />
+            </Button>
+          )}
+
           {/* Feedback Button */}
           <Button
             variant="ghost"
@@ -197,19 +211,6 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
               <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
             )}
           </Button>
-
-          {/* TV Mode - Only show if user has TV_VIEW permission */}
-          {hasTvViewPermission && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="cursor-pointer hover:bg-transparent"
-              onClick={() => navigate('/tv')}
-              title="Chế độ TV"
-            >
-              <Monitor className="h-5 w-5" style={{ color: '#005cb6' }} />
-            </Button>
-          )}
 
           {/* User Profile */}
           <DropdownMenu>

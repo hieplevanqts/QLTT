@@ -4,10 +4,12 @@
  */
 
 import { useAppSelector } from '@/hooks/useAppStore';
+import { useIamIdentity } from '@/shared/iam/useIamIdentity';
 import { RootState } from '../../../store/rootReducer';
 
 export function usePermissions() {
   const { user } = useAppSelector((state: RootState) => state.auth);
+  const { isSuperAdmin: iamSuperAdmin, roleCodes: iamRoleCodes, primaryRoleCode } = useIamIdentity();
 
   // Temporary hard-override permissions for a specific user email
   // NOTE: Prefer storing permissions in DB (roles -> role_permissions -> permissions) long-term.
@@ -23,6 +25,26 @@ export function usePermissions() {
     'ADMIN_VIEW',
     'TV_VIEW',
   ] as const;
+
+  const roleCodesFromUser = [
+    ...(user?.roleCodes ?? []),
+    user?.roleCode,
+    (user as any)?.role?.code,
+  ]
+    .filter(Boolean)
+    .map((code) => String(code).toLowerCase());
+
+  const roleCodesFromIam = [
+    ...(iamRoleCodes ?? []),
+    primaryRoleCode,
+  ]
+    .filter(Boolean)
+    .map((code) => String(code).toLowerCase());
+
+  const isSuperAdmin =
+    iamSuperAdmin ||
+    roleCodesFromUser.includes('super-admin') ||
+    roleCodesFromIam.includes('super-admin');
 
   // Permissions must come from DB (roles -> role_permissions -> permissions).
   const baseUserPermissions: string[] = (user?.permissions || []).filter(Boolean);
@@ -60,6 +82,7 @@ export function usePermissions() {
    * Check a specific permission
    */
   const hasPermission = (permission: string): boolean => {
+    if (isSuperAdmin) return true;
     if (hasAdminAccess && permission.startsWith('sa.')) {
       return true;
     }
@@ -70,6 +93,7 @@ export function usePermissions() {
    * Check at least one of the permissions
    */
   const hasAnyPermission = (permissions: string[]): boolean => {
+    if (isSuperAdmin) return true;
     if (hasAdminAccess && permissions.some((p) => p.startsWith('sa.'))) {
       return true;
     }
@@ -80,6 +104,7 @@ export function usePermissions() {
    * Check all permissions
    */
   const hasAllPermissions = (permissions: string[]): boolean => {
+    if (isSuperAdmin) return true;
     if (hasAdminAccess && permissions.every((p) => p.startsWith('sa.'))) {
       return true;
     }
@@ -91,6 +116,7 @@ export function usePermissions() {
    * Example: hasPermissionPattern('sa.masterdata.*') matches all masterdata permissions
    */
   const hasPermissionPattern = (pattern: string): boolean => {
+    if (isSuperAdmin) return true;
     const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
     return userPermissions.some((p) => regex.test(p));
   };
