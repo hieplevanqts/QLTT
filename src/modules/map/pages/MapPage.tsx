@@ -924,7 +924,7 @@ export default function MapPage() {
         actions={
           <div className="flex items-center gap-2">
             {/* Date Range Picker */}
-            <DateRangePicker
+            {/* <DateRangePicker
               startDate={customStartDate}
               endDate={customEndDate}
               onStartDateChange={setCustomStartDate}
@@ -935,7 +935,7 @@ export default function MapPage() {
                 // 🔥 REMOVED: Auto-save - filters are in Redux store
               }}
               onApply={() => {}}  // 🔥 REMOVED: Auto-save - filters are in Redux store
-            />
+            /> */}
             
             {/* Map Layer Select */}
             <div className={styles.mapLayerSelectWrapper}>
