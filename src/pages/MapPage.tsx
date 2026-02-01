@@ -833,12 +833,20 @@ export default function MapPage() {
     // return false;
     
     // Check if filters differ
-    const filtersDiffer = Object.keys(filters).some(key => {
+    const filterKeys = new Set([
+      ...Object.keys(filters),
+      ...Object.keys(pendingFilters),
+    ]);
+    const filtersDiffer = Array.from(filterKeys).some((key) => {
       return filters[key as keyof CategoryFilter] !== pendingFilters[key as keyof CategoryFilter];
     });
     
     // Check if business type filters differ
-    const businessTypeFiltersDiffer = Object.keys(businessTypeFilters).some(key => {
+    const businessTypeKeys = new Set([
+      ...Object.keys(businessTypeFilters),
+      ...Object.keys(pendingBusinessTypeFilters),
+    ]);
+    const businessTypeFiltersDiffer = Array.from(businessTypeKeys).some((key) => {
       return businessTypeFilters[key] !== pendingBusinessTypeFilters[key];
     });
     
