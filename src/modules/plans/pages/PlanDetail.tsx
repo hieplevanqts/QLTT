@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -23,7 +23,11 @@ import {
   ClipboardCheck,
   BarChart3,
   Search,
-  RefreshCw
+
+  RotateCcw,
+  Table,
+  Play,
+  Paperclip
 } from 'lucide-react';
 import styles from './PlanDetail.module.css';
 import { StatusBadge } from '@/components/common/StatusBadge';
@@ -37,22 +41,29 @@ import {
   ApproveModal,
   RejectModal,
   RecallModal,
-  DeployModal,
+  DeployModal as PlanDeployModal,
   PauseModal,
   DeletePlanModal,
   CompletePlanModal,
   ResumeModal,
   CancelPlanModal
 } from '@/components/plans/PlanActionModals';
-import { CancelTaskModal } from '@/components/tasks/TaskActionModals';
+import { CancelTaskModal, DeployTaskModal, CompleteTaskModal } from '@/components/tasks/TaskActionModals';
+import ReopenTaskModal from '@/components/tasks/ReopenTaskModal';
+import AttachEvidenceModal from '@/components/tasks/AttachEvidenceModal';
+import InspectionResultModal from '@/components/sessions/InspectionResultModal';
+import { Form06Modal } from '@/components/tasks/Form06Modal';
+import { Form10Modal } from '@/components/tasks/Form10Modal';
+import { Form11Modal } from '@/components/tasks/Form11Modal';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import DataTable, { Column } from '@/components/ui-kit/DataTable';
 import ActionColumn, { Action } from '@/components/patterns/ActionColumn';
 import EmptyState from '@/components/ui-kit/EmptyState';
 import { updatePlanApi, deletePlanApi } from '@/utils/api/plansApi';
+import { fetchInspectionSessionsApi, updateInspectionSessionApi } from '@/utils/api/inspectionSessionsApi';
 
-import { useMemo, useEffect } from 'react';
+
 import { useSupabaseInspectionRounds, type InspectionRound } from '@/hooks/useSupabaseInspectionRounds';
 import { useSupabasePlan } from '@/hooks/useSupabasePlans';
 import { mockHistoryEvents } from '@/utils/data/kehoach-mock-data';
@@ -71,14 +82,14 @@ import {
   DeployRoundModal as DeployRoundActionModal
 } from '@/components/inspections/InspectionRoundActionModals';
 
-// ... other imports
+// ...
 
 export function PlanDetail() {
   const navigate = useNavigate();
   const { planId } = useParams<{ planId: string }>();
   const [activeTab, setActiveTab] = useState<TabType>('info');
 
-  // Modal states
+  // Modal states for Plan
   const [modalState, setModalState] = useState<{
     type: 'sendApproval' | 'approve' | 'reject' | 'recall' | 'deploy' | 'pause' | 'delete' | 'complete' | 'resume' | 'cancel' | null;
     plan: Plan | null;
@@ -98,11 +109,19 @@ export function PlanDetail() {
   const openRoundModal = (type: typeof roundModalState.type, round: InspectionRound) => 
     setRoundModalState({ type, round });
 
-  // Task Modal state
+  // Task Modal states (Expanded)
   const [taskModalState, setTaskModalState] = useState<{
-    type: 'cancel' | null;
-    task: any | null;
-  }>({ type: null, task: null });
+      type: 'deploy' | 'cancel' | 'complete' | null;
+      task: any | null;
+    }>({ type: null, task: null });
+    
+  const [actionTask, setActionTask] = useState<any | null>(null);
+  const [isReopenModalOpen, setIsReopenModalOpen] = useState(false);
+  const [isAttachEvidenceModalOpen, setIsAttachEvidenceModalOpen] = useState(false);
+  const [isEnterResultsModalOpen, setIsEnterResultsModalOpen] = useState(false);
+  const [isForm06ModalOpen, setIsForm06ModalOpen] = useState(false);
+  const [isForm10ModalOpen, setIsForm10ModalOpen] = useState(false);
+  const [isForm11ModalOpen, setIsForm11ModalOpen] = useState(false);
 
   // Decode planId since it's URL encoded
   const decodedPlanId = planId ? decodeURIComponent(planId) : undefined;
@@ -113,7 +132,7 @@ export function PlanDetail() {
   // Use Supabase hook to fetch inspection rounds
   const { rounds: planRounds, updateRoundStatus: updatePlanRoundStatus } = useSupabaseInspectionRounds(
     decodedPlanId, 
-    activeTab === 'inspections'
+    activeTab === 'inspections' || activeTab === 'sessions'
   );
   
   const [roundSearch, setRoundSearch] = useState('');
@@ -128,20 +147,88 @@ export function PlanDetail() {
   }, [planRounds, roundSearch]);
   
   // State for session tasks
-  const [planTasks, setPlanTasks] = useState<typeof mockInspectionTasks>(() => {
-    return mockInspectionTasks?.filter(t => t.planId === decodedPlanId) || [];
-  });
+  const [planTasks, setPlanTasks] = useState<typeof mockInspectionTasks>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+
+  // Fetch sessions function
+  const fetchPlanSessions = useCallback(async () => {
+    if (!planRounds || planRounds.length === 0) {
+      setPlanTasks([]);
+      return;
+    }
+
+    setSessionsLoading(true);
+    try {
+      const sessionPromises = planRounds.map(round => 
+        fetchInspectionSessionsApi(round.id)
+          .then(sessions => sessions.map(session => ({
+            ...session,
+            roundId: round.id,
+            roundName: round.name
+          })))
+      );
+
+      const results = await Promise.all(sessionPromises);
+      const allSessions = results.flat();
+
+      // Map API sessions to InspectionTask interface
+      const mappedTasks = allSessions.map(session => ({
+        id: session.id,
+        code: session.id, // Using ID as code for now
+        roundId: session.campaignId || '',
+        roundName: session.campaignName || '', // Will be overwritten by round info above if matches
+        planId: decodedPlanId,
+        planName: plan?.name,
+        type: session.type, 
+        title: session.name,
+        description: session.description || '',
+        targetName: session.merchantName,
+        targetAddress: session.merchantAddress,
+        merchantId: session.merchantId || undefined,
+        assignee: {
+          id: session.userId || '',
+          name: session.userName,
+          role: 'Cán bộ kiểm tra'
+        },
+        assignedBy: {
+          id: 'system',
+          name: 'Hệ thống'
+        },
+        assignedDate: session.createdAt,
+        status: session.status as any, // Cast to TaskStatus
+        priority: (typeof session.priority === 'number' ? (session.priority === 1 ? 'low' : session.priority === 3 ? 'high' : 'medium') : 'medium') as any,
+        dueDate: session.deadlineTime || '',
+        startDate: session.startTime || undefined,
+        progress: session.status === 'completed' ? 100 : 0,
+        checklistTotal: 0,
+        checklistCompleted: 0,
+        createdAt: session.createdAt,
+      }));
+
+      setPlanTasks(mappedTasks);
+    } catch (error) {
+      console.error('Failed to fetch plan sessions:', error);
+      toast.error('Không thể tải danh sách phiên làm việc');
+    } finally {
+      setSessionsLoading(false);
+    }
+  }, [planRounds, decodedPlanId, plan]);
 
   useEffect(() => {
-    if (decodedPlanId) {
-      setPlanTasks(mockInspectionTasks?.filter(t => t.planId === decodedPlanId) || []);
+    if (activeTab === 'sessions') {
+      fetchPlanSessions();
     }
-  }, [decodedPlanId]);
+  }, [fetchPlanSessions, activeTab]);
+
+  const handleRefreshList = () => {
+      fetchPlanSessions();
+  };
+  
   const planHistory = mockHistoryEvents?.filter(h => h.planId === decodedPlanId) || [];
   
   const inspectionRoundsCount = planRounds.length;
   const workingSessionsCount = planTasks.length;
-  
+
   // Dynamic tabs with badges
   const TABS_DYNAMIC = [
     { id: 'info' as TabType, label: 'Thông tin chung' },
@@ -150,8 +237,9 @@ export function PlanDetail() {
     { id: 'history' as TabType, label: 'Lịch sử', badge: planHistory.length }
   ];
 
-  // Logic to get actions for an inspection round based on status
-  const getRoundActions = (round: InspectionRound): Action[] => {
+  /* ... Round Actions ... */
+  const getRoundActions = (round: InspectionRound): Action[] => { 
+    // ... existing logic ...
     const actions: Action[] = [
       {
         label: 'Xem chi tiết',
@@ -282,6 +370,292 @@ export function PlanDetail() {
     return actions;
   };
 
+  // Define columns for Inspection Sessions table matched with TaskBoard
+  const sessionColumns: Column<typeof mockInspectionTasks[0]>[] = [
+    {
+      key: 'title',
+      label: 'Tên nhiệm vụ',
+      sortable: true,
+      render: (task) => (
+        <div>
+          <div style={{ fontWeight: 500 }}>{task?.title || 'N/A'}</div>
+          <div style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>{task?.targetName || ''}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'roundId',
+      label: 'Đợt kiểm tra',
+      sortable: true,
+      render: (task) => (
+        <div>
+          <div style={{ fontWeight: 500 }}>{task?.roundId || 'N/A'}</div>
+          {task?.planName && (
+            <div style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>{task.planName}</div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'targetName',
+      label: 'Tên cửa hàng',
+      sortable: true,
+      render: (task) => task?.targetName || 'N/A',
+    },
+    {
+      key: 'status',
+      label: 'Trạng thái',
+      sortable: true,
+      render: (task) => task?.status ? <StatusBadge {...getStatusProps('task', task.status)} size="sm" /> : <span>-</span>,
+    },
+    {
+      key: 'type',
+      label: 'Loại',
+      sortable: true,
+      render: (task) => task?.type ? <StatusBadge {...getStatusProps('sessionType', task.type)} size="sm" /> : <span>--</span>,
+    },
+    {
+      key: 'priority',
+      label: 'Ưu tiên',
+      sortable: true,
+      render: (task) => task?.priority ? <StatusBadge {...getStatusProps('priority', task.priority)} size="sm" /> : <span>-</span>,
+    },
+    {
+      key: 'assignee',
+      label: 'Người thực hiện',
+      sortable: true,
+      render: (task) => task?.assignee?.name || 'N/A',
+    },
+    {
+      key: 'dueDate',
+      label: 'Hạn hoàn thành',
+      sortable: true,
+      render: (task) => {
+        if (!task?.dueDate) return <span>-</span>;
+        const dueDate = new Date(task.dueDate);
+        const today = new Date();
+        const isOverdue = dueDate < today && task.status !== 'completed';
+        
+        return (
+          <span style={isOverdue ? { color: 'var(--destructive)' } : {}}>
+            {dueDate.toLocaleDateString('vi-VN')}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'actions',
+      label: 'Thao tác',
+      sortable: false,
+      sticky: 'right',
+      width: '170px',
+      render: (task) => {
+        const actions: any[] = [];
+        
+        // Helper handlers
+        const handleStartTask = (t: any) => setTaskModalState({ type: 'deploy', task: t });
+        const handleCompleteTask = (t: any) => setTaskModalState({ type: 'complete', task: t });
+        const handleCancelTask = (t: any) => setTaskModalState({ type: 'cancel', task: t });
+        const handleReopen = (t: any) => {
+            setActionTask(t);
+            setIsReopenModalOpen(true);
+        };
+        const handleEnterResult = (t: any) => {
+            setActionTask(t);
+            setIsEnterResultsModalOpen(true);
+        };
+        const handleAttachEvidence = (t: any) => {
+            setActionTask(t);
+            setIsAttachEvidenceModalOpen(true);
+        };
+        const handleViewDetail = (t: any) => {
+           navigate(`/plans/working-sessions/${encodeURIComponent(t.id)}`);
+        };
+
+        switch (task.status) {
+          case 'not_started':
+          case 'pending_approval':
+            // Chưa bắt đầu: Xem chi tiết, Bắt đầu, Hủy
+            actions.push(
+              {
+                label: 'Xem chi tiết',
+                icon: <Eye size={16} />,
+                onClick: () => handleViewDetail(task),
+                priority: 10,
+              },
+              {
+                label: 'Bắt đầu',
+                icon: <Play size={16} />,
+                onClick: () => handleStartTask(task),
+                priority: 9,
+              },
+              {
+                label: 'Hủy phiên',
+                icon: <XCircle size={16} />,
+                variant: 'destructive', 
+                onClick: () => handleCancelTask(task),
+                priority: 1,
+              }
+            );
+            break;
+
+          case 'in_progress':
+            // Đang thực hiện: Xem chi tiết, Nhập kết quả, Đính kèm, Hoàn thành, Hủy
+            actions.push(
+              {
+                label: 'Xem chi tiết',
+                icon: <Eye size={16} />,
+                onClick: () => handleViewDetail(task),
+                priority: 10,
+              },
+              {
+                label: 'Nhập kết quả',
+                icon: <ClipboardCheck size={16} />,
+                onClick: () => handleEnterResult(task),
+                priority: 9,
+              },
+              {
+                label: 'Đính kèm minh chứng', // Changed from 'Đính kèm' to match typical usage
+                icon: <Paperclip size={16} />,
+                onClick: () => handleAttachEvidence(task),
+                priority: 7,
+              },
+              {
+                label: 'Hoàn thành',
+                icon: <CheckCircle2 size={16} />,
+                onClick: () => handleCompleteTask(task),
+                priority: 8,
+              },
+              {
+                label: 'Hủy phiên',
+                icon: <XCircle size={16} />,
+                variant: 'destructive',
+                separator: true,
+                onClick: () => handleCancelTask(task),
+                priority: 1,
+              }
+            );
+            break;
+
+          case 'completed':
+            // Hoàn thành: Xem chi tiết, Mở lại, Xem kết quả (nếu đã có)
+            actions.push(
+              {
+                label: 'Xem chi tiết',
+                icon: <Eye size={16} />,
+                onClick: () => handleViewDetail(task),
+                priority: 10,
+              },
+              {
+                label: 'Xem kết quả',
+                icon: <ClipboardCheck size={16} />,
+                onClick: () => handleEnterResult(task), // Re-use modal for viewing? Or navigate? Using modal for now to view results
+                priority: 9, 
+              },
+              {
+                label: 'Mở lại',
+                icon: <RotateCcw size={16} />,
+                onClick: () => handleReopen(task),
+                priority: 5,
+              }
+            );
+            break;
+
+          case 'closed':
+          case 'cancelled':
+            // Đã đóng/Hủy: Xem chi tiết, Mở lại
+            actions.push(
+              {
+                label: 'Xem chi tiết',
+                icon: <Eye size={16} />,
+                onClick: () => handleViewDetail(task),
+                priority: 10,
+              },
+              {
+                label: 'Mở lại',
+                icon: <RotateCcw size={16} />,
+                onClick: () => handleReopen(task),
+                priority: 9,
+              }
+            );
+             if (task.status === 'closed') {
+                 actions.push(
+                   {
+                     label: 'Biên bản kiểm tra',
+                     icon: <FileText size={16} />,
+                     onClick: () => {
+                       setActionTask(task);
+                       setIsForm06ModalOpen(true);
+                     },
+                     priority: 8,
+                   },
+                   {
+                     label: 'Bảng kê',
+                     icon: <Table size={16} />,
+                     onClick: () => {
+                       setActionTask(task);
+                       setIsForm10ModalOpen(true);
+                     },
+                     priority: 7,
+                   },
+                   {
+                     label: 'Phụ lục',
+                     icon: <FileText size={16} />,
+                     onClick: () => {
+                       setActionTask(task);
+                       setIsForm11ModalOpen(true);
+                     },
+                     priority: 6,
+                   }
+                );
+             }
+            break;
+
+            case 'reopened':
+                 actions.push(
+                     {
+                        label: 'Xem chi tiết',
+                        icon: <Eye size={16} />,
+                        onClick: () => handleViewDetail(task),
+                        priority: 10,
+                     },
+                     {
+                        label: 'Bắt đầu',
+                        icon: <Play size={16} />,
+                        onClick: () => handleStartTask(task),
+                        priority: 8,
+                     },
+                     {
+                        label: 'Hủy phiên', 
+                        icon: <XCircle size={16} />, 
+                        variant: 'destructive',
+                        onClick: () => handleCancelTask(task),
+                        priority: 1
+                      }
+                 );
+                 break;
+
+          default:
+             actions.push({
+                label: 'Xem chi tiết',
+                icon: <Eye size={16} />,
+                onClick: () => handleViewDetail(task),
+                priority: 10,
+             });
+        }
+
+        return (
+          <ActionColumn
+            style={{ justifyContent: 'flex-start' }}
+            actions={actions}
+          />
+        );
+      },
+    },
+  ];
+
+
+
   if (planLoading) {
     return (
       <div className={styles.container}>
@@ -401,135 +775,7 @@ export function PlanDetail() {
     },
   ];
 
-  // Define columns for Inspection Sessions table
-  // Define columns for Inspection Sessions table matched with TaskBoard
-  const sessionColumns: Column<typeof mockInspectionTasks[0]>[] = [
-    {
-      key: 'title',
-      label: 'Tên nhiệm vụ',
-      sortable: true,
-      render: (task) => (
-        <div>
-          <div style={{ fontWeight: 500 }}>{task?.title || 'N/A'}</div>
-          <div style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>{task?.targetName || ''}</div>
-        </div>
-      ),
-    },
-    {
-      key: 'roundId',
-      label: 'Đợt kiểm tra',
-      sortable: true,
-      render: (task) => (
-        <div>
-          <div style={{ fontWeight: 500 }}>{task?.roundId || 'N/A'}</div>
-          {task?.planName && (
-            <div style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>{task.planName}</div>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'targetName',
-      label: 'Tên cửa hàng',
-      sortable: true,
-      render: (task) => task?.targetName || 'N/A',
-    },
-    {
-      key: 'status',
-      label: 'Trạng thái',
-      sortable: true,
-      render: (task) => task?.status ? <StatusBadge {...getStatusProps('task', task.status)} size="sm" /> : <span>-</span>,
-    },
-    {
-      key: 'type',
-      label: 'Loại',
-      sortable: true,
-      render: (task) => task?.type ? <StatusBadge {...getStatusProps('sessionType', task.type)} size="sm" /> : <span>--</span>,
-    },
-    {
-      key: 'priority',
-      label: 'Ưu tiên',
-      sortable: true,
-      render: (task) => task?.priority ? <StatusBadge {...getStatusProps('priority', task.priority)} size="sm" /> : <span>-</span>,
-    },
-    {
-      key: 'assignee',
-      label: 'Người thực hiện',
-      sortable: true,
-      render: (task) => task?.assignee?.name || 'N/A',
-    },
-    {
-      key: 'dueDate',
-      label: 'Hạn hoàn thành',
-      sortable: true,
-      render: (task) => {
-        if (!task?.dueDate) return <span>-</span>;
-        const dueDate = new Date(task.dueDate);
-        const today = new Date();
-        const isOverdue = dueDate < today && task.status !== 'completed';
-        
-        return (
-          <span style={isOverdue ? { color: 'var(--destructive)' } : {}}>
-            {dueDate.toLocaleDateString('vi-VN')}
-          </span>
-        );
-      },
-    },
-    {
-      key: 'actions',
-      label: 'Thao tác',
-      sortable: false,
-      sticky: 'right',
-      width: '170px',
-      render: (task) => {
-        const actions: any[] = [
-          {
-            label: 'Xem chi tiết',
-            icon: <Eye size={16} />,
-            onClick: () => {
-              navigate(`/plans/working-sessions/${encodeURIComponent(task.id)}`);
-            },
-            priority: 10,
-          }
-        ];
 
-        // Mở lại (Reopen) - Show for 'cancelled' or 'closed'
-        if (task.status === 'cancelled' || task.status === 'closed') {
-          actions.push({
-            label: 'Mở lại',
-            icon: <RefreshCw size={16} />,
-            priority: 9,
-            onClick: () => {
-              if (window.confirm(`Bạn có chắc chắn muốn mở lại phiên làm việc này không?`)) {
-                setPlanTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'reopened' } : t));
-                toast.success(`Đã mở lại phiên làm việc "${task.id}"`);
-              }
-            },
-          });
-        }
-        
-        // Hủy (Cancel) - Show for not_started, in_progress, pending_approval, reopened
-        if (['not_started', 'in_progress', 'pending_approval', 'reopened'].includes(task.status)) {
-          actions.push({
-            label: 'Hủy phiên',
-            icon: <XCircle size={16} />,
-            priority: 1,
-            variant: 'destructive',
-            onClick: () => {
-              setTaskModalState({ type: 'cancel', task });
-            },
-          });
-        }
-
-        return (
-          <ActionColumn
-            style={{ justifyContent: 'flex-start' }}
-            actions={actions}
-          />
-        );
-      },
-    },
-  ];
 
   // Define columns for History table
   const historyColumns: Column<typeof mockHistoryEvents[0]>[] = [
@@ -965,7 +1211,12 @@ export function PlanDetail() {
                     <p className={styles.sectionDesc}>Danh sách các phiên làm việc đã thực hiện</p>
                   </div>
                 </div>
-                {planTasks.length > 0 ? (
+                {sessionsLoading ? (
+                   <div style={{ padding: '64px', textAlign: 'center' }}>
+                     <div className="animate-spin" style={{ width: '32px', height: '32px', margin: '0 auto 16px', border: '2px solid transparent', borderTopColor: 'var(--color-primary)', borderRadius: '50%' }}></div>
+                     <p style={{ color: 'var(--muted-foreground)' }}>Đang tải danh sách phiên làm việc...</p>
+                   </div>
+                ) : planTasks.length > 0 ? (
                   <DataTable
                     columns={sessionColumns}
                     data={planTasks}
@@ -1079,7 +1330,7 @@ export function PlanDetail() {
               }
             }}
           />
-          <DeployModal 
+          <PlanDeployModal 
             isOpen={modalState.type === 'deploy'} 
             onClose={closeModal}
             plan={modalState.plan}
@@ -1333,18 +1584,130 @@ export function PlanDetail() {
           />
         </>
       )}
-      {/* Task Modals */}
-      <CancelTaskModal 
-        isOpen={taskModalState.type === 'cancel'}
-        onClose={() => setTaskModalState({ type: null, task: null })}
-        task={taskModalState.task}
-        onConfirm={() => {
-          if (taskModalState.task) {
-            setPlanTasks(prev => prev.map(t => t.id === taskModalState.task.id ? { ...t, status: 'cancelled' } : t));
-            toast.success(`Đã hủy phiên làm việc "${taskModalState.task.code}"`);
-          }
-        }}
-      />
+      {/* Task Action Modals */}
+      {taskModalState.task && (
+        <>
+          <DeployTaskModal
+            isOpen={taskModalState.type === 'deploy'}
+            onClose={() => setTaskModalState({ type: null, task: null })}
+            task={taskModalState.task}
+            onConfirm={(date) => {
+               // Update status to in_progress (2)
+               updateInspectionSessionApi(taskModalState.task.id, { status: 2, start_time: date })
+                 .then(() => {
+                   toast.success('Đã bắt đầu phiên kiểm tra');
+                   handleRefreshList();
+                 })
+                 .catch(() => toast.error('Lỗi khi bắt đầu phiên'));
+               setTaskModalState({ type: null, task: null });
+            }}
+          />
+          <CancelTaskModal
+            isOpen={taskModalState.type === 'cancel'}
+            onClose={() => setTaskModalState({ type: null, task: null })}
+            task={taskModalState.task}
+             onConfirm={() => {
+               // Update status to cancelled (6)
+               updateInspectionSessionApi(taskModalState.task.id, { status: 6, note: 'Đã hủy bởi người dùng' })
+                 .then(() => {
+                   toast.success('Đã hủy phiên kiểm tra');
+                   handleRefreshList();
+                 })
+                 .catch(() => toast.error('Lỗi khi hủy phiên'));
+               setTaskModalState({ type: null, task: null });
+            }}
+          />
+          <CompleteTaskModal
+            isOpen={taskModalState.type === 'complete'}
+            onClose={() => setTaskModalState({ type: null, task: null })}
+            task={taskModalState.task}
+            onConfirm={() => {
+                // Update status to completed (3)
+               updateInspectionSessionApi(taskModalState.task.id, { status: 3 })
+                 .then(() => {
+                   toast.success('Đã hoàn thành phiên kiểm tra');
+                   handleRefreshList();
+                 })
+                 .catch(() => toast.error('Lỗi khi hoàn thành phiên'));
+               setTaskModalState({ type: null, task: null });
+            }}
+          />
+        </>
+      )}
+
+      {/* Other Task Action Modals */}
+      {actionTask && (
+        <>
+          <ReopenTaskModal
+            isOpen={isReopenModalOpen}
+            onClose={() => setIsReopenModalOpen(false)}
+            taskTitle={actionTask.title}
+            taskId={actionTask.id}
+            onReopen={(reason) => {
+               // Call API to reopen (5)
+               updateInspectionSessionApi(actionTask.id, { status: 5, note: reason })
+                 .then(() => {
+                   toast.success(`Đã mở lại phiên làm việc "${actionTask.title}"`);
+                   handleRefreshList();
+                 })
+                 .catch(() => toast.error('Không thể mở lại phiên làm việc'));
+                setIsReopenModalOpen(false);
+                setActionTask(null);
+            }}
+          />
+          <AttachEvidenceModal
+            isOpen={isAttachEvidenceModalOpen}
+            onClose={() => setIsAttachEvidenceModalOpen(false)}
+            taskTitle={actionTask.title}
+            taskId={actionTask.id}
+            onSubmit={(files) => {
+                 // Mock submission
+                 toast.success(`Đã đính kèm ${files.length} tập tin`);
+                 handleRefreshList();
+                 setIsAttachEvidenceModalOpen(false);
+            }}
+          />
+          <InspectionResultModal
+            isOpen={isEnterResultsModalOpen}
+            onClose={() => setIsEnterResultsModalOpen(false)}
+            session={{
+                id: actionTask.id,
+                code: actionTask.code || actionTask.id,
+                title: actionTask.title,
+                date: actionTask.startDate || new Date().toISOString()
+            }}
+            onSave={(data) => {
+                toast.success('Đã lưu kết quả (Mock)');
+                setIsEnterResultsModalOpen(false);
+            }}
+            onComplete={(data) => {
+                 // Update status to completed (3)
+                 updateInspectionSessionApi(actionTask.id, { status: 3 })
+                   .then(() => {
+                     toast.success('Đã hoàn thành phiên kiểm tra');
+                     handleRefreshList();
+                   })
+                   .catch(() => toast.error('Lỗi khi hoàn thành phiên'));
+                setIsEnterResultsModalOpen(false);
+            }}
+          />
+          <Form06Modal
+            open={isForm06ModalOpen}
+            onOpenChange={setIsForm06ModalOpen}
+            task={actionTask}
+          />
+          <Form10Modal
+            open={isForm10ModalOpen}
+            onOpenChange={setIsForm10ModalOpen}
+            task={actionTask}
+          />
+          <Form11Modal
+            open={isForm11ModalOpen}
+            onOpenChange={setIsForm11ModalOpen}
+            task={actionTask}
+          />
+        </>
+      )}
     </div>
   );
 }
