@@ -13,6 +13,7 @@ import axios from 'axios';
  * @param options - Filtering options object
  * @param options.statusCodes - Optional array of status codes ('active', 'pending', 'suspended', 'rejected')
  * @param options.businessTypes - Optional array of business types to filter by
+ * @param options.categoryIds - Optional array of category IDs to filter by
  * @param options.departmentIds - Optional array of department IDs to filter by
  * @param options.province - Optional province name to filter by
  * @param options.district - Optional district name to filter by
@@ -26,25 +27,59 @@ export async function fetchMerchants(
   departmentIds?: string[],
   provinceId?: string,
   wardId?: string,
-  targetDepartmentPath?: string
+  categoryIds?: string[]
 ): Promise<Restaurant[]> {
 
-try {
-    const baseUrl = `${SUPABASE_REST_URL}/merchant_filter_view`;
-    const params = new URLSearchParams();
-    params.append('select', '_id,business_name,address,business_type,latitude,longitude,status,category_ids');
-    params.append('limit', '1000');
-    params.append('order', '_id.desc');
-    const pathFilter = targetDepartmentPath ? `${targetDepartmentPath}*` : 'QT*';
-    params.append('department_path', `like.${pathFilter}`);
+  try {
+    const validCategoryIds = (categoryIds || []).filter((id) => id && id !== 'undefined' && id !== 'null');
+    const shouldFilterByCategory = validCategoryIds.length > 0;
+    const selectClause = shouldFilterByCategory
+      ? '*,category_merchants!inner(category_id)'
+      : '*';
+
+    // Build query - include category join only when needed
+    let url = `${SUPABASE_REST_URL}/merchants?limit=10000&order=created_at.desc&select=${selectClause}`;
+    
+    if (provinceId) {
+      url += `&province_id=eq.${provinceId}`;
+    }
+    
+    if (wardId) {
+      url += `&ward_id=eq.${wardId}`;
+    }
+    
+    // 🔥 Filter by status if provided (direct field filter)
+    // status field: 'active', 'pending', 'suspended', 'rejected'
     if (statusCodes && statusCodes.length > 0) {
       params.append('status', `in.(${statusCodes.join(',')})`);
     }
-    if (businessTypes && businessTypes.length > 0) {
-      params.append('category_ids', `in.(${businessTypes.join(',')})`);
+    
+    // 🔥 Filter by business_type if provided (direct field filter)
+    // Skip this when categoryIds are provided to avoid mixing name-based filtering.
+    if (!shouldFilterByCategory && businessTypes && businessTypes.length > 0) {
+      const typeFilter = businessTypes.map(type => `business_type.eq.${encodeURIComponent(type)}`).join(',');
+      url += `&or=(${typeFilter})`;
     }
-    const finalUrl = `${baseUrl}?${params.toString()}`;
-    const response = await axios.get(finalUrl, {
+    
+    // 🔥 NEW: Filter by department_id if provided
+    if (departmentIds && departmentIds.length > 0) {
+      const deptFilter = departmentIds.map(id => `department_id.eq.${id}`).join(',');
+      url += `&or=(${deptFilter})`;
+    }
+
+    // 🔥 NEW: Filter by category IDs via category_merchants join
+    if (shouldFilterByCategory) {
+      const categoryFilter = validCategoryIds.length === 1
+        ? `category_merchants.category_id=eq.${validCategoryIds[0]}`
+        : `category_merchants.category_id=in.(${validCategoryIds.join(',')})`;
+      url += `&${categoryFilter}`;
+    }
+    
+
+    console.log('🔍 fetchMerchants API call:', url);
+
+    const response = await fetch(url, {
+      method: 'GET',
       headers: getHeaders()
     });
     const data = response.data;
