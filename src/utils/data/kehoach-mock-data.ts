@@ -17,6 +17,7 @@ export interface Plan {
   scope: string;
   scopeLocation: string;
   responsibleUnit: string;
+  coordinatingUnit?: string; // Đơn vị phối hợp
   region?: string; // For table display
   leadUnit?: string; // For table display
   objectives: string;

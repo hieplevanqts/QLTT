@@ -385,7 +385,12 @@ export function TaskBoard() {
       const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
       const matchesPriority = priorityFilter === 'all' || task.priority === priorityFilter;
       const matchesRound = roundFilter === 'all' || task.roundId === roundFilter;
-      const matchesPlan = planFilter === 'all' || task.planId === planFilter;
+      
+      // Fix: Lookup planId from realRounds because task.planId might be incorrect (mapped to deptId)
+      const taskRound = realRounds.find(r => r.id === task.roundId);
+      const effectivePlanId = taskRound?.planId || task.planId;
+      const matchesPlan = planFilter === 'all' || effectivePlanId === planFilter;
+
       const matchesAssignee = assigneeFilter === 'all' || task.assignee?.name === assigneeFilter;
       const matchesType = typeFilter === 'all' || task.type === typeFilter;
 
@@ -409,7 +414,7 @@ export function TaskBoard() {
 
       return matchesSearch && matchesStatus && matchesPriority && matchesRound && matchesPlan && matchesAssignee && matchesType && matchesDateRange;
     });
-  }, [tasks, searchValue, statusFilter, priorityFilter, roundFilter, planFilter, assigneeFilter, typeFilter, dateRangeFilter]);
+  }, [tasks, searchValue, statusFilter, priorityFilter, roundFilter, planFilter, assigneeFilter, typeFilter, dateRangeFilter, realRounds]);
 
   // Group tasks by status for Kanban
   const tasksByStatus = useMemo(() => {
