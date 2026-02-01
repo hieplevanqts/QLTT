@@ -305,7 +305,7 @@ export function ScopeSelector() {
           ))}
         </select>
 
-        <select
+        {/* <select
           value={selectedArea || ''}
           onChange={handleAreaChange}
           className={styles.select}
@@ -319,7 +319,7 @@ export function ScopeSelector() {
               {area.name}
             </option>
           ))}
-        </select>
+        </select> */}
       </div>
     </div>
   );

@@ -154,6 +154,7 @@ export function PointDetailModal({ point, isOpen, onClose }: PointDetailModalPro
   const justOpenedRef = useRef(false);
   const openTimeRef = useRef(0);
 
+
   // Fetch data
   useEffect(() => {
     if (isOpen && point?.id) {

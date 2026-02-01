@@ -406,13 +406,12 @@ export function PlansList() {
     },
     {
       key: 'name',
-      label: 'Tiêu đề',
+      label: 'Tiêu đề kế hoạch',
       sortable: true,
       width: '300px',
       render: (plan) => (
         <div>
           <div className={styles.planName}>{plan.name || '--'}</div>
-          <div className={styles.planTopic}>{plan.topic || '--'}</div>
         </div>
       ),
     },
@@ -436,7 +435,7 @@ export function PlansList() {
     },
     {
       key: 'time',
-      label: 'Thời gian',
+      label: 'Thời gian thực hiện',
       sortable: true,
       width: '180px',
       render: (plan) => {

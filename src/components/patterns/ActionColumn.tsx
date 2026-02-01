@@ -47,6 +47,8 @@ export interface Action {
 export interface ActionColumnProps {
   actions: Action[]; // All available actions
   variant?: 'default' | 'dots'; // 'default' = icons+menu, 'dots' = menu only
+  className?: string;
+  style?: React.CSSProperties;
 }
 
 /**
@@ -147,13 +149,13 @@ export const CommonActions = {
  * />
  * ```
  */
-export default function ActionColumn({ actions, variant = 'default' }: ActionColumnProps) {
+export default function ActionColumn({ actions, variant = 'default', className, style }: ActionColumnProps) {
   const totalActions = actions.length;
 
   // Rule: If variant is 'dots', show only ellipsis menu regardless of action count
   if (variant === 'dots') {
     return (
-      <div className={styles.actionColumn}>
+      <div className={`${styles.actionColumn} ${className || ''}`} style={style}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button 
@@ -191,7 +193,7 @@ export default function ActionColumn({ actions, variant = 'default' }: ActionCol
   // QLTT Rule: If ≤ 4 actions, show all as icon buttons
   if (totalActions <= 4) {
     return (
-      <div className={styles.actionColumn}>
+      <div className={`${styles.actionColumn} ${className || ''}`} style={style}>
         {actions.map((action, index) => (
           <Tooltip key={index}>
             <TooltipTrigger asChild>
@@ -232,7 +234,7 @@ export default function ActionColumn({ actions, variant = 'default' }: ActionCol
   const menuActions = sortedActions.slice(3);
 
   return (
-    <div className={styles.actionColumn}>
+    <div className={`${styles.actionColumn} ${className || ''}`} style={style}>
       {/* Top 3 priority actions as icon buttons */}
       {topActions.map((action, index) => (
         <Tooltip key={index}>

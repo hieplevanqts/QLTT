@@ -18,6 +18,7 @@ import axios from 'axios';
  * @param options.district - Optional district name to filter by
  * @param options.ward - Optional ward name to filter by
  * @param options.searchQuery - Optional search text (searches name, address, tax code)
+ * @param businessTypeFiltersArray
  * @returns Array of merchants mapped to Restaurant interface (already filtered)
  */
 export async function fetchMerchants(
@@ -26,22 +27,25 @@ export async function fetchMerchants(
   departmentIds?: string[],
   provinceId?: string,
   wardId?: string,
-  targetDepartmentPath?: string
+  targetDepartmentPath?: string,
+  businessTypeFiltersArray?: string[],
+  searchQuery?: string,
 ): Promise<Restaurant[]> {
 
 try {
     const baseUrl = `${SUPABASE_REST_URL}/merchant_filter_view`;
     const params = new URLSearchParams();
     params.append('select', '_id,business_name,address,business_type,latitude,longitude,status,category_ids');
-    params.append('limit', '1000');
+    params.append('limit', searchQuery?.limit ? String(searchQuery?.limit) : '100');
     params.append('order', '_id.desc');
     const pathFilter = targetDepartmentPath ? `${targetDepartmentPath}*` : 'QT*';
     params.append('department_path', `like.${pathFilter}`);
     if (statusCodes && statusCodes.length > 0) {
       params.append('status', `in.(${statusCodes.join(',')})`);
     }
+
     if (businessTypes && businessTypes.length > 0) {
-      params.append('business_type', `in.(${businessTypes.join(',')})`);
+      params.append('category_ids', `cs.{${businessTypes.join(',')}}`);
     }
     const finalUrl = `${baseUrl}?${params.toString()}`;
     const response = await axios.get(finalUrl, {

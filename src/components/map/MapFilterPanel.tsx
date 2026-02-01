@@ -70,9 +70,9 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
   }, ref) => {
     const [expandedSections, setExpandedSections] = useState({
       category: true,
-      location: true,
-      businessType: false,
-      department: false
+      location: false,
+      businessType: true,
+      department: true
     });
 
     if (!isOpen) return null;
@@ -120,14 +120,14 @@ export const MapFilterPanel = forwardRef<HTMLDivElement, MapFilterPanelProps>(
             onFilterChange={onFilterChange}
           />
 
-          <LocationFilterSection
+          {/* <LocationFilterSection
             isExpanded={expandedSections.location}
             onToggle={() => toggleSection('location')}
             selectedProvince={selectedProvince}
             selectedWard={selectedWard}
             onProvinceChange={onProvinceChange}
             onWardChange={onWardChange}
-          />
+          /> */}
 
           <BusinessTypeFilterSection
             isExpanded={expandedSections.businessType}

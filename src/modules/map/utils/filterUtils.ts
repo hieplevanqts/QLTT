@@ -30,7 +30,7 @@ export function getBusinessTypeNames(
   return activeBusinessTypes
     .map(categoryId => {
       const category = categories.find(c => c.id === categoryId);
-      return category?.name;
+      return category?._id;
     })
     .filter((name): name is string => name !== undefined);
 }
