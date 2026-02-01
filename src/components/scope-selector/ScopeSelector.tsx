@@ -32,12 +32,18 @@ export function ScopeSelector() {
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [selectedArea, setSelectedArea] = useState<string>('');
 
+  const fallbackDivisionId =
+    !scope.divisionId && scope.teamId && availableDivisions.length === 1
+      ? availableDivisions[0].id
+      : null;
+  const effectiveDivisionId = scope.divisionId || fallbackDivisionId;
+
   // Sync local state with scope context
   useEffect(() => {
-    setSelectedDivision(scope.divisionId || '');
+    setSelectedDivision(effectiveDivisionId || '');
     setSelectedTeam(scope.teamId || '');
     setSelectedArea(scope.areaId || '');
-  }, [scope.divisionId, scope.teamId, scope.areaId]);
+  }, [effectiveDivisionId, scope.teamId, scope.areaId]);
 
   // Enforce user department/team restrictions
   useEffect(() => {
@@ -122,7 +128,13 @@ export function ScopeSelector() {
 
   // Restore saved division from localStorage
   useEffect(() => {
-    if (!isLoading && availableDivisions.length > 0 && !scope.divisionId) {
+    if (
+      !isLoading
+      && availableDivisions.length > 0
+      && !scope.divisionId
+      && !scope.teamId
+      && !scope.areaId
+    ) {
         const savedDivisionId = localStorage.getItem('division_id');
         if (savedDivisionId) {
             const divisionExists = availableDivisions.some((d: any) => d.id === savedDivisionId);
@@ -141,7 +153,40 @@ export function ScopeSelector() {
             }
         }
     }
-  }, [availableDivisions, isLoading, scope.divisionId, setContextScope, dispatch]);
+  }, [
+    availableDivisions,
+    isLoading,
+    scope.divisionId,
+    scope.teamId,
+    scope.areaId,
+    setContextScope,
+    dispatch,
+  ]);
+
+  // Ensure division is active when only team is provided
+  useEffect(() => {
+    if (isLoading || !fallbackDivisionId) return;
+
+    const newScope = {
+      divisionId: fallbackDivisionId,
+      teamId: scope.teamId || null,
+      areaId: scope.areaId || null,
+      province: scope.province || null,
+      ward: scope.ward || null,
+    };
+
+    setContextScope(newScope);
+    dispatch(setScope(newScope));
+  }, [
+    fallbackDivisionId,
+    isLoading,
+    scope.teamId,
+    scope.areaId,
+    scope.province,
+    scope.ward,
+    setContextScope,
+    dispatch,
+  ]);
 
   const handleDivisionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation();
@@ -175,7 +220,7 @@ export function ScopeSelector() {
     setSelectedArea('');
 
     const newScope = {
-      divisionId: scope.divisionId || null,  // FIX: Use scope.divisionId instead of selectedDivision
+      divisionId: effectiveDivisionId || null,  // 🔥 FIX: Use effectiveDivisionId
       teamId,
       areaId: null,
       province: null,
@@ -196,8 +241,8 @@ export function ScopeSelector() {
     const area = availableAreas.find((item) => item.id === areaId);
     // FIX: Use scope values from context instead of local state
     const newScope = {
-      divisionId: scope.divisionId || null,  // FIX: Use scope.divisionId
-      teamId: scope.teamId || null,            // FIX: Use scope.teamId
+      divisionId: effectiveDivisionId || null,  // 🔥 FIX: Use effectiveDivisionId
+      teamId: scope.teamId || null,            // 🔥 FIX: Use scope.teamId
       areaId,
       province: area?.provinceCode || null,
       ward: area?.wardCode || null,
