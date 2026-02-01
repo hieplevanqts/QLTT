@@ -647,7 +647,7 @@ export default function AdminAreasPage() {
         <div className="px-6 pb-8">
           <Row gutter={16}>
             <Col flex="360px">
-              <Card title="Cây địa bàn" bodyStyle={{ minHeight: 520 }}>
+              <Card title="Cây địa bàn" styles={{ body: { minHeight: 520 } }}>
                 {loading ? (
                   <div style={{ display: "flex", justifyContent: "center", padding: 24 }}>
                     <Spin />
@@ -655,7 +655,7 @@ export default function AdminAreasPage() {
                 ) : treeData.length === 0 ? (
                   <Empty description="Không có dữ liệu địa bàn trong phạm vi." />
                 ) : (
-                  <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+                  <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
                     <Input
                       placeholder="Tìm tỉnh/TP hoặc phường/xã..."
                       value={searchText}
@@ -679,7 +679,7 @@ export default function AdminAreasPage() {
               </Card>
             </Col>
             <Col flex="auto">
-              <Card title="Chi tiết địa bàn" bodyStyle={{ minHeight: 520 }}>
+              <Card title="Chi tiết địa bàn" styles={{ body: { minHeight: 520 } }}>
                 {!selectedNode ? (
                   <Empty description="Chọn một địa bàn bên trái để xem chi tiết." />
                 ) : (
@@ -689,12 +689,12 @@ export default function AdminAreasPage() {
                         key: "admin",
                         label: "Hành chính",
                         children: (
-                          <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+                          <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
                             {!canManageSelected && (
                               <Alert
                                 type="warning"
                                 showIcon
-                                message="Bạn không có quyền chỉnh sửa mục này."
+                                title="Bạn không có quyền chỉnh sửa mục này."
                               />
                             )}
                             <Descriptions bordered size="small" column={2}>
@@ -817,7 +817,7 @@ export default function AdminAreasPage() {
                         key: "metrics",
                         label: "Số liệu",
                         children: (
-                          <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+                          <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
                             <Space wrap>
                               <Select
                                 value={granularity}
@@ -855,7 +855,7 @@ export default function AdminAreasPage() {
                               <Alert
                                 type="info"
                                 showIcon
-                                message={`Đang nhập dữ liệu cho: ${period.label}`}
+                                title={`Đang nhập dữ liệu cho: ${period.label}`}
                               />
                             )}
 
@@ -891,7 +891,7 @@ export default function AdminAreasPage() {
                             <Alert
                               type="warning"
                               showIcon
-                              message="Số liệu theo ngành hàng sẽ triển khai ở sprint sau."
+                              title="Số liệu theo ngành hàng sẽ triển khai ở sprint sau."
                             />
                           </Space>
                         ),
@@ -904,7 +904,7 @@ export default function AdminAreasPage() {
                             <Spin />
                           </div>
                         ) : coordinates ? (
-                          <Space direction="vertical" size="small" style={{ width: "100%" }}>
+                          <Space orientation="vertical" size="small" style={{ width: "100%" }}>
                             <Typography.Text>
                               Trung tâm: {coordinates.center_lat ?? "-"}, {coordinates.center_lng ?? "-"}
                             </Typography.Text>
@@ -944,7 +944,7 @@ export default function AdminAreasPage() {
                               <Alert
                                 type="warning"
                                 showIcon
-                                message="Chưa có tọa độ để hiển thị bản đồ."
+                                title="Chưa có tọa độ để hiển thị bản đồ."
                               />
                             )}
                             <Button type="link" onClick={openCoordModal}>

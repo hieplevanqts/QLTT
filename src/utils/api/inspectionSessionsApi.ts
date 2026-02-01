@@ -102,11 +102,20 @@ function mapRowToSession(row: InspectionSessionResponse): InspectionSession {
   };
 }
 
+import { store } from '@/store/store';
+
 export async function fetchInspectionSessionsApi(campaignId?: string): Promise<InspectionSession[]> {
   try {
-    let url = `${SUPABASE_REST_URL}/map_inspection_sessions?select=*,users(full_name),merchants(business_name,address)&order=created_at.desc`;
+    const state = store.getState();
+    const path = state.auth.user?.app_metadata?.department?.path || '';
+
+    let url = `${SUPABASE_REST_URL}/v_sessions_by_department?select=*,users(full_name),merchants!fk_inspection_merchant(business_name,address)&order=created_at.desc`;
     if (campaignId) {
       url += `&campaign_id=eq.${campaignId}`;
+    }
+    
+    if (path) {
+      url += `&department_path=like.${path}*`;
     }
     
     const response = await fetch(url, { method: 'GET', headers: getHeaders() });

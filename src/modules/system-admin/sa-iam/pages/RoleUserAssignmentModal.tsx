@@ -132,7 +132,7 @@ export default function RoleUserAssignmentModal({ open, role, onClose, onSaved }
         </Button>,
       ]}
     >
-      <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+      <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
         <Space style={{ width: "100%", justifyContent: "space-between" }} wrap>
           <Input
             placeholder="Tìm theo username, họ tên, email..."

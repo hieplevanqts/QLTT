@@ -507,7 +507,7 @@ export function CatalogsManagerPage({ group, title, description }: CatalogsManag
                   </Button>
                 }
               >
-                <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+                <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
                   <Space wrap>
                     <Input
                       placeholder="Tìm theo khóa, tên danh mục..."
@@ -707,7 +707,7 @@ export function CatalogsManagerPage({ group, title, description }: CatalogsManag
                 {!selectedCatalog ? (
                   <Empty description="Chọn một danh mục bên trái để xem chi tiết." />
                 ) : (
-                  <Space direction="vertical" size="large" style={{ width: "100%" }}>
+                  <Space orientation="vertical" size="large" style={{ width: "100%" }}>
                     <div>
                       <Space align="center" wrap>
                         <Typography.Title level={5} style={{ margin: 0 }}>
@@ -954,10 +954,10 @@ export function CatalogsManagerPage({ group, title, description }: CatalogsManag
       <Drawer
         title={itemFormMode === "create" ? "Thêm mục" : "Chỉnh sửa mục"}
         placement="right"
-        width={420}
+        size={420}
         open={itemDrawerOpen}
         onClose={closeItemDrawer}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Button onClick={closeItemDrawer}>Hủy</Button>

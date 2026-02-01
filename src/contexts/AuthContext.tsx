@@ -131,113 +131,58 @@ async function fetchUserPermissions(userId: string): Promise<string[]> {
   }
 }
 
-// 🔥 NEW: Fetch user role name from database (users -> user_roles -> roles)
-async function fetchUserRoleName(userId: string): Promise<string | null> {
-  try {
-    
-    // Step 1: Get user roles from user_roles table
-    const { data: userRoles, error: userRolesError } = await supabase
-      .from(Tables.USER_ROLES)
-      .select('role_id')
-      .eq('user_id', userId)
-      .limit(1); // Get first role (primary role)
-    
-    if (userRolesError) {
-      console.error('❌ Error fetching user roles:', userRolesError);
-      return null;
-    }
-    
-    if (!userRoles || userRoles.length === 0) {
-      return null;
-    }
-    
-    const roleId = userRoles[0].role_id;
-    
-    // Step 2: Get role name from roles table
-    const { data: role, error: roleError } = await supabase
-      .from(Tables.ROLES)
-      .select('name')
-      .eq('_id', roleId)
-      .single();
-    
-    if (roleError) {
-      console.error('❌ Error fetching role name:', roleError);
-      return null;
-    }
-    
-    if (!role || !role.name) {
-      return null;
-    }
-    
-    const roleName = role.name;
-    
-    return roleName;
-  } catch (error: any) {
-    console.error('❌ Error fetching user role name:', error);
-    return null;
+const normalizeToArray = (value: any): string[] => {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
   }
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  return [];
+};
+
+// 🔥 NEW: Fetch user role info from view to avoid joins
+async function fetchUserRolesFromView(userId: string): Promise<{ roleNames: string[]; roleCodes: string[] }> {
+  try {
+    const { data, error } = await supabase
+      .from('v_user_profile')
+      .select('role_names, role_codes')
+      .eq('user_id', userId)
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error('❌ Error fetching user roles from view:', error);
+      return { roleNames: [], roleCodes: [] };
+    }
+
+    const roleNames = normalizeToArray(data?.role_names);
+    const roleCodes = normalizeToArray(data?.role_codes);
+    return { roleNames, roleCodes };
+  } catch (error: any) {
+    console.error('❌ Error fetching user roles from view:', error);
+    return { roleNames: [], roleCodes: [] };
+  }
+}
+
+// 🔥 NEW: Fetch user role name from view
+async function fetchUserRoleName(userId: string): Promise<string | null> {
+  const { roleNames } = await fetchUserRolesFromView(userId);
+  return roleNames.length > 0 ? roleNames.join(', ') : null;
 }
 
 async function fetchUserRoleCode(userId: string): Promise<string | null> {
-  try {
-    const { data: userRoles, error: userRolesError } = await supabase
-      .from('user_roles')
-      .select('role_id')
-      .eq('user_id', userId)
-      .limit(1);
-
-    if (userRolesError || !userRoles || userRoles.length === 0) {
-      return null;
-    }
-
-    const roleId = userRoles[0].role_id;
-    const { data: role, error: roleError } = await supabase
-      .from('roles')
-      .select('code')
-      .eq('_id', roleId)
-      .single();
-
-    if (roleError) {
-      console.error('❌ Error fetching role code:', roleError);
-      return null;
-    }
-
-    return role?.code || null;
-  } catch (error: any) {
-    console.error('❌ Error fetching user role code:', error);
-    return null;
-  }
+  const { roleCodes } = await fetchUserRolesFromView(userId);
+  return roleCodes[0] || null;
 }
 
 async function fetchUserRoleCodes(userId: string): Promise<string[]> {
-  try {
-    const { data: userRoles, error: userRolesError } = await supabase
-      .from('user_roles')
-      .select('role_id')
-      .eq('user_id', userId);
-
-    if (userRolesError || !userRoles || userRoles.length === 0) {
-      return [];
-    }
-
-    const roleIds = userRoles.map((row) => row.role_id).filter(Boolean);
-    if (roleIds.length === 0) return [];
-
-    const { data: roles, error: rolesError } = await supabase
-      .from('roles')
-      .select('code')
-      .in('_id', roleIds);
-
-    if (rolesError) {
-      console.error('❌ Error fetching role codes:', rolesError);
-      return [];
-    }
-
-    return (roles ?? []).map((row: any) => row.code).filter(Boolean);
-  } catch (error: any) {
-    console.error('❌ Error fetching role codes:', error);
-    return [];
-  }
+  const { roleCodes } = await fetchUserRolesFromView(userId);
+  return roleCodes;
 }
 
 function getDepartmentLevelFromCode(code?: string | null): number | undefined {
@@ -627,12 +572,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const parsedUser = JSON.parse(storedUser) as UserInfo;
             // 🔥 NEW: Refresh permissions, department, and role name if user doesn't have them yet
             if (!parsedUser.permissions || parsedUser.permissions.length === 0 || !parsedUser.departmentInfo || !parsedUser.roleDisplay || parsedUser.roleDisplay === 'Người dùng' || parsedUser.roleDisplay.includes('Quản lý')) {
-              const [permissionCodes, departmentInfo, roleName, roleCodes] = await Promise.all([
+              const [permissionCodes, departmentInfo, rolesInfo] = await Promise.all([
                 fetchUserPermissions(supabaseUser.id),
                 fetchUserDepartment(supabaseUser.id),
-                fetchUserRoleName(supabaseUser.id),
-                fetchUserRoleCodes(supabaseUser.id),
+                fetchUserRolesFromView(supabaseUser.id),
               ]);
+              const roleName = rolesInfo.roleNames.length > 0 ? rolesInfo.roleNames.join(', ') : null;
+              const roleCodes = rolesInfo.roleCodes;
               parsedUser.permissions = permissionCodes;
               parsedUser.departmentInfo = departmentInfo || undefined;
               if (roleName) {
@@ -649,12 +595,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } else {
             // If no stored user info, create basic user info from Supabase user
             // 🔥 NEW: Fetch user permissions, department, and role name from database
-            const [permissionCodes, departmentInfo, roleName, roleCodes] = await Promise.all([
+            const [permissionCodes, departmentInfo, rolesInfo] = await Promise.all([
               fetchUserPermissions(supabaseUser.id),
               fetchUserDepartment(supabaseUser.id),
-              fetchUserRoleName(supabaseUser.id),
-              fetchUserRoleCodes(supabaseUser.id),
+              fetchUserRolesFromView(supabaseUser.id),
             ]);
+            const roleName = rolesInfo.roleNames.length > 0 ? rolesInfo.roleNames.join(', ') : null;
+            const roleCodes = rolesInfo.roleCodes;
             const userInfo: UserInfo = {
               _id: supabaseUser.id,
               username: supabaseUser.email || '',
@@ -775,10 +722,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const parsedUser = JSON.parse(storedUser) as UserInfo;
             // 🔥 FIX: Refresh role name if it's still the default/mock value
             if (!parsedUser.roleDisplay || parsedUser.roleDisplay === 'Người dùng' || parsedUser.roleDisplay.includes('Quản lý') || !parsedUser.roleCodes || parsedUser.roleCodes.length === 0) {
-              const [roleName, roleCodes] = await Promise.all([
-                fetchUserRoleName(session.user._id),
-                fetchUserRoleCodes(session.user._id),
-              ]);
+              const rolesInfo = await fetchUserRolesFromView(session.user._id);
+              const roleName = rolesInfo.roleNames.length > 0 ? rolesInfo.roleNames.join(', ') : null;
+              const roleCodes = rolesInfo.roleCodes;
               if (roleName) {
                 parsedUser.roleDisplay = roleName;
               }
@@ -794,10 +740,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Create basic user info
             const supabaseUser = session.user;
             // 🔥 FIX: Fetch role name from database
-            const [roleName, roleCodes] = await Promise.all([
-              fetchUserRoleName(supabaseUser.id),
-              fetchUserRoleCodes(supabaseUser.id),
-            ]);
+            const rolesInfo = await fetchUserRolesFromView(supabaseUser.id);
+            const roleName = rolesInfo.roleNames.length > 0 ? rolesInfo.roleNames.join(', ') : null;
+            const roleCodes = rolesInfo.roleCodes;
             const userInfo: UserInfo = {
               _id: supabaseUser.id,
               username: supabaseUser.email || '',
@@ -920,12 +865,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const hasMultipleUnits = false; // For now, single unit
       
       // 🔥 NEW: Fetch user permissions, department, and role name from database
-      const [permissionCodes, departmentInfo, roleName, roleCodes] = await Promise.all([
+      const [permissionCodes, departmentInfo, rolesInfo] = await Promise.all([
         fetchUserPermissions(supabaseUser.id),
         fetchUserDepartment(supabaseUser.id),
-        fetchUserRoleName(supabaseUser.id),
-        fetchUserRoleCodes(supabaseUser.id),
+        fetchUserRolesFromView(supabaseUser.id),
       ]);
+      const roleName = rolesInfo.roleNames.length > 0 ? rolesInfo.roleNames.join(', ') : null;
+      const roleCodes = rolesInfo.roleCodes;
       
       const userInfo: UserInfo = {
         _id: supabaseUser.id,

@@ -38,7 +38,7 @@ export const PermissionPickerTable: React.FC<PermissionPickerTableProps> = ({
   );
 
   return (
-    <Space direction="vertical" style={{ width: "100%" }} size={8}>
+    <Space orientation="vertical" style={{ width: "100%" }} size={8}>
       <Space>
         <Button type="primary" onClick={onBulkAssign} disabled={!selectedIds.length}>
           Gán đã chọn

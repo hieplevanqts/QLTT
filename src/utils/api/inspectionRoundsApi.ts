@@ -129,11 +129,22 @@ function mapRowToRound(row: InspectionRoundResponse): InspectionRound {
 
 // --- API Functions ---
 
+import { store } from '@/store/store';
+
 export async function fetchInspectionRoundsApi(planId?: string): Promise<InspectionRound[]> {
   try {
-    let url = `${SUPABASE_REST_URL}/map_inspection_campaigns?select=*,map_inspection_plans(plan_name,code)&order=created_at.desc`;
+    const state = store.getState();
+    const path = state.auth.user?.app_metadata?.department?.path || '';
+
+    // Switch to v_campaigns_by_department
+    // Explicitly use the foreign key to resolve ambiguous relationship
+    let url = `${SUPABASE_REST_URL}/v_campaigns_by_department?select=*,map_inspection_plans!fk_campaigns_plan(plan_name,code)&order=created_at.desc`;
     if (planId) {
       url += `&plan_id=eq.${planId}`;
+    }
+    
+    if (path) {
+      url += `&department_path=like.${path}*`;
     }
     
     const response = await fetch(url, { method: 'GET', headers: getHeaders() });

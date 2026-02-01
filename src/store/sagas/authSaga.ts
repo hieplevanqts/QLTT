@@ -17,11 +17,11 @@ import {
   LoginResponse,
   restoreSession,
   fetchUserInfo as fetchUserInfoApi,
-  fetchUserPermissions,
   getStoredToken,
 } from '../../utils/api/authApi';
 import { supabase } from '@/api/supabaseClient';
 import { tokenStorage } from '@/utils/storage/tokenStorage';
+import { getIamIdentity } from '@/shared/iam/iamIdentity.service';
 
 function* handleLogin(action: PayloadAction<{ email: string; password: string }>): Generator<any, any, any> {
   try {
@@ -56,18 +56,38 @@ function* handleLogin(action: PayloadAction<{ email: string; password: string }>
       userInfo = yield call(fetchUserInfoApi, response.access_token);
     }
 
-    // Fetch user permissions if we have user ID
+    // Fetch IAM identity (roles + permissions) after login
     let permissions: string[] = [];
-    if (response.access_token && userInfo?.id) {
+    let roleCodes: string[] | undefined;
+    let primaryRoleCode: string | undefined;
+    let resolvedUserId: string | undefined;
+    let authUid: string | undefined;
+    if (response.access_token) {
       try {
-        permissions = yield call(fetchUserPermissions, userInfo.id, response.access_token);
+        const identity = yield call(getIamIdentity, { force: true });
+        if (identity) {
+          permissions = identity.permissionCodes;
+          roleCodes = identity.roleCodes;
+          primaryRoleCode = identity.primaryRoleCode;
+          resolvedUserId = identity.userId;
+          authUid = identity.authUid;
+        }
       } catch (error) {
-        // Don't block login if permissions fetch fails
+        console.error('Error fetching IAM identity:', error);
       }
     }
 
     // Dispatch success action with full response including permissions
-    const userWithPermissions = userInfo ? { ...userInfo, permissions } : (response.user || undefined);
+    const userWithPermissions = userInfo
+      ? {
+          ...userInfo,
+          permissions,
+          roleCodes,
+          roleCode: primaryRoleCode,
+          _id: resolvedUserId ?? (userInfo as any)?._id,
+          auth_uid: authUid,
+        }
+      : (response.user || undefined);
     yield put(loginSuccess({
       ...response,
       user: userWithPermissions,
@@ -103,21 +123,6 @@ function* handleRestoreSession(): Generator<any, any, any> {
         }
       }
 
-      // Fetch user permissions if we have user ID
-      let permissions: string[] = [];
-      if (session.user?.id && session.token) {
-        try {
-          permissions = yield call(fetchUserPermissions, session.user.id, session.token);
-        } catch (error) {
-          // Don't block restore if permissions fetch fails
-        }
-      }
-
-      // Update user with permissions
-      const userWithPermissions = session.user 
-        ? { ...session.user, permissions }
-        : null;
-
       // Sync Supabase client session for DB views that rely on auth.uid()
       if (session.token) {
         try {
@@ -132,6 +137,40 @@ function* handleRestoreSession(): Generator<any, any, any> {
         }
       }
 
+      // Fetch IAM identity (roles + permissions)
+      let permissions: string[] = [];
+      let roleCodes: string[] | undefined;
+      let primaryRoleCode: string | undefined;
+      let resolvedUserId: string | undefined;
+      let authUid: string | undefined;
+      try {
+        console.log('🔄 AuthSaga: Fetching IAM identity for user');
+        const identity = yield call(getIamIdentity, { force: true });
+        if (identity) {
+          permissions = identity.permissionCodes;
+          roleCodes = identity.roleCodes;
+          primaryRoleCode = identity.primaryRoleCode;
+          resolvedUserId = identity.userId;
+          authUid = identity.authUid;
+          console.log('✅ AuthSaga: IAM identity loaded', identity.userId);
+        }
+      } catch (error) {
+        console.warn('⚠️ AuthSaga: Error fetching IAM identity:', error);
+      }
+
+      // Update user with permissions
+      const userWithPermissions = session.user 
+        ? {
+            ...session.user,
+            permissions,
+            roleCodes,
+            roleCode: primaryRoleCode,
+            _id: resolvedUserId ?? (session.user as any)?._id,
+            auth_uid: authUid,
+          }
+        : null;
+
+      console.log('✅ AuthSaga: Dispatching restoreSessionSuccess');
       yield put(restoreSessionSuccess({
         token: session.token,
         user: userWithPermissions,
@@ -147,6 +186,19 @@ function* handleRestoreSession(): Generator<any, any, any> {
       try {
         const storedToken = yield call(getStoredToken);
         if (storedToken) {
+          // Sync Supabase session so IAM queries can use auth.uid()
+          try {
+            const refreshToken = yield call([tokenStorage, tokenStorage.getRefreshToken]);
+            if (refreshToken) {
+              yield call([supabase.auth, supabase.auth.setSession], {
+                access_token: storedToken,
+                refresh_token: refreshToken,
+              });
+            }
+          } catch (error) {
+            console.warn('⚠️ AuthSaga: Failed to set Supabase session (fallback)', error);
+          }
+
           // Restore with token only, user will be fetched later
           yield put(restoreSessionSuccess({
             token: storedToken,
@@ -184,19 +236,32 @@ function* handleFetchUserInfo(action: PayloadAction<string | undefined>): Genera
     
     const userInfo = yield call(fetchUserInfoApi, token);
     if (userInfo) {
-      // Fetch permissions
+      // Fetch IAM identity to update roles + permissions
       let permissions: string[] = [];
-      if (userInfo.id) {
-        try {
-          permissions = yield call(fetchUserPermissions, userInfo.id, token);
-        } catch (error) {
+      let roleCodes: string[] | undefined;
+      let primaryRoleCode: string | undefined;
+      let resolvedUserId: string | undefined;
+      let authUid: string | undefined;
+      try {
+        const identity = yield call(getIamIdentity, { force: true });
+        if (identity) {
+          permissions = identity.permissionCodes;
+          roleCodes = identity.roleCodes;
+          primaryRoleCode = identity.primaryRoleCode;
+          resolvedUserId = identity.userId;
+          authUid = identity.authUid;
         }
+      } catch (error) {
+        console.error('Error fetching IAM identity:', error);
       }
 
-      // Update user with permissions
       yield put(fetchUserInfoSuccess({
         ...userInfo,
         permissions,
+        roleCodes,
+        roleCode: primaryRoleCode,
+        _id: resolvedUserId ?? (userInfo as any)?._id,
+        auth_uid: authUid,
       }));
     } else {
       yield put(fetchUserInfoFailure());
