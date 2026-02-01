@@ -4330,7 +4330,7 @@ function Text75() {
   return (
     <div className="h-[20px] relative shrink-0 w-[105.484px]" data-name="Text">
       <div className="bg-clip-padding border-0 border-[transparent] border-solid relative size-full">
-        <p className="absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-0 not-italic text-[#667085] text-[14px] top-0 whitespace-pre">{`Cơ sở & Địa bàn`}</p>
+        <p className="absolute font-['Inter:Regular',sans-serif] font-normal leading-[20px] left-0 not-italic text-[#667085] text-[14px] top-0 whitespace-pre">{`Cơ sở quản lý`}</p>
       </div>
     </div>
   );

@@ -568,7 +568,7 @@ export function PlanDetail() {
                   onClick={() => openModal('delete', plan)}
                   title="Xóa kế hoạch"
                 >
-                  <Trash2 size={18} />
+                  <Trash2 size={18} className="text-destructive" />
                 </button>
               </>
             )}

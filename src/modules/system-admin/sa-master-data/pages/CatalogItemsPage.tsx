@@ -313,7 +313,7 @@ export default function CatalogItemsPage() {
             onClick={() => handleOpenDelete(item.id, item.name)}
             disabled={!canDelete}
           >
-            <Trash2 size={14} style={{ marginRight: '4px' }} />
+            <Trash2 size={14} className="text-destructive" style={{ marginRight: '4px' }} />
             Xóa
           </button>
         </div>

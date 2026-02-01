@@ -59,3 +59,11 @@
 .destructiveAction:hover .actionLabel {
   color: var(--destructive-foreground);
 }
+
+.destructiveIcon svg {
+  color: var(--destructive);
+}
+
+.destructiveIcon:hover svg {
+  color: var(--destructive-foreground);
+}

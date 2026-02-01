@@ -752,11 +752,12 @@ export default function StoresListPage() {
     switch (store.status) {
       case 'pending':
       case 'rejected':
-        // Chờ duyệt & Từ chối phê duyệt: Xem chi tiết, Chỉnh sửa, Phê duyệt (thay vì Xóa)
+        // Chờ duyệt & Từ chối phê duyệt: Xem chi tiết, Chỉnh sửa, Phê duyệt, Xóa
         actions.push(
           CommonActions.view(() => navigate(`/registry/stores/${store.id}`)),
           CommonActions.edit(() => handleEdit(store)),
-          CommonActions.approve(() => handleApprove(store.id))
+          CommonActions.approve(() => handleApprove(store.id)),
+          { ...CommonActions.delete(() => handleDelete(store)), separator: true }
         );
         break;
 
@@ -963,9 +964,9 @@ export default function StoresListPage() {
       <PageHeader
         breadcrumbs={[
           { label: 'Trang chủ', href: '/' },
-          { label: 'Cơ sở & Địa bàn' }
+          { label: 'Cơ sở quản lý' }
         ]}
-        title="Tra cứu cơ sở"
+        title="Cơ sở quản lý"
         actions={
           <>
             <Button variant="outline" size="sm" onClick={() => {

@@ -616,7 +616,7 @@ export const FormTemplatesTab: React.FC<FormTemplatesTabProps> = ({ onOpenModal 
                             onClick={() => handleDeleteForm(form)}
                             title="Xóa"
                           >
-                            <Trash2 size={18} />
+                            <Trash2 size={18} className="text-destructive" />
                           </button>
                         </div>
                       </td>

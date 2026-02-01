@@ -347,7 +347,7 @@ Khi migrate một trang:
 - [ ] `RegistryTemplates` - Template system
 
 ### Phase 4: 🎯 Migration (Ongoing)
-- [ ] Migrate "Cơ sở & Địa bàn" page
+- [ ] Migrate "Cơ sở quản lý" page
 - [ ] Migrate các module khác (Doanh nghiệp, Sản phẩm, etc.)
 - [ ] Deprecate old components
 - [ ] Update all documentation

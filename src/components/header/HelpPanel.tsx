@@ -18,7 +18,7 @@ const FAQ_ITEMS = [
   {
     id: '1',
     question: 'Làm sao để thêm cơ sở mới?',
-    answer: 'Vào menu Cơ sở & Địa bàn, nhấn nút "Thêm cơ sở" và điền đầy đủ thông tin.',
+    answer: 'Vào menu Cơ sở quản lý, nhấn nút "Thêm cơ sở" và điền đầy đủ thông tin.',
   },
   {
     id: '2',

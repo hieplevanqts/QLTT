@@ -24,7 +24,7 @@ const MOCK_ACTIVITIES: ActivityLogEntry[] = [
   {
     id: '1',
     action: 'view',
-    module: 'Cơ sở & Địa bàn',
+    module: 'Cơ sở quản lý',
     description: 'Xem chi tiết cơ sở "ABC Company"',
     timestamp: '2026-01-06 14:35:22',
     ipAddress: '192.168.1.100',
@@ -32,7 +32,7 @@ const MOCK_ACTIVITIES: ActivityLogEntry[] = [
   {
     id: '2',
     action: 'edit',
-    module: 'Cơ sở & Địa bàn',
+    module: 'Cơ sở quản lý',
     description: 'Cập nhật thông tin cơ sở "XYZ Store"',
     timestamp: '2026-01-06 12:20:15',
     ipAddress: '192.168.1.100',
@@ -72,7 +72,7 @@ const getActionIcon = (action: ActivityLogEntry['action']) => {
     case 'edit':
       return <Edit size={16} />;
     case 'delete':
-      return <Trash2 size={16} />;
+      return <Trash2 size={16} className="text-destructive" />;
   }
 };
 
@@ -138,7 +138,7 @@ export default function ActivityLog() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tất cả module</SelectItem>
-                    <SelectItem value="Cơ sở & Địa bàn">Cơ sở & Địa bàn</SelectItem>
+                    <SelectItem value="Cơ sở quản lý">Cơ sở quản lý</SelectItem>
                     <SelectItem value="Nguồn tin">Nguồn tin</SelectItem>
                     <SelectItem value="Kế hoạch">Kế hoạch</SelectItem>
                     <SelectItem value="Nhiệm vụ">Nhiệm vụ</SelectItem>

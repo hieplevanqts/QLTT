@@ -515,9 +515,9 @@ export default function CreateLeadFull() {
                   className={styles.input}
                 />
               </div>
-              <div className={styles.hint}>
-                Tìm kiếm từ cơ sở dữ liệu "Cơ sở & Địa bàn"
-              </div>
+                <div className={styles.hint}>
+                Tìm kiếm từ cơ sở dữ liệu "Cơ sở quản lý"
+                </div>
             </div>
 
             <div className={styles.inputRow}>

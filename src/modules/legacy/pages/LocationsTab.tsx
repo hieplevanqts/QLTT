@@ -483,7 +483,7 @@ export const LocationsTab: React.FC = () => {
                     }}
                     title="Xóa"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={14} className="text-destructive" />
                   </button>
                 </div>
                 {selectedProvince?.id === province.id && (
@@ -621,7 +621,7 @@ export const LocationsTab: React.FC = () => {
                               onClick={() => handleDeleteWard(ward)}
                               title="Xóa"
                             >
-                              <Trash2 size={16} />
+                              <Trash2 size={16} className="text-destructive" />
                             </button>
                           </div>
                         </td>

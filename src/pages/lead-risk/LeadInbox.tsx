@@ -1856,7 +1856,7 @@ export default function LeadInbox() {
             className={styles.cleanupButton}
             onClick={() => navigate("/database-cleanup")}
           >
-            <Trash2 size={16} />
+            <Trash2 size={16} className="text-destructive" />
             Dọn dẹp ngay
           </button>
         </div>

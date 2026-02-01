@@ -203,7 +203,7 @@ export default function ActionColumn({ actions, variant = 'default' }: ActionCol
                   action.onClick();
                 }}
                 disabled={action.disabled}
-                className={styles.iconButton}
+                className={`${styles.iconButton} ${action.variant === 'destructive' ? styles.destructiveIcon : ''}`}
               >
                 {action.icon}
               </Button>
@@ -245,7 +245,7 @@ export default function ActionColumn({ actions, variant = 'default' }: ActionCol
                 action.onClick();
               }}
               disabled={action.disabled}
-              className={styles.iconButton}
+              className={`${styles.iconButton} ${action.variant === 'destructive' ? styles.destructiveIcon : ''}`}
             >
               {action.icon}
             </Button>

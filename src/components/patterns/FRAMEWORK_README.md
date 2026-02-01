@@ -2,7 +2,7 @@
 
 ## Tổng quan
 
-Framework này được xây dựng từ trang "Cơ sở & Địa bàn" và được chuẩn hóa để sử dụng lại cho toàn bộ các module trong hệ thống MAPPA Portal.
+Framework này được xây dựng từ trang "Cơ sở quản lý" và được chuẩn hóa để sử dụng lại cho toàn bộ các module trong hệ thống MAPPA Portal.
 
 ## Nguyên tắc thiết kế
 

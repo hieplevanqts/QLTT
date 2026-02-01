@@ -304,7 +304,7 @@ export const SAMPLE_EXPORT_JOBS: ExportJob[] = [
   },
   {
     export_jobs_id: 'EXP_003',
-    export_jobs_source_name: 'Export Cơ sở & Địa bàn - Miền Bắc',
+    export_jobs_source_name: 'Export Cơ sở quản lý - Miền Bắc',
     export_jobs_source_type: 'REPORT_RUN',
     export_jobs_requested_by: 'Lê Văn Supervisor (supervisor@mappa.gov.vn)',
     export_jobs_status: 'Failed',

@@ -141,7 +141,7 @@ export default function CatalogSchemaPage() {
                       onClick={() => handleRemoveField(index)}
                       disabled={!canUpdate}
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={16} className="text-destructive" />
                     </button>
                   </div>
                   <div className={styles.fieldDetails}>

@@ -324,7 +324,7 @@ function Button7() {
   return (
     <div className="h-[36px] relative rounded-[6px] shrink-0 w-full" data-name="Button">
       <Icon7 />
-      <p className="absolute font-['Inter:Medium',sans-serif] font-medium leading-[20px] left-[89px] not-italic text-[#101828] text-[14px] text-center top-[8px] translate-x-[-50%] whitespace-pre">{`Cơ sở & Địa bàn`}</p>
+      <p className="absolute font-['Inter:Medium',sans-serif] font-medium leading-[20px] left-[89px] not-italic text-[#101828] text-[14px] text-center top-[8px] translate-x-[-50%] whitespace-pre">{`Cơ sở quản lý`}</p>
     </div>
   );
 }

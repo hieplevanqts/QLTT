@@ -103,7 +103,6 @@ export function QuickEditDialog({
   onApprove,
   onReject,
 }: QuickEditDialogProps) {
-  const [step, setStep] = useState<EditStep>('form');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -124,7 +123,6 @@ export function QuickEditDialog({
     ownerEmail: '',
   });
 
-  const [changeReason, setChangeReason] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -148,10 +146,8 @@ export function QuickEditDialog({
         ownerIdNumber: store.ownerIdNumber || '',
         ownerEmail: store.ownerEmail || '',
       });
-      setChangeReason('');
       setTagInput('');
       setErrors({});
-      setStep('form');
     }
   }, [store, open]);
 
@@ -195,32 +191,13 @@ export function QuickEditDialog({
     return Object.keys(newErrors).length === 0;
   };
 
-  const validateReason = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!changeReason.trim()) {
-      newErrors.changeReason = 'Vui lòng nhập lý do chỉnh sửa';
-    } else if (changeReason.trim().length < 10) {
-      newErrors.changeReason = 'Lý do chỉnh sửa phải ít nhất 10 ký tự';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleNextStep = () => {
+  const handleSubmit = async () => {
     if (!validate()) return;
 
     if (!hasChanges) {
       setErrors({ form: 'Không có thay đổi nào để lưu' });
       return;
     }
-
-    setStep('reason');
-  };
-
-  const handleSubmit = async () => {
-    if (!validateReason()) return;
 
     setIsSubmitting(true);
 
@@ -248,7 +225,7 @@ export function QuickEditDialog({
       // Call onConfirm with form data
       onConfirm({
         ...formData,
-        changeReason,
+        changeReason: '',
       });
 
       setIsSubmitting(false);
@@ -261,18 +238,13 @@ export function QuickEditDialog({
   };
 
   const handleCancel = () => {
-    if (hasChanges && step === 'form') {
+    if (hasChanges) {
       if (confirm('Bạn có chắc muốn hủy? Các thay đổi chưa lưu sẽ bị mất.')) {
         onOpenChange(false);
       }
     } else {
       onOpenChange(false);
     }
-  };
-
-  const handleBack = () => {
-    setStep('form');
-    setErrors({});
   };
 
   const handleAddTag = () => {
@@ -329,24 +301,12 @@ export function QuickEditDialog({
           <div className="flex items-start justify-between w-full">
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                {step === 'form' ? (
-                  <Edit className="h-5 w-5 text-primary" />
-                ) : (
-                  <Clock className="h-5 w-5 text-primary" />
-                )}
+                <Edit className="h-5 w-5 text-primary" />
               </div>
               <div className="flex-1">
-                <DialogTitle>
-                  {step === 'form' ? 'Chỉnh sửa nhanh' : 'Xác nhận thay đổi'}
-                </DialogTitle>
+                <DialogTitle>Chỉnh sửa nhanh</DialogTitle>
                 <DialogDescription className="mt-1">
-                  {step === 'form' ? (
-                    <>
-                      Cập nhật thông tin cơ bản: <strong>{store?.name}</strong>
-                    </>
-                  ) : (
-                    'Vui lòng nhập lý do chỉnh sửa trước khi gửi phê duyệt'
-                  )}
+                  Cập nhật thông tin cơ bản: <strong>{store?.name}</strong>
                 </DialogDescription>
               </div>
             </div>
@@ -359,23 +319,20 @@ export function QuickEditDialog({
           </div>
         </DialogHeader>
 
-        {step === 'form' && (
-          <>
-            {/* Quick Edit Notice */}
-            <div className="flex gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
-              <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
-              <div className="flex-1 text-sm">
-                <p className="font-medium text-blue-900 mb-1">Chỉnh sửa nhanh - Cần phê duyệt</p>
-                <p className="text-blue-700">
-                  Các thay đổi sẽ được gửi đến quản lý phê duyệt và chỉ có hiệu lực sau khi được duyệt. 
-                  Để chỉnh sửa địa chỉ, tọa độ hoặc loại hình, vui lòng sử dụng{' '}
-                  <strong>Chỉnh sửa đầy đủ</strong>.
-                </p>
-              </div>
-            </div>
+        {/* Quick Edit Notice */}
+        <div className="flex gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
+          <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+          <div className="flex-1 text-sm">
+            <p className="font-medium text-blue-900 mb-1">Chỉnh sửa nhanh</p>
+            <p className="text-blue-700">
+              Cập nhật thông tin cơ bản của cơ sở. Để chỉnh sửa địa chỉ, tọa độ hoặc loại hình, vui lòng sử dụng{' '}
+              <strong>Chỉnh sửa đầy đủ</strong>.
+            </p>
+          </div>
+        </div>
 
-            {/* Form Fields */}
-            <div className="space-y-4 py-4">
+        {/* Form Fields */}
+        <div className="space-y-4 py-4">
               {/* Tên cơ sở */}
               <div className="space-y-2">
                 <Label htmlFor="name">
@@ -581,124 +538,14 @@ export function QuickEditDialog({
               )}
             </div>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={handleCancel}>
-                Hủy
-              </Button>
-              {(store?.status === 'pending' || store?.status === 'rejected') && onApprove && onReject && (
-                <>
-                  <Button 
-                    variant="destructive" 
-                    onClick={() => {
-                      if (store) {
-                        onReject(store.id);
-                        onOpenChange(false);
-                      }
-                    }}
-                  >
-                    <XCircle size={16} />
-                    Từ chối
-                  </Button>
-                  <Button 
-                    onClick={() => {
-                      if (store) {
-                        onApprove(store.id);
-                        onOpenChange(false);
-                      }
-                    }}
-                  >
-                    <CheckCircle2 size={16} />
-                    Phê duyệt
-                  </Button>
-                </>
-              )}
-              {store?.status !== 'pending' && store?.status !== 'rejected' && (
-                <Button onClick={handleNextStep} disabled={!hasChanges}>
-                  Tiếp tục
-                  {hasChanges && (
-                    <Badge variant="secondary" className="ml-2">
-                      {changedFields.length}
-                    </Badge>
-                  )}
-                </Button>
-              )}
-            </DialogFooter>
-          </>
-        )}
-
-        {step === 'reason' && (
-          <>
-            {/* Changed Fields Summary */}
-            <div className="space-y-3 py-4">
-              <div className="flex gap-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
-                <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                <div className="flex-1 text-sm">
-                  <p className="font-medium text-amber-900 mb-1">
-                    Tóm tắt thay đổi ({changedFields.length} trường)
-                  </p>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {changedFields.map((field) => (
-                      <Badge key={field} variant="outline" className="bg-white">
-                        <Check className="h-3 w-3 mr-1" />
-                        {field}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Change Reason */}
-              <div className="space-y-2">
-                <Label htmlFor="change-reason">
-                  Lý do chỉnh sửa <span className="text-destructive">*</span>
-                </Label>
-                <Textarea
-                  id="change-reason"
-                  value={changeReason}
-                  onChange={(e) => setChangeReason(e.target.value)}
-                  placeholder="VD: Cập nhật thông tin liên hệ mới của chủ cơ sở, thêm tags phân loại, cập nhật ghi chú sau thanh tra..."
-                  rows={4}
-                  autoFocus
-                />
-                {errors.changeReason && (
-                  <p className="text-sm text-destructive">{errors.changeReason}</p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Lý do chỉnh sửa sẽ được ghi lại trong audit log và hiển thị trong yêu cầu phê duyệt.
-                </p>
-              </div>
-
-              {/* Approval Notice */}
-              <div className="flex gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
-                <Clock className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
-                <div className="flex-1 text-sm">
-                  <p className="font-medium text-blue-900 mb-1">Quy trình phê duyệt</p>
-                  <p className="text-blue-700">
-                    Thay đổi sẽ được gửi đến quản lý để phê duyệt. Trong thời gian chờ duyệt, 
-                    dữ liệu cũ vẫn được hiển thị và cơ sở sẽ có badge{' '}
-                    <span className="font-semibold">"Đang chờ phê duyệt"</span>.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={handleBack} disabled={isSubmitting}>
-                Quay lại
-              </Button>
-              <Button onClick={handleSubmit} disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <span className="mr-2">Đang gửi...</span>
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  </>
-                ) : (
-                  'Gửi phê duyệt'
-                )}
-              </Button>
-            </DialogFooter>
-          </>
-        )}
+        <DialogFooter className="gap-4">
+          <Button variant="outline" onClick={handleCancel}>
+            Hủy
+          </Button>
+          <Button onClick={handleSubmit} disabled={!hasChanges || isSubmitting}>
+            {isSubmitting ? 'Đang lưu...' : 'Lưu thay đổi'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

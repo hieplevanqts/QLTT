@@ -462,7 +462,7 @@ export const PermissionsMatrixTab: React.FC = () => {
                       onClick={() => handleDeleteModule(module)}
                       title="Xóa module"
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={16} className="text-destructive" />
                     </button>
                   </div>
                 </div>
@@ -529,7 +529,7 @@ export const PermissionsMatrixTab: React.FC = () => {
                                     onClick={() => handleDeletePermission(perm)}
                                     title="Xóa"
                                   >
-                                    <Trash2 size={14} />
+                                    <Trash2 size={14} className="text-destructive" />
                                   </button>
                                 </div>
                               </td>
