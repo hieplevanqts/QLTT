@@ -85,7 +85,7 @@ export const CommonActions = {
     priority: 6,
   }),
   viewHistory: (onClick: () => void): Action => ({
-    label: 'Lịch sử thay đổi',
+    label: 'Lịch sử kiểm tra',
     icon: <History size={16} />,
     onClick,
     priority: 5,

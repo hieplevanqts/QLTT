@@ -26,6 +26,8 @@ import { ImportDialog } from '@/components/ui-kit/ImportDialog';
 import { AddStoreDialog, NewStoreData } from '@/components/ui-kit/AddStoreDialog';
 import DataTable, { Column } from '@/components/ui-kit/DataTable';
 import { SearchInput } from '@/components/ui-kit/SearchInput';
+import { SearchableSelect } from '@/components/ui-kit/SearchableSelect';
+import { BUSINESS_TYPES } from '@/constants/businessTypes';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -92,6 +94,7 @@ export default function StoresListPage() {
     if (pageSize !== 20) params.size = pageSize.toString();
     if (statusFilter !== 'all') params.status = statusFilter;
     if (jurisdictionFilter !== 'all') params.province = jurisdictionFilter;
+    if (businessTypeFilter !== 'all') params.businessType = businessTypeFilter;
     if (debouncedSearchValue) params.q = debouncedSearchValue;
 
     setSearchParams(params, { replace: true });
@@ -102,11 +105,13 @@ export default function StoresListPage() {
     const page = parseInt(getParam('page', '1'), 10);
     const status = getParam('status', 'all');
     const province = getParam('province', 'all');
+    const businessType = getParam('businessType', 'all');
     const query = getParam('q', '');
 
     if (page !== currentPage) setCurrentPage(page);
     if (status !== statusFilter) setStatusFilter(status);
     if (province !== jurisdictionFilter) setJurisdictionFilter(province);
+    if (businessType !== businessTypeFilter) setBusinessTypeFilter(businessType);
     if (query !== searchValue) setSearchValue(query);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
@@ -159,8 +164,8 @@ export default function StoresListPage() {
     hasViolations: 'all',
     hasComplaints: 'all',
     riskLevel: 'all',
-    businessType: 'all',
   });
+  const [businessTypeFilter, setBusinessTypeFilter] = useState<string>(getParam('businessType', 'all'));
   const [legalDocDialog, setLegalDocDialog] = useState<{
     open: boolean;
     document: LegalDocument | null;
@@ -245,6 +250,9 @@ export default function StoresListPage() {
         if (debouncedSearchValue) {
           filters.search = debouncedSearchValue;
         }
+        if (businessTypeFilter && businessTypeFilter !== 'all') {
+          filters.businessType = businessTypeFilter;
+        }
 
         const { data, total } = await fetchStores(pageSize, offset, filters);
 
@@ -275,7 +283,7 @@ export default function StoresListPage() {
     };
 
     loadStores();
-  }, [currentPage, pageSize, statusFilter, jurisdictionFilter, debouncedSearchValue]);
+  }, [currentPage, pageSize, statusFilter, jurisdictionFilter, debouncedSearchValue, businessTypeFilter]);
 
   // Load provinces from API on component mount
   useEffect(() => {
@@ -340,13 +348,6 @@ export default function StoresListPage() {
           return !store.riskLevel || store.riskLevel === 'none';
         }
         return store.riskLevel === filters.riskLevel;
-      });
-    }
-
-    // Filter by business type
-    if (filters.businessType && filters.businessType !== 'all') {
-      filtered = filtered.filter(store => {
-        return store.businessType === filters.businessType;
       });
     }
 
@@ -937,8 +938,8 @@ export default function StoresListPage() {
     if (advancedFilter.riskLevel && advancedFilter.riskLevel !== 'all') {
       mapFilters.riskLevel = advancedFilter.riskLevel;
     }
-    if (advancedFilter.businessType && advancedFilter.businessType !== 'all') {
-      mapFilters.businessType = advancedFilter.businessType;
+    if (businessTypeFilter && businessTypeFilter !== 'all') {
+      mapFilters.businessType = businessTypeFilter;
     }
 
     // Navigate to map page with filters as state
@@ -957,7 +958,7 @@ export default function StoresListPage() {
     advancedFilter.hasViolations !== 'all' ||
     advancedFilter.hasComplaints !== 'all' ||
     advancedFilter.riskLevel !== 'all' ||
-    advancedFilter.businessType !== 'all';
+    businessTypeFilter !== 'all';
 
   return (
     <div className={styles.pageContainer}>
@@ -1139,17 +1140,15 @@ export default function StoresListPage() {
                 hasViolations: 'all',
                 hasComplaints: 'all',
                 riskLevel: 'all',
-                businessType: 'all',
               });
               toast.success('Đã xoá bộ lọc nâng cao');
             }}
             hasActiveFilters={
               advancedFilter.hasViolations !== 'all' ||
               advancedFilter.hasComplaints !== 'all' ||
-              advancedFilter.riskLevel !== 'all' ||
-              advancedFilter.businessType !== 'all'
+              advancedFilter.riskLevel !== 'all'
             }
-            iconOnly={true}
+            iconOnly={false}
           />
 
           {/* 2. Địa bàn */}
@@ -1194,6 +1193,17 @@ export default function StoresListPage() {
               <SelectItem value="refuse">Ngừng hoạt động</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* 3.1 Loại hình kinh doanh (moved out of advanced filter) */}
+          <div style={{ width: '200px', flexShrink: 0 }}>
+            <SearchableSelect
+              value={businessTypeFilter}
+              onValueChange={(val) => { setBusinessTypeFilter(val || 'all'); setCurrentPage(1); }}
+              options={[{ value: 'all', label: 'Tất cả loại hình' }, ...BUSINESS_TYPES.map(bt => ({ value: bt.value, label: bt.label }))]}
+              placeholder="Chọn loại hình kinh doanh"
+              width="200px"
+            />
+          </div>
 
           {/* 4. Tên cơ sở (medium width) */}
           <div style={{ width: '280px', flexShrink: 0 }}>

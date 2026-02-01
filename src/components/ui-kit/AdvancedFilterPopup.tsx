@@ -10,7 +10,6 @@ export interface AdvancedFilters {
   hasViolations?: 'all' | 'yes' | 'no';
   hasComplaints?: 'all' | 'yes' | 'no';
   riskLevel?: 'all' | 'low' | 'medium' | 'high' | 'none';
-  businessType?: string; // 'all' or business type value
 }
 
 interface AdvancedFilterPopupProps {
@@ -105,15 +104,6 @@ export function AdvancedFilterPopup({
     .filter((f) => f && f !== 'all')
     .length;
 
-  // Prepare business type options for SearchableSelect
-  const businessTypeOptions: SearchableSelectOption[] = [
-    { value: 'all', label: 'Chọn loại kinh doanh' },
-    ...BUSINESS_TYPES.map((type) => ({
-      value: type.value,
-      label: type.label,
-    })),
-  ];
-
   return (
     <div className={styles.container}>
       {/* Toggle Button */}
@@ -131,7 +121,7 @@ export function AdvancedFilterPopup({
           />
         ) : (
           <>
-            <span>Lọc nâng cao</span>
+            <span>Bộ lọc</span>
             {hasActiveFilters && activeCount > 0 && (
               <span className={styles.badge}>{activeCount}</span>
             )}
@@ -209,21 +199,7 @@ export function AdvancedFilterPopup({
               />
             </div>
 
-            {/* Loại kinh doanh Filter */}
-            <div className={styles.filterGroup}>
-              <label className={styles.filterLabel}>Loại kinh doanh</label>
-              <SearchableSelect
-                value={tempFilters.businessType || 'all'}
-                onValueChange={(value) => 
-                  setTempFilters({ ...tempFilters, businessType: value })
-                }
-                options={businessTypeOptions}
-                placeholder="Chọn loại kinh doanh"
-                searchPlaceholder="Tìm kiếm..."
-                emptyText="Không tìm thấy"
-                width="100%"
-              />
-            </div>
+            {/* NOTE: 'Loại kinh doanh' moved to main filter bar per UX requirement */}
           </div>
 
           {/* Popup Actions */}
