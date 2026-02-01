@@ -6,6 +6,7 @@ import { Restaurant } from '../../../data/restaurantData';
 import { Category } from '../../../utils/api/categoriesApi';
 import { fetchProvinces, fetchWardsByProvinceId, ProvinceApiData, WardApiData } from '../../../utils/api/locationsApi';
 import { getDepartmentManager } from '../../../utils/api/departmentUsersApi';
+import { useAppSelector } from '../../../app/hooks';
 
 interface LocationStatsCardProps {
   selectedProvince?: string;
@@ -51,6 +52,7 @@ export const LocationStatsCard = React.forwardRef<HTMLDivElement, LocationStatsC
     
     // 🔥 NEW: State for department manager
     const [departmentManager, setDepartmentManager] = useState<{ id: string; full_name: string; email?: string; phone?: string } | null>(null);
+    const authUser = useAppSelector((state) => state.auth.user);
 
     // Load provinces from API
     useEffect(() => {
@@ -124,6 +126,11 @@ export const LocationStatsCard = React.forwardRef<HTMLDivElement, LocationStatsC
     const currentLocation = wardData || districtData || provinceData;
     // 🔥 FIX: Show "Toàn quốc" if no location is selected, otherwise show the selected location
     const locationName = wardName || (selectedDistrict && selectedDistrict !== 'undefined' ? selectedDistrict : null) || provinceName || 'Toàn quốc';
+    const departmentName =
+      (authUser as any)?.app_metadata?.department?.name
+      || (authUser as any)?.departmentInfo?.name
+      || null;
+    const headerTitle = departmentName || locationName;
     // 🔥 NEW: Use department manager from API, fallback to static data
     const officer = departmentManager?.full_name || currentLocation?.officer || 'Chưa phân công';
     const area = currentLocation?.area;
@@ -180,7 +187,7 @@ export const LocationStatsCard = React.forwardRef<HTMLDivElement, LocationStatsC
         <div className={styles.header}>
           <div className={styles.title}>
             <Map size={16} className={styles.titleIcon} />
-            <span className={styles.titleText}>{locationName}</span>
+            <span className={styles.titleText}>{headerTitle}</span>
           </div>
           <button 
             className={styles.closeIcon} 
