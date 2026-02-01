@@ -253,6 +253,8 @@ export async function fetchUserInfo(token: string): Promise<User | null> {
       email: userData.email,
       name: userData.user_metadata?.name || userData.user_metadata?.full_name || userData.email,
       roleDisplay: roleDisplay || userData.user_metadata?.roleDisplay || undefined,
+      app_metadata: userData.app_metadata,
+      user_metadata: userData.user_metadata,
       ...userData.user_metadata,
     };
   } catch (error: any) {
