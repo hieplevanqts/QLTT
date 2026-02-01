@@ -92,14 +92,11 @@ export interface EditStoreData {
   businessArea?: string;
   businessPhone?: string;
   email?: string;
-  website?: string;
-  fax?: string;
   notes?: string;
   ownerName?: string;
   ownerBirthYear?: string;
   ownerIdNumber?: string;
   ownerPhone?: string;
-  ownerPhone2?: string;
   registeredAddress?: string;
   province?: string;
   ward?: string;
@@ -139,14 +136,11 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
         businessArea: store.businessArea || '',
         businessPhone: store.businessPhone || '',
         email: store.email || '',
-        website: store.website || '',
-        fax: store.fax || '',
         notes: store.notes || '',
         ownerName: store.ownerName || '',
         ownerBirthYear: store.ownerBirthYear?.toString() || '',
         ownerIdNumber: store.ownerIdNumber || '',
         ownerPhone: store.ownerPhone || '',
-        ownerPhone2: store.ownerPhone2 || '',
         registeredAddress: store.address || '',
         latitude: store.latitude,
         longitude: store.longitude,
@@ -219,9 +213,32 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
+    // Phone validation function (Vietnamese format)
+    const isValidPhoneNumber = (phone: string): boolean => {
+      if (!phone?.trim()) return false;
+      // Vietnamese phone: 10 digits, starts with 0, optionally +84, or just numbers
+      const phoneRegex = /^(\+84|0)?[0-9]{9,10}$/;
+      return phoneRegex.test(phone.replace(/\s+/g, ''));
+    };
+
     // Tab 1: Business - Required fields
     if (!formData.business_name?.trim()) {
       newErrors.business_name = 'Tên cơ sở là bắt buộc';
+    }
+    if (!formData.businessPhone?.trim()) {
+      newErrors.businessPhone = 'Vui lòng nhập số điện thoại hộ kinh doanh';
+    } else if (!isValidPhoneNumber(formData.businessPhone)) {
+      newErrors.businessPhone = 'Số điện thoại không hợp lệ';
+    }
+
+    // Tab 2: Owner - Required fields
+    if (!formData.ownerName?.trim()) {
+      newErrors.ownerName = 'Tên chủ cơ sở là bắt buộc';
+    }
+    if (!formData.ownerPhone?.trim()) {
+      newErrors.ownerPhone = 'Vui lòng nhập số điện thoại chủ cơ sở';
+    } else if (!isValidPhoneNumber(formData.ownerPhone)) {
+      newErrors.ownerPhone = 'Số điện thoại không hợp lệ';
     }
 
     setErrors(newErrors);
@@ -251,14 +268,11 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
       businessArea: formData.businessArea,
       businessPhone: formData.businessPhone,
       email: formData.email,
-      website: formData.website,
-      fax: formData.fax,
       notes: formData.notes,
       ownerName: formData.ownerName,
       ownerBirthYear: formData.ownerBirthYear,
       ownerIdNumber: formData.ownerIdNumber,
       ownerPhone: formData.ownerPhone,
-      ownerPhone2: formData.ownerPhone2,
       registeredAddress: formData.registeredAddress,
       province: selectedProvince,
       ward: selectedWard,
@@ -290,7 +304,7 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
             onClick={() => setActiveTab('business')}
           >
             <FileText className="w-4 h-4" />
-            <span>Thông tin HKD</span>
+            <span>Thông tin cơ sở</span>
             {Object.keys(errors).some(k => ['business_name', 'taxCode', 'industryName'].includes(k)) && (
               <XCircle className="w-3 h-3 text-red-500" />
             )}
@@ -301,7 +315,7 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
             onClick={() => setActiveTab('owner')}
           >
             <Users className="w-4 h-4" />
-            <span>Thông tin chủ hộ</span>
+            <span>Thông tin chủ cơ sở</span>
             {Object.keys(errors).some(k => ['ownerName'].includes(k)) && (
               <XCircle className="w-3 h-3 text-red-500" />
             )}
@@ -321,13 +335,13 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
 
         {/* Tab Content */}
         <div className={styles.tabContent}>
-          {/* Tab 1: Thông tin HKD */}
+          {/* Tab 1: Thông tin cơ sở */}
           {activeTab === 'business' && (
             <div className={styles.formGrid}>
               {/* Tên cơ sở */}
               <div className="space-y-2 col-span-2">
                 <Label htmlFor="business_name">
-                  Tên cơ sở kinh doanh <span className="text-red-500">*</span>
+                  Tên cơ sở <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="business_name"
@@ -457,29 +471,6 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
                 />
               </div>
 
-              {/* Website */}
-              <div className="space-y-2">
-                <Label htmlFor="website">Website</Label>
-                <Input
-                  id="website"
-                  type="url"
-                  value={formData.website || ''}
-                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                  placeholder="Nhập website"
-                />
-              </div>
-
-              {/* Fax */}
-              <div className="space-y-2">
-                <Label htmlFor="fax">Fax</Label>
-                <Input
-                  id="fax"
-                  value={formData.fax || ''}
-                  onChange={(e) => setFormData({ ...formData, fax: e.target.value })}
-                  placeholder="Nhập số fax"
-                />
-              </div>
-
               {/* Ghi chú */}
               <div className="space-y-2 col-span-2">
                 <Label htmlFor="notes">Ghi chú</Label>
@@ -536,25 +527,13 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
 
               {/* Số điện thoại chính */}
               <div className="space-y-2">
-                <Label htmlFor="ownerPhone">Số điện thoại chính</Label>
+                <Label htmlFor="ownerPhone">Số điện thoại chủ cơ sở *</Label>
                 <Input
                   id="ownerPhone"
                   type="tel"
                   value={formData.ownerPhone || ''}
                   onChange={(e) => setFormData({ ...formData, ownerPhone: e.target.value })}
                   placeholder="Nhập số điện thoại"
-                />
-              </div>
-
-              {/* Số điện thoại phụ */}
-              <div className="space-y-2">
-                <Label htmlFor="ownerPhone2">Số điện thoại phụ</Label>
-                <Input
-                  id="ownerPhone2"
-                  type="tel"
-                  value={formData.ownerPhone2 || ''}
-                  onChange={(e) => setFormData({ ...formData, ownerPhone2: e.target.value })}
-                  placeholder="Nhập số điện thoại phụ (nếu có)"
                 />
               </div>
             </div>
@@ -647,7 +626,7 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
           )}
         </div>
 
-        <DialogFooter className={styles.dialogFooter}>
+        <DialogFooter style={{ gap: '12px' }}>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Hủy
           </Button>

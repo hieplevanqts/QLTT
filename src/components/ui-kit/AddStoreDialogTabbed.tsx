@@ -51,10 +51,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import {
-  provinces,
-  getWardsByProvince
-} from '@/utils/data/vietnamLocations';
 import { fetchProvinces, fetchWardsByProvince, type ProvinceApiData, type WardApiData } from '@/utils/api/locationsApi';
 import { INDUSTRIES } from '@/utils/data/industries';
 import { extractDocumentData } from '@/utils/api/ocrApi';
@@ -155,8 +151,6 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
   // API Data
   const [apiProvinces, setApiProvinces] = useState<ProvinceApiData[]>([]);
   const [apiWards, setApiWards] = useState<WardApiData[]>([]);
-  const [loadingProvinces, setLoadingProvinces] = useState(false);
-  const [loadingWards, setLoadingWards] = useState(false);
 
   // Province/Ward state (NO District)
   const [selectedProvince, setSelectedProvince] = useState('');
@@ -173,17 +167,13 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
   useEffect(() => {
     loadLocationData();
   }, []);
-
   const loadLocationData = async () => {
     try {
-      setLoadingProvinces(true);
       const prov = await fetchProvinces();
       setApiProvinces(prov);
     } catch (error) {
       console.error('Error fetching provinces:', error);
       toast.error('Không thể tải danh sách tỉnh/thành phố');
-    } finally {
-      setLoadingProvinces(false);
     }
   };
 
@@ -195,14 +185,11 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
     }
 
     try {
-      setLoadingWards(true);
       const w = await fetchWardsByProvince(provinceId);
       setApiWards(w);
     } catch (error) {
       console.error('Error fetching wards:', error);
       toast.error('Không thể tải danh sách phường/xã');
-    } finally {
-      setLoadingWards(false);
     }
     
     return;
@@ -447,7 +434,15 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {};
 
-    // Tab 1: Thông tin HKD - Chỉ validate required fields (*)
+    // Phone validation function (Vietnamese format)
+    const isValidPhoneNumber = (phone: string): boolean => {
+      if (!phone?.trim()) return false;
+      // Vietnamese phone: 10 digits, starts with 0, optionally +84, or just numbers
+      const phoneRegex = /^(\+84|0)?[0-9]{9,10}$/;
+      return phoneRegex.test(phone.replace(/\s+/g, ''));
+    };
+
+    // Tab 1: Thông tin cơ sở - Chỉ validate required fields (*)
     if (!formData.business_name?.trim()) {
       newErrors.business_name = 'Vui lòng nhập tên cơ sở kinh doanh';
     }
@@ -460,11 +455,22 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
     if (!formData.operationStatus?.trim()) {
       newErrors.operationStatus = 'Vui lòng chọn tình trạng hoạt động';
     }
-    // businessArea, businessPhone, email, website, fax - optional, không validate
-    // Chỉ validate format nếu có nhập
+    if (!formData.businessPhone?.trim()) {
+      newErrors.businessPhone = 'Vui lòng nhập số điện thoại hộ kinh doanh';
+    } else if (!isValidPhoneNumber(formData.businessPhone)) {
+      newErrors.businessPhone = 'Số điện thoại không hợp lệ';
+    }
+    // businessArea, email, website, fax - optional
 
-    // Tab 2: Thông tin chủ hộ - Không có field required
-    // Tất cả optional fields, không validate
+    // Tab 2: Thông tin chủ cơ sở - Validate required fields (*)
+    if (!formData.ownerName?.trim()) {
+      newErrors.ownerName = 'Vui lòng nhập tên chủ cơ sở';
+    }
+    if (!formData.ownerPhone?.trim()) {
+      newErrors.ownerPhone = 'Vui lòng nhập số điện thoại chủ cơ sở';
+    } else if (!isValidPhoneNumber(formData.ownerPhone)) {
+      newErrors.ownerPhone = 'Số điện thoại không hợp lệ';
+    }
 
     // Tab 3: Địa chỉ - Không validate province, ward, location map
     // registeredAddress, province, ward, latitude, longitude - tất cả optional
@@ -475,16 +481,16 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
     if (Object.keys(newErrors).length > 0) {
       const errorFields = Object.keys(newErrors);
 
-      const businessFields = ['business_name', 'taxCode', 'industryName', 'operationStatus'];
-      const ownerFields = ['ownerName', 'ownerBirthYear', 'ownerIdNumber', 'ownerPhone'];
+      const businessFields = ['business_name', 'taxCode', 'industryName', 'operationStatus', 'businessPhone'];
+      const ownerFields = ['ownerName', 'ownerPhone'];
       const addressFields = ['registeredAddress', 'province', 'ward'];
 
       if (errorFields.some(f => businessFields.includes(f))) {
         setActiveTab('business');
-        toast.error('Vui lòng điền đầy đủ thông tin HKD');
+        toast.error('Vui lòng điền đầy đủ thông tin cơ sở');
       } else if (errorFields.some(f => ownerFields.includes(f))) {
         setActiveTab('owner');
-        toast.error('Vui lòng điền đầy đủ thông tin chủ hộ');
+        toast.error('Vui lòng điền đầy đủ thông tin chủ cơ sở');
       } else if (errorFields.some(f => addressFields.includes(f))) {
         setActiveTab('address');
         toast.error('Vui lòng điền đầy đủ thông tin địa chỉ');
@@ -542,25 +548,6 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
     setSelectedProvince('');
     setSelectedWard('');
     setErrors({});
-  };
-
-  // Handle map location selected
-  const handleMapLocationSelected = (data: {
-    address: string;
-    latitude: number;
-    longitude: number;
-    province: string;
-    district: string;
-    ward: string;
-  }) => {
-    setFormData(prev => ({
-      ...prev,
-      registeredAddress: data.address,
-      latitude: data.latitude,
-      longitude: data.longitude,
-    }));
-    setSelectedProvince(data.province);
-    setSelectedWard(data.ward);
   };
 
   // Render field with auto-fill indicator
@@ -704,7 +691,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
             onClick={() => setActiveTab('business')}
           >
             <FileText className="w-4 h-4" />
-            <span>Thông tin HKD</span>
+            <span>Thông tin cơ sở</span>
             {Object.keys(errors).some(k => ['name', 'taxCode', 'industryName', 'operationStatus', 'businessArea', 'businessPhone'].includes(k)) && (
               <XCircle className="w-3 h-3 text-red-500" />
             )}
@@ -715,7 +702,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
             onClick={() => setActiveTab('owner')}
           >
             <Users className="w-4 h-4" />
-            <span>Thông tin chủ hộ</span>
+            <span>Thông tin chủ cơ sở</span>
             {Object.keys(errors).some(k => ['ownerName', 'ownerBirthYear', 'ownerIdNumber', 'ownerPhone'].includes(k)) && (
               <XCircle className="w-3 h-3 text-red-500" />
             )}
@@ -735,12 +722,12 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
 
         {/* Tab Content */}
         <div className={styles.tabContent}>
-          {/* Tab 1: Thông tin HKD */}
+          {/* Tab 1: Thông tin cơ sở */}
           {activeTab === 'business' && (
             <div className={styles.formGrid}>
               {renderFieldWithIndicator(
                 'business_name',
-                'Tên cơ sở kinh doanh *',
+                'Tên cơ sở *',
                 <Input
                   id="business_name"
                   value={formData.business_name || ''}
@@ -883,7 +870,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
 
               {renderFieldWithIndicator(
                 'businessPhone',
-                'SĐT hộ kinh doanh',
+                'SĐT hộ kinh doanh *',
                 <Input
                   id="businessPhone"
                   type="tel"
@@ -902,29 +889,6 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                   value={formData.email || ''}
                   onChange={(e) => handleFieldChange('email', e.target.value)}
                   placeholder="Nhập email"
-                />
-              )}
-
-              {renderFieldWithIndicator(
-                'website',
-                'Website',
-                <Input
-                  id="website"
-                  type="url"
-                  value={formData.website || ''}
-                  onChange={(e) => handleFieldChange('website', e.target.value)}
-                  placeholder="Nhập website"
-                />
-              )}
-
-              {renderFieldWithIndicator(
-                'fax',
-                'Fax',
-                <Input
-                  id="fax"
-                  value={formData.fax || ''}
-                  onChange={(e) => handleFieldChange('fax', e.target.value)}
-                  placeholder="Nhập số fax"
                 />
               )}
 
@@ -982,7 +946,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
 
               {renderFieldWithIndicator(
                 'ownerPhone',
-                'Số điện thoại chủ hộ',
+                'Số điện thoại chủ cơ sở *',
                 <Input
                   id="ownerPhone"
                   type="tel"
@@ -994,15 +958,15 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
               )}
 
               {renderFieldWithIndicator(
-                'ownerPhone2',
-                'Số điện thoại khác (nếu có)',
+                'ownerName',
+                'Tên chủ cơ sở *',
                 <Input
-                  id="ownerPhone2"
-                  type="tel"
+                  id="ownerName"
+                  type="text"
                   className='placeholder:text-gray-500'
-                  value={formData.ownerPhone2 || ''}
-                  onChange={(e) => handleFieldChange('ownerPhone2', e.target.value)}
-                  placeholder="Nhập số điện thoại"
+                  value={formData.ownerName || ''}
+                  onChange={(e) => handleFieldChange('ownerName', e.target.value)}
+                  placeholder="Nhập tên chủ cơ sở"
                 />
               )}
 
@@ -1205,9 +1169,8 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
         </div>
 
         {/* Footer */}
-        <DialogFooter>
+        <DialogFooter style={{ gap: '12px' }}>
           <Button
-            className='mr-3'
             type="button"
             variant="outline"
             onClick={() => {
@@ -1222,7 +1185,6 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
             Hủy
           </Button>
           <Button type="button" onClick={handleSubmit}>
-            <CheckCircle2 className="w-4 h-4" />
             Lưu cơ sở
           </Button>
         </DialogFooter>
