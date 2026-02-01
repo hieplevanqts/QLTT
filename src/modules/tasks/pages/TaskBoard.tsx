@@ -60,7 +60,7 @@ type ViewMode = 'kanban' | 'list';
 // Valid status transitions based on workflow rules - v2
 const VALID_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
   not_started: ['in_progress', 'cancelled'], // Chỉ có thể bắt đầu hoặc hủy
-  in_progress: ['not_started', 'completed', 'pending_approval', 'cancelled'], // Có thể quay lại, hoàn thành, chờ duyệt hoặc hủy
+  in_progress: ['not_started', 'completed', 'pending_approval', 'cancelled'], // Có thể quay lại, hoàn thành, Chờ duyệt hoặc hủy
   pending_approval: ['completed', 'in_progress', 'cancelled'], // Có thể duyệt xong, yêu cầu sửa hoặc hủy
   completed: ['in_progress', 'closed', 'reopened'], // Có thể reopen hoặc đóng
   closed: ['completed', 'reopened'], // Chỉ có thể reopen về hoàn thành/mở lại

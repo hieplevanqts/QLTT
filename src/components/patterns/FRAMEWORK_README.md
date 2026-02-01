@@ -300,7 +300,7 @@ import ActionColumn, { CommonActions } from '@/components/patterns/ActionColumn'
 }
 
 type FacilityStatus = 
-  | 'pending'           // Chờ xác minh
+  | 'pending'           // Chờ duyệt
   | 'active'            // Đang hoạt động
   | 'underInspection'   // Đang xử lý kiểm tra
   | 'suspended'         // Tạm ngưng hoạt động
@@ -317,7 +317,7 @@ type FacilityStatus =
 
 | Trạng thái | Label | Icon | Màu |
 |-----------|-------|------|-----|
-| `pending` | Chờ xác minh | Clock | Vàng cam (#f59e0b) |
+| `pending` | Chờ duyệt | Clock | Vàng cam (#f59e0b) |
 | `active` | Đang hoạt động | CheckCircle | Xanh lá (#10b981) |
 | `underInspection` | Đang xử lý kiểm tra | Search | Xanh dương (#3b82f6) |
 | `suspended` | Tạm ngưng hoạt động | PauseCircle | Đỏ (#ef4444) |

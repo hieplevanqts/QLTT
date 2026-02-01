@@ -31,7 +31,7 @@ export default function AlertTicker({ scene }: AlertTickerProps) {
         icon: FileBox,
         color: '#8b5cf6',
         priority: 'P2',
-        message: `Chứng cứ mới chờ duyệt: ${pendingEvidences.length} mục`,
+        message: `Chứng cứ mới Chờ duyệt: ${pendingEvidences.length} mục`,
       });
     }
 

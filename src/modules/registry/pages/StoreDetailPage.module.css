@@ -126,7 +126,7 @@
   border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
-/* Chờ xác minh - Yellow */
+/* Chờ duyệt - Yellow */
 .statusPending {
   background: rgba(234, 179, 8, 0.1);
   color: rgb(202, 138, 4);

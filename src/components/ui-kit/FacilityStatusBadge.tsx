@@ -10,7 +10,7 @@ import {
 import styles from './FacilityStatusBadge.module.css';
 
 export type FacilityStatus = 
-  | 'pending'           // Chờ xác minh
+  | 'pending'           // Chờ duyệt
   | 'active'            // Đang hoạt động
   | 'underInspection'   // Đang xử lý kiểm tra
   | 'suspended'         // Tạm ngưng hoạt động
@@ -26,7 +26,7 @@ interface StatusConfig {
 
 const statusConfig: Record<FacilityStatus, StatusConfig> = {
   pending: {
-    label: 'Chờ xác minh',
+    label: 'Chờ duyệt',
     icon: Clock,
     variant: 'pending',
     allowedActions: ['verify', 'edit', 'delete'],

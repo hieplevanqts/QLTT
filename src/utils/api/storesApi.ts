@@ -91,10 +91,10 @@ export async function fetchStores(
       url += `&risk_level=eq.${riskLevelNum}`;
     }
 
-    // Search filter
+    // Search filter - searches business_name, tax_code, and address simultaneously
     if (filters?.search) {
       const searchTerms = encodeURIComponent(`*${filters.search}*`);
-      url += `&or=(business_name.ilike.${searchTerms},address.ilike.${searchTerms})`;
+      url += `&or=(business_name.ilike.${searchTerms},tax_code.ilike.${searchTerms},address.ilike.${searchTerms})`;
     }
 
     // Fetch from API

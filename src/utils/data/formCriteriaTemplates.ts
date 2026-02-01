@@ -188,7 +188,7 @@ export const COUNTERFEIT_GOODS_TEMPLATE: FormTemplate = {
       options: [
         'Có lập biên bản',
         'Không lập biên bản',
-        'Chờ xác minh thêm',
+        'Chờ duyệt thêm',
       ],
     },
     {

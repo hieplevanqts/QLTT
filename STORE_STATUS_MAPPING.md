@@ -10,7 +10,7 @@ The store/merchant status field accepts these values:
 | Status Code | Vietnamese Label | Icon | Meaning |
 |---|---|---|---|
 | `active` | Đang hoạt động | ✓ | Store is active and operating normally |
-| `pending` | Chờ xác minh | ⏱ | Waiting for verification/approval |
+| `pending` | Chờ duyệt | ⏱ | Waiting for verification/approval |
 | `suspended` | Tạm ngưng hoạt động | ⏸ | Store is temporarily suspended |
 | `rejected` | Từ chối phê duyệt | ✗ | Application has been rejected |
 | `refuse` | Ngừng hoạt động | ✗ | Store permanently closed (refuse status) |
@@ -20,7 +20,7 @@ The store/merchant status field accepts these values:
 ```typescript
 export type FacilityStatus = 
   | 'active'            // Đang hoạt động
-  | 'pending'           // Chờ xác minh
+  | 'pending'           // Chờ duyệt
   | 'suspended'         // Tạm ngưng hoạt động
   | 'rejected'          // Từ chối phê duyệt
   | 'refuse';           // Ngừng hoạt động
@@ -72,12 +72,12 @@ export type FacilityStatus =
 - → `active` (Đang hoạt động) - via Resume button
 - → `refuse` (Ngừng hoạt động) - via Close button
 
-### From `pending` (Chờ xác minh)
+### From `pending` (Chờ duyệt)
 - → `active` (Đang hoạt động) - via Approve button
 - → `rejected` (Từ chối phê duyệt) - via Reject button
 
 ### From `rejected` (Từ chối phê duyệt)
-- → `pending` (Chờ xác minh) - via Re-review button
+- → `pending` (Chờ duyệt) - via Re-review button
 
 ### From `refuse` (Ngừng hoạt động)
 - → `active` (Đang hoạt động) - via Reopen button
@@ -114,7 +114,7 @@ This ensures that:
 The `fetchStoresStats()` function now tracks:
 - `total` - Total stores
 - `active` - Đang hoạt động
-- `pending` - Chờ xác minh
+- `pending` - Chờ duyệt
 - `suspended` - Tạm ngưng
 - `refuse` - Ngừng hoạt động
 - `rejected` - Từ chối phê duyệt

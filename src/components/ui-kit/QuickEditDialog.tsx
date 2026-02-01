@@ -399,7 +399,7 @@ export function QuickEditDialog({
 
               {/* Owner Information */}
               <div className="space-y-3 pt-2 border-t border-border">
-                <h4 className="text-sm font-medium">Thông tin chủ hộ kinh doanh</h4>
+                <h4 className="text-sm font-medium">Thông tin Chủ cơ sở</h4>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">

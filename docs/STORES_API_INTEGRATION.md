@@ -83,7 +83,7 @@ API merchants table → Store interface:
 | Merchants Field | Store Field | Ghi Chú |
 |---|---|---|
 | `business_name` | `name` | Tên cơ sở |
-| `owner_name` | `ownerName` | Chủ hộ kinh doanh |
+| `owner_name` | `ownerName` | Chủ cơ sở |
 | `owner_phone` | `ownerPhone` | SĐT chủ hộ |
 | `tax_code` | `taxCode` | Mã số thuế |
 | `address` | `address` | Địa chỉ |

@@ -24,17 +24,17 @@ export function Step3OwnerInfo({ formData, setFormData, isValidPhone }: Step3Pro
     <div className={styles.stepContent}>
       {/* Owner Information Section */}
       <div className={styles.section}>
-        <h3 className={styles.sectionTitle}>Thông tin chủ hộ kinh doanh</h3>
+        <h3 className={styles.sectionTitle}>Thông tin Chủ cơ sở</h3>
         <p className={styles.sectionDescription}>
           Thông tin đã được quét tự động hoặc bạn có thể nhập thủ công.
         </p>
 
         <div className={styles.formGrid}>
-          {/* Tên chủ hộ kinh doanh */}
+          {/* Tên Chủ cơ sở */}
           <div className={styles.formGroup}>
             <Label htmlFor="owner-name">
               <User size={16} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
-              Tên chủ hộ kinh doanh <span className={styles.required}>*</span>
+              Tên Chủ cơ sở <span className={styles.required}>*</span>
             </Label>
             <Input
               id="owner-name"
@@ -43,7 +43,7 @@ export function Step3OwnerInfo({ formData, setFormData, isValidPhone }: Step3Pro
               onChange={(e) => setFormData((prev: any) => ({ ...prev, ownerName: e.target.value }))}
             />
             {!formData.ownerName && (
-              <span className={styles.fieldError}>Vui lòng nhập tên chủ hộ kinh doanh</span>
+              <span className={styles.fieldError}>Vui lòng nhập tên Chủ cơ sở</span>
             )}
             <span className={styles.fieldHelper}>
               Họ tên đầy đủ của chủ hộ (người dùng nhập hoặc scan từ CCCD)
@@ -137,7 +137,7 @@ export function Step3OwnerInfo({ formData, setFormData, isValidPhone }: Step3Pro
               <div className={styles.warningText}>
                 Vui lòng điền đầy đủ các thông tin bắt buộc:
                 <ul style={{ marginTop: 'var(--spacing-2)', paddingLeft: 'var(--spacing-5)' }}>
-                  {!formData.ownerName && <li>Tên chủ hộ kinh doanh</li>}
+                  {!formData.ownerName && <li>Tên Chủ cơ sở</li>}
                   {!formData.ownerBirthYear && <li>Năm sinh chủ hộ</li>}
                   {formData.ownerBirthYear && !isValidYear(formData.ownerBirthYear) && <li>Năm sinh không hợp lệ</li>}
                   {!formData.ownerIdNumber && <li>Số CMTND/CCCD/ĐDCN</li>}

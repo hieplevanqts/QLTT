@@ -149,7 +149,7 @@ export function PendingUpdatesDialog({ open, onClose }: PendingUpdatesDialogProp
             {filteredUpdates.length === 0 ? (
               <div className={styles.emptyState}>
                 <FileText size={48} />
-                <p className={styles.emptyTitle}>Không có yêu cầu chờ duyệt</p>
+                <p className={styles.emptyTitle}>Không có yêu cầu Chờ duyệt</p>
                 <p className={styles.emptyDescription}>
                   {searchValue
                     ? 'Không tìm thấy kết quả phù hợp'

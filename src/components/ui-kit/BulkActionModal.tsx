@@ -45,7 +45,7 @@ const ACTION_CONFIG: Record<BulkActionType, {
     requiresReason: true,
     variant: 'danger',
     icon: <X size={24} />,
-    warningText: 'Cơ sở sẽ được chuyển về trạng thái "Chờ xác minh" và cần bổ sung thông tin.',
+    warningText: 'Cơ sở sẽ được chuyển về trạng thái "Chờ duyệt" và cần bổ sung thông tin.',
   },
   suspend: {
     title: 'Tạm ngừng hàng loạt',
@@ -103,7 +103,7 @@ export function BulkActionModal({
           if (store.status === 'pending') {
             valid.push(store);
           } else {
-            invalid.push({ store, reason: 'Chỉ có thể phê duyệt cơ sở ở trạng thái "Chờ xác minh"' });
+            invalid.push({ store, reason: 'Chỉ có thể phê duyệt cơ sở ở trạng thái "Chờ duyệt"' });
           }
           break;
         
@@ -111,7 +111,7 @@ export function BulkActionModal({
           if (store.status === 'pending' || store.status === 'active') {
             valid.push(store);
           } else {
-            invalid.push({ store, reason: 'Chỉ có thể từ chối cơ sở ở trạng thái "Chờ xác minh" hoặc "Đang hoạt động"' });
+            invalid.push({ store, reason: 'Chỉ có thể từ chối cơ sở ở trạng thái "Chờ duyệt" hoặc "Đang hoạt động"' });
           }
           break;
         

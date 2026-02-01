@@ -129,7 +129,7 @@ export default function KpiGrid6({ scene }: KpiGrid6Props) {
     },
     {
       id: 5,
-      label: 'Chứng cứ chờ duyệt',
+      label: 'Chứng cứ Chờ duyệt',
       value: pendingEvidencesCount,
       change: evidencesDelta.percent,
       trend: evidencesDelta.trend,

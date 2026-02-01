@@ -5,7 +5,7 @@ export const DOCUMENT_TYPES: Record<string, DocumentType> = {
   cccd: {
     id: 'cccd',
     name: 'CCCD / CMND chủ hộ',
-    description: 'Căn cước công dân hoặc Chứng minh nhân dân của chủ hộ kinh doanh',
+    description: 'Căn cước công dân hoặc Chứng minh nhân dân của Chủ cơ sở',
     acceptedFormats: ['.pdf', '.jpg', '.jpeg', '.png', '.webp'],
     maxSizeMB: 10,
     fields: [

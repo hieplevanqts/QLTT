@@ -134,7 +134,7 @@ export default function DashboardPage() {
       trend: 'up' as const,
       icon: Shield,
       status: 'warning',
-      description: 'Đang chờ duyệt',
+      description: 'Đang Chờ duyệt',
       reportType: 'evidence',
       filterParams: {
         status: 'pending',

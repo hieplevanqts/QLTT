@@ -7,7 +7,7 @@
 
 ### 1. **SummaryCard** - Thẻ thống kê nhanh
 - **File**: `/src/patterns/SummaryCard.tsx` + `.module.css`
-- **Chức năng**: Hiển thị các chỉ số tổng quan (tổng số, đang hoạt động, chờ xác minh, etc.)
+- **Chức năng**: Hiển thị các chỉ số tổng quan (tổng số, đang hoạt động, Chờ duyệt, etc.)
 - **Tính năng**:
   - Click để lọc dữ liệu tương ứng
   - 5 biến thể màu sắc: success, warning, danger, info, neutral
@@ -68,7 +68,7 @@
 - **File**: `/src/ui-kit/FacilityStatusBadge.tsx` + `.module.css`
 - **Chức năng**: Badge hiển thị trạng thái với màu sắc và icon chuẩn hóa
 - **5 trạng thái chuẩn**:
-  1. **pending** (Chờ xác minh) - Vàng cam, Clock icon
+  1. **pending** (Chờ duyệt) - Vàng cam, Clock icon
   2. **active** (Đang hoạt động) - Xanh lá, CircleCheck icon
   3. **underInspection** (Đang xử lý kiểm tra) - Xanh dương, Search icon
   4. **suspended** (Tạm ngưng hoạt động) - Đỏ, CirclePause icon

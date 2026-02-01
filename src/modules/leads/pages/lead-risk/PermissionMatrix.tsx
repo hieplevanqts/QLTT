@@ -75,7 +75,7 @@ const initialPermissions: Permission[] = [
     analyst: 'granted',
     đội: 'conditional',
     viewer: 'denied',
-    notes: 'Đội close → chờ duyệt; Analyst duyệt → closed thật'
+    notes: 'Đội close → Chờ duyệt; Analyst duyệt → closed thật'
   },
   {
     action: 'Xem Risk Dashboard',
