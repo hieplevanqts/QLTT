@@ -100,9 +100,9 @@ export async function fetchStores(
     }
 
     // Department path filter (Supabase 'like' syntax expected in caller)
-    if (filters?.department_path) {
-      url += `&department_path=${encodeURIComponent(filters.department_path)}`;
-    }
+    // if (filters?.department_path) {
+    //   url += `&department_path=${encodeURIComponent(filters.department_path)}`;
+    // }
 
     // Fetch from API
     const response = await fetch(url, {
