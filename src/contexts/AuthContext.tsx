@@ -727,6 +727,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for auth state changes (including token expiry)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // If Redux auth is active, ignore AuthContext events to avoid conflicts.
+      const hasReduxToken = localStorage.getItem('mappa_auth_access_token');
+      if (hasReduxToken) {
+        return;
+      }
       
       if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
         // User signed out or token refresh failed
@@ -820,6 +825,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Periodically check session expiry (every 10 seconds for faster detection)
     const expiryCheckInterval = setInterval(async () => {
+      const hasReduxToken = localStorage.getItem('mappa_auth_access_token');
+      if (hasReduxToken) return;
       if (!isAuthenticated || logoutInProgressRef.current) return;
       
       try {
