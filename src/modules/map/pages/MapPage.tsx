@@ -221,15 +221,25 @@ export default function MapPage() {
     async function loadCategories() {
       try {
         const cats = await fetchCategories();
+        const normalizedCategories = (cats || [])
+          .map((cat: any) => {
+            const id = cat.id || cat._id || '';
+            const name = cat.name || cat.code || 'Không xác định';
+            const code = cat.code || '';
+            return { ...cat, id, name, code } as Category;
+          })
+          .filter((cat) => cat.id && cat.id !== 'undefined' && cat.id !== 'null');
         
-        setCategories(cats);
+        setCategories(normalizedCategories);
         
         // 🔥 FIX: Initialize businessTypeFilters with ALL categories enabled (= "Tất cả")
-        if (cats.length > 0) {
+        if (normalizedCategories.length > 0) {
           isInitializingFiltersRef.current = true; // 🔥 FIX: Mark as initializing
           const initialBusinessTypeFilters: { [key: string]: boolean } = {};
-          cats.forEach((cat) => {
-            initialBusinessTypeFilters[cat.id] = true;  // 🔥 ALL categories enabled by default
+          normalizedCategories.forEach((cat) => {
+            if (cat.id) {
+              initialBusinessTypeFilters[cat.id] = true;  // 🔥 ALL categories enabled by default
+            }
           });
           dispatch(setBusinessTypeFilters(initialBusinessTypeFilters));
           dispatch(setPendingBusinessTypeFilters(initialBusinessTypeFilters));  // 🔥 Sync pending
