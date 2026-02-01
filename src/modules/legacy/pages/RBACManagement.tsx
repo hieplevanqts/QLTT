@@ -526,7 +526,7 @@ const RolesView: React.FC<RolesViewProps> = ({ roles, onRefresh }) => {
                       title="Xóa"
                       disabled={role.is_system}
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={14} className="text-destructive" />
                     </button>
                   </div>
                 </td>
@@ -595,7 +595,7 @@ const PermissionsView: React.FC<PermissionsViewProps> = ({ permissions, modules,
                       <Edit size={14} />
                     </button>
                     <button className={styles.btnIconDelete} title="Xóa">
-                      <Trash2 size={14} />
+                      <Trash2 size={14} className="text-destructive" />
                     </button>
                   </div>
                 </td>
@@ -678,7 +678,7 @@ const UsersView: React.FC<UsersViewProps> = ({ users, roles, userRoles, onRefres
                         <Edit size={14} />
                       </button>
                       <button className={styles.btnIconDelete} title="Xóa">
-                        <Trash2 size={14} />
+                        <Trash2 size={14} className="text-destructive" />
                       </button>
                     </div>
                   </td>

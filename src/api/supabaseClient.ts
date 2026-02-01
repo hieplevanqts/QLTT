@@ -131,7 +131,7 @@ export interface UserRole {
 }
 
 /**
- * Facility - Cơ sở (tab Cơ sở & Địa bàn)
+ * Facility - Cơ sở (tab Cơ sở quản lý)
  */
 export interface Facility {
   id: string;

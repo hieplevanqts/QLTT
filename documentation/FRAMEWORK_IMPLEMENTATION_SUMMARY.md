@@ -1,7 +1,7 @@
 # MAPPA Portal Framework - Implementation Summary
 
 ## Tổng quan
-Đã hoàn thành việc chuẩn hóa và mở rộng trang "Cơ sở & Địa bàn" thành **Master Framework** để sử dụng chung cho toàn bộ hệ thống MAPPA Portal.
+Đã hoàn thành việc chuẩn hóa và mở rộng trang "Cơ sở quản lý" thành **Master Framework** để sử dụng chung cho toàn bộ hệ thống MAPPA Portal.
 
 ## Các thành phần đã tạo
 
@@ -75,7 +75,7 @@
   5. **closed** (Ngừng hoạt động) - Xám, CircleX icon
 - **Export `statusConfig`**: Chứa `allowedActions` cho mỗi trạng thái
 
-## Cải tiến trang "Cơ sở & Địa bàn"
+## Cải tiến trang "Cơ sở quản lý"
 
 ### Cấu trúc mới:
 ```
@@ -226,7 +226,7 @@ Chỉ cần thay đổi:
 
 ## Kết luận
 
-Trang "Cơ sở & Địa bàn" đã được chuẩn hóa và mở rộng thành **Master Framework** hoàn chỉnh với:
+Trang "Cơ sở quản lý" đã được chuẩn hóa và mở rộng thành **Master Framework** hoàn chỉnh với:
 - 6 reusable components mới
 - 1 enhanced status system
 - Tài liệu đầy đủ

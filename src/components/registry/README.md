@@ -2,7 +2,7 @@
 
 ## Tổng quan
 
-Registry Components là bộ components tái sử dụng được thiết kế đặc biệt cho các trang quản lý danh mục (CRUD operations) trong MAPPA Portal. Phù hợp cho: Cơ sở & Địa bàn, Doanh nghiệp, Sản phẩm, Người dùng, v.v.
+Registry Components là bộ components tái sử dụng được thiết kế đặc biệt cho các trang quản lý danh mục (CRUD operations) trong MAPPA Portal. Phù hợp cho: Cơ sở quản lý, Doanh nghiệp, Sản phẩm, Người dùng, v.v.
 
 ## Nguyên tắc thiết kế
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, XCircle, X, AlertTriangle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -58,19 +58,28 @@ export function ApproveDialog({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className={styles.dialogContent}>
-        <DialogHeader>
-          <div className={styles.iconWrapper}>
-            <div className={styles.approveIcon}>
-              <CheckCircle2 size={24} />
+        <div className={styles.dialogHeader}>
+          <DialogHeader>
+            <div className={styles.iconWrapper}>
+              <div className={styles.approveIcon}>
+                <CheckCircle2 size={24} />
+              </div>
             </div>
-          </div>
-          <DialogTitle className={styles.title}>Phê duyệt cửa hàng</DialogTitle>
-          <DialogDescription className={styles.description}>
-            Bạn đang phê duyệt cửa hàng <strong>"{storeName}"</strong>.
-            <br />
-            Sau khi phê duyệt, cửa hàng sẽ chuyển sang trạng thái "Đang hoạt động".
-          </DialogDescription>
-        </DialogHeader>
+            <DialogTitle className={styles.title}>Phê duyệt cửa hàng</DialogTitle>
+            <DialogDescription className={styles.description}>
+              Bạn đang phê duyệt cửa hàng <strong>"{storeName}"</strong>.
+              <br />
+              Sau khi phê duyệt, cửa hàng sẽ chuyển sang trạng thái "Đang hoạt động".
+            </DialogDescription>
+          </DialogHeader>
+          <button
+            onClick={handleClose}
+            className={styles.closeButton}
+            aria-label="Đóng"
+          >
+            <X size={20} />
+          </button>
+        </div>
 
         <DialogFooter className={styles.footer}>
           <Button

@@ -101,7 +101,7 @@
 /* Actions */
 .actions {
   display: flex;
-  gap: var(--spacing-3);
+  gap: 20px;
 }
 
 .cancelButton,

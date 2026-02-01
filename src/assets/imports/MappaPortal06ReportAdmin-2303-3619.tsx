@@ -320,7 +320,7 @@ function Button7() {
   return (
     <div className="h-[36px] relative rounded-[6px] shrink-0 w-full" data-name="Button">
       <Icon7 />
-      <p className="absolute font-['Inter:Medium',sans-serif] font-medium leading-[20px] left-[89px] not-italic text-[#101828] text-[14px] text-center top-[8px] translate-x-[-50%] whitespace-pre">{`Cơ sở & Địa bàn`}</p>
+      <p className="absolute font-['Inter:Medium',sans-serif] font-medium leading-[20px] left-[89px] not-italic text-[#101828] text-[14px] text-center top-[8px] translate-x-[-50%] whitespace-pre">{`Cơ sở quản lý`}</p>
     </div>
   );
 }
@@ -2160,7 +2160,7 @@ function TableCell20() {
 function Text37() {
   return (
     <div className="absolute h-[41px] left-[14.5px] top-[20.5px] w-[200.172px]" data-name="Text">
-      <p className="absolute font-['Inter:Medium',sans-serif] font-medium leading-[21px] left-0 not-italic text-[#101828] text-[14px] top-[-2px] w-[201px] whitespace-pre-wrap">{`Export Cơ sở & Địa bàn - Miền Bắc`}</p>
+      <p className="absolute font-['Inter:Medium',sans-serif] font-medium leading-[21px] left-0 not-italic text-[#101828] text-[14px] top-[-2px] w-[201px] whitespace-pre-wrap">{`Export Cơ sở quản lý - Miền Bắc`}</p>
     </div>
   );
 }

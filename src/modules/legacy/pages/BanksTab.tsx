@@ -386,7 +386,7 @@ export const BanksTab: React.FC = () => {
                             style={{ color: 'var(--destructive)' }}
                             title="Xóa"
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={16} className="text-destructive" />
                           </button>
                         </div>
                       </td>

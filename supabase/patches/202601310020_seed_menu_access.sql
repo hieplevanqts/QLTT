@@ -42,7 +42,7 @@ with seed_modules (
   values
     ('admin', 'Quản trị', '⚙️', '/admin', null, 2, 1, 'admin', 'SYSTEM', 2, '{}'::jsonb),
     ('user-management', 'Quản trị Người dùng & Phân quyền', 'Users', '/admin/users', 'Quản lý người dùng, vai trò và phân quyền', 1, 1, 'user-management', 'SYSTEM', 1, '{}'::jsonb),
-    ('facility', 'Cơ sở & Địa bàn', 'Building2', null, 'Quản lý cơ sở và địa bàn', 2, 1, 'facility', 'SYSTEM', 2, '{}'::jsonb),
+    ('facility', 'Cơ sở quản lý', 'Building2', null, 'Quản lý cơ sở và địa bàn', 2, 1, 'facility', 'SYSTEM', 2, '{}'::jsonb),
     ('map-data', 'Dữ liệu Bản đồ', 'Map', null, 'Quản lý dữ liệu bản đồ', 3, 1, 'map-data', 'SYSTEM', 3, '{}'::jsonb),
     ('documents', 'Văn bản & Quy định', 'FileText', null, 'Quản lý văn bản và quy định', 4, 1, 'documents', 'SYSTEM', 4, '{}'::jsonb),
     ('risk-management', 'Quản lý Rủi ro', 'AlertTriangle', null, 'Quản lý rủi ro và cảnh báo', 6, 1, 'risk-management', 'SYSTEM', 6, '{}'::jsonb),
@@ -72,7 +72,7 @@ with seed_modules (
     ('kpi-qltt', 'KPI QLTT', null, '/kpi', 'Báo cáo KPI QLTT', 85, 1, 'kpi-qltt', 'DMS', 30, jsonb_build_object('source','src/modules/kpi-qltt')),
     ('overview', 'Tổng quan', '🏠', '/overview', 'Trang tổng quan hệ thống', 1, 1, 'overview', 'OPS', 101, jsonb_build_object('source','src/pages/OverviewPage.tsx')),
     ('map', 'Bản đồ điều hành', null, '/map', 'Trang bản đồ điều hành', 20, 1, 'map', 'OPS', 102, jsonb_build_object('source','src/pages/MapPage.tsx')),
-    ('registry', 'Cơ sở & địa bàn', null, '/registry', 'Registry / quản lý cơ sở', 30, 1, 'registry', 'DMS', 103, jsonb_build_object('source','src/pages/registry/*')),
+    ('registry', 'Cơ sở quản lý', null, '/registry', 'Registry / quản lý cơ sở', 30, 1, 'registry', 'DMS', 103, jsonb_build_object('source','src/pages/registry/*')),
     ('evidence', 'Kho chứng cứ', null, '/evidence', 'Quản lý chứng cứ', 70, 1, 'evidence', 'OPS', 107, jsonb_build_object('source','src/app/routes/EvidenceRoutes.tsx')),
     ('reports', 'Báo cáo & KPI', 'BarChart3', null, 'Trang báo cáo tổng hợp', 5, 1, 'reports', 'OPS', 109, jsonb_build_object('source','src/pages/ReportsPage.tsx'))
 )

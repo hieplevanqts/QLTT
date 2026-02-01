@@ -205,7 +205,7 @@ export default function RegistryImportReviewPage() {
       <PageHeader
         breadcrumbs={[
           { label: 'Trang chủ', href: '/' },
-          { label: 'Cơ sở & Địa bàn', href: '/registry/stores' },
+          { label: 'Cơ sở quản lý', href: '/registry/stores' },
           { label: 'Xem trước Import' },
         ]}
         title="Xem trước dữ liệu Import"

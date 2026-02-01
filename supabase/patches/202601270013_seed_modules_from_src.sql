@@ -16,7 +16,7 @@ with seed(key, code, name, "group", description, sort_order, status, meta) as (
     -- ===== src/pages (legacy but still routed) =====
     ('overview', 'overview', 'Tổng quan', 'OPS', 'Trang tổng quan hệ thống', 101, 1, '{"source":"src/pages/OverviewPage.tsx"}'::jsonb),
     ('map', 'map', 'Bản đồ điều hành', 'OPS', 'Trang bản đồ điều hành', 102, 1, '{"source":"src/pages/MapPage.tsx"}'::jsonb),
-    ('registry', 'registry', 'Cơ sở & địa bàn', 'DMS', 'Registry / quản lý cơ sở', 103, 1, '{"source":"src/pages/registry/*"}'::jsonb),
+    ('registry', 'registry', 'Cơ sở quản lý', 'DMS', 'Registry / quản lý cơ sở', 103, 1, '{"source":"src/pages/registry/*"}'::jsonb),
     ('lead-risk', 'lead-risk', 'Nguồn tin / Risk', 'DMS', 'Lead & Risk management', 104, 1, '{"source":"src/pages/lead-risk/*"}'::jsonb),
     ('plans', 'plans', 'Kế hoạch tác nghiệp', 'OPS', 'Quản lý kế hoạch và phiên kiểm tra', 105, 1, '{"source":"src/app/pages/plans/*"}'::jsonb),
     ('tasks', 'tasks', 'Nhiệm vụ hiện trường', 'OPS', 'Quản lý nhiệm vụ kiểm tra', 106, 1, '{"source":"src/app/pages/tasks/*"}'::jsonb),

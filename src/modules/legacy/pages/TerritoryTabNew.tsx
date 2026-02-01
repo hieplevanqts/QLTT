@@ -702,7 +702,7 @@ export const TerritoryTabNew: React.FC<TerritoryTabProps> = ({
                           title="Xóa"
                           onClick={() => onOpenModal('delete', territory)}
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={16} className="text-destructive" />
                         </button>
                       </div>
                     </td>

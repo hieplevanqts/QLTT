@@ -286,7 +286,7 @@ export const DepartmentsTab: React.FC = () => {
               title="Xóa"
               type="button"
             >
-              <Trash2 size={16} />
+              <Trash2 size={16} className="text-destructive" />
             </button>
           </div>
         </div>

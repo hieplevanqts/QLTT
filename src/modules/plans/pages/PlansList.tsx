@@ -200,7 +200,7 @@ export function PlansList() {
           },
           {
             label: 'Xóa',
-            icon: <Trash2 size={16} />,
+            icon: <Trash2 size={16} className="text-destructive" />,
             onClick: () => openModal('delete', plan),
             variant: 'destructive' as const,
             separator: true,
@@ -535,7 +535,7 @@ export function PlansList() {
         setSelectedRows(new Set());
       },
       variant: 'destructive',
-      icon: <Trash2 size={16} />,
+      icon: <Trash2 size={16} className="text-destructive" />,
     },
   ];
 

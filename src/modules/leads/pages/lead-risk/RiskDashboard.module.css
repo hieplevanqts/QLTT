@@ -25,6 +25,13 @@
   margin: 0;
 }
 
+.deleteModalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px; /* 👈 khoảng cách giữa 2 button */
+}
+
+
 .createButton {
   display: flex;
   align-items: center;

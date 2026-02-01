@@ -98,9 +98,9 @@ export default function ReportsPage() {
   // Mock reports data
   const reports = [
     {
-      id: 'RPT-2025-001',
-      name: 'Báo cáo tình hình cơ sở ATTP - Thành phố Hồ Chí Minh',
-      type: 'Cơ sở & Địa bàn',
+    id: 'RPT-2025-001',
+    name: 'Báo cáo tình hình cơ sở ATTP - Thành phố Hồ Chí Minh',
+    type: 'Cơ sở quản lý',
       period: 'Tháng 01/2025',
       region: 'Thành phố Hồ Chí Minh',
       createdDate: '2025-01-08',

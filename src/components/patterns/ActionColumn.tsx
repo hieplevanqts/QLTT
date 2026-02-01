@@ -87,7 +87,7 @@ export const CommonActions = {
     priority: 6,
   }),
   viewHistory: (onClick: () => void): Action => ({
-    label: 'Lịch sử thay đổi',
+    label: 'Lịch sử kiểm tra',
     icon: <History size={16} />,
     onClick,
     priority: 5,
@@ -205,7 +205,7 @@ export default function ActionColumn({ actions, variant = 'default', className, 
                   action.onClick();
                 }}
                 disabled={action.disabled}
-                className={styles.iconButton}
+                className={`${styles.iconButton} ${action.variant === 'destructive' ? styles.destructiveIcon : ''}`}
               >
                 {action.icon}
               </Button>
@@ -247,7 +247,7 @@ export default function ActionColumn({ actions, variant = 'default', className, 
                 action.onClick();
               }}
               disabled={action.disabled}
-              className={styles.iconButton}
+              className={`${styles.iconButton} ${action.variant === 'destructive' ? styles.destructiveIcon : ''}`}
             >
               {action.icon}
             </Button>
