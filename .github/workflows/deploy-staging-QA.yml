@@ -81,6 +81,8 @@ jobs:
             --build-arg VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} \
             --build-arg VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} \
             --build-arg PUBLIC_URL=${{ secrets.PUBLIC_URL_TEST }} \
+            --build-arg SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} \
+            --build-arg SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13dWh1aXhreWJid3Jub3FjaWJnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NzYwNTc5MiwiZXhwIjoyMDgzMTgxNzkyfQ.181FfeKfCfZt_v21wHiOgFlzm7g-pNb-JLLjPJtixzo\
             -t ${{ env.FULL_IMAGE_FE }} \
             -f Dockerfile .
 

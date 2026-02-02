@@ -111,6 +111,41 @@ const stripMissingColumn = (
   return payload;
 };
 
+const insertWithColumnFallback = async (
+  payload: Record<string, unknown>,
+  maxAttempts = 4,
+) => {
+  let current = payload;
+  let response = await supabase.from("modules").insert([current]).select("*").single();
+  let attempts = 0;
+  while (response.error && attempts < maxAttempts) {
+    const next = stripMissingColumn(current, response.error.message);
+    if (next === current) break;
+    current = next;
+    response = await supabase.from("modules").insert([current]).select("*").single();
+    attempts += 1;
+  }
+  return response;
+};
+
+const updateWithColumnFallback = async (
+  id: string,
+  payload: Record<string, unknown>,
+  maxAttempts = 4,
+) => {
+  let current = payload;
+  let response = await supabase.from("modules").update(current).eq("_id", id).select("*").single();
+  let attempts = 0;
+  while (response.error && attempts < maxAttempts) {
+    const next = stripMissingColumn(current, response.error.message);
+    if (next === current) break;
+    current = next;
+    response = await supabase.from("modules").update(current).eq("_id", id).select("*").single();
+    attempts += 1;
+  }
+  return response;
+};
+
 export const modulesService = {
   async listModules(params: ModuleListParams): Promise<ModuleListResult> {
     const page = params.page ?? 1;
@@ -181,6 +216,7 @@ export const modulesService = {
     const basePayload: Record<string, unknown> = {
       key: payload.key,
       code: payload.key,
+      module: payload.key,
       name: payload.name,
       group: payload.group,
       description: payload.description ?? null,
@@ -190,22 +226,7 @@ export const modulesService = {
       meta: payload.meta ?? {},
     };
 
-    let response = await supabase
-      .from("modules")
-      .insert([basePayload])
-      .select("*")
-      .single();
-
-    if (response.error) {
-      const stripped = stripMissingColumn(basePayload, response.error.message);
-      if (stripped !== basePayload) {
-        response = await supabase
-          .from("modules")
-          .insert([stripped])
-          .select("*")
-          .single();
-      }
-    }
+    const response = await insertWithColumnFallback(basePayload);
 
     if (response.error) {
       throw new Error(`module insert failed: ${response.error.message}`);
@@ -216,7 +237,9 @@ export const modulesService = {
 
   async updateModule(id: string, payload: Partial<ModulePayload>): Promise<ModuleRecord> {
     const basePayload: Record<string, unknown> = {
-      ...(payload.key ? { key: payload.key, code: payload.key } : {}),
+      ...(payload.key
+        ? { key: payload.key, code: payload.key, module: payload.key }
+        : {}),
       ...(payload.name ? { name: payload.name } : {}),
       ...(payload.group ? { group: payload.group } : {}),
       ...(payload.description !== undefined ? { description: payload.description } : {}),
@@ -227,24 +250,7 @@ export const modulesService = {
       updated_at: new Date().toISOString(),
     };
 
-    let response = await supabase
-      .from("modules")
-      .update(basePayload)
-      .eq("_id", id)
-      .select("*")
-      .single();
-
-    if (response.error) {
-      const stripped = stripMissingColumn(basePayload, response.error.message);
-      if (stripped !== basePayload) {
-        response = await supabase
-          .from("modules")
-          .update(stripped)
-          .eq("_id", id)
-          .select("*")
-          .single();
-      }
-    }
+    const response = await updateWithColumnFallback(id, basePayload);
 
     if (response.error) {
       throw new Error(`module update failed: ${response.error.message}`);
