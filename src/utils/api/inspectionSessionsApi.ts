@@ -111,7 +111,7 @@ function mapRowToSession(row: InspectionSessionResponse): InspectionSession {
 
 import { store } from '@/store/store';
 
-export async function fetchInspectionSessionsApi(campaignId?: string): Promise<InspectionSession[]> {
+export async function fetchInspectionSessionsApi(campaignId?: string, search?: string): Promise<InspectionSession[]> {
   try {
     const state = store.getState();
     const path = state.auth.user?.app_metadata?.department?.path || '';
@@ -123,6 +123,10 @@ export async function fetchInspectionSessionsApi(campaignId?: string): Promise<I
     
     if (path) {
       url += `&department_path=like.${path}*`;
+    }
+
+    if (search) {
+      url += `&name=ilike.*${search}*`;
     }
     
     const response = await fetch(url, { method: 'GET', headers: getHeaders() });
@@ -175,7 +179,16 @@ export async function createInspectionSessionApi(session: Partial<InspectionSess
     const url = `${SUPABASE_REST_URL}/map_inspection_sessions`;
     
     const payload = {
-      ...session,
+      name: session.name,
+      description: session.description,
+      campaign_id: session.campaign_id || (session as any).campaignId,
+      merchant_id: session.merchant_id || (session as any).merchantId,
+      user_id: session.user_id || (session as any).userId,
+      department_id: session.department_id || (session as any).departmentId,
+      start_time: session.start_time || (session as any).startTime,
+      deadline_time: session.deadline_time || (session as any).deadlineTime,
+      type: session.type || 'proactive',
+      
       status: session.status || 1, // Default to 'not_started'
       priority: mapPriority(session.priority || 'medium'),
       created_at: new Date().toISOString(),
