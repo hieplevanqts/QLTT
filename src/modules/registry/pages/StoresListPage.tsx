@@ -47,8 +47,8 @@ import FacilityStatusBadge, { FacilityStatus } from '@/components/ui-kit/Facilit
 import TableFooter from '@/components/ui-kit/TableFooter';
 import { ConfirmDialog, ConfirmVariant } from '@/components/ui-kit/ConfirmDialog';
 import { RiskDialog, RiskLevel } from '@/components/ui-kit/RiskDialog';
-import { QuickEditDialog, QuickEditData } from '@/components/ui-kit/QuickEditDialog';
 import { AddStoreDialogTabbed, NewStoreData as NewStoreDataTabbed } from '@/components/ui-kit/AddStoreDialogTabbed';
+import { EditStoreDialogTabbed, EditStoreData } from '@/components/ui-kit/EditStoreDialogTabbed';
 import { AdvancedFilterPopup, AdvancedFilters } from '@/components/ui-kit/AdvancedFilterPopup';
 import { adminUnitsService, type ProvinceRecord } from '@/modules/system-admin/sa-master-data/services/adminUnits.service';
 import { ApproveDialog, RejectDialog } from '@/components/ui-kit/ApprovalDialogs';
@@ -231,11 +231,26 @@ const departmentPath = user?.app_metadata?.department?.path ;
   // Fetch stats separately or when filters change if needed
   const loadStats = useCallback(async () => {
     try {
-      const data = await fetchStoresStats();
+      const filters: any = {};
+
+      if (statusFilter && statusFilter !== 'all') {
+        filters.status = statusFilter;
+      }
+      if (jurisdictionFilter && jurisdictionFilter !== 'all') {
+        filters.province_id = jurisdictionFilter;
+      }
+      if (debouncedSearchValue) {
+        filters.search = debouncedSearchValue;
+      }
+      if (businessTypeFilter && businessTypeFilter !== 'all') {
+        filters.businessType = businessTypeFilter;
+      }
+
+      const data = await fetchStoresStats(filters, departmentPath);
       setStats(data);
     } catch (error) {
     }
-  }, []);
+  }, [statusFilter, jurisdictionFilter, debouncedSearchValue, businessTypeFilter, departmentPath]);
 
   useEffect(() => {
     loadStats();
@@ -271,7 +286,7 @@ const departmentPath = user?.app_metadata?.department?.path ;
           filters.businessType = businessTypeFilter;
         }
 
-        const { data, total } = await fetchStores(pageSize, offset, filters);
+        const { data, total } = await fetchStores(pageSize, offset, filters, departmentPath);
 
         setStores(data);
         setTotalRecords(total);
@@ -376,52 +391,66 @@ const departmentPath = user?.app_metadata?.department?.path ;
     setEditDialog({ open: true, store });
   };
 
-  const handleEditConfirm = (data: QuickEditData) => {
-    // Create approval request (mock)
-    const approvalRequest = {
-      id: Date.now(),
-      storeId: editDialog.store?.id,
-      storeName: editDialog.store?.name,
-      type: 'quick-edit',
-      changedFields: Object.keys(data).filter(key =>
-        key !== 'changeReason' && data[key as keyof QuickEditData] !== (editDialog.store as any)?.[key]
-      ),
-      newData: data,
-      changeReason: data.changeReason,
-      status: 'pending',
-      submittedAt: new Date().toISOString(),
-      submittedBy: 'Current User', // In production, get from auth context
-    };
+  const handleEditConfirm = async (data: EditStoreData) => {
+    const store = editDialog.store;
+    if (!store || !store.merchantId) {
+      toast.error('Không tìm thấy ID cơ sở để cập nhật');
+      return;
+    }
 
+    try {
+      // Call API to update merchant
+      const updatePayload = {
+        p_business_name: data.business_name,
+        p_tax_code: data.taxCode || '',
+        p_business_type: data.industryName || '',
+        p_established_date: data.establishedDate && data.establishedDate.trim() ? data.establishedDate : null,
+        p_store_area: data.businessArea ? parseFloat(data.businessArea) : undefined,
+        p_business_phone: data.businessPhone,
+        p_business_email: data.email,
+        p_note: data.notes,
+        p_owner_name: data.ownerName,
+        p_owner_birth_year: data.ownerBirthYear ? parseInt(data.ownerBirthYear) : undefined,
+        p_owner_identity_no: data.ownerIdNumber,
+        p_owner_phone: data.ownerPhone,
+        p_address: data.registeredAddress,
+        p_province_id: data.province && data.province.trim() ? data.province : null,
+        p_ward_id: data.ward && data.ward.trim() ? data.ward : null,
+        p_latitude: data.latitude,
+        p_longitude: data.longitude,
+      };
 
-    // In production:
-    // - Save to approval queue
-    // - Show pending badge on store
-    // - Send notification to approver
+      await updateMerchant(store.merchantId, updatePayload);
 
-    // For now, just update the store data immediately (for demo)
-    // In production, data only updates after approval
-    setStores(prev =>
-      prev.map(s => (s.id === editDialog.store?.id ? {
-        ...s,
-        name: data.name,
-        phone: data.phone,
-        email: data.email,
-        notes: data.notes,
-        tags: data.tags,
-        // Add pending approval indicator
-        hasPendingApproval: true,
-        pendingApprovalType: 'quick-edit',
-      } : s))
-    );
+      // Update local state
+      setStores(prev =>
+        prev.map(s => (s.id === store.id ? {
+          ...s,
+          name: data.business_name,
+          taxCode: data.taxCode || s.taxCode,
+          businessType: data.industryName || s.businessType,
+          establishedDate: data.establishedDate || s.establishedDate,
+          businessArea: data.businessArea || s.businessArea,
+          businessPhone: data.businessPhone || s.businessPhone,
+          email: data.email || s.email,
+          notes: data.notes || s.notes,
+          ownerName: data.ownerName || s.ownerName,
+          ownerBirthYear: data.ownerBirthYear ? parseInt(data.ownerBirthYear) : s.ownerBirthYear,
+          ownerIdNumber: data.ownerIdNumber || s.ownerIdNumber,
+          ownerPhone: data.ownerPhone || s.ownerPhone,
+          address: data.registeredAddress || s.address,
+          provinceCode: data.province || s.provinceCode,
+          wardCode: data.ward || s.wardCode,
+          latitude: data.latitude ?? s.latitude,
+          longitude: data.longitude ?? s.longitude,
+        } : s))
+      );
 
-    toast.success(
-      'Thay đổi đã được gửi và đang chờ phê duyệt',
-      {
-        description: 'Bạn sẽ nhận được thông báo khi yêu cầu được xử lý.',
-        duration: 5000,
-      }
-    );
+      toast.success('Cập nhật cơ sở thành công');
+      setEditDialog({ open: false, store: null });
+    } catch (error: any) {
+      toast.error('Lỗi khi cập nhật cơ sở: ' + error.message);
+    }
   };
 
   const handleAssignRisk = (store: Store) => {
@@ -521,15 +550,51 @@ const departmentPath = user?.app_metadata?.department?.path ;
     });
   };
 
-  const handleDelete = (store: Store) => {
+  const handleDelete = async (store: Store) => {
     setConfirmDialog({
       open: true,
       title: 'Xóa cơ sở',
       description: `Bạn có chắc chắn muốn xóa cơ sở \"${store.name}\"? Hành động này không thể hoàn tác.`,
       variant: 'danger',
-      onConfirm: () => {
-        setStores(prev => prev.filter(s => s.id !== store.id));
-        toast.success('Xóa cơ sở thành công');
+      onConfirm: async () => {
+        try {
+          // Soft delete by setting delete_at timestamp with full merchant data
+          await updateMerchant(store.merchantId, {
+            p_business_name: store.name,
+            p_owner_name: store.ownerName,
+            p_owner_phone: store.ownerPhone,
+            p_tax_code: store.taxCode,
+            p_business_type: store.businessType,
+            p_province_id: store.provinceCode || null,
+            p_ward_id: store.wardCode || null,
+            p_address: store.address,
+            p_latitude: store.latitude,
+            p_longitude: store.longitude,
+            p_status: store.status,
+            p_established_date: store.establishedDate || null,
+            p_department_id: departmentId,
+            p_note: store.notes || null,
+            p_business_phone: store.businessPhone || null,
+            p_business_email: store.email || null,
+            p_website: store.website || null,
+            p_store_area: store.businessArea ? parseFloat(store.businessArea) : null,
+            p_owner_phone_2: store.ownerPhone2 || null,
+            p_owner_birth_year: store.ownerBirthYear || null,
+            p_owner_identity_no: store.ownerIdNumber || null,
+            p_owner_email: store.ownerEmail || null,
+            p_delete_at: new Date().toISOString(),
+          });
+          
+          // Remove from local state
+          setStores(prev => prev.filter(s => s.id !== store.id));
+          toast.success('Xóa cơ sở thành công');
+          
+          // Refresh data to get updated stats
+          await loadData();
+        } catch (error: any) {
+          console.error('Error deleting store:', error);
+          toast.error(`Xóa cơ sở thất bại: ${error.message}`);
+        }
       },
     });
   };
@@ -621,6 +686,81 @@ const departmentPath = user?.app_metadata?.department?.path ;
     return stores.filter(store => selectedRows.has(store.id));
   }, [stores, selectedRows]);
 
+  /**
+   * Define allowed actions per status
+   * Only show actions when ALL selected stores have the SAME status
+   */
+  const ACTION_RULES: Record<FacilityStatus, BulkActionType[]> = {
+    pending: ['approve', 'reject'],
+    active: ['suspend'],
+    suspended: ['activate', 'close'],
+    refuse: [],
+    rejected: [],
+    underInspection: [], // No changes allowed while under inspection
+  };
+
+  /**
+   * Get bulk actions based on selected stores status
+   * Returns empty array if stores have different statuses
+   */
+  const getAvailableBulkActions = useMemo(() => {
+    if (selectedStores.length === 0) return [];
+
+    // Check if all selected stores have the same status
+    const firstStatus = selectedStores[0].status;
+    const allSameStatus = selectedStores.every(store => store.status === firstStatus);
+
+    if (!allSameStatus) {
+      // Different statuses - show no actions
+      return [];
+    }
+
+    // All same status - get allowed actions for this status
+    const allowedActions = ACTION_RULES[firstStatus] || [];
+    return allowedActions;
+  }, [selectedStores]);
+
+  // Bulk actions configuration - filtered based on selected stores
+  const bulkActions: BulkAction[] = useMemo(() => {
+    const allActions: Record<BulkActionType, BulkAction> = {
+      approve: {
+        label: 'Phê duyệt',
+        onClick: () => handleBulkAction('approve'),
+        variant: 'default',
+        icon: <CheckCircle2 size={16} />,
+      },
+      reject: {
+        label: 'Từ chối',
+        onClick: () => handleBulkAction('reject'),
+        variant: 'secondary',
+        icon: <XCircle size={16} />,
+      },
+      suspend: {
+        label: 'Tạm dừng hoạt động',
+        onClick: () => handleBulkAction('suspend'),
+        variant: 'secondary',
+        icon: <Pause size={16} />,
+      },
+      activate: {
+        label: 'Kích hoạt lại',
+        onClick: () => handleBulkAction('activate'),
+        variant: 'default',
+        icon: <Play size={16} />,
+      },
+      close: {
+        label: 'Ngừng hoạt động',
+        onClick: () => handleBulkAction('close'),
+        variant: 'destructive',
+        icon: <StopCircle size={16} />,
+      },
+    };
+
+    // Return only the actions that are available for the current selection
+    return getAvailableBulkActions
+      .map(actionType => allActions[actionType as BulkActionType])
+      .filter(Boolean);
+  }, [getAvailableBulkActions]);
+
   // Bulk action handlers
   const handleBulkAction = (actionType: BulkActionType) => {
     setBulkActionModal({
@@ -699,8 +839,8 @@ const departmentPath = user?.app_metadata?.department?.path ;
     // Success feedback
     const actionLabels: Record<BulkActionType, string> = {
       approve: 'phê duyệt',
-      reject: 'từ chi',
-      suspend: 'tạm ngừng',
+      reject: 'từ chối',
+      suspend: 'tạm dừng',
       activate: 'kích hoạt lại',
       close: 'ngừng hoạt động',
       export: 'xuất',
@@ -723,68 +863,29 @@ const departmentPath = user?.app_metadata?.department?.path ;
     setSelectedRows(new Set());
   };
 
-  // Bulk actions configuration
-  const bulkActions: BulkAction[] = [
-    {
-      label: 'Xuất CSV',
-      onClick: () => handleBulkAction('export'),
-      variant: 'secondary',
-      icon: <Download size={16} />,
-    },
-    {
-      label: 'Phê duyệt',
-      onClick: () => handleBulkAction('approve'),
-      variant: 'default',
-      icon: <CheckCircle2 size={16} />,
-    },
-    {
-      label: 'Từ chối',
-      onClick: () => handleBulkAction('reject'),
-      variant: 'secondary',
-      icon: <XCircle size={16} />,
-    },
-    {
-      label: 'Tạm ngừng',
-      onClick: () => handleBulkAction('suspend'),
-      variant: 'secondary',
-      icon: <Pause size={16} />,
-    },
-    {
-      label: 'Kích hoạt lại',
-      onClick: () => handleBulkAction('activate'),
-      variant: 'default',
-      icon: <Play size={16} />,
-    },
-    {
-      label: 'Ngừng hoạt động',
-      onClick: () => handleBulkAction('close'),
-      variant: 'destructive',
-      icon: <StopCircle size={16} />,
-    },
-  ];
-
   // Get actions for a store based on its status
   const getStoreActions = (store: Store): Action[] => {
     const actions: Action[] = [];
 
     switch (store.status) {
       case 'pending':
-        // Chờ duyệt: Xem chi tiết, Chỉnh sửa, Phê duyệt, Từ chối, Xóa
+        // Chờ duyệt: Xem chi tiết, (Chỉnh sửa vào menu), Phê duyệt, Từ chối (icon ngoài), Xóa
+        // We want edit to go into the ellipsis menu — lower its priority for this row instance
+        const editAction = { ...CommonActions.edit(() => handleEdit(store)), priority: 1 };
         actions.push(
           CommonActions.view(() => navigate(`/registry/stores/${store.id}`)),
-          CommonActions.edit(() => handleEdit(store)),
+          editAction,
           CommonActions.approve(() => handleApprove(store.id)),
-          // Reject is separate from delete; opens reject confirmation dialog
-          CommonActions.reject ? CommonActions.reject(() => handleReject(store.id)) : { label: 'Từ chối', onClick: () => handleReject(store.id), separator: false },
+          // Show reject as a top-level destructive icon
+          CommonActions.reject(() => handleReject(store.id)),
           { ...CommonActions.delete(() => handleDelete(store)), separator: true }
         );
         break;
 
       case 'rejected':
-        // Từ chối phê duyệt: Xem chi tiết, Chỉnh sửa, Xóa
+        // Từ chối phê duyệt: Xem chi tiết, Xóa (không có chỉnh sửa)
         actions.push(
           CommonActions.view(() => navigate(`/registry/stores/${store.id}`)),
-          CommonActions.edit(() => handleEdit(store)),
           { ...CommonActions.delete(() => handleDelete(store)), separator: true }
         );
         break;
@@ -998,11 +1099,7 @@ const departmentPath = user?.app_metadata?.department?.path ;
         actions={
           <>
             <Button variant="outline" size="sm" onClick={() => {
-              setSearchValue('');
-              setJurisdictionFilter('all');
-              setStatusFilter('all');
-              setActiveFilter(null);
-              toast.success('Đã tải lại dữ liệu');
+              window.location.reload();
             }}>
               <RefreshCw size={16} />
               Tải lại
@@ -1342,13 +1439,11 @@ const departmentPath = user?.app_metadata?.department?.path ;
         onConfirm={handleRiskConfirm}
       />
 
-      <QuickEditDialog
+      <EditStoreDialogTabbed
         open={editDialog.open}
         onOpenChange={(open) => setEditDialog({ ...editDialog, open })}
         store={editDialog.store}
-        onConfirm={handleEditConfirm}
-        onApprove={handleApprove}
-        onReject={handleReject}
+        onSubmit={handleEditConfirm}
       />
 
       <StoreImportDialog
@@ -1379,7 +1474,7 @@ const departmentPath = user?.app_metadata?.department?.path ;
       <ExportDialog
         open={exportDialogOpen}
         onOpenChange={setExportDialogOpen}
-        totalRecords={stores.length}
+        totalRecords={totalRecords}
         selectedCount={selectedRows.size}
         onExport={(options: ExportOptions) => {
           toast.success('Xuất dữ liệu thành công');
@@ -1454,71 +1549,18 @@ const departmentPath = user?.app_metadata?.department?.path ;
             // Call API to create merchant
             const result = await createMerchant(apiPayload);
 
-
-            // Create local Store object for display
-            const numericId = Math.random() * 1000000 | 0;
-            const newStore: Store = {
-              id: numericId,
-              name: data.business_name,
-              type: data.industryName || 'Chưa xác định',
-              address: data.registeredAddress || '',
-              province: data.province,
-              provinceCode: data.province,
-              jurisdiction: districtName,
-              jurisdictionCode: data.jurisdiction,
-              ward: data.ward,
-              wardCode: data.ward,
-              managementUnit: data.managementUnit || `Chi cục QLTT ${districtName}`,
-              status: (data.status || 'pending') as FacilityStatus,
-              riskLevel: 'none',
-              lastInspection: 'Chưa kiểm tra',
-              area_name: result?.area_name || '0',
-              latitude: data.latitude,
-              longitude: data.longitude,
-              gpsCoordinates: data.latitude && data.longitude
-                ? `${data.latitude.toFixed(6)}, ${data.longitude.toFixed(6)}`
-                : undefined,
-              // Tab 1: Thông tin HKD
-              taxCode: data.taxCode,
-              industryName: data.industryName,
-              establishedDate: data.establishedDate,
-              operationStatus: data.operationStatus,
-              businessArea: result?.area_name || data.businessArea || undefined,  // Use area_name from API response
-              businessPhone: data.businessPhone,
-              email: data.email,
-              website: data.website,
-              fax: data.fax,
-              notes: data.notes,
-              // Tab 2: Thông tin chủ hộ
-              ownerName: data.ownerName,
-              ownerBirthYear: data.ownerBirthYear ? parseInt(data.ownerBirthYear) : undefined,
-              ownerIdNumber: data.ownerIdNumber,
-              ownerPhone: data.ownerPhone,
-              // Tab 3: Địa chỉ
-              registeredAddress: data.registeredAddress || '',
-              headquarterAddress: data.headquarterAddress,
-              productionAddress: data.productionAddress,
-              // Compatibility fields
-              phone: data.ownerPhone,
-              businessType: data.industryName,
-              isVerified: false,
-            };
-
-
-            // Add to global store registry
-            addStore(newStore);
-
-            // Thêm vào đầu danh sách (prepend)
-            setStores(prev => [newStore, ...prev]);
-            // Chuyển về trang 1 để thấy dữ liệu mới
-            setCurrentPage(1);
-
-            // Close dialog
+            // Close dialog immediately
             setAddDialogOpen(false);
 
             toast.success('Thêm cửa hàng thành công', {
               description: 'Cửa hàng mới đã được thêm vào hệ thống',
             });
+
+            // Reload data from API to get the complete store info with merchantId
+            await loadData();
+            
+            // Go to first page to see the new store
+            setCurrentPage(1);
           } catch (error: any) {
             toast.error('Lỗi khi thêm cửa hàng', {
               description: error.message || 'Vui lòng thử lại',
@@ -1563,7 +1605,7 @@ const departmentPath = user?.app_metadata?.department?.path ;
 
       {/* Close Store (Refuse) Reason Dialog */}
       {closeReasonDialog.open && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+        <div className="fixed inset-0 z-[200] bg-black/50 flex items-center justify-center">
           <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
             <h2 className="text-lg font-semibold mb-4">Ngừng hoạt động cơ sở</h2>
             <p className="text-sm text-gray-600 mb-4">

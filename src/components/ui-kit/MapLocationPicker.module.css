@@ -87,7 +87,7 @@
   box-shadow: var(--shadow-lg);
   max-height: 300px;
   overflow-y: auto;
-  z-index: 100;
+  z-index: 9999;
 }
 
 .suggestionItem {

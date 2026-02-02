@@ -609,9 +609,9 @@ export default function FullEditRegistryPage() {
           { label: 'Trang chủ', href: '/' },
           { label: 'Cơ sở quản lý', href: '/registry/stores' },
           { label: originalStore.name, href: `/registry/stores/${id}` },
-          { label: 'Chỉnh sửa đầy đủ' },
+          { label: 'Chỉnh sửa' },
         ]}
-        title="Chỉnh sửa đầy đủ"
+        title="Chỉnh sửa"
         actions={
           <Button variant="outline" onClick={handleCancel}>
             <ArrowLeft size={16} />

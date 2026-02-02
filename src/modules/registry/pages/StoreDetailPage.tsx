@@ -773,102 +773,20 @@ export default function StoreDetailPage() {
             Quay lại
           </Button>
 
-          {/* Status-specific action buttons */}
-          <div className="flex gap-2">
-            {store.status === 'pending' && (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setRejectDialog(true)}
-                  className={styles.statusBtnDanger}
-                >
-                  <XCircle size={16} />
-                  Từ chối duyệt
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => setApproveDialog(true)}
-                  className={styles.statusBtnSuccess}
-                >
-                  <CheckCircle2 size={16} />
-                  Phê duyệt
-                </Button>
-              </>
-            )}
 
-            {store.status === 'active' && (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    if (confirm('Bạn có chắc chắn muốn tạm ngưng hoạt động cơ sở này?')) {
-                      handleUpdateStatus('suspended', 'Đã chuyển trạng thái cơ sở sang Tạm ngưng');
-                    }
-                  }}
-                  className={styles.statusBtnWarning}
-                >
-                  <PauseCircle size={16} />
-                  Tạm ngưng
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setCloseReasonDialog({ open: true, reason: '' })}
-                  className={styles.statusBtnDanger}
-                >
-                  <StopCircle size={16} />
-                  Đóng cửa
-                </Button>
-              </>
-            )}
 
-            {store.status === 'suspended' && (
-              <Button
-                size="sm"
-                onClick={() => handleUpdateStatus('active', 'Đã kích hoạt lại hoạt động cơ sở')}
-                className={styles.statusBtnSuccess}
-              >
-                <Play size={16} />
-                Kích hoạt lại
-              </Button>
-            )}
-
-            {store.status === 'refuse' && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleUpdateStatus('active', 'Đã tái kích hoạt cơ sở từ trạng thái Ngừng hoạt động')}
-                className={styles.statusBtnPrimary}
-              >
-                <RotateCcw size={16} />
-                Mở cửa lại
-              </Button>
-            )}
-
-            {store.status === 'rejected' && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleUpdateStatus('pending', 'Đã chuyển trạng thái về Chờ duyệt để xem xét lại')}
-                className={styles.statusBtnWarning}
-              >
-                <FileSearch size={16} />
-                Xem xét lại
-              </Button>
-            )}
-          </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate(`/registry/full-edit/${store.id}`)}
-            className={styles.editButton}
-          >
-            <Edit size={16} />
-            Chỉnh sửa đầy đủ
-          </Button>
+          {/* Only show edit button for active and pending statuses */}
+          {(store.status === 'active' || store.status === 'pending') && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/registry/full-edit/${store.id}`)}
+              className={styles.editButton}
+            >
+              <Edit size={16} />
+              Chỉnh sửa
+            </Button>
+          )}
         </div>
 
         <div className={styles.headerContent}>
@@ -1136,34 +1054,6 @@ export default function StoreDetailPage() {
                     </span>
                     <span className={styles.infoValue}>{store.businessPhone || store.phone || 'Chưa có thông tin'}</span>
                   </div>
-
-                  <div className={styles.infoRowInline}>
-                    <Building2 size={14} />
-                    <span className={styles.infoLabel}>Diện tích cửa hàng :</span>
-                    <span className={styles.infoValue}>{store.businessArea ? `${store.businessArea} m²` : 'Chưa có thông tin'}</span>
-                  </div>
-
-                  <div className={styles.infoRowInline}>
-                    <Mail size={14} />
-                    <span className={styles.infoLabel}>Email :</span>
-                    <span className={styles.infoValue}>{store.email || 'Chưa có thông tin'}</span>
-                  </div>
-
-                  {store.website && (
-                    <div className={styles.infoRowInline}>
-                      <ExternalLink size={14} />
-                      <span className={styles.infoLabel}>Website :</span>
-                      <span className={styles.infoValue}>{store.website}</span>
-                    </div>
-                  )}
-
-                  {store.fax && (
-                    <div className={styles.infoRowInline}>
-                      <Phone size={14} />
-                      <span className={styles.infoLabel}>Fax :</span>
-                      <span className={styles.infoValue}>{store.fax}</span>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -1175,7 +1065,7 @@ export default function StoreDetailPage() {
                   <div className={styles.infoRowInline}>
                     <User size={14} />
                     <span className={styles.infoLabel}>
-                      Tên Chủ cơ sở<span className={styles.required}>*</span> :
+                      Tên Chủ cơ sở :
                     </span>
                     <span className={styles.infoValue}>{store.ownerName || 'Chưa có thông tin'}</span>
                   </div>
@@ -1183,7 +1073,7 @@ export default function StoreDetailPage() {
                   <div className={styles.infoRowInline}>
                     <Calendar size={14} />
                     <span className={styles.infoLabel}>
-                      Năm sinh chủ hộ<span className={styles.required}>*</span> :
+                      Năm sinh chủ hộ :
                     </span>
                     <span className={styles.infoValue}>{store.ownerBirthYear || 'Chưa có thông tin'}</span>
                   </div>
@@ -1195,7 +1085,7 @@ export default function StoreDetailPage() {
                   <div className={styles.infoRowInline}>
                     <FileText size={14} />
                     <span className={styles.infoLabel}>
-                      Số CMTND / CCCD / ĐDCN<span className={styles.required}>*</span> :
+                      Số CMTND / CCCD / ĐDCN :
                     </span>
                     <span className={styles.infoValue}>{store.ownerIdNumber || 'Chưa có thông tin'}</span>
                   </div>

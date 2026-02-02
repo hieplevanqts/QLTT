@@ -382,7 +382,7 @@ export default function FullEditRegistryPage() {
                 <div>
                   <h3 className="text-lg font-semibold">Không có quyền truy cập</h3>
                   <p className="text-sm text-muted-foreground mt-2">
-                    Bạn không có quyền chỉnh sửa đầy đủ thông tin cơ sở này.
+                    Bạn không có quyền Chỉnh sửa thông tin cơ sở này.
                   </p>
                 </div>
                 <Button onClick={() => navigate(`/registry/stores/${id}`)}>
@@ -420,9 +420,9 @@ export default function FullEditRegistryPage() {
           { label: 'Trang chủ', href: '/' },
           { label: 'Cơ sở quản lý', href: '/registry/stores' },
           { label: originalStore.name, href: `/registry/stores/${id}` },
-          { label: 'Chỉnh sửa đầy đủ' },
+          { label: 'Chỉnh sửa' },
         ]}
-        title="Chỉnh sửa đầy đủ"
+        title="Chỉnh sửa"
         subtitle={originalStore.name}
         actions={
           <Button variant="outline" onClick={handleCancel}>

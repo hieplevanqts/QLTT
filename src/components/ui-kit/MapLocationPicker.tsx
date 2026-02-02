@@ -23,6 +23,8 @@ interface MapLocationPickerProps {
     latitude: number;
     longitude: number;
     address?: string;
+    province?: string;
+    ward?: string;
   }) => void;
   disabled?: boolean;
 }
@@ -45,7 +47,7 @@ function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number
 }
 
 // Reverse geocoding using Nominatim API (free, no key required)
-async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
+async function reverseGeocode(lat: number, lng: number): Promise<{ address: string; province?: string; ward?: string } | null> {
   try {
     const response = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=vi`,
@@ -58,9 +60,27 @@ async function reverseGeocode(lat: number, lng: number): Promise<string | null> 
     
     if (response.ok) {
       const data = await response.json();
-      return data.address?.road
-        ? `${data.address.road}${data.address.house_number ? ' ' + data.address.house_number : ''}, ${data.address.ward || data.address.village || ''}, ${data.address.city || data.address.town || 'TP.HCM'}`
-        : data.address_line1 || null;
+      const address = data.address;
+      
+      // Build street address
+      let streetAddress = '';
+      if (address?.road) {
+        streetAddress = address.road + (address.house_number ? ' ' + address.house_number : '');
+      } else if (address?.address_line1) {
+        streetAddress = address.address_line1;
+      }
+      
+      // Extract province/city and ward/district
+      const province = address?.city || address?.town || 'TP. Hồ Chí Minh';
+      const ward = address?.ward || address?.village || address?.hamlet || '';
+      
+      const fullAddress = [streetAddress, ward, province].filter(p => p).join(', ');
+      
+      return {
+        address: fullAddress || data.address_line1 || '',
+        province,
+        ward,
+      };
     }
   } catch (error) {
     console.error('Reverse geocoding error:', error);
@@ -142,17 +162,26 @@ export function MapLocationPicker({
     setIsLoadingAddress(true);
 
     // Get address from coordinates
-    const addressText = await reverseGeocode(lat, lng);
+    const result = await reverseGeocode(lat, lng);
     setIsLoadingAddress(false);
     
-    onLocationChange({
-      latitude: lat,
-      longitude: lng,
-      address: addressText || undefined,
-    });
-
-    if (addressText) {
-      setSearchQuery(addressText);
+    if (result) {
+      setSearchQuery(result.address);
+      onLocationChange({
+        latitude: lat,
+        longitude: lng,
+        address: result.address,
+        province: result.province,
+        ward: result.ward,
+      });
+    } else {
+      onLocationChange({
+        latitude: lat,
+        longitude: lng,
+      address: result.address,
+        province: result.province,
+        ward: result.ward,
+      });
     }
   };
 
@@ -168,17 +197,23 @@ export function MapLocationPicker({
           setValidationMessage('');
           setIsLoadingAddress(true);
 
-          const addressText = await reverseGeocode(lat, lng);
+          const result = await reverseGeocode(lat, lng);
           setIsLoadingAddress(false);
           
-          onLocationChange({
-            latitude: lat,
-            longitude: lng,
-            address: addressText || undefined,
-          });
-
-          if (addressText) {
-            setSearchQuery(addressText);
+          if (result) {
+            setSearchQuery(result.address);
+            onLocationChange({
+              latitude: lat,
+              longitude: lng,
+              address: result.address,
+              province: result.province,
+              ward: result.ward,
+            });
+          } else {
+            onLocationChange({
+              latitude: lat,
+              longitude: lng,
+            });
           }
         },
         (error) => {

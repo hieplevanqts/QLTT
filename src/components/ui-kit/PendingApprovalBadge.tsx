@@ -32,7 +32,7 @@ export function PendingApprovalBadge({
   const tooltipContent = (
     <div className="space-y-1 text-xs">
       <p className="font-semibold">
-        {type === 'quick-edit' ? 'Chỉnh sửa nhanh' : 'Chỉnh sửa đầy đủ'}
+        {type === 'quick-edit' ? 'Chỉnh sửa nhanh' : 'Chỉnh sửa'}
       </p>
       {changedFields.length > 0 && (
         <div>

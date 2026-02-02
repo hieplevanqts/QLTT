@@ -176,22 +176,31 @@ export default function ActionColumn({ actions, variant = 'default', className, 
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {actions.map((action, index) => (
-              <div key={index} className={styles.actionWrapper}>
-                {action.separator && <DropdownMenuSeparator />}
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    action.onClick();
-                  }}
-                  disabled={action.disabled}
-                  className={action.variant === 'destructive' ? styles.destructiveAction : ''}
-                >
-                  {action.icon}
-                  <span className={styles.actionLabel}>{action.label}</span>
-                </DropdownMenuItem>
-              </div>
-            ))}
+            {(() => {
+              // Ensure destructive actions (e.g., delete) appear at the bottom of the menu
+              const menuList = [...actions].sort((a, b) => {
+                const da = a.variant === 'destructive' ? 1 : 0;
+                const db = b.variant === 'destructive' ? 1 : 0;
+                return da - db; // non-destructive first, destructive last
+              });
+
+              return menuList.map((action, index) => (
+                <div key={index} className={styles.actionWrapper}>
+                  {action.separator && <DropdownMenuSeparator />}
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      action.onClick();
+                    }}
+                    disabled={action.disabled}
+                    className={action.variant === 'destructive' ? styles.destructiveAction : ''}
+                  >
+                    {action.icon}
+                    <span className={styles.actionLabel}>{action.label}</span>
+                  </DropdownMenuItem>
+                </div>
+              ));
+            })()}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -279,22 +288,31 @@ export default function ActionColumn({ actions, variant = 'default', className, 
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          {menuActions.map((action, index) => (
-            <div key={index} className={styles.actionWrapper}>
-              {action.separator && <DropdownMenuSeparator />}
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  action.onClick();
-                }}
-                disabled={action.disabled}
-                className={action.variant === 'destructive' ? styles.destructiveAction : ''}
-              >
-                {action.icon}
-                <span className={styles.actionLabel}>{action.label}</span>
-              </DropdownMenuItem>
-            </div>
-          ))}
+          {(() => {
+            // Place destructive actions (delete) at the bottom of the menu
+            const sortedMenu = [...menuActions].sort((a, b) => {
+              const da = a.variant === 'destructive' ? 1 : 0;
+              const db = b.variant === 'destructive' ? 1 : 0;
+              return da - db;
+            });
+
+            return sortedMenu.map((action, index) => (
+              <div key={index} className={styles.actionWrapper}>
+                {action.separator && <DropdownMenuSeparator />}
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    action.onClick();
+                  }}
+                  disabled={action.disabled}
+                  className={action.variant === 'destructive' ? styles.destructiveAction : ''}
+                >
+                  {action.icon}
+                  <span className={styles.actionLabel}>{action.label}</span>
+                </DropdownMenuItem>
+              </div>
+            ));
+          })()}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
