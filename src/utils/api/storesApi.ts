@@ -635,6 +635,66 @@ export async function fetchMerchantLicenses(merchantId: string): Promise<any[]> 
     return [];
   }
 }
+
+export interface MerchantChangeLog {
+  _id: string;
+  merchant_id: string;
+  user_id: string | null;
+  user_email: string | null;
+  feild_name?: string | null;
+  feild_code?: string | null;
+  field_name?: string | null;
+  old_data?: string | null;
+  new_data?: string | null;
+  action?: string;
+  status?: number | null;
+  entity_type?: string;
+  entity_id?: string | null;
+  note?: string | null;
+  created_at: string;
+  updated_at?: string;
+}
+
+/**
+ * 🧾 Fetch merchant change history logs via RPC
+ * Calls get_merchant_histories RPC function with merchant ID parameter
+ */
+export async function fetchMerchantChangeLogs(merchantId: string): Promise<MerchantChangeLog[]> {
+  try {
+    const url = `${SUPABASE_REST_URL}/rpc/get_merchant_histories`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({
+        p_merchant_id: merchantId,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ [fetchMerchantChangeLogs] API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText,
+      });
+      return [];
+    }
+
+    const data = await response.json();
+    if (Array.isArray(data)) {
+      console.log('✅ [fetchMerchantChangeLogs] Fetched', data.length, 'change logs for merchant:', merchantId);
+      return data as MerchantChangeLog[];
+    }
+
+    return [];
+  } catch (error: any) {
+    console.error('❌ [fetchMerchantChangeLogs] Error:', {
+      merchant_id: merchantId,
+      error_message: error.message,
+    });
+    return [];
+  }
+}
 /**
  * 📝 Upsert a merchant license via RPC
  * @param data - License data matching upsert_merchant_license RPC parameters
