@@ -3,7 +3,7 @@
  * Hook for fetching and managing leads from Supabase
  */
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/utils/supabaseHelpers';
 import type { Lead, LeadStatus } from '@/utils/data/lead-risk/types';
 
@@ -15,7 +15,7 @@ interface SupabaseLead {
   title: string;
   description: string;
   status: LeadStatus;
-  urgency?: string; // May not exist in DB
+  severity?: string; // May not exist in DB
   confidence?: 'low' | 'medium' | 'high'; // May not exist in DB
   source: string;
   category: string;
@@ -36,6 +36,8 @@ interface SupabaseLead {
   is_watched?: boolean;
   tags?: string[];
   rejection_reason?: string;
+  occurred_at?: string;
+  evidences?: any[];
 }
 
 // Transform Supabase lead to app Lead type
@@ -61,7 +63,9 @@ function transformSupabaseLead(dbLead: SupabaseLead): Lead {
     province: '',
   };
 
-  // Map confidence to urgency (since urgency not in database)
+
+
+  // Assuming mapConfidenceToUrgency is similar to mapConfidenceToseverity
   const mapConfidenceToUrgency = (confidence: string) => {
     switch (confidence) {
       case 'high': return 'high' as const;
@@ -77,7 +81,8 @@ function transformSupabaseLead(dbLead: SupabaseLead): Lead {
     title: dbLead.title,
     description: dbLead.description,
     status: dbLead.status,
-    urgency: dbLead.urgency || mapConfidenceToUrgency(dbLead.confidence || 'medium'),
+    urgency: (dbLead.severity as any) || mapConfidenceToUrgency(dbLead.confidence || 'medium'),
+    severity: (dbLead.severity as any) || mapConfidenceToUrgency(dbLead.confidence || 'medium'),
     confidence: dbLead.confidence,
     source: dbLead.source || dbLead.title || 'app',
     category: dbLead.category,
@@ -115,6 +120,8 @@ function transformSupabaseLead(dbLead: SupabaseLead): Lead {
     isWatched: dbLead.is_watched || false,
     hasAlert: false, // Not in database schema
     rejection_reason: dbLead.rejection_reason,
+    occurred_at: dbLead.occurred_at ? new Date(dbLead.occurred_at) : undefined,
+    evidences: dbLead.evidences || [],
   };
 }
 
@@ -132,15 +139,20 @@ export function useSupabaseLeads(options: UseSupabaseLeadsOptions = {}) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const isFetchingRef = useRef(false); // Prevent concurrent fetches
+
 
   useEffect(() => {
-    fetchLeads();
+    // Debounce search to prevent rapid firing
+    const timer = setTimeout(() => {
+      fetchLeads();
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     options.statuses?.join(','),
     options.categories?.join(','),
-    options.sources?.join(','), // Add dependency
+    options.sources?.join(','),
     options.search,
     options.assignedToMe,
     options.unassigned,
@@ -148,14 +160,10 @@ export function useSupabaseLeads(options: UseSupabaseLeadsOptions = {}) {
   ]);
 
   const fetchLeads = async () => {
-    // Prevent concurrent fetches
-    if (isFetchingRef.current) {
-      console.log('⏭️ [useSupabaseLeads] Skipping fetch - already in progress');
-      return;
-    }
+    // Note: Removed strict isFetchingRef check to allow query updates to go through
 
     try {
-      isFetchingRef.current = true;
+      // isFetchingRef.current = true; // Still useful for knowing if loading, but shouldn't block
       setLoading(true);
       setError(null);
 
@@ -265,7 +273,7 @@ export function useSupabaseLeads(options: UseSupabaseLeadsOptions = {}) {
       console.error('❌ [useSupabaseLeads] Error fetching leads:', errorMessage);
       setError(errorMessage);
     } finally {
-      isFetchingRef.current = false;
+      // isFetchingRef.current = false;
       setLoading(false);
     }
   };

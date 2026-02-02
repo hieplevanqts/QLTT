@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Inbox, 
-  AlertTriangle, 
-  TrendingUp, 
+import {
+  Inbox,
+  AlertTriangle,
+  TrendingUp,
   Clock,
   Users,
   MapPin,
@@ -210,13 +210,13 @@ export default function LeadRiskHome() {
         <div className={styles.titleGroup}>
           <div className={styles.titleRow}>
             <Shield size={28} className={styles.titleIcon} />
-            <h1 className={styles.title}>Lead & Risk Management</h1>
+            <h1 className={styles.title}>Quản lý nguồn tin và rủi ro</h1>
           </div>
           <p className={styles.subtitle}>
             Quản lý nguồn tin và phân tích rủi ro tập trung
           </p>
         </div>
-        
+
         <div className={styles.headerActions}>
           <select
             value={timeFilter}
@@ -227,7 +227,7 @@ export default function LeadRiskHome() {
             <option value="week">Tuần này</option>
             <option value="month">Tháng này</option>
           </select>
-          
+
           <button className={styles.createButton} onClick={() => navigate('/lead-risk/create-lead-quick')}>
             <Plus size={18} />
             Tạo Lead
@@ -258,10 +258,10 @@ export default function LeadRiskHome() {
                   {card.change}
                 </div>
               </div>
-              
+
               <div className={styles.kpiValue}>{card.value}</div>
               <div className={styles.kpiLabel}>{card.label}</div>
-              
+
               <div className={styles.kpiAction}>
                 <span>Xem chi tiết</span>
                 <ArrowUpRight size={14} />
