@@ -149,7 +149,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
   const [selectedWard, setSelectedWard] = useState('');
   const [selectedProvinceName, setSelectedProvinceName] = useState('');
   const [selectedWardName, setSelectedWardName] = useState('');
-  
+
   // Track if auto-mapping should be skipped
   const [skipAddressMapping, setSkipAddressMapping] = useState(false);
   // Store the last OCR address for auto-mapping
@@ -183,7 +183,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
       console.error('Error fetching wards:', error);
       toast.error('Không thể tải danh sách phường/xã');
     }
-    
+
     return;
   };
 
@@ -217,7 +217,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
       // Auto-select province
       setSelectedProvince(result.provinceId);
       setSelectedProvinceName(result.provinceName);
-      
+
       // Load wards for this province and auto-select ward
       loadWardsByProvince(result.provinceId).then(() => {
         // Set ward in next tick to ensure wards are loaded
@@ -226,13 +226,13 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
           setSelectedWardName(result.wardName);
         }, 0);
       });
-      
+
       // Set the street address
       setFormData(prev => ({
         ...prev,
         registeredAddress: result.streetAddress,
       }));
-      
+
       console.log('✅ [AddStoreDialogTabbed] Address auto-mapped successfully');
     },
     onAddressMatchFail: (error, fullAddress) => {
@@ -340,12 +340,12 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
 
       setFormData(newFormData);
       setFieldMetadata(prev => ({ ...prev, ...newMetadata }));
-      
+
       // Store the OCR address for auto-mapping
       if (extractedData.registeredAddress) {
         setLastOcrAddress(extractedData.registeredAddress);
       }
-      
+
       // Reset skip flag when new OCR data arrives
       setSkipAddressMapping(false);
 
@@ -447,15 +447,19 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
     if (!formData.operationStatus?.trim()) {
       newErrors.operationStatus = 'Vui lòng chọn tình trạng hoạt động';
     }
-    
+
     // businessPhone - bắt buộc
     if (!formData.businessPhone?.trim()) {
       newErrors.businessPhone = 'Vui lòng nhập số điện thoại hộ kinh doanh';
     } else if (!isValidPhoneNumber(formData.businessPhone)) {
       newErrors.businessPhone = 'Số điện thoại không hợp lệ';
     }
-     if (!formData.ownerName?.trim()) {
+    if (!formData.ownerName?.trim()) {
       newErrors.ownerName = 'Vui lòng nhập tên chủ cơ sở';
+    }
+
+    if (!formData.registeredAddress?.trim()) {
+      newErrors.registeredAddress = 'Vui lòng nhập địa chỉ đăng ký kinh doanh';
     }
     // ownerPhone - bắt buộc
     if (!formData.ownerPhone?.trim()) {
@@ -544,7 +548,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
     inputElement: React.ReactNode
   ) => {
     const isAutoFilled = fieldMetadata[field]?.isAutoFilled && !fieldMetadata[field]?.isManuallyEdited;
-    
+
     // Split label to separate required asterisk
     const labelParts = label.split(' *');
     const isRequired = label.endsWith(' *');
@@ -1018,13 +1022,15 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
 
                 {renderFieldWithIndicator(
                   'registeredAddress',
-                  'Địa chỉ đăng ký kinh doanh',
+                  'Địa chỉ đăng ký kinh doanh *',
                   <Input
                     id="registeredAddress"
                     value={formData.registeredAddress || ''}
+                    className={`placeholder:text-gray-500 ${errors.registeredAddress ? 'border-red-500' : ''}`}
                     onChange={(e) => handleFieldChange('registeredAddress', e.target.value)}
                     placeholder="Nhập địa chỉ đăng ký kinh doanh"
-                  />
+                  />,
+                  true
                 )}
 
                 <div className="space-y-2 col-span-2">
@@ -1070,13 +1076,13 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                       longitude: location.longitude,
                       registeredAddress: location.address || prev.registeredAddress,
                     }));
-                    
+
                     // Auto-select province/ward from reverse geocoding result
                     if (location.province) {
                       // Find province by name
                       const provinceMatch = apiProvinces.find(
                         p => p.name.toLowerCase().includes(location.province?.toLowerCase() || '') ||
-                             location.province?.toLowerCase().includes(p.name.toLowerCase())
+                          location.province?.toLowerCase().includes(p.name.toLowerCase())
                       );
                       if (provinceMatch) {
                         setSelectedProvince(provinceMatch._id);
@@ -1084,18 +1090,18 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                         loadWardsByProvince(provinceMatch._id);
                       }
                     }
-                    
+
                     // Auto-select ward after province is set
                     if (location.ward && location.province) {
                       setTimeout(() => {
                         const provinceMatch = apiProvinces.find(
                           p => p.name.toLowerCase().includes(location.province?.toLowerCase() || '') ||
-                               location.province?.toLowerCase().includes(p.name.toLowerCase())
+                            location.province?.toLowerCase().includes(p.name.toLowerCase())
                         );
                         if (provinceMatch) {
                           const wardMatch = apiWards.find(
                             w => w.name.toLowerCase().includes(location.ward?.toLowerCase() || '') ||
-                                 location.ward?.toLowerCase().includes(w.name.toLowerCase())
+                              location.ward?.toLowerCase().includes(w.name.toLowerCase())
                           );
                           if (wardMatch) {
                             setSelectedWard(wardMatch._id);

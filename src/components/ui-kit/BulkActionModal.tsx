@@ -13,6 +13,7 @@ export type BulkActionType =
   | 'suspend' 
   | 'activate' 
   | 'close'
+  | 'delete'
   | 'export';
 
 interface BulkActionModalProps {
@@ -69,6 +70,14 @@ const ACTION_CONFIG: Record<BulkActionType, {
     variant: 'danger',
     icon: <X size={24} />,
     warningText: 'Hành động này không thể hoàn tác. Cơ sở sẽ chuyển sang trạng thái "Ngừng hoạt động" vĩnh viễn.',
+  },
+  delete: {
+    title: 'Xóa cơ sở hàng loạt',
+    description: 'Xóa các cơ sở đã chọn khỏi hệ thống',
+    requiresReason: false,
+    variant: 'danger',
+    icon: <X size={24} />,
+    warningText: 'Hành động này không thể hoàn tác. Dữ liệu cơ sở sẽ bị xóa khỏi hệ thống.',
   },
   export: {
     title: 'Xuất dữ liệu CSV',
@@ -136,6 +145,14 @@ export function BulkActionModal({
             valid.push(store);
           } else {
             invalid.push({ store, reason: 'Chỉ có thể ngừng hoạt động cơ sở ở trạng thái "Đang hoạt động" hoặc "Tạm ngừng"' });
+          }
+          break;
+
+        case 'delete':
+          if (store.status === 'rejected') {
+            valid.push(store);
+          } else {
+            invalid.push({ store, reason: 'Chỉ có thể xóa cơ sở ở trạng thái "Từ chối phê duyệt"' });
           }
           break;
         

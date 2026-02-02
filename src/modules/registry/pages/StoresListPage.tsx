@@ -14,6 +14,7 @@ import {
   Upload,
   CheckCircle2,
   XCircle,
+  Trash2,
   Pause,
   Play,
   StopCircle,
@@ -695,7 +696,7 @@ const departmentPath = user?.app_metadata?.department?.path ;
     active: ['suspend'],
     suspended: ['activate', 'close'],
     refuse: [],
-    rejected: [],
+    rejected: ['delete'],
     underInspection: [], // No changes allowed while under inspection
   };
 
@@ -753,6 +754,12 @@ const departmentPath = user?.app_metadata?.department?.path ;
         variant: 'destructive',
         icon: <StopCircle size={16} />,
       },
+      delete: {
+        label: 'Xóa cơ sở',
+        onClick: () => handleBulkAction('delete'),
+        variant: 'destructive',
+        icon: <Trash2 size={16} />,
+      },
     };
 
     // Return only the actions that are available for the current selection
@@ -791,6 +798,8 @@ const departmentPath = user?.app_metadata?.department?.path ;
             return store.status === 'suspended';
           case 'close':
             return store.status === 'suspended' || store.status === 'active';
+          case 'delete':
+            return store.status === 'rejected';
           case 'export':
             return true;
           default:
@@ -804,32 +813,70 @@ const departmentPath = user?.app_metadata?.department?.path ;
     // Apply bulk changes
     if (actionType !== 'export') {
       try {
-        const updatePromises = validStoreIds.map(async (id) => {
-          const store = stores.find(s => s.id === id);
-          if (!store?.merchantId) return null;
+        if (actionType === 'delete') {
+          const deletePromises = validStoreIds.map(async (id) => {
+            const store = stores.find(s => s.id === id);
+            if (!store?.merchantId) return null;
 
-          let newStatus: FacilityStatus = store.status;
-          switch (actionType) {
-            case 'approve': newStatus = 'active'; break;
-            case 'reject': newStatus = 'rejected'; break;
-            case 'suspend': newStatus = 'suspended'; break;
-            case 'activate': newStatus = 'active'; break;
-            case 'close': newStatus = 'refuse'; break;
-          }
+            await updateMerchant(store.merchantId, {
+              p_business_name: store.name,
+              p_owner_name: store.ownerName,
+              p_owner_phone: store.ownerPhone,
+              p_tax_code: store.taxCode,
+              p_business_type: store.businessType,
+              p_province_id: store.provinceCode || null,
+              p_ward_id: store.wardCode || null,
+              p_address: store.address,
+              p_latitude: store.latitude,
+              p_longitude: store.longitude,
+              p_status: store.status,
+              p_established_date: store.establishedDate || null,
+              p_department_id: departmentId,
+              p_note: store.notes || null,
+              p_business_phone: store.businessPhone || null,
+              p_business_email: store.email || null,
+              p_website: store.website || null,
+              p_store_area: store.businessArea ? parseFloat(store.businessArea) : null,
+              p_owner_phone_2: store.ownerPhone2 || null,
+              p_owner_birth_year: store.ownerBirthYear || null,
+              p_owner_identity_no: store.ownerIdNumber || null,
+              p_owner_email: store.ownerEmail || null,
+              p_delete_at: new Date().toISOString(),
+            });
 
-          await updateMerchantStatus(store.merchantId, newStatus);
-          return { id, newStatus };
-        });
+            return id;
+          });
 
-        const results = await Promise.all(updatePromises);
+          const deletedIds = (await Promise.all(deletePromises)).filter(Boolean) as number[];
+          setStores(prev => prev.filter(store => !deletedIds.includes(store.id)));
+        } else {
+          const updatePromises = validStoreIds.map(async (id) => {
+            const store = stores.find(s => s.id === id);
+            if (!store?.merchantId) return null;
 
-        setStores(prev =>
-          prev.map(store => {
-            const updateResult = results.find(r => r?.id === store.id);
-            if (!updateResult) return store;
-            return { ...store, status: updateResult.newStatus };
-          })
-        );
+            let newStatus: FacilityStatus = store.status;
+            switch (actionType) {
+              case 'approve': newStatus = 'active'; break;
+              case 'reject': newStatus = 'rejected'; break;
+              case 'suspend': newStatus = 'suspended'; break;
+              case 'activate': newStatus = 'active'; break;
+              case 'close': newStatus = 'refuse'; break;
+            }
+
+            await updateMerchantStatus(store.merchantId, newStatus);
+            return { id, newStatus };
+          });
+
+          const results = await Promise.all(updatePromises);
+
+          setStores(prev =>
+            prev.map(store => {
+              const updateResult = results.find(r => r?.id === store.id);
+              if (!updateResult) return store;
+              return { ...store, status: updateResult.newStatus };
+            })
+          );
+        }
         loadStats();
       } catch (error: any) {
         toast.error('Lỗi khi cập nhật hàng loạt: ' + error.message);
@@ -843,6 +890,7 @@ const departmentPath = user?.app_metadata?.department?.path ;
       suspend: 'tạm dừng',
       activate: 'kích hoạt lại',
       close: 'ngừng hoạt động',
+      delete: 'xóa',
       export: 'xuất',
     };
 
