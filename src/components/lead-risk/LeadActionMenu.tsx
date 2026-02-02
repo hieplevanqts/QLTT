@@ -49,7 +49,7 @@ interface LeadActionMenuProps {
 const getAllowedActions = (status: LeadStatus): LeadAction[] => {
   switch (status) {
     case 'new':
-      return ['view', 'assign', 'reject', 'cancel'];
+      return ['view', 'assign', 'cancel'];
     case 'verifying':
     case 'in_verification':
       return ['view', 'assign', 'pause_verification', 'reject'];

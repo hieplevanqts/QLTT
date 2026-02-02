@@ -6,7 +6,7 @@ import {
   Plus,
   CheckSquare,
   UserPlus,
-  XCircle,
+
   Inbox,
   X,
   Trash2,
@@ -23,6 +23,7 @@ import {
   RotateCcw,
   ArrowRight,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { useSupabaseLeads, useLeadStats } from "@/hooks/useSupabaseLeads";
 import { StatusBadge } from "@/components/lead-risk/StatusBadge";
 import { SLATimer } from "@/components/lead-risk/SLATimer";
@@ -163,10 +164,28 @@ const getAllowedActions = (
   }
 };
 
-// Helper to translate source/category values
+// Helper to translate category values
+const getCategoryLabel = (category: string): string => {
+  const labels: Record<string, string> = {
+    price_fraud: 'Niêm yết giá không đúng',
+    food_safety: 'Vi phạm VSATTP',
+    counterfeit: 'Hàng giả, hàng nhái',
+    origin_unknown: 'Hàng không rõ nguồn gốc',
+    expired: 'Hàng hết hạn',
+    commercial_fraud: 'Gian lận thương mại',
+    illegal_trading: 'Vi phạm quy định kinh doanh',
+    other: 'Khác',
+
+    // Legacy mappings
+    smuggling: 'Hàng không rõ nguồn gốc',
+    unlicensed: 'Vi phạm quy định kinh doanh',
+  };
+  return labels[category] || category;
+};
+
+// Helper to translate source values
 const getSourceLabel = (source: string): string => {
   const labels: Record<string, string> = {
-    // Sources from types
     app: 'Mobile App',
     hotline: 'Hotline 1800',
     import: 'Import hàng loạt',
@@ -174,21 +193,11 @@ const getSourceLabel = (source: string): string => {
     tip: 'Nguồn tin ẩn danh',
     system: 'Tự động phát hiện',
     social: 'Mạng xã hội',
-
-    // Additional sources from Filter options
     website: 'Website/Portal',
     email: 'Email',
     inspection: 'Kiểm tra trực tiếp',
     authority: 'Công an/Chính quyền',
     other: 'Nguồn khác',
-
-    // Categories (just in case)
-    counterfeit: 'Hàng giả',
-    smuggling: 'Buôn lậu',
-    illegal_trading: 'Kinh doanh bất hợp pháp',
-    food_safety: 'An toàn thực phẩm',
-    price_fraud: 'Gian lận giá cả',
-    unlicensed: 'Không giấy phép',
   };
   return labels[source] || source;
 };
@@ -207,7 +216,8 @@ export default function LeadInbox() {
   >(["new"]); // Default: Filter by "Mới" status
   const [selectedAssignments, setSelectedAssignments] =
     useState<string[]>([]);
-  const [selectedSources, setSelectedSources] = useState<
+  const [selectedSeverities, setSelectedSeverities] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<
     string[]
   >([]);
 
@@ -237,7 +247,8 @@ export default function LeadInbox() {
     );
     console.log("📊 [LeadInbox] State:", {
       selectedStatuses,
-      selectedSources,
+      selectedCategories,
+      selectedSeverities,
       searchQuery,
       selectedAssignments,
     });
@@ -324,16 +335,17 @@ export default function LeadInbox() {
         selectedStatuses.length > 0
           ? selectedStatuses
           : undefined,
-      sources:
-        selectedSources.length > 0
-          ? selectedSources
+      // NOTE: Passing Vietnamese category strings directly to Supabase as requested
+      categories:
+        selectedCategories.length > 0
+          ? selectedCategories
           : undefined,
       search: searchQuery || undefined,
       // NOTE: Assignment filtering moved to CLIENT-SIDE (filteredLeads)
       // unassigned: selectedAssignments.includes('unassigned') ? true : undefined,
       limit: 200,
     }),
-    [selectedStatuses, selectedSources, searchQuery],
+    [selectedStatuses, selectedCategories, searchQuery],
   );
 
   const {
@@ -389,9 +401,16 @@ export default function LeadInbox() {
 
 
   // Group processing statuses
-  const inProgressLeads = allLeads.filter(
-    (l) => ["in_progress", "processing", "process_paused"].includes(l.status),
+  const processingLeads = allLeads.filter(
+    (l) => ["in_progress", "processing"].includes(l.status),
   ).length;
+
+  const processPausedLeads = allLeads.filter(
+    (l) => l.status === "process_paused",
+  ).length;
+
+  // Overview combined count (for stat cards if needed, or unused)
+  const inProgressLeads = processingLeads + processPausedLeads;
 
   const resolvedLeads = allLeads.filter(
     (l) => l.status === "resolved",
@@ -401,9 +420,11 @@ export default function LeadInbox() {
     (l) => l.status === "rejected",
   ).length;
 
-  const cancelledLeads = allLeads.filter(
-    (l) => ["cancelled", "rejected"].includes(l.status),
+  const cancelledLeadsOnly = allLeads.filter(
+    (l) => l.status === "cancelled",
   ).length;
+
+  const cancelledLeads = cancelledLeadsOnly + rejectedLeads;
   const assignedToMe = allLeads.filter(
     (l) => l.assignedTo?.userId === "QT24_NGUYENVANA",
   ).length;
@@ -431,8 +452,17 @@ export default function LeadInbox() {
       if (!matchesAssignment) return false;
     }
 
+
+
+    // Severity filter
+    if (selectedSeverities.length > 0) {
+      if (!lead.severity || !selectedSeverities.includes(lead.severity)) {
+        return false;
+      }
+    }
+
     return true;
-  });
+  }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   // Pagination logic
   const totalPages = Math.ceil(
@@ -451,7 +481,8 @@ export default function LeadInbox() {
   }, [
     selectedStatuses,
     selectedAssignments,
-    selectedSources,
+    selectedCategories,
+    selectedSeverities,
     searchQuery,
   ]);
 
@@ -598,13 +629,15 @@ export default function LeadInbox() {
 
   const clearAllFilters = () => {
     setSelectedStatuses([]);
-    setSelectedSources([]);
+    setSelectedCategories([]);
+    setSelectedSeverities([]);
     setSearchQuery("");
   };
 
   const hasActiveFilters =
     selectedStatuses.length > 0 ||
-    selectedSources.length > 0 ||
+    selectedCategories.length > 0 ||
+    selectedSeverities.length > 0 ||
     searchQuery !== "";
 
   // CRUD Handlers
@@ -983,6 +1016,59 @@ export default function LeadInbox() {
     }
   };
 
+  const handleExportExcel = () => {
+    if (filteredLeads.length === 0) {
+      toast.error("Không có dữ liệu để xuất");
+      return;
+    }
+
+    const dataToExport = filteredLeads.map(lead => ({
+      "Mã Lead": lead.code,
+      "Tiêu đề": lead.title,
+      "Trạng thái": lead.status === 'new' ? 'Mới' :
+        lead.status === 'processing' ? 'Đang xử lý' :
+          lead.status === 'process_paused' ? 'Tạm dừng xử lý' :
+            lead.status === 'resolved' ? 'Đã giải quyết' :
+              lead.status === 'cancelled' ? 'Đã hủy' :
+                lead.status === 'rejected' ? 'Đã từ chối' : lead.status,
+      "Mức độ": lead.severity === 'critical' ? 'Nghiêm trọng' : lead.severity === 'high' ? 'Cao' : lead.severity === 'medium' ? 'Trung bình' : 'Thấp',
+      "Nguồn": getSourceLabel(lead.source),
+      "Người báo": lead.reporterName || "",
+      "SĐT Người báo": lead.reporterPhone || "",
+      "Cửa hàng": lead.storeName || "",
+      "Địa chỉ": `${lead.location.address || ""}, ${lead.location.ward || ""}, ${lead.location.district || ""}, ${lead.location.province || ""}`,
+      "Mô tả": lead.description,
+      "Ngày tạo": new Date(lead.reportedAt).toLocaleString('vi-VN'),
+      "Hạn xử lý": new Date(lead.sla.deadline).toLocaleString('vi-VN'),
+      "Người xử lý": lead.assignedTo?.userName || "Chưa giao"
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Leads");
+
+    // Auto-width for columns
+    const wscols = [
+      { wch: 15 }, // Mã Lead
+      { wch: 30 }, // Tiêu đề
+      { wch: 15 }, // Trạng thái
+      { wch: 12 }, // Mức độ
+      { wch: 15 }, // Nguồn
+      { wch: 20 }, // Người báo
+      { wch: 15 }, // SĐT
+      { wch: 25 }, // Cửa hàng
+      { wch: 40 }, // Địa chỉ
+      { wch: 50 }, // Mô tả
+      { wch: 20 }, // Ngày tạo
+      { wch: 20 }, // Hạn xử lý
+      { wch: 20 }, // Người xử lý
+    ];
+    worksheet['!cols'] = wscols;
+
+    XLSX.writeFile(workbook, `Danh_sach_Leads_${new Date().toISOString().split('T')[0]}.xlsx`);
+    toast.success("Đã xuất file Excel thành công");
+  };
+
 
 
   return (
@@ -1084,9 +1170,7 @@ export default function LeadInbox() {
             <span>Phát hiện trùng</span>
           </button>
           <button
-            onClick={() => {
-              toast.info("Tính năng xuất Excel đang phát triển");
-            }}
+            onClick={handleExportExcel}
             style={{
               marginRight: "var(--spacing-3)",
               height: "44px",
@@ -1326,22 +1410,31 @@ export default function LeadInbox() {
           label="Trạng thái"
           options={[
             { value: "new", label: "Mới", count: newLeads },
-
             {
-              value: "in_progress",
+              value: "processing",
               label: "Đang xử lý",
-              count: inProgressLeads, // Includes processing & paused
+              count: processingLeads,
+            },
+            {
+              value: "process_paused",
+              label: "Tạm dừng xử lý",
+              count: processPausedLeads,
             },
             {
               value: "resolved",
-              label: "Đã xử lý xong",
+              label: "Đã giải quyết",
               count: resolvedLeads,
             },
             {
-              value: "cancelled", // Includes rejected
-              label: "Đã hủy/Từ chối",
-              count: cancelledLeads,
+              value: "cancelled",
+              label: "Đã hủy",
+              count: cancelledLeadsOnly,
             },
+            {
+              value: "rejected",
+              label: "Đã từ chối",
+              count: rejectedLeads,
+            }
           ]}
           selectedValues={selectedStatuses}
           onChange={setSelectedStatuses}
@@ -1374,60 +1467,80 @@ export default function LeadInbox() {
         />
 
         <MultiSelectDropdown
+          label="Mức độ"
+          options={[
+            {
+              value: "critical",
+              label: "Nghiêm trọng",
+              count: allLeads.filter((l) => l.severity === "critical").length,
+            },
+            {
+              value: "high",
+              label: "Cao",
+              count: allLeads.filter((l) => l.severity === "high").length,
+            },
+            {
+              value: "medium",
+              label: "Trung bình",
+              count: allLeads.filter((l) => l.severity === "medium").length,
+            },
+            {
+              value: "low",
+              label: "Thấp",
+              count: allLeads.filter((l) => l.severity === "low").length,
+            },
+          ]}
+          selectedValues={selectedSeverities}
+          onChange={setSelectedSeverities}
+          placeholder="Tất cả"
+        />
+
+        <MultiSelectDropdown
           label="Danh mục vi phạm"
           options={[
             {
-              value: "hotline",
-              label: "Hotline 1800",
-              count: allLeads.filter(
-                (l) => l.source === "hotline",
-              ).length,
+              value: "Niêm yết giá không đúng",
+              label: "Niêm yết giá không đúng",
+              count: allLeads.filter((l) => l.category === "Niêm yết giá không đúng").length,
             },
             {
-              value: "website",
-              label: "Website/Portal",
-              count: allLeads.filter(
-                (l) => l.source === "website",
-              ).length,
+              value: "Vi phạm VSATTP",
+              label: "Vi phạm VSATTP",
+              count: allLeads.filter((l) => l.category === "Vi phạm VSATTP").length,
             },
             {
-              value: "email",
-              label: "Email",
-              count: allLeads.filter(
-                (l) => l.source === "email",
-              ).length,
+              value: "Hàng giả, hàng nhái",
+              label: "Hàng giả, hàng nhái",
+              count: allLeads.filter((l) => l.category === "Hàng giả, hàng nhái").length,
             },
             {
-              value: "social",
-              label: "Mạng xã hội",
-              count: allLeads.filter(
-                (l) => l.source === "social",
-              ).length,
+              value: "Hàng không rõ nguồn gốc",
+              label: "Hàng không rõ nguồn gốc",
+              count: allLeads.filter((l) => l.category === "Hàng không rõ nguồn gốc").length,
             },
             {
-              value: "inspection",
-              label: "Kiểm tra trực tiếp",
-              count: allLeads.filter(
-                (l) => l.source === "inspection",
-              ).length,
+              value: "Hàng hết hạn",
+              label: "Hàng hết hạn",
+              count: allLeads.filter((l) => l.category === "Hàng hết hạn").length,
             },
             {
-              value: "authority",
-              label: "Công an/Chính quyền",
-              count: allLeads.filter(
-                (l) => l.source === "authority",
-              ).length,
+              value: "Gian lận thương mại",
+              label: "Gian lận thương mại",
+              count: allLeads.filter((l) => l.category === "Gian lận thương mại").length,
             },
             {
-              value: "other",
-              label: "Nguồn khác",
-              count: allLeads.filter(
-                (l) => l.source === "other",
-              ).length,
+              value: "Vi phạm quy định kinh doanh",
+              label: "Vi phạm quy định kinh doanh",
+              count: allLeads.filter((l) => l.category === "Vi phạm quy định kinh doanh").length,
+            },
+            {
+              value: "Khác",
+              label: "Khác",
+              count: allLeads.filter((l) => l.category === "Khác").length,
             },
           ]}
-          selectedValues={selectedSources}
-          onChange={setSelectedSources}
+          selectedValues={selectedCategories}
+          onChange={setSelectedCategories}
           placeholder="Tất cả"
         />
 
@@ -1536,17 +1649,6 @@ export default function LeadInbox() {
                         }}
                       >
                         <UserPlus size={16} /> Giao việc
-                      </button>
-                      <button
-                        className={styles.bulkButtonDanger}
-                        onClick={() => openBulkConfirm(
-                          "Từ chối leads",
-                          `Bạn có chắc muốn từ chối ${selectedLeads.size} leads đang chọn?`,
-                          "rejected",
-                          "danger"
-                        )}
-                      >
-                        <XCircle size={16} /> Từ chối
                       </button>
                       <button
                         className={styles.bulkButtonDanger}
@@ -1773,12 +1875,13 @@ export default function LeadInbox() {
                   />
                 </th>
                 <th style={{ width: "120px" }}>Mã Lead</th>
+                <th style={{ width: "120px" }}>Mức độ</th>
                 <th style={{ width: "280px" }}>Danh mục vi phạm</th>
                 <th style={{ width: "180px" }}>Người báo</th>
                 <th style={{ width: "160px" }}>Cửa hàng</th>
                 <th style={{ width: "180px" }}>Nội dung</th>
                 <th style={{ width: "140px" }}>Trạng thái</th>
-                <th style={{ width: "110px" }}>SLA</th>
+                <th style={{ width: "140px" }}>Thời gian xảy ra</th>
                 <th style={{ width: "140px" }}>Người xử lý</th>
                 <th
                   style={{
@@ -1828,8 +1931,50 @@ export default function LeadInbox() {
                     </span>
                   </td>
                   <td>
+                    <span
+                      style={{
+                        padding: "4px 8px",
+                        borderRadius: "4px",
+                        fontSize: "12px",
+                        fontWeight: 500,
+                        backgroundColor:
+                          lead.severity === "critical"
+                            ? "#fee2e2"
+                            : lead.severity === "high"
+                              ? "#ffedd5"
+                              : lead.severity === "medium"
+                                ? "#fef9c3"
+                                : "#dcfce7",
+                        color:
+                          lead.severity === "critical"
+                            ? "#ef4444"
+                            : lead.severity === "high"
+                              ? "#f97316"
+                              : lead.severity === "medium"
+                                ? "#eab308"
+                                : "#22c55e",
+                        border: `1px solid ${lead.severity === "critical"
+                          ? "#fecaca"
+                          : lead.severity === "high"
+                            ? "#fed7aa"
+                            : lead.severity === "medium"
+                              ? "#fef08a"
+                              : "#bbf7d0"
+                          }`,
+                      }}
+                    >
+                      {lead.severity === "critical"
+                        ? "Nghiêm trọng"
+                        : lead.severity === "high"
+                          ? "Cao"
+                          : lead.severity === "medium"
+                            ? "Trung bình"
+                            : "Thấp"}
+                    </span>
+                  </td>
+                  <td>
                     <div className={styles.leadTitle}>
-                      {getSourceLabel(lead.source)}
+                      {getCategoryLabel(lead.category)}
                     </div>
                   </td>
                   <td>
@@ -1859,12 +2004,18 @@ export default function LeadInbox() {
                     />
                   </td>
                   <td>
-                    <SLATimer
-                      deadline={lead.sla.deadline}
-                      remainingHours={lead.sla.remainingHours}
-                      isOverdue={lead.sla.isOverdue}
-                      size="sm"
-                    />
+                    <div className={styles.contentPreview}>
+                      {lead.occurred_at
+                        ? new Date(lead.occurred_at).toLocaleString("vi-VN", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                        : "-"
+                      }
+                    </div>
                   </td>
                   <td>
                     <span className={styles.assignee}>
@@ -1944,6 +2095,36 @@ export default function LeadInbox() {
               Sau
             </button>
           </div>
+
+          <div style={{ marginLeft: "16px", display: "flex", alignItems: "center" }}>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              style={{
+                height: "36px",
+                padding: "0 12px",
+                borderRadius: "6px",
+                border: "1px solid var(--border)",
+                backgroundColor: "var(--background)",
+                color: "var(--text-primary)",
+                fontSize: "14px",
+                cursor: "pointer",
+              }}
+            >
+              {[20, 50, 100, 200, 500].map(size => (
+                <option key={size} value={size}>
+                  {size} / trang
+                </option>
+              ))}
+            </select>
+            <span style={{ marginLeft: "8px", fontSize: "14px", color: "var(--text-secondary)" }}>
+              Tổng số bản ghi: {filteredLeads.length}
+            </span>
+          </div>
+
         </div>
       )}
 
