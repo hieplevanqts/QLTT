@@ -65,12 +65,19 @@ export async function fetchStores(
     search?: string;
   },
   department_path?: string,
+  deleted_at?: string
 ): Promise<{ data: Store[]; total: number }> {
   try {
     // Build base URL with pagination (supports unlimited records)
     // Join with wards table to get ward name
     // let url = `${SUPABASE_REST_URL}/merchants?limit=${limit}&offset=${offset}&order=created_at.desc&select=*,wards(_id,name)`;
-    let url = `${SUPABASE_REST_URL}/merchant_filter_view_ext?limit=${limit}&offset=${offset}&order=created_at.desc&select=*,wards(_id,name)&department_path=like.${encodeURIComponent(department_path)}*`;
+    let url = `${SUPABASE_REST_URL}/merchant_filter_view_ext` +
+  `?select=*,wards(_id,name)` +
+  `&limit=${limit}` +
+  `&offset=${offset}` +
+  `&order=created_at.desc` +
+  `&department_path=like.${department_path}*` +
+  `&deleted_at=is.null`;
 
     // Apply filters if provided
     if (filters?.status) {
@@ -218,6 +225,7 @@ export async function fetchStoresStats(filters?: {
   district?: string;
   businessType?: string;
   search?: string;
+ 
   department_path?: string;
 }, department_path?: string): Promise<{
   total: number;
@@ -225,12 +233,13 @@ export async function fetchStoresStats(filters?: {
   pending: number;
   suspended: number;
   refuse: number;
+   deleted_at?: string;
   rejected: number;
 }> {
   try {
     // Helper function to build query string with filters
     const buildCountUrl = (additionalStatus?: string) => {
-      let url = `${SUPABASE_REST_URL}/merchant_filter_view_ext?select=status`;
+      let url = `${SUPABASE_REST_URL}/merchant_filter_view_ext?select=status&deleted_at=is.null`;
 
       // Department path filter - MUST be first to match fetchStores logic
       if (department_path) {
@@ -305,7 +314,7 @@ export async function fetchStoresStats(filters?: {
  */
 export async function fetchStoreById(storeId: string | number): Promise<Store | null> {
   try {
-    const url = `${SUPABASE_REST_URL}/merchants?_id=eq.${storeId}&select=*&limit=1`;
+    const url = `${SUPABASE_REST_URL}/merchants?_id=eq.${storeId}&select=*&limit=1&deleted_at=is.null`;
 
     const response = await fetch(url, {
       method: 'GET',

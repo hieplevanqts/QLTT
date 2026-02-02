@@ -221,7 +221,7 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
 
     // Tab 1: Business - Required fields
     if (!formData.business_name?.trim()) {
-      newErrors.business_name = 'Tên cơ sở là bắt buộc';
+      newErrors.business_name = 'Vui lòng nhập tên cơ sở kinh doanh';
     }
     if (!formData.taxCode?.trim()) {
       newErrors.taxCode = 'Vui lòng nhập mã số thuế';
@@ -246,7 +246,13 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
     } else if (!isValidPhoneNumber(formData.ownerPhone)) {
       newErrors.ownerPhone = 'Số điện thoại không hợp lệ';
     }
+   if (!formData.ownerName?.trim()) {
+      newErrors.ownerName = 'Vui lòng nhập tên chủ cơ sở';
+    }
 
+     if (!formData.registeredAddress?.trim()) {
+      newErrors.registeredAddress = 'Vui lòng nhập địa chỉ đăng ký kinh doanh';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -505,14 +511,18 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
           {activeTab === 'owner' && (
             <div className={styles.formGrid}>
               {/* Tên Chủ cơ sở */}
-              <div className="space-y-2 col-span-2">
-                <Label htmlFor="ownerName">Tên Chủ cơ sở</Label>
+              <div className="space-y-2">
+                <Label htmlFor="ownerName">Tên Chủ cơ sở <span style={{color: 'var(--destructive)', fontWeight: '600'}}>*</span></Label>
                 <Input
                   id="ownerName"
                   value={formData.ownerName || ''}
                   onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })}
                   placeholder="Nhập tên chủ hộ"
+                  className={errors.ownerName ? 'border-red-500' : ''}
                 />
+                  {errors.ownerName && (
+                  <p className="text-sm text-red-500">{errors.ownerName}</p>
+                )}
               </div>
 
               {/* Năm sinh chủ hộ */}
@@ -617,13 +627,16 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
 
               {/* Địa chỉ */}
               <div className="space-y-2 col-span-2">
-                <Label htmlFor="registeredAddress">Địa chỉ</Label>
+                <Label htmlFor="registeredAddress">Địa chỉ đăng ký kinh doanh <span style={{color: 'var(--destructive)', fontWeight: '600'}}>*</span></Label>
                 <Input
                   id="registeredAddress"
                   value={formData.registeredAddress || ''}
                   onChange={(e) => setFormData({ ...formData, registeredAddress: e.target.value })}
                   placeholder="Số nhà, tên đường"
                 />
+                  {errors.registeredAddress && (
+                  <p className="text-sm text-red-500">{errors.registeredAddress}</p>
+                )}
               </div>
 
               {/* Địa chỉ trụ sở chính */}

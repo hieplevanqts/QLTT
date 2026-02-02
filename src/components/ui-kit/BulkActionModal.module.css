@@ -37,6 +37,13 @@
   animation: slideUp 0.3s ease-out;
 }
 
+/* Force white text for colored background buttons inside modal */
+.modal :global(.bg-primary),
+.modal :global(.bg-destructive),
+.modal :global(.bg-secondary) {
+  color: #ffffff !important;
+}
+
 @keyframes slideUp {
   from {
     transform: translateY(20px);
