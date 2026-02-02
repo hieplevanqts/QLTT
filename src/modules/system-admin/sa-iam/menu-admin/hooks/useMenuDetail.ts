@@ -8,6 +8,9 @@ export interface UseMenuDetailState {
   permissions: MenuPermissionRecord[];
   assignedPermissions: PermissionRecord[];
   setPermissions: (rows: MenuPermissionRecord[]) => void;
+  loading: boolean;
+  error: string | null;
+  reload: () => Promise<void>;
   saving: boolean;
   saveMenu: (payload: Partial<MenuRecord>) => Promise<void>;
   savePermissions: (permissionIds: string[]) => Promise<void>;
@@ -17,16 +20,24 @@ export const useMenuDetail = (menuId?: string): UseMenuDetailState => {
   const [menu, setMenu] = React.useState<MenuRecord | undefined>(undefined);
   const [permissions, setPermissions] = React.useState<MenuPermissionRecord[]>([]);
   const [assignedPermissions, setAssignedPermissions] = React.useState<PermissionRecord[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
 
-  React.useEffect(() => {
+  const loadDetail = React.useCallback(async () => {
     if (!menuId) {
       setPermissions([]);
       setAssignedPermissions([]);
+      setMenu(undefined);
+      setError(null);
+      setLoading(false);
       return;
     }
-
-    void (async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const detail = await menuService.getMenuById(menuId);
+      setMenu(detail ?? undefined);
       const rows = await menuService.listMenuPermissions(menuId);
       setPermissions(rows);
       try {
@@ -37,8 +48,18 @@ export const useMenuDetail = (menuId?: string): UseMenuDetailState => {
         const detailed = await menuService.listPermissionsByIds(ids);
         setAssignedPermissions(detailed);
       }
-    })();
+    } catch (err) {
+      setPermissions([]);
+      setAssignedPermissions([]);
+      setError(err instanceof Error ? err.message : "Không tải được chi tiết menu.");
+    } finally {
+      setLoading(false);
+    }
   }, [menuId]);
+
+  React.useEffect(() => {
+    void loadDetail();
+  }, [loadDetail]);
 
   const saveMenu = React.useCallback(
     async (payload: Partial<MenuRecord>) => {
@@ -86,6 +107,9 @@ export const useMenuDetail = (menuId?: string): UseMenuDetailState => {
     permissions,
     assignedPermissions,
     setPermissions,
+    loading,
+    error,
+    reload: loadDetail,
     saving,
     saveMenu,
     savePermissions,

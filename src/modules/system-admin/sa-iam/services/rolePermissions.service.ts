@@ -130,13 +130,28 @@ export const rolePermissionsService = {
     const { data, error } = await supabase
       .from('permission_actions')
       .select('name, code')
-      .order('created_at', { ascending: true }); 
+      .order('code', { ascending: true });
     if (error) {
       console.error('Error fetching permission actions:', error);
       throw error;
     }
 
-    return data || [];
+    const unique = new Map<string, { name: string; code: string }>();
+    (data || []).forEach((row: any) => {
+      const code = String(row?.code ?? "").trim().toUpperCase();
+      if (!code) return;
+      const name = String(row?.name ?? "").trim();
+      const existing = unique.get(code);
+      if (!existing) {
+        unique.set(code, { code, name });
+        return;
+      }
+      if (!existing.name && name) {
+        unique.set(code, { code, name });
+      }
+    });
+
+    return Array.from(unique.values());
   },
   
   async createAction(action: { name: string; code: string }) {

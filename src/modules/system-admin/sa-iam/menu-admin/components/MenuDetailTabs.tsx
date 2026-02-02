@@ -1,4 +1,5 @@
 import {
+  Alert,
   Button,
   Form,
   Input,
@@ -9,19 +10,16 @@ import {
   Switch,
   Tabs,
   Tooltip,
-  Typography,
   message,
 } from "antd";
 import * as React from "react";
 import type { MenuRecord, ModuleRecord, PermissionRecord } from "../menu.types";
 import { AssignedPermissionsTable } from "./AssignedPermissionsTable";
-import { PermissionPickerTable } from "./PermissionPickerTable";
 import { RolePreviewTree } from "./RolePreviewTree";
 import { MenuHistoryTable } from "./MenuHistoryTable";
 import { IconPickerModal } from "../../components/IconPickerModal";
 import { getIconComponent } from "../../components/iconRegistry";
 import { supabase } from "@/api/supabaseClient";
-import { useNavigate } from "react-router-dom";
 
 export interface MenuDetailTabsProps {
   menu?: MenuRecord | null;
@@ -29,14 +27,6 @@ export interface MenuDetailTabsProps {
   saving?: boolean;
   onSaveMenu?: (payload: Partial<MenuRecord>) => void;
   assignedPermissions: PermissionRecord[];
-  pickerData: PermissionRecord[];
-  pickerLoading?: boolean;
-  pickerTotal?: number;
-  pickerPage?: number;
-  pickerPageSize?: number;
-  pickerSelectedIds?: string[];
-  onPickerSelect?: (ids: string[]) => void;
-  onPickerPageChange?: (page: number, pageSize: number) => void;
   onAssignSelected?: (ids?: string[]) => void;
   onRemoveAssigned?: (permissionId: string) => void;
   previewTreeData?: any[];
@@ -53,14 +43,6 @@ export const MenuDetailTabs: React.FC<MenuDetailTabsProps> = ({
   saving,
   onSaveMenu,
   assignedPermissions,
-  pickerData,
-  pickerLoading,
-  pickerTotal,
-  pickerPage,
-  pickerPageSize,
-  pickerSelectedIds,
-  onPickerSelect,
-  onPickerPageChange,
   onAssignSelected,
   onRemoveAssigned,
   previewTreeData,
@@ -70,8 +52,6 @@ export const MenuDetailTabs: React.FC<MenuDetailTabsProps> = ({
   historyData,
   historyLoading,
 }) => {
-  const { Text } = Typography;
-  const navigate = useNavigate();
   const [form] = Form.useForm();
   const [metaText, setMetaText] = React.useState<string>("{}");
   const [metaError, setMetaError] = React.useState<string | null>(null);
@@ -81,12 +61,8 @@ export const MenuDetailTabs: React.FC<MenuDetailTabsProps> = ({
   const [advancedMode, setAdvancedMode] = React.useState(false);
   const [codeManual, setCodeManual] = React.useState(false);
   const [codeError, setCodeError] = React.useState<string | null>(null);
-  const [availableSearch, setAvailableSearch] = React.useState("");
-  const [suggestOpen, setSuggestOpen] = React.useState(false);
-  const [suggestLoading, setSuggestLoading] = React.useState(false);
-  const [suggestedPermission, setSuggestedPermission] = React.useState<PermissionRecord | null>(null);
+  const [autoAssignLoading, setAutoAssignLoading] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState("info");
-  const openedSuggestRef = React.useRef<string | null>(null);
   const iconValue = Form.useWatch("icon", form) as string | null | undefined;
   const pathValue = Form.useWatch("path", form) as string | undefined;
   const moduleIdValue = Form.useWatch("module_id", form) as string | undefined;
@@ -147,141 +123,21 @@ export const MenuDetailTabs: React.FC<MenuDetailTabsProps> = ({
     [assignedPermissions],
   );
 
-  const normalizeRouteSegment = React.useCallback((value: string) => {
-    const normalized = value
-      .toLowerCase()
-      .replace(/-/g, "_")
-      .replace(/[^a-z0-9_.]/g, "_")
-      .replace(/_{2,}/g, "_")
-      .replace(/\.{2,}/g, ".");
-    return normalized.replace(/^[_\.]+|[_\.]+$/g, "");
+  const buildRouteKey = React.useCallback((path?: string | null, moduleKeyInput?: string | null) => {
+    if (!path) return "";
+    const trimmed = String(path).trim();
+    if (!trimmed) return "";
+    const cleaned = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+    const rawSegments = cleaned.replace(/^\/+|\/+$/g, "").split("/").filter(Boolean);
+    if (rawSegments.length === 0) return "";
+    const moduleKey = String(moduleKeyInput ?? "").trim();
+    let segments = rawSegments;
+    if (moduleKey && rawSegments[0] === moduleKey) {
+      segments = rawSegments.slice(1);
+    }
+    return segments.join(".");
   }, []);
 
-  const buildRouteKey = React.useCallback(
-    (path?: string | null, moduleKeyInput?: string | null) => {
-      if (!path) return "";
-      const cleaned = String(path).trim().split("?")[0].split("#")[0];
-      const segments = cleaned.replace(/^\/+/, "").split("/").filter(Boolean);
-      if (segments.length === 0) return "";
-      const normalized = segments.map((segment) => normalizeRouteSegment(segment)).filter(Boolean);
-      const moduleKeyLower = String(moduleKeyInput ?? "").toLowerCase();
-      if (moduleKeyLower && normalized[0] === moduleKeyLower) {
-        normalized.shift();
-      }
-      return normalized.join(".");
-    },
-    [normalizeRouteSegment],
-  );
-
-  const suggestedRouteKey = React.useMemo(() => {
-    if (!moduleKey) return "";
-    return buildRouteKey(menu?.path ?? "", moduleKey);
-  }, [buildRouteKey, menu?.path, moduleKey]);
-
-  const suggestedResource = React.useMemo(() => {
-    if (!moduleKey) return "";
-    return suggestedRouteKey ? `page.${suggestedRouteKey}` : "page";
-  }, [moduleKey, suggestedRouteKey]);
-
-  const suggestedCode = React.useMemo(() => {
-    if (!moduleKey) return "";
-    return `${moduleKey.toLowerCase()}.${suggestedResource}.read`;
-  }, [moduleKey, suggestedResource]);
-
-  const filteredAvailable = React.useMemo(() => {
-    const keyword = availableSearch.trim().toLowerCase();
-    const pageOnly = pickerData.filter(
-      (perm) => String(perm.category ?? "").toUpperCase() === "PAGE",
-    );
-    if (!keyword) return pageOnly;
-    const matches = pageOnly.filter((perm) => {
-      const code = String(perm.code ?? "").toLowerCase();
-      const name = String(perm.name ?? "").toLowerCase();
-      const resource = String(perm.resource ?? "").toLowerCase();
-      return code.includes(keyword) || name.includes(keyword) || resource.includes(keyword);
-    });
-    const exact = matches.filter((perm) => perm.code?.toLowerCase() === suggestedCode);
-    const rest = matches.filter((perm) => perm.code?.toLowerCase() !== suggestedCode);
-    return [...exact, ...rest];
-  }, [availableSearch, pickerData, suggestedCode]);
-
-  const availableTotal = React.useMemo(() => {
-    if (availableSearch.trim()) return filteredAvailable.length;
-    return pickerTotal ?? filteredAvailable.length;
-  }, [availableSearch, filteredAvailable.length, pickerTotal]);
-
-  React.useEffect(() => {
-    if (!menu?._id) return;
-    if (!moduleKey) {
-      setAvailableSearch("");
-      return;
-    }
-    const nextSearch = suggestedCode || suggestedResource || suggestedRouteKey;
-    if (nextSearch) {
-      setAvailableSearch(nextSearch);
-      if (onPickerPageChange) {
-        onPickerPageChange(1, pickerPageSize ?? 20);
-      }
-    }
-  }, [
-    buildRouteKey,
-    menu?._id,
-    menu?.path,
-    moduleKey,
-    onPickerPageChange,
-    pickerPageSize,
-    suggestedCode,
-    suggestedResource,
-  ]);
-
-  React.useEffect(() => {
-    if (!menu?._id) return;
-    const hasMenuPermissions =
-      (menu.permission_ids?.length ?? 0) > 0 || (menu.permission_codes?.length ?? 0) > 0;
-    const shouldOpen = !hasMenuPermissions && assignedPage.length === 0 && menu.path;
-    if (shouldOpen && openedSuggestRef.current !== menu._id) {
-      setActiveTab("permissions");
-      setSuggestOpen(true);
-      openedSuggestRef.current = menu._id;
-    }
-  }, [assignedPage.length, menu?._id, menu?.path]);
-
-  React.useEffect(() => {
-    if (!suggestOpen) {
-      setSuggestedPermission(null);
-      return;
-    }
-    if (!suggestedCode) {
-      setSuggestedPermission(null);
-      return;
-    }
-    let isActive = true;
-    void (async () => {
-      const { data, error } = await supabase
-        .from("permissions")
-        .select("_id, code, name, resource, action, category, status")
-        .eq("code", suggestedCode)
-        .eq("category", "PAGE")
-        .maybeSingle();
-      if (!isActive) return;
-      if (error || !data?._id) {
-        setSuggestedPermission(null);
-        return;
-      }
-      setSuggestedPermission({
-        _id: data._id ?? "",
-        code: data.code ?? "",
-        name: data.name ?? data.code ?? "",
-        resource: data.resource ?? null,
-        action: data.action ?? null,
-        category: data.category ?? null,
-        status: data.status ?? null,
-      });
-    })();
-    return () => {
-      isActive = false;
-    };
-  }, [suggestOpen, suggestedCode]);
 
   React.useEffect(() => {
     if (menu) {
@@ -302,8 +158,6 @@ export const MenuDetailTabs: React.FC<MenuDetailTabsProps> = ({
       setAdvancedMode(false);
       setCodeManual(false);
       setCodeError(null);
-      setAvailableSearch("");
-      setSuggestOpen(false);
       const initial = { path: menu.path ?? "", moduleId: menu.module_id ?? null };
       initialRef.current = initial;
       lastAutoRef.current = initial;
@@ -316,8 +170,6 @@ export const MenuDetailTabs: React.FC<MenuDetailTabsProps> = ({
       setAdvancedMode(false);
       setCodeManual(false);
       setCodeError(null);
-      setAvailableSearch("");
-      setSuggestOpen(false);
       initialRef.current = { path: "", moduleId: null };
       lastAutoRef.current = null;
     }
@@ -424,35 +276,135 @@ export const MenuDetailTabs: React.FC<MenuDetailTabsProps> = ({
     });
   };
 
-  const handleAssignSuggested = React.useCallback(async () => {
+  const normalizePath = React.useCallback((value?: string | null) => {
+    const raw = String(value ?? "").trim();
+    if (!raw) return "";
+    const withSlash = raw.startsWith("/") ? raw : `/${raw}`;
+    return withSlash.replace(/\/+$/g, "");
+  }, []);
+
+  const deriveResourceFromPath = React.useCallback(
+    (
+      path: string | null | undefined,
+      moduleKeyInput: string | null,
+      moduleMeta?: Record<string, unknown> | string | null,
+    ) => {
+      const normalizedPath = normalizePath(path);
+      let metaValue: Record<string, unknown> | null | undefined = moduleMeta;
+      if (typeof moduleMeta === "string") {
+        try {
+          metaValue = JSON.parse(moduleMeta) as Record<string, unknown>;
+        } catch {
+          metaValue = null;
+        }
+      }
+      const areas = Array.isArray((metaValue as any)?.areas) ? (metaValue as any).areas : [];
+      let bestMatch: { route_prefix?: string; resource_prefix?: string } | null = null;
+      let bestLength = -1;
+
+      areas.forEach((area: { route_prefix?: string; resource_prefix?: string }) => {
+        const prefix = normalizePath(area?.route_prefix);
+        if (!prefix) return;
+        const isMatch = normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`);
+        if (!isMatch) return;
+        if (prefix.length > bestLength) {
+          bestLength = prefix.length;
+          bestMatch = area;
+        }
+      });
+
+      if (bestMatch && bestMatch.resource_prefix) {
+        const prefix = normalizePath(bestMatch.route_prefix);
+        const remainder = normalizedPath === prefix ? "" : normalizedPath.slice(prefix.length + 1);
+        const routeKey = remainder
+          .split("/")
+          .filter(Boolean)
+          .join(".");
+        const base = String(bestMatch.resource_prefix).replace(/\.+$/g, "");
+        return routeKey ? `${base}.${routeKey}` : base;
+      }
+
+      const fallbackRouteKey = buildRouteKey(path, moduleKeyInput);
+      return fallbackRouteKey ? `page.${fallbackRouteKey}` : "page";
+    },
+    [buildRouteKey, normalizePath],
+  );
+
+  const handleAutoAssignPermission = React.useCallback(async () => {
     if (!menu?._id) return;
-    if (!moduleReady) {
+    if (!moduleReady || !moduleKey) {
       message.warning("Chọn phân hệ trước.");
       return;
     }
-    if (!suggestedPermission?._id) {
-      message.warning("Chưa có permission PAGE cho route");
-      return;
-    }
-    setSuggestLoading(true);
+    setAutoAssignLoading(true);
     try {
-      const { error } = await supabase
-        .from("menu_permissions")
-        .upsert(
-          [{ menu_id: menu._id, permission_id: suggestedPermission._id }],
-          { onConflict: "menu_id,permission_id" },
-        );
+      const moduleMeta =
+        modules.find((mod) => mod._id === menu.module_id)?.meta ?? null;
+      const resource = deriveResourceFromPath(menu.path ?? "", moduleKey, moduleMeta);
+      const suggested = `${moduleKey}.${resource}.read`.toLowerCase();
+      if (!suggested) {
+        message.error("Không thể suy ra quyền theo route.");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("permissions")
+        .select("_id, code, name, category, resource, action, status")
+        .eq("code", suggested)
+        .maybeSingle();
       if (error) {
         throw error;
       }
-      await Promise.resolve(onAssignSelected?.([suggestedPermission._id]));
-      setSuggestOpen(false);
-    } catch {
-      message.error("Không thể gợi ý quyền theo route.");
+
+      if (data?._id) {
+        const isPage = String(data.category ?? "").toUpperCase() === "PAGE";
+        const isActive = Number(data.status) === 1;
+        if (!isPage || !isActive) {
+          message.error("Permission tìm thấy nhưng không hợp lệ (category/status).");
+          return;
+        }
+        await Promise.resolve(onAssignSelected?.([data._id]));
+        message.success("Đã gán quyền theo route.");
+        return;
+      }
+
+      Modal.confirm({
+        title: "Chưa có PAGE permission cho route này",
+        content: "Tạo mới và gán luôn?",
+        okText: "Tạo & gán",
+        cancelText: "Hủy",
+        onOk: async () => {
+          const payload = {
+            code: suggested,
+            name: menu.name ?? suggested,
+            module_id: menu.module_id,
+            module: moduleKey,
+            category: "PAGE",
+            resource,
+            action: "READ",
+            permission_type: "READ",
+            status: 1,
+          };
+          const { data: created, error: createError } = await supabase
+            .from("permissions")
+            .insert([payload])
+            .select("_id")
+            .single();
+          if (createError) {
+            throw createError;
+          }
+          if (created?._id) {
+            await Promise.resolve(onAssignSelected?.([created._id]));
+            message.success("Đã tạo và gán quyền.");
+          }
+        },
+      });
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : "Không thể gán quyền theo route.");
     } finally {
-      setSuggestLoading(false);
+      setAutoAssignLoading(false);
     }
-  }, [menu?._id, message, moduleReady, onAssignSelected, suggestedPermission]);
+  }, [menu, moduleKey, moduleReady, modules, onAssignSelected, deriveResourceFromPath]);
 
   return (
     <>
@@ -590,53 +542,39 @@ export const MenuDetailTabs: React.FC<MenuDetailTabsProps> = ({
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-sm text-slate-500">Đã gán: {assignedPage.length}</span>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Button onClick={() => setSuggestOpen(true)}>Gợi ý theo route</Button>
-                  <Input
-                    allowClear
-                    placeholder="Tìm theo mã/tên..."
-                    value={availableSearch}
-                    onChange={(event) => {
-                      setAvailableSearch(event.target.value);
-                      if (onPickerPageChange) {
-                        onPickerPageChange(1, pickerPageSize ?? 20);
-                      }
-                    }}
-                    className="min-w-[220px]"
-                    disabled={!moduleReady}
-                  />
                   <Button
                     type="primary"
-                    disabled={!moduleReady || !pickerSelectedIds?.length}
-                    onClick={() => onAssignSelected?.(pickerSelectedIds)}
+                    onClick={handleAutoAssignPermission}
+                    disabled={!moduleReady}
+                    loading={autoAssignLoading}
                   >
-                    Gán đã chọn
+                    Tự gán quyền theo route
+                  </Button>
+                  <Button
+                    danger
+                    disabled={!assignedPage.length}
+                    onClick={() => {
+                      const first = assignedPage[0];
+                      if (first?._id) {
+                        onRemoveAssigned?.(first._id);
+                      }
+                    }}
+                  >
+                    Bỏ gán
                   </Button>
                 </div>
               </div>
               {!moduleReady ? (
-                <div className="text-sm text-amber-600">Chọn phân hệ trước.</div>
+                <Alert
+                  type="warning"
+                  showIcon
+                  message="Chưa chọn phân hệ"
+                  description="Menu này chưa chọn phân hệ. Vui lòng chọn phân hệ để gán quyền PAGE."
+                />
               ) : null}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <div className="text-sm font-medium text-slate-600">Đã gán</div>
-                  <AssignedPermissionsTable data={assignedPage} onRemove={onRemoveAssigned} />
-                </div>
-                <div className="space-y-2">
-                  <div className="text-sm font-medium text-slate-600">Quyền khả dụng</div>
-                <PermissionPickerTable
-                  data={moduleReady ? filteredAvailable : []}
-                  loading={pickerLoading}
-                  total={moduleReady ? availableTotal : 0}
-                  page={pickerPage}
-                  pageSize={pickerPageSize}
-                  selectedIds={pickerSelectedIds}
-                  onSelectChange={onPickerSelect}
-                  onPageChange={onPickerPageChange}
-                  disabled={!moduleReady}
-                  emptyText={moduleReady ? undefined : "Chọn phân hệ trước"}
-                  highlight={availableSearch.trim()}
-                  />
-                </div>
+              <div className="space-y-2">
+                <div className="text-sm font-medium text-slate-600">Đã gán</div>
+                <AssignedPermissionsTable data={assignedPage} onRemove={onRemoveAssigned} />
               </div>
             </div>
           ),
@@ -748,107 +686,6 @@ export const MenuDetailTabs: React.FC<MenuDetailTabsProps> = ({
           form.setFieldsValue({ icon: iconName });
         }}
       />
-      <Modal
-        centered
-        open={suggestOpen}
-        onCancel={() => setSuggestOpen(false)}
-        title="Gợi ý theo route"
-        width={520}
-        footer={
-          <div className="flex justify-end gap-2">
-            <Button onClick={() => setSuggestOpen(false)}>Đóng</Button>
-            <Button
-              type="primary"
-              onClick={handleAssignSuggested}
-              loading={suggestLoading}
-              disabled={!suggestedPermission?._id}
-            >
-              Gán quyền gợi ý
-            </Button>
-          </div>
-        }
-        destroyOnHidden
-        maskClosable
-        keyboard
-      >
-        <div className="space-y-3">
-          <div>
-            <div className="text-xs text-slate-500">Route</div>
-            <Text code>{menu?.path ?? "—"}</Text>
-          </div>
-          <div>
-            <div className="text-xs text-slate-500">Phân hệ</div>
-            <Text code>{moduleKey ?? "—"}</Text>
-          </div>
-          <div>
-            <div className="text-xs text-slate-500">Resource gợi ý</div>
-            {moduleKey ? (
-              <Text code>{suggestedResource}</Text>
-            ) : (
-              <Text type="secondary">Chưa chọn phân hệ.</Text>
-            )}
-          </div>
-          <div>
-            <div className="text-xs text-slate-500">Mã quyền gợi ý</div>
-            {suggestedCode ? (
-              <Text code copyable={{ text: suggestedCode }}>
-                {suggestedCode}
-              </Text>
-            ) : (
-              <Text type="secondary">Chưa có dữ liệu để gợi ý.</Text>
-            )}
-          </div>
-          <div>
-            <div className="text-xs text-slate-500">Trạng thái</div>
-            {!moduleKey ? (
-              <Text type="secondary">CHƯA CHỌN PHÂN HỆ</Text>
-            ) : suggestedPermission ? (
-              <Text type="success">FOUND</Text>
-            ) : (
-              <Text type="warning">NOT FOUND</Text>
-            )}
-          </div>
-          {suggestedPermission ? (
-            <div className="rounded border border-slate-200 bg-slate-50 p-3">
-              <div className="text-xs text-slate-500">Permission tìm thấy</div>
-              <div className="mt-2 space-y-1 text-sm">
-                <div>
-                  <Text strong>{suggestedPermission.name}</Text>
-                </div>
-                <div>
-                  <Text code copyable={{ text: suggestedPermission.code }}>
-                    {suggestedPermission.code}
-                  </Text>
-                </div>
-                <div className="text-slate-600">
-                  Resource: {suggestedPermission.resource ?? "—"} · Action:{" "}
-                  {String(suggestedPermission.action ?? "READ").toUpperCase()}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <Text type="secondary">
-              {moduleKey ? "Chưa có permission PAGE cho route." : "Chưa chọn phân hệ."}
-            </Text>
-          )}
-          {!suggestedPermission && moduleKey ? (
-            <div>
-              <Button
-                type="link"
-                onClick={() => {
-                  const search = suggestedRouteKey || "";
-                  const params = new URLSearchParams();
-                  params.set("module", moduleKey);
-                  if (search) params.set("search", search);
-                  navigate(`/system-admin/iam/permissions?${params.toString()}`);
-                }}
-              >
-                Mở trang Permissions
-              </Button>
-            </div>
-          ) : null}
-        </div>
-      </Modal>
     </>
   );
 };

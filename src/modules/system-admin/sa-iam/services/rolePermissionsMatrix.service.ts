@@ -26,6 +26,11 @@ export type MatrixModuleOption = {
   sort_order?: number | null;
 };
 
+export type MatrixActionCatalogItem = {
+  code: string;
+  name: string;
+};
+
 export const rolePermissionsMatrixService = {
   async listModules(): Promise<MatrixModuleOption[]> {
     const { data, error } = await supabase
@@ -77,6 +82,34 @@ export const rolePermissionsMatrixService = {
     }
 
     return (data || []) as MatrixViewRow[];
+  },
+
+  async listActions(): Promise<MatrixActionCatalogItem[]> {
+    const { data, error } = await supabase
+      .from("permission_actions")
+      .select("code, name")
+      .order("code", { ascending: true });
+
+    if (error) {
+      throw new Error(`permission_actions select failed: ${error.message}`);
+    }
+
+    const unique = new Map<string, MatrixActionCatalogItem>();
+    (data || []).forEach((row: any) => {
+      const code = String(row?.code ?? "").trim().toUpperCase();
+      if (!code) return;
+      const name = String(row?.name ?? "").trim();
+      const existing = unique.get(code);
+      if (!existing) {
+        unique.set(code, { code, name });
+        return;
+      }
+      if (!existing.name && name) {
+        unique.set(code, { code, name });
+      }
+    });
+
+    return Array.from(unique.values());
   },
 
   async saveChanges(roleId: string, toAdd: string[], toRemove: string[]): Promise<void> {

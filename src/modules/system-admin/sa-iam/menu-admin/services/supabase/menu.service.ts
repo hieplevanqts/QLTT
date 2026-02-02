@@ -62,6 +62,7 @@ export const menuService: MenuService = {
       code: row.code,
       name: row.name,
       group: row.group ?? null,
+      meta: row.meta ?? null,
     }));
   },
   async listModules() {
