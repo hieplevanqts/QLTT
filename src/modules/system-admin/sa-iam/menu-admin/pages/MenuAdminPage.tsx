@@ -17,13 +17,15 @@ import {
 } from "antd";
 import type { DataNode, TreeProps } from "antd/es/tree";
 import * as React from "react";
+import { useNavigate } from "react-router-dom";
 import PageHeader from "@/layouts/PageHeader";
 import { MenuDetailTabs } from "../components/MenuDetailTabs";
 import { MenuTree } from "../components/MenuTree";
+import type { PreviewListItem, PreviewReason, PreviewTreeNode } from "../components/RolePreviewPanel";
 import { useMenuDetail } from "../hooks/useMenuDetail";
 import { useMenuTree } from "../hooks/useMenuTree";
 import { menuService } from "../services/supabase/menu.service";
-import type { MenuRecord } from "../menu.types";
+import type { MenuNode, MenuRecord } from "../menu.types";
 import styles from "./MenuAdminPage.module.css";
 import { clearAllMenuCache, emitMenuUpdated } from "@/shared/menu/menuCache";
 import { getIconComponent } from "../../components/iconRegistry";
@@ -78,24 +80,6 @@ const toTreeData = (
     };
   });
 
-const buildPreviewTree = (nodes: any[], rolePermIds: Set<string>) => {
-  const walk = (node: any): any | null => {
-    const children = (node.children ?? []).map(walk).filter(Boolean);
-    const permissionIds: string[] = node.permission_ids ?? [];
-    const hasPermission = permissionIds.length === 0 || permissionIds.some((id) => rolePermIds.has(id));
-    const visible = node.is_active !== false && hasPermission;
-    if (children.length > 0) {
-      return { ...node, children };
-    }
-    if (node.path) {
-      return visible ? { ...node, children } : null;
-    }
-    return null;
-  };
-
-  return nodes.map(walk).filter(Boolean);
-};
-
 type MenuFormValues = {
   code: string;
   name: string;
@@ -135,6 +119,7 @@ const makeMenuCodeFromPath = (path: string | undefined, moduleKey?: string | nul
 };
 
 const MenuAdminPage: React.FC = () => {
+  const navigate = useNavigate();
   const [treeSearch, setTreeSearch] = React.useState<string>("");
   const [treeStatus, setTreeStatus] = React.useState<string>("all");
   const [treeGroup, setTreeGroup] = React.useState<string>("all");
@@ -142,11 +127,15 @@ const MenuAdminPage: React.FC = () => {
   const [selectedMenu, setSelectedMenu] = React.useState<MenuRecord | null>(null);
   const [roles, setRoles] = React.useState<Array<{ _id: string; name: string }>>([]);
   const [previewRoleId, setPreviewRoleId] = React.useState<string | undefined>(undefined);
-  const [previewPermissionIds, setPreviewPermissionIds] = React.useState<string[]>([]);
+  const [previewRoleCodes, setPreviewRoleCodes] = React.useState<string[]>([]);
+  const [previewRoleLoading, setPreviewRoleLoading] = React.useState(false);
+  const [previewMenuPermLoading, setPreviewMenuPermLoading] = React.useState(false);
+  const [previewMenuPermMap, setPreviewMenuPermMap] = React.useState<Record<string, string>>({});
   const [historyRows, setHistoryRows] = React.useState<Array<any>>([]);
   const [historyLoading, setHistoryLoading] = React.useState(false);
   const [assigningModule, setAssigningModule] = React.useState(false);
   const [autoSelectEnabled, setAutoSelectEnabled] = React.useState(true);
+  const [detailTab, setDetailTab] = React.useState("info");
   const [createOpen, setCreateOpen] = React.useState(false);
   const [editOpen, setEditOpen] = React.useState(false);
   const [editingMenu, setEditingMenu] = React.useState<MenuRecord | null>(null);
@@ -210,18 +199,153 @@ const MenuAdminPage: React.FC = () => {
 
   React.useEffect(() => {
     if (!previewRoleId) {
-      setPreviewPermissionIds([]);
+      setPreviewRoleCodes([]);
       return;
     }
+    let active = true;
     void (async () => {
+      setPreviewRoleLoading(true);
       try {
-        const ids = await menuService.listRolePermissions(previewRoleId);
-        setPreviewPermissionIds(ids);
+        const { data, error } = await supabase
+          .from("role_permissions")
+          .select("permissions:permission_id(code, category, status)")
+          .eq("role_id", previewRoleId)
+          .eq("permissions.category", "PAGE")
+          .eq("permissions.status", 1);
+        if (error) throw error;
+        const codes = (data ?? [])
+          .map((row: any) => row.permissions?.code)
+          .filter(Boolean);
+        if (active) setPreviewRoleCodes(codes);
       } catch {
-        setPreviewPermissionIds([]);
+        if (active) setPreviewRoleCodes([]);
+      } finally {
+        if (active) setPreviewRoleLoading(false);
       }
     })();
+    return () => {
+      active = false;
+    };
   }, [previewRoleId]);
+
+  React.useEffect(() => {
+    if (!flatMenus.length) {
+      setPreviewMenuPermMap({});
+      return;
+    }
+    let active = true;
+    void (async () => {
+      setPreviewMenuPermLoading(true);
+      try {
+        const menuIds = flatMenus.map((menu) => menu._id).filter(Boolean);
+        if (!menuIds.length) {
+          if (active) setPreviewMenuPermMap({});
+          return;
+        }
+        const { data, error } = await supabase
+          .from("menu_permissions")
+          .select("menu_id, permissions:permission_id(code, category, status)")
+          .in("menu_id", menuIds)
+          .eq("permissions.category", "PAGE")
+          .eq("permissions.status", 1);
+        if (error) throw error;
+        const map: Record<string, string> = {};
+        (data ?? []).forEach((row: any) => {
+          const code = row.permissions?.code;
+          if (!code || !row.menu_id) return;
+          if (!map[row.menu_id]) {
+            map[row.menu_id] = code;
+          }
+        });
+        if (active) setPreviewMenuPermMap(map);
+      } catch {
+        if (active) setPreviewMenuPermMap({});
+      } finally {
+        if (active) setPreviewMenuPermLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [flatMenus]);
+
+  const moduleLookup = React.useMemo(
+    () => new Map(modules.map((mod) => [mod._id, mod])),
+    [modules],
+  );
+
+  const previewList = React.useMemo<PreviewListItem[]>(() => {
+    const roleSet = new Set(previewRoleCodes.map((code) => code.toLowerCase()));
+    return flatMenus.map((menu) => {
+      const module = menu.module_id ? moduleLookup.get(menu.module_id) : undefined;
+      const moduleKey = module?.key ?? module?.code ?? menu.module_code ?? null;
+      const moduleName = module?.name ?? menu.module_name ?? null;
+      const requiredPermission = previewMenuPermMap[menu._id] ?? null;
+      let visible = true;
+      let reason: PreviewReason | undefined;
+
+      if (menu.is_active === false) {
+        visible = false;
+        reason = "MENU_INACTIVE";
+      } else if (!requiredPermission) {
+        visible = false;
+        reason = "MENU_NO_PERMISSION";
+      } else if (!roleSet.has(requiredPermission.toLowerCase())) {
+        visible = false;
+        reason = "MISSING_PAGE_PERMISSION";
+      }
+
+      return {
+        menuId: menu._id,
+        name: menu.name ?? menu.code ?? "",
+        path: menu.path ?? null,
+        moduleKey,
+        moduleName,
+        requiredPermission,
+        visible,
+        reason,
+      };
+    });
+  }, [flatMenus, moduleLookup, previewMenuPermMap, previewRoleCodes]);
+
+  const previewStats = React.useMemo(() => {
+    if (!previewRoleId) {
+      return { seen: 0, hidden: 0, noPermission: 0 };
+    }
+    const seen = previewList.filter((item) => item.visible).length;
+    const hidden = previewList.length - seen;
+    const noPermission = previewList.filter((item) => item.reason === "MENU_NO_PERMISSION").length;
+    return { seen, hidden, noPermission };
+  }, [previewList, previewRoleId]);
+
+  const previewMap = React.useMemo(
+    () => new Map(previewList.map((item) => [item.menuId, item])),
+    [previewList],
+  );
+
+  const previewTree = React.useMemo<PreviewTreeNode[]>(() => {
+    const buildNodes = (nodes: MenuNode[]): PreviewTreeNode[] =>
+      nodes.map((menu) => {
+        const info = previewMap.get(menu._id);
+        const children = menu.children ? buildNodes(menu.children) : [];
+        return {
+          key: menu._id,
+          title: menu.name ?? menu.code ?? "",
+          menuId: menu._id,
+          name: menu.name ?? menu.code ?? "",
+          path: menu.path ?? null,
+          moduleKey: info?.moduleKey ?? null,
+          moduleName: info?.moduleName ?? null,
+          requiredPermission: info?.requiredPermission ?? null,
+          visible: info?.visible ?? false,
+          reason: info?.reason,
+          children: children.length ? children : undefined,
+        };
+      });
+    return buildNodes(treeMenus);
+  }, [previewMap, treeMenus]);
+
+  const previewLoading = previewRoleLoading || previewMenuPermLoading;
 
   const handleTreeSelect = (keys: React.Key[]) => {
     const key = keys[0];
@@ -230,6 +354,24 @@ const MenuAdminPage: React.FC = () => {
       setSelectedMenuId(key);
     }
   };
+
+  const handlePreviewFocusMenu = React.useCallback(
+    (menuId: string) => {
+      setAutoSelectEnabled(true);
+      setSelectedMenuId(menuId);
+      setDetailTab("permissions");
+    },
+    [setSelectedMenuId],
+  );
+
+  const handleOpenRolePermissions = React.useCallback(
+    (roleId: string, moduleKey?: string | null) => {
+      if (!roleId) return;
+      const moduleParam = moduleKey ? `?module=${encodeURIComponent(moduleKey)}` : "";
+      navigate(`/system-admin/iam/role-permissions/${roleId}${moduleParam}`);
+    },
+    [navigate],
+  );
 
   const handleTreeAction = (action: string, node: MenuRecord) => {
     if (action === "add-child") {
@@ -683,6 +825,8 @@ const MenuAdminPage: React.FC = () => {
               menu={selectedMenu}
               modules={modules}
               saving={saving}
+              activeTabKey={detailTab}
+              onTabChange={setDetailTab}
               onSaveMenu={async (payload) => {
                 try {
                   await saveMenu(payload);
@@ -701,12 +845,17 @@ const MenuAdminPage: React.FC = () => {
               assignedPermissions={assignedPermissions}
               onAssignSelected={handleAssignSelected}
               onRemoveAssigned={handleRemoveAssigned}
-              previewTreeData={toTreeData(buildPreviewTree(treeMenus, new Set(previewPermissionIds)), {
-                showPermissionStatus: false,
-              })}
-              previewRoles={roles}
-              previewRoleId={previewRoleId}
-              onPreviewRoleChange={setPreviewRoleId}
+              previewPanel={{
+                roleOptions: roles.map((role) => ({ label: role.name, value: role._id })),
+                roleId: previewRoleId,
+                onRoleChange: setPreviewRoleId,
+                loading: previewLoading,
+                stats: previewStats,
+                treeData: previewTree,
+                listData: previewList,
+                onFocusMenu: handlePreviewFocusMenu,
+                onOpenRolePermissions: handleOpenRolePermissions,
+              }}
               historyData={historyRows}
               historyLoading={historyLoading}
             />
