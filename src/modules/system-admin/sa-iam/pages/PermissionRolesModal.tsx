@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Input, Modal, Space, Table, Tag, Tooltip } from "antd";
+import { Button, Input, Space, Table, Tag, Tooltip } from "antd";
 import { EyeOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 
@@ -8,6 +8,8 @@ import {
   type PermissionRecord,
   type PermissionRoleRecord,
 } from "../services/permissions.service";
+import { CenteredModalShell } from "@/components/overlays/CenteredModalShell";
+import { EnterpriseModalHeader } from "@/components/overlays/EnterpriseModalHeader";
 
 type PermissionRolesModalProps = {
   open: boolean;
@@ -74,19 +76,19 @@ export default function PermissionRolesModal({
   };
 
   return (
-    <Modal
+    <CenteredModalShell
       open={open}
-      onCancel={onClose}
-      title={
-        permission ? `Vai trò đang dùng quyền: ${permission.name}` : "Danh sách vai trò"
-      }
-      centered
+      onClose={onClose}
       width={860}
-      footer={[
-        <Button key="close" type="primary" onClick={onClose}>
-          Đóng
-        </Button>,
-      ]}
+      header={
+        <EnterpriseModalHeader
+          title={permission ? `Vai trò đang dùng quyền: ${permission.name}` : "Danh sách vai trò"}
+          badgeStatus={permission?.status === 1 ? "success" : "default"}
+          statusLabel={permission ? statusLabel(permission.status) : undefined}
+          code={permission?.code}
+          moduleTag={permission?.module ?? permission?.permission_type ?? undefined}
+        />
+      }
     >
       <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
         <Space wrap style={{ width: "100%", justifyContent: "space-between" }}>
@@ -154,6 +156,6 @@ export default function PermissionRolesModal({
           ]}
         />
       </Space>
-    </Modal>
+    </CenteredModalShell>
   );
 }

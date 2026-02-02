@@ -1,4 +1,4 @@
-import { Button, Col, Row, Space, message } from "antd";
+import { Button, Col, Row, Space, Tag, message } from "antd";
 import type { DataNode, TreeProps } from "antd/es/tree";
 import * as React from "react";
 import PageHeader from "@/layouts/PageHeader";
@@ -11,18 +11,34 @@ import { menuService } from "../services/supabase/menu.service";
 import type { MenuRecord } from "../menu.types";
 import styles from "./MenuAdminPage.module.css";
 import { clearAllMenuCache, emitMenuUpdated } from "@/shared/menu/menuCache";
+import { getIconComponent } from "../../components/iconRegistry";
 
-const toTreeData = (nodes: MenuRecord[]): DataNode[] =>
-  nodes.map((node: any) => ({
-    key: node._id,
-    title: (
-      <span>
-        {node.name}
-        {node.path ? <span style={{ marginLeft: 8, color: "#1677ff" }}>{node.path}</span> : null}
-      </span>
-    ),
-    children: node.children ? toTreeData(node.children) : undefined,
-  }));
+const toTreeData = (
+  nodes: MenuRecord[],
+  options: { showPermissionStatus?: boolean } = {},
+): DataNode[] =>
+  nodes.map((node: any) => {
+    const hasPermission =
+      Boolean(node.permission_ids?.length) || Boolean(node.permission_codes?.length);
+    const showPermissionStatus = options.showPermissionStatus !== false;
+    const Icon = getIconComponent(node.icon);
+    return {
+      key: node._id,
+      title: (
+        <Space size={6}>
+          {Icon ? <Icon size={16} /> : null}
+          <span>{node.name}</span>
+          {node.path ? <span style={{ color: "#1677ff" }}>{node.path}</span> : null}
+          {showPermissionStatus ? (
+            <Tag color={hasPermission ? "green" : "orange"}>
+              {hasPermission ? "Đã gán quyền" : "Chưa gán quyền"}
+            </Tag>
+          ) : null}
+        </Space>
+      ),
+      children: node.children ? toTreeData(node.children, options) : undefined,
+    };
+  });
 
 const buildPreviewTree = (nodes: any[], rolePermIds: Set<string>) => {
   const walk = (node: any): any | null => {
@@ -42,14 +58,6 @@ const buildPreviewTree = (nodes: any[], rolePermIds: Set<string>) => {
   return nodes.map(walk).filter(Boolean);
 };
 
-const getSuggestedResource = (path?: string | null) => {
-  if (!path) return "";
-  const cleaned = path.split("?")[0].split("#")[0];
-  const segments = cleaned.split("/").filter(Boolean);
-  if (segments.length === 0) return "";
-  return segments[segments.length - 1] ?? "";
-};
-
 const MenuAdminPage: React.FC = () => {
   const [treeSearch, setTreeSearch] = React.useState<string>("");
   const [treeStatus, setTreeStatus] = React.useState<string>("all");
@@ -61,7 +69,6 @@ const MenuAdminPage: React.FC = () => {
   const [previewPermissionIds, setPreviewPermissionIds] = React.useState<string[]>([]);
   const [historyRows, setHistoryRows] = React.useState<Array<any>>([]);
   const [historyLoading, setHistoryLoading] = React.useState(false);
-  const [smartRouteOnly, setSmartRouteOnly] = React.useState(true);
 
   const { flatMenus, treeMenus, modules, loading, selectedMenuId, setSelectedMenuId, refreshMenus } =
     useMenuTree();
@@ -84,24 +91,19 @@ const MenuAdminPage: React.FC = () => {
   React.useEffect(() => {
     const current = flatMenus.find((menu) => menu._id === selectedMenuId) ?? null;
     setSelectedMenu(current);
-    if (current?.module_id) {
-      setFilters((prev) => ({ ...prev, moduleId: current.module_id }));
-    }
-    if (current?.path && smartRouteOnly) {
-      const suggested = getSuggestedResource(current.path);
-      if (suggested) {
-        setFilters((prev) => ({
-          ...prev,
-          resource: suggested,
-          search: prev.search || suggested,
-          page: 1,
-        }));
-      }
-    }
+    const module = current?.module_id
+      ? modules.find((mod) => mod._id === current.module_id)
+      : undefined;
+    setFilters((prev) => ({
+      ...prev,
+      moduleId: current?.module_id ?? undefined,
+      moduleCode: module?.key ?? undefined,
+      page: 1,
+    }));
     if (!selectedMenuId && flatMenus.length > 0) {
       setSelectedMenuId(flatMenus[0]._id);
     }
-  }, [flatMenus, selectedMenuId, setFilters, smartRouteOnly]);
+  }, [flatMenus, selectedMenuId, setFilters, modules]);
 
   React.useEffect(() => {
     void (async () => {
@@ -207,10 +209,32 @@ const MenuAdminPage: React.FC = () => {
     }
   };
 
-  const handleAssignSelected = async () => {
+  const handleAssignSelected = async (ids?: string[]) => {
     if (!selectedMenuId) return;
-    const existing = assignedPermissions.map((perm) => perm._id);
-    const merged = Array.from(new Set([...existing, ...selectedIds]));
+    const currentModule = selectedMenu?.module_id
+      ? modules.find((mod) => mod._id === selectedMenu.module_id)
+      : undefined;
+    if (!selectedMenu?.module_id || !currentModule?.key) {
+      message.warning("Chọn phân hệ trước.");
+      return;
+    }
+    const targetIds = ids && ids.length ? ids : selectedIds;
+    if (!targetIds.length) return;
+    const invalid = pickerData
+      .filter((perm) => targetIds.includes(perm._id))
+      .filter((perm) => String(perm.category ?? "").toUpperCase() !== "PAGE");
+    if (invalid.length > 0) {
+      message.error("Menu chỉ được gán quyền PAGE.");
+      return;
+    }
+    const pageAssigned = assignedPermissions
+      .filter((perm) => String(perm.category ?? "").toUpperCase() === "PAGE")
+      .map((perm) => perm._id);
+    const existing =
+      pageAssigned.length > 0
+        ? pageAssigned
+        : (selectedMenu?.permission_ids ?? []).filter(Boolean);
+    const merged = Array.from(new Set([...existing, ...targetIds]));
     await savePermissions(merged);
     await refreshMenus({
       search: treeSearch || undefined,
@@ -225,7 +249,14 @@ const MenuAdminPage: React.FC = () => {
 
   const handleRemoveAssigned = async (permissionId: string) => {
     if (!selectedMenuId) return;
-    const remaining = assignedPermissions.filter((perm) => perm._id !== permissionId).map((perm) => perm._id);
+    const pageAssigned = assignedPermissions
+      .filter((perm) => String(perm.category ?? "").toUpperCase() === "PAGE")
+      .map((perm) => perm._id);
+    const baseAssigned =
+      pageAssigned.length > 0
+        ? pageAssigned
+        : (selectedMenu?.permission_ids ?? []).filter(Boolean);
+    const remaining = baseAssigned.filter((permId) => permId !== permissionId);
     await savePermissions(remaining);
     await refreshMenus({
       search: treeSearch || undefined,
@@ -278,10 +309,13 @@ const MenuAdminPage: React.FC = () => {
               <span className={styles.panelHint}>{treeMenus.length} mục</span>
             </div>
             <MenuTree
-              treeData={toTreeData(treeMenus)}
+              treeData={toTreeData(treeMenus, { showPermissionStatus: true })}
               loading={loading}
               selectedKeys={selectedMenuId ? [selectedMenuId] : []}
-              moduleOptions={modules.map((mod) => ({ label: mod.name, value: mod._id }))}
+              moduleOptions={modules.map((mod) => ({
+                label: `${mod.key ?? mod.code} — ${mod.name}`,
+                value: mod._id,
+              }))}
               moduleGroupOptions={Array.from(new Set(modules.map((mod) => mod.group).filter(Boolean))).map(
                 (group) => ({ label: String(group), value: String(group) }),
               )}
@@ -328,56 +362,20 @@ const MenuAdminPage: React.FC = () => {
               pickerPage={filters.page}
               pickerPageSize={filters.pageSize}
               pickerSelectedIds={selectedIds}
-              pickerFilters={filters}
-              onPickerFilterChange={(next) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  ...next,
-                }))
-              }
               onPickerSelect={setSelectedIds}
               onPickerPageChange={(page, pageSize) =>
                 setFilters((prev) => ({ ...prev, page, pageSize }))
               }
               onAssignSelected={handleAssignSelected}
               onRemoveAssigned={handleRemoveAssigned}
-              previewTreeData={toTreeData(buildPreviewTree(treeMenus, new Set(previewPermissionIds)))}
+              previewTreeData={toTreeData(buildPreviewTree(treeMenus, new Set(previewPermissionIds)), {
+                showPermissionStatus: false,
+              })}
               previewRoles={roles}
               previewRoleId={previewRoleId}
               onPreviewRoleChange={setPreviewRoleId}
               historyData={historyRows}
               historyLoading={historyLoading}
-              smartRouteOnly={smartRouteOnly}
-              suggestedResource={getSuggestedResource(selectedMenu?.path)}
-              onToggleSmartRoute={(value) => {
-                setSmartRouteOnly(value);
-                if (value && selectedMenu?.path) {
-                  const suggested = getSuggestedResource(selectedMenu.path);
-                  setFilters((prev) => ({
-                    ...prev,
-                    resource: suggested || prev.resource,
-                    search: prev.search || suggested,
-                    page: 1,
-                  }));
-                }
-                if (!value) {
-                  setFilters((prev) => ({
-                    ...prev,
-                    resource: undefined,
-                    page: 1,
-                  }));
-                }
-              }}
-              onApplySuggested={() => {
-                const suggested = getSuggestedResource(selectedMenu?.path);
-                if (!suggested) return;
-                setFilters((prev) => ({
-                  ...prev,
-                  resource: suggested,
-                  search: prev.search || suggested,
-                  page: 1,
-                }));
-              }}
             />
           </div>
         </Col>

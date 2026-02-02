@@ -7,12 +7,10 @@ import React from "react";
 import {
   Button,
   Card,
-  Drawer,
   Dropdown,
   Form,
   Input,
   InputNumber,
-  Modal,
   Popconfirm,
   Select,
   Space,
@@ -45,6 +43,8 @@ import { PermissionGate } from "../../_shared";
 import { rolesService, type RoleRecord, type RoleStatusValue } from "../services/roles.service";
 import RoleUsersModal from "./RoleUsersModal";
 import RoleUserAssignmentModal from "./RoleUserAssignmentModal";
+import { CenteredModalShell } from "@/components/overlays/CenteredModalShell";
+import { EnterpriseModalHeader } from "@/components/overlays/EnterpriseModalHeader";
 
 type FormMode = "create" | "edit";
 
@@ -475,15 +475,37 @@ export default function RolesPage() {
         </div>
       </div>
 
-      <Modal
+      <CenteredModalShell
         open={modalOpen}
-        title={formMode === "create" ? "Thêm vai trò" : "Chỉnh sửa vai trò"}
-        onCancel={closeModal}
-        onOk={handleSubmit}
-        okText="Lưu"
-        cancelText="Hủy"
-        confirmLoading={submitting}
-        destroyOnClose
+        onClose={closeModal}
+        width={760}
+        header={
+          <EnterpriseModalHeader
+            title={formMode === "create" ? "Thêm vai trò" : "Chỉnh sửa vai trò"}
+            badgeStatus={
+              formMode === "edit"
+                ? editingRole?.status === 1
+                  ? "success"
+                  : "default"
+                : "default"
+            }
+            statusLabel={
+              formMode === "edit" && editingRole ? statusLabel(editingRole.status) : undefined
+            }
+            code={formMode === "edit" ? editingRole?.code ?? undefined : undefined}
+            moduleTag="iam"
+          />
+        }
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button onClick={closeModal} disabled={submitting}>
+              Đóng
+            </Button>
+            <Button type="primary" onClick={handleSubmit} loading={submitting}>
+              Lưu
+            </Button>
+          </div>
+        }
       >
         <Form layout="vertical" form={form}>
           <Form.Item
@@ -521,14 +543,22 @@ export default function RolesPage() {
             />
           </Form.Item>
         </Form>
-      </Modal>
+      </CenteredModalShell>
 
-      <Drawer
-        title="Chi tiết vai trò"
-        placement="right"
-        size={420}
+      <CenteredModalShell
+        header={
+          <EnterpriseModalHeader
+            title="Chi tiết vai trò"
+            badgeStatus={viewRole?.status === 1 ? "success" : "default"}
+            statusLabel={viewRole ? statusLabel(viewRole.status) : undefined}
+            code={viewRole?.code}
+            moduleTag="iam"
+          />
+        }
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
+        afterClose={() => setViewRole(null)}
+        width={720}
       >
         {viewRole ? (
           <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
@@ -551,7 +581,7 @@ export default function RolesPage() {
         ) : (
           <Typography.Text>Không có dữ liệu.</Typography.Text>
         )}
-      </Drawer>
+      </CenteredModalShell>
 
       <RoleUsersModal
         open={usersModalOpen}

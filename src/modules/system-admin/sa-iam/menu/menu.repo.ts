@@ -451,6 +451,30 @@ export const menuRepo = {
   },
 
   async softDeleteMenu(menuId: string): Promise<void> {
+    const { data: children, error: childError } = await supabase
+      .from("menus")
+      .select("_id")
+      .eq("parent_id", menuId)
+      .limit(1);
+    if (childError) {
+      throw new Error(`menu delete check failed: ${childError.message}`);
+    }
+    if ((children ?? []).length > 0) {
+      throw new Error("Menu còn menu con. Vui lòng tắt menu thay vì xoá.");
+    }
+
+    const { data: mappings, error: mappingError } = await supabase
+      .from("menu_permissions")
+      .select("permission_id")
+      .eq("menu_id", menuId)
+      .limit(1);
+    if (mappingError) {
+      throw new Error(`menu delete check failed: ${mappingError.message}`);
+    }
+    if ((mappings ?? []).length > 0) {
+      throw new Error("Menu đã gán quyền. Vui lòng tắt menu thay vì xoá.");
+    }
+
     const { error } = await supabase
       .from("menus")
       .update({ is_active: false })
@@ -644,6 +668,19 @@ export const menuRepo = {
 
   async listModules(force = false) {
     if (modulesCache && !force) return modulesCache;
+    const loadModulesFromView = async () => {
+      let query = supabase
+        .from("v_modules_stats")
+        .select("*")
+        .is("deleted_at", null)
+        .eq("status", 1)
+        .order("sort_order", { ascending: true })
+        .order("order_index", { ascending: true })
+        .order("name", { ascending: true })
+        .order("code", { ascending: true });
+
+      return query;
+    };
     const loadModules = async (withDeletedFilter: boolean, withOrdering: boolean) => {
       let query = supabase
         .from("modules")
@@ -661,21 +698,39 @@ export const menuRepo = {
     };
 
     let rows: ModuleRow[] = [];
-    const { data, error } = await loadModules(true, true);
-    if (error) {
-      const needsNoDeletedAt = error.message.includes("deleted_at");
-      const needsNoOrdering =
-        error.message.includes("sort_order") || error.message.includes("order_index");
-      const fallback = await loadModules(!needsNoDeletedAt, !needsNoOrdering);
-      if (fallback.error) {
-        throw new Error(`modules select failed: ${fallback.error.message}`);
+    try {
+      const { data, error } = await loadModulesFromView();
+      if (error) {
+        if (!isMissingRelationError(error.message)) {
+          throw error;
+        }
+        throw error;
       }
-      rows = safeArray<ModuleRow>(fallback.data);
-    } else {
       rows = safeArray<ModuleRow>(data);
+    } catch (err: any) {
+      const { data, error } = await loadModules(true, true);
+      if (error) {
+        const needsNoDeletedAt = error.message.includes("deleted_at");
+        const needsNoOrdering =
+          error.message.includes("sort_order") || error.message.includes("order_index");
+        const fallback = await loadModules(!needsNoDeletedAt, !needsNoOrdering);
+        if (fallback.error) {
+          throw new Error(`modules select failed: ${fallback.error.message}`);
+        }
+        rows = safeArray<ModuleRow>(fallback.data);
+      } else {
+        rows = safeArray<ModuleRow>(data);
+      }
     }
 
-    modulesCache = rows.map(mapModuleRow);
+    const activeRows = rows.filter((row: any) => {
+      if (row.deleted_at !== undefined && row.deleted_at !== null) return false;
+      if (row.status === undefined || row.status === null) return true;
+      const raw = String(row.status).toLowerCase();
+      return row.status === 1 || raw === "1" || raw === "active" || raw === "true";
+    });
+
+    modulesCache = activeRows.map(mapModuleRow);
     return modulesCache;
   },
 
@@ -687,6 +742,7 @@ export const menuRepo = {
 
     const search = params.search?.trim();
     const moduleId = params.moduleId ?? null;
+    const moduleCode = params.moduleCode ?? null;
     const action = params.action?.trim();
     const category = params.category?.trim();
     const resource = params.resource?.trim();
@@ -696,8 +752,10 @@ export const menuRepo = {
 
     let query = supabase.from("permissions").select("*", { count: "exact" });
 
-    if (moduleId) {
-      query = query.or(`module_id.eq.${moduleId},module_id.is.null`);
+    if (moduleCode) {
+      query = query.eq("module", moduleCode);
+    } else if (moduleId) {
+      query = query.eq("module_id", moduleId);
     }
     if (category) {
       query = query.ilike("category", category);

@@ -5,7 +5,6 @@ import {
   Card,
   Col,
   Descriptions,
-  Drawer,
   Empty,
   Form,
   Input,
@@ -40,6 +39,8 @@ import {
 
 import PageHeader from "@/layouts/PageHeader";
 import { PermissionGate } from "../../_shared";
+import { CenteredModalShell } from "@/components/overlays/CenteredModalShell";
+import { EnterpriseModalHeader } from "@/components/overlays/EnterpriseModalHeader";
 import { useAuth } from "../../../../contexts/AuthContext";
 import { useIamIdentity } from "@/shared/iam/useIamIdentity";
 import { orgUnitsService, type OrgUnitPayload, type OrgUnitRecord } from "../services/orgUnits.service";
@@ -1248,14 +1249,32 @@ export default function OrgUnitsPage() {
         </div>
       </div>
 
-      <Drawer
-        title={drawerMode === "create" ? "Thêm đơn vị" : "Chỉnh sửa đơn vị"}
-        placement="right"
-        size={420}
+      <CenteredModalShell
+        header={
+          <EnterpriseModalHeader
+            title={drawerMode === "create" ? "Thêm đơn vị" : "Chỉnh sửa đơn vị"}
+            badgeStatus={
+              drawerMode === "edit"
+                ? selectedUnit?.is_active
+                  ? "success"
+                  : "default"
+                : "default"
+            }
+            statusLabel={
+              drawerMode === "edit" && selectedUnit
+                ? selectedUnit.is_active
+                  ? "Hoạt động"
+                  : "Ngừng"
+                : undefined
+            }
+            code={drawerMode === "edit" ? selectedUnit?.code ?? undefined : undefined}
+            moduleTag="master-data"
+          />
+        }
         open={drawerOpen}
         onClose={closeDrawer}
-        destroyOnHidden
-        extra={
+        width={900}
+        footer={
           <Space>
             <Button onClick={closeDrawer}>Hủy</Button>
             <Button type="primary" onClick={handleSubmit} loading={loading}>
@@ -1343,17 +1362,13 @@ export default function OrgUnitsPage() {
             />
           </Form.Item>
         </Form>
-      </Drawer>
+      </CenteredModalShell>
 
-      <Modal
-        title={coordTitle}
+      <CenteredModalShell
+        header={<EnterpriseModalHeader title={coordTitle} moduleTag="master-data" />}
         open={coordModalOpen}
-        onCancel={() => setCoordModalOpen(false)}
-        footer={
-          <Button onClick={() => setCoordModalOpen(false)}>
-            Đóng
-          </Button>
-        }
+        onClose={() => setCoordModalOpen(false)}
+        width={680}
       >
         {coordLoading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: 24 }}>
@@ -1385,7 +1400,7 @@ export default function OrgUnitsPage() {
         ) : (
           <Empty description="Chưa có tọa độ." />
         )}
-      </Modal>
+      </CenteredModalShell>
     </PermissionGate>
   );
 }

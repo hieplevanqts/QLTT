@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { X, FileText, AlertCircle, CheckCircle2, Download, Upload, Edit, Eye, RefreshCw, History } from 'lucide-react';
-import { Sheet, SheetContent } from '../ui/sheet';
+import { AlertCircle, CheckCircle2, Download, Upload, Eye, RefreshCw, History } from 'lucide-react';
+import { CenteredModalShell } from '../overlays/CenteredModalShell';
+import { EnterpriseModalHeader } from '../overlays/EnterpriseModalHeader';
 import { Button } from '../ui/button';
-import { toast } from 'sonner';
 import styles from './PlanDocumentDrawer.module.css'; // Reuse same styles
 import type { InspectionRound } from '../../data/inspection-rounds-mock-data';
 import type { DocumentCode } from '../../../types/ins-documents';
@@ -105,63 +105,64 @@ export function InspectionRoundDocumentDrawer({
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent 
-        side="right" 
-        className="w-[600px] sm:w-[600px] p-0 flex flex-col"
-        style={{ maxWidth: '600px' }}
-      >
-        {/* Header */}
-        <div className={styles.header}>
-          <div className={styles.headerTitle}>
-            <FileText size={20} />
-            Hồ sơ biểu mẫu - Đợt kiểm tra
+    <CenteredModalShell
+      header={
+        <EnterpriseModalHeader
+          title="Hồ sơ biểu mẫu - Đợt kiểm tra"
+          code={round.code}
+          moduleTag="inspection-rounds"
+        />
+      }
+      open={open}
+      onClose={() => onOpenChange(false)}
+      width={720}
+    >
+      {/* Header */}
+      <div className={styles.header}>
+        <div className={styles.planInfo}>
+          <div className={styles.planInfoRow}>
+            <span className={styles.planInfoLabel}>Tên đợt:</span>
+            <span className={styles.planInfoValue}>{round.name}</span>
           </div>
-          
-          <div className={styles.planInfo}>
-            <div className={styles.planInfoRow}>
-              <span className={styles.planInfoLabel}>Tên đợt:</span>
-              <span className={styles.planInfoValue}>{round.name}</span>
-            </div>
-            <div className={styles.planInfoRow}>
-              <span className={styles.planInfoLabel}>Mã đợt:</span>
-              <span className={styles.planInfoValue}>{round.code}</span>
-            </div>
-            <div className={styles.planInfoRow}>
-              <span className={styles.planInfoLabel}>Thời gian:</span>
-              <span className={styles.planInfoValue}>
-                {round.startDate} - {round.endDate}
-              </span>
-            </div>
+          <div className={styles.planInfoRow}>
+            <span className={styles.planInfoLabel}>Mã đợt:</span>
+            <span className={styles.planInfoValue}>{round.code}</span>
           </div>
-
-          {/* Warning/Success Banner */}
-          {highlightMissingDocs && !hasAllRequired && (
-            <div className={styles.banner}>
-              <div className={styles.bannerIcon}>
-                <AlertCircle size={18} />
-              </div>
-              <div className={styles.bannerText}>
-                <strong>Thiếu {missingRequired.length} biểu mẫu bắt buộc:</strong>{' '}
-                {missingRequired.map((d) => d.shortCode).join(', ')}
-              </div>
-            </div>
-          )}
-
-          {highlightMissingDocs && hasAllRequired && (
-            <div className={`${styles.banner} ${styles.successBanner}`}>
-              <div className={styles.bannerIcon}>
-                <CheckCircle2 size={18} />
-              </div>
-              <div className={styles.bannerText}>
-                <strong>Đã đủ hồ sơ bắt buộc</strong> - Có thể gửi trình duyệt
-              </div>
-            </div>
-          )}
+          <div className={styles.planInfoRow}>
+            <span className={styles.planInfoLabel}>Thời gian:</span>
+            <span className={styles.planInfoValue}>
+              {round.startDate} - {round.endDate}
+            </span>
+          </div>
         </div>
 
-        {/* Document List */}
-        <div className={styles.content} style={{ flex: 1, overflowY: 'auto' }}>
+        {/* Warning/Success Banner */}
+        {highlightMissingDocs && !hasAllRequired && (
+          <div className={styles.banner}>
+            <div className={styles.bannerIcon}>
+              <AlertCircle size={18} />
+            </div>
+            <div className={styles.bannerText}>
+              <strong>Thiếu {missingRequired.length} biểu mẫu bắt buộc:</strong>{" "}
+              {missingRequired.map((d) => d.shortCode).join(', ')}
+            </div>
+          </div>
+        )}
+
+        {highlightMissingDocs && hasAllRequired && (
+          <div className={`${styles.banner} ${styles.successBanner}`}>
+            <div className={styles.bannerIcon}>
+              <CheckCircle2 size={18} />
+            </div>
+            <div className={styles.bannerText}>
+              <strong>Đã đủ hồ sơ bắt buộc</strong> - Có thể gửi trình duyệt
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Document List */}
+      <div className={styles.content}>
           {ROUND_DOCUMENTS.map((doc) => {
             const status = getDocStatus(doc.code);
             const hasDoc = documents[doc.code];
@@ -261,14 +262,13 @@ export function InspectionRoundDocumentDrawer({
           })}
         </div>
 
-        {/* Footer */}
-        <div className={styles.footer}>
-          <button className={styles.footerLink} onClick={onViewLogClick}>
-            <History size={16} />
-            Xem lịch sử đồng bộ với INS
-          </button>
-        </div>
-      </SheetContent>
-    </Sheet>
+      {/* Footer */}
+      <div className={styles.footer}>
+        <button className={styles.footerLink} onClick={onViewLogClick}>
+          <History size={16} />
+          Xem lịch sử đồng bộ với INS
+        </button>
+      </div>
+    </CenteredModalShell>
   );
 }

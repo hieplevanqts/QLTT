@@ -22,7 +22,7 @@ const ROUTE_PERMISSION_MAP: { [path: string]: string | undefined } = {
   '/evidence': 'EVIDENCE_VIEW',
   '/reports': undefined,
   '/admin': 'ADMIN_VIEW',
-  '/tv': 'TV_VIEW',
+  '/tv': 'tv-wallboard.page.read',
 };
 
 /**

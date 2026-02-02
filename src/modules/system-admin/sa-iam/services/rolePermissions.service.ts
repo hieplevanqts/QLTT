@@ -20,6 +20,7 @@ export type ModuleOption = {
   id: string;
   code: string;
   name: string;
+  key?: string | null;
 };
 
 export const rolePermissionsService = {
@@ -69,7 +70,7 @@ export const rolePermissionsService = {
   async listModules(): Promise<ModuleOption[]> {
     const { data, error } = await supabase
       .from("modules")
-      .select("_id, code, name")
+      .select("_id, code, name, key")
       .order("code", { ascending: true });
 
     if (error) {
@@ -78,8 +79,9 @@ export const rolePermissionsService = {
 
     return (data || []).map((row: any) => ({
       id: row._id ?? "",
-      code: row.code,
-      name: row.name,
+      code: row.code ?? row.key ?? "",
+      name: row.name ?? row.code ?? row.key ?? "",
+      key: row.key ?? null,
     }));
   },
 

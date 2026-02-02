@@ -29,9 +29,14 @@ export const useMenuDetail = (menuId?: string): UseMenuDetailState => {
     void (async () => {
       const rows = await menuService.listMenuPermissions(menuId);
       setPermissions(rows);
-      const ids = rows.map((row) => row.permission_id).filter(Boolean);
-      const detailed = await menuService.listPermissionsByIds(ids);
-      setAssignedPermissions(detailed);
+      try {
+        const detailed = await menuService.listAssignedPermissions(menuId);
+        setAssignedPermissions(detailed);
+      } catch {
+        const ids = rows.map((row) => row.permission_id).filter(Boolean);
+        const detailed = await menuService.listPermissionsByIds(ids);
+        setAssignedPermissions(detailed);
+      }
     })();
   }, [menuId]);
 
@@ -60,9 +65,14 @@ export const useMenuDetail = (menuId?: string): UseMenuDetailState => {
         await menuService.saveMenuPermissions(menuId, permissionIds);
         const rows = await menuService.listMenuPermissions(menuId);
         setPermissions(rows);
-        const ids = rows.map((row) => row.permission_id).filter(Boolean);
-        const detailed = await menuService.listPermissionsByIds(ids);
-        setAssignedPermissions(detailed);
+        try {
+          const detailed = await menuService.listAssignedPermissions(menuId);
+          setAssignedPermissions(detailed);
+        } catch {
+          const ids = rows.map((row) => row.permission_id).filter(Boolean);
+          const detailed = await menuService.listPermissionsByIds(ids);
+          setAssignedPermissions(detailed);
+        }
       } finally {
         setSaving(false);
       }
