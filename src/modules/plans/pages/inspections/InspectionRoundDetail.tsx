@@ -353,6 +353,7 @@ export default function InspectionRoundDetail() {
           campaign_id: formData.roundId,
           merchant_id: formData.merchantId,
           user_id: formData.assigneeId || null,
+          department_id: formData.departmentId || null, // Add department_id
           start_time: formData.startDate,
           deadline_time: formData.dueDate,
           description: formData.description,
@@ -370,6 +371,7 @@ export default function InspectionRoundDetail() {
           campaign_id: formData.roundId,
           merchant_id: formData.merchantId,
           user_id: formData.assigneeId || null,
+          department_id: formData.departmentId || null, // Add department_id
           start_time: formData.startDate,
           deadline_time: formData.dueDate,
           description: formData.description, // Save to description
@@ -586,12 +588,7 @@ export default function InspectionRoundDetail() {
       label: 'Đợt kiểm tra',
       sortable: true,
       render: (task) => (
-        <div>
-          <div style={{ fontWeight: 500 }}>{task?.roundName || 'N/A'}</div>
-          {task?.planName && (
-            <div style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>{task.planName}</div>
-          )}
-        </div>
+        <div style={{ fontWeight: 500 }}>{task?.roundName || 'N/A'}</div>
       ),
     },
     {
@@ -623,6 +620,15 @@ export default function InspectionRoundDetail() {
       label: 'Người thực hiện',
       sortable: true,
       render: (task) => task?.assignee?.name || 'N/A',
+    },
+    {
+      key: 'startDate',
+      label: 'Ngày bắt đầu',
+      sortable: true,
+      render: (task) => {
+        if (!task?.startDate) return <span>-</span>;
+        return <span>{new Date(task.startDate).toLocaleDateString('vi-VN')}</span>;
+      },
     },
     {
       key: 'dueDate',
@@ -1316,6 +1322,7 @@ export default function InspectionRoundDetail() {
         onSubmit={handleCreateTask}
         defaultRoundId={roundId}
         defaultPlanId={data?.planId}
+        defaultDepartmentId={data?.leadUnitId}
         task={editingTask}
         taskId={editingTask?.id}
       />

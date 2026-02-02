@@ -301,7 +301,7 @@ export function TaskBoard() {
         id: session.id,
         code: session.id.substring(0, 8).toUpperCase(),
         roundId: session.campaignId,
-        roundName: session.campaignName,
+        roundName: session.campaignName || '--',
         planId: session.departmentId, // Using dept id as fallback if needed
         planName: '--',
         type: session.type, // Use type directly from API
@@ -315,6 +315,7 @@ export function TaskBoard() {
         assignedDate: session.createdAt,
         status: session.status,
         priority: session.priority === 3 ? 'urgent' : session.priority === 2 ? 'high' : 'medium',
+        startDate: session.startTime,
         dueDate: session.deadlineTime,
         progress: session.status === 'completed' || session.status === 'closed' ? 100 : 
                   session.status === 'in_progress' ? 50 : 0,
@@ -1064,12 +1065,7 @@ export function TaskBoard() {
       label: 'Đợt kiểm tra',
       sortable: true,
       render: (task) => (
-        <div>
-          <div className={styles.taskTitleCell}>{task?.roundName || 'N/A'}</div>
-          {task?.planName && (
-            <div className={styles.taskTargetCell}>{task.planName}</div>
-          )}
-        </div>
+        <div className={styles.taskTitleCell}>{task?.roundName || 'N/A'}</div>
       ),
     },
     {
@@ -1101,6 +1097,15 @@ export function TaskBoard() {
       label: 'Người thực hiện',
       sortable: true,
       render: (task) => task?.assignee?.name || 'N/A',
+    },
+    {
+      key: 'startDate',
+      label: 'Ngày bắt đầu',
+      sortable: true,
+      render: (task) => {
+        if (!task?.startDate) return <span>-</span>;
+        return <span>{new Date(task.startDate).toLocaleDateString('vi-VN')}</span>;
+      },
     },
     {
       key: 'dueDate',

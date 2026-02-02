@@ -21,10 +21,10 @@ export interface InspectionSessionResponse {
   department_id: string | null;
   note: string;
   result_text: string | null;
-  // Joins
-  users?: { full_name: string } | null;
-  merchants?: { business_name: string; address: string } | null;
-  map_inspection_campaigns?: { campaign_name: string } | null;
+  // Joins - Supabase might return these as object or array of objects depending on relationship config
+  users?: { full_name: string } | { full_name: string }[] | null;
+  merchants?: { business_name: string; address: string } | { business_name: string; address: string }[] | null;
+  map_inspection_campaigns?: { campaign_name: string } | { campaign_name: string }[] | null;
   [key: string]: any;
 }
 
@@ -77,10 +77,17 @@ function mapPriority(p: any): number {
 }
 
 function mapRowToSession(row: InspectionSessionResponse): InspectionSession {
+  // Helper to safely get first item or object
+  const getJoinedData = (data: any) => Array.isArray(data) ? data[0] : data;
+
+  const campaign = getJoinedData(row.map_inspection_campaigns);
+  const user = getJoinedData(row.users);
+  const merchant = getJoinedData(row.merchants);
+
   return {
     id: row._id,
     campaignId: row.campaign_id,
-    campaignName: row.map_inspection_campaigns?.campaign_name || '--',
+    campaignName: campaign?.campaign_name || '--',
     status: mapSessionStatus(row.status),
     startTime: row.start_time,
     endTime: row.end_time,
@@ -89,13 +96,13 @@ function mapRowToSession(row: InspectionSessionResponse): InspectionSession {
     result: row.result,
     resultText: row.result_text || '--',
     merchantId: row.merchant_id,
-    merchantName: row.merchants?.business_name || '--',
-    merchantAddress: row.merchants?.address || '--',
+    merchantName: merchant?.business_name || '--',
+    merchantAddress: merchant?.address || '--',
     type: row.type,
     priority: row.priority || 2,
     deadlineTime: row.deadline_time,
     userId: row.user_id,
-    userName: row.users?.full_name || '--',
+    userName: user?.full_name || '--',
     departmentId: row.department_id,
     note: row.note,
     createdAt: row.created_at,
@@ -109,7 +116,7 @@ export async function fetchInspectionSessionsApi(campaignId?: string): Promise<I
     const state = store.getState();
     const path = state.auth.user?.app_metadata?.department?.path || '';
 
-    let url = `${SUPABASE_REST_URL}/v_sessions_by_department?select=*,users(full_name),merchants!fk_inspection_merchant(business_name,address)&order=created_at.desc`;
+    let url = `${SUPABASE_REST_URL}/v_sessions_by_department?select=*,users(full_name),merchants!fk_inspection_merchant(business_name,address),map_inspection_campaigns(campaign_name)&order=created_at.desc`;
     if (campaignId) {
       url += `&campaign_id=eq.${campaignId}`;
     }
