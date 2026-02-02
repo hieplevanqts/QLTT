@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Save, AlertCircle, Upload, User, UserX } from 'lucide-react';
-import type { Lead, LeadStatus, LeadUrgency } from '../../../data/lead-risk/types';
+import type { Lead, LeadStatus, LeadUrgency } from '@/utils/data/lead-risk/types';
 import styles from './LeadFormModal.module.css';
 
 // Mock data: Danh sách cửa hàng đã đăng ký
@@ -32,27 +32,27 @@ export function LeadFormModal({ isOpen, onClose, onSave, lead, mode }: LeadFormM
     source: '',
     timestamp: new Date().toISOString().slice(0, 16),
     urgency: 'medium' as LeadUrgency,
-    
+
     // [2] Đối tượng / Cửa hàng
     storeName: '',
     storeAddress: '',
     storeType: '',
-    
+
     // [3] Nội dung phản ánh
-    category: 'other',
+    category: 'Khác',
     description: '',
     incidentTime: '',
-    
+
     // [4] Minh chứng
     attachments: '',
     evidenceNote: '',
-    
+
     // [5] Người cung cấp
     isAnonymous: false,
     reporterName: '',
     reporterPhone: '',
     reporterEmail: '',
-    
+
     // Legacy fields
     status: 'new' as LeadStatus,
     title: '',
@@ -66,7 +66,7 @@ export function LeadFormModal({ isOpen, onClose, onSave, lead, mode }: LeadFormM
       setFormData({
         source: lead.source || '',
         timestamp: lead.createdAt ? new Date(lead.createdAt).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
-        urgency: lead.urgency,
+        urgency: lead.urgency || 'medium',
         storeName: lead.storeName || '',
         storeAddress: lead.storeAddress || '',
         storeType: lead.storeType || '',
@@ -92,7 +92,7 @@ export function LeadFormModal({ isOpen, onClose, onSave, lead, mode }: LeadFormM
         storeName: '',
         storeAddress: '',
         storeType: '',
-        category: 'other',
+        category: 'Khác',
         description: '',
         incidentTime: '',
         attachments: '',
@@ -159,23 +159,28 @@ export function LeadFormModal({ isOpen, onClose, onSave, lead, mode }: LeadFormM
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
     // Generate title from category and store name
     const categoryLabels: Record<string, string> = {
-      food_safety: 'An toàn thực phẩm',
-      counterfeit: 'Hàng giả',
-      unlicensed: 'Kinh doanh không phép',
-      price_fraud: 'Gian lận giá cả',
-      smuggling: 'Buôn lậu',
-      illegal_trading: 'Kinh doanh bất hợp pháp',
+      food_safety: 'Vi phạm VSATTP',
+      counterfeit: 'Hàng giả, hàng nhái',
+      origin_unknown: 'Hàng không rõ nguồn gốc',
+      expired: 'Hàng hết hạn',
+      commercial_fraud: 'Gian lận thương mại',
+      illegal_trading: 'Vi phạm quy định kinh doanh',
+      price_fraud: 'Niêm yết giá không đúng',
       other: 'Khác',
+
+      // Legacy
+      unlicensed: 'Vi phạm quy định kinh doanh',
+      smuggling: 'Hàng không rõ nguồn gốc',
     };
-    
-    const generatedTitle = `${categoryLabels[formData.category] || 'Nguồn tin'} - ${formData.storeName}`;
+
+    const generatedTitle = `${displayCategory || 'Nguồn tin'} - ${formData.storeName}`;
 
     onSave({
       ...formData,
@@ -216,7 +221,7 @@ export function LeadFormModal({ isOpen, onClose, onSave, lead, mode }: LeadFormM
             {/* [1] Thông tin chung */}
             <div className={styles.section}>
               <h3 className={styles.sectionTitle}>1. Thông tin chung</h3>
-              
+
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
                   <label className={styles.label}>
@@ -284,7 +289,7 @@ export function LeadFormModal({ isOpen, onClose, onSave, lead, mode }: LeadFormM
             {/* [2] Đối tượng / Cửa hàng */}
             <div className={styles.section}>
               <h3 className={styles.sectionTitle}>2. Đối tượng / Cửa hàng</h3>
-              
+
               <div className={styles.formGroup}>
                 <label className={styles.label}>
                   Cửa hàng <span className={styles.required}>*</span>
@@ -294,7 +299,7 @@ export function LeadFormModal({ isOpen, onClose, onSave, lead, mode }: LeadFormM
                   onChange={(e) => {
                     const selectedStoreName = e.target.value;
                     handleChange('storeName', selectedStoreName);
-                    
+
                     // Auto-fill address and type if a registered store is selected
                     const selectedStore = REGISTERED_STORES.find(s => s.name === selectedStoreName);
                     if (selectedStore && selectedStore.id !== 'store-other') {
@@ -411,7 +416,7 @@ export function LeadFormModal({ isOpen, onClose, onSave, lead, mode }: LeadFormM
             {/* [3] Nội dung phản ánh */}
             <div className={styles.section}>
               <h3 className={styles.sectionTitle}>3. Nội dung phản ánh</h3>
-              
+
               <div className={styles.formGroup}>
                 <label className={styles.label}>
                   Loại vấn đề <span className={styles.required}>*</span>
@@ -421,13 +426,14 @@ export function LeadFormModal({ isOpen, onClose, onSave, lead, mode }: LeadFormM
                   onChange={(e) => handleChange('category', e.target.value)}
                   className={`${styles.select} ${errors.category ? styles.inputError : ''}`}
                 >
-                  <option value="food_safety">An toàn thực phẩm</option>
-                  <option value="counterfeit">Hàng giả, hàng nhái</option>
-                  <option value="unlicensed">Kinh doanh không phép</option>
-                  <option value="price_fraud">Gian lận giá cả</option>
-                  <option value="smuggling">Buôn lậu</option>
-                  <option value="illegal_trading">Kinh doanh bất hợp pháp</option>
-                  <option value="other">Vấn đề khác</option>
+                  <option value="Niêm yết giá không đúng">Niêm yết giá không đúng</option>
+                  <option value="Vi phạm VSATTP">Vi phạm VSATTP</option>
+                  <option value="Hàng giả, hàng nhái">Hàng giả, hàng nhái</option>
+                  <option value="Hàng không rõ nguồn gốc">Hàng không rõ nguồn gốc</option>
+                  <option value="Hàng hết hạn">Hàng hết hạn</option>
+                  <option value="Gian lận thương mại">Gian lận thương mại</option>
+                  <option value="Vi phạm quy định kinh doanh">Vi phạm quy định kinh doanh</option>
+                  <option value="Khác">Khác</option>
                 </select>
                 {errors.category && (
                   <span className={styles.errorText}>
@@ -470,7 +476,7 @@ export function LeadFormModal({ isOpen, onClose, onSave, lead, mode }: LeadFormM
             {/* [4] Minh chứng */}
             <div className={styles.section}>
               <h3 className={styles.sectionTitle}>4. Minh chứng</h3>
-              
+
               <div className={styles.formGroup}>
                 <label className={styles.label}>
                   Hình ảnh / Video <span className={styles.required}>*</span>
@@ -511,7 +517,7 @@ export function LeadFormModal({ isOpen, onClose, onSave, lead, mode }: LeadFormM
             {/* [5] Người cung cấp */}
             <div className={styles.section}>
               <h3 className={styles.sectionTitle}>5. Người cung cấp (tùy chọn)</h3>
-              
+
               <div className={styles.formGroup}>
                 <div className={styles.anonymousToggle}>
                   <label className={styles.toggleLabel}>
