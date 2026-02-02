@@ -34,6 +34,7 @@ export interface CreateTaskFormData {
   status: TaskStatus;
   dueDate: string;
   startDate?: string;
+  departmentId?: string; // Add departmentId
 }
 
 const PRIORITY_OPTIONS = [
@@ -73,6 +74,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, task, taskId, defau
     status: 'not_started', // Mặc định Chưa bắt đầu
     dueDate: '',
     startDate: getTodayDate(), // Mặc định ngày hiện tại
+    departmentId: '', // Initialize departmentId
   });
 
   const isEditMode = !!task;
@@ -241,6 +243,14 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, task, taskId, defau
         ...prev, 
         merchantId: value,
         targetName: selectedMerchant ? selectedMerchant.name : '' 
+      }));
+    } else if (field === 'roundId') {
+      const selectedRound = rounds.find(r => r.id === value);
+      setFormData(prev => ({
+        ...prev,
+        roundId: value,
+        planId: selectedRound?.planId || prev.planId,
+        departmentId: selectedRound?.leadUnitId || '', // Set departmentId from round
       }));
     } else {
       setFormData((prev) => ({ ...prev, [field]: value }));
