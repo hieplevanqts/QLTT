@@ -525,6 +525,21 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
                 )}
               </div>
 
+              {/* Số điện thoại chính */}
+              <div className="space-y-2">
+                <Label htmlFor="ownerPhone">Số điện thoại chủ cơ sở <span style={{color: 'var(--destructive)', fontWeight: '600'}}>*</span></Label>
+                <Input
+                  id="ownerPhone"
+                  type="tel"
+                  value={formData.ownerPhone || ''}
+                  onChange={(e) => setFormData({ ...formData, ownerPhone: e.target.value })}
+                  placeholder="Nhập số điện thoại"
+                  className={errors.ownerPhone ? 'border-red-500' : ''}
+                />
+                {errors.ownerPhone && (
+                  <p className="text-sm text-red-500">{errors.ownerPhone}</p>
+                )}
+              </div>
               {/* Năm sinh chủ hộ */}
               <div className="space-y-2">
                 <Label htmlFor="ownerBirthYear">Năm sinh chủ hộ</Label>
@@ -551,21 +566,6 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
                 />
               </div>
 
-              {/* Số điện thoại chính */}
-              <div className="space-y-2">
-                <Label htmlFor="ownerPhone">Số điện thoại chủ cơ sở <span style={{color: 'var(--destructive)', fontWeight: '600'}}>*</span></Label>
-                <Input
-                  id="ownerPhone"
-                  type="tel"
-                  value={formData.ownerPhone || ''}
-                  onChange={(e) => setFormData({ ...formData, ownerPhone: e.target.value })}
-                  placeholder="Nhập số điện thoại"
-                  className={errors.ownerPhone ? 'border-red-500' : ''}
-                />
-                {errors.ownerPhone && (
-                  <p className="text-sm text-red-500">{errors.ownerPhone}</p>
-                )}
-              </div>
             </div>
           )}
 
