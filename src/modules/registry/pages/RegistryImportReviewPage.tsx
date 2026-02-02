@@ -14,12 +14,17 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import DataTable, { Column } from '@/components/ui-kit/DataTable';
 import TableFooter from '@/components/ui-kit/TableFooter';
+import { useAppSelector } from '@/hooks/useAppStore';
+import type { RootState } from '@/store/store';
 import { ParseResult, ParsedStoreRow } from '../../utils/importTemplate';
+import { createMerchant } from '@/utils/api/storesApi';
 import styles from './RegistryImportReviewPage.module.css';
 
 export default function RegistryImportReviewPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAppSelector((state: RootState) => state.auth);
+  const departmentId = user?.department_id;
   const [importing, setImporting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -47,23 +52,62 @@ export default function RegistryImportReviewPage() {
       toast.error('Không có dữ liệu hợp lệ để import');
       return;
     }
+    if (!departmentId) {
+      toast.error('Không xác định được đơn vị quản lý để import');
+      return;
+    }
 
     setImporting(true);
 
     try {
-      // Simulate API call to import data
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const invalidRows = new Set(errors.map((e) => e.row));
+      const validRows = data.filter((row) => !invalidRows.has(row.rowIndex));
 
-      // In production: Send data to backend
-      // const response = await api.importStores(data);
-
-      toast.success(
-        `Import thành công ${summary.valid} cửa hàng`,
-        {
-          description: 'Tất cả cửa hàng đã được tạo ở trạng thái "Chờ duyệt"',
-          duration: 5000,
-        }
+      const results = await Promise.allSettled(
+        validRows.map((row) =>
+          createMerchant({
+            p_business_name: row.name,
+            p_owner_name: row.ownerName || '',
+            p_owner_phone: row.phone || '',
+            p_license_status: 'valid',
+            p_tax_code: row.taxCode || '',
+            p_business_type: row.industryName || 'retail',
+            p_province_id: null,
+            p_ward_id: null,
+            p_address: row.address || `${row.ward || ''} ${row.province || ''}`.trim(),
+            p_latitude: 0,
+            p_longitude: 0,
+            p_status: 'pending',
+            p_department_id: departmentId,
+            p_note: row.notes || null,
+            p_business_phone: row.phone || null,
+            p_business_email: null,
+            p_website: null,
+            p_store_area: null,
+            p_owner_phone_2: null,
+            p_owner_birth_year: null,
+            p_owner_identity_no: null,
+            p_owner_email: null,
+          })
+        )
       );
+
+      const successCount = results.filter((r) => r.status === 'fulfilled').length;
+      const failedCount = results.length - successCount;
+
+      if (successCount > 0) {
+        toast.success(
+          `Import thành công ${successCount} cửa hàng`,
+          {
+            description: 'Tất cả cửa hàng đã được tạo ở trạng thái "Chờ duyệt"',
+            duration: 5000,
+          }
+        );
+      }
+
+      if (failedCount > 0) {
+        toast.error(`Có ${failedCount} cửa hàng import thất bại. Vui lòng kiểm tra dữ liệu.`);
+      }
 
       // Navigate back to store list
       navigate('/registry/stores');
