@@ -11,15 +11,20 @@ import {
   Modal,
   Select,
   Space,
+  Switch,
+  Tooltip,
   message,
   type TablePaginationConfig,
 } from "antd";
 import { PlusOutlined, ReloadOutlined } from "@ant-design/icons";
 import type { FilterValue, SorterResult } from "antd/es/table/interface";
+import { useNavigate } from "react-router-dom";
 
 import PageHeader from "@/layouts/PageHeader";
 import { PermissionGate, usePermissions } from "../../_shared";
 import { ModuleFormModal } from "../components/modules/ModuleFormModal";
+import { GeneratePermissionsModal } from "../components/modules/GeneratePermissionsModal";
+import { ModulePermissionsOverviewModal } from "../components/ModulePermissionsOverviewModal";
 import { ModulesTable } from "../components/modules/ModulesTable";
 import {
   modulesService,
@@ -37,6 +42,7 @@ const GROUP_OPTIONS = [
 
 export default function ModulesPage() {
   const { hasPermission } = usePermissions();
+  const navigate = useNavigate();
 
   const canCreate = hasPermission("sa.iam.module.create");
   const canUpdate = hasPermission("sa.iam.module.update");
@@ -46,6 +52,7 @@ export default function ModulesPage() {
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const [groupFilter, setGroupFilter] = React.useState<string>("all");
   const [statusFilter, setStatusFilter] = React.useState<"all" | "active" | "inactive">("all");
+  const [noPermissionOnly, setNoPermissionOnly] = React.useState(false);
 
   const [page, setPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(10);
@@ -59,6 +66,10 @@ export default function ModulesPage() {
   const [modalOpen, setModalOpen] = React.useState(false);
   const [editingModule, setEditingModule] = React.useState<ModuleRecord | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
+  const [generateOpen, setGenerateOpen] = React.useState(false);
+  const [generateModule, setGenerateModule] = React.useState<ModuleRecord | null>(null);
+  const [overviewOpen, setOverviewOpen] = React.useState(false);
+  const [overviewModule, setOverviewModule] = React.useState<ModuleRecord | null>(null);
 
   React.useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);
@@ -67,7 +78,7 @@ export default function ModulesPage() {
 
   React.useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, groupFilter, statusFilter]);
+  }, [debouncedSearch, groupFilter, statusFilter, noPermissionOnly]);
 
   const loadModules = React.useCallback(async () => {
     setLoading(true);
@@ -76,6 +87,7 @@ export default function ModulesPage() {
         q: debouncedSearch || undefined,
         group: groupFilter === "all" ? undefined : groupFilter,
         status: statusFilter,
+        noPermissionOnly,
         page,
         pageSize,
         sortBy: sortField,
@@ -89,7 +101,7 @@ export default function ModulesPage() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, groupFilter, page, pageSize, sortField, sortOrder, statusFilter]);
+  }, [debouncedSearch, groupFilter, noPermissionOnly, page, pageSize, sortField, sortOrder, statusFilter]);
 
   React.useEffect(() => {
     void loadModules();
@@ -130,13 +142,25 @@ export default function ModulesPage() {
   const handleSubmit = async (values: ModulePayload) => {
     try {
       setSubmitting(true);
+      const keyValue = values.key.trim();
+      if (keyValue) {
+        const existing = await modulesService.getModuleByKey(keyValue);
+        if (existing && (!editingModule || existing.id !== editingModule.id)) {
+          message.error("Mã phân hệ đã tồn tại.");
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      let saved: ModuleRecord;
       if (editingModule) {
-        await modulesService.updateModule(editingModule.id, values);
+        saved = await modulesService.updateModule(editingModule.id, values);
         message.success("Đã cập nhật phân hệ.");
       } else {
-        await modulesService.createModule(values);
+        saved = await modulesService.createModule(values);
         message.success("Đã tạo phân hệ.");
       }
+
       setModalOpen(false);
       await loadModules();
     } catch (err) {
@@ -163,13 +187,33 @@ export default function ModulesPage() {
   const handleDelete = async (record: ModuleRecord) => {
     if (!canDelete) return;
     try {
-      await modulesService.softDeleteModule(record.id);
-      message.success("Đã xóa mềm phân hệ.");
+      const permTotal = record.permission_count ?? 0;
+      const menuTotal = record.menu_count ?? 0;
+      if (permTotal > 0 || menuTotal > 0) {
+        Modal.warning({
+          title: "Không thể xóa phân hệ",
+          content:
+            "Không thể xoá vì phân hệ đang có quyền/menu. Vui lòng Disable hoặc xoá quyền/menu trước.",
+        });
+        return;
+      }
+      await modulesService.deleteModule(record.id);
+      message.success("Đã xóa phân hệ.");
       await loadModules();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Không thể xóa phân hệ.";
       message.error(msg);
     }
+  };
+
+  const handleViewPermissions = (record: ModuleRecord) => {
+    setOverviewModule(record);
+    setOverviewOpen(true);
+  };
+
+  const handleGeneratePermissions = (record: ModuleRecord) => {
+    setGenerateModule(record);
+    setGenerateOpen(true);
   };
 
   return (
@@ -201,7 +245,7 @@ export default function ModulesPage() {
             <Space wrap>
               <Input
                 allowClear
-                placeholder="Tìm theo mã, tên phân hệ..."
+                placeholder="Tìm theo key hoặc tên phân hệ..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{ width: 280 }}
@@ -222,6 +266,12 @@ export default function ModulesPage() {
                 style={{ width: 180 }}
                 options={GROUP_OPTIONS}
               />
+              <Tooltip title="Chỉ hiển thị phân hệ chưa có quyền (TOTAL = 0)">
+                <Space size={6}>
+                  <span className="text-sm text-gray-500">Chưa có quyền</span>
+                  <Switch checked={noPermissionOnly} onChange={setNoPermissionOnly} />
+                </Space>
+              </Tooltip>
             </Space>
             <div className="text-sm text-gray-500">Tổng: {total} phân hệ</div>
           </div>
@@ -232,15 +282,14 @@ export default function ModulesPage() {
             total={total}
             page={page}
             pageSize={pageSize}
-            statusFilter={statusFilter}
-            groupFilter={groupFilter}
-            groupOptions={GROUP_OPTIONS.filter((g) => g.value !== "all")}
             canUpdate={canUpdate}
             canDelete={canDelete}
             onChange={handleTableChange}
             onEdit={openEdit}
             onToggleStatus={handleToggleStatus}
             onDelete={handleDelete}
+            onViewPermissions={handleViewPermissions}
+            onGeneratePermissions={handleGeneratePermissions}
           />
         </Card>
 
@@ -250,6 +299,45 @@ export default function ModulesPage() {
           initialValues={editingModule}
           onCancel={closeModal}
           onSubmit={handleSubmit}
+        />
+
+        <GeneratePermissionsModal
+          open={generateOpen}
+          module={generateModule}
+          onClose={() => setGenerateOpen(false)}
+          onGenerated={async () => {
+            setGenerateOpen(false);
+            await loadModules();
+          }}
+        />
+
+        <ModulePermissionsOverviewModal
+          open={overviewOpen}
+          moduleRow={
+            overviewModule
+              ? {
+                  _id: overviewModule.id,
+                  key: overviewModule.key,
+                  name: overviewModule.name,
+                  group: overviewModule.group,
+                  status: overviewModule.status,
+                  permission_count: overviewModule.permission_count ?? 0,
+                  permission_page_count: overviewModule.permission_page_count ?? 0,
+                  permission_feature_count: overviewModule.permission_feature_count ?? 0,
+                }
+              : null
+          }
+          onClose={() => setOverviewOpen(false)}
+          onGeneratePermissions={() => {
+            if (!overviewModule) return;
+            setOverviewOpen(false);
+            handleGeneratePermissions(overviewModule);
+          }}
+          onOpenManagePermissions={() => {
+            if (!overviewModule) return;
+            const moduleKey = overviewModule.key;
+            navigate(`/system-admin/iam/permissions?module=${encodeURIComponent(moduleKey)}`);
+          }}
         />
       </div>
     </PermissionGate>

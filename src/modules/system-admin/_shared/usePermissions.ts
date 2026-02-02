@@ -23,7 +23,7 @@ export function usePermissions() {
     'TASKS_VIEW',
     'EVIDENCE_VIEW',
     'ADMIN_VIEW',
-    'TV_VIEW',
+    'tv-wallboard.page.read',
   ] as const;
 
   const roleCodesFromUser = [

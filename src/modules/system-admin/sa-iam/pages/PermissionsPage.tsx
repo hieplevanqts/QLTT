@@ -149,7 +149,7 @@ const buildExpected = (record: PermissionRecord, moduleOptions?: PermissionModul
     record.module_id && moduleOptions?.length
       ? moduleOptions.find((item) => item.id === record.module_id)?.code ?? ""
       : "";
-  const moduleCode = moduleFromRecord || moduleFromId || parsed.module;
+  const moduleCode = parsed.module || moduleFromRecord || moduleFromId;
 
   const resourceFromRecord = (record.resource ?? "").trim();
   const actionFromRecord = String(record.action ?? "").trim().toUpperCase();
@@ -171,16 +171,18 @@ const buildExpected = (record: PermissionRecord, moduleOptions?: PermissionModul
       ? resource.toLowerCase().startsWith("page")
         ? "PAGE"
         : "FEATURE"
-      : "");
+      : action
+        ? "FEATURE"
+        : "");
   const code = String(record.code ?? "");
 
-  const hasModule = Boolean(moduleFromRecord || moduleFromId || parsed.module);
+  const hasModule = Boolean(moduleCode);
   const missing = {
     module: !hasModule,
-    category: !categoryFromRecord,
-    resource: !resourceFromRecord,
-    action: !actionFromRecord,
-    permissionType: !permissionTypeFromRecord,
+    category: !category,
+    resource: !resource,
+    action: !action,
+    permissionType: !permissionType,
   };
   const hasMissing = Object.values(missing).some(Boolean);
 

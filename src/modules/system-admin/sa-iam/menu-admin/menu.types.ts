@@ -34,6 +34,7 @@ export interface MenuNode extends MenuRecord {
 
 export interface ModuleRecord {
   _id: string;
+  key?: string | null;
   code: string;
   name: string;
   group?: string | null;
@@ -69,10 +70,11 @@ export interface MenuPermissionRecord {
 export interface PermissionFilter {
   search?: string;
   moduleId?: string;
+  moduleCode?: string;
   category?: string;
   action?: string;
   resource?: string;
-  status?: number | "all";
+  status?: "active" | "inactive" | "all";
   page?: number;
   pageSize?: number;
   sortBy?: string;

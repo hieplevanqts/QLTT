@@ -33,7 +33,7 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
   const { user } = useAppSelector((state: RootState) => state.auth);
   
   const { hasPermission } = usePermissions();
-  const hasTvViewPermission = hasPermission('TV_VIEW');
+  const hasTvViewPermission = hasPermission('tv-wallboard.page.read');
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('light');
   const [language, setLanguage] = useState<'vi' | 'en'>('vi');
   const [showNotifications, setShowNotifications] = useState(false);
@@ -168,7 +168,7 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* TV Mode - Only show if user has TV_VIEW permission */}
+          {/* TV Mode - Only show if user has tv-wallboard.page.read permission */}
           {hasTvViewPermission && (
             <Button
               variant="ghost"

@@ -13,7 +13,11 @@ export type ModuleRecord = {
   status: ModuleStatusValue;
   sort_order: number;
   permission_count?: number | null;
+  permission_page_count?: number | null;
+  permission_feature_count?: number | null;
   menu_count?: number | null;
+  meta_source?: string | null;
+  key_is_kebab?: boolean | null;
   created_at?: string | null;
   updated_at?: string | null;
   deleted_at?: string | null;
@@ -23,6 +27,7 @@ export type ModuleListParams = {
   q?: string;
   group?: string;
   status?: "all" | "active" | "inactive";
+  noPermissionOnly?: boolean;
   page?: number;
   pageSize?: number;
   sortBy?: string;
@@ -50,6 +55,18 @@ const normalizeStatus = (value: unknown): ModuleStatusValue => {
   return 1;
 };
 
+const normalizeBoolean = (value: unknown): boolean | null => {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === 1;
+  if (typeof value === "string") {
+    const trimmed = value.trim().toLowerCase();
+    if (trimmed === "true" || trimmed === "t" || trimmed === "1") return true;
+    if (trimmed === "false" || trimmed === "f" || trimmed === "0") return false;
+  }
+  return Boolean(value);
+};
+
 const mapRow = (row: any): ModuleRecord => ({
   id: row._id ?? "",
   key: row.key ?? row.code ?? "",
@@ -60,9 +77,14 @@ const mapRow = (row: any): ModuleRecord => ({
   icon: row.icon ?? null,
   status: normalizeStatus(row.status),
   sort_order: Number(row.sort_order ?? row.order_index ?? 0),
-  permission_count:
-    row.permission_count == null ? null : Number(row.permission_count),
+  permission_count: row.permission_count == null ? null : Number(row.permission_count),
+  permission_page_count:
+    row.permission_page_count == null ? null : Number(row.permission_page_count),
+  permission_feature_count:
+    row.permission_feature_count == null ? null : Number(row.permission_feature_count),
   menu_count: row.menu_count == null ? null : Number(row.menu_count),
+  meta_source: row.meta_source ?? null,
+  key_is_kebab: normalizeBoolean(row.key_is_kebab),
   created_at: row.created_at ?? null,
   updated_at: row.updated_at ?? null,
   deleted_at: row.deleted_at ?? null,
@@ -98,55 +120,35 @@ export const modulesService = {
     const sortBy = params.sortBy ?? "sort_order";
     const sortDir = params.sortDir ?? "asc";
 
-    const buildQuery = (source: "v_modules_stats" | "modules") => {
-      let query = supabase
-        .from(source)
-        .select("*", { count: "exact" })
-        .range(from, to);
+    let query = supabase
+      .from("v_modules_stats")
+      .select("*", { count: "exact" })
+      .range(from, to);
 
-      const search = params.q?.trim();
-      if (search) {
-        query = query.or(
-          `key.ilike.%${search}%,code.ilike.%${search}%,name.ilike.%${search}%,description.ilike.%${search}%`,
-        );
-      }
-
-      if (params.group && params.group !== "all") {
-        query = query.eq("group", params.group);
-      }
-
-      const statusFilter = normalizeStatusFilter(params.status ?? "all");
-      if (statusFilter !== null) {
-        query = query.eq("status", statusFilter);
-      }
-
-      query = query
-        .order(sortBy, { ascending: sortDir === "asc", nullsFirst: false })
-        .order("name", { ascending: true });
-
-      return query;
-    };
-
-    let response = await buildQuery("v_modules_stats");
-    const missingView =
-      response.error && response.error.message.includes("v_modules_stats");
-    if (missingView) {
-      response = await buildQuery("modules");
+    const search = params.q?.trim();
+    if (search) {
+      const escaped = search.replace(/,/g, "\\,");
+      query = query.or(`key.ilike.%${escaped}%,name.ilike.%${escaped}%`);
     }
 
-    // Fallback ordering when sort_order is missing.
-    if (
-      response.error &&
-      response.error.message.toLowerCase().includes("sort_order")
-    ) {
-      const fallback = supabase
-        .from(missingView ? "modules" : "v_modules_stats")
-        .select("*", { count: "exact" })
-        .range(from, to)
-        .order("order_index", { ascending: true })
-        .order("name", { ascending: true });
-      response = await fallback;
+    if (params.group && params.group !== "all") {
+      query = query.eq("group", params.group);
     }
+
+    const statusFilter = normalizeStatusFilter(params.status ?? "all");
+    if (statusFilter !== null) {
+      query = query.eq("status", statusFilter);
+    }
+
+    if (params.noPermissionOnly) {
+      query = query.eq("permission_count", 0);
+    }
+
+    query = query
+      .order(sortBy, { ascending: sortDir === "asc", nullsFirst: false })
+      .order("name", { ascending: true });
+
+    const response = await query;
 
     if (response.error) {
       throw new Error(`modules select failed: ${response.error.message}`);
@@ -156,6 +158,23 @@ export const modulesService = {
       data: (response.data || []).map(mapRow),
       total: response.count ?? 0,
     };
+  },
+
+  async getModuleByKey(key: string): Promise<ModuleRecord | null> {
+    const trimmed = key.trim();
+    if (!trimmed) return null;
+    const escaped = trimmed.replace(/,/g, "\\,");
+    const { data, error } = await supabase
+      .from("modules")
+      .select("*")
+      .or(`key.eq.${escaped},code.eq.${escaped}`)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`module select failed: ${error.message}`);
+    }
+
+    return data ? mapRow(data) : null;
   },
 
   async createModule(payload: ModulePayload): Promise<ModuleRecord> {
@@ -251,6 +270,13 @@ export const modulesService = {
       .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
       .eq("_id", id);
 
+    if (response.error) {
+      throw new Error(`module delete failed: ${response.error.message}`);
+    }
+  },
+
+  async deleteModule(id: string): Promise<void> {
+    const response = await supabase.from("modules").delete().eq("_id", id);
     if (response.error) {
       throw new Error(`module delete failed: ${response.error.message}`);
     }

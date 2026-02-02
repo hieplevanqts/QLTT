@@ -143,7 +143,17 @@ export const permissionsService = {
       }
 
       if (params.category && params.category !== "all") {
-        query = query.eq("category", params.category);
+        if (params.category === "PAGE") {
+          query = query.or(
+            "category.eq.PAGE,resource.ilike.page%,code.ilike.%.page.%",
+          );
+        } else if (params.category === "FEATURE") {
+          query = query.or(
+            "category.eq.FEATURE,resource.not.ilike.page%,code.not.ilike.%.page.%",
+          );
+        } else {
+          query = query.eq("category", params.category);
+        }
       }
 
       if (params.action) {
@@ -294,6 +304,22 @@ export const permissionsService = {
     ) as string[];
 
     return unique.map((code) => ({ code }));
+  },
+
+  async listPermissionActionCatalog(): Promise<PermissionActionOption[]> {
+    const { data, error } = await supabase
+      .from("permission_actions")
+      .select("code")
+      .order("code", { ascending: true });
+
+    if (error) {
+      throw new Error(`permission actions select failed: ${error.message}`);
+    }
+
+    return (data || [])
+      .map((row: any) => row.code)
+      .filter(Boolean)
+      .map((code: string) => ({ code }));
   },
 
   async listPermissionLegacyTypes(): Promise<PermissionLegacyTypeOption[]> {

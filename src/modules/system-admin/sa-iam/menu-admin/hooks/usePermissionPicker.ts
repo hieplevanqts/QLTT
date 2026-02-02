@@ -18,9 +18,8 @@ export interface UsePermissionPickerState {
 export const usePermissionPicker = (): UsePermissionPickerState => {
   const [filters, setFilters] = React.useState<PermissionFilter>({
     page: 1,
-    pageSize: 10,
+    pageSize: 20,
     category: "PAGE",
-    action: "READ",
     status: "active",
   });
   const [data, setData] = React.useState<PermissionRecord[]>([]);
@@ -29,9 +28,23 @@ export const usePermissionPicker = (): UsePermissionPickerState => {
   const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
 
   const refresh = React.useCallback(async () => {
+    const hasModule = Boolean(filters.moduleCode);
+    if (!hasModule) {
+      setData([]);
+      setTotal(0);
+      setSelectedIds([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
-      const result: PagedResult<PermissionRecord> = await menuService.listPermissions(filters);
+      const normalizedFilters: PermissionFilter = {
+        ...filters,
+        category: "PAGE",
+        status: "active",
+      };
+      const result: PagedResult<PermissionRecord> =
+        await menuService.listPermissions(normalizedFilters);
       setData(result.data);
       setTotal(result.total);
     } finally {
@@ -42,6 +55,10 @@ export const usePermissionPicker = (): UsePermissionPickerState => {
   React.useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  React.useEffect(() => {
+    setSelectedIds([]);
+  }, [filters.moduleCode]);
 
   const assignSelected = React.useCallback(async () => undefined, []);
   const removeSelected = React.useCallback(async () => undefined, []);

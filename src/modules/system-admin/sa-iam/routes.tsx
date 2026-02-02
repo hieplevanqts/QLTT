@@ -10,13 +10,12 @@ const UsersPage = React.lazy(() => import('./pages/UsersPage'));
 const UserDetailPage = React.lazy(() => import('./pages/UserDetailPage'));
 const RolesPage = React.lazy(() => import('./pages/RolesPage'));
 const PermissionsPage = React.lazy(() => import('./pages/PermissionsPage'));
-const RolePermissionsPage = React.lazy(() => import('./pages/RolePermissionsPage'));
+const RolePermissionsV2Page = React.lazy(() => import('./pages/RolePermissionsV2Page'));
 const AssignmentsPage = React.lazy(() => import('./pages/AssignmentsPage'));
 const UserAssignmentsPage = React.lazy(() => import('./pages/UserAssignmentsPage'));
 const RoleAssignmentsPage = React.lazy(() => import('./pages/RoleAssignmentsPage'));
 const ModulesPage = React.lazy(() => import('./pages/ModulesPage'));
 const MenusPage = React.lazy(() => import('./menu-admin/pages/MenuAdminPage'));
-import RolePermissionsMatrixPage from "@/modules/system-admin/sa-iam/pages/RolePermissionsMatrixPage";
 
 /**
  * Route configuration cho SA IAM
@@ -54,18 +53,18 @@ export const saIamRoutes: RouteObject = {
     // Role Permissions Matrix - Phân quyền theo vai trò
     {
       path: 'role-permissions',
-      element: <RolePermissionsPage />
+      element: <RolePermissionsV2Page />
       // Permission: sa.iam.assignment.read (checked in component)
     },
     {
       path: 'role-permissions/:roleId',
-      element: <RolePermissionsPage />
+      element: <RolePermissionsV2Page />
       // Permission: sa.iam.assignment.read (checked in component)
     },
     {
       // Nếu bạn đang ở trong children của route "/system-admin/iam"
       path: "role-permissions/new/:roleId",
-      element: <RolePermissionsMatrixPage />,
+      element: <RolePermissionsV2Page />,
     },
         
     // Assignments - Phân quyền
