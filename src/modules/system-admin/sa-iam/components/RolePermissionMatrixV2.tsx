@@ -16,6 +16,7 @@ import { Copy } from "lucide-react";
 
 import {
   rolePermissionsMatrixService,
+  type MatrixActionCatalogItem,
   type MatrixCategory,
   type MatrixModuleOption,
   type MatrixViewRow,
@@ -26,7 +27,6 @@ const { Text } = Typography;
 type MatrixAction = {
   code: string;
   label: string;
-  order: number;
 };
 
 type MatrixCell = {
@@ -65,8 +65,26 @@ const normalizeBoolean = (value: unknown) => {
   return false;
 };
 
-const normalizeActionLabel = (action?: string | null, label?: string | null) => {
-  const fallback = String(action ?? "").toUpperCase();
+const normalizeActionCode = (value: unknown) => String(value ?? "").trim().toUpperCase();
+
+const ACTION_PRIORITY = [
+  "READ",
+  "CREATE",
+  "UPDATE",
+  "DELETE",
+  "EXPORT",
+  "RESTORE",
+  "ASSIGN",
+  "APPROVE",
+  "IMPORT",
+];
+
+const ACTION_PRIORITY_INDEX = new Map(
+  ACTION_PRIORITY.map((code, index) => [code, index]),
+);
+
+const buildActionLabel = (action?: string | null, label?: string | null) => {
+  const fallback = normalizeActionCode(action);
   const cleaned = String(label ?? "").trim();
   return cleaned || fallback || "N/A";
 };
@@ -80,23 +98,15 @@ const formatResourceLabel = (resourceKey: string, category: string, tabKey: Matr
 };
 
 const buildMatrix = (rows: MatrixViewRow[], tabKey: MatrixCategory) => {
-  const actionMap = new Map<string, MatrixAction>();
   const rowMap = new Map<string, MatrixRow>();
   const rowOrder: string[] = [];
   const baseline = new Set<string>();
 
   rows.forEach((raw) => {
-    const action = String(raw.action ?? "").toUpperCase();
+    const action = normalizeActionCode(raw.action);
     if (!action) return;
-    const actionLabel = normalizeActionLabel(raw.action, raw.action_label);
+    const actionLabel = buildActionLabel(raw.action, raw.action_label);
     const actionOrder = Number(raw.action_order ?? 0);
-    if (!actionMap.has(action)) {
-      actionMap.set(action, {
-        code: action,
-        label: actionLabel,
-        order: Number.isNaN(actionOrder) ? 0 : actionOrder,
-      });
-    }
 
     const resourceKey = String(raw.resource_key ?? raw.permission_code ?? "").trim();
     if (!resourceKey) return;
@@ -137,10 +147,6 @@ const buildMatrix = (rows: MatrixViewRow[], tabKey: MatrixCategory) => {
     if (isGranted) baseline.add(permissionId);
   });
 
-  const actions = Array.from(actionMap.values()).sort(
-    (a, b) => a.order - b.order || a.label.localeCompare(b.label, "vi"),
-  );
-
   const orderedRows = rowOrder
     .map((key) => rowMap.get(key))
     .filter(Boolean)
@@ -164,7 +170,7 @@ const buildMatrix = (rows: MatrixViewRow[], tabKey: MatrixCategory) => {
       };
     });
 
-  return { actions, rows: orderedRows, baseline };
+  return { rows: orderedRows, baseline };
 };
 
 export function RolePermissionMatrixV2({ roleId, roleName, roleCode }: Props) {
@@ -174,8 +180,8 @@ export function RolePermissionMatrixV2({ roleId, roleName, roleCode }: Props) {
   const [search, setSearch] = React.useState("");
   const [loading, setLoading] = React.useState(false);
 
+  const [actionCatalog, setActionCatalog] = React.useState<MatrixActionCatalogItem[]>([]);
   const [matrixRows, setMatrixRows] = React.useState<MatrixRow[]>([]);
-  const [matrixActions, setMatrixActions] = React.useState<MatrixAction[]>([]);
   const [baselineIds, setBaselineIds] = React.useState<Set<string>>(new Set());
   const [currentIds, setCurrentIds] = React.useState<Set<string>>(new Set());
 
@@ -189,9 +195,23 @@ export function RolePermissionMatrixV2({ roleId, roleName, roleCode }: Props) {
     }
   }, []);
 
+  const loadActions = React.useCallback(async () => {
+    try {
+      const data = await rolePermissionsMatrixService.listActions();
+      setActionCatalog(data);
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : "Không thể tải danh sách hành động.");
+      setActionCatalog([]);
+    }
+  }, []);
+
   React.useEffect(() => {
     void loadModules();
   }, [loadModules]);
+
+  React.useEffect(() => {
+    void loadActions();
+  }, [loadActions]);
 
   React.useEffect(() => {
     if (!modules.length) return;
@@ -204,7 +224,6 @@ export function RolePermissionMatrixV2({ roleId, roleName, roleCode }: Props) {
   const fetchMatrix = React.useCallback(async () => {
     if (!roleId || !moduleKey) {
       setMatrixRows([]);
-      setMatrixActions([]);
       setBaselineIds(new Set());
       setCurrentIds(new Set());
       return;
@@ -218,15 +237,13 @@ export function RolePermissionMatrixV2({ roleId, roleName, roleCode }: Props) {
         category: tabKey,
       });
 
-      const { actions, rows, baseline } = buildMatrix(data, tabKey);
-      setMatrixActions(actions);
+      const { rows, baseline } = buildMatrix(data, tabKey);
       setMatrixRows(rows);
       setBaselineIds(new Set(baseline));
       setCurrentIds(new Set(baseline));
     } catch (err) {
       message.error(err instanceof Error ? err.message : "Không thể tải ma trận quyền.");
       setMatrixRows([]);
-      setMatrixActions([]);
       setBaselineIds(new Set());
       setCurrentIds(new Set());
     } finally {
@@ -238,13 +255,24 @@ export function RolePermissionMatrixV2({ roleId, roleName, roleCode }: Props) {
     void fetchMatrix();
   }, [fetchMatrix]);
 
-  const displayActions = React.useMemo(() => {
+  const displayActions = React.useMemo<MatrixAction[]>(() => {
+    let filtered = actionCatalog;
     if (tabKey === "PAGE") {
-      const readAction = matrixActions.find((action) => action.code === "READ");
-      return readAction ? [readAction] : [];
+      filtered = actionCatalog.filter((action) => action.code === "READ");
     }
-    return matrixActions;
-  }, [matrixActions, tabKey]);
+
+    const sorted = [...filtered].sort((a, b) => {
+      const priorityA = ACTION_PRIORITY_INDEX.get(a.code) ?? Number.MAX_SAFE_INTEGER;
+      const priorityB = ACTION_PRIORITY_INDEX.get(b.code) ?? Number.MAX_SAFE_INTEGER;
+      if (priorityA !== priorityB) return priorityA - priorityB;
+      return a.code.localeCompare(b.code, "vi");
+    });
+
+    return sorted.map((action) => ({
+      code: action.code,
+      label: buildActionLabel(action.code, action.name),
+    }));
+  }, [actionCatalog, tabKey]);
 
   const filteredRows = React.useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -371,7 +399,7 @@ export function RolePermissionMatrixV2({ roleId, roleName, roleCode }: Props) {
       render: (_: unknown, row: MatrixRow) => {
         const cell = row.cells.get(action.code);
         if (!cell) {
-          return <Checkbox disabled />;
+          return <span className="text-xs text-slate-300">—</span>;
         }
         const checked = currentIds.has(cell.permissionId);
         return (

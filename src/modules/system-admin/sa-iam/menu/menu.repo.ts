@@ -17,6 +17,7 @@ type ModuleRow = {
   code?: string | null;
   name?: string | null;
   group?: string | null;
+  meta?: Record<string, unknown> | string | null;
   sort_order?: number | null;
   order_index?: number | null;
   status?: number | string | null;
@@ -93,6 +94,7 @@ const mapModuleRow = (row: ModuleRow) => ({
   code: row.code ?? row.key ?? "",
   name: row.name ?? row.code ?? row.key ?? "",
   group: row.group ?? null,
+  meta: row.meta ?? null,
   sort_order: row.sort_order ?? row.order_index ?? 0,
   status: row.status ?? null,
 });
@@ -553,16 +555,16 @@ export const menuRepo = {
       const payload = Array.from(deduped.values());
       if (payload.length === 0) return;
 
-      const upsertResponse = await supabase.from("menus").upsert(
-        payload.map((row) => ({
-          _id: row._id,
-          parent_id: row.parent_id,
-          sort_order: row.order_index,
-        })),
-        { onConflict: "_id" },
+      const updateRequests = payload.map((row) =>
+        supabase
+          .from("menus")
+          .update({ parent_id: row.parent_id, sort_order: row.order_index })
+          .eq("_id", row._id),
       );
-      if (upsertResponse.error) {
-        throw new Error(`menu move failed: ${upsertResponse.error.message}`);
+      const results = await Promise.all(updateRequests);
+      const failure = results.find((result) => result.error);
+      if (failure?.error) {
+        throw new Error(`menu move failed: ${failure.error.message}`);
       }
       return;
     }
@@ -616,10 +618,16 @@ export const menuRepo = {
     const payload = Array.from(deduped.values());
     if (payload.length === 0) return;
 
-    const upsertResponse = await supabase.from("menus").upsert(payload, { onConflict: "_id" });
-
-    if (upsertResponse.error) {
-      throw new Error(`menu move failed: ${upsertResponse.error.message}`);
+    const updateRequests = payload.map((row) =>
+      supabase
+        .from("menus")
+        .update({ parent_id: row.parent_id, order_index: row.order_index })
+        .eq("_id", row._id),
+    );
+    const results = await Promise.all(updateRequests);
+    const failure = results.find((result) => result.error);
+    if (failure?.error) {
+      throw new Error(`menu move failed: ${failure.error.message}`);
     }
   },
 

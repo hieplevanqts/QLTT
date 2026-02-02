@@ -46,7 +46,6 @@ const { Sider, Content } = Layout;
 type MatrixAction = {
   code: string;
   label: string;
-  order: number;
 };
 
 type MatrixItem = {
@@ -77,9 +76,45 @@ const normalizeBoolean = (value: unknown) => {
   return false;
 };
 
+const normalizeActionCode = (value: unknown) => String(value ?? "").trim().toUpperCase();
+
+const ACTION_PRIORITY = [
+  "READ",
+  "CREATE",
+  "UPDATE",
+  "DELETE",
+  "EXPORT",
+  "RESTORE",
+  "ASSIGN",
+  "APPROVE",
+  "IMPORT",
+];
+
+const ACTION_PRIORITY_INDEX = new Map(
+  ACTION_PRIORITY.map((code, index) => [code, index]),
+);
+
 const buildActionLabel = (action?: string | null, label?: string | null) => {
-  const fallback = String(action ?? "").toUpperCase();
+  const fallback = normalizeActionCode(action);
   return String(label ?? "").trim() || fallback || "N/A";
+};
+
+const normalizeActionCatalog = (list: { name?: string | null; code?: string | null }[]) => {
+  const unique = new Map<string, { name: string; code: string }>();
+  list.forEach((item) => {
+    const code = normalizeActionCode(item?.code);
+    if (!code) return;
+    const name = String(item?.name ?? "").trim();
+    const existing = unique.get(code);
+    if (!existing) {
+      unique.set(code, { code, name });
+      return;
+    }
+    if (!existing.name && name) {
+      unique.set(code, { code, name });
+    }
+  });
+  return Array.from(unique.values());
 };
 
 export default function RolePermissionsMatrixPage() {
@@ -95,10 +130,9 @@ export default function RolePermissionsMatrixPage() {
 
   const [modules, setModules] = useState<ModuleOption[]>([]);
   const [moduleKey, setModuleKey] = useState<string | null>(null);
-  const [categoryTab, setCategoryTab] = useState<"PAGE" | "FEATURE">("PAGE");
+  const [categoryTab, setCategoryTab] = useState<"PAGE" | "FEATURE" | "ALL">("PAGE");
 
   const [matrixRows, setMatrixRows] = useState<MatrixRow[]>([]);
-  const [matrixActions, setMatrixActions] = useState<MatrixAction[]>([]);
   const [grantedIds, setGrantedIds] = useState<Set<string>>(new Set());
   const [baselineIds, setBaselineIds] = useState<Set<string>>(new Set());
   const [loadingMatrix, setLoadingMatrix] = useState(false);
@@ -149,7 +183,7 @@ export default function RolePermissionsMatrixPage() {
   const loadActions = useCallback(async () => {
     try {
       const actionRes = await rolePermissionsService.listActions();
-      setActionCatalog((actionRes || []).filter((item) => item && item.code));
+      setActionCatalog(normalizeActionCatalog(actionRes || []));
     } catch {
       notify("error", "Không thể tải danh sách hành động");
     }
@@ -173,7 +207,6 @@ export default function RolePermissionsMatrixPage() {
   const fetchMatrix = useCallback(async () => {
     if (!roleId || !moduleKey) {
       setMatrixRows([]);
-      setMatrixActions([]);
       setGrantedIds(new Set());
       setBaselineIds(new Set());
       return;
@@ -181,15 +214,20 @@ export default function RolePermissionsMatrixPage() {
 
     setLoadingMatrix(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from("v_role_permissions_matrix")
         .select("*")
         .eq("role_id", roleId)
         .eq("module_key", moduleKey)
-        .eq("category", categoryTab)
         .order("resource_group", { ascending: true })
         .order("resource_key", { ascending: true })
         .order("action_order", { ascending: true });
+
+      if (categoryTab !== "ALL") {
+        query = query.eq("category", categoryTab);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         throw new Error(error.message);
@@ -197,21 +235,13 @@ export default function RolePermissionsMatrixPage() {
 
       const rows: MatrixRow[] = [];
       const rowMap = new Map<string, MatrixRow>();
-      const actionMap = new Map<string, MatrixAction>();
       const nextBaseline = new Set<string>();
 
       (data || []).forEach((raw: any) => {
-        const actionCode = String(raw.action ?? "").toUpperCase();
+        const actionCode = normalizeActionCode(raw.action);
         if (!actionCode) return;
         const actionLabel = buildActionLabel(raw.action, raw.action_label);
         const actionOrder = Number(raw.action_order ?? 0);
-        if (!actionMap.has(actionCode)) {
-          actionMap.set(actionCode, {
-            code: actionCode,
-            label: actionLabel,
-            order: Number.isNaN(actionOrder) ? 0 : actionOrder,
-          });
-        }
 
         const resourceKey = String(raw.resource_key ?? raw.resource ?? "").trim();
         if (!resourceKey) return;
@@ -245,10 +275,6 @@ export default function RolePermissionsMatrixPage() {
         if (isGranted) nextBaseline.add(String(permissionId));
       });
 
-      const actions = Array.from(actionMap.values()).sort(
-        (a, b) => a.order - b.order || a.label.localeCompare(b.label, "vi"),
-      );
-
       rows.forEach((row) => {
         const sorted = Array.from(row.items.values()).sort(
           (a, b) => a.actionOrder - b.actionOrder || a.action.localeCompare(b.action, "vi"),
@@ -261,13 +287,11 @@ export default function RolePermissionsMatrixPage() {
       });
 
       setMatrixRows(rows);
-      setMatrixActions(actions);
       setBaselineIds(new Set(nextBaseline));
       setGrantedIds(new Set(nextBaseline));
     } catch (err) {
       notify("error", err instanceof Error ? err.message : "Lỗi tải ma trận quyền");
       setMatrixRows([]);
-      setMatrixActions([]);
       setGrantedIds(new Set());
       setBaselineIds(new Set());
     } finally {
@@ -278,6 +302,26 @@ export default function RolePermissionsMatrixPage() {
   useEffect(() => {
     void fetchMatrix();
   }, [fetchMatrix]);
+
+  const matrixActions = useMemo(() => {
+    const catalog = actionCatalog;
+    let filtered = catalog;
+    if (categoryTab === "PAGE") {
+      filtered = catalog.filter((action) => action.code === "READ");
+    }
+
+    const sorted = [...filtered].sort((a, b) => {
+      const priorityA = ACTION_PRIORITY_INDEX.get(a.code) ?? Number.MAX_SAFE_INTEGER;
+      const priorityB = ACTION_PRIORITY_INDEX.get(b.code) ?? Number.MAX_SAFE_INTEGER;
+      if (priorityA !== priorityB) return priorityA - priorityB;
+      return a.code.localeCompare(b.code, "vi");
+    });
+
+    return sorted.map((action) => ({
+      code: action.code,
+      label: buildActionLabel(action.code, action.name),
+    }));
+  }, [actionCatalog, categoryTab]);
 
   const handleSave = async () => {
     if (!roleId) return;
@@ -410,7 +454,9 @@ export default function RolePermissionsMatrixPage() {
       width: 100,
       render: (_: unknown, record: MatrixRow) => {
         const item = record.items.get(action.code);
-        if (!item) return null;
+        if (!item) {
+          return <span className="text-xs text-slate-300">—</span>;
+        }
         const checked = grantedIds.has(item.permissionId);
         return (
           <Tooltip
@@ -547,10 +593,11 @@ export default function RolePermissionsMatrixPage() {
                 />
                 <Tabs
                   activeKey={categoryTab}
-                  onChange={(key) => setCategoryTab(key as "PAGE" | "FEATURE")}
+                  onChange={(key) => setCategoryTab(key as "PAGE" | "FEATURE" | "ALL")}
                   items={[
                     { key: "PAGE", label: "PAGE" },
                     { key: "FEATURE", label: "FEATURE" },
+                    { key: "ALL", label: "ALL" },
                   ]}
                 />
                 <Button size="large" icon={<ReloadOutlined />} onClick={fetchMatrix}>

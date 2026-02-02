@@ -108,9 +108,7 @@ export default function RolePermissionsV2Page() {
                         <Radio value={role.id} />
                         <div className="flex-1">
                           <div className="font-medium text-slate-900">{role.name}</div>
-                          <Text type="secondary" className="text-xs">
-                            {role.code}
-                          </Text>
+                          <span className="text-xs text-slate-900">{role.code}</span>
                         </div>
                         <Tag color={role.status === 1 ? "green" : "red"}>
                           {role.status === 1 ? "Hoạt động" : "Ngừng"}

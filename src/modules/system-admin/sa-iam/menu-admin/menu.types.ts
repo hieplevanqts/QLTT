@@ -38,6 +38,7 @@ export interface ModuleRecord {
   code: string;
   name: string;
   group?: string | null;
+  meta?: Record<string, unknown> | string | null;
 }
 
 export interface RoleRecord {
