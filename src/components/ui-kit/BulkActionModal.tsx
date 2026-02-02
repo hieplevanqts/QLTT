@@ -149,10 +149,10 @@ export function BulkActionModal({
           break;
 
         case 'delete':
-          if (store.status === 'rejected') {
+          if (store.status === 'rejected' || store.status === 'refuse') {
             valid.push(store);
           } else {
-            invalid.push({ store, reason: 'Chỉ có thể xóa cơ sở ở trạng thái "Từ chối phê duyệt"' });
+            invalid.push({ store, reason: 'Chỉ có thể xóa cơ sở ở trạng thái "Từ chối phê duyệt" hoặc "Ngừng hoạt động"' });
           }
           break;
         

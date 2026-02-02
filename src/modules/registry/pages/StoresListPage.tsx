@@ -234,6 +234,9 @@ const departmentPath = user?.app_metadata?.department?.path ;
     try {
       const filters: any = {};
 
+      // Exclude soft-deleted records
+      filters.deleted_at = 'is.null';
+
       if (statusFilter && statusFilter !== 'all') {
         filters.status = statusFilter;
       }
@@ -273,6 +276,9 @@ const departmentPath = user?.app_metadata?.department?.path ;
 
       const offset = (currentPage - 1) * pageSize;
       const filters: any = {};
+
+      // Exclude soft-deleted records
+      filters.deleted_at = 'is.null';
 
       if (statusFilter && statusFilter !== 'all') {
         filters.status = statusFilter;
@@ -710,10 +716,10 @@ const departmentPath = user?.app_metadata?.department?.path ;
    * Only show actions when ALL selected stores have the SAME status
    */
   const ACTION_RULES: Record<FacilityStatus, BulkActionType[]> = {
-    pending: ['approve', 'reject'],
+    pending: ['approve', 'reject', 'delete'],
     active: ['suspend'],
     suspended: ['activate', 'close'],
-    refuse: [],
+    refuse: ['delete'],
     rejected: ['delete'],
     underInspection: [], // No changes allowed while under inspection
   };
@@ -817,7 +823,7 @@ const departmentPath = user?.app_metadata?.department?.path ;
           case 'close':
             return store.status === 'suspended' || store.status === 'active';
           case 'delete':
-            return store.status === 'rejected';
+            return store.status === 'rejected' || store.status === 'pending' || store.status === 'refuse';
           case 'export':
             return true;
           default:

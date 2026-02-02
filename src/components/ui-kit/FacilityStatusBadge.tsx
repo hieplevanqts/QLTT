@@ -59,7 +59,7 @@ const statusConfig: Record<FacilityStatus, StatusConfig> = {
     label: 'Ngừng hoạt động',
     icon: CircleX,
     variant: 'closed',
-    allowedActions: ['view', 'viewHistory'],
+    allowedActions: ['view', 'viewHistory', 'delete'],
   },
 };
 
