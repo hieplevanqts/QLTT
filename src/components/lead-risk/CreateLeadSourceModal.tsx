@@ -13,6 +13,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { getSupabaseClient } from '@/utils/supabaseClient';
 import { projectId, publicAnonKey } from '/utils/supabase/info';
 import styles from './CreateLeadSourceModal.module.css';
 
@@ -206,12 +207,50 @@ export default function CreateLeadSourceModal({
         'Khẩn cấp': 'critical'
       };
 
-      // Prepare evidences array from files (for now, just file names)
-      const evidences = formData.evidenceFiles.map(file => ({
-        name: file.name,
-        size: file.size,
-        type: file.type,
-      }));
+      // Prepare evidences array with file upload
+      const evidences = [];
+      const supabase = getSupabaseClient();
+
+      if (formData.evidenceFiles.length > 0) {
+        toast.info('Đang tải lên minh chứng...');
+
+        for (const file of formData.evidenceFiles) {
+          try {
+            // Sanitize filename
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+
+            // Upload to Supabase Storage 'vhv_file' bucket
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('vhv_file')
+              .upload(fileName, file, {
+                cacheControl: '3600',
+                upsert: false
+              });
+
+            if (uploadError) {
+              console.error('Error uploading file:', file.name, uploadError);
+              toast.error(`Không thể tải lên ${file.name}`);
+              continue;
+            }
+
+            // Get Public URL
+            const { data: publicUrlData } = supabase.storage
+              .from('vhv_file')
+              .getPublicUrl(fileName);
+
+            evidences.push({
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              url: publicUrlData.publicUrl,
+              path: uploadData.path
+            });
+          } catch (err) {
+            console.error('Exception uploading file:', file.name, err);
+          }
+        }
+      }
 
       // Prepare API payload with mapping
       const payload = {

@@ -454,7 +454,9 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
     } else if (!isValidPhoneNumber(formData.businessPhone)) {
       newErrors.businessPhone = 'Số điện thoại không hợp lệ';
     }
-    
+     if (!formData.ownerName?.trim()) {
+      newErrors.ownerName = 'Vui lòng nhập tên chủ cơ sở';
+    }
     // ownerPhone - bắt buộc
     if (!formData.ownerPhone?.trim()) {
       newErrors.ownerPhone = 'Vui lòng nhập số điện thoại chủ cơ sở';
@@ -853,9 +855,6 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                     placeholder="Nhập số điện thoại"
                     className={errors.businessPhone ? 'border-red-500' : ''}
                   />
-                  {errors.businessPhone && (
-                    <p className="text-sm text-red-500 mt-1">{errors.businessPhone}</p>
-                  )}
                 </>,
                 true
               )}
@@ -878,13 +877,15 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
             <div className={styles.formGrid}>
               {renderFieldWithIndicator(
                 'ownerName',
-                'Tên Chủ cơ sở',
+                'Tên chủ cơ sở *',
                 <Input
                   id="ownerName"
                   value={formData.ownerName || ''}
+                  className={`placeholder:text-gray-500 ${errors.ownerName ? 'border-red-500' : ''}`}
                   onChange={(e) => handleFieldChange('ownerName', e.target.value)}
                   placeholder="Nhập tên chủ hộ"
-                />
+                />,
+                true
               )}
 
               {renderFieldWithIndicator(
@@ -924,9 +925,6 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                     onChange={(e) => handleFieldChange('ownerPhone', e.target.value)}
                     placeholder="Nhập số điện thoại"
                   />
-                  {errors.ownerPhone && (
-                    <p className="text-sm text-red-500 mt-1">{errors.ownerPhone}</p>
-                  )}
                 </>,
                 true
               )}

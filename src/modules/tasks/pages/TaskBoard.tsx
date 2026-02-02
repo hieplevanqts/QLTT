@@ -265,6 +265,28 @@ export function TaskBoard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
 
+  // Selection State
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+
+  const handleSelectRow = (id: string | number) => {
+    const stringId = String(id);
+    const newSelected = new Set(selectedRows);
+    if (newSelected.has(stringId)) {
+      newSelected.delete(stringId);
+    } else {
+      newSelected.add(stringId);
+    }
+    setSelectedRows(newSelected);
+  };
+
+  const handleSelectAll = (selected: boolean) => {
+    if (selected) {
+      setSelectedRows(new Set(paginatedTasks.map((t) => t.id)));
+    } else {
+      setSelectedRows(new Set());
+    }
+  };
+
 
 
   // Fetch sessions from API
@@ -675,6 +697,7 @@ export function TaskBoard() {
           merchant_id: formData.merchantId,
           campaign_id: formData.roundId,
           user_id: formData.assigneeId || null,
+          department_id: formData.departmentId || null, // Add department_id
           start_time: formData.startDate,
           deadline_time: formData.dueDate,
           status: formData.status === 'not_started' ? 1 : 
@@ -701,6 +724,7 @@ export function TaskBoard() {
         merchant_id: formData.merchantId,
         campaign_id: formData.roundId,
         user_id: formData.assigneeId || null,
+        department_id: formData.departmentId || null, // Add department_id
         start_time: formData.startDate,
         deadline_time: formData.dueDate,
         status: 1, // not_started
@@ -1016,8 +1040,17 @@ export function TaskBoard() {
   // Table columns for list view
   const columns: Column<InspectionTask>[] = [
     {
+      key: 'stt',
+      label: 'STT',
+      width: '60px',
+      className: 'text-center',
+      render: (_, index) => (
+        <div className="text-center">{(currentPage - 1) * itemsPerPage + index + 1}</div>
+      ),
+    },
+    {
       key: 'title',
-      label: 'Tên nhiệm vụ',
+      label: 'Tên phiên làm việc',
       sortable: true,
       render: (task) => (
         <div>
@@ -1032,7 +1065,7 @@ export function TaskBoard() {
       sortable: true,
       render: (task) => (
         <div>
-          <div className={styles.taskTitleCell}>{task?.roundId || 'N/A'}</div>
+          <div className={styles.taskTitleCell}>{task?.roundName || 'N/A'}</div>
           {task?.planName && (
             <div className={styles.taskTargetCell}>{task.planName}</div>
           )}
@@ -1294,6 +1327,11 @@ export function TaskBoard() {
                     data={paginatedTasks}
                     columns={columns}
                     onRowClick={handleTaskClick}
+                    selectable={true}
+                    selectedRows={selectedRows}
+                    onSelectRow={handleSelectRow}
+                    onSelectAll={handleSelectAll}
+                    getRowId={(task) => task.id}
                   />
                 </CardContent>
                 <TableFooter

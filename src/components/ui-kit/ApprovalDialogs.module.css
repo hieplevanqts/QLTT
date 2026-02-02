@@ -184,3 +184,17 @@
   font-weight: var(--font-weight-medium);
   padding: var(--spacing-2) var(--spacing-4);
 }
+.closeButtonFooter {
+  background-color: white;
+  color: black;
+  border: 1px solid #d1d5db;
+  font-weight: var(--font-weight-medium);
+  padding: var(--spacing-2) var(--spacing-4);
+  transition: all 0.2s ease;
+}
+
+.closeButtonFooter:hover:not(:disabled) {
+  background-color: #dc2626;
+  color: white;
+  border-color: #dc2626;
+}
