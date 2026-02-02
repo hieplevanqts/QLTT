@@ -114,6 +114,11 @@ const mapPermissionRow = (row: PermissionRow) => ({
 });
 
 let modulesCache: ReturnType<typeof mapModuleRow>[] | null = null;
+const permissionListCache = new Map<
+  string,
+  { ts: number; promise: Promise<MenuPermissionListResult> }
+>();
+const PERMISSION_LIST_CACHE_TTL_MS = 5000;
 
 const isMissingRelationError = (message: string) =>
   message.includes("Could not find the table") ||
@@ -743,8 +748,26 @@ export const menuRepo = {
   },
 
   async listPermissions(params: MenuPermissionListParams = {}): Promise<MenuPermissionListResult> {
-    const pageSize = params.pageSize ?? 20;
-    const page = params.page ?? 1;
+    const cacheKey = JSON.stringify({
+      search: params.search?.trim() ?? "",
+      moduleId: params.moduleId ?? null,
+      moduleCode: params.moduleCode ?? null,
+      action: params.action?.trim() ?? "",
+      category: params.category?.trim() ?? "",
+      resource: params.resource?.trim() ?? "",
+      status: params.status ?? "active",
+      page: params.page ?? 1,
+      pageSize: params.pageSize ?? 20,
+      sortBy: params.sortBy ?? "code",
+      sortDir: params.sortDir ?? "asc",
+    });
+    const cached = permissionListCache.get(cacheKey);
+    if (cached && Date.now() - cached.ts < PERMISSION_LIST_CACHE_TTL_MS) {
+      return cached.promise;
+    }
+    const requestPromise = (async () => {
+      const pageSize = params.pageSize ?? 20;
+      const page = params.page ?? 1;
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
@@ -799,10 +822,13 @@ export const menuRepo = {
       throw new Error(`permissions select failed: ${error.message}`);
     }
 
-    return {
-      data: safeArray<PermissionRow>(data).map(mapPermissionRow),
-      total: count ?? 0,
-    };
+      return {
+        data: safeArray<PermissionRow>(data).map(mapPermissionRow),
+        total: count ?? 0,
+      };
+    })();
+    permissionListCache.set(cacheKey, { ts: Date.now(), promise: requestPromise });
+    return requestPromise;
   },
 
   async listRoles() {

@@ -112,10 +112,32 @@ const normalizeStatusFilter = (value: "all" | "active" | "inactive") => {
   return value === "active" ? 1 : 0;
 };
 
+const permissionListCache = new Map<
+  string,
+  { ts: number; promise: Promise<PermissionListResult> }
+>();
+const PERMISSION_LIST_CACHE_TTL_MS = 5000;
+
 export const permissionsService = {
   async listPermissions(params: PermissionListParams): Promise<PermissionListResult> {
-    const page = params.page ?? 1;
-    const pageSize = params.pageSize ?? 10;
+    const cacheKey = JSON.stringify({
+      q: params.q?.trim() ?? "",
+      status: params.status ?? "all",
+      moduleId: params.moduleId ?? null,
+      moduleCode: params.moduleCode ?? null,
+      category: params.category ?? "all",
+      action: params.action ?? "",
+      permissionType: params.permissionType ?? "",
+      page: params.page ?? 1,
+      pageSize: params.pageSize ?? 10,
+    });
+    const cached = permissionListCache.get(cacheKey);
+    if (cached && Date.now() - cached.ts < PERMISSION_LIST_CACHE_TTL_MS) {
+      return cached.promise;
+    }
+    const requestPromise = (async () => {
+      const page = params.page ?? 1;
+      const pageSize = params.pageSize ?? 10;
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
     const isUuid = (value?: string | null) =>
@@ -193,10 +215,13 @@ export const permissionsService = {
       throw new Error(`permissions select failed: ${response.error.message}`);
     }
 
-    return {
-      data: (response.data || []).map(mapRow),
-      total: response.count ?? 0,
-    };
+      return {
+        data: (response.data || []).map(mapRow),
+        total: response.count ?? 0,
+      };
+    })();
+    permissionListCache.set(cacheKey, { ts: Date.now(), promise: requestPromise });
+    return requestPromise;
   },
 
   async getPermissionById(id: string): Promise<PermissionRecord | null> {
