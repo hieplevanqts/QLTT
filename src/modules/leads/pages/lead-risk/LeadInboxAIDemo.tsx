@@ -18,6 +18,7 @@ import {
   MapPin,
   Calendar,
   FileText,
+  Zap,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AIBulkActionBar } from "@/components/lead-risk/AIBulkActionBar";
@@ -262,7 +263,7 @@ export default function LeadInboxAIDemo() {
         <div className={styles.titleGroup}>
           <div className={styles.titleWithIcon}>
             <Bot size={28} style={{ color: 'var(--primary)' }} />
-            <h1 className={styles.title}>Trợ lý ảo của bạn</h1>
+            <h1 className={styles.title}>Trợ lý ảo của bạn 123</h1>
             <Sparkles size={20} style={{ color: 'rgba(251, 146, 60, 1)' }} />
           </div>
           <p className={styles.subtitle}>
@@ -278,16 +279,40 @@ export default function LeadInboxAIDemo() {
         </button>
       </div>
 
-      {/* Two Column Layout */}
-      <div className={styles.twoColumnLayout}>
-        {/* Left Column - AI Leads Feed */}
+      {/* News Ticker */}
+      <div className={styles.tickerContainer}>
+        <div className={styles.tickerLabel}>
+          <Zap size={16} fill="white" />
+          <span>Tin mới nhận ({aiLeads.length})</span>
+        </div>
+        <div className={styles.tickerTrackWrapper}>
+          <div className={styles.tickerTrack}>
+            {[...aiLeads, ...aiLeads, ...aiLeads, ...aiLeads].map((lead, index) => (
+              <div key={`${lead.id}-${index}`} className={styles.tickerItem} onClick={() => handleLeadClick(lead)} style={{ cursor: 'pointer' }}>
+                <span className={styles.tickerTime}>{formatTimestamp(lead.timestamp)}</span>
+                <span className={styles.tickerIcon}>•</span>
+                <strong>{lead.category}:</strong>
+                <span>{lead.title}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Three Column Layout */}
+      <div className={styles.threeColumnLayout}>
+
+        {/* Left Column (3 parts) - List */}
         <div className={styles.leftColumn}>
           <div className={styles.columnHeader}>
             <h2 className={styles.columnTitle}>
               <Activity size={18} />
-              Nguồn tin đã phân tích
+              Nguồn tin ({aiLeads.length})
             </h2>
-            <span className={styles.badge}>{aiLeads.filter(l => !l.isRead).length} mới</span>
+            <div style={{ display: 'flex', gap: 4 }}>
+              <span className={styles.badge} style={{ background: 'var(--muted)', color: 'var(--foreground)' }}>{aiLeads.filter(l => l.isRead).length} đã xem</span>
+              <span className={styles.badge}>{aiLeads.filter(l => !l.isRead).length} mới</span>
+            </div>
           </div>
 
           <div className={styles.leadsList}>
@@ -326,17 +351,11 @@ export default function LeadInboxAIDemo() {
                     </span>
                   </div>
 
-                  <div className={styles.leadAISummary}>
-                    <Sparkles size={14} style={{ color: 'var(--primary)', flexShrink: 0 }} />
-                    <span>{lead.ai.summary}</span>
-                  </div>
-
                   <div className={styles.leadFooter}>
                     <span className={`${styles.leadPriority} ${styles[`priority${lead.priority}`]}`}>
                       {getPriorityLabel(lead.priority)}
                     </span>
                     <span className={styles.leadConfidence}>{lead.ai.confidence}% tin cậy</span>
-                    <ChevronRight size={16} className={styles.leadArrow} />
                   </div>
 
                   {!lead.isRead && <div className={styles.unreadDot}></div>}
@@ -346,10 +365,11 @@ export default function LeadInboxAIDemo() {
           </div>
         </div>
 
-        {/* Right Column - Lead Details */}
-        <div className={styles.rightColumn}>
+        {/* Center Column (6 parts) - Dashboard or Detail */}
+        <div className={styles.centerColumn}>
           {selectedLead ? (
-            <div className={styles.detailsContainer}>
+            // Lead Detail View
+            <div className={styles.detailViewContainer}>
               {/* Header */}
               <div className={styles.detailsHeader}>
                 <div className={styles.detailsVerdictLarge} style={{
@@ -363,7 +383,13 @@ export default function LeadInboxAIDemo() {
                   })()}
                   <span>{getVerdictConfig(selectedLead.ai.verdict).text}</span>
                 </div>
-                <span className={styles.detailsTime}>{formatTimestamp(selectedLead.timestamp)}</span>
+
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <span className={styles.detailsTime}>{formatTimestamp(selectedLead.timestamp)}</span>
+                  <button onClick={() => setSelectedLead(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--muted-foreground)' }}>
+                    <XCircle size={20} />
+                  </button>
+                </div>
               </div>
 
               <div className={styles.detailsCode}>{selectedLead.code}</div>
@@ -407,29 +433,9 @@ export default function LeadInboxAIDemo() {
                   <Sparkles size={18} />
                   Phân tích AI
                 </h3>
-                <p className={styles.detailsText}>{selectedLead.ai.summary}</p>
-              </div>
-
-              {/* AI Metrics */}
-              <div className={styles.detailsSection}>
-                <h3 className={styles.detailsSectionTitle}>Số liệu đánh giá</h3>
-                <div className={styles.metricsGrid}>
-                  <div className={styles.metricCard}>
-                    <div className={styles.metricLabel}>Độ tin cậy AI</div>
-                    <div className={styles.metricValue}>{selectedLead.ai.confidence}%</div>
-                  </div>
-                  <div className={styles.metricCard}>
-                    <div className={styles.metricLabel}>Mức độ nghiêm trọng</div>
-                    <div className={styles.metricValue}>{selectedLead.ai.severity}</div>
-                  </div>
-                  <div className={styles.metricCard}>
-                    <div className={styles.metricLabel}>Chất lượng bằng chứng</div>
-                    <div className={styles.metricValue}>{selectedLead.ai.evidenceQuality}</div>
-                  </div>
-                  <div className={styles.metricCard}>
-                    <div className={styles.metricLabel}>Trường hợp tương tự</div>
-                    <div className={styles.metricValue}>{selectedLead.ai.similarCases} cases</div>
-                  </div>
+                <div className={styles.leadAISummary} style={{ fontSize: 'var(--text-md)', padding: 'var(--spacing-4)' }}>
+                  <Sparkles size={16} style={{ color: 'var(--primary)', marginTop: 4 }} />
+                  <p style={{ margin: 0 }}>{selectedLead.ai.summary}</p>
                 </div>
               </div>
 
@@ -439,7 +445,7 @@ export default function LeadInboxAIDemo() {
                   <h3 className={styles.detailsSectionTitle}>Hành vi vi phạm phát hiện</h3>
                   <ul className={styles.violationsList}>
                     {selectedLead.ai.violations.map((violation, idx) => (
-                      <li key={idx}>{violation}</li>
+                      <li key={idx}>• {violation}</li>
                     ))}
                   </ul>
                 </div>
@@ -449,21 +455,76 @@ export default function LeadInboxAIDemo() {
               <div className={styles.detailsSection}>
                 <h3 className={styles.detailsSectionTitle}>Đề xuất của AI</h3>
                 <div className={styles.recommendation}>
-                  <Bell size={16} />
+                  <Bell size={16} style={{ flexShrink: 0, marginTop: 2 }} />
                   <p className={styles.detailsText}>{selectedLead.ai.recommendation}</p>
                 </div>
               </div>
+            </div>
+          ) : (
+            // Default Dashboard View
+            <div className={styles.dashboardContainer}>
+              <div className={styles.dashboardHeader}>
+                <h2 className={styles.dashboardTitle}>Tổng quan rủi ro</h2>
+                <p className={styles.dashboardSubtitle}>Cập nhật thời gian thực từ các nguồn tin</p>
+              </div>
 
-              {/* Actions */}
-              <div className={styles.detailsActions}>
+              <div className={styles.statsGrid}>
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>Tổng tin hôm nay</span>
+                  <span className={styles.statValue}>{aiLeads.length}</span>
+                  <TrendingUp size={16} className="text-green-500" />
+                </div>
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>Rủi ro cao</span>
+                  <span className={styles.statValue} style={{ color: 'rgb(239, 68, 68)' }}>{aiLeads.filter(l => l.priority === 'high').length}</span>
+                  <AlertTriangle size={16} className="text-red-500" />
+                </div>
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>Đã xử lý</span>
+                  <span className={styles.statValue} style={{ color: 'rgb(34, 197, 94)' }}>{aiLeads.filter(l => l.isRead).length}</span>
+                  <CheckCircle size={16} className="text-blue-500" />
+                </div>
+              </div>
+
+              <div className={styles.filterSection}>
+                <div className={styles.filterTitle}>
+                  <Activity size={16} />
+                  Lọc theo ngành hàng / Danh mục
+                </div>
+                <div className={styles.filterTags}>
+                  {["Tất cả", "ATTP", "Hàng giả", "Gian lận giá", "Quảng cáo", "Dược phẩm", "Mỹ phẩm", "Điện tử"].map(tag => (
+                    <button key={tag} className={styles.filterTag}>
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Placeholder for a chart or map */}
+              <div style={{ height: 200, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted-foreground)' }}>
+                [Biểu đồ xu hướng vi phạm theo khu vực]
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right Column (3 parts) - Actions */}
+        <div className={styles.rightColumn}>
+          {selectedLead ? (
+            <>
+              <div className={styles.actionPanelTitle}>
+                Hành động xử lý
+              </div>
+
+              <div className={styles.actionButtonStack}>
                 {selectedLead.ai.verdict === "worthy" && (
                   <>
-                    <button className={styles.btnApprove} onClick={handleApproveAI}>
-                      <ThumbsUp size={16} />
-                      Chấp nhận đề xuất AI
+                    <button className={`${styles.actionButton} ${styles.btnApprove}`} onClick={handleApproveAI}>
+                      <ThumbsUp size={18} />
+                      Chấp nhận đề xuất
                     </button>
-                    <button className={styles.btnSecondary} onClick={() => navigate("/lead-risk/lead-detail-ai-demo")}>
-                      <Eye size={16} />
+                    <button className={`${styles.actionButton} ${styles.btnSecondary}`} onClick={() => navigate("/lead-risk/lead-detail-ai-demo")}>
+                      <Eye size={18} />
                       Xem chi tiết
                     </button>
                   </>
@@ -471,36 +532,56 @@ export default function LeadInboxAIDemo() {
 
                 {selectedLead.ai.verdict === "unworthy" && (
                   <>
-                    <button className={styles.btnReject} onClick={handleRejectLead}>
-                      <ThumbsDown size={16} />
-                      Đồng ý từ chối
+                    <button className={`${styles.actionButton} ${styles.btnReject}`} onClick={handleRejectLead}>
+                      <ThumbsDown size={18} />
+                      Từ chối tin
                     </button>
-                    <button className={styles.btnSecondary} onClick={() => navigate("/lead-risk/lead-detail-ai-demo")}>
-                      <Eye size={16} />
-                      Xem lại
+                    <button className={`${styles.actionButton} ${styles.btnSecondary}`} onClick={() => navigate("/lead-risk/lead-detail-ai-demo")}>
+                      <Eye size={18} />
+                      Xem chi tiết
                     </button>
                   </>
                 )}
 
                 {selectedLead.ai.verdict === "review" && (
                   <>
-                    <button className={styles.btnReview} onClick={handleRequestMore}>
-                      <AlertTriangle size={16} />
+                    <button className={`${styles.actionButton} ${styles.btnReview}`} onClick={handleRequestMore}>
+                      <AlertTriangle size={18} />
                       Yêu cầu bổ sung
                     </button>
-                    <button className={styles.btnSecondary} onClick={() => navigate("/lead-risk/lead-detail-ai-demo")}>
-                      <Eye size={16} />
+                    <button className={`${styles.actionButton} ${styles.btnSecondary}`} onClick={() => navigate("/lead-risk/lead-detail-ai-demo")}>
+                      <Eye size={18} />
                       Xem chi tiết
                     </button>
                   </>
                 )}
               </div>
-            </div>
+
+              <div className={styles.actionPanelTitle} style={{ marginTop: 'var(--spacing-8)' }}>
+                Số liệu phân tích
+              </div>
+              <div className={styles.metricsGrid} style={{ gridTemplateColumns: '1fr', gap: 'var(--spacing-3)' }}>
+                <div className={styles.metricCard}>
+                  <div className={styles.metricLabel}>Độ tin cậy AI</div>
+                  <div className={styles.metricValue}>{selectedLead.ai.confidence}%</div>
+                  <div style={{ height: 4, background: '#eee', marginTop: 8, borderRadius: 2 }}>
+                    <div style={{ height: '100%', width: `${selectedLead.ai.confidence}%`, background: 'var(--primary)', borderRadius: 2 }}></div>
+                  </div>
+                </div>
+                <div className={styles.metricCard}>
+                  <div className={styles.metricLabel}>Độ nghiêm trọng</div>
+                  <div className={styles.metricValue}>{selectedLead.ai.severity}</div>
+                </div>
+                <div className={styles.metricCard}>
+                  <div className={styles.metricLabel}>Tương tự</div>
+                  <div className={styles.metricValue}>{selectedLead.ai.similarCases} cases</div>
+                </div>
+              </div>
+            </>
           ) : (
-            <div className={styles.emptyDetails}>
-              <Bot size={64} style={{ color: 'var(--muted-foreground)', opacity: 0.3 }} />
-              <h3>Chọn một nguồn tin để xem chi tiết</h3>
-              <p>Click vào các nguồn tin bên trái để xem phân tích AI và đề xuất xử lý</p>
+            <div style={{ color: 'var(--muted-foreground)', textAlign: 'center', marginTop: 'var(--spacing-12)' }}>
+              <Info size={32} style={{ marginBottom: 8, opacity: 0.5 }} />
+              <p style={{ fontSize: 'var(--text-sm)' }}>Chọn một nguồn tin để xem các hành động khả dụng.</p>
             </div>
           )}
         </div>

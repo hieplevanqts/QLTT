@@ -95,6 +95,7 @@ function mapRowToRound(row: InspectionRoundResponse): InspectionRound {
     endDate: row.end_time || row.end_date || new Date().toISOString(),
     leadUnit: row.owner_dept || row.lead_unit || teamMeta.leadUnit || '',
     leadUnitId: row.department_id,
+    departmentId: row.department_id,
     teamLeader: teamMeta.teamLeader || '',
     team: teamMeta.team || [],
     teamSize: teamMeta.teamSize || 0,
