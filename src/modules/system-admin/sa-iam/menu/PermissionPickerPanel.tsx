@@ -95,6 +95,7 @@ export default function PermissionPickerPanel({
   const [selectedPermission, setSelectedPermission] = React.useState<MenuPermissionRecord | null>(
     null,
   );
+  const lastQueryRef = React.useRef<string | null>(null);
 
   const isGroupMenu = !menu?.path;
   const suggestedResource = React.useMemo(
@@ -122,6 +123,23 @@ export default function PermissionPickerPanel({
   }, [permissions, selectedPermissionId]);
 
   React.useEffect(() => {
+    const queryKey = JSON.stringify({
+      search,
+      moduleId,
+      action,
+      category,
+      resource,
+      status,
+      page,
+      pageSize,
+      smartRouteOnly,
+      isGroupMenu,
+      suggestedResource,
+    });
+    if (lastQueryRef.current === queryKey) {
+      return;
+    }
+    lastQueryRef.current = queryKey;
     const timer = setTimeout(() => {
       void (async () => {
         if (isGroupMenu) {

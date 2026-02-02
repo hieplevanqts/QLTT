@@ -93,6 +93,12 @@ const requestAdmin = async <T>(path: string, options?: RequestInit): Promise<T> 
   return (await response.json()) as T;
 };
 
+const requestAdminRaw = async (path: string, options?: RequestInit) => {
+  const response = await fetch(`${API_BASE}${path}`, options);
+  const payload = await response.json().catch(() => ({}));
+  return { response, payload };
+};
+
 const mapRow = (row: any): UserRecord => ({
   _id: row._id ?? row.id ?? "",
   id: row._id ?? row.id ?? "",
@@ -579,6 +585,38 @@ export const usersService = {
       throw new Error("Không thể xác định dữ liệu người dùng sau khi cập nhật.");
     }
     return mapRow(row);
+  },
+
+  async resetUserPassword(userId: string, password: string): Promise<void> {
+    if (!userId) {
+      throw new Error("Thiếu mã người dùng để khởi tạo mật khẩu.");
+    }
+    const nextPassword = password?.trim();
+    if (!nextPassword) {
+      throw new Error("Mật khẩu mới không hợp lệ.");
+    }
+
+    // 1) Preferred endpoint: reset-password
+    const firstTry = await requestAdminRaw(`/system-admin/admin/users/${userId}/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: nextPassword }),
+    });
+    if (firstTry.response.ok) return;
+
+    // 2) Fallback: update user with default_password
+    const fallback = await requestAdminRaw(`/system-admin/admin/users/${userId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ default_password: nextPassword }),
+    });
+    if (fallback.response.ok) return;
+
+    const message =
+      firstTry.payload?.message ||
+      fallback.payload?.message ||
+      "Không thể khởi tạo mật khẩu.";
+    throw new Error(message);
   },
 
   async setUserStatus(id: string, status: UserStatusValue): Promise<void> {

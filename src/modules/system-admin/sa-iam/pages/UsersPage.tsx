@@ -22,6 +22,7 @@ import {
   TreeSelect,
   Tooltip,
   Typography,
+  message,
   type InputRef,
   type MenuProps,
 } from "antd";
@@ -34,6 +35,7 @@ import {
   UnlockOutlined,
   TeamOutlined,
   MoreOutlined,
+  KeyOutlined,
 } from "@ant-design/icons";
 
 import { PermissionGate, EmptyState } from "../../_shared";
@@ -84,6 +86,7 @@ const PERM_USER_LOCK = "system-admin.user.lock.update";
 const PERM_USER_ROLES_UPDATE = "system-admin.user_roles.update";
 const PERM_USER_RESET_PASSWORD = "system-admin.user.reset_password.update";
 const PERM_USER_DELETE = "system-admin.user.delete";
+const DEFAULT_RESET_PASSWORD = "Vhv@1234";
 
 const inferScopeLevelFromPath = (path?: string | null): number | null => {
   if (!path) return null;
@@ -455,6 +458,35 @@ export default function UsersPage() {
     }
   };
 
+  const handleResetPassword = async (record: UserRecord) => {
+    Modal.confirm({
+      title: "Khởi tạo mật khẩu",
+      content: (
+        <div className="space-y-2">
+          <div>
+            Reset mật khẩu cho <strong>{record.username || record.email || record.id}</strong> về
+            mặc định <strong>{DEFAULT_RESET_PASSWORD}</strong>?
+          </div>
+          <div className="text-xs text-slate-500">
+            Người dùng sẽ cần đổi mật khẩu sau khi đăng nhập.
+          </div>
+        </div>
+      ),
+      okText: "Khởi tạo",
+      cancelText: "Hủy",
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          await usersService.resetUserPassword(record.id, DEFAULT_RESET_PASSWORD);
+          message.success("Đã khởi tạo mật khẩu.");
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : "Không thể khởi tạo mật khẩu.";
+          message.error(msg);
+        }
+      },
+    });
+  };
+
   const isTargetSuperAdmin = React.useCallback((record: UserRecord) => {
     return (record.roles || []).some(
       (role) => (role.code || "").toLowerCase() === "super-admin",
@@ -760,7 +792,7 @@ export default function UsersPage() {
                 {
                   title: "Thao tác",
                   key: "actions",
-                  width: 180,
+                  width: 220,
                   fixed: "right",
                   render: (_: unknown, record: UserRecord) => {
                     const scopeReason = getActionScopeReason(record);
@@ -771,6 +803,9 @@ export default function UsersPage() {
                     const canLockByPerm =
                       hasPerm(PERM_USER_LOCK) ||
                       (isPermissionMissing(PERM_USER_LOCK) && hasPerm(PERM_USER_UPDATE));
+                    const canResetByPerm =
+                      hasPerm(PERM_USER_RESET_PASSWORD) ||
+                      (isPermissionMissing(PERM_USER_RESET_PASSWORD) && hasPerm(PERM_USER_UPDATE));
 
                     const viewReason = scopeReason ?? getPermissionReason(PERM_USER_READ, canViewByPerm);
                     const assignReason =
@@ -779,12 +814,15 @@ export default function UsersPage() {
                     const deleteReason =
                       scopeReason ?? getPermissionReason(PERM_USER_DELETE, canDeleteByPerm);
                     const lockReason = scopeReason ?? getPermissionReason(PERM_USER_LOCK, canLockByPerm);
+                    const resetReason =
+                      scopeReason ?? getPermissionReason(PERM_USER_RESET_PASSWORD, canResetByPerm);
 
                     const canView = !viewReason;
                     const canAssign = !assignReason;
                     const canEditAction = !editReason;
                     const canDeleteAction = !deleteReason;
                     const canToggle = !lockReason;
+                    const canResetAction = !resetReason;
 
                     return (
                       <Space>
@@ -843,6 +881,15 @@ export default function UsersPage() {
                             disabled: !canToggle,
                           },
                           lockReason,
+                        )}
+                        {renderIconButton(
+                          {
+                            title: "Khởi tạo mật khẩu",
+                            icon: <KeyOutlined />,
+                            onClick: () => handleResetPassword(record),
+                            disabled: !canResetAction,
+                          },
+                          resetReason,
                         )}
                         <Dropdown menu={getMoreActions(record)}>
                           <Button type="text" size="small" icon={<MoreOutlined />} />
