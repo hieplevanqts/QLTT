@@ -15,7 +15,7 @@ import {
 import * as React from "react";
 import type { MenuRecord, ModuleRecord, PermissionRecord } from "../menu.types";
 import { AssignedPermissionsTable } from "./AssignedPermissionsTable";
-import { RolePreviewTree } from "./RolePreviewTree";
+import { RolePreviewPanel, type RolePreviewPanelProps } from "./RolePreviewPanel";
 import { MenuHistoryTable } from "./MenuHistoryTable";
 import { IconPickerModal } from "../../components/IconPickerModal";
 import { getIconComponent } from "../../components/iconRegistry";
@@ -29,10 +29,9 @@ export interface MenuDetailTabsProps {
   assignedPermissions: PermissionRecord[];
   onAssignSelected?: (ids?: string[]) => void;
   onRemoveAssigned?: (permissionId: string) => void;
-  previewTreeData?: any[];
-  previewRoles?: Array<{ _id: string; name: string }>;
-  previewRoleId?: string;
-  onPreviewRoleChange?: (roleId?: string) => void;
+  previewPanel?: RolePreviewPanelProps;
+  activeTabKey?: string;
+  onTabChange?: (key: string) => void;
   historyData?: any[];
   historyLoading?: boolean;
 }
@@ -45,10 +44,9 @@ export const MenuDetailTabs: React.FC<MenuDetailTabsProps> = ({
   assignedPermissions,
   onAssignSelected,
   onRemoveAssigned,
-  previewTreeData,
-  previewRoles,
-  previewRoleId,
-  onPreviewRoleChange,
+  previewPanel,
+  activeTabKey,
+  onTabChange,
   historyData,
   historyLoading,
 }) => {
@@ -406,11 +404,14 @@ export const MenuDetailTabs: React.FC<MenuDetailTabsProps> = ({
     }
   }, [menu, moduleKey, moduleReady, modules, onAssignSelected, deriveResourceFromPath]);
 
+  const currentTab = activeTabKey ?? activeTab;
+  const handleTabChange = onTabChange ?? setActiveTab;
+
   return (
     <>
       <Tabs
-        activeKey={activeTab}
-        onChange={setActiveTab}
+        activeKey={currentTab}
+        onChange={handleTabChange}
         items={[
         {
           key: "info",
@@ -581,22 +582,11 @@ export const MenuDetailTabs: React.FC<MenuDetailTabsProps> = ({
         },
         {
           key: "preview",
-          label: "Preview theo vai trò",
-          children: (
-            <Space orientation="vertical" style={{ width: "100%" }} size={12}>
-              <Select
-                placeholder="Chọn vai trò để preview"
-                value={previewRoleId}
-                onChange={(value) => onPreviewRoleChange?.(value)}
-                allowClear
-                options={(previewRoles ?? []).map((role) => ({
-                  label: role.name,
-                  value: role._id,
-                }))}
-                style={{ maxWidth: 360 }}
-              />
-              <RolePreviewTree treeData={previewTreeData ?? []} />
-            </Space>
+          label: "Xem menu theo vai trò",
+          children: previewPanel ? (
+            <RolePreviewPanel {...previewPanel} />
+          ) : (
+            <Alert type="info" message="Chưa có dữ liệu preview." />
           ),
         },
         {
