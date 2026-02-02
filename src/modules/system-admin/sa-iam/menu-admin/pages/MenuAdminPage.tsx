@@ -53,7 +53,6 @@ const toTreeData = (
       <div className="flex items-center gap-2">
         {Icon ? <Icon size={16} /> : null}
         <span>{node.name}</span>
-        {node.path ? <span style={{ color: "#1677ff" }}>{node.path}</span> : null}
         {showPermissionStatus ? (
           <Tag color={hasPermission ? "green" : "orange"}>
             {hasPermission ? "Đã gán quyền" : "Chưa gán quyền"}
