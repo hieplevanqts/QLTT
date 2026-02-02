@@ -891,7 +891,21 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                 />,
                 true
               )}
-
+              {renderFieldWithIndicator(
+                'ownerPhone',
+                'Số điện thoại chủ cơ sở *',
+                <>
+                  <Input
+                    id="ownerPhone"
+                    type="tel"
+                    className={`placeholder:text-gray-500 ${errors.ownerPhone ? 'border-red-500' : ''}`}
+                    value={formData.ownerPhone || ''}
+                    onChange={(e) => handleFieldChange('ownerPhone', e.target.value)}
+                    placeholder="Nhập số điện thoại"
+                  />
+                </>,
+                true
+              )}
               {renderFieldWithIndicator(
                 'ownerBirthYear',
                 'Năm sinh chủ hộ',
@@ -917,21 +931,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                 />
               )}
 
-              {renderFieldWithIndicator(
-                'ownerPhone',
-                'Số điện thoại chủ cơ sở *',
-                <>
-                  <Input
-                    id="ownerPhone"
-                    type="tel"
-                    className={`placeholder:text-gray-500 ${errors.ownerPhone ? 'border-red-500' : ''}`}
-                    value={formData.ownerPhone || ''}
-                    onChange={(e) => handleFieldChange('ownerPhone', e.target.value)}
-                    placeholder="Nhập số điện thoại"
-                  />
-                </>,
-                true
-              )}
+
             </div>
           )}
 
