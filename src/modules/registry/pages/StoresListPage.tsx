@@ -908,7 +908,12 @@ const departmentPath = user?.app_metadata?.department?.path ;
         actions.push(
           CommonActions.view(() => navigate(`/registry/stores/${store.id}`)),
           CommonActions.resume(() => handleResume(store)),
-          { ...CommonActions.delete(() => handleClose(store)), label: 'Ngừng hoạt động', separator: true }
+          {
+            ...CommonActions.delete(() => handleClose(store)),
+            label: 'Ngừng hoạt động',
+            icon: <XCircle size={16} />,
+            separator: true,
+          }
         );
         break;
 
