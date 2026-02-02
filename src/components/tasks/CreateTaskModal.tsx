@@ -20,6 +20,7 @@ interface CreateTaskModalProps {
   taskId?: string; // ID of the task to edit
   defaultRoundId?: string;
   defaultPlanId?: string;
+  defaultDepartmentId?: string;
 }
 
 export interface CreateTaskFormData {
@@ -60,7 +61,7 @@ const getTodayDate = () => {
   return `${year}-${month}-${day}`;
 };
 
-export function CreateTaskModal({ isOpen, onClose, onSubmit, task, taskId, defaultRoundId, defaultPlanId }: CreateTaskModalProps) {
+export function CreateTaskModal({ isOpen, onClose, onSubmit, task, taskId, defaultRoundId, defaultPlanId, defaultDepartmentId }: CreateTaskModalProps) {
   // Set giá trị mặc định ngay từ đầu
   const [formData, setFormData] = useState<CreateTaskFormData>({
     title: '',
@@ -74,7 +75,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, task, taskId, defau
     status: 'not_started', // Mặc định Chưa bắt đầu
     dueDate: '',
     startDate: getTodayDate(), // Mặc định ngày hiện tại
-    departmentId: '', // Initialize departmentId
+    departmentId: defaultDepartmentId || '', // Initialize departmentId
   });
 
   const isEditMode = !!task;
@@ -125,10 +126,11 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, task, taskId, defau
       setFormData(prev => ({
         ...prev,
         roundId: defaultRoundId || '',
-        planId: defaultPlanId || ''
+        planId: defaultPlanId || '',
+        departmentId: defaultDepartmentId || prev.departmentId // Preserve if already set, or use default
       }));
     }
-  }, [isOpen, task, defaultRoundId, defaultPlanId]);
+  }, [isOpen, task, defaultRoundId, defaultPlanId, defaultDepartmentId]);
 
   // Populate data when in edit mode
   useEffect(() => {
