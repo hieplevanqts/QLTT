@@ -20,6 +20,18 @@ on:
         required: true
       PUBLIC_URL:
         required: true
+      SUPABASE_URL:
+        required: true
+      SUPABASE_SERVICE_ROLE_KEY:
+        required: true
+      VITE_SYSTEM_ADMIN_API:
+        required: true
+      VITE_GOOGLE_MAPS_API_KEY:
+        required: true
+      VITE_GEOCODER_PROVIDER:
+        required: true
+      VITE_NOMINATIM_EMAIL:
+        required: true
 
 jobs:
   build-and-deploy:
@@ -81,6 +93,12 @@ jobs:
             --build-arg VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} \
             --build-arg VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} \
             --build-arg PUBLIC_URL=${{ secrets.PUBLIC_URL }} \
+            --build-arg SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
+            --build-arg SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} \
+            --build-arg VITE_SYSTEM_ADMIN_API=${{ secrets.VITE_SYSTEM_ADMIN_API }} \
+            --build-arg VITE_GOOGLE_MAPS_API_KEY=${{ secrets.VITE_GOOGLE_MAPS_API_KEY }} \
+            --build-arg VITE_GEOCODER_PROVIDER=${{ secrets.VITE_GEOCODER_PROVIDER }} \
+            --build-arg VITE_NOMINATIM_EMAIL=${{ secrets.VITE_NOMINATIM_EMAIL }} \
             -t ${{ env.FULL_IMAGE_FE }} \
             -f Dockerfile .
 
