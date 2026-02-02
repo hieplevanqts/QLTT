@@ -63,24 +63,222 @@
   color: var(--primary);
 }
 
-/* Two Column Layout */
-.twoColumnLayout {
+/* Three Column Layout - 3:6:3 Ratio */
+.threeColumnLayout {
   display: grid;
-  grid-template-columns: 420px 1fr;
+  grid-template-columns: 25% 50% 25%;
   gap: 0;
   height: calc(100vh - 160px);
+  /* Adjust based on header + ticker height */
   overflow: hidden;
+  background: var(--background);
 }
 
-/* Left Column - Leads Feed */
+/* Left Column - Leads List (3 parts) */
 .leftColumn {
-  background: var(--card);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: var(--card);
 }
 
+/* Center Column - Main Content (6 parts) */
+.centerColumn {
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  background: var(--background);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Right Column - Actions (3 parts) */
+.rightColumn {
+  background: var(--background);
+  /* Or slightly different shade? */
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-4);
+}
+
+/* Dashboard Styles (Center Column Default) */
+.dashboardContainer {
+  padding: var(--spacing-6);
+}
+
+.dashboardHeader {
+  margin-bottom: var(--spacing-6);
+}
+
+.dashboardTitle {
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--spacing-2) 0;
+}
+
+.dashboardSubtitle {
+  color: var(--muted-foreground);
+  font-size: var(--text-sm);
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-4);
+  margin-bottom: var(--spacing-8);
+}
+
+.statCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--spacing-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.statValue {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--primary);
+}
+
+.statLabel {
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+}
+
+.filterSection {
+  margin-bottom: var(--spacing-6);
+}
+
+.filterTitle {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-3);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.filterTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+}
+
+.filterTag {
+  padding: var(--spacing-1-5) var(--spacing-3);
+  background: var(--secondary);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.filterTag:hover {
+  background: var(--muted);
+  border-color: var(--border);
+}
+
+.filterTagActive {
+  background: var(--primary);
+  color: white;
+}
+
+/* Center Detail View Details */
+.detailViewContainer {
+  padding: var(--spacing-6);
+}
+
+/* Right Column Action Panel */
+.actionPanelTitle {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  margin-bottom: var(--spacing-4);
+  padding-bottom: var(--spacing-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.actionButtonStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.actionButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3);
+  border-radius: var(--radius);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+/* Responsive adjustment */
+@media (max-width: 1280px) {
+  .threeColumnLayout {
+    grid-template-columns: 30% 70% 0;
+    /* Hide right column or stack it? Standard approach for smaller screens */
+  }
+
+  .threeColumnLayout.showRight {
+    /* Class to toggle right panel on mobile if needed */
+    grid-template-columns: 0 50% 50%;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: var(--spacing-3);
+  }
+
+  .backButton {
+    width: 100%;
+  }
+
+  .twoColumnLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .leftColumn {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    max-height: 40vh;
+  }
+
+  .rightColumn {
+    padding: var(--spacing-4);
+  }
+
+  .metricsGrid,
+  .detailsInfoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .detailsActions {
+    flex-direction: column;
+  }
+
+  .detailsActions button {
+    width: 100%;
+  }
+}
+
+
+/* Column Components */
 .columnHeader {
   display: flex;
   align-items: center;
@@ -279,18 +477,97 @@
   }
 }
 
-/* Right Column - Details */
-.rightColumn {
-  background: var(--background);
-  overflow-y: auto;
-  padding: var(--spacing-6);
+/* Ticker Styles */
+.tickerContainer {
+  background: linear-gradient(90deg, rgba(0, 92, 182, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  height: 40px;
+  position: relative;
 }
 
-.detailsContainer {
-  max-width: 800px;
-  margin: 0 auto;
+.tickerLabel {
+  background: var(--primary);
+  color: white;
+  padding: 0 var(--spacing-4);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  z-index: 10;
+  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+  position: relative;
 }
 
+.tickerLabel::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -12px;
+  width: 12px;
+  height: 100%;
+  background: var(--primary);
+  clip-path: polygon(0 0, 0 100%, 100% 100%);
+}
+
+.tickerTrackWrapper {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  mask-image: linear-gradient(to right, transparent, black 20px, black 95%, transparent);
+}
+
+.tickerTrack {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-8);
+  padding-left: var(--spacing-4);
+  white-space: nowrap;
+  animation: scrollTicker 40s linear infinite;
+}
+
+.tickerItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--text-sm);
+  color: var(--foreground);
+}
+
+.tickerIcon {
+  color: var(--primary);
+}
+
+.tickerTime {
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+  font-family: monospace;
+}
+
+.tickerContainer:hover .tickerTrack {
+  animation-play-state: paused;
+}
+
+@keyframes scrollTicker {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Detail View Styles */
 .detailsHeader {
   display: flex;
   align-items: center;
@@ -328,7 +605,6 @@
   line-height: 1.4;
 }
 
-/* Info Grid */
 .detailsInfoGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -363,7 +639,6 @@
   color: var(--foreground);
 }
 
-/* Details Section */
 .detailsSection {
   margin-bottom: var(--spacing-6);
 }
@@ -385,10 +660,36 @@
   margin: 0;
 }
 
-/* Metrics Grid */
+.violationsList {
+  margin: 0;
+  padding-left: var(--spacing-5);
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  line-height: 1.8;
+}
+
+.violationsList li {
+  margin-bottom: var(--spacing-1-5);
+}
+
+.violationsList li:last-child {
+  margin-bottom: 0;
+}
+
+.recommendation {
+  display: flex;
+  gap: var(--spacing-3);
+  padding: var(--spacing-4);
+  background: rgba(59, 130, 246, 0.05);
+  border-left: 3px solid rgba(59, 130, 246, 1);
+  border-radius: var(--radius);
+  color: rgba(59, 130, 246, 1);
+}
+
+/* Metrics styles for Right Column */
 .metricsGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: 1fr;
   gap: var(--spacing-3);
 }
 
@@ -412,58 +713,7 @@
   color: var(--foreground);
 }
 
-/* Violations List */
-.violationsList {
-  margin: 0;
-  padding-left: var(--spacing-5);
-  font-size: var(--text-sm);
-  color: var(--foreground);
-  line-height: 1.8;
-}
-
-.violationsList li {
-  margin-bottom: var(--spacing-1-5);
-}
-
-.violationsList li:last-child {
-  margin-bottom: 0;
-}
-
-/* Recommendation */
-.recommendation {
-  display: flex;
-  gap: var(--spacing-3);
-  padding: var(--spacing-4);
-  background: rgba(59, 130, 246, 0.05);
-  border-left: 3px solid rgba(59, 130, 246, 1);
-  border-radius: var(--radius);
-  color: rgba(59, 130, 246, 1);
-}
-
-/* Details Actions */
-.detailsActions {
-  display: flex;
-  gap: var(--spacing-3);
-  padding-top: var(--spacing-6);
-  border-top: 1px solid var(--border);
-  margin-top: var(--spacing-6);
-}
-
-.detailsActions button {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-3) var(--spacing-5);
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-semibold);
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid transparent;
-  flex: 1;
-  justify-content: center;
-}
-
+/* Action Buttons Colors */
 .btnApprove {
   background: rgba(34, 197, 94, 1);
   color: white;
@@ -534,55 +784,12 @@
   max-width: 400px;
 }
 
-/* Responsive */
-@media (max-width: 1024px) {
-  .twoColumnLayout {
-    grid-template-columns: 380px 1fr;
+@keyframes scrollTicker {
+  0% {
+    transform: translateX(0);
   }
 
-  .metricsGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .detailsInfoGrid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .header {
-    flex-direction: column;
-    gap: var(--spacing-3);
-  }
-
-  .backButton {
-    width: 100%;
-  }
-
-  .twoColumnLayout {
-    grid-template-columns: 1fr;
-  }
-
-  .leftColumn {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-    max-height: 40vh;
-  }
-
-  .rightColumn {
-    padding: var(--spacing-4);
-  }
-
-  .metricsGrid,
-  .detailsInfoGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .detailsActions {
-    flex-direction: column;
-  }
-
-  .detailsActions button {
-    width: 100%;
+  100% {
+    transform: translateX(-50%);
   }
 }

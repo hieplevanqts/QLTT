@@ -20,6 +20,18 @@ on:
         required: true
       PUBLIC_URL:
         required: true
+      SUPABASE_URL:
+        required: true
+      SUPABASE_SERVICE_ROLE_KEY:
+        required: true
+      VITE_SYSTEM_ADMIN_API:
+        required: true
+      VITE_GOOGLE_MAPS_API_KEY:
+        required: true
+      VITE_GEOCODER_PROVIDER:
+        required: true
+      VITE_NOMINATIM_EMAIL:
+        required: true
 
 jobs:
   build-and-deploy:

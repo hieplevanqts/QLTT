@@ -7,7 +7,7 @@ import styles from './AdvancedFilterModal.module.css';
 export interface FilterConfig {
   key: string;
   label: string;
-  type: 'text' | 'select' | 'daterange' | 'multiselect' | 'infinite-scroll-select';
+  type: 'text' | 'select' | 'daterange' | 'multiselect' | 'infinite-scroll-select' | 'date';
   options?: { value: string; label: string; subtitle?: string }[];
   placeholder?: string;
   // For infinite-scroll-select
@@ -62,7 +62,7 @@ export default function AdvancedFilterModal({
   const handleClear = () => {
     const clearedValues: Record<string, any> = {};
     filters.forEach(filter => {
-      if (filter.type === 'daterange') {
+      if (filter.type === 'daterange' || filter.type === 'date') {
         clearedValues[filter.key] = { startDate: null, endDate: null };
       } else if (filter.type === 'multiselect') {
         clearedValues[filter.key] = [];
@@ -120,6 +120,20 @@ export default function AdvancedFilterModal({
               <DateRangePicker
                 value={(value as DateRange) || { startDate: null, endDate: null }}
                 onChange={(dateRange) => handleChange(filter.key, dateRange)}
+              />
+            </div>
+          </div>
+        );
+
+      case 'date':
+        return (
+          <div className={styles.dateRangeInputs}>
+            <div className={styles.dateInputGroup}>
+              <DateRangePicker
+                value={(value as DateRange) || { startDate: null, endDate: null }}
+                onChange={(dateRange) => handleChange(filter.key, dateRange)}
+                mode="single"
+                placeholder="Chọn ngày"
               />
             </div>
           </div>
