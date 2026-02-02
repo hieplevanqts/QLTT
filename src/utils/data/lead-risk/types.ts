@@ -35,13 +35,15 @@ export type LeadSource =
 // LEAD CATEGORY
 // ========================================
 export type LeadCategory =
-  | 'counterfeit'       // Hàng giả
-  | 'smuggling'         // Buôn lậu
-  | 'illegal_trading'   // Kinh doanh bất hợp pháp
-  | 'food_safety'       // An toàn thực phẩm
-  | 'price_fraud'       // Gian lận giá cả
-  | 'unlicensed'        // Không giấy phép
-  | 'other';            // Khác
+  | 'Niêm yết giá không đúng'
+  | 'Vi phạm VSATTP'
+  | 'Hàng giả, hàng nhái'
+  | 'Hàng không rõ nguồn gốc'
+  | 'Hàng hết hạn'
+  | 'Gian lận thương mại'
+  | 'Vi phạm quy định kinh doanh'
+  | 'Khác'
+  | string; // Allow for potential legacy or other values
 
 // ========================================
 // LEAD INTERFACE
@@ -54,6 +56,7 @@ export interface Lead {
   description: string;
   status: LeadStatus;
   urgency?: LeadUrgency;           // Optional - không bắt buộc
+  severity?: LeadUrgency;          // Alias for urgency in some contexts
   confidence: LeadConfidence;
   source: LeadSource | string;     // Allow custom string sources
   category: LeadCategory | string; // Allow custom categories
@@ -98,6 +101,7 @@ export interface Lead {
   // Metadata
   reportedBy?: string;
   reportedAt: Date;
+  occurred_at?: Date;
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;
@@ -112,6 +116,7 @@ export interface Lead {
   isWatched: boolean;
   hasAlert: boolean;
   rejection_reason?: string;
+  evidences?: any[];
 }
 
 // ========================================

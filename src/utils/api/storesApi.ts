@@ -63,14 +63,21 @@ export async function fetchStores(
     hasComplaints?: boolean;
     riskLevel?: string;
     search?: string;
-    // Optional Supabase style filter for department path, e.g. 'like.QT*'
-    department_path?: string;
-  }
+  },
+  department_path?: string,
+  deleted_at?: string
 ): Promise<{ data: Store[]; total: number }> {
   try {
     // Build base URL with pagination (supports unlimited records)
     // Join with wards table to get ward name
-    let url = `${SUPABASE_REST_URL}/merchants?limit=${limit}&offset=${offset}&order=created_at.desc&select=*,wards(_id,name)`;
+    // let url = `${SUPABASE_REST_URL}/merchants?limit=${limit}&offset=${offset}&order=created_at.desc&select=*,wards(_id,name)`;
+    let url = `${SUPABASE_REST_URL}/merchant_filter_view_ext` +
+  `?select=*,wards(_id,name)` +
+  `&limit=${limit}` +
+  `&offset=${offset}` +
+  `&order=created_at.desc` +
+  `&department_path=like.${department_path}*` +
+  `&deleted_at=is.null`;
 
     // Apply filters if provided
     if (filters?.status) {
@@ -208,30 +215,60 @@ export async function fetchStores(
 
 /**
  * 📊 Fetch store statistics
- * @param filters - Optional filters
+ * @param filters - Optional filters (status, province_id, businessType, search, department_path)
+ * @param department_path - Department path for filtering
  * @returns Statistics object with counts by status
  */
 export async function fetchStoresStats(filters?: {
+  status?: string;
+  province_id?: string;
   district?: string;
-}): Promise<{
+  businessType?: string;
+  search?: string;
+ 
+  department_path?: string;
+}, department_path?: string): Promise<{
   total: number;
   active: number;
   pending: number;
   suspended: number;
-  closed: number;
+  refuse: number;
+   deleted_at?: string;
   rejected: number;
 }> {
   try {
-    // Build URL with simple select to count by status
-    let url = `${SUPABASE_REST_URL}/merchants?select=status`;
+    // Helper function to build query string with filters
+    const buildCountUrl = (additionalStatus?: string) => {
+      let url = `${SUPABASE_REST_URL}/merchant_filter_view_ext?select=status&deleted_at=is.null`;
 
-    if (filters?.district) {
-      url += `&district=eq.${encodeURIComponent(filters.district)}`;
-    }
+      // Department path filter - MUST be first to match fetchStores logic
+      if (department_path) {
+        url += `&department_path=like.${encodeURIComponent(department_path)}*`;
+      }
+
+      // Apply all filters to ensure stats match the list view
+      if (filters?.province_id) {
+        url += `&province_id=eq.${encodeURIComponent(filters.province_id)}`;
+      }
+      if (filters?.businessType) {
+        url += `&business_type=eq.${encodeURIComponent(filters.businessType)}`;
+      }
+      if (filters?.search) {
+        const searchTerms = encodeURIComponent(`*${filters.search}*`);
+        url += `&or=(business_name.ilike.${searchTerms},tax_code.ilike.${searchTerms},address.ilike.${searchTerms})`;
+      }
+      
+      // Add status filter if provided
+      if (additionalStatus) {
+        url += `&status=eq.${additionalStatus}`;
+      }
+
+      return url;
+    };
 
     // Optimization: Just get counts by status using count=exact and limit=0
     const fetchStatusCount = async (status: string) => {
-      const statusUrl = `${SUPABASE_REST_URL}/merchants?select=*&status=eq.${status}&limit=1`;
+      const statusUrl = buildCountUrl(status);
       const res = await fetch(statusUrl, {
         method: 'GET',
         headers: { ...getHeaders(), 'Prefer': 'count=exact' },
@@ -240,28 +277,19 @@ export async function fetchStoresStats(filters?: {
       return parseInt(range?.split('/')?.[1] || '0', 10);
     };
 
-    const fetchTotalCount = async () => {
-      const totalUrl = `${SUPABASE_REST_URL}/merchants?select=*&limit=1`;
-      const res = await fetch(totalUrl, {
-        method: 'GET',
-        headers: { ...getHeaders(), 'Prefer': 'count=exact' },
-      });
-      const range = res.headers.get('content-range');
-      return parseInt(range?.split('/')?.[1] || '0', 10);
-    };
-
-    const [total, active, pending, suspended, refuse, rejected] = await Promise.all([
-      fetchTotalCount(),
+    const [active, pending, suspended, refuse, rejected] = await Promise.all([
       fetchStatusCount('active'),
       fetchStatusCount('pending'),
       fetchStatusCount('suspended'),
       fetchStatusCount('refuse'),
       fetchStatusCount('rejected'),
-    ]);
+  ]);
 
+    // Ensure total matches sum of statuses
+    const calculatedTotal = active + pending + suspended + refuse + rejected;
 
     return {
-      total,
+      total: calculatedTotal,
       active,
       pending,
       suspended,
@@ -286,7 +314,7 @@ export async function fetchStoresStats(filters?: {
  */
 export async function fetchStoreById(storeId: string | number): Promise<Store | null> {
   try {
-    const url = `${SUPABASE_REST_URL}/merchants?_id=eq.${storeId}&select=*&limit=1`;
+    const url = `${SUPABASE_REST_URL}/merchants?_id=eq.${storeId}&select=*&limit=1&deleted_at=is.null`;
 
     const response = await fetch(url, {
       method: 'GET',
@@ -464,6 +492,7 @@ export async function updateMerchant(
     p_owner_birth_year?: number;
     p_owner_identity_no?: string;
     p_owner_email?: string;
+    p_delete_at?: string | null;
   }
 ): Promise<any> {
   try {
@@ -497,6 +526,7 @@ export async function updateMerchant(
       p_tax_code: data.p_tax_code ?? null,
       p_ward_id: data.p_ward_id ?? null,
       p_website: data.p_website ?? null,
+      p_delete_at : data.p_delete_at ?? null,
     };
 
     const response = await fetch(url, {
@@ -605,6 +635,66 @@ export async function fetchMerchantLicenses(merchantId: string): Promise<any[]> 
     return [];
   }
 }
+
+export interface MerchantChangeLog {
+  _id: string;
+  merchant_id: string;
+  user_id: string | null;
+  user_email: string | null;
+  feild_name?: string | null;
+  feild_code?: string | null;
+  field_name?: string | null;
+  old_data?: string | null;
+  new_data?: string | null;
+  action?: string;
+  status?: number | null;
+  entity_type?: string;
+  entity_id?: string | null;
+  note?: string | null;
+  created_at: string;
+  updated_at?: string;
+}
+
+/**
+ * 🧾 Fetch merchant change history logs via RPC
+ * Calls get_merchant_histories RPC function with merchant ID parameter
+ */
+export async function fetchMerchantChangeLogs(merchantId: string): Promise<MerchantChangeLog[]> {
+  try {
+    const url = `${SUPABASE_REST_URL}/rpc/get_merchant_histories`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({
+        p_merchant_id: merchantId,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ [fetchMerchantChangeLogs] API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText,
+      });
+      return [];
+    }
+
+    const data = await response.json();
+    if (Array.isArray(data)) {
+      console.log('✅ [fetchMerchantChangeLogs] Fetched', data.length, 'change logs for merchant:', merchantId);
+      return data as MerchantChangeLog[];
+    }
+
+    return [];
+  } catch (error: any) {
+    console.error('❌ [fetchMerchantChangeLogs] Error:', {
+      merchant_id: merchantId,
+      error_message: error.message,
+    });
+    return [];
+  }
+}
 /**
  * 📝 Upsert a merchant license via RPC
  * @param data - License data matching upsert_merchant_license RPC parameters
@@ -639,7 +729,21 @@ export async function upsertMerchantLicense(data: {
   try {
     const url = `${SUPABASE_REST_URL}/rpc/upsert_merchant_license`;
 
-    const body = JSON.stringify(data);
+    // Sanitize date fields - convert empty strings to undefined to avoid PostgreSQL date parsing errors
+    const sanitizedData = { ...data };
+    const dateFields: (keyof typeof data)[] = ['p_issued_date', 'p_expiry_date', 'p_rent_start_date', 'p_rent_end_date'];
+    dateFields.forEach(field => {
+      if (sanitizedData[field] === '') {
+        sanitizedData[field] = undefined;
+      }
+    });
+
+    // Ensure required fields have default values
+    if (!sanitizedData.p_issued_by) {
+      sanitizedData.p_issued_by = ''; // Database requires non-null value
+    }
+
+    const body = JSON.stringify(sanitizedData);
     console.log('📦 [upsertMerchantLicense] Request body:', body);
 
     const response = await fetch(url, {

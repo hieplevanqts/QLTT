@@ -51,6 +51,7 @@ export function IDCardUploadDialog({
 
   // Form state
   const [formData, setFormData] = useState<Record<string, any>>(existingData?.fields || {});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // UI states
   const [frontDragging, setFrontDragging] = useState(false);
@@ -73,6 +74,19 @@ export function IDCardUploadDialog({
 
       if (editingDocument.uploadedData) {
         Object.assign(existingFields, editingDocument.uploadedData);
+
+        // Parse notes JSON if present
+        if (typeof editingDocument.uploadedData.notes === 'string') {
+          try {
+            const parsed = JSON.parse(editingDocument.uploadedData.notes);
+            const notesFields = parsed?.fields || parsed;
+            if (notesFields && typeof notesFields === 'object') {
+              Object.assign(existingFields, notesFields);
+            }
+          } catch {
+            // ignore non-JSON notes
+          }
+        }
       }
 
       // Map common fields
@@ -97,7 +111,7 @@ export function IDCardUploadDialog({
         }
       });
 
-      ['fullName', 'issuePlace', 'issuingAuthority', 'address', 'notes'].forEach((field) => {
+      ['fullName', 'issuePlace', 'issuingAuthority', 'address'].forEach((field) => {
         if (editingDocument[field]) {
           existingFields[field] = editingDocument[field];
         }

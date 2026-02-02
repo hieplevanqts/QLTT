@@ -253,17 +253,50 @@ export function TaskBoard() {
 
   // Filters
   const [searchValue, setSearchValue] = useState('');
+  
+  // Debounce search value
+  const [debouncedSearchValue, setDebouncedSearchValue] = useState(searchValue);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchValue(searchValue);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchValue]);
+
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [roundFilter, setRoundFilter] = useState<string>('all');
   const [planFilter, setPlanFilter] = useState<string>('all');
   const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [dateRangeFilter, setDateRangeFilter] = useState<DateRange>({ startDate: null, endDate: null });
+  const [dueDateRangeFilter, setDueDateRangeFilter] = useState<DateRange>({ startDate: null, endDate: null });
 
   // Pagination for list view
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
+
+  // Selection State
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+
+  const handleSelectRow = (id: string | number) => {
+    const stringId = String(id);
+    const newSelected = new Set(selectedRows);
+    if (newSelected.has(stringId)) {
+      newSelected.delete(stringId);
+    } else {
+      newSelected.add(stringId);
+    }
+    setSelectedRows(newSelected);
+  };
+
+  const handleSelectAll = (selected: boolean) => {
+    if (selected) {
+      setSelectedRows(new Set(paginatedTasks.map((t) => t.id)));
+    } else {
+      setSelectedRows(new Set());
+    }
+  };
 
 
 
@@ -272,14 +305,14 @@ export function TaskBoard() {
     try {
       setLoading(true);
       const campaignId = roundId || searchParams.get('campaignId') || undefined;
-      const data = await fetchInspectionSessionsApi(campaignId);
+      const data = await fetchInspectionSessionsApi(campaignId, debouncedSearchValue);
       
       // Map InspectionSession to the expected UI format (InspectionTask compatible)
       const mappedTasks = data.map(session => ({
         id: session.id,
         code: session.id.substring(0, 8).toUpperCase(),
         roundId: session.campaignId,
-        roundName: session.campaignName,
+        roundName: session.campaignName || '--',
         planId: session.departmentId, // Using dept id as fallback if needed
         planName: '--',
         type: session.type, // Use type directly from API
@@ -293,6 +326,7 @@ export function TaskBoard() {
         assignedDate: session.createdAt,
         status: session.status,
         priority: session.priority === 3 ? 'urgent' : session.priority === 2 ? 'high' : 'medium',
+        startDate: session.startTime,
         dueDate: session.deadlineTime,
         progress: session.status === 'completed' || session.status === 'closed' ? 100 : 
                   session.status === 'in_progress' ? 50 : 0,
@@ -312,7 +346,7 @@ export function TaskBoard() {
 
   useEffect(() => {
     loadSessions();
-  }, [roundId, searchParams.get('campaignId')]);
+  }, [roundId, searchParams.get('campaignId'), debouncedSearchValue]);
 
   // Initialize filter from URL query params
   useEffect(() => {
@@ -377,10 +411,8 @@ export function TaskBoard() {
     if (!tasks || tasks.length === 0) return [];
     return tasks.filter(task => {
       if (!task) return false;
-      const matchesSearch = !searchValue || 
-        task.title?.toLowerCase().includes(searchValue.toLowerCase()) ||
-        task.code?.toLowerCase().includes(searchValue.toLowerCase()) ||
-        task.targetName?.toLowerCase().includes(searchValue.toLowerCase());
+      // Search is now handled server-side
+      const matchesSearch = true;
 
       const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
       const matchesPriority = priorityFilter === 'all' || task.priority === priorityFilter;
@@ -395,26 +427,26 @@ export function TaskBoard() {
       const matchesType = typeFilter === 'all' || task.type === typeFilter;
 
       // Date range filter
-      let matchesDateRange = true;
-      if (dateRangeFilter.startDate || dateRangeFilter.endDate) {
-        const taskDate = task.assignedDate ? new Date(task.assignedDate) : null;
-        if (taskDate) {
-          if (dateRangeFilter.startDate && taskDate < new Date(dateRangeFilter.startDate)) {
-            matchesDateRange = false;
+      let matchesDueDate = true;
+      if (dueDateRangeFilter.startDate || dueDateRangeFilter.endDate) {
+        const taskDueDate = task.dueDate ? new Date(task.dueDate) : null;
+        if (taskDueDate) {
+          if (dueDateRangeFilter.startDate && taskDueDate < new Date(dueDateRangeFilter.startDate)) {
+            matchesDueDate = false;
           }
-          if (dateRangeFilter.endDate) {
-            const endOfDay = new Date(dateRangeFilter.endDate);
+          if (dueDateRangeFilter.endDate) {
+            const endOfDay = new Date(dueDateRangeFilter.endDate);
             endOfDay.setHours(23, 59, 59, 999);
-            if (taskDate > endOfDay) {
-              matchesDateRange = false;
+            if (taskDueDate > endOfDay) {
+              matchesDueDate = false;
             }
           }
         }
       }
 
-      return matchesSearch && matchesStatus && matchesPriority && matchesRound && matchesPlan && matchesAssignee && matchesType && matchesDateRange;
+      return matchesSearch && matchesStatus && matchesPriority && matchesRound && matchesPlan && matchesAssignee && matchesType && matchesDueDate;
     });
-  }, [tasks, searchValue, statusFilter, priorityFilter, roundFilter, planFilter, assigneeFilter, typeFilter, dateRangeFilter, realRounds]);
+  }, [tasks, searchValue, statusFilter, priorityFilter, roundFilter, planFilter, assigneeFilter, typeFilter, dueDateRangeFilter, realRounds]);
 
   // Group tasks by status for Kanban
   const tasksByStatus = useMemo(() => {
@@ -504,7 +536,7 @@ export function TaskBoard() {
     setPlanFilter('all');
     setAssigneeFilter('all');
     setTypeFilter('all');
-    setDateRangeFilter({ startDate: null, endDate: null });
+    setDueDateRangeFilter({ startDate: null, endDate: null });
   };
 
   const hasActiveFilters = useMemo(() => {
@@ -516,10 +548,10 @@ export function TaskBoard() {
       planFilter !== 'all' || 
       assigneeFilter !== 'all' || 
       typeFilter !== 'all' ||
-      dateRangeFilter.startDate || 
-      dateRangeFilter.endDate
+      dueDateRangeFilter.startDate || 
+      dueDateRangeFilter.endDate
     );
-  }, [searchValue, statusFilter, priorityFilter, roundFilter, planFilter, assigneeFilter, typeFilter, dateRangeFilter]);
+  }, [searchValue, statusFilter, priorityFilter, roundFilter, planFilter, assigneeFilter, typeFilter, dueDateRangeFilter]);
 
   // Advanced filter configuration - using correct AdvancedFilterModal format
   const filterConfigs: FilterConfig[] = [
@@ -529,8 +561,8 @@ export function TaskBoard() {
       type: 'select',
       options: [
         { value: 'all', label: 'Tất cả loại' },
-        { value: 'passive', label: 'Nguồn tin (Passive)' },
-        { value: 'proactive', label: 'Kế hoạch (Proactive)' },
+        { value: 'passive', label: 'Nguồn tin' },
+        { value: 'proactive', label: 'Kế hoạch' },
       ],
     },
     {
@@ -543,6 +575,7 @@ export function TaskBoard() {
         { value: 'in_progress', label: 'Đang thực hiện' },
         { value: 'completed', label: 'Hoàn thành' },
         { value: 'closed', label: 'Đã đóng' },
+        { value: 'cancelled', label: 'Đã hủy' },
       ],
     },
     {
@@ -567,9 +600,9 @@ export function TaskBoard() {
       ],
     },
     {
-      key: 'dateRange',
-      label: 'Ngày giao việc',
-      type: 'daterange',
+      key: 'dueDate',
+      label: 'Hạn hoàn thành',
+      type: 'date',
     },
   ];
 
@@ -580,18 +613,17 @@ export function TaskBoard() {
     plan: planFilter,
     assignee: assigneeFilter,
     type: typeFilter,
-    dateRange: dateRangeFilter,
+    dueDate: dueDateRangeFilter,
   };
 
-  // Handle advanced filter change
-  const handleFilterChange = (values: Record<string, any>) => {
+    const handleFilterChange = (values: Record<string, any>) => {
     setStatusFilter(values.status || 'all');
     setPriorityFilter(values.priority || 'all');
     setRoundFilter(values.round || 'all');
     setPlanFilter(values.plan || 'all');
     setAssigneeFilter(values.assignee || 'all');
     setTypeFilter(values.type || 'all');
-    setDateRangeFilter(values.dateRange || { startDate: null, endDate: null });
+    setDueDateRangeFilter(values.dueDate || { startDate: null, endDate: null });
   };
 
   // Handle advanced filter apply
@@ -675,6 +707,7 @@ export function TaskBoard() {
           merchant_id: formData.merchantId,
           campaign_id: formData.roundId,
           user_id: formData.assigneeId || null,
+          department_id: formData.departmentId || null, // Add department_id
           start_time: formData.startDate,
           deadline_time: formData.dueDate,
           status: formData.status === 'not_started' ? 1 : 
@@ -701,6 +734,7 @@ export function TaskBoard() {
         merchant_id: formData.merchantId,
         campaign_id: formData.roundId,
         user_id: formData.assigneeId || null,
+        department_id: formData.departmentId || null, // Add department_id
         start_time: formData.startDate,
         deadline_time: formData.dueDate,
         status: 1, // not_started
@@ -1016,8 +1050,17 @@ export function TaskBoard() {
   // Table columns for list view
   const columns: Column<InspectionTask>[] = [
     {
+      key: 'stt',
+      label: 'STT',
+      width: '60px',
+      className: 'text-center',
+      render: (_, index) => (
+        <div className="text-center">{(currentPage - 1) * itemsPerPage + index + 1}</div>
+      ),
+    },
+    {
       key: 'title',
-      label: 'Tên nhiệm vụ',
+      label: 'Tên phiên làm việc',
       sortable: true,
       render: (task) => (
         <div>
@@ -1031,12 +1074,7 @@ export function TaskBoard() {
       label: 'Đợt kiểm tra',
       sortable: true,
       render: (task) => (
-        <div>
-          <div className={styles.taskTitleCell}>{task?.roundId || 'N/A'}</div>
-          {task?.planName && (
-            <div className={styles.taskTargetCell}>{task.planName}</div>
-          )}
-        </div>
+        <div className={styles.taskTitleCell}>{task?.roundName || 'N/A'}</div>
       ),
     },
     {
@@ -1068,6 +1106,15 @@ export function TaskBoard() {
       label: 'Người thực hiện',
       sortable: true,
       render: (task) => task?.assignee?.name || 'N/A',
+    },
+    {
+      key: 'startDate',
+      label: 'Ngày bắt đầu',
+      sortable: true,
+      render: (task) => {
+        if (!task?.startDate) return <span>-</span>;
+        return <span>{new Date(task.startDate).toLocaleDateString('vi-VN')}</span>;
+      },
     },
     {
       key: 'dueDate',
@@ -1195,7 +1242,7 @@ export function TaskBoard() {
               <SearchInput
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
-                placeholder="Tìm kiếm phiên làm việc..."
+                placeholder="Tìm kiếm theo tên phiên làm việc"
                 style={{ width: '400px' }}
               />
             </>
@@ -1294,6 +1341,11 @@ export function TaskBoard() {
                     data={paginatedTasks}
                     columns={columns}
                     onRowClick={handleTaskClick}
+                    selectable={true}
+                    selectedRows={selectedRows}
+                    onSelectRow={handleSelectRow}
+                    onSelectAll={handleSelectAll}
+                    getRowId={(task) => task.id}
                   />
                 </CardContent>
                 <TableFooter

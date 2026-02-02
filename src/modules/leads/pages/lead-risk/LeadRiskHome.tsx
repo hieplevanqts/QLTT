@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Inbox, 
-  AlertTriangle, 
-  TrendingUp, 
+import { getSupabaseClient } from '@/utils/supabaseClient';
+import {
+  Inbox,
+  AlertTriangle,
+  TrendingUp,
   Clock,
   Users,
   MapPin,
@@ -52,17 +53,63 @@ export default function LeadRiskHome() {
   const navigate = useNavigate();
   const [timeFilter, setTimeFilter] = useState<'today' | 'week' | 'month'>('today');
 
-  // Mock data
+  /* State for KPI counts */
+  const [todayLeadCount, setTodayLeadCount] = useState(0);
+  const [newLeadCount, setNewLeadCount] = useState(0);
+  const [processingCount, setProcessingCount] = useState(0);
+  const [resolvedWeekCount, setResolvedWeekCount] = useState(0);
+
+  useEffect(() => {
+    async function fetchStats() {
+      const supabase = getSupabaseClient();
+
+      try {
+        // 1. Tổng số Leads (Total leads all time)
+        const { count: totalCount } = await supabase
+          .from('leads')
+          .select('*', { count: 'exact', head: true });
+        setTodayLeadCount(totalCount || 0);
+
+        // 2. Chờ triage (Status = 'new')
+        const { count: newCount } = await supabase
+          .from('leads')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'new');
+        setNewLeadCount(newCount || 0);
+
+        // 3. Đang xử lý (Strict 'processing' status)
+        const { count: procCount } = await supabase
+          .from('leads')
+          .select('*', { count: 'exact', head: true })
+          .in('status', ['processing', 'in_progress']);
+        setProcessingCount(procCount || 0);
+
+        // 4. Đã xử lý (Total Resolved - All time)
+        const { count: resolvedCount } = await supabase
+          .from('leads')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'resolved');
+        setResolvedWeekCount(resolvedCount || 0);
+
+      } catch (error) {
+        console.error('Error fetching KPI stats:', error);
+      }
+    }
+
+    fetchStats();
+  }, []);
+
+  // Mock data with real values
   const kpiCards: KPICard[] = [
     {
-      label: 'Lead hôm nay',
-      value: 24,
-      change: 12,
-      trend: 'up',
+      label: 'Tổng số Lead',
+      value: todayLeadCount,
+      change: 0, // Dynamic change calculation omitted for simplicity
+      trend: 'stable',
       icon: Inbox,
       color: 'rgba(0, 92, 182, 1)',
       bgColor: 'rgba(239, 246, 255, 1)',
-      link: '/lead-risk/inbox?filter=today',
+      link: '/lead-risk/inbox?status=all',
     },
     {
       label: 'Lead quá hạn',
@@ -86,7 +133,7 @@ export default function LeadRiskHome() {
     },
     {
       label: 'Chờ triage',
-      value: 32,
+      value: newLeadCount,
       change: 0,
       trend: 'stable',
       icon: Target,
@@ -96,8 +143,8 @@ export default function LeadRiskHome() {
     },
     {
       label: 'Đang xử lý',
-      value: 56,
-      change: 8,
+      value: processingCount,
+      change: 0,
       trend: 'up',
       icon: Users,
       color: 'rgba(59, 130, 246, 1)',
@@ -105,20 +152,20 @@ export default function LeadRiskHome() {
       link: '/lead-risk/inbox?status=in_progress',
     },
     {
-      label: 'Hoàn thành tuần',
-      value: 127,
-      change: 15,
+      label: 'Đã xử lý',
+      value: resolvedWeekCount,
+      change: 0,
       trend: 'up',
       icon: TrendingUp,
       color: 'rgba(34, 197, 94, 1)',
       bgColor: 'rgba(240, 253, 244, 1)',
-      link: '/lead-risk/inbox?status=resolved&period=week',
+      link: '/lead-risk/inbox?status=resolved',
     },
   ];
 
   const quickActions: QuickAction[] = [
     {
-      label: 'Tạo Lead nhanh',
+      label: 'Tạo nhanh nguồn tin',
       description: 'Tạo nguồn tin trong 60 giây',
       icon: Plus,
       link: '/lead-risk/create-lead-quick',
@@ -210,13 +257,13 @@ export default function LeadRiskHome() {
         <div className={styles.titleGroup}>
           <div className={styles.titleRow}>
             <Shield size={28} className={styles.titleIcon} />
-            <h1 className={styles.title}>Lead & Risk Management</h1>
+            <h1 className={styles.title}>Quản lý nguồn tin và rủi ro</h1>
           </div>
           <p className={styles.subtitle}>
             Quản lý nguồn tin và phân tích rủi ro tập trung
           </p>
         </div>
-        
+
         <div className={styles.headerActions}>
           <select
             value={timeFilter}
@@ -227,10 +274,10 @@ export default function LeadRiskHome() {
             <option value="week">Tuần này</option>
             <option value="month">Tháng này</option>
           </select>
-          
+
           <button className={styles.createButton} onClick={() => navigate('/lead-risk/create-lead-quick')}>
             <Plus size={18} />
-            Tạo Lead
+            Tạo nhanh nguồn tin
           </button>
         </div>
       </div>
@@ -258,10 +305,10 @@ export default function LeadRiskHome() {
                   {card.change}
                 </div>
               </div>
-              
+
               <div className={styles.kpiValue}>{card.value}</div>
               <div className={styles.kpiLabel}>{card.label}</div>
-              
+
               <div className={styles.kpiAction}>
                 <span>Xem chi tiết</span>
                 <ArrowUpRight size={14} />

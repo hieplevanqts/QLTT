@@ -57,11 +57,7 @@ interface Store {
   taxCode?: string;
   businessType?: string;
   establishedDate?: string;
-  businessArea?: string;
   businessPhone?: string;
-  email?: string;
-  website?: string;
-  fax?: string;
   notes?: string;
   ownerName?: string;
   ownerBirthYear?: number;
@@ -89,18 +85,16 @@ export interface EditStoreData {
   taxCode?: string;
   industryName?: string;
   establishedDate?: string;
-  businessArea?: string;
-  businessPhone?: string;
-  email?: string;
-  website?: string;
-  fax?: string;
+  operationStatus?: string;
+  businessPhone: string; // Required
   notes?: string;
   ownerName?: string;
   ownerBirthYear?: string;
   ownerIdNumber?: string;
-  ownerPhone?: string;
-  ownerPhone2?: string;
+  ownerPhone: string; // Required
   registeredAddress?: string;
+  headquarterAddress?: string;
+  productionAddress?: string;
   province?: string;
   ward?: string;
   latitude?: number;
@@ -136,18 +130,16 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
         taxCode: store.taxCode || '',
         industryName: store.businessType || '',
         establishedDate: store.establishedDate || '',
-        businessArea: store.businessArea || '',
+        operationStatus: 'active',
         businessPhone: store.businessPhone || '',
-        email: store.email || '',
-        website: store.website || '',
-        fax: store.fax || '',
         notes: store.notes || '',
         ownerName: store.ownerName || '',
         ownerBirthYear: store.ownerBirthYear?.toString() || '',
         ownerIdNumber: store.ownerIdNumber || '',
         ownerPhone: store.ownerPhone || '',
-        ownerPhone2: store.ownerPhone2 || '',
         registeredAddress: store.address || '',
+        headquarterAddress: '',
+        productionAddress: '',
         latitude: store.latitude,
         longitude: store.longitude,
       });
@@ -219,11 +211,48 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
+    // Phone validation function (Vietnamese format)
+    const isValidPhoneNumber = (phone: string): boolean => {
+      if (!phone?.trim()) return false;
+      // Vietnamese phone: 10 digits, starts with 0, optionally +84, or just numbers
+      const phoneRegex = /^(\+84|0)?[0-9]{9,10}$/;
+      return phoneRegex.test(phone.replace(/\s+/g, ''));
+    };
+
     // Tab 1: Business - Required fields
     if (!formData.business_name?.trim()) {
-      newErrors.business_name = 'Tên cơ sở là bắt buộc';
+      newErrors.business_name = 'Vui lòng nhập tên cơ sở kinh doanh';
+    }
+    if (!formData.taxCode?.trim()) {
+      newErrors.taxCode = 'Vui lòng nhập mã số thuế';
+    }
+    if (!formData.industryName?.trim()) {
+      newErrors.industryName = 'Vui lòng nhập tên ngành kinh doanh';
+    }
+    if (!formData.operationStatus?.trim()) {
+      newErrors.operationStatus = 'Vui lòng chọn tình trạng hoạt động';
+    }
+    
+    // businessPhone - bắt buộc
+    if (!formData.businessPhone?.trim()) {
+      newErrors.businessPhone = 'Vui lòng nhập số điện thoại hộ kinh doanh';
+    } else if (!isValidPhoneNumber(formData.businessPhone)) {
+      newErrors.businessPhone = 'Số điện thoại không hợp lệ';
     }
 
+    // Tab 2: Owner - ownerPhone required
+    if (!formData.ownerPhone?.trim()) {
+      newErrors.ownerPhone = 'Vui lòng nhập số điện thoại chủ cơ sở';
+    } else if (!isValidPhoneNumber(formData.ownerPhone)) {
+      newErrors.ownerPhone = 'Số điện thoại không hợp lệ';
+    }
+   if (!formData.ownerName?.trim()) {
+      newErrors.ownerName = 'Vui lòng nhập tên chủ cơ sở';
+    }
+
+     if (!formData.registeredAddress?.trim()) {
+      newErrors.registeredAddress = 'Vui lòng nhập địa chỉ đăng ký kinh doanh';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -232,10 +261,15 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
   const handleSubmit = () => {
     if (!validateForm()) {
       // Switch to tab with error
-      if (errors.business_name || errors.taxCode || errors.industryName) {
+      const businessFields = ['business_name', 'taxCode', 'industryName', 'operationStatus', 'businessPhone'];
+      const ownerFields = ['ownerName', 'ownerPhone', 'ownerBirthYear', 'ownerIdNumber'];
+      
+      if (Object.keys(errors).some(k => businessFields.includes(k))) {
         setActiveTab('business');
-      } else if (errors.ownerName) {
+        toast.error('Vui lòng điền đầy đủ thông tin cơ sở');
+      } else if (Object.keys(errors).some(k => ownerFields.includes(k))) {
         setActiveTab('owner');
+        toast.error('Vui lòng điền đầy đủ thông tin chủ cơ sở');
       } else {
         setActiveTab('address');
       }
@@ -248,20 +282,18 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
       taxCode: formData.taxCode || '',
       industryName: formData.industryName || '',
       establishedDate: formData.establishedDate,
-      businessArea: formData.businessArea,
-      businessPhone: formData.businessPhone,
-      email: formData.email,
-      website: formData.website,
-      fax: formData.fax,
+      operationStatus: formData.operationStatus || 'active',
+      businessPhone: formData.businessPhone!,
       notes: formData.notes,
       ownerName: formData.ownerName,
       ownerBirthYear: formData.ownerBirthYear,
       ownerIdNumber: formData.ownerIdNumber,
-      ownerPhone: formData.ownerPhone,
-      ownerPhone2: formData.ownerPhone2,
+      ownerPhone: formData.ownerPhone!,
       registeredAddress: formData.registeredAddress,
-      province: selectedProvince,
-      ward: selectedWard,
+      headquarterAddress: formData.headquarterAddress,
+      productionAddress: formData.productionAddress,
+      province: selectedProvince && selectedProvince.trim() ? selectedProvince : undefined,
+      ward: selectedWard && selectedWard.trim() ? selectedWard : undefined,
       latitude: formData.latitude,
       longitude: formData.longitude,
     };
@@ -290,8 +322,8 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
             onClick={() => setActiveTab('business')}
           >
             <FileText className="w-4 h-4" />
-            <span>Thông tin HKD</span>
-            {Object.keys(errors).some(k => ['business_name', 'taxCode', 'industryName'].includes(k)) && (
+            <span>Thông tin cơ sở</span>
+            {Object.keys(errors).some(k => ['business_name', 'taxCode', 'industryName', 'operationStatus', 'businessPhone'].includes(k)) && (
               <XCircle className="w-3 h-3 text-red-500" />
             )}
           </button>
@@ -301,8 +333,8 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
             onClick={() => setActiveTab('owner')}
           >
             <Users className="w-4 h-4" />
-            <span>Thông tin chủ hộ</span>
-            {Object.keys(errors).some(k => ['ownerName'].includes(k)) && (
+            <span>Thông tin chủ cơ sở</span>
+            {Object.keys(errors).some(k => ['ownerName', 'ownerPhone', 'ownerBirthYear', 'ownerIdNumber'].includes(k)) && (
               <XCircle className="w-3 h-3 text-red-500" />
             )}
           </button>
@@ -321,13 +353,13 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
 
         {/* Tab Content */}
         <div className={styles.tabContent}>
-          {/* Tab 1: Thông tin HKD */}
+          {/* Tab 1: Thông tin cơ sở */}
           {activeTab === 'business' && (
             <div className={styles.formGrid}>
               {/* Tên cơ sở */}
               <div className="space-y-2 col-span-2">
                 <Label htmlFor="business_name">
-                  Tên cơ sở kinh doanh <span className="text-red-500">*</span>
+                  Tên cơ sở <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="business_name"
@@ -349,6 +381,9 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
                   onChange={(e) => setFormData({ ...formData, taxCode: e.target.value })}
                   placeholder="Nhập mã số thuế"
                 />
+                {errors.taxCode && (
+                  <p className="text-sm text-red-500">{errors.taxCode}</p>
+                )}
               </div>
 
               {/* Industry Name - Searchable Select (Combobox) */}
@@ -421,63 +456,41 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
                 />
               </div>
 
-              {/* Diện tích cửa hàng */}
+              {/* Tình trạng hoạt động */}
               <div className="space-y-2">
-                <Label htmlFor="businessArea">Diện tích cửa hàng (m²)</Label>
-                <Input
-                  id="businessArea"
-                  type="number"
-                  value={formData.businessArea || ''}
-                  onChange={(e) => setFormData({ ...formData, businessArea: e.target.value })}
-                  placeholder="Nhập diện tích"
-                />
+                <Label htmlFor="operationStatus">Tình trạng hoạt động <span className="text-red-500">*</span></Label>
+                <Select
+                  value={formData.operationStatus || 'active'}
+                  onValueChange={(value) => setFormData({ ...formData, operationStatus: value })}
+                >
+                  <SelectTrigger id="operationStatus">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Đang hoạt động</SelectItem>
+                    <SelectItem value="inactive">Ngừng hoạt động</SelectItem>
+                    <SelectItem value="suspended">Tạm ngừng</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.operationStatus && (
+                  <p className="text-sm text-red-500">{errors.operationStatus}</p>
+                )}
               </div>
 
               {/* SĐT hộ kinh doanh */}
               <div className="space-y-2">
-                <Label htmlFor="businessPhone">SĐT hộ kinh doanh</Label>
+                <Label htmlFor="businessPhone">SĐT hộ kinh doanh <span style={{color: 'var(--destructive)', fontWeight: '600'}}>*</span></Label>
                 <Input
                   id="businessPhone"
                   type="tel"
                   value={formData.businessPhone || ''}
                   onChange={(e) => setFormData({ ...formData, businessPhone: e.target.value })}
                   placeholder="Nhập số điện thoại"
+                  className={errors.businessPhone ? 'border-red-500' : ''}
                 />
-              </div>
-
-              {/* Email */}
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email || ''}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="Nhập email"
-                />
-              </div>
-
-              {/* Website */}
-              <div className="space-y-2">
-                <Label htmlFor="website">Website</Label>
-                <Input
-                  id="website"
-                  type="url"
-                  value={formData.website || ''}
-                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                  placeholder="Nhập website"
-                />
-              </div>
-
-              {/* Fax */}
-              <div className="space-y-2">
-                <Label htmlFor="fax">Fax</Label>
-                <Input
-                  id="fax"
-                  value={formData.fax || ''}
-                  onChange={(e) => setFormData({ ...formData, fax: e.target.value })}
-                  placeholder="Nhập số fax"
-                />
+                {errors.businessPhone && (
+                  <p className="text-sm text-red-500">{errors.businessPhone}</p>
+                )}
               </div>
 
               {/* Ghi chú */}
@@ -498,16 +511,35 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
           {activeTab === 'owner' && (
             <div className={styles.formGrid}>
               {/* Tên Chủ cơ sở */}
-              <div className="space-y-2 col-span-2">
-                <Label htmlFor="ownerName">Tên Chủ cơ sở</Label>
+              <div className="space-y-2">
+                <Label htmlFor="ownerName">Tên Chủ cơ sở <span style={{color: 'var(--destructive)', fontWeight: '600'}}>*</span></Label>
                 <Input
                   id="ownerName"
                   value={formData.ownerName || ''}
                   onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })}
                   placeholder="Nhập tên chủ hộ"
+                  className={errors.ownerName ? 'border-red-500' : ''}
                 />
+                  {errors.ownerName && (
+                  <p className="text-sm text-red-500">{errors.ownerName}</p>
+                )}
               </div>
 
+              {/* Số điện thoại chính */}
+              <div className="space-y-2">
+                <Label htmlFor="ownerPhone">Số điện thoại chủ cơ sở <span style={{color: 'var(--destructive)', fontWeight: '600'}}>*</span></Label>
+                <Input
+                  id="ownerPhone"
+                  type="tel"
+                  value={formData.ownerPhone || ''}
+                  onChange={(e) => setFormData({ ...formData, ownerPhone: e.target.value })}
+                  placeholder="Nhập số điện thoại"
+                  className={errors.ownerPhone ? 'border-red-500' : ''}
+                />
+                {errors.ownerPhone && (
+                  <p className="text-sm text-red-500">{errors.ownerPhone}</p>
+                )}
+              </div>
               {/* Năm sinh chủ hộ */}
               <div className="space-y-2">
                 <Label htmlFor="ownerBirthYear">Năm sinh chủ hộ</Label>
@@ -534,29 +566,6 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
                 />
               </div>
 
-              {/* Số điện thoại chính */}
-              <div className="space-y-2">
-                <Label htmlFor="ownerPhone">Số điện thoại chính</Label>
-                <Input
-                  id="ownerPhone"
-                  type="tel"
-                  value={formData.ownerPhone || ''}
-                  onChange={(e) => setFormData({ ...formData, ownerPhone: e.target.value })}
-                  placeholder="Nhập số điện thoại"
-                />
-              </div>
-
-              {/* Số điện thoại phụ */}
-              <div className="space-y-2">
-                <Label htmlFor="ownerPhone2">Số điện thoại phụ</Label>
-                <Input
-                  id="ownerPhone2"
-                  type="tel"
-                  value={formData.ownerPhone2 || ''}
-                  onChange={(e) => setFormData({ ...formData, ownerPhone2: e.target.value })}
-                  placeholder="Nhập số điện thoại phụ (nếu có)"
-                />
-              </div>
             </div>
           )}
 
@@ -618,12 +627,37 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
 
               {/* Địa chỉ */}
               <div className="space-y-2 col-span-2">
-                <Label htmlFor="registeredAddress">Địa chỉ</Label>
+                <Label htmlFor="registeredAddress">Địa chỉ đăng ký kinh doanh <span style={{color: 'var(--destructive)', fontWeight: '600'}}>*</span></Label>
                 <Input
                   id="registeredAddress"
                   value={formData.registeredAddress || ''}
                   onChange={(e) => setFormData({ ...formData, registeredAddress: e.target.value })}
                   placeholder="Số nhà, tên đường"
+                />
+                  {errors.registeredAddress && (
+                  <p className="text-sm text-red-500">{errors.registeredAddress}</p>
+                )}
+              </div>
+
+              {/* Địa chỉ trụ sở chính */}
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="headquarterAddress">Địa chỉ trụ sở chính (nếu khác)</Label>
+                <Input
+                  id="headquarterAddress"
+                  value={formData.headquarterAddress || ''}
+                  onChange={(e) => setFormData({ ...formData, headquarterAddress: e.target.value })}
+                  placeholder="Nhập địa chỉ trụ sở chính"
+                />
+              </div>
+
+              {/* Địa chỉ cơ sở sản xuất */}
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="productionAddress">Địa chỉ cơ sở sản xuất (nếu có)</Label>
+                <Input
+                  id="productionAddress"
+                  value={formData.productionAddress || ''}
+                  onChange={(e) => setFormData({ ...formData, productionAddress: e.target.value })}
+                  placeholder="Nhập địa chỉ cơ sở sản xuất"
                 />
               </div>
 
@@ -635,11 +669,47 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
                   latitude={formData.latitude}
                   longitude={formData.longitude}
                   onLocationChange={(location) => {
-                    setFormData({
-                      ...formData,
+                    // Update coordinates and address
+                    setFormData(prev => ({
+                      ...prev,
                       latitude: location.latitude,
                       longitude: location.longitude,
-                    });
+                      registeredAddress: location.address || prev.registeredAddress,
+                    }));
+                    
+                    // Auto-select province/ward from reverse geocoding result
+                    if (location.province) {
+                      // Find province by name
+                      const provinceMatch = apiProvinces.find(
+                        p => p.name.toLowerCase().includes(location.province?.toLowerCase() || '') ||
+                             location.province?.toLowerCase().includes(p.name.toLowerCase())
+                      );
+                      if (provinceMatch) {
+                        setSelectedProvince(provinceMatch._id);
+                        setSelectedProvinceName(provinceMatch.name);
+                        loadWardsByProvince(provinceMatch._id);
+                      }
+                    }
+                    
+                    // Auto-select ward after province is set
+                    if (location.ward && location.province) {
+                      setTimeout(() => {
+                        const provinceMatch = apiProvinces.find(
+                          p => p.name.toLowerCase().includes(location.province?.toLowerCase() || '') ||
+                               location.province?.toLowerCase().includes(p.name.toLowerCase())
+                        );
+                        if (provinceMatch) {
+                          const wardMatch = apiWards.find(
+                            w => w.name.toLowerCase().includes(location.ward?.toLowerCase() || '') ||
+                                 location.ward?.toLowerCase().includes(w.name.toLowerCase())
+                          );
+                          if (wardMatch) {
+                            setSelectedWard(wardMatch._id);
+                            setSelectedWardName(wardMatch.name);
+                          }
+                        }
+                      }, 50);
+                    }
                   }}
                 />
               </div>
@@ -647,7 +717,7 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
           )}
         </div>
 
-        <DialogFooter className={styles.dialogFooter}>
+        <DialogFooter style={{ gap: '12px' }}>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Hủy
           </Button>

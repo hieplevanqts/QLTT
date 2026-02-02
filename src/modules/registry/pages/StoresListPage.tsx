@@ -14,6 +14,7 @@ import {
   Upload,
   CheckCircle2,
   XCircle,
+  Trash2,
   Pause,
   Play,
   StopCircle,
@@ -231,76 +232,115 @@ const departmentPath = user?.app_metadata?.department?.path ;
   // Fetch stats separately or when filters change if needed
   const loadStats = useCallback(async () => {
     try {
-      const data = await fetchStoresStats();
+      const filters: any = {};
+
+      // Exclude soft-deleted records
+      filters.deleted_at = 'is.null';
+
+      if (statusFilter && statusFilter !== 'all') {
+        filters.status = statusFilter;
+      }
+      if (jurisdictionFilter && jurisdictionFilter !== 'all') {
+        filters.province_id = jurisdictionFilter;
+      }
+      if (debouncedSearchValue) {
+        filters.search = debouncedSearchValue;
+      }
+      if (businessTypeFilter && businessTypeFilter !== 'all') {
+        filters.businessType = businessTypeFilter;
+      }
+      if (advancedFilter.hasViolations && advancedFilter.hasViolations !== 'all') {
+        filters.hasViolations = advancedFilter.hasViolations;
+      }
+      if (advancedFilter.hasComplaints && advancedFilter.hasComplaints !== 'all') {
+        filters.hasComplaints = advancedFilter.hasComplaints;
+      }
+      if (advancedFilter.riskLevel && advancedFilter.riskLevel !== 'all') {
+        filters.riskLevel = advancedFilter.riskLevel;
+      }
+
+      const data = await fetchStoresStats(filters, departmentPath);
       setStats(data);
     } catch (error) {
     }
-  }, []);
+  }, [statusFilter, jurisdictionFilter, debouncedSearchValue, businessTypeFilter, advancedFilter, departmentPath]);
 
   useEffect(() => {
     loadStats();
   }, [loadStats]);
 
+  const loadData = useCallback(async () => {
+    try {
+      setIsLoadingStores(true);
+      setStoreError(null);
+
+      const offset = (currentPage - 1) * pageSize;
+      const filters: any = {};
+
+      // Exclude soft-deleted records
+      filters.deleted_at = 'is.null';
+
+      if (statusFilter && statusFilter !== 'all') {
+        filters.status = statusFilter;
+      }
+      if (jurisdictionFilter && jurisdictionFilter !== 'all') {
+        filters.province_id = jurisdictionFilter;
+      }
+      if (debouncedSearchValue) {
+        filters.search = debouncedSearchValue;
+      }
+      // If user has a department path (e.g. "QT.QT01"), filter by its root code like "QT*"
+      if (departmentPath) {
+        const root = String(departmentPath).split('.')[0];
+        if (root) {
+          filters.department_path = `like.${root}*`;
+        }
+      }
+      if (businessTypeFilter && businessTypeFilter !== 'all') {
+        filters.businessType = businessTypeFilter;
+      }
+      if (advancedFilter.hasViolations && advancedFilter.hasViolations !== 'all') {
+        filters.hasViolations = advancedFilter.hasViolations;
+      }
+      if (advancedFilter.hasComplaints && advancedFilter.hasComplaints !== 'all') {
+        filters.hasComplaints = advancedFilter.hasComplaints;
+      }
+      if (advancedFilter.riskLevel && advancedFilter.riskLevel !== 'all') {
+        filters.riskLevel = advancedFilter.riskLevel;
+      }
+
+      const { data, total } = await fetchStores(pageSize, offset, filters, departmentPath);
+
+      setStores(data);
+      setTotalRecords(total);
+
+      // Save to localStorage for offline backup
+      try {
+        localStorage.setItem(STORES_STORAGE_KEY, JSON.stringify(data));
+      } catch (e) {
+      }
+    } catch (error: any) {
+      setStoreError(error.message || 'Failed to load stores');
+
+      // Fallback handling...
+      try {
+        const savedStores = localStorage.getItem(STORES_STORAGE_KEY);
+        if (savedStores) {
+          const parsedStores = JSON.parse(savedStores);
+          setStores(parsedStores);
+          setTotalRecords(parsedStores.length);
+        }
+      } catch (e) {
+      }
+    } finally {
+      setIsLoadingStores(false);
+    }
+  }, [currentPage, pageSize, statusFilter, jurisdictionFilter, debouncedSearchValue, businessTypeFilter, advancedFilter, departmentPath]);
+
   // Load stores from API when pagination or filters change
   useEffect(() => {
-    const loadStores = async () => {
-      try {
-        setIsLoadingStores(true);
-        setStoreError(null);
-
-        const offset = (currentPage - 1) * pageSize;
-        const filters: any = {};
-
-        if (statusFilter && statusFilter !== 'all') {
-          filters.status = statusFilter;
-        }
-        if (jurisdictionFilter && jurisdictionFilter !== 'all') {
-          filters.province_id = jurisdictionFilter;
-        }
-        if (debouncedSearchValue) {
-          filters.search = debouncedSearchValue;
-        }
-        // If user has a department path (e.g. "QT.QT01"), filter by its root code like "QT*"
-        if (departmentPath) {
-          const root = String(departmentPath).split('.')[0];
-          if (root) {
-            filters.department_path = `like.${root}*`;
-          }
-        }
-        if (businessTypeFilter && businessTypeFilter !== 'all') {
-          filters.businessType = businessTypeFilter;
-        }
-
-        const { data, total } = await fetchStores(pageSize, offset, filters);
-
-        setStores(data);
-        setTotalRecords(total);
-
-        // Save to localStorage for offline backup
-        try {
-          localStorage.setItem(STORES_STORAGE_KEY, JSON.stringify(data));
-        } catch (e) {
-        }
-      } catch (error: any) {
-        setStoreError(error.message || 'Failed to load stores');
-
-        // Fallback handling...
-        try {
-          const savedStores = localStorage.getItem(STORES_STORAGE_KEY);
-          if (savedStores) {
-            const parsedStores = JSON.parse(savedStores);
-            setStores(parsedStores);
-            setTotalRecords(parsedStores.length);
-          }
-        } catch (e) {
-        }
-      } finally {
-        setIsLoadingStores(false);
-      }
-    };
-
-    loadStores();
-  }, [currentPage, pageSize, statusFilter, jurisdictionFilter, debouncedSearchValue, businessTypeFilter, departmentPath]);
+    loadData();
+  }, [loadData]);
 
   // Load provinces from API on component mount
   useEffect(() => {
@@ -389,21 +429,18 @@ const departmentPath = user?.app_metadata?.department?.path ;
         p_business_name: data.business_name,
         p_tax_code: data.taxCode || '',
         p_business_type: data.industryName || '',
-        p_established_date: data.establishedDate,
+        p_established_date: data.establishedDate && data.establishedDate.trim() ? data.establishedDate : null,
         p_store_area: data.businessArea ? parseFloat(data.businessArea) : undefined,
         p_business_phone: data.businessPhone,
         p_business_email: data.email,
-        p_website: data.website,
-        p_fax: data.fax,
         p_note: data.notes,
         p_owner_name: data.ownerName,
         p_owner_birth_year: data.ownerBirthYear ? parseInt(data.ownerBirthYear) : undefined,
         p_owner_identity_no: data.ownerIdNumber,
         p_owner_phone: data.ownerPhone,
-        p_owner_phone_2: data.ownerPhone2,
         p_address: data.registeredAddress,
-        p_province_id: data.province,
-        p_ward_id: data.ward,
+        p_province_id: data.province && data.province.trim() ? data.province : null,
+        p_ward_id: data.ward && data.ward.trim() ? data.ward : null,
         p_latitude: data.latitude,
         p_longitude: data.longitude,
       };
@@ -421,14 +458,11 @@ const departmentPath = user?.app_metadata?.department?.path ;
           businessArea: data.businessArea || s.businessArea,
           businessPhone: data.businessPhone || s.businessPhone,
           email: data.email || s.email,
-          website: data.website || s.website,
-          fax: data.fax || s.fax,
           notes: data.notes || s.notes,
           ownerName: data.ownerName || s.ownerName,
           ownerBirthYear: data.ownerBirthYear ? parseInt(data.ownerBirthYear) : s.ownerBirthYear,
           ownerIdNumber: data.ownerIdNumber || s.ownerIdNumber,
           ownerPhone: data.ownerPhone || s.ownerPhone,
-          ownerPhone2: data.ownerPhone2 || s.ownerPhone2,
           address: data.registeredAddress || s.address,
           provinceCode: data.province || s.provinceCode,
           wardCode: data.ward || s.wardCode,
@@ -541,15 +575,51 @@ const departmentPath = user?.app_metadata?.department?.path ;
     });
   };
 
-  const handleDelete = (store: Store) => {
+  const handleDelete = async (store: Store) => {
     setConfirmDialog({
       open: true,
       title: 'Xóa cơ sở',
       description: `Bạn có chắc chắn muốn xóa cơ sở \"${store.name}\"? Hành động này không thể hoàn tác.`,
       variant: 'danger',
-      onConfirm: () => {
-        setStores(prev => prev.filter(s => s.id !== store.id));
-        toast.success('Xóa cơ sở thành công');
+      onConfirm: async () => {
+        try {
+          // Soft delete by setting delete_at timestamp with full merchant data
+          await updateMerchant(store.merchantId, {
+            p_business_name: store.name,
+            p_owner_name: store.ownerName,
+            p_owner_phone: store.ownerPhone,
+            p_tax_code: store.taxCode,
+            p_business_type: store.businessType,
+            p_province_id: store.provinceCode || null,
+            p_ward_id: store.wardCode || null,
+            p_address: store.address,
+            p_latitude: store.latitude,
+            p_longitude: store.longitude,
+            p_status: store.status,
+            p_established_date: store.establishedDate || null,
+            p_department_id: departmentId,
+            p_note: store.notes || null,
+            p_business_phone: store.businessPhone || null,
+            p_business_email: store.email || null,
+            p_website: store.website || null,
+            p_store_area: store.businessArea ? parseFloat(store.businessArea) : null,
+            p_owner_phone_2: store.ownerPhone2 || null,
+            p_owner_birth_year: store.ownerBirthYear || null,
+            p_owner_identity_no: store.ownerIdNumber || null,
+            p_owner_email: store.ownerEmail || null,
+            p_delete_at: new Date().toISOString(),
+          });
+          
+          // Remove from local state
+          setStores(prev => prev.filter(s => s.id !== store.id));
+          toast.success('Xóa cơ sở thành công');
+          
+          // Refresh data to get updated stats
+          await loadData();
+        } catch (error: any) {
+          console.error('Error deleting store:', error);
+          toast.error(`Xóa cơ sở thất bại: ${error.message}`);
+        }
       },
     });
   };
@@ -641,6 +711,87 @@ const departmentPath = user?.app_metadata?.department?.path ;
     return stores.filter(store => selectedRows.has(store.id));
   }, [stores, selectedRows]);
 
+  /**
+   * Define allowed actions per status
+   * Only show actions when ALL selected stores have the SAME status
+   */
+  const ACTION_RULES: Record<FacilityStatus, BulkActionType[]> = {
+    pending: ['approve', 'reject', 'delete'],
+    active: ['suspend'],
+    suspended: ['activate', 'close'],
+    refuse: ['delete'],
+    rejected: ['delete'],
+    underInspection: [], // No changes allowed while under inspection
+  };
+
+  /**
+   * Get bulk actions based on selected stores status
+   * Returns empty array if stores have different statuses
+   */
+  const getAvailableBulkActions = useMemo(() => {
+    if (selectedStores.length === 0) return [];
+
+    // Check if all selected stores have the same status
+    const firstStatus = selectedStores[0].status;
+    const allSameStatus = selectedStores.every(store => store.status === firstStatus);
+
+    if (!allSameStatus) {
+      // Different statuses - show no actions
+      return [];
+    }
+
+    // All same status - get allowed actions for this status
+    const allowedActions = ACTION_RULES[firstStatus] || [];
+    return allowedActions;
+  }, [selectedStores]);
+
+  // Bulk actions configuration - filtered based on selected stores
+  const bulkActions: BulkAction[] = useMemo(() => {
+    const allActions: Record<BulkActionType, BulkAction> = {
+      approve: {
+        label: 'Phê duyệt',
+        onClick: () => handleBulkAction('approve'),
+        variant: 'default',
+        icon: <CheckCircle2 size={16} />,
+      },
+      reject: {
+        label: 'Từ chối',
+        onClick: () => handleBulkAction('reject'),
+        variant: 'secondary',
+        icon: <XCircle size={16} />,
+      },
+      suspend: {
+        label: 'Tạm dừng hoạt động',
+        onClick: () => handleBulkAction('suspend'),
+        variant: 'secondary',
+        icon: <Pause size={16} />,
+      },
+      activate: {
+        label: 'Kích hoạt lại',
+        onClick: () => handleBulkAction('activate'),
+        variant: 'default',
+        icon: <Play size={16} />,
+      },
+      close: {
+        label: 'Ngừng hoạt động',
+        onClick: () => handleBulkAction('close'),
+        variant: 'destructive',
+        icon: <StopCircle size={16} />,
+      },
+      delete: {
+        label: 'Xóa cơ sở',
+        onClick: () => handleBulkAction('delete'),
+        variant: 'destructive',
+        icon: <Trash2 size={16} />,
+      },
+    };
+
+    // Return only the actions that are available for the current selection
+    return getAvailableBulkActions
+      .map(actionType => allActions[actionType as BulkActionType])
+      .filter(Boolean);
+  }, [getAvailableBulkActions]);
+
   // Bulk action handlers
   const handleBulkAction = (actionType: BulkActionType) => {
     setBulkActionModal({
@@ -671,6 +822,8 @@ const departmentPath = user?.app_metadata?.department?.path ;
             return store.status === 'suspended';
           case 'close':
             return store.status === 'suspended' || store.status === 'active';
+          case 'delete':
+            return store.status === 'rejected' || store.status === 'pending' || store.status === 'refuse';
           case 'export':
             return true;
           default:
@@ -684,32 +837,70 @@ const departmentPath = user?.app_metadata?.department?.path ;
     // Apply bulk changes
     if (actionType !== 'export') {
       try {
-        const updatePromises = validStoreIds.map(async (id) => {
-          const store = stores.find(s => s.id === id);
-          if (!store?.merchantId) return null;
+        if (actionType === 'delete') {
+          const deletePromises = validStoreIds.map(async (id) => {
+            const store = stores.find(s => s.id === id);
+            if (!store?.merchantId) return null;
 
-          let newStatus: FacilityStatus = store.status;
-          switch (actionType) {
-            case 'approve': newStatus = 'active'; break;
-            case 'reject': newStatus = 'rejected'; break;
-            case 'suspend': newStatus = 'suspended'; break;
-            case 'activate': newStatus = 'active'; break;
-            case 'close': newStatus = 'refuse'; break;
-          }
+            await updateMerchant(store.merchantId, {
+              p_business_name: store.name,
+              p_owner_name: store.ownerName,
+              p_owner_phone: store.ownerPhone,
+              p_tax_code: store.taxCode,
+              p_business_type: store.businessType,
+              p_province_id: store.provinceCode || null,
+              p_ward_id: store.wardCode || null,
+              p_address: store.address,
+              p_latitude: store.latitude,
+              p_longitude: store.longitude,
+              p_status: store.status,
+              p_established_date: store.establishedDate || null,
+              p_department_id: departmentId,
+              p_note: store.notes || null,
+              p_business_phone: store.businessPhone || null,
+              p_business_email: store.email || null,
+              p_website: store.website || null,
+              p_store_area: store.businessArea ? parseFloat(store.businessArea) : null,
+              p_owner_phone_2: store.ownerPhone2 || null,
+              p_owner_birth_year: store.ownerBirthYear || null,
+              p_owner_identity_no: store.ownerIdNumber || null,
+              p_owner_email: store.ownerEmail || null,
+              p_delete_at: new Date().toISOString(),
+            });
 
-          await updateMerchantStatus(store.merchantId, newStatus);
-          return { id, newStatus };
-        });
+            return id;
+          });
 
-        const results = await Promise.all(updatePromises);
+          const deletedIds = (await Promise.all(deletePromises)).filter(Boolean) as number[];
+          setStores(prev => prev.filter(store => !deletedIds.includes(store.id)));
+        } else {
+          const updatePromises = validStoreIds.map(async (id) => {
+            const store = stores.find(s => s.id === id);
+            if (!store?.merchantId) return null;
 
-        setStores(prev =>
-          prev.map(store => {
-            const updateResult = results.find(r => r?.id === store.id);
-            if (!updateResult) return store;
-            return { ...store, status: updateResult.newStatus };
-          })
-        );
+            let newStatus: FacilityStatus = store.status;
+            switch (actionType) {
+              case 'approve': newStatus = 'active'; break;
+              case 'reject': newStatus = 'rejected'; break;
+              case 'suspend': newStatus = 'suspended'; break;
+              case 'activate': newStatus = 'active'; break;
+              case 'close': newStatus = 'refuse'; break;
+            }
+
+            await updateMerchantStatus(store.merchantId, newStatus);
+            return { id, newStatus };
+          });
+
+          const results = await Promise.all(updatePromises);
+
+          setStores(prev =>
+            prev.map(store => {
+              const updateResult = results.find(r => r?.id === store.id);
+              if (!updateResult) return store;
+              return { ...store, status: updateResult.newStatus };
+            })
+          );
+        }
         loadStats();
       } catch (error: any) {
         toast.error('Lỗi khi cập nhật hàng loạt: ' + error.message);
@@ -719,10 +910,11 @@ const departmentPath = user?.app_metadata?.department?.path ;
     // Success feedback
     const actionLabels: Record<BulkActionType, string> = {
       approve: 'phê duyệt',
-      reject: 'từ chi',
-      suspend: 'tạm ngừng',
+      reject: 'từ chối',
+      suspend: 'tạm dừng',
       activate: 'kích hoạt lại',
       close: 'ngừng hoạt động',
+      delete: 'xóa',
       export: 'xuất',
     };
 
@@ -742,46 +934,6 @@ const departmentPath = user?.app_metadata?.department?.path ;
     setBulkActionModal({ open: false, actionType: 'export', loading: false });
     setSelectedRows(new Set());
   };
-
-  // Bulk actions configuration
-  const bulkActions: BulkAction[] = [
-    {
-      label: 'Xuất CSV',
-      onClick: () => handleBulkAction('export'),
-      variant: 'secondary',
-      icon: <Download size={16} />,
-    },
-    {
-      label: 'Phê duyệt',
-      onClick: () => handleBulkAction('approve'),
-      variant: 'default',
-      icon: <CheckCircle2 size={16} />,
-    },
-    {
-      label: 'Từ chối',
-      onClick: () => handleBulkAction('reject'),
-      variant: 'secondary',
-      icon: <XCircle size={16} />,
-    },
-    {
-      label: 'Tạm ngừng',
-      onClick: () => handleBulkAction('suspend'),
-      variant: 'secondary',
-      icon: <Pause size={16} />,
-    },
-    {
-      label: 'Kích hoạt lại',
-      onClick: () => handleBulkAction('activate'),
-      variant: 'default',
-      icon: <Play size={16} />,
-    },
-    {
-      label: 'Ngừng hoạt động',
-      onClick: () => handleBulkAction('close'),
-      variant: 'destructive',
-      icon: <StopCircle size={16} />,
-    },
-  ];
 
   // Get actions for a store based on its status
   const getStoreActions = (store: Store): Action[] => {
@@ -803,10 +955,9 @@ const departmentPath = user?.app_metadata?.department?.path ;
         break;
 
       case 'rejected':
-        // Từ chối phê duyệt: Xem chi tiết, Chỉnh sửa, Xóa
+        // Từ chối phê duyệt: Xem chi tiết, Xóa (không có chỉnh sửa)
         actions.push(
           CommonActions.view(() => navigate(`/registry/stores/${store.id}`)),
-          CommonActions.edit(() => handleEdit(store)),
           { ...CommonActions.delete(() => handleDelete(store)), separator: true }
         );
         break;
@@ -829,7 +980,12 @@ const departmentPath = user?.app_metadata?.department?.path ;
         actions.push(
           CommonActions.view(() => navigate(`/registry/stores/${store.id}`)),
           CommonActions.resume(() => handleResume(store)),
-          { ...CommonActions.delete(() => handleClose(store)), label: 'Ngừng hoạt động', separator: true }
+          {
+            ...CommonActions.delete(() => handleClose(store)),
+            label: 'Ngừng hoạt động',
+            icon: <XCircle size={16} />,
+            separator: true,
+          }
         );
         break;
 
@@ -1020,11 +1176,7 @@ const departmentPath = user?.app_metadata?.department?.path ;
         actions={
           <>
             <Button variant="outline" size="sm" onClick={() => {
-              setSearchValue('');
-              setJurisdictionFilter('all');
-              setStatusFilter('all');
-              setActiveFilter(null);
-              toast.success('Đã tải lại dữ liệu');
+              window.location.reload();
             }}>
               <RefreshCw size={16} />
               Tải lại
@@ -1118,7 +1270,7 @@ const departmentPath = user?.app_metadata?.department?.path ;
             }}
           />
           <SummaryCard
-            label="Tạm ngừng"
+            label="Tạm ngừng hoạt động"
             value={stats.suspended}
             icon={CirclePause}
             variant="danger"
@@ -1182,6 +1334,7 @@ const departmentPath = user?.app_metadata?.department?.path ;
             appliedFilters={advancedFilter}
             onApply={(filters) => {
               setAdvancedFilter(filters);
+              setCurrentPage(1);
               toast.success('Đã áp dụng bộ lọc nâng cao');
             }}
             onClear={() => {
@@ -1190,6 +1343,7 @@ const departmentPath = user?.app_metadata?.department?.path ;
                 hasComplaints: 'all',
                 riskLevel: 'all',
               });
+              setCurrentPage(1);
               toast.success('Đã xoá bộ lọc nâng cao');
             }}
             hasActiveFilters={
@@ -1237,7 +1391,7 @@ const departmentPath = user?.app_metadata?.department?.path ;
               <SelectItem value="all">Tất cả trạng thái</SelectItem>
               <SelectItem value="pending">Chờ duyệt</SelectItem>
               <SelectItem value="active">Đang hoạt động</SelectItem>
-              <SelectItem value="suspended">Tạm ngưng</SelectItem>
+              <SelectItem value="suspended">Tạm ngưng hoạt động</SelectItem>
               <SelectItem value="rejected">Từ chối phê duyệt</SelectItem>
               <SelectItem value="refuse">Ngừng hoạt động</SelectItem>
             </SelectContent>
@@ -1399,7 +1553,7 @@ const departmentPath = user?.app_metadata?.department?.path ;
       <ExportDialog
         open={exportDialogOpen}
         onOpenChange={setExportDialogOpen}
-        totalRecords={stores.length}
+        totalRecords={totalRecords}
         selectedCount={selectedRows.size}
         onExport={(options: ExportOptions) => {
           toast.success('Xuất dữ liệu thành công');
@@ -1474,71 +1628,18 @@ const departmentPath = user?.app_metadata?.department?.path ;
             // Call API to create merchant
             const result = await createMerchant(apiPayload);
 
-
-            // Create local Store object for display
-            const numericId = Math.random() * 1000000 | 0;
-            const newStore: Store = {
-              id: numericId,
-              name: data.business_name,
-              type: data.industryName || 'Chưa xác định',
-              address: data.registeredAddress || '',
-              province: data.province,
-              provinceCode: data.province,
-              jurisdiction: districtName,
-              jurisdictionCode: data.jurisdiction,
-              ward: data.ward,
-              wardCode: data.ward,
-              managementUnit: data.managementUnit || `Chi cục QLTT ${districtName}`,
-              status: (data.status || 'pending') as FacilityStatus,
-              riskLevel: 'none',
-              lastInspection: 'Chưa kiểm tra',
-              area_name: result?.area_name || '0',
-              latitude: data.latitude,
-              longitude: data.longitude,
-              gpsCoordinates: data.latitude && data.longitude
-                ? `${data.latitude.toFixed(6)}, ${data.longitude.toFixed(6)}`
-                : undefined,
-              // Tab 1: Thông tin HKD
-              taxCode: data.taxCode,
-              industryName: data.industryName,
-              establishedDate: data.establishedDate,
-              operationStatus: data.operationStatus,
-              businessArea: result?.area_name || data.businessArea || undefined,  // Use area_name from API response
-              businessPhone: data.businessPhone,
-              email: data.email,
-              website: data.website,
-              fax: data.fax,
-              notes: data.notes,
-              // Tab 2: Thông tin chủ hộ
-              ownerName: data.ownerName,
-              ownerBirthYear: data.ownerBirthYear ? parseInt(data.ownerBirthYear) : undefined,
-              ownerIdNumber: data.ownerIdNumber,
-              ownerPhone: data.ownerPhone,
-              // Tab 3: Địa chỉ
-              registeredAddress: data.registeredAddress || '',
-              headquarterAddress: data.headquarterAddress,
-              productionAddress: data.productionAddress,
-              // Compatibility fields
-              phone: data.ownerPhone,
-              businessType: data.industryName,
-              isVerified: false,
-            };
-
-
-            // Add to global store registry
-            addStore(newStore);
-
-            // Thêm vào đầu danh sách (prepend)
-            setStores(prev => [newStore, ...prev]);
-            // Chuyển về trang 1 để thấy dữ liệu mới
-            setCurrentPage(1);
-
-            // Close dialog
+            // Close dialog immediately
             setAddDialogOpen(false);
 
             toast.success('Thêm cửa hàng thành công', {
               description: 'Cửa hàng mới đã được thêm vào hệ thống',
             });
+
+            // Reload data from API to get the complete store info with merchantId
+            await loadData();
+            
+            // Go to first page to see the new store
+            setCurrentPage(1);
           } catch (error: any) {
             toast.error('Lỗi khi thêm cửa hàng', {
               description: error.message || 'Vui lòng thử lại',

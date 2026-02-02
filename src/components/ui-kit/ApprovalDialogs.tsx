@@ -76,6 +76,14 @@ export function ApproveDialog({
 
         <DialogFooter className={styles.footer}>
           <Button
+            variant="outline"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className={styles.closeButtonFooter}
+          >
+            Đóng
+          </Button>
+          <Button
             onClick={handleSubmit}
             disabled={isSubmitting}
             className={styles.approveButton}

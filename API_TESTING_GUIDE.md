@@ -42,7 +42,7 @@
 ### 🟢 Test Step 2: Chỉnh sửa một vài field
 
 **Action**: 
-1. Click "Chỉnh sửa đầy đủ"
+1. Click "Chỉnh sửa"
 2. Sửa: Tên cơ sở, Email
 3. Nhấn "Xem trước thay đổi"
 

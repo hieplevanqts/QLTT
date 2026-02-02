@@ -54,6 +54,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // 🔥 NEW: Fetch user permissions from database (users -> user_roles -> roles -> role_permissions -> permissions)
 async function fetchUserPermissions(userId: string): Promise<string[]> {
+  console.log('Fetching user permissions...');
+  
   try {
     // Prefer a single RPC to avoid multi-step permission fetches.
     const rpcResult = await supabase.rpc('rpc_user_permissions_codes', {

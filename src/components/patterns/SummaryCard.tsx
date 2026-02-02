@@ -33,15 +33,15 @@ export default function SummaryCard({
         <div className={`${styles.iconWrapper} ${styles[variant]}`}>
           <Icon size={20} />
         </div>
-      </div>
-      <div className={styles.content}>
-        <div className={styles.label}>{label}</div>
-        <div className={styles.value}>{value}</div>
-        {trend && (
-          <div className={`${styles.trend} ${trend.direction === 'up' ? styles.positive : styles.negative}`}>
-            {trend.direction === 'up' ? '↑' : '↓'} {trend.value}
-          </div>
-        )}
+        <div className={styles.content}>
+          <div className={styles.label}>{label}</div>
+          <div className={styles.value}>{value}</div>
+          {trend && (
+            <div className={`${styles.trend} ${trend.direction === 'up' ? styles.positive : styles.negative}`}>
+              {trend.direction === 'up' ? '↑' : '↓'} {trend.value}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

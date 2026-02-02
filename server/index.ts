@@ -53,9 +53,11 @@ const loadEnvFile = () => {
 
 loadEnvFile();
 
-const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_URL = 'https://mwuhuixkybbwrnoqcibg.supabase.co';
+const SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13dWh1aXhreWJid3Jub3FjaWJnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NzYwNTc5MiwiZXhwIjoyMDgzMTgxNzkyfQ.181FfeKfCfZt_v21wHiOgFlzm7g-pNb-JLLjPJtixzo';
 
+// const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+// const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 let supabaseAdmin: SupabaseClient | null = null;
 
 const getSupabaseAdmin = () => {

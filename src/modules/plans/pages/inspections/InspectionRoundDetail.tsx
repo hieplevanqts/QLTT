@@ -270,6 +270,28 @@ export default function InspectionRoundDetail() {
   // We can reuse selectedTask for these action modals if we are careful, 
   // or use a separate 'actionTask' state like TaskBoard to be safe.
   const [actionTask, setActionTask] = useState<any | null>(null);
+  
+  // Selection State
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+
+  const handleSelectRow = (id: string | number) => {
+    const stringId = String(id);
+    const newSelected = new Set(selectedRows);
+    if (newSelected.has(stringId)) {
+      newSelected.delete(stringId);
+    } else {
+      newSelected.add(stringId);
+    }
+    setSelectedRows(newSelected);
+  };
+
+  const handleSelectAll = (selected: boolean) => {
+    if (selected) {
+      setSelectedRows(new Set(sessions.map((s) => s.id)));
+    } else {
+      setSelectedRows(new Set());
+    }
+  };
 
 
   useEffect(() => {
@@ -331,6 +353,7 @@ export default function InspectionRoundDetail() {
           campaign_id: formData.roundId,
           merchant_id: formData.merchantId,
           user_id: formData.assigneeId || null,
+          department_id: formData.departmentId || null, // Add department_id
           start_time: formData.startDate,
           deadline_time: formData.dueDate,
           description: formData.description,
@@ -348,6 +371,7 @@ export default function InspectionRoundDetail() {
           campaign_id: formData.roundId,
           merchant_id: formData.merchantId,
           user_id: formData.assigneeId || null,
+          department_id: formData.departmentId || null, // Add department_id
           start_time: formData.startDate,
           deadline_time: formData.dueDate,
           description: formData.description, // Save to description
@@ -478,7 +502,7 @@ export default function InspectionRoundDetail() {
             status: s.status, 
             type: s.type || 'proactive',
             priority: 'medium',
-            roundName: 'Đợt kiểm tra hiện tại',
+            roundName: s.campaignName || data?.name || 'Đợt kiểm tra hiện tại',
             description: s.description || s.note, 
             merchantId: s.merchantId,
             merchantName: s.merchantName,
@@ -540,8 +564,17 @@ export default function InspectionRoundDetail() {
   // Define columns matching TaskBoard exactly
   const columns: Column<any>[] = [
     {
+      key: 'stt',
+      label: 'STT',
+      width: '60px',
+      className: 'text-center',
+      render: (_, index) => (
+        <div className="text-center">{index + 1}</div>
+      ),
+    },
+    {
       key: 'title',
-      label: 'Tên nhiệm vụ',
+      label: 'Tên phiên làm việc',
       sortable: true,
       render: (task) => (
         <div>
@@ -555,12 +588,7 @@ export default function InspectionRoundDetail() {
       label: 'Đợt kiểm tra',
       sortable: true,
       render: (task) => (
-        <div>
-          <div style={{ fontWeight: 500 }}>{task?.roundId || 'N/A'}</div>
-          {task?.planName && (
-            <div style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>{task.planName}</div>
-          )}
-        </div>
+        <div style={{ fontWeight: 500 }}>{task?.roundName || 'N/A'}</div>
       ),
     },
     {
@@ -592,6 +620,15 @@ export default function InspectionRoundDetail() {
       label: 'Người thực hiện',
       sortable: true,
       render: (task) => task?.assignee?.name || 'N/A',
+    },
+    {
+      key: 'startDate',
+      label: 'Ngày bắt đầu',
+      sortable: true,
+      render: (task) => {
+        if (!task?.startDate) return <span>-</span>;
+        return <span>{new Date(task.startDate).toLocaleDateString('vi-VN')}</span>;
+      },
     },
     {
       key: 'dueDate',
@@ -1145,6 +1182,10 @@ export default function InspectionRoundDetail() {
                   columns={columns}
                   data={sessions}
                   getRowId={(s) => s.id}
+                  selectable={true}
+                  selectedRows={selectedRows}
+                  onSelectRow={handleSelectRow}
+                  onSelectAll={handleSelectAll}
                 />
               ) : (
                 <EmptyState
@@ -1281,6 +1322,7 @@ export default function InspectionRoundDetail() {
         onSubmit={handleCreateTask}
         defaultRoundId={roundId}
         defaultPlanId={data?.planId}
+        defaultDepartmentId={data?.leadUnitId}
         task={editingTask}
         taskId={editingTask?.id}
       />

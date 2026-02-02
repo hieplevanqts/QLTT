@@ -41,6 +41,7 @@ interface FormData {
   startDate: string | null;
   endDate: string | null;
   leadUnit: string;
+  leadUnitId?: string; // Add leadUnitId
   provinceId: string;
   wardId: string;
   priority: PriorityLevel;
@@ -173,6 +174,7 @@ export default function InspectionRoundCreate() {
     startDate: null,
     endDate: null,
     leadUnit: '',
+    leadUnitId: '', // Initialize leadUnitId
     priority: 'medium',
     provinceId: '',
     wardId: '',
@@ -303,6 +305,8 @@ export default function InspectionRoundCreate() {
         relatedPlanId: value,
         provinceId: selectedPlan?.provinceId || '',
         wardId: selectedPlan?.wardId || '',
+        leadUnitId: selectedPlan?.leadUnit || '', // Set leadUnitId from selected plan
+        leadUnit: selectedPlan?.responsibleUnit || prev.leadUnit, // Optional: auto-fill leadUnit name
       }));
     } else {
       setFormData(prev => ({ ...prev, [field]: value }));
@@ -349,6 +353,7 @@ export default function InspectionRoundCreate() {
           startDate: formData.startDate!,
           endDate: formData.endDate!,
           leadUnit: formData.leadUnit || userWard,
+          leadUnitId: formData.leadUnitId, // Pass department_id from plan
           totalTargets: formData.selectedStores.length,
           provinceId: formData.provinceId,
           wardId: formData.wardId,
@@ -365,6 +370,7 @@ export default function InspectionRoundCreate() {
           startDate: formData.startDate!,
           endDate: formData.endDate!,
           leadUnit: formData.leadUnit || userWard,
+          leadUnitId: formData.leadUnitId, // Pass department_id from plan
           totalTargets: formData.selectedStores.length,
           inspectedTargets: 0,
           provinceId: formData.provinceId,

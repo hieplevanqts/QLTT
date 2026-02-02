@@ -238,6 +238,17 @@ export function DocumentViewDialog({
 
                     // Direct key match in uploadedData (if any)
                     if (document.uploadedData[field.key]) return document.uploadedData[field.key];
+
+                    // Fallback to notes JSON (stored fields)
+                    if (typeof document.uploadedData.notes === 'string') {
+                      try {
+                        const parsed = JSON.parse(document.uploadedData.notes);
+                        const notesFields = parsed?.fields || parsed;
+                        if (notesFields && notesFields[field.key]) return notesFields[field.key];
+                      } catch {
+                        // ignore non-JSON notes
+                      }
+                    }
                   }
 
                   return null;
@@ -273,13 +284,6 @@ export function DocumentViewDialog({
                 </div>
               )}
             </div>
-
-            {document.notes && (
-              <div className={styles.notesSection}>
-                <div className={styles.detailLabel}>Ghi chú</div>
-                <div className={styles.detailValue}>{document.notes}</div>
-              </div>
-            )}
           </div>
         </div>
 

@@ -94,7 +94,7 @@ Khi mở trang edit, bạn sẽ thấy các logs:
 ### Test 2: Mở edit page
 1. Vào `/registry/stores` 
 2. Click vào cửa hàng vừa tạo
-3. Click "Chỉnh sửa đầy đủ"
+3. Click "Chỉnh sửa"
 4. **Kiểm tra:** Các select fields có hiển thị đúng giá trị không?
 
 ### Test 3: Thay đổi select values

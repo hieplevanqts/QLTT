@@ -122,6 +122,7 @@ export const MerchantsLayer: React.FC<MerchantsLayerProps> = ({
         popupAnchor: [0, -markerSize]
       });
 
+
       const marker = L.marker([restaurant.lat, restaurant.lng], { icon: customIcon })
         .addTo(mapInstance)
         .bindPopup(`

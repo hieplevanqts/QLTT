@@ -31,11 +31,12 @@ export async function fetchMerchants(
   businessTypeFiltersArray?: string[],
   searchQuery?: string,
 ): Promise<Restaurant[]> {
+console.log('targetDepartmentPath', targetDepartmentPath);
 
 try {
     const baseUrl = `${SUPABASE_REST_URL}/merchant_filter_view`;
     const params = new URLSearchParams();
-    params.append('select', '_id,business_name,address,business_type,latitude,longitude,status,category_ids');
+    params.append('select', '_id,business_name,address,business_type,latitude,longitude,status,category_ids,tax_code');
     params.append('limit', searchQuery?.limit ? String(searchQuery?.limit) : '100');
     params.append('order', '_id.desc');
     const pathFilter = targetDepartmentPath ? `${targetDepartmentPath}*` : 'QT*';
@@ -62,7 +63,8 @@ try {
       category: mapMerchantStatusToCategory(m.status),
       merchant_staff: m.merchant_staff, 
       merchant_law_docs: m.merchant_law_docs, 
-      status: m.status
+      status: m.status,
+      taxCode: m.tax_code
     }));
 
   } catch (error) {
@@ -186,7 +188,7 @@ export async function fetchMerchantStats(
 
 export async function fetchMerchantDetail(merchantId: string, licenseType: string = 'Giấy phép kinh doanh'): Promise<any> {
   try {
-    const url = `${SUPABASE_REST_URL}/merchants?id=eq.${merchantId}&select=*,merchant_licenses!merchant_licenses_merchant_id_fkey!inner(*)&merchant_licenses.license_type=ilike.*${encodeURIComponent(licenseType)}*`;
+    const url = `${SUPABASE_REST_URL}/merchants?or=(id.eq.${merchantId},_id.eq.${merchantId})&select=*,merchant_licenses!merchant_licenses_merchant_id_fkey!inner(*)&merchant_licenses.license_type=ilike.*${encodeURIComponent(licenseType)}*`;
     
     console.log('🔍 fetchMerchantDetail API call (axios):', url);
 

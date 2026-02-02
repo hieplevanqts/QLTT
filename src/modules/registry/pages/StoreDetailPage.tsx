@@ -35,7 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { mockStores, Store } from '@/utils/data/mockStores';
 import { getProvinceByCode, getDistrictByName, getWardByCode } from '@/utils/data/vietnamLocations';
 import { fetchProvinceById, fetchWardById } from '@/utils/api/locationsApi';
-import { fetchStoreById, fetchMerchantLicenses, upsertMerchantLicense, updateMerchantStatus } from '@/utils/api/storesApi';
+import { fetchStoreById, fetchMerchantLicenses, upsertMerchantLicense, updateMerchantStatus, fetchMerchantChangeLogs, type MerchantChangeLog } from '@/utils/api/storesApi';
 import { generateLegalDocuments, LegalDocumentData } from '@/utils/data/mockLegalDocuments';
 import { LegalDocumentItem, ApprovalStatus } from '@/components/ui-kit/LegalDocumentItem';
 import { DocumentUploadDialog } from '@/components/ui-kit/DocumentUploadDialog';
@@ -77,6 +77,9 @@ export default function StoreDetailPage() {
   const [editingDocument, setEditingDocument] = useState<LegalDocumentData | null>(null);
   const [currentDocumentType, setCurrentDocumentType] = useState<string | null>(null);
   const [legalDocuments, setLegalDocuments] = useState<LegalDocumentData[]>([]);
+  const [changeLogs, setChangeLogs] = useState<MerchantChangeLog[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
 
   // Approval Dialog states
   const [approveDialog, setApproveDialog] = useState(false);
@@ -329,10 +332,28 @@ export default function StoreDetailPage() {
     }
   }, [store?.merchantId, store?.id]);
 
+  const loadChangeHistory = useCallback(async () => {
+    if (!store?.merchantId) return;
+    setIsLoadingHistory(true);
+    setHistoryError(null);
+    try {
+      const logs = await fetchMerchantChangeLogs(store.merchantId);
+      setChangeLogs(logs);
+    } catch (error: any) {
+      setHistoryError(error?.message || 'Không thể tải lịch sử thay đổi');
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }, [store?.merchantId]);
+
   // Initial load
   useEffect(() => {
     loadMerchantLicenses();
   }, [loadMerchantLicenses]);
+
+  useEffect(() => {
+    loadChangeHistory();
+  }, [loadChangeHistory]);
 
   // Loading state
   if (isLoadingStore) {
@@ -372,6 +393,117 @@ export default function StoreDetailPage() {
     provinceName || province?.name || store.province
   ].filter(part => part && part !== 'undefined' && part !== 'none');
   const fullAddress = addressParts.join(', ');
+
+  // 🗺️ Map kỹ thuật → Tiếng Việt thân thiện
+  const fieldNameMapping: Record<string, string> = {
+    // Thông tin cơ bản
+    email: 'Email liên hệ',
+    phone: 'Số điện thoại',
+    phone_number: 'Số điện thoại',
+    name: 'Tên cơ sở kinh doanh',
+    business_name: 'Tên cơ sở kinh doanh',
+    
+    // Địa chỉ
+    address: 'Địa chỉ chi tiết',
+    province: 'Tỉnh/Thành phố',
+    province_code: 'Tỉnh/Thành phố',
+    district: 'Quận/Huyện',
+    district_code: 'Quận/Huyện',
+    ward: 'Phường/Xã',
+    ward_code: 'Phường/Xã',
+    
+    // Thông tin kinh doanh
+    website: 'Trang web',
+    website_url: 'Trang web',
+    business_type: 'Loại hình kinh doanh',
+    business_type_code: 'Loại hình kinh doanh',
+    store_area: 'Diện tích cơ sở',
+    area: 'Diện tích cơ sở',
+    
+    // Trạng thái
+    status: 'Trạng thái',
+    approval_status: 'Trạng thái phê duyệt',
+    
+    // Giấy phép
+    license_number: 'Số giấy phép',
+    license_type: 'Loại giấy phép',
+    license_expiry: 'Ngày hết hạn giấy phép',
+    license_issued_date: 'Ngày cấp giấy phép',
+    
+    // Metadata
+    updated_at: 'Thời gian cập nhật hệ thống',
+    created_at: 'Thời gian tạo hệ thống',
+    last_modified: 'Lần sửa đổi cuối',
+  };
+
+  const formatHistoryField = (fieldCode: string | null | undefined): string => {
+    if (!fieldCode) return 'Trường dữ liệu khác';
+    const mapped = fieldNameMapping[fieldCode.toLowerCase()];
+    return mapped || 'Trường dữ liệu khác';
+  };
+
+  const formatHistoryValue = (value: string | null | undefined) => {
+    if (value === null || value === undefined || value === '') return 'Chưa có dữ liệu';
+    
+    // Kiểm tra nếu là URL
+    if (typeof value === 'string' && (value.startsWith('http://') || value.startsWith('https://'))) {
+      return value;
+    }
+    
+    return String(value);
+  };
+
+  const formatHistoryDate = (value: string | null | undefined) => {
+    if (!value) return 'Không xác định';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  };
+
+  const formatHistoryTime = (value: string | null | undefined) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  };
+
+  // 📅 Group changes by created_at timestamp
+  const groupChangesByTimestamp = (logs: MerchantChangeLog[]) => {
+    const grouped: Record<string, MerchantChangeLog[]> = {};
+    logs.forEach((log) => {
+      const key = log.created_at || 'unknown';
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(log);
+    });
+    return Object.entries(grouped)
+      .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
+      .map(([timestamp, items]) => ({ timestamp, items }));
+  };
+
+  // Translate action type
+  const translateAction = (action?: string): string => {
+    if (!action) return 'Cập nhật';
+    const actionMap: Record<string, string> = {
+      'UPDATE': 'Cập nhật thông tin',
+      'CREATE': 'Tạo mới',
+      'DELETE': 'Xóa',
+      'INSERT': 'Thêm mới',
+      'APPROVE': 'Phê duyệt',
+      'REJECT': 'Từ chối',
+    };
+    return actionMap[action.toUpperCase()] || 'Cập nhật';
+  };
 
   // Get legal documents
   const initialLegalDocuments = generateLegalDocuments(store.id);
@@ -775,15 +907,18 @@ export default function StoreDetailPage() {
 
 
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate(`/registry/full-edit/${store.id}`)}
-            className={styles.editButton}
-          >
-            <Edit size={16} />
-            Chỉnh sửa đầy đủ
-          </Button>
+          {/* Only show edit button for active and pending statuses */}
+          {(store.status === 'active' || store.status === 'pending') && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/registry/full-edit/${store.id}`)}
+              className={styles.editButton}
+            >
+              <Edit size={16} />
+              Chỉnh sửa
+            </Button>
+          )}
         </div>
 
         <div className={styles.headerContent}>
@@ -990,6 +1125,7 @@ export default function StoreDetailPage() {
           <TabsTrigger value="photos">Phản ánh</TabsTrigger>
           <TabsTrigger value="risk">Rủi ro & theo dõi</TabsTrigger>
           <TabsTrigger value="images">Ảnh</TabsTrigger>
+          <TabsTrigger value="history">Lịch sử thay đổi</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className={styles.tabContent}>
@@ -1051,34 +1187,6 @@ export default function StoreDetailPage() {
                     </span>
                     <span className={styles.infoValue}>{store.businessPhone || store.phone || 'Chưa có thông tin'}</span>
                   </div>
-
-                  <div className={styles.infoRowInline}>
-                    <Building2 size={14} />
-                    <span className={styles.infoLabel}>Diện tích cửa hàng :</span>
-                    <span className={styles.infoValue}>{store.businessArea ? `${store.businessArea} m²` : 'Chưa có thông tin'}</span>
-                  </div>
-
-                  <div className={styles.infoRowInline}>
-                    <Mail size={14} />
-                    <span className={styles.infoLabel}>Email :</span>
-                    <span className={styles.infoValue}>{store.email || 'Chưa có thông tin'}</span>
-                  </div>
-
-                  {store.website && (
-                    <div className={styles.infoRowInline}>
-                      <ExternalLink size={14} />
-                      <span className={styles.infoLabel}>Website :</span>
-                      <span className={styles.infoValue}>{store.website}</span>
-                    </div>
-                  )}
-
-                  {store.fax && (
-                    <div className={styles.infoRowInline}>
-                      <Phone size={14} />
-                      <span className={styles.infoLabel}>Fax :</span>
-                      <span className={styles.infoValue}>{store.fax}</span>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -1090,7 +1198,7 @@ export default function StoreDetailPage() {
                   <div className={styles.infoRowInline}>
                     <User size={14} />
                     <span className={styles.infoLabel}>
-                      Tên Chủ cơ sở<span className={styles.required}>*</span> :
+                      Tên Chủ cơ sở :
                     </span>
                     <span className={styles.infoValue}>{store.ownerName || 'Chưa có thông tin'}</span>
                   </div>
@@ -1098,7 +1206,7 @@ export default function StoreDetailPage() {
                   <div className={styles.infoRowInline}>
                     <Calendar size={14} />
                     <span className={styles.infoLabel}>
-                      Năm sinh chủ hộ<span className={styles.required}>*</span> :
+                      Năm sinh chủ hộ :
                     </span>
                     <span className={styles.infoValue}>{store.ownerBirthYear || 'Chưa có thông tin'}</span>
                   </div>
@@ -1110,7 +1218,7 @@ export default function StoreDetailPage() {
                   <div className={styles.infoRowInline}>
                     <FileText size={14} />
                     <span className={styles.infoLabel}>
-                      Số CMTND / CCCD / ĐDCN<span className={styles.required}>*</span> :
+                      Số CMTND / CCCD / ĐDCN :
                     </span>
                     <span className={styles.infoValue}>{store.ownerIdNumber || 'Chưa có thông tin'}</span>
                   </div>
@@ -1374,10 +1482,97 @@ export default function StoreDetailPage() {
               <CardTitle>Lịch sử thay đổi</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className={styles.historyEmpty}>
-                <Calendar size={48} className={styles.emptyIcon} />
-                <p>Cha có lịch sử thay đổi</p>
-              </div>
+              {isLoadingHistory ? (
+                <div className={styles.historyEmpty}>
+                  <Calendar size={48} className={styles.emptyIcon} />
+                  <p>Đang tải lịch sử thay đổi...</p>
+                </div>
+              ) : historyError ? (
+                <div className={styles.historyEmpty}>
+                  <AlertTriangle size={48} className={styles.emptyIcon} />
+                  <p>{historyError}</p>
+                </div>
+              ) : changeLogs.length === 0 ? (
+                <div className={styles.historyEmpty}>
+                  <Calendar size={48} className={styles.emptyIcon} />
+                  <p>📄 Chưa có lịch sử thay đổi nào được ghi nhận</p>
+                </div>
+              ) : (
+                <div className={styles.timelineContainer}>
+                  {groupChangesByTimestamp(changeLogs).map((group, groupIndex) => (
+                    <div key={`${group.timestamp}-${groupIndex}`} className={styles.timelineGroup}>
+                      {/* Timeline Marker */}
+                      <div className={styles.timelineMarker}>
+                        <div className={styles.timelineDot} />
+                        <div className={styles.timelineConnector} />
+                      </div>
+
+                      {/* Group Card */}
+                      <div className={styles.timelineCard}>
+                        {/* Header: Timestamp + Action + User */}
+                        <div className={styles.timelineHeader}>
+                          <div className={styles.timelineTime}>
+                            <span className={styles.timelineDate}>
+                              📅 {new Date(group.timestamp).toLocaleDateString('vi-VN', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                              })}
+                            </span>
+                            <span className={styles.timelineHour}>
+                              🕒 {formatHistoryTime(group.timestamp)}
+                            </span>
+                          </div>
+                          <div className={styles.timelineAction}>
+                            <span className={styles.actionBadge}>{translateAction(group.items[0]?.action)}</span>
+                          </div>
+                        </div>
+
+                        {/* User Info */}
+                        <div className={styles.timelineUser}>
+                          👤 <span className={styles.userEmail}>{group.items[0]?.user_email || 'Hệ thống'}</span>
+                        </div>
+
+                        {/* Changes List */}
+                        <div className={styles.changesList}>
+                          {group.items.map((log) => (
+                            <div key={log._id} className={styles.changeItem}>
+                              {/* Field Name */}
+                              <div className={styles.fieldName}>
+                                ✏️ <span className={styles.fieldLabel}>{formatHistoryField(log.feild_code || log.feild_name)}</span>
+                              </div>
+
+                              {/* Old → New Values */}
+                              <div className={styles.valuesComparison}>
+                                <div className={styles.valueBox}>
+                                  <div className={styles.valueBoxLabel}>Trước</div>
+                                  <div className={styles.valueBoxContent}>
+                                    {formatHistoryValue(log.old_data)}
+                                  </div>
+                                </div>
+                                <div className={styles.valueArrow}>→</div>
+                                <div className={styles.valueBox + ' ' + styles.valueBoxNew}>
+                                  <div className={styles.valueBoxLabel}>Sau</div>
+                                  <div className={styles.valueBoxContent}>
+                                    {formatHistoryValue(log.new_data)}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Notes if exist */}
+                              {log.note && (
+                                <div className={styles.changeNote}>
+                                  📝 <span>{log.note}</span>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

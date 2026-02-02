@@ -1,18 +1,19 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Save, 
-  X, 
-  MapPin, 
-  Phone, 
-  Globe, 
-  User, 
+import {
+  Save,
+  X,
+  MapPin,
+  Phone,
+  Globe,
+  User,
   FileText,
   AlertCircle,
   Clock,
   ChevronDown
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { getSupabaseClient } from '@/utils/supabaseClient';
 import styles from './CreateLeadQuick.module.css';
 
 interface FormData {
@@ -98,15 +99,103 @@ export default function CreateLeadQuick() {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      
-      const newLeadId = `L-2024-${Math.floor(1000 + Math.random() * 9000)}`;
-      
-      toast.success(`Đã tạo lead ${newLeadId} thành công!`);
-      navigate(`/lead-risk/lead/${newLeadId}`);
+      const supabase = getSupabaseClient();
+
+      // Generate Lead Code: LEAD-YYYYMM-XXXX
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const prefix = `LEAD-${year}${month}`;
+
+      // Find the latest lead code with this prefix to increment
+      const { data: latestLead } = await supabase
+        .from('leads')
+        .select('code')
+        .ilike('code', `${prefix}-%`)
+        .order('code', { ascending: false })
+        .limit(1)
+        .single();
+
+      let sequence = 1;
+      if (latestLead && latestLead.code) {
+        const parts = latestLead.code.split('-');
+        const lastSeq = parseInt(parts[2]); // LEAD-YYYYMM-XXXX -> parts[2] is XXXX
+        if (!isNaN(lastSeq)) {
+          sequence = lastSeq + 1;
+        }
+      }
+
+      const generatedCode = `${prefix}-${String(sequence).padStart(4, '0')}`;
+
+      // Parse coordinates
+      let lat = 10.762622; // Default HCMC
+      let lng = 106.660172;
+
+      if (formData.coordinates) {
+        const parts = formData.coordinates.split(',').map(p => p.trim());
+        if (parts.length === 2) {
+          const pLat = parseFloat(parts[0]);
+          const pLng = parseFloat(parts[1]);
+          if (!isNaN(pLat) && !isNaN(pLng)) {
+            lat = pLat;
+            lng = pLng;
+          }
+        }
+      }
+
+      // Prepare payload
+      const payload = {
+        code: generatedCode,
+        title: formData.sourceDetail ? `${formData.source} - ${formData.sourceDetail}` : formData.source,
+        description: formData.description,
+        severity: formData.urgency,
+        location: {
+          province: 'TP. Hồ Chí Minh', // Default
+          district: formData.district,
+          ward: '', // Not in quick form
+          address: formData.address || `${formData.district}, TP.HCM`,
+          lat: lat,
+          lng: lng
+        },
+        reporter_name: formData.contactName || 'Người dân',
+        reporter_phone: formData.contactPhone || null,
+
+        // Default fields for required columns
+        status: 'new',
+        category: 'other',
+        occurred_at: new Date().toISOString(),
+        created_by: 'admin', // Placeholder
+        sla: {
+          response_hours: 24,
+          resolution_hours: 72
+        }
+      };
+
+      // Insert into leads table
+      // Note: trigger should handle lead code generation if configured, 
+      // otherwise we might need the edge function if this fails on 'code' constraint.
+      // Trying direct insert first as requested.
+      const { data, error } = await supabase
+        .from('leads')
+        .insert([payload])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating lead:', error);
+        throw error;
+      }
+
+      const newLead = data;
+      const newLeadId = newLead.code || newLead._id; // Fallback
+
+      toast.success(`Đã tạo nhanh nguồn tin ${newLeadId} thành công!`);
+      navigate(`/lead-risk/lead/${newLeadId}`); // Adjust route if needed, usually /lead-risk/leads/:id or similar.
+      // Assuming route is /lead-risk/lead/:id based on previous simulated code.
+
     } catch (error) {
-      toast.error('Có lỗi xảy ra. Vui lòng thử lại.');
+      console.error('Submit error:', error);
+      toast.error('Có lỗi xảy ra khi tạo nguồn tin. Vui lòng thử lại.');
     } finally {
       setIsSubmitting(false);
     }
@@ -123,7 +212,7 @@ export default function CreateLeadQuick() {
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.titleGroup}>
-          <h1 className={styles.title}>Tạo Lead nhanh</h1>
+          <h1 className={styles.title}>Tạo nhanh nguồn tin</h1>
           <p className={styles.subtitle}>Tạo nguồn tin trong 60 giây</p>
         </div>
 
@@ -141,7 +230,7 @@ export default function CreateLeadQuick() {
             <h2 className={styles.sectionTitle}>
               1. Nguồn tin <span className={styles.required}>*</span>
             </h2>
-            
+
             <div className={styles.sourceGrid}>
               {sourceTypes.map((source) => {
                 const IconComponent = source.icon;
@@ -149,9 +238,8 @@ export default function CreateLeadQuick() {
                   <button
                     key={source.value}
                     type="button"
-                    className={`${styles.sourceButton} ${
-                      formData.source === source.value ? styles.sourceButtonActive : ''
-                    }`}
+                    className={`${styles.sourceButton} ${formData.source === source.value ? styles.sourceButtonActive : ''
+                      }`}
                     onClick={() => setFormData({ ...formData, source: source.value })}
                   >
                     <IconComponent size={24} />
@@ -186,7 +274,7 @@ export default function CreateLeadQuick() {
             <h2 className={styles.sectionTitle}>
               2. Mô tả sự việc <span className={styles.required}>*</span>
             </h2>
-            
+
             <div className={styles.inputGroup}>
               <textarea
                 placeholder="Mô tả ngắn gọn về sự việc, vi phạm, khiếu nại..."
@@ -212,15 +300,14 @@ export default function CreateLeadQuick() {
             <h2 className={styles.sectionTitle}>
               3. Mức độ khẩn cấp <span className={styles.required}>*</span>
             </h2>
-            
+
             <div className={styles.urgencyGrid}>
               {urgencyLevels.map((level) => (
                 <button
                   key={level.value}
                   type="button"
-                  className={`${styles.urgencyButton} ${
-                    formData.urgency === level.value ? styles.urgencyButtonActive : ''
-                  }`}
+                  className={`${styles.urgencyButton} ${formData.urgency === level.value ? styles.urgencyButtonActive : ''
+                    }`}
                   onClick={() => setFormData({ ...formData, urgency: level.value as any })}
                   style={{
                     borderColor: formData.urgency === level.value ? level.color : 'var(--border)',
@@ -244,7 +331,7 @@ export default function CreateLeadQuick() {
             <h2 className={styles.sectionTitle}>
               4. Địa điểm <span className={styles.required}>*</span>
             </h2>
-            
+
             <div className={styles.locationGrid}>
               <div className={styles.inputGroup}>
                 <label>Quận/Huyện</label>
@@ -316,7 +403,7 @@ export default function CreateLeadQuick() {
           {/* Contact Info */}
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>5. Thông tin liên hệ (tùy chọn)</h2>
-            
+
             <div className={styles.contactGrid}>
               <div className={styles.inputGroup}>
                 <label>Tên người báo cáo</label>

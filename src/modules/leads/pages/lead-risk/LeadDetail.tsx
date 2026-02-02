@@ -25,6 +25,7 @@ import {
   Loader2,
   PauseCircle,
   PlayCircle,
+  Ban,
 } from 'lucide-react';
 import { useSupabaseLead } from '@/hooks/useSupabaseLeads';
 import { StatusBadge } from '@/components/lead-risk/StatusBadge';
@@ -42,51 +43,7 @@ import type { LeadUrgency, LeadConfidence, LeadCategory } from '@/utils/data/lea
 import styles from './LeadDetail.module.css';
 
 
-// Mock evidence data
-const mockEvidenceImages = [
-  {
-    id: 'ev-001',
-    url: 'https://images.unsplash.com/photo-1556742400-b5b6c5e44c2b?w=800&h=600&fit=crop',
-    caption: 'Hình ảnh tổng quan cửa hàng',
-    timestamp: new Date('2025-01-07T08:35:00'),
-    uploadedBy: 'Nguyễn Văn A',
-  },
-  {
-    id: 'ev-002',
-    url: 'https://images.unsplash.com/photo-1605902711834-8b11c3e3ef2f?w=800&h=600&fit=crop',
-    caption: 'Sản phẩm nghi giả mạo - Điện thoại không tem',
-    timestamp: new Date('2025-01-07T08:40:00'),
-    uploadedBy: 'Nguyễn Văn A',
-  },
-  {
-    id: 'ev-003',
-    url: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&h=600&fit=crop',
-    caption: 'Chi tiết sản phẩm - Thiếu thông tin xuất xứ',
-    timestamp: new Date('2025-01-07T08:45:00'),
-    uploadedBy: 'Nguyễn Văn A',
-  },
-  {
-    id: 'ev-004',
-    url: 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=800&h=600&fit=crop',
-    caption: 'Hóa đơn bán hàng nghi vấn',
-    timestamp: new Date('2025-01-07T08:50:00'),
-    uploadedBy: 'Nguyễn Văn A',
-  },
-  {
-    id: 'ev-005',
-    url: 'https://images.unsplash.com/photo-1580894732444-8ecded7900cd?w=800&h=600&fit=crop',
-    caption: 'Biển hiệu cửa hàng',
-    timestamp: new Date('2025-01-07T08:55:00'),
-    uploadedBy: 'Trần Văn B',
-  },
-  {
-    id: 'ev-006',
-    url: 'https://images.unsplash.com/photo-1512941675424-1c7c9f6f5e0e?w=800&h=600&fit=crop',
-    caption: 'Kho chứa hàng phía sau cửa hàng',
-    timestamp: new Date('2025-01-07T09:00:00'),
-    uploadedBy: 'Trần Văn B',
-  },
-];
+
 
 export default function LeadDetail() {
   const { id } = useParams<{ id: string }>();
@@ -133,7 +90,7 @@ export default function LeadDetail() {
   const [showQuickActionsSidebar, setShowQuickActionsSidebar] = useState(false);
 
   // Start Verification Modal state
-  const [showStartVerificationModal, setShowStartVerificationModal] = useState(false);
+
 
   // Generic Confirmation Dialog state
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -394,49 +351,7 @@ export default function LeadDetail() {
     }
   };
 
-  // Handle start verification (new → verifying)
-  const handleConfirmStartVerification = async () => {
-    try {
-      const supabase = getSupabaseClient();
 
-      console.log(`▶️ [LeadDetail] Starting verification for lead ${lead.code}`);
-
-      const updatePayload = {
-        status: 'verifying',
-        updated_at: new Date().toISOString()
-      };
-
-      const { error } = await supabase
-        .from('leads')
-        .update(updatePayload)
-        .eq('_id', lead._id);
-
-      if (error) {
-        console.error('❌ [LeadDetail] Failed to start verification:', error);
-        toast.error('Lỗi khi bắt đầu xác minh', {
-          description: error.message,
-        });
-        return;
-      }
-
-      console.log('✅ [LeadDetail] Verification started successfully');
-
-      toast.success('Đã bắt đầu xác minh', {
-        description: `Lead ${lead.code} đã chuyển sang trạng thái đang xác minh.`,
-        duration: 3000,
-      });
-
-      setShowStartVerificationModal(false);
-      // Refetch lead data to update UI
-      await refetch();
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Lỗi không xác định';
-      console.error('❌ [LeadDetail] Error starting verification:', errorMessage);
-      toast.error('Lỗi hệ thống', {
-        description: errorMessage,
-      });
-    }
-  };
 
   // Handle complete processing (processing → resolved)
   const handleCompleteProcessing = async () => {
@@ -724,14 +639,36 @@ export default function LeadDetail() {
                     {/* NEW status - Chỉ có Bắt đầu xác minh, không có Từ chối */}
                     {/* Nghiệp vụ: Lead mới phải qua xác minh trước, không thể từ chối ngay */}
                     {lead.status === 'new' && (
-                      <button
-                        className={styles.submitBtn}
-                        onClick={() => setShowStartVerificationModal(true)}
-                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%' }}
-                      >
-                        <PlayCircle size={16} />
-                        Bắt đầu xác minh
-                      </button>
+                      <>
+                        <button
+                          className={styles.submitBtn}
+                          onClick={() => setShowAssignLeadModal(true)}
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%' }}
+                        >
+                          <UserPlus size={16} />
+                          Giao việc
+                        </button>
+                        <button
+                          className={styles.secondaryBtn}
+                          onClick={() => {
+                            setConfirmDialog({
+                              isOpen: true,
+                              title: 'Hủy bỏ leads',
+                              message: 'Bạn có chắc chắn muốn hủy bỏ lead này?',
+                              confirmText: 'Đồng ý hủy',
+                              type: 'danger',
+                              onConfirm: () => {
+                                handleCancelProcessing();
+                                setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                              }
+                            });
+                          }}
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', borderColor: 'var(--destructive)', color: 'var(--destructive)' }}
+                        >
+                          <Ban size={16} />
+                          Hủy bỏ
+                        </button>
+                      </>
                     )}
 
                     {/* VERIFYING status */}
@@ -979,7 +916,7 @@ export default function LeadDetail() {
                 onClick={() => setActiveTab('evidence')}
               >
                 <ImageIcon size={16} />
-                Minh chứng ({mockEvidenceImages.length})
+                Minh chứng ({lead.evidences?.length || 0})
               </button>
               <button
                 className={activeTab === 'activity' ? styles.tabActive : styles.tab}
@@ -1050,18 +987,24 @@ export default function LeadDetail() {
                   <section className={styles.section}>
                     <h3>Minh chứng đính kèm</h3>
                     <div className={styles.evidencePreview}>
-                      {mockEvidenceImages.length > 0 ? (
+                      {lead.evidences && lead.evidences.length > 0 ? (
                         <div className={styles.evidenceGrid}>
-                          {mockEvidenceImages.slice(0, 4).map((img, idx) => (
+                          {lead.evidences.slice(0, 4).map((img, idx) => (
                             <div
                               key={idx}
                               className={styles.evidenceThumbnail}
-                              onClick={() => setSelectedImage(img.url)}
+                              onClick={() => setSelectedImage(img.url || img)} // Handle object or string
                             >
-                              <img src={img.url} alt={img.caption} />
-                              {idx === 3 && mockEvidenceImages.length > 4 && (
+                              <img
+                                src={img.url || img}
+                                alt={img.caption || `Evidence ${idx + 1}`}
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=No+Image';
+                                }}
+                              />
+                              {idx === 3 && lead.evidences && lead.evidences.length > 4 && (
                                 <div className={styles.moreOverlay}>
-                                  +{mockEvidenceImages.length - 4}
+                                  +{lead.evidences.length - 4}
                                 </div>
                               )}
                             </div>
@@ -1368,25 +1311,38 @@ export default function LeadDetail() {
                   </div>
 
                   <div className={styles.evidenceGrid}>
-                    {mockEvidenceImages.map((evidence) => (
-                      <div
-                        key={evidence.id}
-                        className={styles.evidenceCard}
-                        onClick={() => setSelectedImage(evidence.url)}
-                      >
-                        <div className={styles.evidenceImage}>
-                          <img src={evidence.url} alt={evidence.caption} />
-                        </div>
-                        <div className={styles.evidenceInfo}>
-                          <div className={styles.evidenceCaption}>{evidence.caption}</div>
-                          <div className={styles.evidenceMeta}>
-                            <span>{evidence.uploadedBy}</span>
-                            <span>•</span>
-                            <span>{evidence.timestamp.toLocaleString('vi-VN')}</span>
+                    {lead.evidences && lead.evidences.length > 0 ? (
+                      lead.evidences.map((evidence, idx) => (
+                        <div
+                          key={evidence.id || idx}
+                          className={styles.evidenceCard}
+                          onClick={() => setSelectedImage(evidence.url || evidence)}
+                        >
+                          <div className={styles.evidenceImage}>
+                            <img
+                              src={evidence.url || evidence}
+                              alt={evidence.caption || `Evidence ${idx + 1}`}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=No+Image';
+                              }}
+                            />
+                          </div>
+                          <div className={styles.evidenceInfo}>
+                            <div className={styles.evidenceCaption}>{evidence.caption || `Minh chứng #${idx + 1}`}</div>
+                            <div className={styles.evidenceMeta}>
+                              <span>{evidence.uploadedBy || 'N/A'}</span>
+                              <span>•</span>
+                              <span>{evidence.timestamp ? new Date(evidence.timestamp).toLocaleString('vi-VN') : '---'}</span>
+                            </div>
                           </div>
                         </div>
+                      ))
+                    ) : (
+                      <div className={styles.emptyState} style={{ gridColumn: "1 / -1", padding: "40px", textAlign: "center" }}>
+                        <ImageIcon size={48} style={{ color: "var(--muted-foreground)", marginBottom: "16px" }} />
+                        <p style={{ color: "var(--muted-foreground)" }}>Chưa có minh chứng đính kèm</p>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               )}
@@ -1554,18 +1510,7 @@ export default function LeadDetail() {
           }}
         />
 
-        {/* Start Verification Confirmation Modal */}
-        <ConfirmationDialog
-          isOpen={showStartVerificationModal}
-          onClose={() => setShowStartVerificationModal(false)}
-          onConfirm={handleConfirmStartVerification}
-          title="Bắt đầu xác minh"
-          message="Bạn có chắc muốn chuyển lead này sang trạng thái 'Đang xác minh'?"
-          leadCode={lead.code}
-          confirmText="Xác nhận"
-          cancelText="Hủy"
-          type="info"
-        />
+
 
         {/* Generic Confirmation Dialog */}
         <ConfirmationDialog
