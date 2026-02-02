@@ -256,66 +256,66 @@ const departmentPath = user?.app_metadata?.department?.path ;
     loadStats();
   }, [loadStats]);
 
+  const loadData = useCallback(async () => {
+    try {
+      setIsLoadingStores(true);
+      setStoreError(null);
+
+      const offset = (currentPage - 1) * pageSize;
+      const filters: any = {};
+
+      if (statusFilter && statusFilter !== 'all') {
+        filters.status = statusFilter;
+      }
+      if (jurisdictionFilter && jurisdictionFilter !== 'all') {
+        filters.province_id = jurisdictionFilter;
+      }
+      if (debouncedSearchValue) {
+        filters.search = debouncedSearchValue;
+      }
+      // If user has a department path (e.g. "QT.QT01"), filter by its root code like "QT*"
+      if (departmentPath) {
+        const root = String(departmentPath).split('.')[0];
+        if (root) {
+          filters.department_path = `like.${root}*`;
+        }
+      }
+      if (businessTypeFilter && businessTypeFilter !== 'all') {
+        filters.businessType = businessTypeFilter;
+      }
+
+      const { data, total } = await fetchStores(pageSize, offset, filters, departmentPath);
+
+      setStores(data);
+      setTotalRecords(total);
+
+      // Save to localStorage for offline backup
+      try {
+        localStorage.setItem(STORES_STORAGE_KEY, JSON.stringify(data));
+      } catch (e) {
+      }
+    } catch (error: any) {
+      setStoreError(error.message || 'Failed to load stores');
+
+      // Fallback handling...
+      try {
+        const savedStores = localStorage.getItem(STORES_STORAGE_KEY);
+        if (savedStores) {
+          const parsedStores = JSON.parse(savedStores);
+          setStores(parsedStores);
+          setTotalRecords(parsedStores.length);
+        }
+      } catch (e) {
+      }
+    } finally {
+      setIsLoadingStores(false);
+    }
+  }, [currentPage, pageSize, statusFilter, jurisdictionFilter, debouncedSearchValue, businessTypeFilter, departmentPath]);
+
   // Load stores from API when pagination or filters change
   useEffect(() => {
-    const loadStores = async () => {
-      try {
-        setIsLoadingStores(true);
-        setStoreError(null);
-
-        const offset = (currentPage - 1) * pageSize;
-        const filters: any = {};
-
-        if (statusFilter && statusFilter !== 'all') {
-          filters.status = statusFilter;
-        }
-        if (jurisdictionFilter && jurisdictionFilter !== 'all') {
-          filters.province_id = jurisdictionFilter;
-        }
-        if (debouncedSearchValue) {
-          filters.search = debouncedSearchValue;
-        }
-        // If user has a department path (e.g. "QT.QT01"), filter by its root code like "QT*"
-        if (departmentPath) {
-          const root = String(departmentPath).split('.')[0];
-          if (root) {
-            filters.department_path = `like.${root}*`;
-          }
-        }
-        if (businessTypeFilter && businessTypeFilter !== 'all') {
-          filters.businessType = businessTypeFilter;
-        }
-
-        const { data, total } = await fetchStores(pageSize, offset, filters, departmentPath);
-
-        setStores(data);
-        setTotalRecords(total);
-
-        // Save to localStorage for offline backup
-        try {
-          localStorage.setItem(STORES_STORAGE_KEY, JSON.stringify(data));
-        } catch (e) {
-        }
-      } catch (error: any) {
-        setStoreError(error.message || 'Failed to load stores');
-
-        // Fallback handling...
-        try {
-          const savedStores = localStorage.getItem(STORES_STORAGE_KEY);
-          if (savedStores) {
-            const parsedStores = JSON.parse(savedStores);
-            setStores(parsedStores);
-            setTotalRecords(parsedStores.length);
-          }
-        } catch (e) {
-        }
-      } finally {
-        setIsLoadingStores(false);
-      }
-    };
-
-    loadStores();
-  }, [currentPage, pageSize, statusFilter, jurisdictionFilter, debouncedSearchValue, businessTypeFilter, departmentPath]);
+    loadData();
+  }, [loadData]);
 
   // Load provinces from API on component mount
   useEffect(() => {
