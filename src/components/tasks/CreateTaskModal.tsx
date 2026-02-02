@@ -380,7 +380,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, task, taskId, defau
 
               <div className={styles.formGroup}>
                 <label className={styles.label} htmlFor="description">
-                  Nội dung chi tiết
+                  Mô tả
                 </label>
                 <textarea
                   id="description"
@@ -449,7 +449,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, task, taskId, defau
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
                   <label className={styles.label} htmlFor="merchantId">
-                    Cơ sở / Đối tượng kiểm tra <span className={styles.required}>*</span>
+                    Tên cửa hàng <span className={styles.required}>*</span>
                   </label>
                   <select
                     id="merchantId"
@@ -480,7 +480,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, task, taskId, defau
 
                 <div className={styles.formGroup}>
                   <label className={styles.label} htmlFor="assigneeId">
-                    Người chủ trì
+                    Người thực hiện
                   </label>
                   <select
                     id="assigneeId"
@@ -494,7 +494,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, task, taskId, defau
                         ? 'Đang tải...' 
                         : !formData.roundId 
                           ? '-- Chọn đợt trước --' 
-                          : '-- Chọn người chủ trì --'}
+                          : '-- Chọn người thực hiện --'}
                     </option>
                     {assignees.map(assignee => (
                       <option key={assignee.value} value={assignee.value}>

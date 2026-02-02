@@ -43,6 +43,7 @@ export interface InspectionRound {
   status: InspectionRoundStatus;
   provinceId?: string;
   wardId?: string;
+  departmentId?: string;
   startDate: string;
   endDate: string;
   actualStartDate?: string;

@@ -61,7 +61,8 @@ import DataTable, { Column } from '@/components/ui-kit/DataTable';
 import ActionColumn, { Action } from '@/components/patterns/ActionColumn';
 import EmptyState from '@/components/ui-kit/EmptyState';
 import { updatePlanApi, deletePlanApi } from '@/utils/api/plansApi';
-import { fetchInspectionSessionsApi, updateInspectionSessionApi } from '@/utils/api/inspectionSessionsApi';
+import { fetchInspectionSessionsApi, updateInspectionSessionApi, createInspectionSessionApi } from '@/utils/api/inspectionSessionsApi';
+import { CreateTaskModal, type CreateTaskFormData } from '@/components/tasks/CreateTaskModal';
 
 
 import { useSupabaseInspectionRounds, type InspectionRound } from '@/hooks/useSupabaseInspectionRounds';
@@ -146,9 +147,43 @@ export function PlanDetail() {
     );
   }, [planRounds, roundSearch]);
   
+  // State for Create Task Modal
+  const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
+
   // State for session tasks
   const [planTasks, setPlanTasks] = useState<typeof mockInspectionTasks>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
+
+  // Handle create task
+  const handleCreateTask = async (taskData: CreateTaskFormData) => {
+    try {
+      if (!plan || !taskData.roundId) return;
+
+      const selectedRound = planRounds.find(r => r.id === taskData.roundId);
+
+      const newTask = {
+        name: taskData.title,
+        description: taskData.description,
+        merchantId: taskData.merchantId,
+        campaignId: taskData.roundId, // roundId matches campaignId
+        userId: taskData.assigneeId || undefined,
+        departmentId: selectedRound?.departmentId || undefined,
+        type: 'proactive', // Default type
+        priority: taskData.priority === 'urgent' ? 4 : taskData.priority === 'high' ? 3 : taskData.priority === 'low' ? 1 : 2,
+        startTime: taskData.startDate ? new Date(taskData.startDate).toISOString() : new Date().toISOString(),
+        deadlineTime: taskData.dueDate ? new Date(taskData.dueDate).toISOString() : undefined,
+        status: taskData.status === 'in_progress' ? 2 : taskData.status === 'completed' ? 3 : taskData.status === 'closed' ? 4 : taskData.status === 'cancelled' ? 6 : 1,
+      };
+
+      await createInspectionSessionApi(newTask);
+      toast.success('Đã tạo phiên làm việc mới');
+      setIsCreateTaskModalOpen(false);
+      fetchPlanSessions(); // Refresh list
+    } catch (error) {
+      console.error('Failed to create task:', error);
+      toast.error('Không thể tạo phiên làm việc');
+    }
+  };
 
   // Fetch sessions function
   const fetchPlanSessions = useCallback(async () => {
@@ -939,9 +974,8 @@ export function PlanDetail() {
                   Tạm dừng
                 </button>
                 <button 
-                  className={styles.primaryButton}
+                  className={styles.successButton}
                   onClick={() => openModal('complete', plan)}
-                  style={{ background: 'var(--success)' }}
                 >
                   <ClipboardCheck size={18} />
                   Hoàn thành
@@ -1238,6 +1272,13 @@ export function PlanDetail() {
                     <h2 className={styles.sectionTitle}>Phiên làm việc</h2>
                     <p className={styles.sectionDesc}>Danh sách các phiên làm việc đã thực hiện</p>
                   </div>
+                  <button 
+                    className={styles.primaryButton}
+                    onClick={() => setIsCreateTaskModalOpen(true)}
+                  >
+                    <Plus size={16} />
+                    Thêm phiên làm việc
+                  </button>
                 </div>
                 {sessionsLoading ? (
                    <div style={{ padding: '64px', textAlign: 'center' }}>
@@ -1737,6 +1778,15 @@ export function PlanDetail() {
             task={actionTask}
           />
         </>
+      )}
+      {/* Create Task Modal */}
+      {isCreateTaskModalOpen && (
+        <CreateTaskModal
+          isOpen={isCreateTaskModalOpen}
+          onClose={() => setIsCreateTaskModalOpen(false)}
+          onSubmit={handleCreateTask}
+          defaultPlanId={plan?.id}
+        />
       )}
     </div>
   );
