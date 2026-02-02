@@ -1,15 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Filter, X, Check } from 'lucide-react';
+import { ChevronDown, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { BUSINESS_TYPES } from '@/constants/businessTypes';
 import { SearchableSelect, SearchableSelectOption } from './SearchableSelect';
-import { NativeSelect } from './NativeSelect';
 import styles from './AdvancedFilterPopup.module.css';
 
 export interface AdvancedFilters {
   hasViolations?: 'all' | 'yes' | 'no';
   hasComplaints?: 'all' | 'yes' | 'no';
   riskLevel?: 'all' | 'low' | 'medium' | 'high' | 'none';
+  businessType?: string;
 }
 
 interface AdvancedFilterPopupProps {
@@ -24,8 +23,7 @@ interface AdvancedFilterPopupProps {
  * AdvancedFilterPopup - Bộ lọc nâng cao dạng popup
  * 
  * Popup nổi với temp state - KHÔNG tự động đóng khi chọn giá trị
- * Chỉ apply khi user click "Áp dụng"
- * UX: Giữ popup mở để thử nhiều filter trước khi apply
+ * Tự động áp dụng khi user chọn giá trị
  */
 export function AdvancedFilterPopup({
   appliedFilters,
@@ -75,10 +73,9 @@ export function AdvancedFilterPopup({
     };
   }, [isOpen]);
 
-  const handleApply = () => {
-    onApply(tempFilters);
-    // ❌ KHÔNG đóng popup - để user tiếp tục chọn filter nếu muốn
-    // setIsOpen(false);
+  const handleAutoApply = (nextFilters: AdvancedFilters) => {
+    setTempFilters(nextFilters);
+    onApply(nextFilters);
   };
 
   const handleClearLocal = () => {
@@ -93,6 +90,26 @@ export function AdvancedFilterPopup({
     // ❌ KHÔNG đóng popup - để user thấy filters đã được clear
     // setIsOpen(false);
   };
+
+  const violationOptions: SearchableSelectOption[] = [
+    { value: 'all', label: 'Tất cả' },
+    { value: 'yes', label: 'Có vi phạm' },
+    { value: 'no', label: 'Không có vi phạm' },
+  ];
+
+  const complaintOptions: SearchableSelectOption[] = [
+    { value: 'all', label: 'Tất cả' },
+    { value: 'yes', label: 'Có phản ánh' },
+    { value: 'no', label: 'Không có phản ánh' },
+  ];
+
+  const riskOptions: SearchableSelectOption[] = [
+    { value: 'all', label: 'Tất cả mức độ' },
+    { value: 'none', label: 'Không có rủi ro' },
+    { value: 'low', label: '🟢 Thấp' },
+    { value: 'medium', label: '🟡 Trung bình' },
+    { value: 'high', label: '🔴 Cao' },
+  ];
 
   // Count active filters
   const activeCount = [
@@ -152,50 +169,57 @@ export function AdvancedFilterPopup({
             {/* Vi phạm Filter */}
             <div className={styles.filterGroup}>
               <label className={styles.filterLabel}>Vi phạm</label>
-              <NativeSelect
+              <SearchableSelect
                 value={tempFilters.hasViolations || 'all'}
-                onChange={(value) => 
-                  setTempFilters({ ...tempFilters, hasViolations: value as AdvancedFilters['hasViolations'] })
+                onValueChange={(value) =>
+                  handleAutoApply({
+                    ...tempFilters,
+                    hasViolations: value as AdvancedFilters['hasViolations'],
+                  })
                 }
-                options={[
-                  { value: 'all', label: 'Tất cả' },
-                  { value: 'yes', label: 'Có vi phạm' },
-                  { value: 'no', label: 'Không có vi phạm' },
-                ]}
+                options={violationOptions}
+                placeholder="Chọn trạng thái vi phạm"
+                searchPlaceholder="Tìm kiếm trạng thái..."
+                emptyText="Không tìm thấy trạng thái"
+                width="100%"
               />
             </div>
 
             {/* Phản ánh Filter */}
             <div className={styles.filterGroup}>
               <label className={styles.filterLabel}>Phản ánh</label>
-              <NativeSelect
+              <SearchableSelect
                 value={tempFilters.hasComplaints || 'all'}
-                onChange={(value) => 
-                  setTempFilters({ ...tempFilters, hasComplaints: value as AdvancedFilters['hasComplaints'] })
+                onValueChange={(value) =>
+                  handleAutoApply({
+                    ...tempFilters,
+                    hasComplaints: value as AdvancedFilters['hasComplaints'],
+                  })
                 }
-                options={[
-                  { value: 'all', label: 'Tất cả' },
-                  { value: 'yes', label: 'Có phản ánh' },
-                  { value: 'no', label: 'Không có phản ánh' },
-                ]}
+                options={complaintOptions}
+                placeholder="Chọn trạng thái phản ánh"
+                searchPlaceholder="Tìm kiếm trạng thái..."
+                emptyText="Không tìm thấy trạng thái"
+                width="100%"
               />
             </div>
 
             {/* Mức độ rủi ro Filter */}
             <div className={styles.filterGroup}>
               <label className={styles.filterLabel}>Mức độ rủi ro</label>
-              <NativeSelect
+              <SearchableSelect
                 value={tempFilters.riskLevel || 'all'}
-                onChange={(value) => 
-                  setTempFilters({ ...tempFilters, riskLevel: value as AdvancedFilters['riskLevel'] })
+                onValueChange={(value) =>
+                  handleAutoApply({
+                    ...tempFilters,
+                    riskLevel: value as AdvancedFilters['riskLevel'],
+                  })
                 }
-                options={[
-                  { value: 'all', label: 'Tất cả mức độ' },
-                  { value: 'none', label: 'Không có rủi ro' },
-                  { value: 'low', label: '🟢 Thấp' },
-                  { value: 'medium', label: '🟡 Trung bình' },
-                  { value: 'high', label: '🔴 Cao' },
-                ]}
+                options={riskOptions}
+                placeholder="Chọn mức độ rủi ro"
+                searchPlaceholder="Tìm kiếm mức độ..."
+                emptyText="Không tìm thấy mức độ"
+                width="100%"
               />
             </div>
 
@@ -210,17 +234,7 @@ export function AdvancedFilterPopup({
               onClick={handleClearLocal}
               className={styles.clearButton}
             >
-              <X size={16} />
               Xóa tất cả
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={handleApply}
-              className={styles.applyButton}
-            >
-              <Check size={16} />
-              Áp dụng
             </Button>
           </div>
         </div>

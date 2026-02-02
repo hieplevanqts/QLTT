@@ -246,12 +246,21 @@ const departmentPath = user?.app_metadata?.department?.path ;
       if (businessTypeFilter && businessTypeFilter !== 'all') {
         filters.businessType = businessTypeFilter;
       }
+      if (advancedFilter.hasViolations && advancedFilter.hasViolations !== 'all') {
+        filters.hasViolations = advancedFilter.hasViolations;
+      }
+      if (advancedFilter.hasComplaints && advancedFilter.hasComplaints !== 'all') {
+        filters.hasComplaints = advancedFilter.hasComplaints;
+      }
+      if (advancedFilter.riskLevel && advancedFilter.riskLevel !== 'all') {
+        filters.riskLevel = advancedFilter.riskLevel;
+      }
 
       const data = await fetchStoresStats(filters, departmentPath);
       setStats(data);
     } catch (error) {
     }
-  }, [statusFilter, jurisdictionFilter, debouncedSearchValue, businessTypeFilter, departmentPath]);
+  }, [statusFilter, jurisdictionFilter, debouncedSearchValue, businessTypeFilter, advancedFilter, departmentPath]);
 
   useEffect(() => {
     loadStats();
@@ -284,6 +293,15 @@ const departmentPath = user?.app_metadata?.department?.path ;
       if (businessTypeFilter && businessTypeFilter !== 'all') {
         filters.businessType = businessTypeFilter;
       }
+      if (advancedFilter.hasViolations && advancedFilter.hasViolations !== 'all') {
+        filters.hasViolations = advancedFilter.hasViolations;
+      }
+      if (advancedFilter.hasComplaints && advancedFilter.hasComplaints !== 'all') {
+        filters.hasComplaints = advancedFilter.hasComplaints;
+      }
+      if (advancedFilter.riskLevel && advancedFilter.riskLevel !== 'all') {
+        filters.riskLevel = advancedFilter.riskLevel;
+      }
 
       const { data, total } = await fetchStores(pageSize, offset, filters, departmentPath);
 
@@ -311,7 +329,7 @@ const departmentPath = user?.app_metadata?.department?.path ;
     } finally {
       setIsLoadingStores(false);
     }
-  }, [currentPage, pageSize, statusFilter, jurisdictionFilter, debouncedSearchValue, businessTypeFilter, departmentPath]);
+  }, [currentPage, pageSize, statusFilter, jurisdictionFilter, debouncedSearchValue, businessTypeFilter, advancedFilter, departmentPath]);
 
   // Load stores from API when pagination or filters change
   useEffect(() => {
@@ -1246,7 +1264,7 @@ const departmentPath = user?.app_metadata?.department?.path ;
             }}
           />
           <SummaryCard
-            label="Tạm ngừng"
+            label="Tạm ngừng hoạt động"
             value={stats.suspended}
             icon={CirclePause}
             variant="danger"
@@ -1310,6 +1328,7 @@ const departmentPath = user?.app_metadata?.department?.path ;
             appliedFilters={advancedFilter}
             onApply={(filters) => {
               setAdvancedFilter(filters);
+              setCurrentPage(1);
               toast.success('Đã áp dụng bộ lọc nâng cao');
             }}
             onClear={() => {
@@ -1318,6 +1337,7 @@ const departmentPath = user?.app_metadata?.department?.path ;
                 hasComplaints: 'all',
                 riskLevel: 'all',
               });
+              setCurrentPage(1);
               toast.success('Đã xoá bộ lọc nâng cao');
             }}
             hasActiveFilters={
@@ -1365,7 +1385,7 @@ const departmentPath = user?.app_metadata?.department?.path ;
               <SelectItem value="all">Tất cả trạng thái</SelectItem>
               <SelectItem value="pending">Chờ duyệt</SelectItem>
               <SelectItem value="active">Đang hoạt động</SelectItem>
-              <SelectItem value="suspended">Tạm ngưng</SelectItem>
+              <SelectItem value="suspended">Tạm ngưng hoạt động</SelectItem>
               <SelectItem value="rejected">Từ chối phê duyệt</SelectItem>
               <SelectItem value="refuse">Ngừng hoạt động</SelectItem>
             </SelectContent>

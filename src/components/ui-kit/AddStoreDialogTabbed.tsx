@@ -1058,7 +1058,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
               <div className="mt-4">
                 <Label className="inline-flex items-center gap-1.5 mb-3" style={{ display: 'inline-flex', alignItems: 'center', lineHeight: '1' }}>
                   <MapPin className="w-4 h-4 flex-shrink-0" style={{ flexShrink: 0 }} />
-                  <span style={{ lineHeight: '1' }}>Định vị trên bản đồ</span>
+                  <span style={{ lineHeight: '1' }}>Vị trí trên bản đồ</span>
                 </Label>
 
                 {/* Hidden input for full address (for map search) */}
