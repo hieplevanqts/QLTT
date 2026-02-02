@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import {
   Search,
@@ -204,6 +204,7 @@ const getSourceLabel = (source: string): string => {
 
 export default function LeadInbox() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const renderCountRef = useRef(0);
   const [selectedLeads, setSelectedLeads] = useState<
     Set<string>
@@ -211,9 +212,12 @@ export default function LeadInbox() {
   const [searchQuery, setSearchQuery] = useState("");
 
   // Multi-select filters
-  const [selectedStatuses, setSelectedStatuses] = useState<
-    string[]
-  >(["new"]); // Default: Filter by "Mới" status
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(() => {
+    const statusParam = searchParams.get('status');
+    if (statusParam === 'all') return [];
+    if (statusParam) return [statusParam];
+    return ["new"];
+  });
   const [selectedAssignments, setSelectedAssignments] =
     useState<string[]>([]);
   const [selectedSeverities, setSelectedSeverities] = useState<string[]>([]);
@@ -253,6 +257,16 @@ export default function LeadInbox() {
       selectedAssignments,
     });
   });
+
+  // Sync URL params to filter state
+  useEffect(() => {
+    const statusParam = searchParams.get('status');
+    if (statusParam === 'all') {
+      setSelectedStatuses((prev) => (prev.length === 0 ? prev : []));
+    } else if (statusParam) {
+      setSelectedStatuses((prev) => (prev.length === 1 && prev[0] === statusParam ? prev : [statusParam]));
+    }
+  }, [searchParams]);
 
   // Modal states
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);

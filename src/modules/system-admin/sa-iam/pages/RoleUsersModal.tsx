@@ -1,9 +1,11 @@
 import React from "react";
-import { Button, Input, Modal, Select, Space, Table, Tag, Tooltip, message } from "antd";
+import { Button, Input, Select, Space, Table, Tag, Tooltip, message } from "antd";
 import { EyeOutlined, UserAddOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 
 import { rolesService, type RoleRecord, type RoleUserRecord } from "../services/roles.service";
+import { CenteredModalShell } from "@/components/overlays/CenteredModalShell";
+import { EnterpriseModalHeader } from "@/components/overlays/EnterpriseModalHeader";
 
 type RoleUsersModalProps = {
   open: boolean;
@@ -82,17 +84,19 @@ export default function RoleUsersModal({ open, role, onClose, onAssignUsers }: R
   };
 
   return (
-    <Modal
+    <CenteredModalShell
       open={open}
-      onCancel={onClose}
-      title={role ? `Người dùng thuộc vai trò: ${role.name}` : "Danh sách người dùng"}
-      centered
+      onClose={onClose}
       width={900}
-      footer={[
-        <Button key="close" type="primary" onClick={onClose}>
-          Đóng
-        </Button>,
-      ]}
+      header={
+        <EnterpriseModalHeader
+          title={role ? `Người dùng thuộc vai trò: ${role.name}` : "Danh sách người dùng"}
+          badgeStatus={role?.status === 1 ? "success" : "default"}
+          statusLabel={role ? statusLabel(role.status) : undefined}
+          code={role?.code}
+          moduleTag="iam"
+        />
+      }
     >
       <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
         <Space wrap style={{ width: "100%", justifyContent: "space-between" }}>
@@ -202,6 +206,6 @@ export default function RoleUsersModal({ open, role, onClose, onAssignUsers }: R
           ]}
         />
       </Space>
-    </Modal>
+    </CenteredModalShell>
   );
 }

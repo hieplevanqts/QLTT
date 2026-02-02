@@ -42,6 +42,8 @@ import AppTable from "@/components/data-table/AppTable";
 import { getColumnSearchProps } from "@/components/data-table/columnSearch";
 import { useIamIdentity } from "@/shared/iam/useIamIdentity";
 import { supabase } from "@/api/supabaseClient";
+import { CenteredModalShell } from "@/components/overlays/CenteredModalShell";
+import { EnterpriseModalHeader } from "@/components/overlays/EnterpriseModalHeader";
 import {
   usersService,
   type DepartmentScopeRecord,
@@ -855,13 +857,35 @@ export default function UsersPage() {
           </Card>
         </div>
 
-        <Modal
+        <CenteredModalShell
           open={formOpen}
-          title={editingUser ? "Cập nhật người dùng" : "Thêm người dùng"}
-          onCancel={() => setFormOpen(false)}
-          onOk={handleSubmit}
-          okText="Lưu"
-          cancelText="Hủy"
+          onClose={() => setFormOpen(false)}
+          width={760}
+          header={
+            <EnterpriseModalHeader
+              title={editingUser ? "Cập nhật người dùng" : "Thêm người dùng"}
+              badgeStatus={
+                editingUser
+                  ? editingUser.status === 1
+                    ? "success"
+                    : editingUser.status === 0
+                      ? "warning"
+                      : "error"
+                  : "default"
+              }
+              statusLabel={editingUser ? statusLabel(editingUser.status) : undefined}
+              code={editingUser?.username}
+              moduleTag="iam"
+            />
+          }
+          footer={
+            <div className="flex justify-end gap-2">
+              <Button onClick={() => setFormOpen(false)}>Đóng</Button>
+              <Button type="primary" onClick={handleSubmit}>
+                Lưu
+              </Button>
+            </div>
+          }
         >
           <Form form={form} layout="vertical">
             <Form.Item
@@ -931,7 +955,7 @@ export default function UsersPage() {
               <Input.TextArea rows={3} />
             </Form.Item>
           </Form>
-        </Modal>
+        </CenteredModalShell>
 
         <UserRolesModal
           open={rolesModalOpen}
@@ -1005,14 +1029,35 @@ function UserRolesModal({
   };
 
   return (
-    <Modal
+    <CenteredModalShell
       open={open}
-      title={user ? `Gán vai trò cho ${user.full_name || user.username || ""}` : "Gán vai trò"}
-      onCancel={onClose}
-      onOk={handleSave}
-      okText="Lưu"
-      cancelText="Hủy"
+      onClose={onClose}
       width={680}
+      header={
+        <EnterpriseModalHeader
+          title={user ? `Gán vai trò cho ${user.full_name || user.username || ""}` : "Gán vai trò"}
+          badgeStatus={
+            user
+              ? user.status === 1
+                ? "success"
+                : user.status === 0
+                  ? "warning"
+                  : "error"
+              : "default"
+          }
+          statusLabel={user ? statusLabel(user.status) : undefined}
+          code={user?.username}
+          moduleTag="iam"
+        />
+      }
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button onClick={onClose}>Đóng</Button>
+          <Button type="primary" onClick={handleSave}>
+            Lưu
+          </Button>
+        </div>
+      }
     >
       <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
         <div>
@@ -1043,6 +1088,6 @@ function UserRolesModal({
           </Radio.Group>
         </div>
       </Space>
-    </Modal>
+    </CenteredModalShell>
   );
 }

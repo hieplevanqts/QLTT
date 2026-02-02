@@ -2,7 +2,6 @@ import React from "react";
 import {
   Button,
   Card,
-  Drawer,
   Form,
   Input,
   InputNumber,
@@ -28,6 +27,8 @@ import {
 
 import PageHeader from "@/layouts/PageHeader";
 import { PermissionGate, usePermissions } from "../../_shared";
+import { CenteredModalShell } from "@/components/overlays/CenteredModalShell";
+import { EnterpriseModalHeader } from "@/components/overlays/EnterpriseModalHeader";
 import { useAuth } from "../../../../contexts/AuthContext";
 import { useQLTTScope } from "../../../../contexts/QLTTScopeContext";
 import {
@@ -496,14 +497,34 @@ export default function DepartmentsPage() {
           )}
         </Card>
 
-        <Drawer
+        <CenteredModalShell
           open={drawerOpen}
           onClose={handleCloseDrawer}
-          size={560}
-          title={drawerMode === "create" ? "Thêm phòng ban" : "Chỉnh sửa phòng ban"}
-          extra={
+          width={900}
+          header={
+            <EnterpriseModalHeader
+              title={drawerMode === "create" ? "Thêm phòng ban" : "Chỉnh sửa phòng ban"}
+              badgeStatus={
+                drawerMode === "edit"
+                  ? selectedDepartment?.is_active
+                    ? "success"
+                    : "default"
+                  : "default"
+              }
+              statusLabel={
+                drawerMode === "edit" && selectedDepartment
+                  ? selectedDepartment.is_active
+                    ? "Hoạt động"
+                    : "Ngừng"
+                  : undefined
+              }
+              code={drawerMode === "edit" ? selectedDepartment?.code ?? undefined : undefined}
+              moduleTag="master-data"
+            />
+          }
+          footer={
             <Space>
-              <Button onClick={handleCloseDrawer}>Hủy</Button>
+              <Button onClick={handleCloseDrawer}>Đóng</Button>
               <Button
                 type="primary"
                 onClick={handleSubmit}
@@ -578,15 +599,21 @@ export default function DepartmentsPage() {
                 : []),
             ]}
           />
-        </Drawer>
+        </CenteredModalShell>
 
-        <Modal
+        <CenteredModalShell
+          header={<EnterpriseModalHeader title="Thêm thành viên" moduleTag="master-data" />}
           open={memberModalOpen}
-          onCancel={() => setMemberModalOpen(false)}
-          onOk={handleSaveMembers}
-          okText="Lưu"
-          cancelText="Hủy"
-          title="Thêm thành viên"
+          onClose={() => setMemberModalOpen(false)}
+          width={600}
+          footer={
+            <Space>
+              <Button onClick={() => setMemberModalOpen(false)}>Đóng</Button>
+              <Button type="primary" onClick={handleSaveMembers}>
+                Lưu
+              </Button>
+            </Space>
+          }
         >
           <Space orientation="vertical" style={{ width: "100%" }}>
             <Typography.Text>
@@ -608,7 +635,7 @@ export default function DepartmentsPage() {
               style={{ width: "100%" }}
             />
           </Space>
-        </Modal>
+        </CenteredModalShell>
       </div>
     </PermissionGate>
   );

@@ -262,7 +262,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
   const { setLayoutMode } = useLayout();
   const [mobileSubmenuOpen, setMobileSubmenuOpen] = React.useState<string | null>(null);
   const { tree, loading } = useRuntimeMenu();
-  const { roleCodes, loading: identityLoading } = useIamIdentity();
+  const { roleCodes, loading: identityLoading, isSuperAdmin } = useIamIdentity();
   const fallbackEnabled = getMenuFallbackEnabled();
   const isPathActive = React.useCallback(
     (path?: string | null) => {
@@ -284,20 +284,20 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
   const runtimeModules = React.useMemo(() => menuTreeToModules(tree), [tree]);
   const visibleModules = React.useMemo(() => {
     if (runtimeModules.length > 0) return runtimeModules;
-    return fallbackEnabled ? mappaModules : [];
-  }, [runtimeModules, fallbackEnabled]);
-  const showNoRoleBanner = !identityLoading && roleCodes.length === 0;
-  const showEmptyState = !loading && visibleModules.length === 0 && !fallbackEnabled;
+    return fallbackEnabled || isSuperAdmin ? mappaModules : [];
+  }, [runtimeModules, fallbackEnabled, isSuperAdmin]);
+  const showNoRoleBanner = !identityLoading && !isSuperAdmin && roleCodes.length === 0;
+  const showEmptyState = !loading && visibleModules.length === 0 && !fallbackEnabled && !isSuperAdmin;
 
   // Mock permissions - In real app, this would come from user context/auth
   const userPermissions = {
-    canCreateFacility: true,
-    canImportFacilityData: true,
-    canCreateRisk: false,
-    canCreateFeedback: true,
-    canCreateInspectionPlan: true,
-    canCreateInspectionRound: false,
-    canCreateInspectionSession: true,
+    canCreateFacility: isSuperAdmin || true,
+    canImportFacilityData: isSuperAdmin || true,
+    canCreateRisk: isSuperAdmin || false,
+    canCreateFeedback: isSuperAdmin || true,
+    canCreateInspectionPlan: isSuperAdmin || true,
+    canCreateInspectionRound: isSuperAdmin || false,
+    canCreateInspectionSession: isSuperAdmin || true,
   };
 
   return (

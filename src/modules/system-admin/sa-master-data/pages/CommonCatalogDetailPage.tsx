@@ -3,7 +3,6 @@ import {
   Button,
   Card,
   Descriptions,
-  Drawer,
   Empty,
   Form,
   Input,
@@ -26,6 +25,8 @@ import PageHeader from "@/layouts/PageHeader";
 import { PermissionGate, usePermissions } from "../../_shared";
 import { catalogsRepo, type CatalogRecord, type CatalogStatus } from "../data/catalogs.repo";
 import { catalogItemsRepo, type CatalogItemRecord, type CatalogItemStatus } from "../data/catalogItems.repo";
+import { CenteredModalShell } from "@/components/overlays/CenteredModalShell";
+import { EnterpriseModalHeader } from "@/components/overlays/EnterpriseModalHeader";
 
 type ItemNode = DataNode & { data: CatalogItemRecord };
 
@@ -512,16 +513,32 @@ export default function CommonCatalogDetailPage() {
         </div>
       </div>
 
-      <Drawer
-        title={drawerMode === "create" ? "Thêm mục" : "Chỉnh sửa mục"}
-        placement="right"
-        size={420}
+      <CenteredModalShell
+        header={
+          <EnterpriseModalHeader
+            title={drawerMode === "create" ? "Thêm mục" : "Chỉnh sửa mục"}
+            badgeStatus={
+              drawerMode === "edit"
+                ? selectedItem?.status === "ACTIVE"
+                  ? "success"
+                  : "default"
+                : "default"
+            }
+            statusLabel={
+              drawerMode === "edit" && selectedItem
+                ? statusLabel(selectedItem.status)
+                : undefined
+            }
+            code={drawerMode === "edit" ? selectedItem?.code ?? undefined : undefined}
+            moduleTag="master-data"
+          />
+        }
         open={drawerOpen}
         onClose={closeDrawer}
-        destroyOnHidden
-        extra={
+        width={900}
+        footer={
           <Space>
-            <Button onClick={closeDrawer}>Hủy</Button>
+            <Button onClick={closeDrawer}>Đóng</Button>
             <Button type="primary" onClick={handleSubmit} loading={submitting}>
               Lưu
             </Button>
@@ -566,7 +583,7 @@ export default function CommonCatalogDetailPage() {
             />
           </Form.Item>
         </Form>
-      </Drawer>
+      </CenteredModalShell>
     </PermissionGate>
   );
 }

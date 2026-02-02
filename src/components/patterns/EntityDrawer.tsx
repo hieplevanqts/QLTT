@@ -1,15 +1,7 @@
 import React, { ReactNode, useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { CenteredModalShell } from '@/components/overlays/CenteredModalShell';
+import { EnterpriseModalHeader } from '@/components/overlays/EnterpriseModalHeader';
 
 interface EntityDrawerProps {
   open: boolean;
@@ -45,56 +37,51 @@ export default function EntityDrawer({
     }
   }, [defaultTab]);
 
-  const sizeClasses = {
-    sm: 'w-[33vw]',
-    md: 'w-[50vw]',
-    lg: 'w-[66vw]',
+  const sizeWidth = {
+    sm: 600,
+    md: 720,
+    lg: 960,
   };
 
   return (
-    <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent side="right" className={`flex flex-col ${sizeClasses[size]}`}>
-        <SheetHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <SheetTitle>{title}</SheetTitle>
-              {description && <SheetDescription>{description}</SheetDescription>}
+    <CenteredModalShell
+      header={
+        <EnterpriseModalHeader
+          title={
+            <div className="flex flex-col gap-1">
+              <span>{title}</span>
+              {description && (
+                <span className="text-sm font-normal text-muted-foreground">{description}</span>
+              )}
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
+          }
+        />
+      }
+      open={open}
+      onClose={onClose}
+      width={sizeWidth[size]}
+      footer={footer}
+    >
+      {tabs ? (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col">
+          <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}>
+            {tabs.map((tab) => (
+              <TabsTrigger key={tab.value} value={tab.value}>
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          <div className="mt-4">
+            {tabs.map((tab) => (
+              <TabsContent key={tab.value} value={tab.value} className="mt-0">
+                {tab.content}
+              </TabsContent>
+            ))}
           </div>
-        </SheetHeader>
-
-        {tabs ? (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-            <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}>
-              {tabs.map((tab) => (
-                <TabsTrigger key={tab.value} value={tab.value}>
-                  {tab.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            <ScrollArea className="flex-1 mt-4">
-              {tabs.map((tab) => (
-                <TabsContent key={tab.value} value={tab.value} className="mt-0">
-                  {tab.content}
-                </TabsContent>
-              ))}
-            </ScrollArea>
-          </Tabs>
-        ) : (
-          <ScrollArea className="flex-1 mt-4">
-            {/* Default content if no tabs */}
-          </ScrollArea>
-        )}
-
-        {footer && (
-          <div className="border-t border-border pt-4 mt-4">
-            {footer}
-          </div>
-        )}
-      </SheetContent>
-    </Sheet>
+        </Tabs>
+      ) : (
+        <div className="mt-4" />
+      )}
+    </CenteredModalShell>
   );
 }

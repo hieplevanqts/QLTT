@@ -21,6 +21,7 @@ export interface MenuService {
   listPermissions: (filters: PermissionFilter) => Promise<PagedResult<PermissionRecord>>;
   listPermissionsByIds: (ids: string[]) => Promise<PermissionRecord[]>;
   listMenuPermissions: (menuId: string) => Promise<MenuPermissionRecord[]>;
+  listAssignedPermissions: (menuId: string) => Promise<PermissionRecord[]>;
   saveMenuPermissions: (menuId: string, permissionIds: string[]) => Promise<void>;
   listRoles: () => Promise<RoleRecord[]>;
   listRolePermissions: (roleId: string) => Promise<string[]>;
@@ -57,6 +58,7 @@ export const menuService: MenuService = {
     const rows = await menuRepo.listModules();
     return rows.map((row) => ({
       _id: row._id,
+      key: row.key ?? row.code,
       code: row.code,
       name: row.name,
       group: row.group ?? null,
@@ -107,6 +109,32 @@ export const menuService: MenuService = {
       permission_id: row.permission_id,
       created_at: row.created_at ?? null,
     }));
+  },
+  async listAssignedPermissions(menuId: string) {
+    const { data, error } = await supabase
+      .from("menu_permissions")
+      .select(
+        "permission_id, permissions:permission_id(_id, code, name, description, module_id, module, resource, action, category, status)",
+      )
+      .eq("menu_id", menuId);
+    if (error) {
+      throw new Error(`menu permissions select failed: ${error.message}`);
+    }
+    return (data ?? [])
+      .map((row: any) => row.permissions)
+      .filter(Boolean)
+      .map((perm: any) => ({
+        _id: perm._id ?? "",
+        code: perm.code ?? "",
+        name: perm.name ?? perm.code ?? "",
+        description: perm.description ?? null,
+        module_id: perm.module_id ?? null,
+        module: perm.module ?? perm.permission_type ?? null,
+        resource: perm.resource ?? null,
+        action: perm.action ?? null,
+        category: perm.category ?? null,
+        status: perm.status ?? null,
+      }));
   },
   async saveMenuPermissions(menuId, permissionIds) {
     await menuRepo.setMenuPermissions(menuId, permissionIds ?? []);

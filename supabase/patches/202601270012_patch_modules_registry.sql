@@ -140,13 +140,20 @@ create or replace view public.v_modules_stats as
 select
   m.*,
   coalesce(p.permission_count, 0)::int as permission_count,
-  0::int as menu_count
+  coalesce(p.permission_page_count, 0)::int as permission_page_count,
+  coalesce(p.permission_feature_count, 0)::int as permission_feature_count,
+  0::int as menu_count,
+  m.meta->>'source' as meta_source,
+  coalesce(m.key ~ '^[a-z0-9]+(-[a-z0-9]+)*$', false) as key_is_kebab
 from public.modules m
 left join (
-  select module_id, count(*) as permission_count
+  select
+    module_id,
+    count(*) as permission_count,
+    count(*) filter (where upper(category) = 'PAGE') as permission_page_count,
+    count(*) filter (where upper(category) = 'FEATURE') as permission_feature_count
   from public.permissions
   group by module_id
 ) p on p.module_id = m._id
 where m.deleted_at is null
 order by m.sort_order nulls last, m.name;
-

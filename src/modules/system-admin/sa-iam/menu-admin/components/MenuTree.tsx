@@ -52,6 +52,15 @@ export const MenuTree: React.FC<MenuTreeProps> = ({
           placeholder="Tất cả phân hệ"
           onChange={onFilterModule}
           options={[{ label: "Tất cả phân hệ", value: "all" }, ...(moduleOptions ?? [])]}
+          showSearch
+          optionFilterProp="label"
+          popupMatchSelectWidth={false}
+          dropdownStyle={{ minWidth: 360 }}
+          filterOption={(input, option) =>
+            String(option?.label ?? "")
+              .toLowerCase()
+              .includes(input.toLowerCase())
+          }
           style={{ minWidth: 180 }}
         />
       </Space>

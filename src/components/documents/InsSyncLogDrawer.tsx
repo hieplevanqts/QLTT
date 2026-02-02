@@ -1,12 +1,7 @@
 import React, { useState } from 'react';
 import { CheckCircle2, XCircle, History, Download, Upload, RefreshCw } from 'lucide-react';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '../ui/sheet';
+import { CenteredModalShell } from '../overlays/CenteredModalShell';
+import { EnterpriseModalHeader } from '../overlays/EnterpriseModalHeader';
 import { Button } from '../ui/button';
 import styles from './InsSyncLogDrawer.module.css';
 import type { InsSyncLog } from '../../../types/ins-documents';
@@ -119,16 +114,17 @@ export function InsSyncLogDrawer({ open, onOpenChange }: InsSyncLogDrawerProps) 
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[600px] sm:max-w-[600px]">
-        <SheetHeader>
-          <SheetTitle>Lịch sử đồng bộ INS</SheetTitle>
-          <SheetDescription>
-            Xem lịch sử import/export biểu mẫu với hệ thống INS
-          </SheetDescription>
-        </SheetHeader>
+    <CenteredModalShell
+      header={<EnterpriseModalHeader title="Lịch sử đồng bộ INS" moduleTag="documents" />}
+      open={open}
+      onClose={() => onOpenChange(false)}
+      width={720}
+    >
+      <div className="text-sm text-muted-foreground">
+        Xem lịch sử import/export biểu mẫu với hệ thống INS
+      </div>
 
-        <div className={styles.content}>
+      <div className={styles.content}>
           {/* Filters */}
           <div className={styles.filters}>
             <Button
@@ -201,8 +197,7 @@ export function InsSyncLogDrawer({ open, onOpenChange }: InsSyncLogDrawerProps) 
               ))}
             </div>
           )}
-        </div>
-      </SheetContent>
-    </Sheet>
+      </div>
+    </CenteredModalShell>
   );
 }

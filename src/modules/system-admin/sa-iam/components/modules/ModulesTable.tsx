@@ -1,13 +1,11 @@
 import React from "react";
 import {
   Button,
-  Dropdown,
   Popconfirm,
   Space,
   Tag,
   Tooltip,
-  type InputRef,
-  type MenuProps,
+  Typography,
 } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import type { FilterValue, SorterResult, TableCurrentDataSource } from "antd/es/table/interface";
@@ -15,15 +13,12 @@ import {
   CheckCircleOutlined,
   DeleteOutlined,
   EditOutlined,
-  MoreOutlined,
+  EyeOutlined,
+  ThunderboltOutlined,
   StopOutlined,
 } from "@ant-design/icons";
 
 import AppTable from "@/components/data-table/AppTable";
-import {
-  getColumnSearchProps,
-  type ColumnSearchState,
-} from "@/components/data-table/columnSearch";
 import type { ModuleRecord, ModuleStatusValue } from "../../services/modules.service";
 
 type ModulesTableProps = {
@@ -32,9 +27,6 @@ type ModulesTableProps = {
   total: number;
   page: number;
   pageSize: number;
-  statusFilter: "all" | "active" | "inactive";
-  groupFilter: string;
-  groupOptions: Array<{ label: string; value: string }>;
   canUpdate?: boolean;
   canDelete?: boolean;
   onChange: (
@@ -46,6 +38,8 @@ type ModulesTableProps = {
   onEdit: (record: ModuleRecord) => void;
   onToggleStatus: (record: ModuleRecord) => void;
   onDelete: (record: ModuleRecord) => void;
+  onViewPermissions: (record: ModuleRecord) => void;
+  onGeneratePermissions: (record: ModuleRecord) => void;
   onRefresh?: () => void;
 };
 
@@ -60,102 +54,99 @@ export function ModulesTable({
   total,
   page,
   pageSize,
-  statusFilter,
-  groupFilter,
-  groupOptions,
   canUpdate,
   canDelete,
   onChange,
   onEdit,
   onToggleStatus,
   onDelete,
+  onViewPermissions,
+  onGeneratePermissions,
 }: ModulesTableProps) {
-  const searchInput = React.useRef<InputRef>(null);
-  const [columnSearchText, setColumnSearchText] = React.useState("");
-  const [searchedColumn, setSearchedColumn] = React.useState("");
-
-  const columnSearchState: ColumnSearchState = {
-    searchText: columnSearchText,
-    searchedColumn,
-    setSearchText: setColumnSearchText,
-    setSearchedColumn,
-    inputRef: searchInput,
-  };
-
-  const getMoreActions = (record: ModuleRecord): MenuProps => ({
-    items: [
-      {
-        key: "toggle",
-        label: record.status === 1 ? "Ngừng phân hệ" : "Kích hoạt phân hệ",
-        onClick: () => onToggleStatus(record),
-        disabled: !canUpdate,
-      },
-      {
-        key: "delete",
-        danger: true,
-        label: "Xóa mềm",
-        onClick: () => onDelete(record),
-        disabled: !canDelete,
-      },
-    ],
-  });
+  const isKebabCase = (value?: string | null) =>
+    Boolean(value && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value));
+  const getPermTotal = (record: ModuleRecord) => record.permission_count ?? 0;
+  const getPermPage = (record: ModuleRecord) => record.permission_page_count ?? 0;
+  const getPermFeature = (record: ModuleRecord) => record.permission_feature_count ?? 0;
+  const getSource = (record: ModuleRecord) =>
+    typeof record.meta_source === "string" ? record.meta_source : "";
 
   const columns: ColumnsType<ModuleRecord> = [
     {
-      title: "Mã phân hệ",
+      title: "Key",
       dataIndex: "key",
       key: "key",
-      width: 180,
+      width: 220,
       sorter: (a, b) => (a.key || "").localeCompare(b.key || "", "vi"),
-      ...getColumnSearchProps<ModuleRecord>("key", columnSearchState, {
-        placeholder: "Tìm theo mã phân hệ",
-      }),
+      render: (value: string, record: ModuleRecord) => (
+        <Space direction="vertical" size={4}>
+          <Typography.Text code copyable={{ text: value }}>
+            {value || "—"}
+          </Typography.Text>
+          <Typography.Text type="secondary" className="text-xs">
+            {record.code || value || "—"}
+          </Typography.Text>
+          {record.key_is_kebab === false && (
+            <Tooltip title="Key phải theo kebab-case (vd: system-admin). Nên trùng folder src/modules/<key>.">
+              <Tag color="red">Key không chuẩn</Tag>
+            </Tooltip>
+          )}
+          {record.key_is_kebab == null && !isKebabCase(value) && (
+            <Tooltip title="Key phải theo kebab-case (vd: system-admin). Nên trùng folder src/modules/<key>.">
+              <Tag color="red">Key không chuẩn</Tag>
+            </Tooltip>
+          )}
+        </Space>
+      ),
     },
     {
-      title: "Tên phân hệ",
+      title: "Tên",
       dataIndex: "name",
       key: "name",
-      width: 240,
+      width: 260,
       sorter: (a, b) => (a.name || "").localeCompare(b.name || "", "vi"),
-      ...getColumnSearchProps<ModuleRecord>("name", columnSearchState, {
-        placeholder: "Tìm theo tên phân hệ",
-      }),
+      render: (value?: string | null) => value || "—",
     },
     {
       title: "Nhóm",
       dataIndex: "group",
       key: "group",
-      width: 140,
-      filters: groupOptions.map((g) => ({ text: g.label, value: g.value })),
-      filteredValue: groupFilter !== "all" ? [groupFilter] : null,
-      onFilter: (value, record) => record.group === value,
+      width: 120,
       sorter: (a, b) => (a.group || "").localeCompare(b.group || "", "vi"),
       render: (value: string) => <Tag>{value}</Tag>,
     },
     {
-      title: "Mô tả",
-      dataIndex: "description",
-      key: "description",
-      ellipsis: true,
-      sorter: (a, b) =>
-        (a.description || "").localeCompare(b.description || "", "vi"),
-      ...getColumnSearchProps<ModuleRecord>(
-        "description",
-        columnSearchState,
-        {
-          placeholder: "Tìm theo mô tả",
-        },
+      title: "Quyền",
+      key: "permissions",
+      width: 210,
+      render: (_: unknown, record: ModuleRecord) => (
+        <Space size={4} wrap>
+          <Tag color="blue">PAGE {getPermPage(record)}</Tag>
+          <Tag color="gold">FEATURE {getPermFeature(record)}</Tag>
+          <Tag color="geekblue">TOTAL {getPermTotal(record)}</Tag>
+          {getPermTotal(record) === 0 && (
+            <Tag color="volcano">Chưa khai báo quyền</Tag>
+          )}
+        </Space>
       ),
-      render: (value?: string | null) => value || "—",
     },
     {
-      title: "Số quyền",
-      dataIndex: "permission_count",
-      key: "permission_count",
-      width: 110,
-      align: "right",
-      sorter: (a, b) => (a.permission_count ?? 0) - (b.permission_count ?? 0),
-      render: (value?: number | null) => value ?? 0,
+      title: "Source",
+      key: "source",
+      width: 220,
+      render: (_: unknown, record: ModuleRecord) => {
+        const sourceValue = getSource(record);
+        if (!sourceValue) return "—";
+        return (
+          <Typography.Text
+            ellipsis={{ tooltip: sourceValue }}
+            copyable={{ text: sourceValue }}
+            className="max-w-[200px]"
+          >
+            {sourceValue}
+          </Typography.Text>
+        );
+      },
     },
     {
       title: "Thứ tự",
@@ -170,13 +161,6 @@ export function ModulesTable({
       dataIndex: "status",
       key: "status",
       width: 120,
-      filters: [
-        { text: "Hoạt động", value: 1 },
-        { text: "Ngừng", value: 0 },
-      ],
-      filteredValue:
-        statusFilter === "all" ? null : [statusFilter === "active" ? 1 : 0],
-      onFilter: (value, record) => record.status === value,
       sorter: (a, b) => (a.status ?? 0) - (b.status ?? 0),
       render: (value: ModuleStatusValue) => (
         <Tag color={statusColor(value)}>{statusLabel(value)}</Tag>
@@ -186,9 +170,28 @@ export function ModulesTable({
       title: "Thao tác",
       key: "actions",
       fixed: "right",
-      width: 170,
+      width: 230,
       render: (_: unknown, record) => (
         <Space size={4}>
+          <Tooltip title="Sinh quyền">
+            <Button
+              type="text"
+              size="small"
+              icon={<ThunderboltOutlined />}
+              onClick={() => onGeneratePermissions(record)}
+              disabled={!canUpdate}
+            >
+              Sinh quyền
+            </Button>
+          </Tooltip>
+          <Tooltip title="Xem quyền">
+            <Button
+              type="text"
+              size="small"
+              icon={<EyeOutlined />}
+              onClick={() => onViewPermissions(record)}
+            />
+          </Tooltip>
           <Tooltip title="Sửa">
             <Button
               type="text"
@@ -232,9 +235,6 @@ export function ModulesTable({
               />
             </Tooltip>
           </Popconfirm>
-          <Dropdown menu={getMoreActions(record)} trigger={["click"]}>
-            <Button type="text" size="small" icon={<MoreOutlined />} />
-          </Dropdown>
         </Space>
       ),
     },
@@ -248,7 +248,7 @@ export function ModulesTable({
       loading={loading}
       columns={columns}
       dataSource={data}
-      scroll={{ x: 1200 }}
+      scroll={{ x: 1500 }}
       pagination={{
         current: page,
         pageSize,

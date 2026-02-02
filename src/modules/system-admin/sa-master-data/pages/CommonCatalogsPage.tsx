@@ -2,13 +2,11 @@ import React from "react";
 import {
   Button,
   Card,
-  Drawer,
   Dropdown,
   Empty,
   Form,
   Input,
   InputNumber,
-  Modal,
   Popconfirm,
   Row,
   Col,
@@ -36,6 +34,8 @@ import PageHeader from "@/layouts/PageHeader";
 import AppTable from "@/components/data-table/AppTable";
 import { getColumnSearchProps } from "@/components/data-table/columnSearch";
 import { PermissionGate, usePermissions } from "../../_shared";
+import { CenteredModalShell } from "@/components/overlays/CenteredModalShell";
+import { EnterpriseModalHeader } from "@/components/overlays/EnterpriseModalHeader";
 import { catalogsRepo, type CatalogRecord, type CatalogStatus } from "../data/catalogs.repo";
 import {
   catalogItemsRepo,
@@ -909,15 +909,41 @@ export function CatalogsManagerPage({ group, title, description }: CatalogsManag
         </div>
       </div>
 
-      <Modal
+      <CenteredModalShell
+        header={
+          <EnterpriseModalHeader
+            title={catalogFormMode === "create" ? "Thêm danh mục" : "Chỉnh sửa danh mục"}
+            badgeStatus={
+              catalogFormMode === "edit"
+                ? editingCatalog?.status === "ACTIVE"
+                  ? "success"
+                  : "default"
+                : "default"
+            }
+            statusLabel={
+              catalogFormMode === "edit" && editingCatalog
+                ? editingCatalog.status === "ACTIVE"
+                  ? "Hoạt động"
+                  : "Ngừng"
+                : undefined
+            }
+            code={catalogFormMode === "edit" ? editingCatalog?.key ?? undefined : undefined}
+            moduleTag="master-data"
+          />
+        }
         open={catalogModalOpen}
-        title={catalogFormMode === "create" ? "Thêm danh mục" : "Chỉnh sửa danh mục"}
-        onCancel={closeCatalogModal}
-        onOk={handleSubmitCatalog}
-        okText="Lưu"
-        cancelText="Hủy"
-        confirmLoading={catalogSubmitting}
-        destroyOnClose
+        onClose={closeCatalogModal}
+        width={720}
+        footer={
+          <Space>
+            <Button onClick={closeCatalogModal} disabled={catalogSubmitting}>
+              Đóng
+            </Button>
+            <Button type="primary" onClick={handleSubmitCatalog} loading={catalogSubmitting}>
+              Lưu
+            </Button>
+          </Space>
+        }
       >
         <Form layout="vertical" form={catalogForm}>
           <Form.Item
@@ -949,18 +975,36 @@ export function CatalogsManagerPage({ group, title, description }: CatalogsManag
             />
           </Form.Item>
         </Form>
-      </Modal>
+      </CenteredModalShell>
 
-      <Drawer
-        title={itemFormMode === "create" ? "Thêm mục" : "Chỉnh sửa mục"}
-        placement="right"
-        size={420}
+      <CenteredModalShell
+        header={
+          <EnterpriseModalHeader
+            title={itemFormMode === "create" ? "Thêm mục" : "Chỉnh sửa mục"}
+            badgeStatus={
+              itemFormMode === "edit"
+                ? editingItem?.status === "ACTIVE"
+                  ? "success"
+                  : "default"
+                : "default"
+            }
+            statusLabel={
+              itemFormMode === "edit" && editingItem
+                ? editingItem.status === "ACTIVE"
+                  ? "Hoạt động"
+                  : "Ngừng"
+                : undefined
+            }
+            code={itemFormMode === "edit" ? editingItem?.code ?? undefined : undefined}
+            moduleTag="master-data"
+          />
+        }
         open={itemDrawerOpen}
         onClose={closeItemDrawer}
-        destroyOnHidden
-        extra={
+        width={900}
+        footer={
           <Space>
-            <Button onClick={closeItemDrawer}>Hủy</Button>
+            <Button onClick={closeItemDrawer}>Đóng</Button>
             <Button type="primary" onClick={handleSubmitItem} loading={itemSubmitting}>
               Lưu
             </Button>
@@ -1003,7 +1047,7 @@ export function CatalogsManagerPage({ group, title, description }: CatalogsManag
             />
           </Form.Item>
         </Form>
-      </Drawer>
+      </CenteredModalShell>
     </PermissionGate>
   );
 }
