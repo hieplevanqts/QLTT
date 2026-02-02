@@ -270,6 +270,28 @@ export default function InspectionRoundDetail() {
   // We can reuse selectedTask for these action modals if we are careful, 
   // or use a separate 'actionTask' state like TaskBoard to be safe.
   const [actionTask, setActionTask] = useState<any | null>(null);
+  
+  // Selection State
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+
+  const handleSelectRow = (id: string | number) => {
+    const stringId = String(id);
+    const newSelected = new Set(selectedRows);
+    if (newSelected.has(stringId)) {
+      newSelected.delete(stringId);
+    } else {
+      newSelected.add(stringId);
+    }
+    setSelectedRows(newSelected);
+  };
+
+  const handleSelectAll = (selected: boolean) => {
+    if (selected) {
+      setSelectedRows(new Set(sessions.map((s) => s.id)));
+    } else {
+      setSelectedRows(new Set());
+    }
+  };
 
 
   useEffect(() => {
@@ -478,7 +500,7 @@ export default function InspectionRoundDetail() {
             status: s.status, 
             type: s.type || 'proactive',
             priority: 'medium',
-            roundName: 'Đợt kiểm tra hiện tại',
+            roundName: s.campaignName || data?.name || 'Đợt kiểm tra hiện tại',
             description: s.description || s.note, 
             merchantId: s.merchantId,
             merchantName: s.merchantName,
@@ -540,8 +562,17 @@ export default function InspectionRoundDetail() {
   // Define columns matching TaskBoard exactly
   const columns: Column<any>[] = [
     {
+      key: 'stt',
+      label: 'STT',
+      width: '60px',
+      className: 'text-center',
+      render: (_, index) => (
+        <div className="text-center">{index + 1}</div>
+      ),
+    },
+    {
       key: 'title',
-      label: 'Tên nhiệm vụ',
+      label: 'Tên phiên làm việc',
       sortable: true,
       render: (task) => (
         <div>
@@ -556,7 +587,7 @@ export default function InspectionRoundDetail() {
       sortable: true,
       render: (task) => (
         <div>
-          <div style={{ fontWeight: 500 }}>{task?.roundId || 'N/A'}</div>
+          <div style={{ fontWeight: 500 }}>{task?.roundName || 'N/A'}</div>
           {task?.planName && (
             <div style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>{task.planName}</div>
           )}
@@ -1145,6 +1176,10 @@ export default function InspectionRoundDetail() {
                   columns={columns}
                   data={sessions}
                   getRowId={(s) => s.id}
+                  selectable={true}
+                  selectedRows={selectedRows}
+                  onSelectRow={handleSelectRow}
+                  onSelectAll={handleSelectAll}
                 />
               ) : (
                 <EmptyState

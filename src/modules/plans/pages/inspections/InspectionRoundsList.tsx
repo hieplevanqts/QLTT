@@ -323,9 +323,7 @@ export function InspectionRoundsList() {
   const filteredData = useMemo(() => {
     return rounds.filter((round: InspectionRound) => {
       const matchesSearch = round.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-                           round.code.toLowerCase().includes(searchValue.toLowerCase()) ||
-                           round.leadUnit.toLowerCase().includes(searchValue.toLowerCase());
-                            round.leadUnit.toLowerCase().includes(searchValue.toLowerCase());
+                           round.code.toLowerCase().includes(searchValue.toLowerCase());
       const matchesPlan = planFilter === 'all' || 
                          (planFilter === 'with_plan' && round.planId) ||
                          (planFilter === 'no_plan' && !round.planId);
@@ -816,7 +814,7 @@ export function InspectionRoundsList() {
           }
           searchInput={
             <SearchInput
-              placeholder="Tìm theo mã, tên đợt hoặc người chủ trì"
+              placeholder="Tìm kiếm theo mã, tên đợt kiểm tra"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
               style={{ width: '400px' }}
