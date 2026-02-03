@@ -5,16 +5,16 @@ import styles from './LeadFormModal.module.css';
 
 // Mock data: Danh sách cửa hàng đã đăng ký
 const REGISTERED_STORES = [
-  { id: 'store-001', name: 'Cửa hàng tiện lợi Circle K - Nguyễn Huệ', address: '45 Nguyễn Huệ, Q.1, TP.HCM', type: 'retail' },
-  { id: 'store-002', name: 'Siêu thị Vinmart - Lê Lợi', address: '123 Lê Lợi, Q.1, TP.HCM', type: 'supermarket' },
-  { id: 'store-003', name: 'Nhà hàng Món Huế - Pasteur', address: '56 Pasteur, Q.1, TP.HCM', type: 'restaurant' },
-  { id: 'store-004', name: 'Quán cafe The Coffee House - Đồng Khởi', address: '78 Đồng Khởi, Q.1, TP.HCM', type: 'cafe' },
-  { id: 'store-005', name: 'Cửa hàng thực phẩm Bách Hóa Xanh - Hai Bà Trưng', address: '234 Hai Bà Trưng, Q.1, TP.HCM', type: 'grocery' },
-  { id: 'store-006', name: 'Salon tóc Hair Salon - Trần Hưng Đạo', address: '89 Trần Hưng Đạo, Q.1, TP.HCM', type: 'service' },
-  { id: 'store-007', name: 'Nhà thuốc Pharmacity - Võ Văn Tần', address: '167 Võ Văn Tần, Q.3, TP.HCM', type: 'pharmacy' },
-  { id: 'store-008', name: 'Tiệm bánh Kinh Đô - Nguyễn Thị Minh Khai', address: '345 Nguyễn Thị Minh Khai, Q.3, TP.HCM', type: 'bakery' },
-  { id: 'store-009', name: 'Cửa hàng điện máy Nguyễn Kim - Cách Mạng Tháng 8', address: '456 Cách Mạng Tháng 8, Q.10, TP.HCM', type: 'electronics' },
-  { id: 'store-010', name: 'Chợ Bến Thành - Lê Lợi', address: 'Lê Lợi, Q.1, TP.HCM', type: 'market' },
+  { id: 'store-001', name: 'Cửa hàng tiện lợi Circle K - Nguyễn Huệ', address: '45 Nguyễn Huệ, Phường 1, Hà Nội', type: 'retail' },
+  { id: 'store-002', name: 'Siêu thị Vinmart - Lê Lợi', address: '123 Lê Lợi, Phường 1, Hà Nội', type: 'supermarket' },
+  { id: 'store-003', name: 'Nhà hàng Món Huế - Pasteur', address: '56 Pasteur, Phường 1, Hà Nội', type: 'restaurant' },
+  { id: 'store-004', name: 'Quán cafe The Coffee House - Đồng Khởi', address: '78 Đồng Khởi, Phường 1, Hà Nội', type: 'cafe' },
+  { id: 'store-005', name: 'Cửa hàng thực phẩm Bách Hóa Xanh - Hai Bà Trưng', address: '234 Hai Bà Trưng, Phường 1, Hà Nội', type: 'grocery' },
+  { id: 'store-006', name: 'Salon tóc Hair Salon - Trần Hưng Đạo', address: '89 Trần Hưng Đạo, Phường 1, Hà Nội', type: 'service' },
+  { id: 'store-007', name: 'Nhà thuốc Pharmacity - Võ Văn Tần', address: '167 Võ Văn Tần, Phường 3, Hà Nội', type: 'pharmacy' },
+  { id: 'store-008', name: 'Tiệm bánh Kinh Đô - Nguyễn Thị Minh Khai', address: '345 Nguyễn Thị Minh Khai, Phường 3, Hà Nội', type: 'bakery' },
+  { id: 'store-009', name: 'Cửa hàng điện máy Nguyễn Kim - Cách Mạng Tháng 8', address: '456 Cách Mạng Tháng 8, Phường 10, Hà Nội', type: 'electronics' },
+  { id: 'store-010', name: 'Chợ Bến Thành - Lê Lợi', address: 'Lê Lợi, Phường 1, Hà Nội', type: 'market' },
   { id: 'store-other', name: '🔍 Cửa hàng khác (nhập tay)', address: '', type: '' },
 ];
 

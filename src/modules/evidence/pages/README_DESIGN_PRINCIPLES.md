@@ -134,7 +134,7 @@ interface Evidence {
   capturedAt: string;  // ISO 8601
   
   // 6. Location (địa điểm thu thập)
-  location: string;  // e.g., "Quận 1, TP.HCM"
+  location: string;  // e.g., "Phường 1, Hà Nội"
   
   // 7. Submitter (người nộp)
   submitter: string;  // User ID or name
@@ -546,7 +546,7 @@ const newEvidence = await evidenceService.createNewEvidence({
   type: 'image',
   source: 'Mobile App',
   capturedAt: '2026-01-10T09:00:00Z',
-  location: 'Quận 1, TP.HCM',
+  location: 'Phường 1, Hà Nội',
   submitter: 'Nguyễn Văn A',
   file: fileBlob,
   notes: 'Vi phạm vệ sinh...',

@@ -75,15 +75,15 @@ export function Step4AddressMap({
       // TP. Hồ Chí Minh
       return [
         { value: 'qltt-hcm', label: 'Chi cục QLTT TP. Hồ Chí Minh' },
-        { value: 'qltt-q1', label: 'Chi cục QLTT Quận 1' },
-        { value: 'qltt-q3', label: 'Chi cục QLTT Quận 3' },
-        { value: 'qltt-q5', label: 'Chi cục QLTT Quận 5' },
-        { value: 'qltt-q10', label: 'Chi cục QLTT Quận 10' },
-        { value: 'qltt-pn', label: 'Chi cục QLTT Quận Phú Nhuận' },
-        { value: 'qltt-tb', label: 'Chi cục QLTT Quận Tân Bình' },
-        { value: 'qltt-bt', label: 'Chi cục QLTT Quận Bình Thạnh' },
-        { value: 'qltt-gv', label: 'Chi cục QLTT Quận Gò Vấp' },
-        { value: 'qltt-tp', label: 'Chi cục QLTT Quận Tân Phú' },
+        { value: 'qltt-q1', label: 'Chi cục QLTT Phường 1' },
+        { value: 'qltt-q3', label: 'Chi cục QLTT Phường 3' },
+        { value: 'qltt-q5', label: 'Chi cục QLTT Phường 5' },
+        { value: 'qltt-q10', label: 'Chi cục QLTT Phường 10' },
+        { value: 'qltt-pn', label: 'Chi cục QLTT Phường Phú Nhuận' },
+        { value: 'qltt-tb', label: 'Chi cục QLTT Phường Tân Bình' },
+        { value: 'qltt-bt', label: 'Chi cục QLTT Phường Bình Thạnh' },
+        { value: 'qltt-gv', label: 'Chi cục QLTT Phường Gò Vấp' },
+        { value: 'qltt-tp', label: 'Chi cục QLTT Phường Tân Phú' },
         { value: 'qltt-td', label: 'Chi cục QLTT TP. Thủ Đức' },
       ];
     }
@@ -300,7 +300,7 @@ export function Step4AddressMap({
               <Label htmlFor="registered-address">Địa chỉ đăng ký kinh doanh</Label>
               <Input
                 id="registered-address"
-                placeholder="VD: 456 Lê Lợi, Quận 1, TP.HCM"
+                placeholder="VD: 456 Lê Lợi, Phường 1, Hà Nội"
                 value={formData.registeredAddress}
                 onChange={(e) => setFormData((prev: any) => ({ ...prev, registeredAddress: e.target.value }))}
               />
@@ -314,7 +314,7 @@ export function Step4AddressMap({
               <Label htmlFor="headquarter-address">Địa chỉ trụ sở chính</Label>
               <Input
                 id="headquarter-address"
-                placeholder="VD: 789 Hai Bà Trưng, Quận 3, TP.HCM"
+                placeholder="VD: 789 Hai Bà Trưng, Phường 3, Hà Nội"
                 value={formData.headquarterAddress}
                 onChange={(e) => setFormData((prev: any) => ({ ...prev, headquarterAddress: e.target.value }))}
               />
@@ -328,7 +328,7 @@ export function Step4AddressMap({
               <Label htmlFor="production-address">Địa chỉ sản xuất</Label>
               <Input
                 id="production-address"
-                placeholder="VD: KCN Tân Bình, TP.HCM"
+                placeholder="VD: KCN Tân Bình, Hà Nội"
                 value={formData.productionAddress}
                 onChange={(e) => setFormData((prev: any) => ({ ...prev, productionAddress: e.target.value }))}
               />
@@ -518,7 +518,7 @@ export function Step4AddressMap({
                         <li><strong>Rooftop:</strong> Chính xác đến mái nhà/tòa nhà cụ thể</li>
                         <li><strong>Street:</strong> Chính xác đến đường/phố</li>
                         <li><strong>Ward:</strong> Chính xác đến phường/xã</li>
-                        <li><strong>District:</strong> Chính xác đến quận/huyện</li>
+                        <li><strong>District:</strong> Chính xác đến Phường/Xã</li>
                       </ul>
                     </TooltipContent>
                   </Tooltip>
@@ -556,7 +556,7 @@ export function Step4AddressMap({
                       <Map size={16} />
                       <div>
                         <div className={styles.selectItemLabel}>District</div>
-                        <div className={styles.selectItemDesc}>Chính xác đến quận/huyện</div>
+                        <div className={styles.selectItemDesc}>Chính xác đến Phường/Xã</div>
                       </div>
                     </SelectItem>
                   </SelectContent>

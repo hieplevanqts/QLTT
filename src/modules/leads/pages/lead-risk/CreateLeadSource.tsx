@@ -70,7 +70,7 @@ export default function CreateLeadSource() {
   // Mock stores - in production, this would filter by user's jurisdiction
   const stores = [
     { id: 'S001', name: 'Cửa hàng Bách Hóa Xanh - Nguyễn Văn Cừ' },
-    { id: 'S002', name: 'Siêu thị Co.opMart - Quận 1' },
+    { id: 'S002', name: 'Siêu thị Co.opMart - Phường 1' },
     { id: 'S003', name: 'Nhà hàng Phở 24 - Lê Lợi' },
     { id: 'S004', name: 'Cửa hàng Điện Máy Xanh - Phạm Ngũ Lão' },
   ];

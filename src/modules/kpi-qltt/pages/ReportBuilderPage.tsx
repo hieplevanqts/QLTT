@@ -179,7 +179,7 @@ export const ReportBuilderPage: React.FC = () => {
                   type="text"
                   value={formData.location}
                   onChange={(e) => handleInputChange('location', e.target.value)}
-                  placeholder="Ví dụ: Quận Ba Đình"
+                  placeholder="Ví dụ: Phường Ba Đình"
                   className={styles.formInput}
                 />
               </div>

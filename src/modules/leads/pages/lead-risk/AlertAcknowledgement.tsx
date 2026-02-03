@@ -58,10 +58,10 @@ export default function AlertAcknowledgement() {
     type: 'critical' as const,
     category: 'lead',
     title: 'Lead mới từ hotline - Vi phạm nghiêm trọng',
-    description: 'Phát hiện cửa hàng bán hàng giả quy mô lớn tại 123 Nguyễn Huệ, Quận 1',
+    description: 'Phát hiện cửa hàng bán hàng giả quy mô lớn tại 123 Nguyễn Huệ, Phường 1',
     location: {
       address: '123 Nguyễn Huệ',
-      district: 'Quận 1',
+      district: 'Phường 1',
     },
     timestamp: '2025-01-09T08:30:00',
     source: 'Hotline 1800',

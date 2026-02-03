@@ -170,7 +170,7 @@ export default function EvidenceAnalysisViewer({ evidence }: EvidenceAnalysisVie
   const linkedCases = [
     {
       id: 'CASE-2026-045',
-      title: 'Vi phạm ATTP tại cơ sở ăn uống Quận 1',
+      title: 'Vi phạm ATTP tại cơ sở ăn uống Phường 1',
       type: 'case',
       status: 'active',
       assignee: 'Nguyễn Văn A',

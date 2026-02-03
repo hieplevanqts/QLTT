@@ -25,12 +25,12 @@ Parses an address string into components.
 
 **Format:**
 ```
-"110A Ngô Quyền, Phường 08, Quận 5, Thành phố Hồ Chí Minh, Việt Nam"
+"110A Ngô Quyền, Phường 08, Phường 5, Thành phố Hồ Chí Minh, Việt Nam"
                   ↓
 {
   streetAddress: "110A Ngô Quyền",
   wardName: "Phường 08",
-  districtName: "Quận 5",
+  districtName: "Phường 5",
   provinceName: "Thành phố Hồ Chí Minh",
   country: "Việt Nam"
 }
@@ -40,7 +40,7 @@ Parses an address string into components.
 Normalizes location names for matching.
 
 **Transformations:**
-- Removes prefixes: "Phường", "Xã", "Quận", "Huyện", "Thành phố", "Tỉnh"
+- Removes prefixes: "Phường", "Xã", "Phường", "Xã", "Thành phố", "Tỉnh"
 - Converts to lowercase
 - Removes tone marks: "à"→"a", "é"→"e", etc.
 - Normalizes whitespace
@@ -49,7 +49,7 @@ Normalizes location names for matching.
 ```
 "Phường 08" → "phuong 08"
 "Thành phố Hồ Chí Minh" → "ho chi minh"
-"Quận 5" → "5"
+"Phường 5" → "5"
 ```
 
 #### `namesMatch(name1: string, name2: string): boolean`
@@ -64,7 +64,7 @@ Intelligently compares two location names.
 **Examples:**
 ```
 namesMatch("Phường 08", "Phường 8") → true
-namesMatch("Hoàn Kiếm", "Quận Hoàn Kiếm") → true
+namesMatch("Hoàn Kiếm", "Phường Hoàn Kiếm") → true
 namesMatch("Hà Nội", "Thành phố Hà Nội") → true
 namesMatch("Ba Đình", "Phường Ba Đình") → false (different level)
 ```
@@ -225,7 +225,7 @@ __addressParserTests.testFullIntegration()
 
 ### Success Case
 ```
-User uploads: "110A Ngô Quyền, Phường 08, Quận 5, Thành phố Hồ Chí Minh, Việt Nam"
+User uploads: "110A Ngô Quyền, Phường 08, Phường 5, Thành phố Hồ Chí Minh, Việt Nam"
               ↓
 Auto-mapper finds matches
               ↓

@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS businesses (
   
   -- Administrative Divisions
   province TEXT NOT NULL,  -- Tỉnh/Thành phố (e.g., "Hà Nội")
-  district TEXT NOT NULL,  -- Quận/Huyện (e.g., "Ba Đình", "Hoàn Kiếm")
+  district TEXT NOT NULL,  -- Phường/Xã (e.g., "Ba Đình", "Hoàn Kiếm")
   ward TEXT NOT NULL,      -- Phường/Xã (e.g., "Phường Điện Biên", "Phường Hàng Bạc")
   
   -- Population Impact

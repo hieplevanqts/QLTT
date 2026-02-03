@@ -95,7 +95,7 @@ export default function LeadList() {
     priority: (['critical', 'high', 'medium', 'low'] as const)[i % 4],
     status: (['new', 'triaged', 'in_progress', 'resolved', 'closed'] as const)[i % 5],
     assignee: ['Nguyễn Văn A', 'Trần Thị B', 'Lê Văn C', 'Phạm Thị D'][i % 4],
-    area: ['Quận 1', 'Quận 3', 'Quận 7', 'Quận 10'][i % 4],
+    area: ['Phường 1', 'Phường 3', 'Phường 7', 'Phường 10'][i % 4],
     category: ['Hàng giả', 'Chất lượng', 'Giá cả', 'An toàn thực phẩm'][i % 4],
     createdAt: new Date(Date.now() - i * 86400000).toISOString(),
     dueDate: new Date(Date.now() + (7 - i % 10) * 86400000).toISOString(),
@@ -373,7 +373,7 @@ export default function LeadList() {
             <div className={styles.filterGroup}>
               <label>Địa bàn</label>
               <div className={styles.checkboxGroup}>
-                {['Quận 1', 'Quận 3', 'Quận 7', 'Quận 10'].map((area) => (
+                {['Phường 1', 'Phường 3', 'Phường 7', 'Phường 10'].map((area) => (
                   <label key={area} className={styles.checkboxLabel}>
                     <input
                       type="checkbox"

@@ -51,7 +51,7 @@ export function generatePlanReportPDF(data: PlanReportData): jsPDF {
   // Left side
   doc.text('UY BAN NHAN DAN TP. HO CHI MINH', leftMargin, yPos);
   yPos += 5;
-  doc.text('SO CONG THUONG TP.HCM', leftMargin, yPos);
+  doc.text('SO CONG THUONG Hà Nội', leftMargin, yPos);
   yPos += 3;
   doc.setFont('times', 'normal');
   doc.text('_________________', leftMargin, yPos);

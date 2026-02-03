@@ -47,7 +47,7 @@
 - ✅ Create form (drawer)
 - ✅ Update form (drawer)
 - ✅ Soft delete
-- ✅ Type badges (Tỉnh/Quận/Phường)
+- ✅ Type badges (Tỉnh/Phường/Phường)
 - ✅ Permission gates
 - ✅ All standard features
 

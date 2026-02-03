@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   ArrowLeft,
@@ -1356,7 +1356,7 @@ export default function LeadDetail() {
                       userId: 'QT24_ADMIN',
                       userName: 'Nguyễn Văn Admin',
                       timestamp: '2025-01-06T09:00:00Z',
-                      location: 'TP.HCM',
+                      location: 'Hà Nội',
                     },
                     {
                       id: '2',
@@ -1369,7 +1369,7 @@ export default function LeadDetail() {
                         urgency: lead.urgency,
                         reason: 'Lead có độ tin cậy cao, cần kiểm tra ngay'
                       },
-                      location: 'TP.HCM',
+                      location: 'Hà Nội',
                     },
                     {
                       id: '3',
@@ -1382,7 +1382,7 @@ export default function LeadDetail() {
                         deadline: '2025-01-08T17:00:00Z',
                         instructions: 'Kiểm tra tại địa điểm, thu thập bằng chứng'
                       },
-                      location: 'TP.HCM',
+                      location: 'Hà Nội',
                     },
                     ...((typeof lead.sla.remainingHours === 'number' && !isNaN(lead.sla.remainingHours) && lead.sla.remainingHours <= 2) ? [{
                       id: '4',
@@ -1394,7 +1394,7 @@ export default function LeadDetail() {
                         escalateTo: 'Chi Cục Trưởng',
                         reason: 'SLA < 2h, cn hỗ trợ khẩn cấp'
                       },
-                      location: 'TP.HCM',
+                      location: 'Hà Nội',
                     }] : []),
                   ]} />
                 </div>

@@ -126,13 +126,13 @@ const finalNames = ['An', 'Bình', 'Cường', 'Dũng', 'Hùng', 'Khoa', 'Long',
 const roles = ['Công dân', 'Kiểm soát viên', 'Quản lý', 'Giám đốc', 'Nhân viên', 'Trưởng phòng', 'Phó phòng', 'Chuyên viên'];
 const roleCodes = ['R001', 'R002', 'R003', 'R004', 'R005', 'R006', 'R007', 'R008'];
 
-const units = ['Chi cục QLTT Quận 1', 'Chi cục QLTT Quận 2', 'Chi cục QLTT Quận 3', 'Phòng Kế hoạch', 'Phòng Nghiệp vụ', 'Phòng Hành chính'];
+const units = ['Chi cục QLTT Phường 1', 'Chi cục QLTT Phường 2', 'Chi cục QLTT Phường 3', 'Phòng Kế hoạch', 'Phòng Nghiệp vụ', 'Phòng Hành chính'];
 const unitIds = ['U001', 'U002', 'U003', 'U004', 'U005', 'U006'];
 
 const territories = ['Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng', 'Hải Phòng', 'Cần Thơ', 'An Giang', 'Bà Rịa - Vũng Tàu', 'Bắc Giang'];
 const territoryIds = ['T001', 'T002', 'T003', 'T004', 'T005', 'T006', 'T007', 'T008'];
 
-const districts = ['Quận 1', 'Quận 2', 'Quận 3', 'Quận 4', 'Quận 5', 'Quận 6', 'Quận 7', 'Quận 8', 'Quận 9', 'Quận 10'];
+const districts = ['Phường 1', 'Phường 2', 'Phường 3', 'Phường 4', 'Phường 5', 'Phường 6', 'Phường 7', 'Phường 8', 'Phường 9', 'Phường 10'];
 const wards = ['Phường 1', 'Phường 2', 'Phường 3', 'Phường 4', 'Phường 5', 'Phường 6', 'Phường 7', 'Phường 8'];
 
 const teamTypes = ['department', 'team', 'group'];

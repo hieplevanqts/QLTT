@@ -370,7 +370,7 @@ export default function AddEvidenceDialog({ open, onOpenChange, onSuccess }: Add
                         id="location"
                         value={formData.location}
                         onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                        placeholder="VD: Hà Nội, Quận Ba Đình"
+                        placeholder="VD: Hà Nội, Phường Ba Đình"
                         className={styles.formInput}
                       />
                     </div>

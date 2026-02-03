@@ -21,7 +21,7 @@ export interface UserInfo {
   teamCode?: string; // "01", "02", etc.
   teamName?: string; // "Đội 1", "Phường Mai Dịch", etc.
   position: string; // "Trưởng phòng kiểm tra", etc.
-  department: string; // "Chi cục QLTT TP.HCM - Đội 1", etc.
+  department: string; // "Chi cục QLTT Hà Nội - Đội 1", etc.
   availableUnits?: Array<{
     code: string;
     name: string;

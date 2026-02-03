@@ -2,7 +2,7 @@
  * Address Parser Utility
  * Parses Vietnamese addresses from OCR and matches them to database records
  * 
- * Format: "110A Ngô Quyền, Phường 08, Quận 5, Thành phố Hồ Chí Minh, Việt Nam"
+ * Format: "110A Ngô Quyền, Phường 08, Phường 5, Thành phố Hồ Chí Minh, Việt Nam"
  */
 
 export interface ParsedAddress {
@@ -39,7 +39,7 @@ export interface AddressMatchResult {
 
 /**
  * Parse Vietnamese address string into components
- * Handles formats like: "110A Ngô Quyền, Phường 08, Quận 5, Thành phố Hồ Chí Minh, Việt Nam"
+ * Handles formats like: "110A Ngô Quyền, Phường 08, Phường 5, Thành phố Hồ Chí Minh, Việt Nam"
  */
 export function parseVietnameseAddress(address: string): ParsedAddress {
   const trimmed = address.trim();
@@ -60,7 +60,7 @@ export function parseVietnameseAddress(address: string): ParsedAddress {
   // Usually:
   // parts[0] = street address (e.g., "110A Ngô Quyền")
   // parts[1] = ward (e.g., "Phường 08")
-  // parts[2] = district (e.g., "Quận 5")
+  // parts[2] = district (e.g., "Phường 5")
   // parts[3] = city (e.g., "Thành phố Hồ Chí Minh")
   // parts[4] = country (e.g., "Việt Nam")
 
@@ -87,7 +87,7 @@ export function parseVietnameseAddress(address: string): ParsedAddress {
 
 /**
  * Normalize location names for matching
- * Removes common prefixes like "Phường", "Xã", "Quận", "Huyện", etc.
+ * Removes common prefixes like "Phường", "Xã", "Phường", "Xã", etc.
  */
 export function normalizeName(name: string): string {
   if (!name) return '';
@@ -96,7 +96,7 @@ export function normalizeName(name: string): string {
     .toLowerCase()
     .trim()
     // Remove common Vietnamese prefixes
-    .replace(/^(phường|xã|quận|huyện|thành phố|tỉnh)\s+/i, '')
+    .replace(/^(phường|xã|Phường|Xã|thành phố|tỉnh)\s+/i, '')
     .replace(/\s+/g, ' ')
     .trim();
 

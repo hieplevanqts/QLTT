@@ -21,7 +21,7 @@ export interface Restaurant {
   category: 'certified' | 'hotspot' | 'scheduled' | 'inspected'; // Phân loại mới
   categoryId?: string; // 🔥 Category ID from database (UUID for filtering)
   province: string; // Tỉnh/Thành phố
-  district: string; // Quận/Huyện
+  district: string; // Phường/Xã
   ward: string; // Phường/Xã
   citizenReports?: CitizenReport[]; // Phản ánh của người dân (chỉ cho hotspot)
   nearbyPopulation?: number; // Số dân sinh sống trong bán kính 500m xung quanh điểm
@@ -226,10 +226,10 @@ function generateRestaurant(index: number, category: Restaurant['category']): Re
   const latOffset = (Math.random() - 0.5) * 0.002;
   const lngOffset = (Math.random() - 0.5) * 0.002;
   
-  // Tính dân số dựa trên quận (nội thành vs ngoại thành)
-  // Quận nội thành: Hoàn Kiếm, Ba Đình, Đống Đa, Hai Bà Trưng - mật độ cao (1500-3000 người/điểm)
-  // Quận trung tâm mở rộng: Cầu Giấy, Tây Hồ, Thanh Xuân, Long Biên - mật độ trung bình (1000-2000 người/điểm)
-  // Quận ngoại thành: Nam Từ Liêm, Bắc Từ Liêm, Hoàng Mai, Hà Đông - mật độ thấp (600-1500 người/điểm)
+  // Tính dân số dựa trên Phường (nội thành vs ngoại thành)
+  // Phường nội thành: Hoàn Kiếm, Ba Đình, Đống Đa, Hai Bà Trưng - mật độ cao (1500-3000 người/điểm)
+  // Phường trung tâm mở rộng: Cầu Giấy, Tây Hồ, Thanh Xuân, Long Biên - mật độ trung bình (1000-2000 người/điểm)
+  // Phường ngoại thành: Nam Từ Liêm, Bắc Từ Liêm, Hoàng Mai, Hà Đông - mật độ thấp (600-1500 người/điểm)
   const innerDistricts = ['Hoàn Kiếm', 'Ba Đình', 'Đống Đa', 'Hai Bà Trưng'];
   const middleDistricts = ['Cầu Giấy', 'Tây Hồ', 'Thanh Xuân', 'Long Biên'];
   

@@ -72,7 +72,7 @@ export function generateForm06PDF(data: Form06Data): jsPDF {
   // Left side
   doc.text('UY BAN NHAN DAN TP. HO CHI MINH', leftMargin, yPos);
   yPos += 5;
-  doc.text('SO CONG THUONG TP.HCM', leftMargin, yPos);
+  doc.text('SO CONG THUONG Hà Nội', leftMargin, yPos);
   yPos += 3;
   doc.setFont('times', 'normal');
   doc.text('_________________', leftMargin, yPos);
@@ -336,7 +336,7 @@ export function createForm06DataFromTask(task: InspectionTask): Form06Data {
     },
     
     inspectionTeam: {
-      organization: 'Sở Công Thương TP.HCM',
+      organization: 'Sở Công Thương TP. Hà Nội',
       leader: task.assignee.name,
       members: ['Trần Văn B - Thanh tra viên', 'Lê Thị C - Chuyên viên'],
     },

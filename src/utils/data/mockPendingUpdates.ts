@@ -83,8 +83,8 @@ export const mockPendingUpdates: PendingUpdate[] = [
       {
         field: 'address',
         label: 'Địa chỉ',
-        oldValue: '123 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM',
-        newValue: '456 Lê Lợi, Phường Bến Thành, Quận 1, TP.HCM',
+        oldValue: '123 Nguyễn Huệ, Phường Bến Nghé, Phường 1, Hà Nội',
+        newValue: '456 Lê Lợi, Phường Bến Thành, Phường 1, Hà Nội',
       },
       {
         field: 'ward',

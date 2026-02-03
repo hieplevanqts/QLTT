@@ -65,7 +65,7 @@ export interface Evidence {
 const PROVINCES = VIETNAM_PROVINCES;
 
 const DISTRICTS: Record<string, string[]> = {
-  'TP.HCM': ['Quận 1', 'Quận 3', 'Quận 5', 'Quận 10', 'Phú Nhuận', 'Tân Bình', 'Bình Thạnh', 'Gò Vấp', 'Thủ Đức', 'Bình Tân'],
+  'Hà Nội': ['Phường 1', 'Phường 3', 'Phường 5', 'Phường 10', 'Phú Nhuận', 'Tân Bình', 'Bình Thạnh', 'Gò Vấp', 'Thủ Đức', 'Bình Tân'],
   'Hà Nội': ['Hoàn Kiếm', 'Ba Đình', 'Đống Đa', 'Hai Bà Trưng', 'Cầu Giấy', 'Thanh Xuân', 'Tây Hồ', 'Long Biên', 'Hoàng Mai', 'Nam Từ Liêm'],
   'Đà Nẵng': ['Hải Châu', 'Thanh Khê', 'Sơn Trà', 'Ngũ Hành Sơn', 'Liên Chiểu', 'Cẩm Lệ', 'Hòa Vang'],
   'Cần Thơ': ['Ninh Kiều', 'Bình Thủy', 'Cái Răng', 'Ô Môn', 'Thốt Nốt'],
@@ -78,9 +78,9 @@ const DISTRICTS: Record<string, string[]> = {
 };
 
 const WARDS: Record<string, string[]> = {
-  'Quận 1': ['Phường Bến Nghé', 'Phường Bến Thành', 'Phường Nguyễn Thái Bình', 'Phường Phạm Ngũ Lão', 'Phường Cầu Ông Lãnh', 'Phường Nguyễn Cư Trinh', 'Phường Tân Định', 'Phường Đa Kao', 'Phường Cô Giang', 'Phường Cầu Kho'],
-  'Quận 3': ['Phường 1', 'Phường 2', 'Phường 3', 'Phường 4', 'Phường 5', 'Phường 6', 'Phường 7', 'Phường 8', 'Phường 9', 'Phường 10'],
-  'Quận 5': ['Phường 1', 'Phường 2', 'Phường 3', 'Phường 4', 'Phường 5', 'Phường 6', 'Phường 7', 'Phường 8', 'Phường 9', 'Phường 10'],
+  'Phường 1': ['Phường Bến Nghé', 'Phường Bến Thành', 'Phường Nguyễn Thái Bình', 'Phường Phạm Ngũ Lão', 'Phường Cầu Ông Lãnh', 'Phường Nguyễn Cư Trinh', 'Phường Tân Định', 'Phường Đa Kao', 'Phường Cô Giang', 'Phường Cầu Kho'],
+  'Phường 3': ['Phường 1', 'Phường 2', 'Phường 3', 'Phường 4', 'Phường 5', 'Phường 6', 'Phường 7', 'Phường 8', 'Phường 9', 'Phường 10'],
+  'Phường 5': ['Phường 1', 'Phường 2', 'Phường 3', 'Phường 4', 'Phường 5', 'Phường 6', 'Phường 7', 'Phường 8', 'Phường 9', 'Phường 10'],
   'Phú Nhuận': ['Phường 1', 'Phường 2', 'Phường 3', 'Phường 4', 'Phường 5', 'Phường 7', 'Phường 8', 'Phường 9', 'Phường 10', 'Phường 11', 'Phường 12', 'Phường 13', 'Phường 15', 'Phường 17'],
 };
 
@@ -111,7 +111,7 @@ const SAMPLE_IMAGES = [
 ];
 
 const LOCATION_COORDS: Record<string, { lat: number; lng: number }> = {
-  'TP.HCM': { lat: 10.8231, lng: 106.6297 },
+  'Hà Nội': { lat: 10.8231, lng: 106.6297 },
   'Hà Nội': { lat: 21.0285, lng: 105.8542 },
   'Đà Nẵng': { lat: 16.0544, lng: 108.2022 },
   'Cần Thơ': { lat: 10.0452, lng: 105.7469 },
@@ -146,7 +146,7 @@ function generateLocation(provinceName: string): Location {
   }
   
   // Fallback for provinces not in VIETNAM_PROVINCES (legacy data)
-  const districts = DISTRICTS[provinceName] || ['Quận 1'];
+  const districts = DISTRICTS[provinceName] || ['Phường 1'];
   const district = districts[Math.floor(Math.random() * districts.length)];
   const wards = WARDS[district] || ['Phường 1', 'Phường 2', 'Phường 3'];
   const ward = wards[Math.floor(Math.random() * wards.length)];

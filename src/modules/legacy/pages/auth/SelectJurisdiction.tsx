@@ -9,18 +9,18 @@ import selectStyles from './SelectJurisdiction.module.css';
 
 const units = [
   { id: 1, name: 'Cục Quản lý thị trường TP. Hồ Chí Minh', type: 'bureau' },
-  { id: 2, name: 'Chi cục QLTT Quận 1', type: 'sub-bureau', parent: 1 },
-  { id: 3, name: 'Chi cục QLTT Quận 3', type: 'sub-bureau', parent: 1 },
+  { id: 2, name: 'Chi cục QLTT Phường 1', type: 'sub-bureau', parent: 1 },
+  { id: 3, name: 'Chi cục QLTT Phường 3', type: 'sub-bureau', parent: 1 },
   { id: 4, name: 'Đội QLTT số 1', type: 'team', parent: 2 },
   { id: 5, name: 'Đội QLTT số 2', type: 'team', parent: 2 },
 ];
 
 const jurisdictions = [
   'Toàn địa bàn',
-  'Quận 1',
-  'Quận 3',
-  'Quận 5',
-  'Quận 10',
+  'Phường 1',
+  'Phường 3',
+  'Phường 5',
+  'Phường 10',
   'Phường Bến Nghé',
   'Phường Bến Thành',
 ];

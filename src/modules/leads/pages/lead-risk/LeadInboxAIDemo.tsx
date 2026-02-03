@@ -64,7 +64,7 @@ export default function LeadInboxAIDemo() {
       title: "Cửa hàng mỹ phẩm Hoàn Kiếm bán hàng giả",
       reporter: "Nguyễn Văn A",
       reportDate: "15/01/2025",
-      location: "Quận Hoàn Kiếm, Hà Nội",
+      location: "Phường Hoàn Kiếm, Hà Nội",
       category: "Hàng giả",
       timestamp: new Date(Date.now() - 5 * 60000), // 5 phút trước
       priority: 'high',
@@ -94,7 +94,7 @@ export default function LeadInboxAIDemo() {
       title: "Siêu thị ABC gian lận giá cả",
       reporter: "Trần Thị B",
       reportDate: "16/01/2025",
-      location: "Quận Đống Đa, Hà Nội",
+      location: "Phường Đống Đa, Hà Nội",
       category: "Gian lận giá",
       timestamp: new Date(Date.now() - 15 * 60000), // 15 phút trước
       priority: 'medium',
@@ -142,7 +142,7 @@ export default function LeadInboxAIDemo() {
       title: "Nhà hàng không đảm bảo VSATTP",
       reporter: "Phạm Thị D",
       reportDate: "18/01/2025",
-      location: "Quận Cầu Giấy, Hà Nội",
+      location: "Phường Cầu Giấy, Hà Nội",
       category: "ATTP",
       timestamp: new Date(Date.now() - 60 * 60000), // 1 giờ trước
       priority: 'high',
@@ -172,7 +172,7 @@ export default function LeadInboxAIDemo() {
       title: "Cửa hàng điện thoại bán hàng xách tay không rõ nguồn gốc",
       reporter: "Hoàng Văn E",
       reportDate: "19/01/2025",
-      location: "Quận Hai Bà Trưng, Hà Nội",
+      location: "Phường Hai Bà Trưng, Hà Nội",
       category: "Hàng không nguồn gốc",
       timestamp: new Date(Date.now() - 120 * 60000), // 2 giờ trước
       priority: 'medium',
@@ -201,7 +201,7 @@ export default function LeadInboxAIDemo() {
 
   const generateRandomLead = (): AILead => {
     const categories = ['Hàng giả', 'Gian lận giá', 'ATTP', 'Hàng không nguồn gốc', 'Quảng cáo'];
-    const locations = ['Quận Cầu Giấy, Hà Nội', 'Quận Hoàn Kiếm, Hà Nội', 'Quận Đống Đa, Hà Nội', 'Quận Ba Đình, Hà Nội', 'Online'];
+    const locations = ['Phường Cầu Giấy, Hà Nội', 'Phường Hoàn Kiếm, Hà Nội', 'Phường Đống Đa, Hà Nội', 'Phường Ba Đình, Hà Nội', 'Online'];
     const reporters = ['Nguyễn Văn F', 'Lê Thị G', 'Phạm Văn H', 'Tran Thi K', 'Anonymous'];
     const titles = [
       'Phát hiện kho hàng lậu lớn',

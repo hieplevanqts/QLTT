@@ -49,7 +49,7 @@ let mockOrgUnits: OrgUnit[] = [
   {
     id: '3',
     code: 'CCQLTT-HCM',
-    name: 'Chi cục Quản lý thị trường TP.HCM',
+    name: 'Chi cục Quản lý thị trường Hà Nội',
     shortName: 'Chi cục HCM',
     type: 'provincial',
     level: 2,
@@ -97,7 +97,7 @@ let mockOrgUnits: OrgUnit[] = [
   {
     id: '7',
     code: 'DOI-HCM-01',
-    name: 'Đội Quản lý thị trường số 1 TP.HCM',
+    name: 'Đội Quản lý thị trường số 1 Hà Nội',
     shortName: 'Đội 01 HCM',
     type: 'team',
     level: 3,
@@ -187,7 +187,7 @@ let mockAreas: Area[] = [
   {
     id: '3',
     code: 'HN-HK',
-    name: 'Quận Hoàn Kiếm',
+    name: 'Phường Hoàn Kiếm',
     type: 'district',
     parentId: '1',
     provinceName: 'Hà Nội',
@@ -198,7 +198,7 @@ let mockAreas: Area[] = [
   {
     id: '4',
     code: 'HN-BD',
-    name: 'Quận Ba Đình',
+    name: 'Phường Ba Đình',
     type: 'district',
     parentId: '1',
     provinceName: 'Hà Nội',
@@ -209,7 +209,7 @@ let mockAreas: Area[] = [
   {
     id: '5',
     code: 'HCM-Q1',
-    name: 'Quận 1',
+    name: 'Phường 1',
     type: 'district',
     parentId: '2',
     provinceName: 'TP. Hồ Chí Minh',

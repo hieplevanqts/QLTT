@@ -25,12 +25,12 @@ Tổng cục Quản lý thị trường (Organization)
 - **Options hiển thị**: Tất cả 63 tỉnh và các chi cục/đội thuộc tỉnh đó
 
 ### Cấp Chi cục (Provincial Director) - `level: 'chicuc'`
-- Username pattern: `QT{MÃ_TỈNH}_*` (ví dụ: `QT24_TEST` = Chi cục TP.HCM)
+- Username pattern: `QT{MÃ_TỈNH}_*` (ví dụ: `QT24_TEST` = Chi cục Hà Nội)
 - **Quyền hạn**: Chỉ thấy tỉnh của mình, có thể chọn các chi cục/đội trong tỉnh
 - **Options hiển thị**: Chỉ 1 tỉnh được gán + các chi cục/đội thuộc tỉnh đó
 
 ### Cấp Đội (Team Level) - `level: 'doi'`
-- Username pattern: `QT{MÃ_TỈNH}{MÃ_ĐỘI}_*` (ví dụ: `QT2401_TEST` = Đội 1, Chi cục TP.HCM)
+- Username pattern: `QT{MÃ_TỈNH}{MÃ_ĐỘI}_*` (ví dụ: `QT2401_TEST` = Đội 1, Chi cục Hà Nội)
 - **Quyền hạn**: Bị khóa vào scope của đội mình, KHÔNG thể thay đổi
 - **UI**: Hiển thị locked state với icon khóa
 
@@ -133,7 +133,7 @@ State được quản lý bởi `QLTTScopeContext` và tự động lưu vào `l
    - Expected: Thấy tất cả options từ "Toàn quốc" đến từng đội
 
 2. **Provincial Director**:
-   - Login: `QT24_TEST` (TP.HCM)
+   - Login: `QT24_TEST` (Hà Nội)
    - Expected: Chỉ thấy Hồ Chí Minh và các chi cục/đội trong HCM
 
 3. **Team Level**:

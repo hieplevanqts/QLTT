@@ -64,7 +64,7 @@ export default function LeadDuplicateDemo() {
       title: 'Mua mỹ phẩm giả ở Hoàn Kiếm',
       similarity: 65,
       reasons: [
-        'Cùng quận: Hoàn Kiếm',
+        'Cùng Phường: Hoàn Kiếm',
         'Cùng loại sản phẩm: Mỹ phẩm Hàn Quốc',
         'Hình ảnh tem chống giả tương tự 70%',
       ],
@@ -346,7 +346,7 @@ export default function LeadDuplicateDemo() {
 
       {/* Design Notes */}
       <div className={styles.designNotes}>
-        <h3>✨ Nguyên tắc thiết kế AI Duplicate Detection</h3>
+        <h3>✨ Nguyên tắc thiết kế AI Hỗ trợ phát hiện tin báo trùng</h3>
         <ul>
           <li>
             <strong>🔍 AI hoạt động nền:</strong> Tự động so sánh nguồn tin mới với dữ

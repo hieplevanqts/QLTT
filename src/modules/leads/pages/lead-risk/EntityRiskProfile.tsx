@@ -68,7 +68,7 @@ export default function EntityRiskProfile() {
     name: 'Cửa hàng điện thoại ABC',
     businessName: 'Công ty TNHH Thương mại ABC',
     address: '123 Nguyễn Huệ, Phường Bến Nghé',
-    district: 'Quận 1',
+    district: 'Phường 1',
     city: 'TP. Hồ Chí Minh',
     phone: '028 3829 1234',
     email: 'contact@abc-store.vn',

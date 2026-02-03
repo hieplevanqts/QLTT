@@ -49,8 +49,8 @@ const DISTRICT_POPULATION: { [key: string]: number } = {
   'Q1': 120000, 'Q2': 135000, 'Q3': 145000, 'Q4': 150000, 'Q5': 160000,
   'Q6': 140000, 'Q7': 130000, 'Q8': 125000, 'Q9': 118000, 'Q10': 142000,
   'Q11': 128000, 'Q12': 138000,
-  'Quận Bình Thạnh': 155000, 'Quận Gò Vấp': 162000, 
-  'Quận Tân Bình': 148000, 'Quận Phú Nhuận': 125000
+  'Phường Bình Thạnh': 155000, 'Phường Gò Vấp': 162000, 
+  'Phường Tân Bình': 148000, 'Phường Phú Nhuận': 125000
 };
 
 interface MarketAnalysisSectionsProps {
@@ -222,7 +222,7 @@ export function MarketAnalysisSections({ stores, hasActiveFilters }: MarketAnaly
         <p className={styles.analysisDescription}>
           {showSummary 
             ? 'Tổng quan về tỷ lệ đạt chuẩn diện tích kinh doanh trên toàn địa bàn. Sử dụng bộ lọc để xem chi tiết từng ngành và khu vực.'
-            : 'Sử dụng bộ lọc ở trên (Ngành hàng và Quận/Huyện) để xem phân tích chi tiết về tỷ lệ đạt chuẩn diện tích kinh doanh'
+            : 'Sử dụng bộ lọc ở trên (Ngành hàng và Phường/Xã) để xem phân tích chi tiết về tỷ lệ đạt chuẩn diện tích kinh doanh'
           }
         </p>
 

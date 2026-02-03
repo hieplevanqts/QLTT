@@ -441,7 +441,7 @@ const accessResult = evidenceSecurityService.checkObjectAccess(
   'EVD-2026-1250',
   'download',
   {
-    location: 'Quận 1, TP.HCM',
+    location: 'Phường 1, Hà Nội',
     sensitivityLabel: 'confidential',
     status: 'approved'
   }

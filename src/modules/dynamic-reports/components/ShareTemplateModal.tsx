@@ -21,10 +21,10 @@ interface Unit {
 }
 
 const MOCK_UNITS: Unit[] = [
-  { id: 'cuc-01', name: 'Cục Quản lý thị trường TP.HCM', level: 'cuc' },
-  { id: 'cc-01', name: 'Chi cục QLTT Quận 1', level: 'chi_cuc', parent: 'cuc-01' },
-  { id: 'cc-02', name: 'Chi cục QLTT Quận 3', level: 'chi_cuc', parent: 'cuc-01' },
-  { id: 'cc-03', name: 'Chi cục QLTT Quận 5', level: 'chi_cuc', parent: 'cuc-01' },
+  { id: 'cuc-01', name: 'Cục Quản lý thị trường Hà Nội', level: 'cuc' },
+  { id: 'cc-01', name: 'Chi cục QLTT Phường 1', level: 'chi_cuc', parent: 'cuc-01' },
+  { id: 'cc-02', name: 'Chi cục QLTT Phường 3', level: 'chi_cuc', parent: 'cuc-01' },
+  { id: 'cc-03', name: 'Chi cục QLTT Phường 5', level: 'chi_cuc', parent: 'cuc-01' },
   { id: 'doi-01', name: 'Đội QLTT số 1 - Q1', level: 'doi', parent: 'cc-01' },
   { id: 'doi-02', name: 'Đội QLTT số 2 - Q1', level: 'doi', parent: 'cc-01' },
   { id: 'doi-03', name: 'Đội QLTT số 1 - Q3', level: 'doi', parent: 'cc-02' },

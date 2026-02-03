@@ -1,4 +1,4 @@
-// ĐẦY ĐỦ TẤT CẢ PHƯỜNG/XÃ CỦA 12 QUẬN HÀ NỘI
+// ĐẦY ĐỦ TẤT CẢ PHƯỜNG/XÃ CỦA 12 Phường HÀ NỘI
 // Tổng: 168 phường với thông tin cán bộ quản lý và diện tích
 
 import { Ward } from './vietnamLocations';

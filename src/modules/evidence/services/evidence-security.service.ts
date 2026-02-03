@@ -52,7 +52,7 @@ class EvidenceSecurityService {
         userId: 'USR-2026-001',
         userName: 'Nguyễn Văn A',
         role: 'inspector',
-        allowedDistricts: ['Quận 1', 'Quận 3', 'Quận 5'], // Scope địa bàn
+        allowedDistricts: ['Phường 1', 'Phường 3', 'Phường 5'], // Scope địa bàn
         allowedSensitivityLevels: ['public', 'internal', 'confidential']
       };
     }
@@ -70,7 +70,7 @@ class EvidenceSecurityService {
       return { allowed: true };
     }
 
-    // Extract district from location (e.g., "Quận 1, TP.HCM" -> "Quận 1")
+    // Extract district from location (e.g., "Phường 1, Hà Nội" -> "Phường 1")
     const district = evidenceLocation.split(',')[0].trim();
     
     const hasAccess = user.allowedDistricts.includes(district);

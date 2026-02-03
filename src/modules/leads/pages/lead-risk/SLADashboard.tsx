@@ -67,7 +67,7 @@ const overallMetrics = {
 };
 
 const byTeam = [
-  { team: 'Đội 24 - TP.HCM số 4', total: 45, withinSLA: 32, atRisk: 8, breached: 5, compliance: 71.1, location: { lat: 10.7756, lng: 106.7019, address: 'Quận 1, TP.HCM' }, activeMembers: 8 },
+  { team: 'Đội 24 - Hà Nội số 4', total: 45, withinSLA: 32, atRisk: 8, breached: 5, compliance: 71.1, location: { lat: 10.7756, lng: 106.7019, address: 'Phường 1, Hà Nội' }, activeMembers: 8 },
   { team: 'Đội 01 - QLTT số 1', total: 38, withinSLA: 34, atRisk: 3, breached: 1, compliance: 89.5, location: { lat: 21.0285, lng: 105.8542, address: 'Hoàn Kiếm, Hà Nội' }, activeMembers: 6 },
   { team: 'Đội 02 - QLTT số 2', total: 32, withinSLA: 29, atRisk: 2, breached: 1, compliance: 90.6, location: { lat: 21.0245, lng: 105.8412, address: 'Ba Đình, Hà Nội' }, activeMembers: 5 },
   { team: 'Đội 15 - Hà Nội số 3', total: 28, withinSLA: 23, atRisk: 3, breached: 2, compliance: 82.1, location: { lat: 21.0122, lng: 105.8256, address: 'Đống Đa, Hà Nội' }, activeMembers: 7 },

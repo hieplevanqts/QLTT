@@ -73,7 +73,7 @@ export default function EvidenceReviewDetailPage() {
     type: 'image',
     submittedBy: 'Nguyễn Văn A',
     submittedAt: '10/01/2026 09:30',
-    location: 'Quận 1, TP.HCM',
+    location: 'Phường 1, Hà Nội',
     linkedEntity: 'CASE-2026-048',
     entityType: 'Vụ việc',
     status: 'inReview'

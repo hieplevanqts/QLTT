@@ -407,8 +407,8 @@ export default function StoreDetailPage() {
     address: 'Địa chỉ chi tiết',
     province: 'Tỉnh/Thành phố',
     province_code: 'Tỉnh/Thành phố',
-    district: 'Quận/Huyện',
-    district_code: 'Quận/Huyện',
+    district: 'Phường/Xã',
+    district_code: 'Phường/Xã',
     ward: 'Phường/Xã',
     ward_code: 'Phường/Xã',
     

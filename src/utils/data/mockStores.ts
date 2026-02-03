@@ -81,18 +81,18 @@ const storeTypes = [
 ];
 
 const jurisdictions = [
-  'Quận 1',
-  'Quận 2',
-  'Quận 3',
-  'Quận 4',
-  'Quận 5',
-  'Quận 6',
-  'Quận 7',
-  'Quận 8',
-  'Quận 9',
-  'Quận 10',
-  'Quận 11',
-  'Quận 12',
+  'Phường 1',
+  'Phường 2',
+  'Phường 3',
+  'Phường 4',
+  'Phường 5',
+  'Phường 6',
+  'Phường 7',
+  'Phường 8',
+  'Phường 9',
+  'Phường 10',
+  'Phường 11',
+  'Phường 12',
   'Thủ Đức',
   'Bình Thạnh',
   'Tân Bình',
@@ -161,7 +161,7 @@ function generateAddress(index: number): string {
   const street = streets[index % streets.length];
   const houseNumber = 100 + (index * 13) % 900;
   const jurisdiction = jurisdictions[index % jurisdictions.length];
-  return `${houseNumber} ${street}, ${jurisdiction}, TP.HCM`;
+  return `${houseNumber} ${street}, ${jurisdiction}, Hà Nội`;
 }
 
 function generateInspectionDate(index: number): string {
@@ -189,18 +189,18 @@ export const mockStores: Store[] = Array.from({ length: 10000 }, (_, index) => {
   // District 5: 10.755833, 106.666667
   // District 10: 10.772778, 106.668889
   const districtCoordinates: { [key: string]: { lat: number; lng: number } } = {
-    'Quận 1': { lat: 10.7627, lng: 106.6602 },
-    'Quận 2': { lat: 10.7770, lng: 106.7314 },
-    'Quận 3': { lat: 10.7828, lng: 106.6872 },
-    'Quận 4': { lat: 10.7572, lng: 106.7032 },
-    'Quận 5': { lat: 10.7558, lng: 106.6667 },
-    'Quận 6': { lat: 10.7428, lng: 106.6345 },
-    'Quận 7': { lat: 10.7337, lng: 106.7221 },
-    'Quận 8': { lat: 10.7271, lng: 106.6294 },
-    'Quận 9': { lat: 10.8415, lng: 106.7937 },
-    'Quận 10': { lat: 10.7728, lng: 106.6689 },
-    'Quận 11': { lat: 10.7631, lng: 106.6503 },
-    'Quận 12': { lat: 10.8550, lng: 106.6686 },
+    'Phường 1': { lat: 10.7627, lng: 106.6602 },
+    'Phường 2': { lat: 10.7770, lng: 106.7314 },
+    'Phường 3': { lat: 10.7828, lng: 106.6872 },
+    'Phường 4': { lat: 10.7572, lng: 106.7032 },
+    'Phường 5': { lat: 10.7558, lng: 106.6667 },
+    'Phường 6': { lat: 10.7428, lng: 106.6345 },
+    'Phường 7': { lat: 10.7337, lng: 106.7221 },
+    'Phường 8': { lat: 10.7271, lng: 106.6294 },
+    'Phường 9': { lat: 10.8415, lng: 106.7937 },
+    'Phường 10': { lat: 10.7728, lng: 106.6689 },
+    'Phường 11': { lat: 10.7631, lng: 106.6503 },
+    'Phường 12': { lat: 10.8550, lng: 106.6686 },
     'Thủ Đức': { lat: 10.8532, lng: 106.7633 },
     'Bình Thạnh': { lat: 10.8081, lng: 106.7044 },
     'Tân Bình': { lat: 10.7992, lng: 106.6528 },

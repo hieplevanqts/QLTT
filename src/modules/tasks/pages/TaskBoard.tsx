@@ -37,7 +37,7 @@ import { StatusBadge } from '@/components/common/StatusBadge';
 import { getStatusProps } from '@/utils/status-badge-helper';
 import DataTable, { type Column } from '@/components/ui-kit/DataTable';
 import AdvancedFilterModal, { type FilterConfig } from '@/components/ui-kit/AdvancedFilterModal';
-import { type InfiniteScrollSelectOption } from '@/components/ui-kit/InfiniteScrollSelect';
+import { SearchableSelect, type SearchableSelectOption } from '@/components/ui-kit/SearchableSelect';
 import { type DateRange } from '@/components/ui-kit/DateRangePicker';
 import { toast } from 'sonner';
 import CreateTaskModal, { type CreateTaskFormData } from '@/components/tasks/CreateTaskModal';
@@ -366,12 +366,19 @@ export function TaskBoard() {
     return realPlans.filter(plan => plan.status === 'approved' || plan.status === 'active');
   }, [realPlans]);
 
-  const planOptions: InfiniteScrollSelectOption[] = useMemo(() => {
-    return approvedPlans.map(plan => ({
+  const planOptions: SearchableSelectOption[] = useMemo(() => {
+    const options = approvedPlans.map(plan => ({
       value: plan.id,
       label: plan.name,
-      subtitle: `${plan.code || plan.id} - ${plan.planType === 'periodic' ? 'Định kỳ' : plan.planType === 'thematic' ? 'Chuyên đề' : 'Đột xuất'}`,
+      category: `${plan.code || plan.id} - ${
+        plan.planType === 'periodic'
+          ? 'Định kỳ'
+          : plan.planType === 'thematic'
+            ? 'Chuyên đề'
+            : 'Đột xuất'
+      }`,
     }));
+    return [{ value: 'all', label: 'Tất cả kế hoạch' }, ...options];
   }, [approvedPlans]);
 
   // Prepare round options
@@ -1252,19 +1259,17 @@ export function TaskBoard() {
                 Bộ lọc
               </Button>
 
-              <Select value={planFilter} onValueChange={setPlanFilter}>
-                <SelectTrigger style={{ width: '220px' }}>
-                  <SelectValue placeholder="Kế hoạch" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả kế hoạch</SelectItem>
-                  {planOptions.map(plan => (
-                    <SelectItem key={plan.value} value={plan.value}>
-                      {plan.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div style={{ width: '220px', flexShrink: 0 }}>
+                <SearchableSelect
+                  value={planFilter}
+                  onValueChange={(val) => setPlanFilter(val || 'all')}
+                  options={planOptions}
+                  placeholder="Tất cả kế hoạch"
+                  searchPlaceholder="Tìm kế hoạch..."
+                  emptyText="Không có kế hoạch"
+                  width="220px"
+                />
+              </div>
 
               <Select value={roundFilter} onValueChange={setRoundFilter}>
                 <SelectTrigger style={{ width: '220px' }}>

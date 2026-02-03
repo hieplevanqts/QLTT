@@ -75,7 +75,7 @@ export function downloadStoreImportTemplate(): void {
       'Phường Bến Nghé',
       '123 Nguyễn Huệ',
       'Thực phẩm',
-      'Chi cục QLTT Quận 1',
+      'Chi cục QLTT Phường 1',
       'Ví dụ mẫu - Xóa dòng này trước khi import',
     ],
     [
@@ -87,7 +87,7 @@ export function downloadStoreImportTemplate(): void {
       'Phường Võ Thị Sáu',
       '456 Lê Lợi',
       'Đồ uống',
-      'Chi cục QLTT Quận 3',
+      'Chi cục QLTT Phường 3',
       '',
     ],
   ];
@@ -133,9 +133,9 @@ export function downloadExcelTemplate(): void {
       '0901234567',
       'TP. Hồ Chí Minh',
       'Phường Bến Nghé',
-      '123 Nguyễn Huệ, Quận 1',
+      '123 Nguyễn Huệ, Phường 1',
       'Thực phẩm',
-      'Chi cục QLTT Quận 1',
+      'Chi cục QLTT Phường 1',
       'Nhà hàng phở truyền thống',
     ],
     [
@@ -145,9 +145,9 @@ export function downloadExcelTemplate(): void {
       '0912345678',
       'TP. Hồ Chí Minh',
       'Phường Võ Thị Sáu',
-      '456 Lê Lợi, Quận 3',
+      '456 Lê Lợi, Phường 3',
       'Đồ uống',
-      'Chi cục QLTT Quận 3',
+      'Chi cục QLTT Phường 3',
       'Cà phê take away',
     ],
     [
@@ -157,9 +157,9 @@ export function downloadExcelTemplate(): void {
       '0903456789',
       'TP. Hồ Chí Minh',
       'Phường Phạm Ngũ Lão',
-      '789 Nguyễn Trãi, Quận 5',
+      '789 Nguyễn Trãi, Phường 5',
       'Mỹ phẩm',
-      'Chi cục QLTT Quận 5',
+      'Chi cục QLTT Phường 5',
       'Bán mỹ phẩm chính hãng',
     ],
     [
@@ -169,9 +169,9 @@ export function downloadExcelTemplate(): void {
       '0914567890',
       'TP. Hồ Chí Minh',
       'Phường 14',
-      '234 Lý Thường Kiệt, Quận 10',
+      '234 Lý Thường Kiệt, Phường 10',
       'Dược phẩm',
-      'Chi cục QLTT Quận 10',
+      'Chi cục QLTT Phường 10',
       'Nhà thuốc GPP đạt chuẩn',
     ],
     [
@@ -468,9 +468,9 @@ export function downloadReferenceData(): void {
   lines.push('');
   lines.push('Đơn vị quản lý');
   const districts = [
-    'Quận 1', 'Quận 2', 'Quận 3', 'Quận 4', 'Quận 5',
-    'Quận 6', 'Quận 7', 'Quận 8', 'Quận 9', 'Quận 10',
-    'Quận 11', 'Quận 12', 'Thủ Đức', 'Bình Thạnh',
+    'Phường 1', 'Phường 2', 'Phường 3', 'Phường 4', 'Phường 5',
+    'Phường 6', 'Phường 7', 'Phường 8', 'Phường 9', 'Phường 10',
+    'Phường 11', 'Phường 12', 'Thủ Đức', 'Bình Thạnh',
     'Tân Bình', 'Tân Phú', 'Phú Nhuận', 'Gò Vấp', 'Bình Tân',
   ];
   districts.forEach(district => {
