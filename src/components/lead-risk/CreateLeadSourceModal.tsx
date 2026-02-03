@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Save,
   X,
@@ -11,10 +11,27 @@ import {
   Clock,
   Paperclip,
   Trash2,
+  Check,
+  ChevronsUpDown,
 } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/components/ui/utils";
 import { toast } from 'sonner';
 import { getSupabaseClient } from '@/utils/supabaseClient';
-import { projectId, publicAnonKey } from '/utils/supabase/info';
+import { projectId, publicAnonKey } from '@/utils/supabase/info';
 import styles from './CreateLeadSourceModal.module.css';
 
 interface CreateLeadSourceModalProps {
@@ -77,13 +94,51 @@ export default function CreateLeadSourceModal({
     { value: 'Khẩn cấp', color: 'rgba(239, 68, 68, 1)' },
   ];
 
-  // Mock stores - in production, this would filter by user's jurisdiction
-  const stores = [
-    { id: 'S001', name: 'Cửa hàng Bách Hóa Xanh - Nguyễn Văn Cừ' },
-    { id: 'S002', name: 'Siêu thị Co.opMart - Quận 1' },
-    { id: 'S003', name: 'Nhà hàng Phở 24 - Lê Lợi' },
-    { id: 'S004', name: 'Cửa hàng Điện Máy Xanh - Phạm Ngũ Lão' },
-  ];
+  // Merchants state
+  const [merchants, setMerchants] = useState<{ id: string; name: string; address?: string }[]>([]);
+  const [openCombobox, setOpenCombobox] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+
+  // Fetch merchants from Supabase
+  const fetchMerchantsList = async (search: string = '') => {
+    try {
+      const supabase = getSupabaseClient();
+      let query = supabase
+        .from('merchants')
+        .select('_id, business_name, address')
+        .limit(50); // Limit to top 50 matches
+
+      if (search) {
+        query = query.ilike('business_name', `%${search}%`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching merchants:', error);
+        return;
+      }
+
+      const mappedMerchants = (data || []).map((m: any) => ({
+        id: m._id,
+        name: m.business_name || 'Không tên',
+        address: m.address
+      }));
+
+      setMerchants(mappedMerchants);
+    } catch (err) {
+      console.error('Exception fetching merchants:', err);
+    }
+  };
+
+  // Effect to handle search with debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchMerchantsList(searchValue);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchValue]);
+
 
   const issueTypes = [
     'Niêm yết giá không đúng',
@@ -417,27 +472,72 @@ export default function CreateLeadSourceModal({
                 <label className={styles.label}>
                   Cửa hàng bị phản ánh <span className={styles.required}>*</span>
                 </label>
-                <select
-                  value={formData.storeId}
-                  onChange={(e) => {
-                    const selectedStore = stores.find(s => s.id === e.target.value);
-                    setFormData({
-                      ...formData,
-                      storeId: e.target.value,
-                      storeName: selectedStore?.name || null
-                    });
-                  }}
-                  className={`${styles.select} ${errors.storeId ? styles.inputError : ''}`}
-                >
-                  <option value="">Chọn cửa hàng</option>
-                  {stores.map((store) => (
-                    <option key={store.id} value={store.id}>
-                      {store.name}
-                    </option>
-                  ))}
-                </select>
+
+                <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openCombobox}
+                      className={cn(
+                        "w-full justify-between font-normal",
+                        !formData.storeId && "text-muted-foreground",
+                        styles.select // Keep existing style class if needed, or override
+                      )}
+                      style={{ height: '40px', borderColor: errors.storeId ? 'var(--destructive)' : undefined }}
+                    >
+                      {formData.storeId
+                        ? merchants.find((merchant) => merchant.id === formData.storeId)?.name
+                        : "Chọn cửa hàng..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[400px] p-0 z-[10000]" align="start">
+                    <Command shouldFilter={false}>
+                      <CommandInput
+                        placeholder="Tìm kiếm tên cửa hàng..."
+                        value={searchValue}
+                        onValueChange={(val) => {
+                          setSearchValue(val);
+                          fetchMerchantsList(val);
+                        }}
+                      />
+                      <CommandList>
+                        <CommandEmpty>Không tìm thấy cửa hàng nào.</CommandEmpty>
+                        <CommandGroup>
+                          {merchants.map((merchant) => (
+                            <CommandItem
+                              key={merchant.id}
+                              value={merchant.name} // Use name for value to help with default sorting/filtering if enabled, but we disabled it
+                              onSelect={() => {
+                                setFormData({
+                                  ...formData,
+                                  storeId: merchant.id,
+                                  storeName: merchant.name
+                                });
+                                setOpenCombobox(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  formData.storeId === merchant.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <div className="flex flex-col">
+                                <span>{merchant.name}</span>
+                                {merchant.address && <span className="text-xs text-muted-foreground">{merchant.address}</span>}
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+
                 <div className={styles.hint}>
-                  Danh sách cửa hàng được lọc theo địa bàn QLTT phụ trách
+                  Nhập tên để tìm kiếm trong danh sách doanh nghiệp/cửa hàng
                 </div>
                 {errors.storeId && (
                   <div className={styles.error}>
