@@ -416,6 +416,7 @@ export default function StoresListPage() {
 
     try {
       // Call API to update merchant
+      // Note: department_id is preserved from the store's current value
       const updatePayload = {
         p_business_name: data.business_name,
         p_tax_code: data.taxCode || '',
@@ -434,6 +435,7 @@ export default function StoresListPage() {
         p_ward_id: data.ward && data.ward.trim() ? data.ward : null,
         p_latitude: data.latitude,
         p_longitude: data.longitude,
+        p_department_id: store.departmentId || undefined, // Preserve current department_id
       };
 
       await updateMerchant(store.merchantId, updatePayload);
