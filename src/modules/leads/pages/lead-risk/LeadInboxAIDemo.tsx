@@ -12,9 +12,6 @@ import {
   Bell,
   Activity,
   ChevronRight,
-  ThumbsUp,
-  ThumbsDown,
-  Eye,
   User,
   MapPin,
   Calendar,
@@ -56,6 +53,7 @@ interface AILead {
 export default function LeadInboxAIDemo() {
   const navigate = useNavigate();
   const [selectedLead, setSelectedLead] = useState<AILead | null>(null);
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'category' | 'location'>('overview');
 
   // Mock AI Leads Data
@@ -213,11 +211,11 @@ export default function LeadInboxAIDemo() {
       'Tăng giá bất hợp lý dịp Tết'
     ];
     const evidenceImages = [
-      "https://images.unsplash.com/photo-1596462502278-27bfdd403cc2?w=400&h=300&fit=crop",
-      "https://images.unsplash.com/photo-1612817288484-6f8ccace713d?w=400&h=300&fit=crop",
-      "https://images.unsplash.com/photo-1554469384-e58fac16e23a?w=400&h=300&fit=crop",
-      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop",
-      "https://images.unsplash.com/photo-1550966871-3ed3c47e2ce2?w=400&h=300&fit=crop"
+      `https://picsum.photos/seed/${Math.random()}/800/600`,
+      `https://picsum.photos/seed/${Math.random() + 1}/800/600`,
+      `https://picsum.photos/seed/${Math.random() + 2}/800/600`,
+      `https://picsum.photos/seed/${Math.random() + 3}/800/600`,
+      `https://picsum.photos/seed/${Math.random() + 4}/800/600`
     ];
 
     const category = getRandomElement(categories);
@@ -326,24 +324,6 @@ export default function LeadInboxAIDemo() {
 
   const handleLeadClick = (lead: AILead) => {
     setSelectedLead(lead);
-  };
-
-  const handleApproveAI = () => {
-    if (selectedLead) {
-      alert(`✅ Chấp nhận đề xuất AI cho lead ${selectedLead.code}`);
-    }
-  };
-
-  const handleRejectLead = () => {
-    if (selectedLead) {
-      alert(`❌ Từ chối lead ${selectedLead.code}`);
-    }
-  };
-
-  const handleRequestMore = () => {
-    if (selectedLead) {
-      alert(`⚠️ Yêu cầu bổ sung thông tin cho lead ${selectedLead.code}`);
-    }
   };
 
   return (
@@ -817,8 +797,31 @@ export default function LeadInboxAIDemo() {
                       {selectedLead.evidences && selectedLead.evidences.length > 0 ? (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '8px' }}>
                           {selectedLead.evidences.map((img, idx) => (
-                            <div key={idx} style={{ aspectRatio: '4/3', overflow: 'hidden', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                              <img src={img} alt={`Evidence ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <div
+                              key={idx}
+                              style={{
+                                aspectRatio: '4/3',
+                                overflow: 'hidden',
+                                borderRadius: '8px',
+                                border: '1px solid var(--border)',
+                                cursor: 'pointer',
+                                position: 'relative'
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setViewingImage(img);
+                              }}
+                            >
+                              <img
+                                src={img}
+                                alt={`Evidence ${idx + 1}`}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.2s' }}
+                                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                onError={(e) => {
+                                  e.currentTarget.src = `https://picsum.photos/seed/error_${idx}/800/600`; // Fallback if regular link fails
+                                }}
+                              />
                             </div>
                           ))}
                         </div>
@@ -851,60 +854,12 @@ export default function LeadInboxAIDemo() {
                     </div>
                   </div>
 
-                  {/* Right Side: Actions & Metrics (1/3) */}
+                  {/* Right Side: Metrics (1/3) */}
                   <div className="col-span-1 border-l pl-6 space-y-8">
-                    {/* Actions */}
-                    <div>
-                      <div className={styles.actionPanelTitle}>
-                        Hành động xử lý
-                      </div>
-
-                      <div className={styles.actionButtonStack}>
-                        {selectedLead.ai.verdict === "worthy" && (
-                          <>
-                            <button className={`${styles.actionButton} ${styles.btnApprove}`} onClick={handleApproveAI}>
-                              <ThumbsUp size={18} />
-                              Chấp nhận đề xuất
-                            </button>
-                            <button className={`${styles.actionButton} ${styles.btnSecondary}`} onClick={() => navigate("/lead-risk/lead-detail-ai-demo")}>
-                              <Eye size={18} />
-                              Xem chi tiết
-                            </button>
-                          </>
-                        )}
-
-                        {selectedLead.ai.verdict === "unworthy" && (
-                          <>
-                            <button className={`${styles.actionButton} ${styles.btnReject}`} onClick={handleRejectLead}>
-                              <ThumbsDown size={18} />
-                              Từ chối tin
-                            </button>
-                            <button className={`${styles.actionButton} ${styles.btnSecondary}`} onClick={() => navigate("/lead-risk/lead-detail-ai-demo")}>
-                              <Eye size={18} />
-                              Xem chi tiết
-                            </button>
-                          </>
-                        )}
-
-                        {selectedLead.ai.verdict === "review" && (
-                          <>
-                            <button className={`${styles.actionButton} ${styles.btnReview}`} onClick={handleRequestMore}>
-                              <AlertTriangle size={18} />
-                              Yêu cầu bổ sung
-                            </button>
-                            <button className={`${styles.actionButton} ${styles.btnSecondary}`} onClick={() => navigate("/lead-risk/lead-detail-ai-demo")}>
-                              <Eye size={18} />
-                              Xem chi tiết
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
                     {/* Metrics */}
                     <div>
                       <div className={styles.actionPanelTitle}>
-                        Số liệu phân tích
+                        KẾT QUẢ PHÂN TÍCH
                       </div>
                       <div className={styles.metricsGrid} style={{ gridTemplateColumns: '1fr', gap: 'var(--spacing-3)' }}>
                         <div className={styles.metricCard}>
@@ -931,6 +886,70 @@ export default function LeadInboxAIDemo() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Image Viewer Overlay - Force z-index high */}
+      {viewingImage && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            zIndex: 2147483647, // Max Z-Index
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'zoom-out'
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setViewingImage(null);
+          }}
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setViewingImage(null);
+            }}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              background: 'rgba(255, 255, 255, 0.2)',
+              border: 'none',
+              borderRadius: '50%',
+              width: '48px',
+              height: '48px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'white',
+              backdropFilter: 'blur(4px)',
+              zIndex: 1000000
+            }}
+          >
+            <X size={28} />
+          </button>
+
+          <img
+            src={viewingImage}
+            alt="Full size evidence"
+            style={{
+              maxWidth: '95vw',
+              maxHeight: '95vh',
+              objectFit: 'contain',
+              borderRadius: '4px',
+              boxShadow: '0 0 50px rgba(0,0,0,0.5)',
+              cursor: 'default'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }
