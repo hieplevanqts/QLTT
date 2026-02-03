@@ -419,303 +419,303 @@ export default function VerticalSidebar({
           </div>
         ) : (
           visibleModules.map((module) => {
-          const Icon = module.icon;
-          const isAdminMenu = module.path === '/admin';
+            const Icon = module.icon;
+            const isAdminMenu = module.path === '/admin';
 
-          // Special logic for active state
-          let isActive = false;
+            // Special logic for active state
+            let isActive = false;
 
-          if (module.path === '/plans') {
-            // "Kế hoạch tác nghiệp" menu cha KHÔNG active khi ở submenu
-            isActive = false;
-          } else if (module.path === '/tasks') {
-            // "Phiên kiểm tra" KHÔNG active khi ở /plans/inspection-session
-            isActive = location.pathname === '/tasks' && location.pathname !== '/plans/inspection-session';
-          } else if ((module as any).hasSubmenu && (module as any).submenu) {
-            // Submenu modules (lead-risk, reports, admin)
-            if (module.path === '/reports') {
-              isActive = location.pathname === '/dashboard' || location.pathname === '/reports';
-            } else if (module.path === '/admin') {
-              isActive = location.pathname.startsWith('/system') || location.pathname.startsWith('/system-admin') || location.pathname === '/admin';
+            if (module.path === '/plans') {
+              // "Kế hoạch tác nghiệp" menu cha KHÔNG active khi ở submenu
+              isActive = false;
+            } else if (module.path === '/tasks') {
+              // "Phiên kiểm tra" KHÔNG active khi ở /plans/inspection-session
+              isActive = location.pathname === '/tasks' && location.pathname !== '/plans/inspection-session';
+            } else if ((module as any).hasSubmenu && (module as any).submenu) {
+              // Submenu modules (lead-risk, reports, admin)
+              if (module.path === '/reports') {
+                isActive = location.pathname === '/dashboard' || location.pathname === '/reports';
+              } else if (module.path === '/admin') {
+                isActive = location.pathname.startsWith('/system') || location.pathname.startsWith('/system-admin') || location.pathname === '/admin';
+              } else {
+                isActive = location.pathname.startsWith('/lead-risk') || location.pathname === '/leads';
+              }
+            } else if (module.path === '/registry/stores') {
+              // Registry - include full-edit paths
+              isActive = location.pathname === module.path || location.pathname.startsWith(module.path + '/') || location.pathname.startsWith('/registry/full-edit');
             } else {
-              isActive = location.pathname.startsWith('/lead-risk') || location.pathname === '/leads';
+              // Normal modules - active when path matches
+              isActive = location.pathname === module.path || location.pathname.startsWith(module.path + '/');
             }
-          } else if (module.path === '/registry/stores') {
-            // Registry - include full-edit paths
-            isActive = location.pathname === module.path || location.pathname.startsWith(module.path + '/') || location.pathname.startsWith('/registry/full-edit');
-          } else {
-            // Normal modules - active when path matches
-            isActive = location.pathname === module.path || location.pathname.startsWith(module.path + '/');
-          }
 
-          // Special handling for "Kế hoạch tác nghiệp" with submenu
-          if (module.path === '/plans') {
-            // When collapsed, show as dropdown menu
-            if (collapsed) {
+            // Special handling for "Kế hoạch tác nghiệp" with submenu
+            if (module.path === '/plans') {
+              // When collapsed, show as dropdown menu
+              if (collapsed) {
+                return (
+                  <DropdownMenu key={module.path}>
+                    <DropdownMenuTrigger asChild>
+                      <div
+                        className={cn(
+                          'flex items-center justify-center px-3 py-2.5 rounded-lg transition-colors mb-1 cursor-pointer',
+                          isActive
+                            ? 'text-primary bg-primary/10 font-medium'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                        )}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <Icon className="h-5 w-5 shrink-0" />
+                      </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="right" align="start" className="w-64">
+                      <DropdownMenuItem asChild>
+                        <Link to="/plans/list" className="flex items-center gap-3 cursor-pointer">
+                          <ListChecks className="h-4 w-4" />
+                          <div className="font-medium">Kế hoạch kiểm tra</div>
+                        </Link>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem asChild>
+                        <Link to="/plans/inspection-rounds" className="flex items-center gap-3 cursor-pointer">
+                          <ClipboardCheck className="h-4 w-4" />
+                          <div className="font-medium">Đợt kiểm tra</div>
+                        </Link>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem asChild>
+                        <Link to="/plans/inspection-session" className="flex items-center gap-3 cursor-pointer">
+                          <KanbanSquare className="h-4 w-4" />
+                          <div className="font-medium">Phiên làm việc</div>
+                        </Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                );
+              }
+
+              // When expanded, show collapsible submenu
               return (
-                <DropdownMenu key={module.path}>
-                  <DropdownMenuTrigger asChild>
-                    <div
+                <div key={module.path} className="mb-1">
+                  {/* Parent menu item */}
+                  <div
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors cursor-pointer',
+                      isActive
+                        ? 'text-primary bg-primary/10 font-medium'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    )}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setPlansSubmenuOpen(!plansSubmenuOpen)}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" />
+                    <span className="text-sm flex-1">{module.label}</span>
+                    <ChevronDown
                       className={cn(
-                        'flex items-center justify-center px-3 py-2.5 rounded-lg transition-colors mb-1 cursor-pointer',
-                        isActive
-                          ? 'text-primary bg-primary/10 font-medium'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                        'h-4 w-4 transition-transform',
+                        plansSubmenuOpen ? 'rotate-180' : ''
                       )}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <Icon className="h-5 w-5 shrink-0" />
+                    />
+                  </div>
+
+                  {/* Submenu items */}
+                  {plansSubmenuOpen && (
+                    <div className="ml-4 mt-1 space-y-1">
+                      <Link to="/plans/list">
+                        <div
+                          className={cn(
+                            'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
+                            location.pathname === '/plans/list' || location.pathname.startsWith('/plans/KH-') || location.pathname.startsWith('/plans/create-new')
+                              ? 'text-primary bg-primary/5 font-medium'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                          )}
+                        >
+                          <ListChecks className="h-4 w-4 shrink-0" />
+                          <span>Kế hoạch kiểm tra</span>
+                        </div>
+                      </Link>
+
+                      <Link to="/plans/inspection-rounds">
+                        <div
+                          className={cn(
+                            'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
+                            location.pathname === '/plans/inspection-rounds' || location.pathname.startsWith('/plans/inspection-rounds/')
+                              ? 'text-primary bg-primary/5 font-medium'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                          )}
+                        >
+                          <ClipboardCheck className="h-4 w-4 shrink-0" />
+                          <span>Đợt kiểm tra</span>
+                        </div>
+                      </Link>
+
+                      <Link to="/plans/inspection-session">
+                        <div
+                          className={cn(
+                            'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
+                            location.pathname === '/plans/inspection-session'
+                              ? 'text-primary bg-primary/5 font-medium'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                          )}
+                        >
+                          <KanbanSquare className="h-4 w-4 shrink-0" />
+                          <span>Phiên làm việc</span>
+                        </div>
+                      </Link>
                     </div>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent side="right" align="start" className="w-64">
-                    <DropdownMenuItem asChild>
-                      <Link to="/plans/list" className="flex items-center gap-3 cursor-pointer">
-                        <ListChecks className="h-4 w-4" />
-                        <div className="font-medium">Kế hoạch kiểm tra</div>
-                      </Link>
-                    </DropdownMenuItem>
-
-                    <DropdownMenuItem asChild>
-                      <Link to="/plans/inspection-rounds" className="flex items-center gap-3 cursor-pointer">
-                        <ClipboardCheck className="h-4 w-4" />
-                        <div className="font-medium">Đợt kiểm tra</div>
-                      </Link>
-                    </DropdownMenuItem>
-
-                    <DropdownMenuItem asChild>
-                      <Link to="/plans/inspection-session" className="flex items-center gap-3 cursor-pointer">
-                        <KanbanSquare className="h-4 w-4" />
-                        <div className="font-medium">Phiên làm việc</div>
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                  )}
+                </div>
               );
             }
 
-            // When expanded, show collapsible submenu
-            return (
-              <div key={module.path} className="mb-1">
-                {/* Parent menu item */}
-                <div
-                  className={cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors cursor-pointer',
-                    isActive
-                      ? 'text-primary bg-primary/10 font-medium'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                  )}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => setPlansSubmenuOpen(!plansSubmenuOpen)}
-                >
-                  <Icon className="h-5 w-5 shrink-0" />
-                  <span className="text-sm flex-1">{module.label}</span>
-                  <ChevronDown
-                    className={cn(
-                      'h-4 w-4 transition-transform',
-                      plansSubmenuOpen ? 'rotate-180' : ''
-                    )}
-                  />
-                </div>
+            // If module has submenu (for lead-risk)
+            if ((module as any).hasSubmenu && (module as any).submenu) {
+              const isOpen = submenuOpen === module.path;
 
-                {/* Submenu items */}
-                {plansSubmenuOpen && (
-                  <div className="ml-4 mt-1 space-y-1">
-                    <Link to="/plans/list">
+              // If collapsed, show as dropdown
+              if (collapsed) {
+                return (
+                  <DropdownMenu key={module.path}>
+                    <DropdownMenuTrigger asChild>
                       <div
                         className={cn(
-                          'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
-                          location.pathname === '/plans/list' || location.pathname.startsWith('/plans/KH-') || location.pathname.startsWith('/plans/create-new')
-                            ? 'text-primary bg-primary/5 font-medium'
+                          'flex items-center justify-center p-3 rounded-lg transition-colors mb-1 cursor-pointer',
+                          isActive
+                            ? 'text-primary bg-primary/10'
                             : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                         )}
                       >
-                        <ListChecks className="h-4 w-4 shrink-0" />
-                        <span>Kế hoạch kiểm tra</span>
+                        <Icon className="h-5 w-5" />
                       </div>
-                    </Link>
-
-                    <Link to="/plans/inspection-rounds">
-                      <div
-                        className={cn(
-                          'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
-                          location.pathname === '/plans/inspection-rounds' || location.pathname.startsWith('/plans/inspection-rounds/')
-                            ? 'text-primary bg-primary/5 font-medium'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                        )}
-                      >
-                        <ClipboardCheck className="h-4 w-4 shrink-0" />
-                        <span>Đợt kiểm tra</span>
-                      </div>
-                    </Link>
-
-                    <Link to="/plans/inspection-session">
-                      <div
-                        className={cn(
-                          'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
-                          location.pathname === '/plans/inspection-session'
-                            ? 'text-primary bg-primary/5 font-medium'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                        )}
-                      >
-                        <KanbanSquare className="h-4 w-4 shrink-0" />
-                        <span>Phiên làm việc</span>
-                      </div>
-                    </Link>
-                  </div>
-                )}
-              </div>
-            );
-          }
-
-          // If module has submenu (for lead-risk)
-          if ((module as any).hasSubmenu && (module as any).submenu) {
-            const isOpen = submenuOpen === module.path;
-
-            // If collapsed, show as dropdown
-            if (collapsed) {
-              return (
-                <DropdownMenu key={module.path}>
-                  <DropdownMenuTrigger asChild>
-                    <div
-                      className={cn(
-                        'flex items-center justify-center p-3 rounded-lg transition-colors mb-1 cursor-pointer',
-                        isActive
-                          ? 'text-primary bg-primary/10'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="right" align="start" className={cn("w-64", isAdminMenu && "w-72 p-2")}>
+                      {!isAdminMenu && (
+                        <div className="px-2 py-1.5 text-sm font-semibold text-foreground">
+                          {module.label}
+                        </div>
                       )}
-                    >
-                      <Icon className="h-5 w-5" />
-                    </div>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent side="right" align="start" className={cn("w-64", isAdminMenu && "w-72 p-2")}>
-                    {!isAdminMenu && (
-                      <div className="px-2 py-1.5 text-sm font-semibold text-foreground">
-                        {module.label}
-                      </div>
-                    )}
-                    {(module as any).submenu.map((item: any, index: number) => {
-                      if (item.type === 'separator') {
-                        return <DropdownMenuSeparator key={`sep-${index}`} className={cn(isAdminMenu && "my-2")} />;
-                      }
-                      if (item.type === 'label') {
+                      {(module as any).submenu.map((item: any, index: number) => {
+                        if (item.type === 'separator') {
+                          return <DropdownMenuSeparator key={`sep-${index}`} className={cn(isAdminMenu && "my-2")} />;
+                        }
+                        if (item.type === 'label') {
+                          return (
+                            <DropdownMenuLabel
+                              key={`label-${index}`}
+                              className="text-xs uppercase text-muted-foreground"
+                            >
+                              {item.label}
+                            </DropdownMenuLabel>
+                          );
+                        }
+                        if (!item.path) return null;
+                        const ItemIcon = item.icon;
+                        const isItemActive = isPathActive(item.path);
                         return (
-                          <DropdownMenuLabel
-                            key={`label-${index}`}
-                            className="text-xs uppercase text-muted-foreground"
-                          >
-                            {item.label}
-                          </DropdownMenuLabel>
+                          <DropdownMenuItem key={item.path} asChild>
+                            <Link
+                              to={item.path}
+                              className={cn(
+                                isAdminMenu
+                                  ? "flex items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
+                                  : "cursor-pointer",
+                                isItemActive &&
+                                (isAdminMenu ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary")
+                              )}
+                            >
+                              {ItemIcon && <ItemIcon className="h-4 w-4" />}
+                              {item.label}
+                            </Link>
+                          </DropdownMenuItem>
                         );
-                      }
-                      if (!item.path) return null;
-                      const ItemIcon = item.icon;
-                      const isItemActive = isPathActive(item.path);
-                      return (
-                        <DropdownMenuItem key={item.path} asChild>
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                );
+              }
+
+              // If expanded, show inline submenu
+              return (
+                <div key={module.path}>
+                  <button
+                    onClick={() => setSubmenuOpen(isOpen ? null : module.path)}
+                    className={cn(
+                      'flex items-center justify-between w-full px-3 py-2.5 rounded-lg transition-colors mb-1',
+                      isActive
+                        ? 'text-primary bg-primary/10 font-medium'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon className="h-5 w-5 shrink-0" />
+                      <span className="text-sm">{module.label}</span>
+                    </div>
+                    <ChevronDown
+                      className={cn(
+                        "h-4 w-4 transition-transform",
+                        isOpen && "rotate-180"
+                      )}
+                    />
+                  </button>
+
+                  {isOpen && (
+                    <div className="ml-8 mb-2 space-y-1">
+                      {(module as any).submenu.map((item: any, index: number) => {
+                        if (item.type === 'separator') {
+                          return <div key={`sep-${index}`} className={cn("my-2 h-px bg-border", isAdminMenu && "mx-2")} />;
+                        }
+                        if (item.type === 'label') {
+                          return (
+                            <div
+                              key={`label-${index}`}
+                              className="px-3 py-1 text-xs font-semibold uppercase text-muted-foreground"
+                            >
+                              {item.label}
+                            </div>
+                          );
+                        }
+                        if (!item.path) return null;
+                        const ItemIcon = item.icon;
+                        const isItemActive = isPathActive(item.path);
+                        return (
                           <Link
+                            key={item.path}
                             to={item.path}
                             className={cn(
                               isAdminMenu
-                                ? "flex items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
-                                : "cursor-pointer",
-                              isItemActive &&
-                              (isAdminMenu ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary")
+                                ? 'flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors'
+                                : 'flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors',
+                              isItemActive
+                                ? (isAdminMenu ? 'bg-primary text-primary-foreground' : 'text-primary bg-primary/10 font-medium')
+                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                             )}
                           >
                             {ItemIcon && <ItemIcon className="h-4 w-4" />}
                             {item.label}
                           </Link>
-                        </DropdownMenuItem>
-                      );
-                    })}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               );
             }
 
-            // If expanded, show inline submenu
+            // Regular menu item without submenu
             return (
-              <div key={module.path}>
-                <button
-                  onClick={() => setSubmenuOpen(isOpen ? null : module.path)}
+              <Link key={module.path} to={module.path}>
+                <div
                   className={cn(
-                    'flex items-center justify-between w-full px-3 py-2.5 rounded-lg transition-colors mb-1',
+                    'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors mb-1',
                     isActive
                       ? 'text-primary bg-primary/10 font-medium'
                       : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                   )}
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className="h-5 w-5 shrink-0" />
-                    <span className="text-sm">{module.label}</span>
-                  </div>
-                  <ChevronDown
-                    className={cn(
-                      "h-4 w-4 transition-transform",
-                      isOpen && "rotate-180"
-                    )}
-                  />
-                </button>
-
-                {isOpen && (
-                  <div className="ml-8 mb-2 space-y-1">
-                    {(module as any).submenu.map((item: any, index: number) => {
-                      if (item.type === 'separator') {
-                        return <div key={`sep-${index}`} className={cn("my-2 h-px bg-border", isAdminMenu && "mx-2")} />;
-                      }
-                      if (item.type === 'label') {
-                        return (
-                          <div
-                            key={`label-${index}`}
-                            className="px-3 py-1 text-xs font-semibold uppercase text-muted-foreground"
-                          >
-                            {item.label}
-                          </div>
-                        );
-                      }
-                      if (!item.path) return null;
-                      const ItemIcon = item.icon;
-                      const isItemActive = isPathActive(item.path);
-                      return (
-                        <Link
-                          key={item.path}
-                          to={item.path}
-                          className={cn(
-                            isAdminMenu
-                              ? 'flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors'
-                              : 'flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors',
-                            isItemActive
-                              ? (isAdminMenu ? 'bg-primary text-primary-foreground' : 'text-primary bg-primary/10 font-medium')
-                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                          )}
-                        >
-                          {ItemIcon && <ItemIcon className="h-4 w-4" />}
-                          {item.label}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+                  <Icon className="h-5 w-5 shrink-0" />
+                  {!collapsed && <span className="text-sm">{module.label}</span>}
+                </div>
+              </Link>
             );
-          }
-
-          // Regular menu item without submenu
-          return (
-            <Link key={module.path} to={module.path}>
-              <div
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors mb-1',
-                  isActive
-                    ? 'text-primary bg-primary/10 font-medium'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                )}
-              >
-                <Icon className="h-5 w-5 shrink-0" />
-                {!collapsed && <span className="text-sm">{module.label}</span>}
-              </div>
-            </Link>
-          );
           })
         )}
       </nav>
