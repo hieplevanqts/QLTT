@@ -32,7 +32,9 @@ export async function fetchMerchants(
   searchQuery?: string,
 ): Promise<Restaurant[]> {
 console.log('targetDepartmentPath', targetDepartmentPath);
-
+if(targetDepartmentPath === undefined || targetDepartmentPath === null || targetDepartmentPath === '' || targetDepartmentPath === 'undefined' || targetDepartmentPath === 'null' || targetDepartmentPath === ' ' ){
+  return [];
+}
 try {
     const baseUrl = `${SUPABASE_REST_URL}/merchant_filter_view`;
     const params = new URLSearchParams();

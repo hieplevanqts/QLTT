@@ -38,6 +38,7 @@ import { fetchMarketManagementTeams, Department, fetchDepartmentById } from '@/u
 import { officersData, Officer, teamsData } from '@/utils/data/officerTeamData';
 import { useAppSelector, useAppDispatch } from '@/hooks/useAppStore';
 import { usePermissions } from '@/modules/system-admin/_shared/usePermissions';
+import { RootState } from '@/store/rootReducer';
 
 import {
   setFilters,
@@ -55,6 +56,7 @@ import {
   setLimit,
 } from '@/store/slices/mapFiltersSlice';
 
+
 type CategoryFilter = {
   [key: string]: boolean;  // Dynamic keys from point_status table
 };
@@ -66,7 +68,8 @@ export default function MapPage() {
   const mapFilters = useAppSelector((state) => state.mapFilters);
   const dispatch = useAppDispatch();
   const { hasPermission } = usePermissions();
-  
+
+  const { user,department } = useAppSelector((state: RootState) => state.auth);
   // 🔥 Redux Auth Check
   const canEditMap = hasPermission('map.page.edit') || hasPermission('ADMIN_VIEW');
   const canViewMap = hasPermission('map.page.read') || hasPermission('ADMIN_VIEW');
@@ -335,7 +338,6 @@ export default function MapPage() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const urlLimit = urlParams.get('limit');
-    console.log('urlLimit', urlLimit);
     
     if (urlLimit) {
       const parsedLimit = parseInt(urlLimit, 10);
@@ -471,12 +473,12 @@ export default function MapPage() {
         const businessTypeFiltersArray = calculateBusinessTypeFiltersArray(businessTypeFilters, categories);
         
         // Fetch division path if divisionId exists
-        let divisionPath = '';
-        if (divisionId) {
+        let divisionPath: string | null
+        if (user?.department_id) {
           try {
-            const division = await fetchDepartmentById(divisionId);
+            const division = await fetchDepartmentById(user?.department_id);
             if (division) {
-              divisionPath = division.path;
+              divisionPath = division.path;  
             }
           } catch (error) {
             console.error('Error fetching division path:', error);
