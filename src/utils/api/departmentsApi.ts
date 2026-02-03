@@ -226,3 +226,37 @@ export async function fetchDepartmentById(departmentId: string): Promise<Departm
     throw error;
   }
 }
+export async function fetchDepartmentByParentId(parent_id: string) {
+  // Thực hiện truy vấn trực tiếp
+  const { data, error } = await supabase
+    .from('departments')
+    .select('*') // Chỉ lấy field _id
+    .eq('_id', parent_id) // Khớp đúng cột và biến truyền vào
+    .is('deleted_at', null);
+
+  if (error) {
+    console.error('Lỗi lấy dữ liệu:', error.message);
+    return { data: null, error };
+  }
+
+  console.log('Dữ liệu phòng ban:', data);
+  return { data, error: null };
+}
+
+export async function fetchDepartmentByPath(path: string) {
+  // Thực hiện truy vấn trực tiếp
+  const { data, error } = await supabase
+    .from('departments')
+    .select('*') // Chỉ lấy field _id
+    .like('path', `${path}%`) // Lấy tất cả các path bắt đầu bằng cụm này
+    .neq('path', path)        // LOẠI TRỪ: Không lấy chính xác cái path truyền vào
+    .is('deleted_at', null);
+
+  if (error) {
+    console.error('Lỗi lấy dữ liệu:', error.message);
+    return { data: null, error };
+  }
+
+  console.log('Dữ liệu phòng ban:', data);
+  return { data, error: null };
+}
