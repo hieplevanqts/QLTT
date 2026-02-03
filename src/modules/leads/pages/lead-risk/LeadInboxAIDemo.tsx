@@ -364,7 +364,7 @@ export default function LeadInboxAIDemo() {
         <div className={styles.titleGroup}>
           <div className={styles.titleWithIcon}>
             <Bot size={28} style={{ color: 'var(--primary)' }} />
-            <h1 className={styles.title}>Trợ lý ảo của bạn 123</h1>
+            <h1 className={styles.title}>Trợ lý ảo của bạn</h1>
             <Sparkles size={20} style={{ color: 'rgba(251, 146, 60, 1)' }} />
           </div>
           <p className={styles.subtitle}>
@@ -388,14 +388,21 @@ export default function LeadInboxAIDemo() {
         </div>
         <div className={styles.tickerTrackWrapper}>
           <div className={styles.tickerTrack}>
-            {[...aiLeads, ...aiLeads, ...aiLeads, ...aiLeads].map((lead, index) => (
-              <div key={`${lead.id}-${index}`} className={styles.tickerItem} onClick={() => handleLeadClick(lead)} style={{ cursor: 'pointer' }}>
-                <span className={styles.tickerTime}>{formatTimestamp(lead.timestamp)}</span>
-                <span className={styles.tickerIcon}>•</span>
-                <strong>{lead.category}:</strong>
-                <span>{lead.title}</span>
-              </div>
-            ))}
+            {(() => {
+              // Limit to latest 10 leads to prevent infinite speed increase
+              const recentLeads = aiLeads.slice(0, 10);
+              // Duplicate sufficiently to create seamless loop
+              const tickerItems = [...recentLeads, ...recentLeads, ...recentLeads, ...recentLeads];
+
+              return tickerItems.map((lead, index) => (
+                <div key={`${lead.id}-${index}`} className={styles.tickerItem} onClick={() => handleLeadClick(lead)} style={{ cursor: 'pointer' }}>
+                  <span className={styles.tickerTime}>{formatTimestamp(lead.timestamp)}</span>
+                  <span className={styles.tickerIcon}>•</span>
+                  <strong>{lead.category}:</strong>
+                  <span>{lead.title}</span>
+                </div>
+              ));
+            })()}
           </div>
         </div>
       </div>
@@ -593,11 +600,122 @@ export default function LeadInboxAIDemo() {
           </div>
         </div>
 
-        {/* Right Column (3 parts) - EMPTY or DEFAULT */}
+        {/* Right Column (3 parts) - Bulk Actions & Summary */}
         <div className={styles.rightColumn}>
-          <div style={{ color: 'var(--muted-foreground)', textAlign: 'center', marginTop: 'var(--spacing-12)' }}>
-            <Info size={32} style={{ marginBottom: 8, opacity: 0.5 }} />
-            <p style={{ fontSize: 'var(--text-sm)' }}>Chọn một nguồn tin để xem chi tiết và xử lý.</p>
+          <div className={styles.columnHeader}>
+            <h2 className={styles.columnTitle}>
+              <TrendingUp size={18} />
+              Xử lý hàng loạt
+            </h2>
+          </div>
+
+          <div className="p-4 space-y-4">
+            {/* Global Auto-Process */}
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6">
+              <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                <Sparkles size={16} className="text-blue-600" />
+                Tự động xử lý AI
+              </h3>
+              <p className="text-xs text-blue-700 mb-4">
+                Chấp nhận tin đáng xử lý & từ chối tin không đáng (Độ tin cậy &gt; 90%)
+              </p>
+              <button
+                className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium text-sm transition-colors flex items-center justify-center gap-2"
+                onClick={() => {
+                  const worthyCount = aiLeads.filter(l => l.ai.verdict === 'worthy' && l.ai.confidence > 90 && !l.isRead).length;
+                  const unworthyCount = aiLeads.filter(l => l.ai.verdict === 'unworthy' && l.ai.confidence > 90 && !l.isRead).length;
+                  alert(`Đang tự động xử lý:\n- Chấp nhận ${worthyCount} tin đáng xử lý\n- Từ chối ${unworthyCount} tin không đáng`);
+                }}
+              >
+                <Zap size={16} />
+                Xử lý tất cả ({aiLeads.filter(l => (l.ai.verdict === 'worthy' || l.ai.verdict === 'unworthy') && l.ai.confidence > 90 && !l.isRead).length} tin)
+              </button>
+            </div>
+
+            {/* Category 1: Worthy */}
+            {(() => {
+              const count = aiLeads.filter(l => l.ai.verdict === 'worthy' && !l.isRead).length;
+              return (
+                <div className="bg-white border rounded-lg p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded bg-green-100 text-green-600">
+                        <CheckCircle size={16} />
+                      </div>
+                      <span className="font-semibold text-sm">Đáng xử lý</span>
+                    </div>
+                    <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs font-bold">{count}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Độ tin cậy cao, có bằng chứng xác thực.
+                  </p>
+                  <button
+                    className="w-full py-1.5 border border-green-600 text-green-700 hover:bg-green-50 rounded text-xs font-medium transition-colors"
+                    onClick={() => alert(`Đang chấp nhận & phân công ${count} tin...`)}
+                    disabled={count === 0}
+                  >
+                    Chấp nhận tất cả
+                  </button>
+                </div>
+              );
+            })()}
+
+            {/* Category 2: Unworthy */}
+            {(() => {
+              const count = aiLeads.filter(l => l.ai.verdict === 'unworthy' && !l.isRead).length;
+              return (
+                <div className="bg-white border rounded-lg p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded bg-gray-100 text-gray-600">
+                        <XCircle size={16} />
+                      </div>
+                      <span className="font-semibold text-sm">Không đáng</span>
+                    </div>
+                    <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs font-bold">{count}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Tin rác, thiếu thông tin hoặc trùng lặp.
+                  </p>
+                  <button
+                    className="w-full py-1.5 border border-gray-400 text-gray-600 hover:bg-gray-50 rounded text-xs font-medium transition-colors"
+                    onClick={() => alert(`Đang bác bỏ ${count} tin...`)}
+                    disabled={count === 0}
+                  >
+                    Từ chối tất cả
+                  </button>
+                </div>
+              );
+            })()}
+
+            {/* Category 3: Needs Review */}
+            {(() => {
+              const count = aiLeads.filter(l => l.ai.verdict === 'review' && !l.isRead).length;
+              return (
+                <div className="bg-white border rounded-lg p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded bg-orange-100 text-orange-600">
+                        <AlertTriangle size={16} />
+                      </div>
+                      <span className="font-semibold text-sm">Cần xem xét</span>
+                    </div>
+                    <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs font-bold">{count}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Thông tin chưa rõ ràng, cần xác minh thêm.
+                  </p>
+                  <button
+                    className="w-full py-1.5 border border-orange-400 text-orange-600 hover:bg-orange-50 rounded text-xs font-medium transition-colors"
+                    onClick={() => alert(`Đang yêu cầu bổ sung thông tin cho ${count} tin...`)}
+                    disabled={count === 0}
+                  >
+                    Yêu cầu bổ sung
+                  </button>
+                </div>
+              );
+            })()}
+
           </div>
         </div>
       </div>
