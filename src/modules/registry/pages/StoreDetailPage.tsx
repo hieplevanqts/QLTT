@@ -764,7 +764,6 @@ export default function StoreDetailPage() {
 
       toast.success('Đã từ chối hồ sơ');
       await loadMerchantLicenses(); // Reload to update state
-      setViewDialogOpen(false);
       setSelectedDocument(null);
     } catch (error) {
       console.error('❌ Error rejecting document:', error);
