@@ -338,7 +338,7 @@ export const router = createBrowserRouter([
             children: [
               {
                 index: true,
-                element: <RegistryHomePage />,
+                element: <Navigate to="/registry/stores" replace />,
               },
               {
                 path: 'stores',

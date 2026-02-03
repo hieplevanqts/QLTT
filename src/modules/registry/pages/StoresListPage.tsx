@@ -1570,6 +1570,10 @@ export default function StoresListPage() {
               toast.error('Vui lòng nhập địa chỉ');
               return;
             }
+            if (!departmentId) {
+              toast.error('Không tìm thấy thông tin phòng ban của người dùng');
+              return;
+            }
             // if (!data.province) {
             //   toast.error('Vui lòng chọn tỉnh/thành phố');
             //   return;
@@ -1603,7 +1607,7 @@ export default function StoresListPage() {
               p_status: data.status || 'pending',
               p_established_date: data.establishedDate || undefined,
               p_fax: data.fax || undefined,
-              p_department_id: departmentId || undefined,
+              p_department_id: departmentId, // Required: User's department ID
               p_note: data.notes || undefined,
               p_business_phone: data.businessPhone || undefined,
               p_business_email: data.email || undefined,
