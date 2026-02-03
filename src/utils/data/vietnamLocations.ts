@@ -363,7 +363,7 @@ export const provinces: { [key: string]: Province } = {
   }
 };
 
-// Quận/Huyện theo tỉnh (top cities)
+// Phường/Xã theo tỉnh (top cities)
 export const districts: { [key: string]: District[] } = {
   'Hà Nội': [
     { name: 'Hoàn Kiếm', province: 'Hà Nội', center: [21.0285, 105.8542], bounds: [[21.0180, 105.8420], [21.0380, 105.8620]], area: 5.29, officer: 'Trần Thị Lan' },
@@ -380,18 +380,18 @@ export const districts: { [key: string]: District[] } = {
     { name: 'Hà Đông', province: 'Hà Nội', center: [20.9723, 105.7734], bounds: [[20.9400, 105.7400], [21.0000, 105.7850]], area: 47.91, officer: 'Đinh Thị Thu' },
   ],
   'Hồ Chí Minh': [
-    { name: 'Quận 1', province: 'Hồ Chí Minh', center: [10.7756, 106.7019], bounds: [[10.7600, 106.6800], [10.7900, 106.7200]] },
-    { name: 'Quận 2', province: 'Hồ Chí Minh', center: [10.7896, 106.7474], bounds: [[10.7500, 106.7100], [10.8300, 106.8000]] },
-    { name: 'Quận 3', province: 'Hồ Chí Minh', center: [10.7860, 106.6897], bounds: [[10.7700, 106.6700], [10.8000, 106.7100]] },
-    { name: 'Quận 4', province: 'Hồ Chí Minh', center: [10.7546, 106.7025], bounds: [[10.7400, 106.6800], [10.7700, 106.7200]] },
-    { name: 'Quận 5', province: 'Hồ Chí Minh', center: [10.7545, 106.6665], bounds: [[10.7400, 106.6500], [10.7700, 106.6900]] },
-    { name: 'Quận 6', province: 'Hồ Chí Minh', center: [10.7478, 106.6345], bounds: [[10.7300, 106.6100], [10.7700, 106.6600]] },
-    { name: 'Quận 7', province: 'Hồ Chí Minh', center: [10.7333, 106.7208], bounds: [[10.7100, 106.6900], [10.7600, 106.7500]] },
-    { name: 'Quận 8', province: 'Hồ Chí Minh', center: [10.7423, 106.6291], bounds: [[10.7200, 106.6000], [10.7700, 106.6600]] },
-    { name: 'Quận 9', province: 'Hồ Chí Minh', center: [10.8502, 106.7893], bounds: [[10.8000, 106.7400], [10.9000, 106.8400]] },
-    { name: 'Quận 10', province: 'Hồ Chí Minh', center: [10.7726, 106.6700], bounds: [[10.7600, 106.6500], [10.7900, 106.6900]] },
-    { name: 'Quận 11', province: 'Hồ Chí Minh', center: [10.7629, 106.6500], bounds: [[10.7500, 106.6300], [10.7800, 106.6700]] },
-    { name: 'Quận 12', province: 'Hồ Chí Minh', center: [10.8662, 106.6702], bounds: [[10.8300, 106.6300], [10.9000, 106.7100]] },
+    { name: 'Phường 1', province: 'Hồ Chí Minh', center: [10.7756, 106.7019], bounds: [[10.7600, 106.6800], [10.7900, 106.7200]] },
+    { name: 'Phường 2', province: 'Hồ Chí Minh', center: [10.7896, 106.7474], bounds: [[10.7500, 106.7100], [10.8300, 106.8000]] },
+    { name: 'Phường 3', province: 'Hồ Chí Minh', center: [10.7860, 106.6897], bounds: [[10.7700, 106.6700], [10.8000, 106.7100]] },
+    { name: 'Phường 4', province: 'Hồ Chí Minh', center: [10.7546, 106.7025], bounds: [[10.7400, 106.6800], [10.7700, 106.7200]] },
+    { name: 'Phường 5', province: 'Hồ Chí Minh', center: [10.7545, 106.6665], bounds: [[10.7400, 106.6500], [10.7700, 106.6900]] },
+    { name: 'Phường 6', province: 'Hồ Chí Minh', center: [10.7478, 106.6345], bounds: [[10.7300, 106.6100], [10.7700, 106.6600]] },
+    { name: 'Phường 7', province: 'Hồ Chí Minh', center: [10.7333, 106.7208], bounds: [[10.7100, 106.6900], [10.7600, 106.7500]] },
+    { name: 'Phường 8', province: 'Hồ Chí Minh', center: [10.7423, 106.6291], bounds: [[10.7200, 106.6000], [10.7700, 106.6600]] },
+    { name: 'Phường 9', province: 'Hồ Chí Minh', center: [10.8502, 106.7893], bounds: [[10.8000, 106.7400], [10.9000, 106.8400]] },
+    { name: 'Phường 10', province: 'Hồ Chí Minh', center: [10.7726, 106.6700], bounds: [[10.7600, 106.6500], [10.7900, 106.6900]] },
+    { name: 'Phường 11', province: 'Hồ Chí Minh', center: [10.7629, 106.6500], bounds: [[10.7500, 106.6300], [10.7800, 106.6700]] },
+    { name: 'Phường 12', province: 'Hồ Chí Minh', center: [10.8662, 106.6702], bounds: [[10.8300, 106.6300], [10.9000, 106.7100]] },
     { name: 'Bình Thạnh', province: 'Hồ Chí Minh', center: [10.8081, 106.7123], bounds: [[10.7800, 106.6800], [10.8400, 106.7500]] },
     { name: 'Tân Bình', province: 'Hồ Chí Minh', center: [10.8006, 106.6536], bounds: [[10.7800, 106.6200], [10.8200, 106.6900]] },
     { name: 'Tân Phú', province: 'Hồ Chí Minh', center: [10.7879, 106.6286], bounds: [[10.7700, 106.6000], [10.8100, 106.6600]] },
@@ -425,23 +425,23 @@ export const districts: { [key: string]: District[] } = {
   ]
 };
 
-// Phường/Xã theo quận - Merge data từ Hà Nội comprehensive data và các TP khác
+// Phường/Xã theo Phường - Merge data từ Hà Nội comprehensive data và các TP khác
 export const wards: { [key: string]: Ward[] } = {
   // Import tất cả phường Hà Nội từ hanoiWards.ts
   ...hanoiWards,
 
-  // TP HCM - Quận 1
-  'Quận 1': [
-    { name: 'Phường Bến Nghé', district: 'Quận 1', province: 'Hồ Chí Minh' },
-    { name: 'Phường Bến Thành', district: 'Quận 1', province: 'Hồ Chí Minh' },
-    { name: 'Phường Cầu Kho', district: 'Quận 1', province: 'Hồ Chí Minh' },
-    { name: 'Phường Cầu Ông Lãnh', district: 'Quận 1', province: 'Hồ Chí Minh' },
-    { name: 'Phường Cô Giang', district: 'Quận 1', province: 'Hồ Chí Minh' },
-    { name: 'Phường Đa Kao', district: 'Quận 1', province: 'Hồ Chí Minh' },
-    { name: 'Phường Nguyễn Cư Trinh', district: 'Quận 1', province: 'Hồ Chí Minh' },
-    { name: 'Phường Nguyễn Thái Bình', district: 'Quận 1', province: 'Hồ Chí Minh' },
-    { name: 'Phường Phạm Ngũ Lão', district: 'Quận 1', province: 'Hồ Chí Minh' },
-    { name: 'Phường Tân Định', district: 'Quận 1', province: 'Hồ Chí Minh' },
+  // TP HCM - Phường 1
+  'Phường 1': [
+    { name: 'Phường Bến Nghé', district: 'Phường 1', province: 'Hồ Chí Minh' },
+    { name: 'Phường Bến Thành', district: 'Phường 1', province: 'Hồ Chí Minh' },
+    { name: 'Phường Cầu Kho', district: 'Phường 1', province: 'Hồ Chí Minh' },
+    { name: 'Phường Cầu Ông Lãnh', district: 'Phường 1', province: 'Hồ Chí Minh' },
+    { name: 'Phường Cô Giang', district: 'Phường 1', province: 'Hồ Chí Minh' },
+    { name: 'Phường Đa Kao', district: 'Phường 1', province: 'Hồ Chí Minh' },
+    { name: 'Phường Nguyễn Cư Trinh', district: 'Phường 1', province: 'Hồ Chí Minh' },
+    { name: 'Phường Nguyễn Thái Bình', district: 'Phường 1', province: 'Hồ Chí Minh' },
+    { name: 'Phường Phạm Ngũ Lão', district: 'Phường 1', province: 'Hồ Chí Minh' },
+    { name: 'Phường Tân Định', district: 'Phường 1', province: 'Hồ Chí Minh' },
   ],
 
   // Đà Nẵng - Hải Châu
@@ -535,7 +535,7 @@ export const getWardByCode = (code: string): Ward | undefined => {
 // vietnamLocations.ts
 
 /**
- * 🏔️ Lấy danh sách Quận/Huyện dựa trên province_id (UUID) từ backend
+ * 🏔️ Lấy danh sách Phường/Xã dựa trên province_id (UUID) từ backend
  */
 export async function getDistrictsByProvince(provinceId: string): Promise<District[]> {
   if (!provinceId) return [];
@@ -594,7 +594,7 @@ export async function getWardsByDistrict(districtId: string): Promise<Ward[]> {
 // vietnamLocations.ts
 
 /**
- * 🏔️ Lấy danh sách Quận/Huyện dựa trên province_id (UUID) từ backend
+ * 🏔️ Lấy danh sách Phường/Xã dựa trên province_id (UUID) từ backend
  */
 export async function getDistrictsByProvinceFromDb(provinceId: string): Promise<District[]> {
   if (!provinceId) return [];

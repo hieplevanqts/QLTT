@@ -109,7 +109,7 @@ export const MOCK_ORGANIZATION_INFO: OrganizationInfo = {
   englishName: 'Market Management Department',
   taxCode: '0123456789',
   address: '54 Hai Bà Trưng',
-  district: 'Quận Hoàn Kiếm',
+  district: 'Phường Hoàn Kiếm',
   city: 'Hà Nội',
   phone: '024.39366666',
   fax: '024.39366667',

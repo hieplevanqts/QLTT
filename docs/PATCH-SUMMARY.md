@@ -61,8 +61,8 @@ New component showing selected Unit + Jurisdiction with edit button.
 
 ```tsx
 <OperationalContext
-  unit="Chi cục QLTT Quận 1"
-  jurisdiction="Quận 1, TP. Hồ Chí Minh"
+  unit="Chi cục QLTT Phường 1"
+  jurisdiction="Phường 1, TP. Hồ Chí Minh"
   onEdit={() => navigate('/auth/select-jurisdiction')}
 />
 ```

@@ -12,9 +12,6 @@ import {
   Bell,
   Activity,
   ChevronRight,
-  ThumbsUp,
-  ThumbsDown,
-  Eye,
   User,
   MapPin,
   Calendar,
@@ -25,6 +22,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AIBulkActionBar } from "@/components/lead-risk/AIBulkActionBar";
+import RiskByWardMockChart from "@/components/lead-risk/RiskByWardMockChart";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import styles from "./LeadInboxAIDemo.module.css";
@@ -56,6 +54,7 @@ interface AILead {
 export default function LeadInboxAIDemo() {
   const navigate = useNavigate();
   const [selectedLead, setSelectedLead] = useState<AILead | null>(null);
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'category' | 'location'>('overview');
 
   // Mock AI Leads Data
@@ -66,7 +65,7 @@ export default function LeadInboxAIDemo() {
       title: "Cửa hàng mỹ phẩm Hoàn Kiếm bán hàng giả",
       reporter: "Nguyễn Văn A",
       reportDate: "15/01/2025",
-      location: "Quận Hoàn Kiếm, Hà Nội",
+      location: "Phường Hoàn Kiếm, Hà Nội",
       category: "Hàng giả",
       timestamp: new Date(Date.now() - 5 * 60000), // 5 phút trước
       priority: 'high',
@@ -96,7 +95,7 @@ export default function LeadInboxAIDemo() {
       title: "Siêu thị ABC gian lận giá cả",
       reporter: "Trần Thị B",
       reportDate: "16/01/2025",
-      location: "Quận Đống Đa, Hà Nội",
+      location: "Phường Đống Đa, Hà Nội",
       category: "Gian lận giá",
       timestamp: new Date(Date.now() - 15 * 60000), // 15 phút trước
       priority: 'medium',
@@ -144,7 +143,7 @@ export default function LeadInboxAIDemo() {
       title: "Nhà hàng không đảm bảo VSATTP",
       reporter: "Phạm Thị D",
       reportDate: "18/01/2025",
-      location: "Quận Cầu Giấy, Hà Nội",
+      location: "Phường Cầu Giấy, Hà Nội",
       category: "ATTP",
       timestamp: new Date(Date.now() - 60 * 60000), // 1 giờ trước
       priority: 'high',
@@ -174,7 +173,7 @@ export default function LeadInboxAIDemo() {
       title: "Cửa hàng điện thoại bán hàng xách tay không rõ nguồn gốc",
       reporter: "Hoàng Văn E",
       reportDate: "19/01/2025",
-      location: "Quận Hai Bà Trưng, Hà Nội",
+      location: "Phường Hai Bà Trưng, Hà Nội",
       category: "Hàng không nguồn gốc",
       timestamp: new Date(Date.now() - 120 * 60000), // 2 giờ trước
       priority: 'medium',
@@ -203,7 +202,7 @@ export default function LeadInboxAIDemo() {
 
   const generateRandomLead = (): AILead => {
     const categories = ['Hàng giả', 'Gian lận giá', 'ATTP', 'Hàng không nguồn gốc', 'Quảng cáo'];
-    const locations = ['Quận Cầu Giấy, Hà Nội', 'Quận Hoàn Kiếm, Hà Nội', 'Quận Đống Đa, Hà Nội', 'Quận Ba Đình, Hà Nội', 'Online'];
+    const locations = ['Phường Cầu Giấy, Hà Nội', 'Phường Hoàn Kiếm, Hà Nội', 'Phường Đống Đa, Hà Nội', 'Phường Ba Đình, Hà Nội', 'Online'];
     const reporters = ['Nguyễn Văn F', 'Lê Thị G', 'Phạm Văn H', 'Tran Thi K', 'Anonymous'];
     const titles = [
       'Phát hiện kho hàng lậu lớn',
@@ -213,11 +212,11 @@ export default function LeadInboxAIDemo() {
       'Tăng giá bất hợp lý dịp Tết'
     ];
     const evidenceImages = [
-      "https://images.unsplash.com/photo-1596462502278-27bfdd403cc2?w=400&h=300&fit=crop",
-      "https://images.unsplash.com/photo-1612817288484-6f8ccace713d?w=400&h=300&fit=crop",
-      "https://images.unsplash.com/photo-1554469384-e58fac16e23a?w=400&h=300&fit=crop",
-      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop",
-      "https://images.unsplash.com/photo-1550966871-3ed3c47e2ce2?w=400&h=300&fit=crop"
+      `https://picsum.photos/seed/${Math.random()}/800/600`,
+      `https://picsum.photos/seed/${Math.random() + 1}/800/600`,
+      `https://picsum.photos/seed/${Math.random() + 2}/800/600`,
+      `https://picsum.photos/seed/${Math.random() + 3}/800/600`,
+      `https://picsum.photos/seed/${Math.random() + 4}/800/600`
     ];
 
     const category = getRandomElement(categories);
@@ -328,24 +327,6 @@ export default function LeadInboxAIDemo() {
     setSelectedLead(lead);
   };
 
-  const handleApproveAI = () => {
-    if (selectedLead) {
-      alert(`✅ Chấp nhận đề xuất AI cho lead ${selectedLead.code}`);
-    }
-  };
-
-  const handleRejectLead = () => {
-    if (selectedLead) {
-      alert(`❌ Từ chối lead ${selectedLead.code}`);
-    }
-  };
-
-  const handleRequestMore = () => {
-    if (selectedLead) {
-      alert(`⚠️ Yêu cầu bổ sung thông tin cho lead ${selectedLead.code}`);
-    }
-  };
-
   return (
     <div className={styles.container}>
       {/* Breadcrumb */}
@@ -364,7 +345,7 @@ export default function LeadInboxAIDemo() {
         <div className={styles.titleGroup}>
           <div className={styles.titleWithIcon}>
             <Bot size={28} style={{ color: 'var(--primary)' }} />
-            <h1 className={styles.title}>Trợ lý ảo của bạn 123</h1>
+            <h1 className={styles.title}>Trợ lý ảo của bạn</h1>
             <Sparkles size={20} style={{ color: 'rgba(251, 146, 60, 1)' }} />
           </div>
           <p className={styles.subtitle}>
@@ -388,14 +369,21 @@ export default function LeadInboxAIDemo() {
         </div>
         <div className={styles.tickerTrackWrapper}>
           <div className={styles.tickerTrack}>
-            {[...aiLeads, ...aiLeads, ...aiLeads, ...aiLeads].map((lead, index) => (
-              <div key={`${lead.id}-${index}`} className={styles.tickerItem} onClick={() => handleLeadClick(lead)} style={{ cursor: 'pointer' }}>
-                <span className={styles.tickerTime}>{formatTimestamp(lead.timestamp)}</span>
-                <span className={styles.tickerIcon}>•</span>
-                <strong>{lead.category}:</strong>
-                <span>{lead.title}</span>
-              </div>
-            ))}
+            {(() => {
+              // Limit to latest 10 leads to prevent infinite speed increase
+              const recentLeads = aiLeads.slice(0, 10);
+              // Duplicate sufficiently to create seamless loop
+              const tickerItems = [...recentLeads, ...recentLeads, ...recentLeads, ...recentLeads];
+
+              return tickerItems.map((lead, index) => (
+                <div key={`${lead.id}-${index}`} className={styles.tickerItem} onClick={() => handleLeadClick(lead)} style={{ cursor: 'pointer' }}>
+                  <span className={styles.tickerTime}>{formatTimestamp(lead.timestamp)}</span>
+                  <span className={styles.tickerIcon}>•</span>
+                  <strong>{lead.category}:</strong>
+                  <span>{lead.title}</span>
+                </div>
+              ));
+            })()}
           </div>
         </div>
       </div>
@@ -532,10 +520,7 @@ export default function LeadInboxAIDemo() {
                     </div>
                   </div>
 
-                  {/* Placeholder for a chart or map */}
-                  <div style={{ height: 200, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted-foreground)' }}>
-                    [Biểu đồ xu hướng vi phạm theo khu vực]
-                  </div>
+                  <RiskByWardMockChart />
                 </>
               )}
 
@@ -593,11 +578,122 @@ export default function LeadInboxAIDemo() {
           </div>
         </div>
 
-        {/* Right Column (3 parts) - EMPTY or DEFAULT */}
+        {/* Right Column (3 parts) - Bulk Actions & Summary */}
         <div className={styles.rightColumn}>
-          <div style={{ color: 'var(--muted-foreground)', textAlign: 'center', marginTop: 'var(--spacing-12)' }}>
-            <Info size={32} style={{ marginBottom: 8, opacity: 0.5 }} />
-            <p style={{ fontSize: 'var(--text-sm)' }}>Chọn một nguồn tin để xem chi tiết và xử lý.</p>
+          <div className={styles.columnHeader}>
+            <h2 className={styles.columnTitle}>
+              <TrendingUp size={18} />
+              Xử lý hàng loạt
+            </h2>
+          </div>
+
+          <div className="p-4 space-y-4">
+            {/* Global Auto-Process */}
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6">
+              <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                <Sparkles size={16} className="text-blue-600" />
+                Tự động xử lý AI
+              </h3>
+              <p className="text-xs text-blue-700 mb-4">
+                Chấp nhận tin đáng xử lý & từ chối tin không đáng (Độ tin cậy &gt; 90%)
+              </p>
+              <button
+                className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium text-sm transition-colors flex items-center justify-center gap-2"
+                onClick={() => {
+                  const worthyCount = aiLeads.filter(l => l.ai.verdict === 'worthy' && l.ai.confidence > 90 && !l.isRead).length;
+                  const unworthyCount = aiLeads.filter(l => l.ai.verdict === 'unworthy' && l.ai.confidence > 90 && !l.isRead).length;
+                  alert(`Đang tự động xử lý:\n- Chấp nhận ${worthyCount} tin đáng xử lý\n- Từ chối ${unworthyCount} tin không đáng`);
+                }}
+              >
+                <Zap size={16} />
+                Xử lý tất cả ({aiLeads.filter(l => (l.ai.verdict === 'worthy' || l.ai.verdict === 'unworthy') && l.ai.confidence > 90 && !l.isRead).length} tin)
+              </button>
+            </div>
+
+            {/* Category 1: Worthy */}
+            {(() => {
+              const count = aiLeads.filter(l => l.ai.verdict === 'worthy' && !l.isRead).length;
+              return (
+                <div className="bg-white border rounded-lg p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded bg-green-100 text-green-600">
+                        <CheckCircle size={16} />
+                      </div>
+                      <span className="font-semibold text-sm">Đáng xử lý</span>
+                    </div>
+                    <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs font-bold">{count}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Độ tin cậy cao, có bằng chứng xác thực.
+                  </p>
+                  <button
+                    className="w-full py-1.5 border border-green-600 text-green-700 hover:bg-green-50 rounded text-xs font-medium transition-colors"
+                    onClick={() => alert(`Đang chấp nhận & phân công ${count} tin...`)}
+                    disabled={count === 0}
+                  >
+                    Chấp nhận tất cả
+                  </button>
+                </div>
+              );
+            })()}
+
+            {/* Category 2: Unworthy */}
+            {(() => {
+              const count = aiLeads.filter(l => l.ai.verdict === 'unworthy' && !l.isRead).length;
+              return (
+                <div className="bg-white border rounded-lg p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded bg-gray-100 text-gray-600">
+                        <XCircle size={16} />
+                      </div>
+                      <span className="font-semibold text-sm">Không đáng</span>
+                    </div>
+                    <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs font-bold">{count}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Tin rác, thiếu thông tin hoặc trùng lặp.
+                  </p>
+                  <button
+                    className="w-full py-1.5 border border-gray-400 text-gray-600 hover:bg-gray-50 rounded text-xs font-medium transition-colors"
+                    onClick={() => alert(`Đang bác bỏ ${count} tin...`)}
+                    disabled={count === 0}
+                  >
+                    Từ chối tất cả
+                  </button>
+                </div>
+              );
+            })()}
+
+            {/* Category 3: Needs Review */}
+            {(() => {
+              const count = aiLeads.filter(l => l.ai.verdict === 'review' && !l.isRead).length;
+              return (
+                <div className="bg-white border rounded-lg p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded bg-orange-100 text-orange-600">
+                        <AlertTriangle size={16} />
+                      </div>
+                      <span className="font-semibold text-sm">Cần xem xét</span>
+                    </div>
+                    <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs font-bold">{count}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Thông tin chưa rõ ràng, cần xác minh thêm.
+                  </p>
+                  <button
+                    className="w-full py-1.5 border border-orange-400 text-orange-600 hover:bg-orange-50 rounded text-xs font-medium transition-colors"
+                    onClick={() => alert(`Đang yêu cầu bổ sung thông tin cho ${count} tin...`)}
+                    disabled={count === 0}
+                  >
+                    Yêu cầu bổ sung
+                  </button>
+                </div>
+              );
+            })()}
+
           </div>
         </div>
       </div>
@@ -699,8 +795,31 @@ export default function LeadInboxAIDemo() {
                       {selectedLead.evidences && selectedLead.evidences.length > 0 ? (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '8px' }}>
                           {selectedLead.evidences.map((img, idx) => (
-                            <div key={idx} style={{ aspectRatio: '4/3', overflow: 'hidden', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                              <img src={img} alt={`Evidence ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <div
+                              key={idx}
+                              style={{
+                                aspectRatio: '4/3',
+                                overflow: 'hidden',
+                                borderRadius: '8px',
+                                border: '1px solid var(--border)',
+                                cursor: 'pointer',
+                                position: 'relative'
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setViewingImage(img);
+                              }}
+                            >
+                              <img
+                                src={img}
+                                alt={`Evidence ${idx + 1}`}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.2s' }}
+                                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                onError={(e) => {
+                                  e.currentTarget.src = `https://picsum.photos/seed/error_${idx}/800/600`; // Fallback if regular link fails
+                                }}
+                              />
                             </div>
                           ))}
                         </div>
@@ -733,60 +852,12 @@ export default function LeadInboxAIDemo() {
                     </div>
                   </div>
 
-                  {/* Right Side: Actions & Metrics (1/3) */}
+                  {/* Right Side: Metrics (1/3) */}
                   <div className="col-span-1 border-l pl-6 space-y-8">
-                    {/* Actions */}
-                    <div>
-                      <div className={styles.actionPanelTitle}>
-                        Hành động xử lý
-                      </div>
-
-                      <div className={styles.actionButtonStack}>
-                        {selectedLead.ai.verdict === "worthy" && (
-                          <>
-                            <button className={`${styles.actionButton} ${styles.btnApprove}`} onClick={handleApproveAI}>
-                              <ThumbsUp size={18} />
-                              Chấp nhận đề xuất
-                            </button>
-                            <button className={`${styles.actionButton} ${styles.btnSecondary}`} onClick={() => navigate("/lead-risk/lead-detail-ai-demo")}>
-                              <Eye size={18} />
-                              Xem chi tiết
-                            </button>
-                          </>
-                        )}
-
-                        {selectedLead.ai.verdict === "unworthy" && (
-                          <>
-                            <button className={`${styles.actionButton} ${styles.btnReject}`} onClick={handleRejectLead}>
-                              <ThumbsDown size={18} />
-                              Từ chối tin
-                            </button>
-                            <button className={`${styles.actionButton} ${styles.btnSecondary}`} onClick={() => navigate("/lead-risk/lead-detail-ai-demo")}>
-                              <Eye size={18} />
-                              Xem chi tiết
-                            </button>
-                          </>
-                        )}
-
-                        {selectedLead.ai.verdict === "review" && (
-                          <>
-                            <button className={`${styles.actionButton} ${styles.btnReview}`} onClick={handleRequestMore}>
-                              <AlertTriangle size={18} />
-                              Yêu cầu bổ sung
-                            </button>
-                            <button className={`${styles.actionButton} ${styles.btnSecondary}`} onClick={() => navigate("/lead-risk/lead-detail-ai-demo")}>
-                              <Eye size={18} />
-                              Xem chi tiết
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
                     {/* Metrics */}
                     <div>
                       <div className={styles.actionPanelTitle}>
-                        Số liệu phân tích
+                        KẾT QUẢ PHÂN TÍCH
                       </div>
                       <div className={styles.metricsGrid} style={{ gridTemplateColumns: '1fr', gap: 'var(--spacing-3)' }}>
                         <div className={styles.metricCard}>
@@ -813,6 +884,70 @@ export default function LeadInboxAIDemo() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Image Viewer Overlay - Force z-index high */}
+      {viewingImage && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            zIndex: 2147483647, // Max Z-Index
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'zoom-out'
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setViewingImage(null);
+          }}
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setViewingImage(null);
+            }}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              background: 'rgba(255, 255, 255, 0.2)',
+              border: 'none',
+              borderRadius: '50%',
+              width: '48px',
+              height: '48px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'white',
+              backdropFilter: 'blur(4px)',
+              zIndex: 1000000
+            }}
+          >
+            <X size={28} />
+          </button>
+
+          <img
+            src={viewingImage}
+            alt="Full size evidence"
+            style={{
+              maxWidth: '95vw',
+              maxHeight: '95vh',
+              objectFit: 'contain',
+              borderRadius: '4px',
+              boxShadow: '0 0 50px rgba(0,0,0,0.5)',
+              cursor: 'default'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }

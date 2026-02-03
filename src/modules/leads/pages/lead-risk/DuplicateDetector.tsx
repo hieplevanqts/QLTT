@@ -56,13 +56,13 @@ export default function DuplicateDetector() {
   const currentLead: Lead = {
     id: id || 'L-2024-1234',
     title: 'Phát hiện cửa hàng kinh doanh hàng giả',
-    description: 'Tại địa chỉ 123 Nguyễn Huệ, Quận 1. Cửa hàng bán điện thoại di động nghi vấn là hàng giả, không tem phiếu đầy đủ. Khách hàng phản ánh đã mua sản phẩm và phát hiện dấu hiệu giả mạo.',
+    description: 'Tại địa chỉ 123 Nguyễn Huệ, Phường 1. Cửa hàng bán điện thoại di động nghi vấn là hàng giả, không tem phiếu đầy đủ. Khách hàng phản ánh đã mua sản phẩm và phát hiện dấu hiệu giả mạo.',
     status: 'new',
     priority: 'high',
     source: 'Hotline 1800',
     location: {
       address: '123 Nguyễn Huệ',
-      district: 'Quận 1',
+      district: 'Phường 1',
     },
     reportedAt: '2025-01-09T08:30:00',
     assignee: 'Chưa phân công',
@@ -80,7 +80,7 @@ export default function DuplicateDetector() {
       source: 'Website',
       location: {
         address: '123 Nguyễn Huệ',
-        district: 'Quận 1',
+        district: 'Phường 1',
       },
       reportedAt: '2025-01-07T14:20:00',
       assignee: 'Nguyễn Văn A',
@@ -89,13 +89,13 @@ export default function DuplicateDetector() {
     {
       id: 'L-2024-1189',
       title: 'Cửa hàng điện thoại vi phạm',
-      description: 'Địa chỉ 125 Nguyễn Huệ, Quận 1. Phát hiện cửa hàng bán điện thoại không tem, không hóa đơn chứng từ.',
+      description: 'Địa chỉ 125 Nguyễn Huệ, Phường 1. Phát hiện cửa hàng bán điện thoại không tem, không hóa đơn chứng từ.',
       status: 'triaged',
       priority: 'medium',
       source: 'Thanh tra viên',
       location: {
         address: '125 Nguyễn Huệ',
-        district: 'Quận 1',
+        district: 'Phường 1',
       },
       reportedAt: '2025-01-05T10:15:00',
       assignee: 'Trần Thị B',
@@ -110,7 +110,7 @@ export default function DuplicateDetector() {
       source: 'Mobile App',
       location: {
         address: '123 Nguyễn Huệ',
-        district: 'Quận 1',
+        district: 'Phường 1',
       },
       reportedAt: '2025-01-01T16:45:00',
       assignee: 'Lê Văn C',
@@ -167,7 +167,7 @@ export default function DuplicateDetector() {
       },
       {
         field: 'district',
-        label: 'Quận/Huyện',
+        label: 'Phường/Xã',
         current: lead1.location.district,
         duplicate: lead2.location.district,
         match: lead1.location.district === lead2.location.district,

@@ -53,7 +53,7 @@ export default function EvidenceExportCenterPage() {
   const exportJobs: ExportJob[] = [
     {
       id: 'EXP-2026-156',
-      name: 'Gói chứng cứ vụ vi phạm ATTP Quận 1 - ZIP Full',
+      name: 'Gói chứng cứ vụ vi phạm ATTP Phường 1 - ZIP Full',
       type: 'package',
       format: 'zip-full',
       status: 'completed',

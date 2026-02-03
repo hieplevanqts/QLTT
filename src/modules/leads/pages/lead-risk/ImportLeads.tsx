@@ -47,7 +47,7 @@ export default function ImportLeads() {
     { sourceColumn: 'Tiêu đề', targetField: 'title', required: true },
     { sourceColumn: 'Mô tả', targetField: 'description', required: true },
     { sourceColumn: 'Địa chỉ', targetField: 'address', required: true },
-    { sourceColumn: 'Quận', targetField: 'district', required: true },
+    { sourceColumn: 'Phường', targetField: 'district', required: true },
     { sourceColumn: 'Loại vi phạm', targetField: 'violation_type', required: true },
     { sourceColumn: 'Nguồn', targetField: 'source', required: false },
     { sourceColumn: 'Độ khẩn', targetField: 'urgency', required: false },
@@ -69,7 +69,7 @@ export default function ImportLeads() {
       {
         row: 25,
         column: 'district',
-        message: 'Quận không tồn tại trong hệ thống',
+        message: 'Phường không tồn tại trong hệ thống',
         severity: 'error',
       },
       {
@@ -97,7 +97,7 @@ export default function ImportLeads() {
     { value: 'title', label: 'Tiêu đề *', required: true },
     { value: 'description', label: 'Mô tả *', required: true },
     { value: 'address', label: 'Địa chỉ *', required: true },
-    { value: 'district', label: 'Quận/Huyện *', required: true },
+    { value: 'district', label: 'Phường/Xã *', required: true },
     { value: 'violation_type', label: 'Loại vi phạm *', required: true },
     { value: 'source', label: 'Nguồn tin', required: false },
     { value: 'urgency', label: 'Độ khẩn', required: false },

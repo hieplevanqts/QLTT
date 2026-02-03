@@ -224,6 +224,16 @@ export default function StoresListPage() {
   const [storeError, setStoreError] = useState<string | null>(null);
   const [provinces, setProvinces] = useState<ProvinceRecord[]>([]);
   const [isLoadingProvinces, setIsLoadingProvinces] = useState(true);
+  const provinceOptions = useMemo(
+    () => [
+      { value: 'all', label: 'Tất cả địa bàn' },
+      ...provinces.map((province) => ({
+        value: province.id,
+        label: province.name,
+      })),
+    ],
+    [provinces]
+  );
 
   // Stats state
   const [stats, setStats] = useState({
@@ -353,10 +363,10 @@ export default function StoresListPage() {
       } catch (error: any) {
         // Fallback to hardcoded list if API fails
         setProvinces([
-          { id: '1', code: 'HCM', name: 'Quận 1' },
-          { id: '2', code: 'HCM', name: 'Quận 3' },
-          { id: '3', code: 'HCM', name: 'Quận 5' },
-          { id: '4', code: 'HCM', name: 'Quận 10' },
+          { id: '1', code: 'HCM', name: 'Phường 1' },
+          { id: '2', code: 'HCM', name: 'Phường 3' },
+          { id: '3', code: 'HCM', name: 'Phường 5' },
+          { id: '4', code: 'HCM', name: 'Phường 10' },
         ]);
       } finally {
         setIsLoadingProvinces(false);
@@ -1356,26 +1366,21 @@ export default function StoresListPage() {
           />
 
           {/* 2. Địa bàn */}
-          <Select
-            value={jurisdictionFilter}
-            onValueChange={(val) => {
-              setJurisdictionFilter(val);
-              setCurrentPage(1);
-            }}
-            disabled={isLoadingProvinces}
-          >
-            <SelectTrigger style={{ width: '200px', border: '1px solid #e5e7eb' }}>
-              <SelectValue placeholder={isLoadingProvinces ? 'Đang tải...' : 'Chọn địa bàn'} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả địa bàn</SelectItem>
-              {provinces.map((province) => (
-                <SelectItem key={province.id} value={province.id}>
-                  {province.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div style={{ width: '200px', flexShrink: 0 }}>
+            <SearchableSelect
+              value={jurisdictionFilter}
+              onValueChange={(val) => {
+                setJurisdictionFilter(val || 'all');
+                setCurrentPage(1);
+              }}
+              options={provinceOptions}
+              placeholder={isLoadingProvinces ? 'Đang tải...' : 'Tất cả địa bàn'}
+              searchPlaceholder="Tìm địa bàn..."
+              emptyText="Không có địa bàn"
+              width="200px"
+              disabled={isLoadingProvinces}
+            />
+          </div>
 
           {/* 3. Trạng thái */}
           <Select

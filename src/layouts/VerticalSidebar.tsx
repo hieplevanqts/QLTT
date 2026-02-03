@@ -460,7 +460,7 @@ export default function VerticalSidebar({
                           'flex items-center justify-center px-3 py-2.5 rounded-lg transition-colors mb-1 cursor-pointer',
                           isActive
                             ? 'text-primary bg-primary/10 font-medium'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                            : 'text-muted-foreground hover:text-white hover:bg-primary/90'
                         )}
                         style={{ cursor: 'pointer' }}
                       >
@@ -502,7 +502,7 @@ export default function VerticalSidebar({
                       'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors cursor-pointer',
                       isActive
                         ? 'text-primary bg-primary/10 font-medium'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                        : 'text-muted-foreground hover:text-white hover:bg-primary/90'
                     )}
                     style={{ cursor: 'pointer' }}
                     onClick={() => setPlansSubmenuOpen(!plansSubmenuOpen)}
@@ -526,7 +526,7 @@ export default function VerticalSidebar({
                             'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
                             location.pathname === '/plans/list' || location.pathname.startsWith('/plans/KH-') || location.pathname.startsWith('/plans/create-new')
                               ? 'text-primary bg-primary/5 font-medium'
-                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                              : 'text-muted-foreground hover:text-white hover:bg-primary/90'
                           )}
                         >
                           <ListChecks className="h-4 w-4 shrink-0" />
@@ -540,7 +540,7 @@ export default function VerticalSidebar({
                             'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
                             location.pathname === '/plans/inspection-rounds' || location.pathname.startsWith('/plans/inspection-rounds/')
                               ? 'text-primary bg-primary/5 font-medium'
-                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                              : 'text-muted-foreground hover:text-white hover:bg-primary/90'
                           )}
                         >
                           <ClipboardCheck className="h-4 w-4 shrink-0" />
@@ -554,7 +554,7 @@ export default function VerticalSidebar({
                             'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
                             location.pathname === '/plans/inspection-session'
                               ? 'text-primary bg-primary/5 font-medium'
-                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                              : 'text-muted-foreground hover:text-white hover:bg-primary/90'
                           )}
                         >
                           <KanbanSquare className="h-4 w-4 shrink-0" />
@@ -581,7 +581,7 @@ export default function VerticalSidebar({
                           'flex items-center justify-center p-3 rounded-lg transition-colors mb-1 cursor-pointer',
                           isActive
                             ? 'text-primary bg-primary/10'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                            : 'text-muted-foreground hover:text-white hover:bg-primary/90'
                         )}
                       >
                         <Icon className="h-5 w-5" />
@@ -616,7 +616,7 @@ export default function VerticalSidebar({
                               to={item.path}
                               className={cn(
                                 isAdminMenu
-                                  ? "flex items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
+                                  ? "flex items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-primary/90 hover:text-white"
                                   : "cursor-pointer",
                                 isItemActive &&
                                 (isAdminMenu ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary")
@@ -642,7 +642,7 @@ export default function VerticalSidebar({
                       'flex items-center justify-between w-full px-3 py-2.5 rounded-lg transition-colors mb-1',
                       isActive
                         ? 'text-primary bg-primary/10 font-medium'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                        : 'text-muted-foreground hover:text-white hover:bg-primary/90'
                     )}
                   >
                     <div className="flex items-center gap-3">
@@ -686,7 +686,7 @@ export default function VerticalSidebar({
                                 : 'flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors',
                               isItemActive
                                 ? (isAdminMenu ? 'bg-primary text-primary-foreground' : 'text-primary bg-primary/10 font-medium')
-                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                                : 'text-muted-foreground hover:text-white hover:bg-primary/90'
                             )}
                           >
                             {ItemIcon && <ItemIcon className="h-4 w-4" />}
@@ -708,7 +708,7 @@ export default function VerticalSidebar({
                     'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors mb-1',
                     isActive
                       ? 'text-primary bg-primary/10 font-medium'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                      : 'text-muted-foreground hover:text-white hover:bg-primary/90'
                   )}
                 >
                   <Icon className="h-5 w-5 shrink-0" />
@@ -779,3 +779,4 @@ export default function VerticalSidebar({
     </aside>
   );
 }
+

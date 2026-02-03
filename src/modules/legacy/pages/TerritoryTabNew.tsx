@@ -296,7 +296,7 @@ export const TerritoryTabNew: React.FC<TerritoryTabProps> = ({
       const instructions = [
         { 'CỘT': 'Mã', 'BẮT BUỘC': 'Có', 'ĐỊNH DẠNG': 'Text', 'GHI CHÚ': 'Mã địa bàn duy nhất, ví dụ: DB001' },
         { 'CỘT': 'Tên địa bàn', 'BẮT BUỘC': 'Có', 'ĐỊNH DẠNG': 'Text', 'GHI CHÚ': 'Tên đầy đủ của địa bàn' },
-        { 'CỘT': 'Cấp', 'BẮT BUỘC': 'Có', 'ĐỊNH DẠNG': 'Text', 'GHI CHÚ': 'Ghi "PROVINCE" (Tỉnh/TP) hoặc "WARD" (Xã/Phường) hoặc "DISTRICT" (Quận/Huyện)' },
+        { 'CỘT': 'Cấp', 'BẮT BUỘC': 'Có', 'ĐỊNH DẠNG': 'Text', 'GHI CHÚ': 'Ghi "PROVINCE" (Tỉnh/TP) hoặc "WARD" (Xã/Phường) hoặc "DISTRICT" (Phường/Xã)' },
         { 'CỘT': 'Mô tả', 'BẮT BUỘC': 'Không', 'ĐỊNH DẠNG': 'Text', 'GHI CHÚ': 'Mô tả chi tiết về địa bàn' },
         { 'CỘT': 'Trạng thái', 'BẮT BUỘC': 'Không', 'ĐỊNH DẠNG': 'Text', 'GHI CHÚ': 'Ghi "Hoạt động" hoặc để trống/khác = Không hoạt động' },
       ];

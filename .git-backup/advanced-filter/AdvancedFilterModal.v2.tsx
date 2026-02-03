@@ -299,10 +299,10 @@ export function AdvancedFilterModalV2({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Tất cả</SelectItem>
-                      <SelectItem value="q1">Chi cục QLTT Quận 1</SelectItem>
-                      <SelectItem value="q2">Chi cục QLTT Quận 2</SelectItem>
-                      <SelectItem value="q3">Chi cục QLTT Quận 3</SelectItem>
-                      <SelectItem value="q7">Chi cục QLTT Quận 7</SelectItem>
+                      <SelectItem value="q1">Chi cục QLTT Phường 1</SelectItem>
+                      <SelectItem value="q2">Chi cục QLTT Phường 2</SelectItem>
+                      <SelectItem value="q3">Chi cục QLTT Phường 3</SelectItem>
+                      <SelectItem value="q7">Chi cục QLTT Phường 7</SelectItem>
                       <SelectItem value="td">Chi cục QLTT Thủ Đức</SelectItem>
                       <SelectItem value="bt">Chi cục QLTT Bình Thạnh</SelectItem>
                       <SelectItem value="tb">Chi cục QLTT Tân Bình</SelectItem>

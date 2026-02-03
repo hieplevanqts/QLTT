@@ -12,7 +12,7 @@ export default function EvidencePackageListPage() {
   const packages = [
     {
       id: 'PKG-2026-042',
-      name: 'Gói chứng cứ vụ vi phạm ATTP Quận 1',
+      name: 'Gói chứng cứ vụ vi phạm ATTP Phường 1',
       caseId: 'CASE-2026-045',
       itemCount: 24,
       status: 'active',

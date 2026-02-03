@@ -63,9 +63,9 @@ export default function CreateLeadQuick() {
   ];
 
   const districts = [
-    'Quận 1', 'Quận 2', 'Quận 3', 'Quận 4', 'Quận 5',
-    'Quận 6', 'Quận 7', 'Quận 8', 'Quận 9', 'Quận 10',
-    'Quận 11', 'Quận 12', 'Bình Thạnh', 'Tân Bình', 'Tân Phú',
+    'Phường 1', 'Phường 2', 'Phường 3', 'Phường 4', 'Phường 5',
+    'Phường 6', 'Phường 7', 'Phường 8', 'Phường 9', 'Phường 10',
+    'Phường 11', 'Phường 12', 'Bình Thạnh', 'Tân Bình', 'Tân Phú',
     'Phú Nhuận', 'Gò Vấp', 'Bình Tân', 'Thủ Đức'
   ];
 
@@ -153,7 +153,7 @@ export default function CreateLeadQuick() {
           province: 'TP. Hồ Chí Minh', // Default
           district: formData.district,
           ward: '', // Not in quick form
-          address: formData.address || `${formData.district}, TP.HCM`,
+          address: formData.address || `${formData.district}, Hà Nội`,
           lat: lat,
           lng: lng
         },
@@ -334,14 +334,14 @@ export default function CreateLeadQuick() {
 
             <div className={styles.locationGrid}>
               <div className={styles.inputGroup}>
-                <label>Quận/Huyện</label>
+                <label>Phường/Xã</label>
                 <div className={styles.selectWrapper}>
                   <select
                     value={formData.district}
                     onChange={(e) => setFormData({ ...formData, district: e.target.value })}
                     className={`${styles.select} ${errors.district ? styles.inputError : ''}`}
                   >
-                    <option value="">Chọn quận/huyện</option>
+                    <option value="">Chọn Phường/Xã</option>
                     {districts.map((district) => (
                       <option key={district} value={district}>
                         {district}

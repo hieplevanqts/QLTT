@@ -174,11 +174,11 @@ export async function fetchStores(
         // Location
         province: merchant.province || 'TP. Hồ Chí Minh',
         provinceCode: merchant.province_id || '',
-        jurisdiction: merchant.district || 'Quận 1',
+        jurisdiction: merchant.district || 'Phường 1',
         jurisdictionCode: merchant.province_id || '',
         ward: merchant.wards?.name || '',  // Get ward name from joined wards table
         wardCode: merchant.ward_id || '',
-        managementUnit: `Chi cục QLTT ${merchant.district || 'Quận 1'}`,
+        managementUnit: `Chi cục QLTT ${merchant.district || 'Phường 1'}`,
 
         // GPS
         latitude,
@@ -379,7 +379,7 @@ export async function fetchStoreById(storeId: string | number): Promise<Store | 
       jurisdictionCode: merchant.province_id || '',
       ward: merchant.ward || '',
       wardCode: merchant.ward_id || '',
-      managementUnit: `Chi cục QLTT ${merchant.district || 'Quận 1'}`,
+      managementUnit: `Chi cục QLTT ${merchant.district || 'Phường 1'}`,
       latitude,
       longitude,
       gpsCoordinates: latitude && longitude ? `${latitude.toFixed(6)}, ${longitude.toFixed(6)}` : undefined,

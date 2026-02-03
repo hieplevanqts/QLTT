@@ -161,7 +161,7 @@ const industryFilterOptions = [
 // District options for analysis filters
 const districtOptions = [
   'Q1', 'Q2', 'Q3', 'Q4', 'Q5', 'Q6', 'Q7', 'Q8', 'Q9', 'Q10', 'Q11', 'Q12',
-  'Quận Bình Thạnh', 'Quận Gò Vấp', 'Quận Tân Bình', 'Quận Phú Nhuận'
+  'Phường Bình Thạnh', 'Phường Gò Vấp', 'Phường Tân Bình', 'Phường Phú Nhuận'
 ];
 
 // Industry standards data - chuẩn cho từng ngành
@@ -1311,12 +1311,12 @@ function MarketFilterPopup({ filters, onFiltersChange, onClose }: MarketFilterPo
         />
         
         <MultiSelect
-          label="Quận/Huyện"
+          label="Phường/Xã"
           options={districtOptions}
           selectedValues={tempFilters.districts}
           onChange={(values) => setTempFilters({ ...tempFilters, districts: values })}
-          placeholder="Chọn quận/huyện"
-          allOptionLabel="Tất cả quận/huyện"
+          placeholder="Chọn Phường/Xã"
+          allOptionLabel="Tất cả Phường/Xã"
         />
       </div>
 

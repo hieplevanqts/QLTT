@@ -101,7 +101,7 @@ export const DOCUMENT_TYPES: Record<string, DocumentType> = {
         label: 'Cơ quan cấp',
         type: 'text',
         required: true,
-        placeholder: 'VD: Sở Kế hoạch và Đầu tư TP.HCM',
+        placeholder: 'VD: Sở Kế hoạch và Đầu tư Hà Nội',
       },
       {
         key: 'businessScope',
@@ -222,7 +222,7 @@ export const DOCUMENT_TYPES: Record<string, DocumentType> = {
         label: 'Cơ quan cấp',
         type: 'text',
         required: true,
-        placeholder: 'VD: Chi cục An toàn Vệ sinh Thực phẩm TP.HCM',
+        placeholder: 'VD: Chi cục An toàn Vệ sinh Thực phẩm Hà Nội',
       },
       {
         key: 'scope',
@@ -265,7 +265,7 @@ export const DOCUMENT_TYPES: Record<string, DocumentType> = {
         label: 'Cơ quan cấp',
         type: 'text',
         required: true,
-        placeholder: 'VD: Sở Y tế TP.HCM',
+        placeholder: 'VD: Sở Y tế Hà Nội',
       },
       {
         key: 'scope',
@@ -308,7 +308,7 @@ export const DOCUMENT_TYPES: Record<string, DocumentType> = {
         label: 'Cơ quan cấp',
         type: 'text',
         required: true,
-        placeholder: 'VD: Phòng Cảnh sát PCCC - Quận 1',
+        placeholder: 'VD: Phòng Cảnh sát PCCC - Phường 1',
       },
       {
         key: 'inspectionResult',

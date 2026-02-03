@@ -121,13 +121,13 @@ export const mockPlans: Plan[] = [
   // Demo Plan for Task Board
   {
     id: 'KH-2026-Q1-001',
-    name: 'Kế hoạch kiểm tra nông sản Q1/2026 - TP.HCM',
+    name: 'Kế hoạch kiểm tra nông sản Q1/2026 - Hà Nội',
     planType: 'thematic',
     quarter: 'Q1/2026',
     topic: 'Kiểm tra chất lượng nông sản',
     scope: 'Toàn thành phố',
-    scopeLocation: 'TP.HCM',
-    responsibleUnit: 'Chi cục QLTT TP.HCM',
+    scopeLocation: 'Hà Nội',
+    responsibleUnit: 'Chi cục QLTT Hà Nội',
     objectives: 'Kiểm tra nguồn gốc và chất lượng nông sản tại các chợ truyền thống và siêu thị',
     status: 'active',
     priority: 'high',
@@ -168,14 +168,14 @@ export const mockPlans: Plan[] = [
   },
   {
     id: 'KH-I/2025-TPHCM',
-    name: 'Kế hoạch kiểm tra định kỳ quý I/2025 - TP.HCM',
+    name: 'Kế hoạch kiểm tra định kỳ quý I/2025 - Hà Nội',
     planType: 'periodic',
     quarter: 'Q1/2025',
     topic: 'Kiểm tra định kỳ',
     scope: 'Toàn thành phố',
-    scopeLocation: 'TP.HCM',
-    responsibleUnit: 'Chi cục QLTT TP.HCM',
-    objectives: 'Kiểm tra định kỳ các cơ sở kinh doanh trên địa bàn TP.HCM quý I/2025',
+    scopeLocation: 'Hà Nội',
+    responsibleUnit: 'Chi cục QLTT Hà Nội',
+    objectives: 'Kiểm tra định kỳ các cơ sở kinh doanh trên địa bàn Hà Nội quý I/2025',
     status: 'completed',
     priority: 'high',
     startDate: '2025-01-01',
@@ -359,8 +359,8 @@ export const mockPlans: Plan[] = [
     quarter: 'Q2/2025',
     topic: 'Chống hàng giả',
     scope: 'Khu vực miền Nam',
-    scopeLocation: 'TP.HCM, Đồng Nai, Bình Dương',
-    responsibleUnit: 'Chi cục QLTT TP.HCM',
+    scopeLocation: 'Hà Nội, Đồng Nai, Bình Dương',
+    responsibleUnit: 'Chi cục QLTT Hà Nội',
     objectives: 'Tổng kiểm tra, xử lý hàng giả, hàng nhái mạo tại khu vực miền Nam',
     status: 'approved',
     priority: 'high',
@@ -474,7 +474,7 @@ export const mockPlans: Plan[] = [
     quarter: 'Q4/2025',
     topic: 'Chống buôn lậu',
     scope: 'Thành phố lớn',
-    scopeLocation: 'Hà Nội, TP.HCM',
+    scopeLocation: 'Hà Nội, Hà Nội',
     responsibleUnit: 'Tổng cục QLTT',
     objectives: 'Kiểm tra thiết bị điện tử nhập lậu tại các thành phố lớn',
     status: 'draft',
@@ -642,7 +642,7 @@ export const mockTargets: Target[] = [
     priority: 'high',
     location: {
       address: 'Chợ Bến Thành, Lê Lợi, Phường Bến Thành',
-      district: 'Quận 1',
+      district: 'Phường 1',
       lat: 10.7719,
       lng: 106.6981
     },
@@ -658,7 +658,7 @@ export const mockTargets: Target[] = [
     priority: 'medium',
     location: {
       address: '189B Nguyễn Đình Chiểu, Phường 6',
-      district: 'Quận 3',
+      district: 'Phường 3',
       lat: 10.7797,
       lng: 106.6919
     },
@@ -674,7 +674,7 @@ export const mockTargets: Target[] = [
     priority: 'critical',
     location: {
       address: '45 Nguyễn Trãi, Phường Nguyễn Cư Trinh',
-      district: 'Quận 1',
+      district: 'Phường 1',
       lat: 10.7629,
       lng: 106.6881
     },
@@ -689,8 +689,8 @@ export const mockTargets: Target[] = [
     name: 'Khu vực chợ đầu mối Hóc Môn',
     priority: 'high',
     location: {
-      address: 'Khu vực chợ đầu mối, Huyện Hóc Môn',
-      district: 'Huyện Hóc Môn',
+      address: 'Khu vực chợ đầu mối, Xã Hóc Môn',
+      district: 'Xã Hóc Môn',
       lat: 10.8821,
       lng: 106.5927
     },
@@ -713,7 +713,7 @@ export const mockTasks: Task[] = [
     assignee: {
       id: 'U001',
       name: 'Phạm Văn Minh',
-      team: 'Đội 1 - Quận 1'
+      team: 'Đội 1 - Phường 1'
     },
     assignedBy: {
       id: 'U100',
@@ -780,7 +780,7 @@ export const mockTasks: Task[] = [
     assignee: {
       id: 'U003',
       name: 'Lê Hoàng Nam',
-      team: 'Đội 1 - Quận 1'
+      team: 'Đội 1 - Phường 1'
     },
     assignedBy: {
       id: 'U100',
@@ -811,7 +811,7 @@ export const mockTasks: Task[] = [
     assignee: {
       id: 'U004',
       name: 'Võ Thị Mai',
-      team: 'Đội 3 - Quận 3'
+      team: 'Đội 3 - Phường 3'
     },
     assignedBy: {
       id: 'U100',
@@ -843,7 +843,7 @@ export const mockTasks: Task[] = [
     assignee: {
       id: 'U005',
       name: 'Đặng Văn Hùng',
-      team: 'Đội 1 - Quận 1'
+      team: 'Đội 1 - Phường 1'
     },
     assignedBy: {
       id: 'U100',
@@ -937,7 +937,7 @@ export const mockTasks: Task[] = [
     assignee: {
       id: 'U003',
       name: 'Lê Hoàng Nam',
-      team: 'Đội 1 - Quận 1'
+      team: 'Đội 1 - Phường 1'
     },
     assignedBy: {
       id: 'U100',
@@ -967,23 +967,23 @@ export const vietnamProvinces = [
 ];
 
 export const hcmDistricts = [
-  { code: '760', name: 'Quận 1' },
-  { code: '761', name: 'Quận 2' },
-  { code: '762', name: 'Quận 3' },
-  { code: '763', name: 'Quận 4' },
-  { code: '764', name: 'Quận 5' },
-  { code: '765', name: 'Quận 6' },
-  { code: '766', name: 'Quận 7' },
-  { code: '767', name: 'Quận 8' },
-  { code: '768', name: 'Quận 9' },
-  { code: '769', name: 'Quận 10' },
-  { code: '770', name: 'Quận 11' },
-  { code: '771', name: 'Quận 12' },
-  { code: '772', name: 'Quận Bình Thạnh' },
-  { code: '773', name: 'Quận Tân Bình' },
-  { code: '774', name: 'Quận Phú Nhuận' },
-  { code: '783', name: 'Huyện Hóc Môn' },
-  { code: '784', name: 'Huyện Củ Chi' }
+  { code: '760', name: 'Phường 1' },
+  { code: '761', name: 'Phường 2' },
+  { code: '762', name: 'Phường 3' },
+  { code: '763', name: 'Phường 4' },
+  { code: '764', name: 'Phường 5' },
+  { code: '765', name: 'Phường 6' },
+  { code: '766', name: 'Phường 7' },
+  { code: '767', name: 'Phường 8' },
+  { code: '768', name: 'Phường 9' },
+  { code: '769', name: 'Phường 10' },
+  { code: '770', name: 'Phường 11' },
+  { code: '771', name: 'Phường 12' },
+  { code: '772', name: 'Phường Bình Thạnh' },
+  { code: '773', name: 'Phường Tân Bình' },
+  { code: '774', name: 'Phường Phú Nhuận' },
+  { code: '783', name: 'Xã Hóc Môn' },
+  { code: '784', name: 'Xã Củ Chi' }
 ];
 
 // Topics
@@ -999,10 +999,10 @@ export const planTopics = [
 
 // Teams/Units
 export const teams = [
-  { id: 'TEAM-Q1-01', name: 'Đội 1 - Quận 1', capacity: 5 },
-  { id: 'TEAM-Q1-02', name: 'Đội 2 - Quận 1', capacity: 4 },
-  { id: 'TEAM-Q3-01', name: 'Đội 1 - Quận 3', capacity: 6 },
-  { id: 'TEAM-Q5-01', name: 'Đội 1 - Quận 5', capacity: 5 },
+  { id: 'TEAM-Q1-01', name: 'Đội 1 - Phường 1', capacity: 5 },
+  { id: 'TEAM-Q1-02', name: 'Đội 2 - Phường 1', capacity: 4 },
+  { id: 'TEAM-Q3-01', name: 'Đội 1 - Phường 3', capacity: 6 },
+  { id: 'TEAM-Q5-01', name: 'Đội 1 - Phường 5', capacity: 5 },
   { id: 'TEAM-HM-01', name: 'Đội 1 - Hóc Môn', capacity: 4 }
 ];
 
@@ -1035,10 +1035,10 @@ const merchantNames = [
 const industries = ['Mỹ phẩm', 'Thực phẩm', 'Điện tử', 'Dược phẩm', 'Dân dụng'];
 const addresses = [
   'Hà Nội - Phường Hàng Bài',
-  'TP.HCM - Quận 1',
-  'Đà Nẵng - Quận Hải Châu',
-  'Hải Phòng - Quận Lê Chân',
-  'Cần Thơ - Quận Ninh Kiều'
+  'Hà Nội - Phường 1',
+  'Đà Nẵng - Phường Hải Châu',
+  'Hải Phòng - Phường Lê Chân',
+  'Cần Thơ - Phường Ninh Kiều'
 ];
 
 export const mockMerchants: Merchant[] = mockPlans.flatMap((plan, planIndex) => {
@@ -1117,11 +1117,11 @@ export interface InspectionRound {
 }
 
 const units = [
-  'Chi cục QLTT Quận 1',
-  'Chi cục QLTT Quận 3',
-  'Chi cục QLTT Quận 5',
-  'Chi cục QLTT Quận 7',
-  'Chi cục QLTT Quận 10',
+  'Chi cục QLTT Phường 1',
+  'Chi cục QLTT Phường 3',
+  'Chi cục QLTT Phường 5',
+  'Chi cục QLTT Phường 7',
+  'Chi cục QLTT Phường 10',
   'Chi cục QLTT Bình Thạnh',
   'Chi cục QLTT Tân Bình',
   'Chi cục QLTT Thủ Đức'

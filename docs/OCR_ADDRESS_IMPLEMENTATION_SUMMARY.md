@@ -166,7 +166,7 @@ onAddressMatchFail: (error, fullAddress) => {
 ```
 User uploads Giấy Phép Kinh Doanh
         ↓
-   OCR extracts address: "110A Ngô Quyền, Phường 8, Quận 5, TP.HCM, Việt Nam"
+   OCR extracts address: "110A Ngô Quyền, Phường 8, Phường 5, Hà Nội, Việt Nam"
         ↓
    Auto-mapper detects new address in form
         ↓

@@ -309,25 +309,28 @@ export default function CreateLeadSourceModal({
 
       // Prepare API payload with mapping
       const payload = {
-        title: formData.source, // Nguồn tin -> title
-        description: formData.description, // Mô tả chi tiết -> description
-        severity: severityMap[formData.urgency] || 'medium', // Mức độ khẩn cấp -> severity
-        store_id: formData.storeId, // Cửa hàng bị phản ánh -> store_id
-        store_name: formData.storeName || null, // Tên cửa hàng -> store_name
-        category: formData.issueType, // Loại vấn đề -> category
-        occurred_at: formData.occurredAt, // Thời gian xảy ra -> occurred_at
-        reporter_name: formData.providerName, // Người cung cấp -> reporter_name
-        reporter_phone: formData.providerPhone, // Số điện thoại -> reporter_phone
-        reporter_email: formData.providerEmail || null, // Email -> reporter_email
-        evidences: evidences, // Minh chứng đính kèm -> evidences
-        created_by: 'admin', // TODO: Lấy từ user session
-        assignee_name: null, // Chưa phân công
-        location: null, // TODO: Thêm location picker nếu cần
+        title: formData.source,
+        description: formData.description,
+        severity: severityMap[formData.urgency] || 'medium',
+        store_id: formData.storeId,
+        merchant_id: formData.storeId ? String(formData.storeId) : 'NO_ID', // Force string
+        store_name: formData.storeName || null,
+        category: formData.issueType,
+        occurred_at: formData.occurredAt,
+        reporter_name: formData.providerName,
+        reporter_phone: formData.providerPhone,
+        reporter_email: formData.providerEmail || null,
+        evidences: evidences,
+        created_by: 'admin',
+        assignee_name: null,
+        location: null,
         sla: {
           response_hours: 24,
           resolution_hours: 72,
         },
       };
+
+      console.log('🚀 [CreateLead] Payload DEBUG:', { merchant_id: payload.merchant_id, payload }); // Enhanced debug log
 
       // Call API to create lead
       const response = await fetch(
@@ -349,6 +352,50 @@ export default function CreateLeadSourceModal({
       }
 
       const newLeadCode = result.leadCode || result.data?.code;
+
+      // HOTFIX: Manually update merchant_id directly to DB to ensure it is saved
+      // This bypasses potential Edge Function filtering
+      if (formData.storeId && newLeadCode) {
+        const supabase = getSupabaseClient();
+        console.log(`🔧 [CreateLead] Patching merchant_id=${formData.storeId} for lead ${newLeadCode}...`);
+
+        // Step 1: Get the Lead ID first (to ensure we have the correct record ref)
+        const { data: leadData, error: findError } = await supabase
+          .from('leads')
+          .select('_id, id')
+          .eq('code', newLeadCode)
+          .single();
+
+        if (findError || !leadData) {
+          console.error('❌ [CreateLead] Could not find newly created lead to patch:', findError);
+        } else {
+          const leadId = leadData._id || leadData.id;
+          console.log(`✅ [CreateLead] Found lead ID: ${leadId}. Updating merchant_id...`);
+
+          // Step 2: Update using ID
+          const { error: patchError } = await supabase
+            .from('leads')
+            .update({ merchant_id: formData.storeId })
+            .eq('_id', leadId); // Try _id first which seems to be the standard here
+
+          if (patchError) {
+            // Fallback: Try 'id' if '_id' failed (rare but possible in some schemas)
+            console.warn('⚠️ [CreateLead] Update by _id failed, trying by id...', patchError);
+            const { error: patchError2 } = await supabase
+              .from('leads')
+              .update({ merchant_id: formData.storeId })
+              .eq('id', leadId);
+
+            if (patchError2) {
+              console.error('❌ [CreateLead] Failed to patch merchant_id (both _id and id):', patchError2);
+            } else {
+              console.log('✅ [CreateLead] Successfully patched merchant_id using "id"');
+            }
+          } else {
+            console.log('✅ [CreateLead] Successfully patched merchant_id using "_id"');
+          }
+        }
+      }
 
       toast.success(`Đã tạo nguồn tin ${newLeadCode} thành công! Trạng thái: Mới`);
 

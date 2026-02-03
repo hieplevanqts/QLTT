@@ -206,7 +206,7 @@ export function Step4MapGeocoding({
                       <li><strong>Rooftop:</strong> Chính xác đến mái nhà/tòa nhà cụ thể</li>
                       <li><strong>Street:</strong> Chính xác đến đường/phố</li>
                       <li><strong>Ward:</strong> Chính xác đến phường/xã</li>
-                      <li><strong>District:</strong> Chính xác đến quận/huyện</li>
+                      <li><strong>District:</strong> Chính xác đến Phường/Xã</li>
                     </ul>
                   </TooltipContent>
                 </Tooltip>
@@ -244,7 +244,7 @@ export function Step4MapGeocoding({
                     <Map size={16} />
                     <div>
                       <div className={styles.selectItemLabel}>District</div>
-                      <div className={styles.selectItemDesc}>Chính xác đến quận/huyện</div>
+                      <div className={styles.selectItemDesc}>Chính xác đến Phường/Xã</div>
                     </div>
                   </SelectItem>
                 </SelectContent>

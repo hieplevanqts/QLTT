@@ -40,7 +40,7 @@ export const MOCK_ORG_UNITS: OrgUnit[] = [
   {
     id: '3',
     code: 'CCQLTT-HCM',
-    name: 'Chi cục Quản lý thị trường TP.HCM',
+    name: 'Chi cục Quản lý thị trường Hà Nội',
     shortName: 'Chi cục HCM',
     type: 'provincial',
     level: 2,
@@ -124,7 +124,7 @@ export const MOCK_JURISDICTIONS: Jurisdiction[] = [
   {
     id: '3',
     code: 'HN-HBT',
-    name: 'Quận Hoàn Kiếm',
+    name: 'Phường Hoàn Kiếm',
     type: 'district',
     parentId: '1',
     orgUnitId: '2',

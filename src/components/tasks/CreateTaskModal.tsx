@@ -10,6 +10,7 @@ import type { Plan } from '@/types/plans';
 import type { InspectionRound } from '@/types/inspections';
 import { fetchMerchants } from '@/utils/api/merchantsApi';
 import { fetchDepartmentUsers } from '@/utils/api/departmentUsersApi';
+import { fetchDepartmentById } from '@/utils/api/departmentsApi';
 import { Restaurant } from '@/utils/data/restaurantData';
 
 interface CreateTaskModalProps {
@@ -111,7 +112,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, task, taskId, defau
     if (isOpen && formData.roundId) {
       const selectedRound = rounds.find(r => r.id === formData.roundId);
       if (selectedRound) {
-        fetchMerchantsByLocation(selectedRound.provinceId, selectedRound.wardId);
+        fetchMerchantsByLocation(selectedRound.provinceId, selectedRound.wardId, selectedRound.leadUnitId);
         fetchAssignees(selectedRound.leadUnitId);
       }
     } else if (isOpen && !formData.roundId) {
@@ -169,10 +170,31 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, task, taskId, defau
     }
   };
 
-  const fetchMerchantsByLocation = async (provinceId?: string, wardId?: string) => {
+  const fetchMerchantsByLocation = async (provinceId?: string, wardId?: string, departmentId?: string) => {
     try {
       setLoadingMerchants(true);
-      const data = await fetchMerchants(undefined, undefined, undefined, provinceId, wardId);
+      
+      let targetPath = undefined;
+      if (departmentId) {
+        try {
+          const dept = await fetchDepartmentById(departmentId);
+          if (dept) {
+            targetPath = dept.path;
+          }
+        } catch (err) {
+          console.error('Error fetching department details:', err);
+        }
+      }
+
+      // Pass departmentId as array to match API signature
+      const data = await fetchMerchants(
+        undefined, 
+        undefined, 
+        departmentId ? [departmentId] : undefined, 
+        provinceId, 
+        wardId,
+        targetPath
+      );
       setMerchants(data);
     } catch (error) {
       console.error('Error fetching merchants:', error);

@@ -43,7 +43,7 @@ Nội dung kiểm tra được thực hiện theo đúng quy trình và phát hi
   const [businessLicense, setBusinessLicense] = useState('0123456789');
   
   // Inspection team
-  const [organization, setOrganization] = useState('Sở Công Thương TP.HCM');
+  const [organization, setOrganization] = useState('Sở Công Thương TP. Hà Nội');
   const [teamLeader, setTeamLeader] = useState(task.assignee.name);
   const [teamMembers, setTeamMembers] = useState('Trần Văn B - Thanh tra viên; Lê Thị C - Chuyên viên');
   
@@ -300,7 +300,7 @@ Nội dung kiểm tra được thực hiện theo đúng quy trình và phát hi
                   className={styles.input}
                   value={organization}
                   onChange={(e) => setOrganization(e.target.value)}
-                  placeholder="VD: Sở Công Thương TP.HCM"
+                  placeholder="VD: Sở Công Thương TP. Hà Nội"
                 />
               </div>
             </div>

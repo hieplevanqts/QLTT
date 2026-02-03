@@ -217,7 +217,7 @@ export default function JurisdictionsPage() {
   const getTypeLabel = (type: AreaType) => {
     const map: Record<AreaType, string> = {
       province: 'Tỉnh/Thành phố',
-      district: 'Quận/Huyện',
+      district: 'Phường/Xã',
       ward: 'Phường/Xã'
     };
     return map[type];
@@ -362,7 +362,7 @@ export default function JurisdictionsPage() {
               disabled={submitting}
             >
               <option value="province">Tỉnh/Thành phố</option>
-              <option value="district">Quận/Huyện</option>
+              <option value="district">Phường/Xã</option>
               <option value="ward">Phường/Xã</option>
             </select>
           </FormGroup>

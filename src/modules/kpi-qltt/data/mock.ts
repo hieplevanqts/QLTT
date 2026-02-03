@@ -198,7 +198,7 @@ const categoryGroups = ['Ăn uống', 'Dịch vụ', 'Bán lẻ', 'Sản xuất'
 const units = [
   // Cục level
   { level: 'cuc' as const, id: 'cuc-hn', name: 'Cục QLTT Hà Nội', province: 'Hà Nội' },
-  { level: 'cuc' as const, id: 'cuc-hcm', name: 'Cục QLTT TP.HCM', province: 'TP. Hồ Chí Minh' },
+  { level: 'cuc' as const, id: 'cuc-hcm', name: 'Cục QLTT Hà Nội', province: 'TP. Hồ Chí Minh' },
   { level: 'cuc' as const, id: 'cuc-dn', name: 'Cục QLTT Đà Nẵng', province: 'Đà Nẵng' },
   { level: 'cuc' as const, id: 'cuc-hp', name: 'Cục QLTT Hải Phòng', province: 'Hải Phòng' },
   { level: 'cuc' as const, id: 'cuc-na', name: 'Cục QLTT Nghệ An', province: 'Nghệ An' },
@@ -209,9 +209,9 @@ const units = [
   { level: 'chicuc' as const, id: 'cc-cg', name: 'Chi cục QLTT Cầu Giấy', province: 'Hà Nội' },
   { level: 'chicuc' as const, id: 'cc-hm', name: 'Chi cục QLTT Hai Bà Trưng', province: 'Hà Nội' },
   
-  // Chi cục level - TP.HCM
-  { level: 'chicuc' as const, id: 'cc-q1', name: 'Chi cục QLTT Quận 1', province: 'TP. Hồ Chí Minh' },
-  { level: 'chicuc' as const, id: 'cc-q3', name: 'Chi cục QLTT Quận 3', province: 'TP. Hồ Chí Minh' },
+  // Chi cục level - Hà Nội
+  { level: 'chicuc' as const, id: 'cc-q1', name: 'Chi cục QLTT Phường 1', province: 'TP. Hồ Chí Minh' },
+  { level: 'chicuc' as const, id: 'cc-q3', name: 'Chi cục QLTT Phường 3', province: 'TP. Hồ Chí Minh' },
   { level: 'chicuc' as const, id: 'cc-td', name: 'Chi cục QLTT Thủ Đức', province: 'TP. Hồ Chí Minh' },
   { level: 'chicuc' as const, id: 'cc-tb', name: 'Chi cục QLTT Tân Bình', province: 'TP. Hồ Chí Minh' },
   
@@ -225,10 +225,10 @@ const units = [
   { level: 'doi' as const, id: 'doi-bd-1', name: 'Đội QLTT 1 Ba Đình', province: 'Hà Nội' },
   { level: 'doi' as const, id: 'doi-cg-1', name: 'Đội QLTT 1 Cầu Giấy', province: 'Hà Nội' },
   
-  // Đội level - TP.HCM
-  { level: 'doi' as const, id: 'doi-q1-1', name: 'Đội QLTT 1 Quận 1', province: 'TP. Hồ Chí Minh' },
-  { level: 'doi' as const, id: 'doi-q1-2', name: 'Đội QLTT 2 Quận 1', province: 'TP. Hồ Chí Minh' },
-  { level: 'doi' as const, id: 'doi-q3-1', name: 'Đội QLTT 1 Quận 3', province: 'TP. Hồ Chí Minh' },
+  // Đội level - Hà Nội
+  { level: 'doi' as const, id: 'doi-q1-1', name: 'Đội QLTT 1 Phường 1', province: 'TP. Hồ Chí Minh' },
+  { level: 'doi' as const, id: 'doi-q1-2', name: 'Đội QLTT 2 Phường 1', province: 'TP. Hồ Chí Minh' },
+  { level: 'doi' as const, id: 'doi-q3-1', name: 'Đội QLTT 1 Phường 3', province: 'TP. Hồ Chí Minh' },
   { level: 'doi' as const, id: 'doi-td-1', name: 'Đội QLTT 1 Thủ Đức', province: 'TP. Hồ Chí Minh' },
 ];
 

@@ -70,7 +70,7 @@ export function EvidenceDocumentModal({ isOpen, onClose, leadId, leadTitle }: Ev
     // Title
     meetingPurpose: 'Xác minh thông tin về vi phạm hành chính trong lĩnh vực QLTT',
     meetingTime: '8 giờ 30 phút, ngày 23 tháng 1 năm 2026',
-    meetingLocation: 'Cửa hàng ABC, số 123 Đường XYZ, Quận Hoàn Kiếm, Hà Nội',
+    meetingLocation: 'Cửa hàng ABC, số 123 Đường XYZ, Phường Hoàn Kiếm, Hà Nội',
     
     // Attendees
     requesterName: 'Nguyễn Văn An',

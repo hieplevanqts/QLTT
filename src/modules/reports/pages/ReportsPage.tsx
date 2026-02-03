@@ -56,7 +56,7 @@ export default function ReportsPage() {
     },
     {
       id: 'EXP-002',
-      reportName: 'Báo cáo kiểm tra vệ sinh ATTP - Quận 3',
+      reportName: 'Báo cáo kiểm tra vệ sinh ATTP - Phường 3',
       format: 'pdf',
       status: 'completed',
       createdBy: 'Trần Thị B',
@@ -110,10 +110,10 @@ export default function ReportsPage() {
     },
     {
       id: 'RPT-2025-002',
-      name: 'Báo cáo kiểm tra vệ sinh ATTP - Quận 3',
+      name: 'Báo cáo kiểm tra vệ sinh ATTP - Phường 3',
       type: 'Nhiệm vụ hiện trường',
       period: 'Tuần 1/2025',
-      region: 'Quận 3',
+      region: 'Phường 3',
       createdDate: '2025-01-07',
       createdBy: 'Trần Thị B',
       status: 'completed',
@@ -143,10 +143,10 @@ export default function ReportsPage() {
     },
     {
       id: 'RPT-2025-005',
-      name: 'Báo cáo kế hoạch tác nghiệp - Quận 5',
+      name: 'Báo cáo kế hoạch tác nghiệp - Phường 5',
       type: 'Kế hoạch',
       period: 'Tháng 01/2025',
-      region: 'Quận 5',
+      region: 'Phường 5',
       createdDate: '2025-01-03',
       createdBy: 'Hoàng Văn E',
       status: 'draft',
@@ -492,9 +492,9 @@ export default function ReportsPage() {
               }}
             >
               <option value="all">Tất cả khu vực</option>
-              <option value="Quận 1">Quận 1</option>
-              <option value="Quận 3">Quận 3</option>
-              <option value="Quận 5">Quận 5</option>
+              <option value="Phường 1">Phường 1</option>
+              <option value="Phường 3">Phường 3</option>
+              <option value="Phường 5">Phường 5</option>
               <option value="Toàn thành phố">Toàn thành phố</option>
             </select>
 
@@ -753,7 +753,7 @@ export default function ReportsPage() {
                             navigate('/facility-report', {
                               state: {
                                 viewMode: 'drill-down',
-                                selectedDistrict: 'Quận 3',
+                                selectedDistrict: 'Phường 3',
                               },
                             });
                           }
@@ -975,10 +975,10 @@ export default function ReportsPage() {
               title: 'Xuất Excel thành công!',
               message: `File: ${fileName}\nSố sheets: 4 | Tổng records: ${quan1FacilitiesData.length}`,
             });
-          } else if (selectedReport === 'Báo cáo kiểm tra vệ sinh ATTP - Quận 3') {
+          } else if (selectedReport === 'Báo cáo kiểm tra vệ sinh ATTP - Phường 3') {
             // Prepare data for export with real quan3FacilitiesData
             const areaSummary = [{
-              area: 'Quận 3',
+              area: 'Phường 3',
               totalFacilities: quan3FacilitiesData.length,
               activeFacilities: quan3FacilitiesData.filter(f => f.status === 'active').length,
               highRisk: quan3FacilitiesData.filter(f => f.riskLevel === 'high').length,
@@ -993,7 +993,7 @@ export default function ReportsPage() {
               type: f.type,
               address: f.address,
               ward: f.ward || 'Phường Bến Nghé',
-              district: 'Quận 3',
+              district: 'Phường 3',
               riskLevel: f.riskLevel,
               legalStatus: f.legalStatus || 'Đầy đủ',
               status: f.status || ('active' as const),
@@ -1019,7 +1019,7 @@ export default function ReportsPage() {
 
             const options = {
               period: 'Tháng 01/2025',
-              area: 'Quận 3',
+              area: 'Phường 3',
               exportDate: formatExportDate(),
             };
 

@@ -88,8 +88,8 @@ const filters: FilterConfig[] = [
     label: 'Địa bàn',
     placeholder: 'Tất cả địa bàn',
     options: [
-      { value: 'q1', label: 'Quận 1' },
-      { value: 'q3', label: 'Quận 3' },
+      { value: 'q1', label: 'Phường 1' },
+      { value: 'q3', label: 'Phường 3' },
     ],
   },
   {

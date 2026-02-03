@@ -144,7 +144,7 @@ export function exportFacilityReportToExcel(
       'Loại hình',
       'Địa chỉ',
       'Phường/Xã',
-      'Quận/Huyện',
+      'Phường/Xã',
       'Mức độ rủi ro',
       'Tình trạng pháp lý',
       'Trạng thái hoạt động',
@@ -173,7 +173,7 @@ export function exportFacilityReportToExcel(
     { wch: 20 }, // Loại hình
     { wch: 35 }, // Địa chỉ
     { wch: 15 }, // Phường
-    { wch: 15 }, // Quận
+    { wch: 15 }, // Phường
     { wch: 15 }, // Rủi ro
     { wch: 20 }, // Pháp lý
     { wch: 18 }, // Trạng thái
@@ -296,7 +296,7 @@ export function formatExportDate(date: Date = new Date()): string {
 export function generateSampleExport() {
   const areaSummary: AreaSummary[] = [
     {
-      area: 'Quận 1',
+      area: 'Phường 1',
       totalFacilities: 245,
       activeFacilities: 232,
       highRisk: 28,
@@ -305,7 +305,7 @@ export function generateSampleExport() {
       riskRate: 11.4,
     },
     {
-      area: 'Quận 3',
+      area: 'Phường 3',
       totalFacilities: 198,
       activeFacilities: 185,
       highRisk: 22,
@@ -314,7 +314,7 @@ export function generateSampleExport() {
       riskRate: 11.1,
     },
     {
-      area: 'Quận 5',
+      area: 'Phường 5',
       totalFacilities: 312,
       activeFacilities: 298,
       highRisk: 35,
@@ -331,7 +331,7 @@ export function generateSampleExport() {
       type: 'Nhà hàng',
       address: '123 Nguyễn Huệ',
       ward: 'Phường Bến Nghé',
-      district: 'Quận 1',
+      district: 'Phường 1',
       riskLevel: 'high',
       legalStatus: 'Đầy đủ',
       status: 'active',
@@ -342,7 +342,7 @@ export function generateSampleExport() {
       type: 'Siêu thị',
       address: '456 Lê Lợi',
       ward: 'Phường Bến Thành',
-      district: 'Quận 1',
+      district: 'Phường 1',
       riskLevel: 'medium',
       legalStatus: 'Đầy đủ',
       status: 'active',

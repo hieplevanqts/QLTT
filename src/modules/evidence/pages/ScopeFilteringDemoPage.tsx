@@ -38,9 +38,9 @@ function generateDiverseMockEvidence(): EvidenceItem[] {
     {
       evidenceId: 'EVD-2026-1256',
       file: { filename: 'evidence_hcm_quan1.jpg', storageKey: 'storage/3', mimeType: 'image/jpeg', sizeBytes: 1500000 },
-      scope: { province: 'TP. Hồ Chí Minh', district: 'Quận 1', unitId: 'UNIT-HCM-01' },
+      scope: { province: 'TP. Hồ Chí Minh', district: 'Phường 1', unitId: 'UNIT-HCM-01' },
       status: 'Approved',
-      location: { lat: 10.7769, lng: 106.7009, addressText: 'Quận 1, TP.HCM' },
+      location: { lat: 10.7769, lng: 106.7009, addressText: 'Phường 1, Hà Nội' },
     },
   ];
 
@@ -82,13 +82,13 @@ export default function ScopeFilteringDemoPage() {
       // Cấp chi cục - chỉ xem tỉnh/TP của mình
       return allEvidence.filter(e => e.scope.province === user.provinceName);
     } else if (user.level === 'doi') {
-      // Cấp đội - chỉ xem quận/huyện của mình
+      // Cấp đội - chỉ xem Phường/Xã của mình
       return allEvidence.filter(e => 
         e.scope.province === user.provinceName && 
         e.scope.district === user.teamName?.replace('Đội 1', 'Ba Đình')
           .replace('Đội 2', 'Hoàn Kiếm')
-          .replace('Đội 1', 'Quận 1')
-          .replace('Đội 2', 'Quận 3')
+          .replace('Đội 1', 'Phường 1')
+          .replace('Đội 2', 'Phường 3')
       );
     }
     return [];
@@ -392,7 +392,7 @@ export default function ScopeFilteringDemoPage() {
               <ul style={{ marginTop: '12px', marginBottom: 0, paddingLeft: '20px' }}>
                 <li>User <strong>cấp Cục</strong>: Xem tất cả chứng cứ từ mọi tỉnh/thành phố</li>
                 <li>User <strong>cấp Chi cục</strong>: Chỉ xem chứng cứ từ tỉnh/thành phố quản lý</li>
-                <li>User <strong>cấp Đội</strong>: Chỉ xem chứng cứ từ quận/huyện quản lý</li>
+                <li>User <strong>cấp Đội</strong>: Chỉ xem chứng cứ từ Phường/Xã quản lý</li>
               </ul>
             </div>
           </div>

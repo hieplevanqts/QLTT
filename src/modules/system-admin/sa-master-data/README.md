@@ -73,7 +73,7 @@ Base path: `/system-admin/master-data`
 - Có trưởng phòng (headId)
 
 ### Jurisdiction (Địa bàn)
-- Phân loại: Tỉnh/TP, Quận/Huyện, Phường/Xã
+- Phân loại: Tỉnh/TP, Phường/Xã, Phường/Xã
 - Có ranh giới (boundary) dạng GeoJSON Polygon
 - Được quản lý bởi một OrgUnit
 

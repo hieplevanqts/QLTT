@@ -65,8 +65,8 @@ export default function EvidencePackageDetailPage() {
   // Mock data
   const packageData = {
     id: packageId || 'PKG-2026-042',
-    name: 'Gói chứng cứ vụ vi phạm ATTP Quận 1',
-    description: 'Tập hợp đầy đủ chứng cứ cho vụ vi phạm an toàn thực phẩm tại Quận 1, bao gồm hình ảnh hiện trường, video thanh tra và các tài liệu liên quan.',
+    name: 'Gói chứng cứ vụ vi phạm ATTP Phường 1',
+    description: 'Tập hợp đầy đủ chứng cứ cho vụ vi phạm an toàn thực phẩm tại Phường 1, bao gồm hình ảnh hiện trường, video thanh tra và các tài liệu liên quan.',
     linkedEntity: 'CASE-2026-048',
     entityType: 'Vụ việc',
     status: 'active',
@@ -84,7 +84,7 @@ export default function EvidencePackageDetailPage() {
       fileName: 'anh_vi_pham_ve_sinh_01.jpg',
       type: 'image',
       capturedAt: '10/01/2026 09:00',
-      location: 'Quận 1, TP.HCM',
+      location: 'Phường 1, Hà Nội',
       status: 'approved'
     },
     {
@@ -92,7 +92,7 @@ export default function EvidencePackageDetailPage() {
       fileName: 'anh_vi_pham_ve_sinh_02.jpg',
       type: 'image',
       capturedAt: '10/01/2026 09:15',
-      location: 'Quận 1, TP.HCM',
+      location: 'Phường 1, Hà Nội',
       status: 'approved'
     },
     {
@@ -100,7 +100,7 @@ export default function EvidencePackageDetailPage() {
       fileName: 'video_thanh_tra.mp4',
       type: 'video',
       capturedAt: '10/01/2026 08:00',
-      location: 'Quận 1, TP.HCM',
+      location: 'Phường 1, Hà Nội',
       status: 'sealed'
     },
     {
@@ -108,7 +108,7 @@ export default function EvidencePackageDetailPage() {
       fileName: 'bien_ban_kiem_tra.pdf',
       type: 'document',
       capturedAt: '09/01/2026 15:00',
-      location: 'Quận 1, TP.HCM',
+      location: 'Phường 1, Hà Nội',
       status: 'approved'
     }
   ];

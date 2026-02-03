@@ -229,19 +229,19 @@ export const mockInspectionTasks: InspectionTask[] = [
     updatedAt: '2025-01-22T15:00:00'
   },
 
-  // Tasks for ROUND-002 (Đợt kiểm tra thực phẩm Tết - TP.HCM)
+  // Tasks for ROUND-002 (Đợt kiểm tra thực phẩm Tết - Hà Nội)
   {
     id: 'TASK-006',
     code: 'NV-2025/006',
     roundId: 'ROUND-002',
-    roundName: 'Đợt kiểm tra thực phẩm Tết - TP.HCM',
+    roundName: 'Đợt kiểm tra thực phẩm Tết - Hà Nội',
     planId: 'KH-CD-ATVSTP-2025',
     planName: 'Chuyên đề An toàn vệ sinh thực phẩm Tết Nguyên Đán 2025',
     type: 'passive',
     title: 'Kiểm tra Chợ Bến Thành - 20/01/2025',
     description: 'Kiểm tra ATVS thực phẩm Tết tại chợ Bến Thành',
     targetName: 'Chợ Bến Thành',
-    targetAddress: 'Lê Lợi, Phường Bến Thành, Quận 1, TP.HCM',
+    targetAddress: 'Lê Lợi, Phường Bến Thành, Phường 1, Hà Nội',
     assignee: {
       id: 'U006',
       name: 'Nguyễn Thị Hương'
@@ -265,14 +265,14 @@ export const mockInspectionTasks: InspectionTask[] = [
     id: 'TASK-007',
     code: 'NV-2025/007',
     roundId: 'ROUND-002',
-    roundName: 'Đợt kiểm tra thực phẩm Tết - TP.HCM',
+    roundName: 'Đợt kiểm tra thực phẩm Tết - Hà Nội',
     planId: 'KH-CD-ATVSTP-2025',
     planName: 'Chuyên đề An toàn vệ sinh thực phẩm Tết Nguyên Đán 2025',
     type: 'passive',
     title: 'Kiểm tra Siêu thị CoopMart Nguyễn Đình Chiểu - 21/01/2025',
     description: 'Kiểm tra thực phẩm, bánh kẹo Tết',
     targetName: 'Siêu thị CoopMart Nguyễn Đình Chiểu',
-    targetAddress: '189B Nguyễn Đình Chiểu, Quận 3, TP.HCM',
+    targetAddress: '189B Nguyễn Đình Chiểu, Phường 3, Hà Nội',
     assignee: {
       id: 'U007',
       name: 'Trần Văn Đức'
@@ -456,14 +456,14 @@ export const mockInspectionTasks: InspectionTask[] = [
     id: 'TASK-014',
     code: 'NV-2025/014',
     roundId: 'ROUND-002',
-    roundName: 'Đợt kiểm tra thực phẩm Tết - TP.HCM',
+    roundName: 'Đợt kiểm tra thực phẩm Tết - Hà Nội',
     planId: 'KH-CD-ATVSTP-2025',
     planName: 'Chuyên đề An toàn vệ sinh thực phẩm Tết Nguyên Đán 2025',
     type: 'passive',
     title: 'Kiểm tra Cửa hàng bánh kẹo Kinh Đô - 28/12/2024',
     description: 'Đã hoàn thành và đóng hồ sơ',
     targetName: 'Cửa hàng bánh kẹo Kinh Đô',
-    targetAddress: '456 Nguyễn Văn Linh, Quận 7, TP.HCM',
+    targetAddress: '456 Nguyễn Văn Linh, Phường 7, Hà Nội',
     assignee: {
       id: 'U014',
       name: 'Trương Văn Khải'

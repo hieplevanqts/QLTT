@@ -159,7 +159,7 @@ export function DataExportPanel() {
             {stats.districts}
           </div>
           <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginTop: 'var(--spacing-1)' }}>
-            Quận/Huyện
+            Phường/Xã
           </div>
         </div>
 

@@ -22,7 +22,7 @@ type ViewMode = 'team' | 'individual' | 'tasks';
 const teamStats = [
   {
     teamId: 'team-24',
-    name: 'Đội 24 - TP.HCM số 4',
+    name: 'Đội 24 - Hà Nội số 4',
     members: 8,
     activeLeads: 45,
     capacity: 80,

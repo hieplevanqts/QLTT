@@ -190,17 +190,17 @@ export function EditStoreDialog({
                   <SelectValue placeholder="Chọn địa bàn" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Quận 1">Quận 1</SelectItem>
-                  <SelectItem value="Quận 2">Quận 2</SelectItem>
-                  <SelectItem value="Quận 3">Quận 3</SelectItem>
-                  <SelectItem value="Quận 4">Quận 4</SelectItem>
-                  <SelectItem value="Quận 5">Quận 5</SelectItem>
-                  <SelectItem value="Quận 6">Quận 6</SelectItem>
-                  <SelectItem value="Quận 7">Quận 7</SelectItem>
-                  <SelectItem value="Quận 8">Quận 8</SelectItem>
-                  <SelectItem value="Quận 10">Quận 10</SelectItem>
-                  <SelectItem value="Quận 11">Quận 11</SelectItem>
-                  <SelectItem value="Quận 12">Quận 12</SelectItem>
+                  <SelectItem value="Phường 1">Phường 1</SelectItem>
+                  <SelectItem value="Phường 2">Phường 2</SelectItem>
+                  <SelectItem value="Phường 3">Phường 3</SelectItem>
+                  <SelectItem value="Phường 4">Phường 4</SelectItem>
+                  <SelectItem value="Phường 5">Phường 5</SelectItem>
+                  <SelectItem value="Phường 6">Phường 6</SelectItem>
+                  <SelectItem value="Phường 7">Phường 7</SelectItem>
+                  <SelectItem value="Phường 8">Phường 8</SelectItem>
+                  <SelectItem value="Phường 10">Phường 10</SelectItem>
+                  <SelectItem value="Phường 11">Phường 11</SelectItem>
+                  <SelectItem value="Phường 12">Phường 12</SelectItem>
                 </SelectContent>
               </Select>
               {errors.jurisdiction && (

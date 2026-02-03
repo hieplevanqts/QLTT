@@ -176,7 +176,7 @@ export default function LeadDetailAIDemo() {
       extractedInfo: {
         behavior: 'Bán hàng giả, hàng nhái thương hiệu',
         subject: 'Mỹ phẩm các nhãn hiệu L\'Oreal, MAC, Innisfree',
-        location: '45 Phố Hàng Gai, Quận Hoàn Kiếm, Hà Nội',
+        location: '45 Phố Hàng Gai, Phường Hoàn Kiếm, Hà Nội',
         time: 'Mua hàng vào ngày 20/01/2025',
       },
       suggestedTags: [
@@ -251,7 +251,7 @@ export default function LeadDetailAIDemo() {
     reporter: {
       name: 'Nguyễn Thị Lan Anh',
       phone: '0912345678',
-      address: 'Quận Hoàn Kiếm, Hà Nội',
+      address: 'Phường Hoàn Kiếm, Hà Nội',
     },
     content: {
       text: 'Em mua mỹ phẩm ở cửa hàng 45 Hoàn Kiếm, nghi ngờ hàng giả vì giá rẻ hơn nhiều so với cửa hàng chính hãng. Em đã quét mã QR trên tem chống giả nhưng không có phản hồi. Nhân viên cửa hàng nói là hàng xách tay Hàn Quốc nên giá rẻ, nhưng em thấy bao bì in không sắc nét, màu sắc khác với hàng thật. Em có chụp ảnh và giữ hóa đơn.',

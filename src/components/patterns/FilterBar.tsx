@@ -49,10 +49,10 @@ export default function FilterBar({ onFilterChange, onReset }: FilterBarProps) {
             onChange={(e) => handleChange('jurisdiction', e.target.value)}
           >
             <option value="">Tất cả địa bàn</option>
-            <option value="q1">Quận 1</option>
-            <option value="q3">Quận 3</option>
-            <option value="q5">Quận 5</option>
-            <option value="q10">Quận 10</option>
+            <option value="q1">Phường 1</option>
+            <option value="q3">Phường 3</option>
+            <option value="q5">Phường 5</option>
+            <option value="q10">Phường 10</option>
           </select>
         </div>
 

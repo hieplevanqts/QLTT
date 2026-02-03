@@ -9,8 +9,8 @@ interface OperationalContextProps {
 }
 
 export default function OperationalContext({ 
-  unit = 'Chi cục QLTT Quận 1', 
-  jurisdiction = 'Quận 1',
+  unit = 'Chi cục QLTT Phường 1', 
+  jurisdiction = 'Phường 1',
   onEdit 
 }: OperationalContextProps) {
   return (

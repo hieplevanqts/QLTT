@@ -64,7 +64,7 @@
 TRIGGER: User uploads Giấy Phép Kinh Doanh
                     ↓
         OCR API extracts data including:
-        { address: "110A Ngô Quyền, Phường 8, Quận 5, TP.HCM, Việt Nam" }
+        { address: "110A Ngô Quyền, Phường 8, Phường 5, Hà Nội, Việt Nam" }
                     ↓
         Component stores address: setLastOcrAddress(extractedData.address)
         And resets flag: setSkipAddressMapping(false)
@@ -77,7 +77,7 @@ TRIGGER: User uploads Giấy Phép Kinh Doanh
         │ Output: {                                   │
         │   streetAddress: "110A Ngô Quyền",         │
         │   wardName: "Phường 8",                     │
-        │   provinceName: "TP.HCM",                   │
+        │   provinceName: "Hà Nội",                   │
         │   ...                                       │
         │ }                                           │
         └─────────────────────────────────────────────┘
@@ -85,7 +85,7 @@ TRIGGER: User uploads Giấy Phép Kinh Doanh
         ┌─────────────────────────────────────────────┐
         │ MATCHING PHASE                              │
         │ 1. Find province by name in database        │
-        │    → "TP.HCM" matches "Thành phố HCM"      │
+        │    → "Hà Nội" matches "Thành phố HCM"      │
         │ 2. Filter wards by province ID              │
         │ 3. Find ward by name                        │
         │    → "Phường 8" matches "Phường 8"         │
@@ -131,8 +131,8 @@ The system handles various Vietnamese naming conventions:
 // Prefix removal
 "Phường 8" → "phuong 8"
 "Xã Long Hải" → "long hai"
-"Quận 1" → "1"
-"Huyện Bàu Bàng" → "bau bang"
+"Phường 1" → "1"
+"Xã Bàu Bàng" → "bau bang"
 
 // Number variation handling
 "Phường 08" matches "Phường 8"
@@ -140,7 +140,7 @@ The system handles various Vietnamese naming conventions:
 Compares: parseInt("08") === parseInt("8") ✓
 
 // Fuzzy matching
-"Hoàn Kiếm" matches "Quận Hoàn Kiếm" (70%+ similarity + common words)
+"Hoàn Kiếm" matches "Phường Hoàn Kiếm" (70%+ similarity + common words)
 ```
 
 ### 2. Confidence Scoring System
@@ -188,7 +188,7 @@ __addressParserTests.runAllTests()
 1. **Open Add Store Dialog**
 2. **Upload test document with address:**
    ```
-   "110A Ngô Quyền, Phường 8, Quận 5, Thành phố Hồ Chí Minh, Việt Nam"
+   "110A Ngô Quyền, Phường 8, Phường 5, Thành phố Hồ Chí Minh, Việt Nam"
    ```
 3. **Verify auto-filled:**
    - Tỉnh/Thành phố: `Thành phố Hồ Chí Minh` ✓
@@ -315,13 +315,13 @@ useAddressAutoMapper({
 
 ```javascript
 // Test parser
-const address = "110A Ngô Quyền, Phường 8, Quận 5, TP.HCM, Việt Nam";
+const address = "110A Ngô Quyền, Phường 8, Phường 5, Hà Nội, Việt Nam";
 const parsed = __addressParserTests.parseVietnameseAddress(address);
 console.log(parsed);
 // Output: {
 //   streetAddress: "110A Ngô Quyền",
 //   wardName: "Phường 8",
-//   provinceNames: "TP.HCM",
+//   provinceNames: "Hà Nội",
 //   ...
 // }
 

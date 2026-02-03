@@ -27,11 +27,11 @@ export function generateMockEvidenceItems(count: number = 50): EvidenceItem[] {
   // Evidence 1: Photo - Approved - MULTIPLE FILES EXAMPLE
   const evidence1 = createEvidenceItem({
     evidenceId: 'EVD-2026-1250',
-    evidenceName: 'Vi phạm vệ sinh tại nhà hàng Quận 1',
+    evidenceName: 'Vi phạm vệ sinh tại nhà hàng Phường 1',
     type: 'PHOTO',
     status: 'Approved',
     scope: {
-      province: 'TP.HCM',
+      province: 'Hà Nội',
       ward: 'Phường Bến Nghé',
       unitId: 'UNIT-Q1-001'
     },
@@ -41,7 +41,7 @@ export function generateMockEvidenceItems(count: number = 50): EvidenceItem[] {
     location: {
       lat: 10.7769,
       lng: 106.7009,
-      addressText: '123 Đường Lê Lợi, Phường Bến Nghé, Quận 1, TP.HCM',
+      addressText: '123 Đường Lê Lợi, Phường Bến Nghé, Phường 1, Hà Nội',
       precision: 10,
       confidence: 0.95
     },
@@ -113,11 +113,11 @@ export function generateMockEvidenceItems(count: number = 50): EvidenceItem[] {
   // Evidence 2: Video - InReview
   const evidence2 = createEvidenceItem({
     evidenceId: 'EVD-2026-1251',
-    evidenceName: 'Quy trình chế biến thực phẩm tại nhà hàng Quận 3',
+    evidenceName: 'Quy trình chế biến thực phẩm tại nhà hàng Phường 3',
     type: 'VIDEO',
     status: 'InReview',
     scope: {
-      province: 'TP.HCM',
+      province: 'Hà Nội',
       ward: 'Phường 7',
       unitId: 'UNIT-Q3-002'
     },
@@ -127,7 +127,7 @@ export function generateMockEvidenceItems(count: number = 50): EvidenceItem[] {
     location: {
       lat: 10.7847,
       lng: 106.6884,
-      addressText: '456 Đường Nam Kỳ Khởi Nghĩa, Phường 7, Quận 3, TP.HCM',
+      addressText: '456 Đường Nam Kỳ Khởi Nghĩa, Phường 7, Phường 3, Hà Nội',
       precision: 15,
       confidence: 0.88
     },
@@ -172,7 +172,7 @@ export function generateMockEvidenceItems(count: number = 50): EvidenceItem[] {
     type: 'PDF',
     status: 'Sealed',
     scope: {
-      province: 'TP.HCM',
+      province: 'Hà Nội',
       ward: 'Phường 14',
       unitId: 'UNIT-Q5-003'
     },
@@ -182,7 +182,7 @@ export function generateMockEvidenceItems(count: number = 50): EvidenceItem[] {
     location: {
       lat: 10.7547,
       lng: 106.6662,
-      addressText: '789 Đường Trần Hưng Đạo, Phường 14, Quận 5, TP.HCM',
+      addressText: '789 Đường Trần Hưng Đạo, Phường 14, Phường 5, Hà Nội',
       precision: 0,
       confidence: 1.0
     },
@@ -229,7 +229,7 @@ export function generateMockEvidenceItems(count: number = 50): EvidenceItem[] {
     type: 'PHOTO',
     status: 'Submitted',
     scope: {
-      province: 'TP.HCM',
+      province: 'Hà Nội',
       ward: 'Phường Tân Định',
       unitId: 'UNIT-Q1-001'
     },
@@ -239,7 +239,7 @@ export function generateMockEvidenceItems(count: number = 50): EvidenceItem[] {
     location: {
       lat: 10.7923,
       lng: 106.6849,
-      addressText: '321 Đường Võ Văn Tần, Phường Tân Định, Quận 1, TP.HCM',
+      addressText: '321 Đường Võ Văn Tần, Phường Tân Định, Phường 1, Hà Nội',
       precision: 12,
       confidence: 0.92
     },
@@ -297,7 +297,7 @@ export function generateMockEvidenceItems(count: number = 50): EvidenceItem[] {
     type: 'DOC',
     status: 'Draft',
     scope: {
-      province: 'TP.HCM',
+      province: 'Hà Nội',
       ward: 'Phường 6',
       unitId: 'UNIT-Q3-002'
     },
@@ -307,7 +307,7 @@ export function generateMockEvidenceItems(count: number = 50): EvidenceItem[] {
     location: {
       lat: 10.7801,
       lng: 106.6928,
-      addressText: '654 Đường Điện Biên Phủ, Phường 6, Quận 3, TP.HCM',
+      addressText: '654 Đường Điện Biên Phủ, Phường 6, Phường 3, Hà Nội',
       precision: 0,
       confidence: 1.0
     },
@@ -339,7 +339,7 @@ export function generateMockEvidenceItems(count: number = 50): EvidenceItem[] {
     type: 'AUDIO',
     status: 'Approved',
     scope: {
-      province: 'TP.HCM',
+      province: 'Hà Nội',
       ward: 'Phường An Phú',
       unitId: 'UNIT-Q1-001'
     },
@@ -349,7 +349,7 @@ export function generateMockEvidenceItems(count: number = 50): EvidenceItem[] {
     location: {
       lat: 10.8032,
       lng: 106.7423,
-      addressText: '987 Đường Lương Định Của, Phường An Phú, Quận 2, TP.HCM',
+      addressText: '987 Đường Lương Định Của, Phường An Phú, Phường 2, Hà Nội',
       precision: 18,
       confidence: 0.85
     },
@@ -392,7 +392,7 @@ export function generateMockEvidenceItems(count: number = 50): EvidenceItem[] {
   // Generate additional 44 diverse evidence items programmatically
   const provinces = [
     { name: 'Hà Nội', wards: ['Phường Hàng Bài', 'Phường Ngọc Hà', 'Phường Hàng Bông', 'Phường Hàng Trống', 'Phường Nhân Chính', 'Phường Khương Thượng', 'Phường Quảng An', 'Phường Ngọc Lâm'] },
-    { name: 'TP.HCM', wards: ['Phường Thảo Điền', 'Phường 8', 'Phường 10', 'Phường Tân Thuận Đông', 'Phường 11', 'Phường 12', 'Phường 15', 'Phường 22', 'Phường 10 (Q.GV)', 'Phường 13 (Q.TB)', 'Phường 15 (Q.PN)', 'Phường Tân Sơn Nhì'] },
+    { name: 'TP. HCM', wards: ['Phường Thảo Điền', 'Phường 8', 'Phường 10', 'Phường Tân Thuận Đông', 'Phường 11', 'Phường 12', 'Phường 15', 'Phường 22', 'Phường 10 (Phường GV)', 'Phường 13 (Phường TB)', 'Phường 15 (Phường PN)', 'Phường Tân Sơn Nhì'] },
     { name: 'Đà Nẵng', wards: ['Phường Hòa Thuận Tây', 'Phường An Hải Bắc', 'Phường Thọ Quang', 'Phường Mỹ An', 'Phường Hòa Minh', 'Phường Khuê Trung'] },
     { name: 'Cần Thơ', wards: ['Phường Xuân Khánh', 'Phường Bình Thủy', 'Phường Lê Bình', 'Phường Long Hòa', 'Phường Thới An Đông'] },
     { name: 'Hải Phòng', wards: ['Phường Đông Khê', 'Phường Máy Chai', 'Phường Trại Cau', 'Phường Đông Hải', 'Phường Trần Nguyên Hãn', 'Phường Vạn Mỹ'] },
@@ -628,7 +628,7 @@ export function generateMockEvidencePackages(count: number = 10): EvidencePackag
       'UNIT-001',
       `USER-${String(i % 5).padStart(3, '0')}`,
       {
-        province: 'TP.HCM',
+        province: 'Hà Nội',
         ward: 'Phường Bến Nghé'
       }
     );

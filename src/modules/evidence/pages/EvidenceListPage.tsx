@@ -896,10 +896,10 @@ export default function EvidenceListPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tất cả địa bàn</SelectItem>
-                  <SelectItem value="Quận 1">Quận 1</SelectItem>
-                  <SelectItem value="Quận 3">Quận 3</SelectItem>
-                  <SelectItem value="Quận 5">Quận 5</SelectItem>
-                  <SelectItem value="Quận 7">Quận 7</SelectItem>
+                  <SelectItem value="Phường 1">Phường 1</SelectItem>
+                  <SelectItem value="Phường 3">Phường 3</SelectItem>
+                  <SelectItem value="Phường 5">Phường 5</SelectItem>
+                  <SelectItem value="Phường 7">Phường 7</SelectItem>
                 </SelectContent>
               </Select>
 

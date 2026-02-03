@@ -16,7 +16,7 @@ export const LOCATION_BOUNDS: Record<string, LocationBounds> = {
     center: [21.0278, 105.8342],
     bounds: [[20.90, 105.70], [21.15, 106.05]],
   },
-  'TP.HCM': {
+  'Hà Nội': {
     center: [10.7769, 106.7009],
     bounds: [[10.65, 106.50], [10.90, 106.90]],
   },
