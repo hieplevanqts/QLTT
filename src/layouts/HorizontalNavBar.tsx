@@ -301,7 +301,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
   };
 
   return (
-    <>
+    <div className="mappa-topnav">
       {/* Desktop Navigation */}
       <nav className="hidden md:flex h-14 bg-card border-b border-border items-center px-6 gap-1">
         {/* Main MAPPA Modules */}
@@ -832,7 +832,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
 

@@ -6,6 +6,7 @@ import HorizontalNavBar from './HorizontalNavBar';
 import VerticalSidebar from './VerticalSidebar';
 import { cn } from '@/components/ui/utils';
 import AppFooter from '@/components/layout/AppFooter';
+import GlobalChatDrawer from '@/ai/GlobalChatDrawer';
 
 // Inline page loader for route transitions
 function InlinePageLoader() {
@@ -86,6 +87,7 @@ export default function MainLayout() {
           </div>
         </>
       )}
+      <GlobalChatDrawer />
     </div>
   );
 }

@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useEffect } from "react";
-import { Segmented, Typography, Spin } from "antd";
+import React, { useMemo, useRef, useState, useEffect } from "react";
+import { Segmented, Typography, Spin, Select, Tag, Checkbox, Button, Divider, theme } from "antd";
 import {
   BarChart,
   Bar,
@@ -7,7 +7,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
 
@@ -44,36 +43,54 @@ const WARDS = [
   "Phường Hàng Đào",
 ];
 
-const VIOLATION_SERIES = [
-  "ATTP",
-  "Hàng giả",
-  "Gian lận giá",
-  "Quảng cáo sai",
-  "Dược phẩm",
-  "Điện tử",
-  "Mỹ phẩm",
-];
+const SERIES_MAP = {
+  violation_category: [
+    "An toàn thực phẩm",
+    "Nguồn gốc",
+    "Giá cả",
+    "Quảng cáo",
+    "Hàng giả",
+    "Gian lận",
+    "Dược phẩm",
+    "Mỹ phẩm",
+    "Điện tử",
+  ],
+  industry: [
+    "An ninh & Bảo vệ",
+    "Ăn uống",
+    "Bảo hiểm",
+    "Bar & Pub",
+    "Bất động sản",
+    "Cafe & Trà",
+    "Cắm trại & Dã ngoại",
+    "Cửa hàng Đồ chơi",
+    "Điện tử",
+    "Dược phẩm",
+    "Mỹ phẩm",
+    "Thời trang",
+  ],
+} as const;
 
-const INDUSTRY_SERIES = [
-  "Ăn uống",
-  "Mỹ phẩm",
-  "Bảo hiểm",
-  "Đồ chơi",
-  "Điện tử",
-  "Dược phẩm",
-  "Thời trang",
-];
-
-const SERIES_COLORS = [
-  "#3b82f6",
-  "#22c55e",
-  "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-  "#06b6d4",
-  "#f97316",
-  "#10b981",
-];
+const SERIES_COLORS: Record<string, string> = {
+  "An toàn thực phẩm": "#1677ff",
+  "Nguồn gốc": "#52c41a",
+  "Giá cả": "#faad14",
+  "Quảng cáo": "#f5222d",
+  "Hàng giả": "#722ed1",
+  "Gian lận": "#13c2c2",
+  "Dược phẩm": "#fa541c",
+  "Mỹ phẩm": "#2f54eb",
+  "Điện tử": "#a0d911",
+  "An ninh & Bảo vệ": "#1677ff",
+  "Ăn uống": "#52c41a",
+  "Bảo hiểm": "#faad14",
+  "Bar & Pub": "#f5222d",
+  "Bất động sản": "#722ed1",
+  "Cafe & Trà": "#13c2c2",
+  "Cắm trại & Dã ngoại": "#fa541c",
+  "Cửa hàng Đồ chơi": "#2f54eb",
+  "Thời trang": "#a0d911",
+};
 
 function mulberry32(seed: number) {
   let t = seed >>> 0;
@@ -90,7 +107,7 @@ function generateMockData(seriesList: string[], seed: number): LongDatum[] {
   const data: LongDatum[] = [];
 
   WARDS.forEach((ward) => {
-    let total = Math.floor(rand() * 26);
+    let total = 3 + Math.floor(rand() * 23);
     if (rand() < 0.2) {
       total = Math.floor(rand() * 4);
     }
@@ -155,7 +172,9 @@ type StackedRow = { ward: string } & Record<string, number>;
 
 function toStackedData(data: LongDatum[], seriesList: string[]) {
   const map = new Map<string, StackedRow>();
+  const allowed = new Set(seriesList);
   data.forEach((item) => {
+    if (!allowed.has(item.series)) return;
     if (!map.has(item.ward)) {
       const row: StackedRow = { ward: item.ward } as StackedRow;
       seriesList.forEach((s) => {
@@ -168,52 +187,75 @@ function toStackedData(data: LongDatum[], seriesList: string[]) {
   });
 
   const rows = Array.from(map.values());
-  const withTotals = rows.map((row) => ({
-    ...row,
-    __total: seriesList.reduce((sum, s) => sum + (row[s] || 0), 0),
-  }));
+  const withTotals = rows
+    .map((row) => ({
+      ...row,
+      __total: seriesList.reduce((sum, s) => sum + (row[s] || 0), 0),
+    }))
+    .filter((row) => (row.__total || 0) > 0);
 
   withTotals.sort((a, b) => (b.__total || 0) - (a.__total || 0));
   return withTotals;
 }
 
 export default function RiskByWardMockChart() {
+  const { token } = theme.useToken();
   const [mode, setMode] = useState<Mode>("violation_category");
+  const [selectedSeries, setSelectedSeries] = useState<string[]>(
+    () => [...SERIES_MAP.violation_category]
+  );
   const [loading, setLoading] = useState(false);
+  const didMount = useRef(false);
 
-  const violationData = useMemo(
-    () => generateMockData(VIOLATION_SERIES, 20260203),
+  const dataByMode = useMemo(
+    () => ({
+      violation_category: generateMockData(SERIES_MAP.violation_category, 20260203),
+      industry: generateMockData(SERIES_MAP.industry, 20260213),
+    }),
     []
   );
-  const industryData = useMemo(
-    () => generateMockData(INDUSTRY_SERIES, 20260213),
-    []
-  );
 
-  const currentSeries = mode === "violation_category" ? VIOLATION_SERIES : INDUSTRY_SERIES;
-  const currentData = mode === "violation_category" ? violationData : industryData;
-  const stackedData = useMemo(
-    () => toStackedData(currentData, currentSeries),
-    [currentData, currentSeries]
+  const currentSeries = SERIES_MAP[mode];
+  const currentData = dataByMode[mode];
+  const selectedSet = useMemo(() => new Set(selectedSeries), [selectedSeries]);
+  const filteredSeries = useMemo(
+    () => currentSeries.filter((series) => selectedSet.has(series)),
+    [currentSeries, selectedSet]
   );
+  const stackedData = useMemo(() => {
+    if (filteredSeries.length === 0) return [];
+    return toStackedData(currentData, filteredSeries);
+  }, [currentData, filteredSeries]);
 
   useEffect(() => {
-    return () => {
-      setLoading(false);
-    };
-  }, []);
+    if (!didMount.current) {
+      didMount.current = true;
+      return;
+    }
+    setLoading(true);
+    const timer = setTimeout(() => setLoading(false), 250);
+    return () => clearTimeout(timer);
+  }, [mode, selectedSeries]);
 
   const handleModeChange = (value: Mode) => {
     if (value === mode) return;
-    setLoading(true);
-    setTimeout(() => {
-      setMode(value);
-      setLoading(false);
-    }, 300);
+    setMode(value);
+    setSelectedSeries([...SERIES_MAP[value]]);
+  };
+
+  const options = useMemo(
+    () => currentSeries.map((series) => ({ label: series, value: series })),
+    [currentSeries]
+  );
+  const allSelected = selectedSeries.length === currentSeries.length;
+  const toggleSelectAll = () => {
+    setSelectedSeries(allSelected ? [] : [...currentSeries]);
   };
 
   const rowHeight = 26;
   const chartHeight = Math.max(320, stackedData.length * rowHeight + 80);
+  const minWidth = 320;
+  const getSeriesColor = (series: string) => SERIES_COLORS[series] || token.colorPrimary;
 
   return (
     <div
@@ -242,18 +284,83 @@ export default function RiskByWardMockChart() {
             Thống kê theo phường (mặc định: Hà Nội)
           </Text>
         </div>
-        <Segmented
-          size="small"
-          value={mode}
-          onChange={(value) => handleModeChange(value as Mode)}
-          options={[
-            { label: "Danh mục vi phạm", value: "violation_category" },
-            { label: "Ngành hàng", value: "industry" },
-          ]}
-        />
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <Segmented
+            size="small"
+            value={mode}
+            onChange={(value) => handleModeChange(value as Mode)}
+            options={[
+              { label: "Danh mục vi phạm", value: "violation_category" },
+              { label: "Ngành hàng", value: "industry" },
+            ]}
+          />
+          <Select
+            mode="multiple"
+            value={selectedSeries}
+            onChange={(values) => setSelectedSeries(values as string[])}
+            options={options}
+            placeholder="Chọn nhóm hiển thị"
+            maxTagCount="responsive"
+            maxTagPlaceholder={(omitted) =>
+              allSelected ? "Tất cả" : `+${omitted.length}`
+            }
+            style={{ minWidth }}
+            optionFilterProp="label"
+            showSearch
+            dropdownRender={(menu) => (
+              <div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "6px 10px",
+                  }}
+                >
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    Chọn nhóm hiển thị
+                  </Text>
+                  <Button
+                    type="link"
+                    size="small"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={toggleSelectAll}
+                    style={{ padding: 0 }}
+                  >
+                    {allSelected ? "Bỏ chọn" : "Chọn tất cả"}
+                  </Button>
+                </div>
+                <Divider style={{ margin: 0 }} />
+                {menu}
+              </div>
+            )}
+            optionRender={(option) => (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Checkbox checked={selectedSet.has(option.value as string)} />
+                <Tag color={getSeriesColor(option.value as string)} style={{ marginInlineEnd: 0 }}>
+                  {option.label}
+                </Tag>
+              </div>
+            )}
+            tagRender={(props) => {
+              const { label, value, closable, onClose } = props;
+              const color = getSeriesColor(String(value));
+              return (
+                <Tag
+                  color={color}
+                  closable={closable}
+                  onClose={onClose}
+                  style={{ marginInlineEnd: 4 }}
+                >
+                  {label}
+                </Tag>
+              );
+            }}
+          />
+        </div>
       </div>
 
-      <div style={{ maxHeight: 400, overflowY: "auto" }}>
+      <div style={{ maxHeight: 420, overflowY: "auto" }}>
         <div style={{ height: chartHeight, minHeight: 320 }}>
           {loading ? (
             <div
@@ -265,6 +372,19 @@ export default function RiskByWardMockChart() {
               }}
             >
               <Spin size="small" />
+            </div>
+          ) : filteredSeries.length === 0 ? (
+            <div
+              style={{
+                height: chartHeight,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: token.colorTextSecondary,
+                fontSize: 12,
+              }}
+            >
+              Chưa chọn nhóm hiển thị
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
@@ -282,13 +402,12 @@ export default function RiskByWardMockChart() {
                   tick={{ fontSize: 12 }}
                 />
                 <Tooltip />
-                <Legend verticalAlign="top" align="left" />
-                {currentSeries.map((series, idx) => (
+                {filteredSeries.map((series) => (
                   <Bar
                     key={series}
                     dataKey={series}
                     stackId="total"
-                    fill={SERIES_COLORS[idx % SERIES_COLORS.length]}
+                    fill={getSeriesColor(series)}
                     radius={[0, 4, 4, 0]}
                   />
                 ))}

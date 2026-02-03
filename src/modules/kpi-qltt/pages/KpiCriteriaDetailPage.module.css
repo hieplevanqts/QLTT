@@ -1,0 +1,82 @@
+.page {
+  padding: var(--spacing-2xl);
+  background: var(--background);
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.breadcrumb {
+  font-size: 12px;
+}
+
+.subtitle {
+  color: var(--muted-foreground);
+  font-size: var(--text-sm);
+}
+
+.actionGroup {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.kpiGrid {
+  margin-bottom: 16px;
+}
+
+.kpiCard {
+  height: 100%;
+}
+
+.kpiHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kpiTitle {
+  font-size: 13px;
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+
+.sectionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.sectionCard {
+  height: 100%;
+}
+
+@media (max-width: 1024px) {
+  .sectionGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: var(--spacing-lg);
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

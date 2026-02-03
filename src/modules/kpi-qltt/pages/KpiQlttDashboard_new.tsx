@@ -27,6 +27,14 @@ import { MarketAnalysisSections } from '../components/MarketAnalysisSections';
 import InspectionDashboard from './InspectionDashboard';
 import RiskDashboard from './RiskDashboard';
 import FeedbackDashboard from './FeedbackDashboard';
+import GeoUnitTreeSelect from '@/modules/kpi/components/GeoUnitTreeSelect';
+import {
+  applyGeoSeries,
+  applyGeoValue,
+  buildKpiDashboardMock,
+  formatGeoSelection,
+  type GeoMockContext,
+} from '@/modules/kpi/mocks/kpiDashboard.mock';
 import { 
   InspectionFilterPopup, 
   RiskFilterPopup, 
@@ -185,8 +193,19 @@ export default function KpiQlttDashboard() {
   const [timeRange, setTimeRange] = useState<TimeRange>('30');
   const [activeTab, setActiveTab] = useState<TabValue>('market');
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedGeoUnits, setSelectedGeoUnits] = useState<string[]>([]);
   const filterButtonRef = useRef<HTMLButtonElement>(null);
   const filterPopupRef = useRef<HTMLDivElement>(null);
+
+  const rangeKey = timeRange === '7' ? '7d' : timeRange === '30' ? '30d' : '90d';
+  const geoContext = useMemo(
+    () => buildKpiDashboardMock({ geoUnits: selectedGeoUnits, range: rangeKey }),
+    [selectedGeoUnits, rangeKey],
+  );
+  const geoLabel = useMemo(
+    () => formatGeoSelection(selectedGeoUnits),
+    [selectedGeoUnits],
+  );
 
   // Filter States for each tab
   const [marketFilters, setMarketFilters] = useState<MarketFilters>({
@@ -386,9 +405,15 @@ export default function KpiQlttDashboard() {
         <div>
           <h1 className={styles.pageTitle}>Dashboard KPI QLTT</h1>
           <p className={styles.pageSubtitle}>Tổng hợp chỉ số hiệu suất quản lý thị trường</p>
+          <p className={styles.pageMeta}>Địa bàn: {geoLabel}</p>
         </div>
         
         <div className={styles.timeFilter}>
+          <GeoUnitTreeSelect
+            value={selectedGeoUnits}
+            onChange={setSelectedGeoUnits}
+            width={360}
+          />
           <Button
             variant={timeRange === '7' ? 'default' : 'outline'}
             size="sm"
@@ -527,18 +552,32 @@ export default function KpiQlttDashboard() {
       </div>
 
       {/* Tab Content */}
-      {activeTab === 'market' && <MarketDashboard timeRange={timeRange} filters={marketFilters} />}
-      {activeTab === 'tasks' && <TasksDashboard timeRange={timeRange} filters={tasksFilters} />}
-      {activeTab === 'teams' && <TeamsDashboard timeRange={timeRange} filters={teamsFilters} />}
-      {activeTab === 'inspection' && <InspectionDashboard timeRange={timeRange} />}
-      {activeTab === 'risk' && <RiskDashboard timeRange={timeRange} />}
-      {activeTab === 'feedback' && <FeedbackDashboard timeRange={timeRange} />}
+      {activeTab === 'market' && (
+        <MarketDashboard timeRange={timeRange} filters={marketFilters} geoContext={geoContext} />
+      )}
+      {activeTab === 'tasks' && (
+        <TasksDashboard timeRange={timeRange} filters={tasksFilters} geoContext={geoContext} />
+      )}
+      {activeTab === 'teams' && (
+        <TeamsDashboard timeRange={timeRange} filters={teamsFilters} geoContext={geoContext} />
+      )}
+      {activeTab === 'inspection' && <InspectionDashboard timeRange={timeRange} geoContext={geoContext} />}
+      {activeTab === 'risk' && <RiskDashboard timeRange={timeRange} geoContext={geoContext} />}
+      {activeTab === 'feedback' && <FeedbackDashboard timeRange={timeRange} geoContext={geoContext} />}
     </div>
   );
 }
 
 // Tab 1: Market Dashboard Component
-function MarketDashboard({ timeRange, filters }: { timeRange: TimeRange; filters: MarketFilters }) {
+function MarketDashboard({
+  timeRange,
+  filters,
+  geoContext,
+}: {
+  timeRange: TimeRange;
+  filters: MarketFilters;
+  geoContext: GeoMockContext;
+}) {
   // Filter stores based on active filters
   const filteredStores = useMemo(() => {
     let stores = [...RAW_STORES];
@@ -570,8 +609,13 @@ function MarketDashboard({ timeRange, filters }: { timeRange: TimeRange; filters
   const totalStores = filteredStores.length;
   const totalArea = filteredStores.reduce((sum, store) => sum + store.area, 0);
   const totalRevenue = filteredStores.reduce((sum, store) => sum + store.revenue, 0);
-  const avgArea = totalStores > 0 ? (totalArea / totalStores).toFixed(1) : '0';
-  const avgRevenue = totalStores > 0 ? (totalRevenue / totalStores).toFixed(1) : '0';
+  const scaledTotalStores = applyGeoValue(totalStores, geoContext, 'count');
+  const scaledTotalArea = applyGeoValue(totalArea, geoContext, 'amount', { decimals: 0 });
+  const scaledTotalRevenue = applyGeoValue(totalRevenue, geoContext, 'amount', { decimals: 1 });
+  const scaledPopulation = applyGeoValue(1245678, geoContext, 'count');
+  const scaledPopulationDensity = applyGeoValue(12456, geoContext, 'amount', { decimals: 0 });
+  const avgArea = scaledTotalStores > 0 ? (scaledTotalArea / scaledTotalStores).toFixed(1) : '0';
+  const avgRevenue = scaledTotalStores > 0 ? (scaledTotalRevenue / scaledTotalStores).toFixed(1) : '0';
 
   // Calculate store distribution by industry
   const storeDistribution = useMemo(() => {
@@ -589,6 +633,11 @@ function MarketDashboard({ timeRange, filters }: { timeRange: TimeRange; filters
     }));
   }, [filteredStores]);
 
+  const scaledStoreDistribution = useMemo(
+    () => applyGeoSeries(storeDistribution, geoContext, [{ key: 'value', kind: 'count' }]),
+    [storeDistribution, geoContext],
+  );
+
   // Calculate revenue by district
   const revenueByDistrict = useMemo(() => {
     const districtRevenue: { [key: string]: number } = {};
@@ -601,6 +650,11 @@ function MarketDashboard({ timeRange, filters }: { timeRange: TimeRange; filters
       .sort((a, b) => a.district.localeCompare(b.district));
   }, [filteredStores]);
 
+  const scaledRevenueByDistrict = useMemo(
+    () => applyGeoSeries(revenueByDistrict, geoContext, [{ key: 'revenue', kind: 'amount', decimals: 1 }]),
+    [revenueByDistrict, geoContext],
+  );
+
   return (
     <div className={styles.tabContent}>
       {/* KPI Section 1: Chỉ số dân cư & cửa hàng */}
@@ -610,7 +664,7 @@ function MarketDashboard({ timeRange, filters }: { timeRange: TimeRange; filters
       <div className={styles.kpiGridCompact}>
         <KpiCard
           title="Tổng dân số địa bàn"
-          value="1.245.678"
+          value={scaledPopulation.toLocaleString()}
           unit="người"
           icon={<Users className="w-5 h-5" />}
           trend={2.3}
@@ -618,7 +672,7 @@ function MarketDashboard({ timeRange, filters }: { timeRange: TimeRange; filters
         
         <KpiCard
           title="Mật độ dân cư"
-          value="12.456"
+          value={scaledPopulationDensity.toLocaleString()}
           unit="người/km²"
           icon={<Target className="w-5 h-5" />}
           trend={1.8}
@@ -626,7 +680,7 @@ function MarketDashboard({ timeRange, filters }: { timeRange: TimeRange; filters
         
         <KpiCard
           title="Tổng số cửa hàng"
-          value={totalStores.toString()}
+          value={scaledTotalStores.toString()}
           unit="cửa hàng"
           icon={<Store className="w-5 h-5" />}
           trend={5.2}
@@ -635,7 +689,7 @@ function MarketDashboard({ timeRange, filters }: { timeRange: TimeRange; filters
         
         <KpiCard
           title="Mật độ cửa hàng"
-          value={(totalStores / 1245.678).toFixed(2)}
+          value={scaledPopulation > 0 ? (scaledTotalStores / (scaledPopulation / 1000)).toFixed(2) : '0'}
           unit="/ 1,000 dân"
           icon={<Target className="w-5 h-5" />}
         />
@@ -648,7 +702,7 @@ function MarketDashboard({ timeRange, filters }: { timeRange: TimeRange; filters
       <div className={styles.kpiGridCompact}>
         <KpiCard
           title="Tổng diện tích kinh doanh"
-          value={totalArea.toLocaleString()}
+          value={scaledTotalArea.toLocaleString()}
           unit="m²"
           icon={<Store className="w-5 h-5" />}
           trend={3.4}
@@ -665,7 +719,7 @@ function MarketDashboard({ timeRange, filters }: { timeRange: TimeRange; filters
         
         <KpiCard
           title="Tổng doanh thu khai báo"
-          value={(totalRevenue / 1000).toFixed(1)}
+          value={(scaledTotalRevenue / 1000).toFixed(1)}
           unit="tỷ đồng"
           icon={<DollarSign className="w-5 h-5" />}
           trend={8.5}
@@ -687,11 +741,11 @@ function MarketDashboard({ timeRange, filters }: { timeRange: TimeRange; filters
         {/* Store Distribution by Industry */}
         <div className={styles.chartCard}>
           <h3 className={styles.chartTitle}>Phân bố cửa hàng theo ngành</h3>
-          {storeDistribution.length > 0 ? (
+          {scaledStoreDistribution.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={storeDistribution}
+                  data={scaledStoreDistribution}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -700,7 +754,7 @@ function MarketDashboard({ timeRange, filters }: { timeRange: TimeRange; filters
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {storeDistribution.map((entry, index) => (
+                  {scaledStoreDistribution.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -715,9 +769,9 @@ function MarketDashboard({ timeRange, filters }: { timeRange: TimeRange; filters
         {/* Revenue by District */}
         <div className={styles.chartCard}>
           <h3 className={styles.chartTitle}>Doanh thu theo địa bàn (tỷ đồng)</h3>
-          {revenueByDistrict.length > 0 ? (
+          {scaledRevenueByDistrict.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={revenueByDistrict}>
+              <BarChart data={scaledRevenueByDistrict}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis dataKey="district" stroke="var(--muted-foreground)" />
                 <YAxis stroke="var(--muted-foreground)" />
@@ -752,7 +806,15 @@ function MarketDashboard({ timeRange, filters }: { timeRange: TimeRange; filters
 }
 
 // Tab 2: Tasks Dashboard Component
-function TasksDashboard({ timeRange, filters }: { timeRange: TimeRange; filters: TasksFilters }) {
+function TasksDashboard({
+  timeRange,
+  filters,
+  geoContext,
+}: {
+  timeRange: TimeRange;
+  filters: TasksFilters;
+  geoContext: GeoMockContext;
+}) {
   // Filter tasks based on active filters
   const filteredTasks = useMemo(() => {
     let tasks = [...RAW_TASKS];
@@ -781,6 +843,11 @@ function TasksDashboard({ timeRange, filters }: { timeRange: TimeRange; filters:
   const tasksOverdue = filteredTasks.filter(t => t.status === 'Quá hạn').length;
   const totalFines = filteredTasks.reduce((sum, t) => sum + t.fine, 0);
 
+  const scaledTasksInProgress = applyGeoValue(tasksInProgress, geoContext, 'count', { min: 0 });
+  const scaledTasksCompleted = applyGeoValue(tasksCompleted, geoContext, 'count', { min: 0 });
+  const scaledTasksOverdue = applyGeoValue(tasksOverdue, geoContext, 'count', { min: 0 });
+  const scaledTotalFines = applyGeoValue(totalFines, geoContext, 'amount', { decimals: 1, min: 0 });
+
   // Calculate task status distribution
   const taskStatusData = useMemo(() => {
     const statusCount: { [key: string]: number } = {};
@@ -795,12 +862,13 @@ function TasksDashboard({ timeRange, filters }: { timeRange: TimeRange; filters:
       'Quá hạn': '#f94144',
     };
     
-    return Object.entries(statusCount).map(([name, value]) => ({
+    const base = Object.entries(statusCount).map(([name, value]) => ({
       name,
       value,
       color: statusColors[name] || '#695cfb'
     }));
-  }, [filteredTasks]);
+    return applyGeoSeries(base, geoContext, [{ key: 'value', kind: 'count', min: 0 }]);
+  }, [filteredTasks, geoContext]);
 
   // Calculate task aging data
   const taskAgingData = useMemo(() => {
@@ -818,13 +886,18 @@ function TasksDashboard({ timeRange, filters }: { timeRange: TimeRange; filters:
       else agingGroups['> 15 ngày']++;
     });
     
-    return [
+    const base = [
       { period: '≤ 3 ngày', count: agingGroups['≤ 3 ngày'], color: '#0fc87a' },
       { period: '4-7 ngày', count: agingGroups['4-7 ngày'], color: '#f7a23b' },
       { period: '8-15 ngày', count: agingGroups['8-15 ngày'], color: '#f94144' },
       { period: '> 15 ngày', count: agingGroups['> 15 ngày'], color: '#f94144' },
     ];
-  }, [filteredTasks]);
+    return applyGeoSeries(base, geoContext, [{ key: 'count', kind: 'count', min: 0 }]);
+  }, [filteredTasks, geoContext]);
+
+  const avgProcessDays = applyGeoValue(3.5, geoContext, 'duration', { decimals: 1, min: 1 });
+  const onTimeRate = applyGeoValue(91.2, geoContext, 'rate', { decimals: 1, min: 60, max: 100 });
+  const overdueRate = applyGeoValue(5.0, geoContext, 'rate', { decimals: 1, min: 0, max: 40 });
 
   return (
     <div className={styles.tabContent}>
@@ -832,7 +905,7 @@ function TasksDashboard({ timeRange, filters }: { timeRange: TimeRange; filters:
       <div className={styles.kpiGrid}>
         <KpiCard
           title="Nhiệm vụ đang xử lý"
-          value={tasksInProgress.toString()}
+          value={scaledTasksInProgress.toString()}
           unit="nhiệm vụ"
           icon={<Clock className="w-5 h-5" />}
           trend={-5.2}
@@ -841,7 +914,7 @@ function TasksDashboard({ timeRange, filters }: { timeRange: TimeRange; filters:
         
         <KpiCard
           title="Nhiệm vụ hoàn thành"
-          value={tasksCompleted.toString()}
+          value={scaledTasksCompleted.toString()}
           unit="nhiệm vụ"
           icon={<CheckCircle className="w-5 h-5" />}
           trend={12.8}
@@ -850,7 +923,7 @@ function TasksDashboard({ timeRange, filters }: { timeRange: TimeRange; filters:
         
         <KpiCard
           title="Nhiệm vụ quá hạn"
-          value={tasksOverdue.toString()}
+          value={scaledTasksOverdue.toString()}
           unit="nhiệm vụ"
           icon={<AlertCircle className="w-5 h-5" />}
           trend={-15.4}
@@ -859,7 +932,7 @@ function TasksDashboard({ timeRange, filters }: { timeRange: TimeRange; filters:
         
         <KpiCard
           title="Tổng số tiền phạt"
-          value={totalFines.toFixed(1)}
+          value={scaledTotalFines.toFixed(1)}
           unit="triệu đồng"
           icon={<DollarSign className="w-5 h-5" />}
           trend={18.3}
@@ -956,7 +1029,7 @@ function TasksDashboard({ timeRange, filters }: { timeRange: TimeRange; filters:
             <FileCheck className="w-5 h-5" style={{ color: 'var(--primary)' }} />
             <div className={styles.progressContent}>
               <span className={styles.progressLabel}>Thời gian xử lý trung bình</span>
-              <span className={styles.progressValue}>3.5 ngày</span>
+              <span className={styles.progressValue}>{avgProcessDays} ngày</span>
             </div>
           </div>
           
@@ -964,7 +1037,7 @@ function TasksDashboard({ timeRange, filters }: { timeRange: TimeRange; filters:
             <CheckCircle className="w-5 h-5" style={{ color: '#0fc87a' }} />
             <div className={styles.progressContent}>
               <span className={styles.progressLabel}>Tỷ lệ hoàn thành đúng hạn</span>
-              <span className={styles.progressValue}>91.2%</span>
+              <span className={styles.progressValue}>{onTimeRate}%</span>
             </div>
           </div>
           
@@ -972,7 +1045,7 @@ function TasksDashboard({ timeRange, filters }: { timeRange: TimeRange; filters:
             <AlertCircle className="w-5 h-5" style={{ color: '#f94144' }} />
             <div className={styles.progressContent}>
               <span className={styles.progressLabel}>Tỷ lệ nhiệm vụ quá hạn</span>
-              <span className={styles.progressValue}>5.0%</span>
+              <span className={styles.progressValue}>{overdueRate}%</span>
             </div>
           </div>
         </div>
@@ -982,7 +1055,15 @@ function TasksDashboard({ timeRange, filters }: { timeRange: TimeRange; filters:
 }
 
 // Tab 3: Teams Dashboard Component
-function TeamsDashboard({ timeRange, filters }: { timeRange: TimeRange; filters: TeamsFilters }) {
+function TeamsDashboard({
+  timeRange,
+  filters,
+  geoContext,
+}: {
+  timeRange: TimeRange;
+  filters: TeamsFilters;
+  geoContext: GeoMockContext;
+}) {
   // Filter teams based on active filters
   const filteredTeams = useMemo(() => {
     let teams = [...RAW_TEAMS];
@@ -1014,11 +1095,35 @@ function TeamsDashboard({ timeRange, filters }: { timeRange: TimeRange; filters:
     return teams;
   }, [filters]);
 
-  // Calculate KPIs from filtered data
-  const totalTeams = filteredTeams.length;
-  const avgTasks = totalTeams > 0 ? (filteredTeams.reduce((sum, t) => sum + t.tasks, 0) / totalTeams).toFixed(1) : '0';
-  const avgPerformance = totalTeams > 0 ? (filteredTeams.reduce((sum, t) => sum + t.completionRate, 0) / totalTeams).toFixed(1) : '0';
-  const avgTime = totalTeams > 0 ? (filteredTeams.reduce((sum, t) => sum + t.avgTime, 0) / totalTeams).toFixed(1) : '0';
+  const scaledTeams = useMemo(() => {
+    return filteredTeams.map((team) => {
+      const tasks = applyGeoValue(team.tasks, geoContext, 'count', { min: 0 });
+      const completedRaw = applyGeoValue(team.completed, geoContext, 'count', { min: 0 });
+      const completed = Math.min(tasks, completedRaw);
+      const avgTime = applyGeoValue(team.avgTime, geoContext, 'duration', { decimals: 1, min: 1, max: 10 });
+      const overdueRate = applyGeoValue(team.overdueRate, geoContext, 'rate', { decimals: 1, min: 0, max: 100 });
+      const violations = applyGeoValue(team.violations, geoContext, 'count', { min: 0 });
+      const fines = applyGeoValue(team.fines, geoContext, 'amount', { decimals: 1, min: 0 });
+      const completionRate = tasks > 0 ? parseFloat(((completed / tasks) * 100).toFixed(1)) : 0;
+
+      return {
+        ...team,
+        tasks,
+        completed,
+        completionRate,
+        avgTime,
+        overdueRate,
+        violations,
+        fines,
+      };
+    });
+  }, [filteredTeams, geoContext]);
+
+  // Calculate KPIs from scaled data
+  const totalTeams = scaledTeams.length;
+  const avgTasks = totalTeams > 0 ? (scaledTeams.reduce((sum, t) => sum + t.tasks, 0) / totalTeams).toFixed(1) : '0';
+  const avgPerformance = totalTeams > 0 ? (scaledTeams.reduce((sum, t) => sum + t.completionRate, 0) / totalTeams).toFixed(1) : '0';
+  const avgTime = totalTeams > 0 ? (scaledTeams.reduce((sum, t) => sum + t.avgTime, 0) / totalTeams).toFixed(1) : '0';
 
   return (
     <div className={styles.tabContent}>
@@ -1061,7 +1166,7 @@ function TeamsDashboard({ timeRange, filters }: { timeRange: TimeRange; filters:
       {/* Team Performance Table */}
       <div className={styles.chartCard}>
         <h3 className={styles.chartTitle}>So sánh hiệu suất giữa các đội</h3>
-        {filteredTeams.length > 0 ? (
+        {scaledTeams.length > 0 ? (
           <div className={styles.tableContainer}>
             <table className={styles.performanceTable}>
               <thead>
@@ -1076,7 +1181,7 @@ function TeamsDashboard({ timeRange, filters }: { timeRange: TimeRange; filters:
                 </tr>
               </thead>
               <tbody>
-                {filteredTeams.map((team, index) => {
+                {scaledTeams.map((team, index) => {
                   const isOverloaded = team.overdueRate > 30;
                   const isEfficient = team.completionRate >= 95;
                   
@@ -1123,9 +1228,9 @@ function TeamsDashboard({ timeRange, filters }: { timeRange: TimeRange; filters:
       <div className={styles.chartsGrid}>
         <div className={styles.chartCard}>
           <h3 className={styles.chartTitle}>Khối lượng công việc theo đội</h3>
-          {filteredTeams.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={filteredTeams}>
+        {scaledTeams.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={scaledTeams}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis dataKey="team" stroke="var(--muted-foreground)" />
                 <YAxis stroke="var(--muted-foreground)" />
@@ -1148,9 +1253,9 @@ function TeamsDashboard({ timeRange, filters }: { timeRange: TimeRange; filters:
 
         <div className={styles.chartCard}>
           <h3 className={styles.chartTitle}>Kết quả xử lý theo đội</h3>
-          {filteredTeams.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={filteredTeams}>
+        {scaledTeams.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={scaledTeams}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis dataKey="team" stroke="var(--muted-foreground)" />
                 <YAxis stroke="var(--muted-foreground)" />

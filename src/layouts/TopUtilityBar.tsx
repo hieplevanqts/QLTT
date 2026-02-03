@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Globe, Moon, Sun, Grid3x3, Bell, User, Menu, MessageSquare, LayoutGrid, LayoutList, Monitor, ChevronDown } from 'lucide-react';
+import { Globe, Moon, Sun, Grid3x3, Bell, User, Menu, MessageSquare, LayoutGrid, LayoutList, Monitor, ChevronDown, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GlobalSearch } from '@/components/header/GlobalSearch';
 import { NotificationPanel } from '@/components/header/NotificationPanel';
@@ -21,6 +21,7 @@ import { logout } from '../store/slices/authSlice';
 import { logout as logoutApi } from '../utils/api/authApi';
 import { useNavigate, Link } from 'react-router-dom';
 import mappaLogo from '../assets/79505e63e97894ec2d06837c57cf53a19680f611.png';
+import { useAssistant } from '@/ai/assistantStore';
 
 interface TopUtilityBarProps {
   onMobileMenuToggle: () => void;
@@ -29,6 +30,7 @@ interface TopUtilityBarProps {
 export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps) {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const { setDrawerOpen } = useAssistant();
   // Get user from Redux instead of AuthContext
   const { user } = useAppSelector((state: RootState) => state.auth);
   
@@ -193,6 +195,17 @@ export default function TopUtilityBar({ onMobileMenuToggle }: TopUtilityBarProps
             title="Gửi phản hồi"
           >
             <MessageSquare className="h-5 w-5" style={{ color: '#005cb6' }} />
+          </Button>
+
+          {/* AI Assistant */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="cursor-pointer hover:bg-transparent"
+            onClick={() => setDrawerOpen(true)}
+            title="Mở trợ lý AI"
+          >
+            <Bot className="h-5 w-5" style={{ color: '#005cb6' }} />
           </Button>
 
           {/* Notifications */}

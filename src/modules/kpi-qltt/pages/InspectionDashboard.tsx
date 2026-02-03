@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   ClipboardCheck,
   AlertTriangle,
@@ -30,6 +30,7 @@ import {
 } from 'recharts';
 import { cn } from '@/components/ui/utils';
 import MultiSelectDropdown from '@/components/lead-risk/MultiSelectDropdown';
+import { applyGeoValue, type GeoMockContext } from '@/modules/kpi/mocks/kpiDashboard.mock';
 
 type TimeRange = '7' | '30' | '90';
 
@@ -137,9 +138,10 @@ const REOFFENDER_STATS = {
 
 interface InspectionDashboardProps {
   timeRange: TimeRange;
+  geoContext: GeoMockContext;
 }
 
-export default function InspectionDashboard({ timeRange }: InspectionDashboardProps) {
+export default function InspectionDashboard({ timeRange, geoContext }: InspectionDashboardProps) {
   const [overviewBy, setOverviewBy] = useState<'district' | 'team' | 'industry'>('district');
   const [filters, setFilters] = useState<InspectionFilters>({
     fromDate: '',
@@ -148,21 +150,121 @@ export default function InspectionDashboard({ timeRange }: InspectionDashboardPr
     violationTypes: [],
   });
 
+  const inspectionByDistrict = useMemo(() => {
+    return INSPECTION_BY_DISTRICT.map((row) => {
+      const passed = applyGeoValue(row.passed, geoContext, 'count', { min: 0 });
+      const violated = applyGeoValue(row.violated, geoContext, 'count', { min: 0 });
+      const serious = applyGeoValue(row.serious, geoContext, 'count', { min: 0 });
+      const total = passed + violated + serious;
+      const rate = total > 0 ? parseFloat(((passed / total) * 100).toFixed(1)) : 0;
+      return { ...row, total, passed, violated, serious, rate };
+    });
+  }, [geoContext]);
+
+  const inspectionByTeam = useMemo(() => {
+    return INSPECTION_BY_TEAM.map((row) => {
+      const passed = applyGeoValue(row.passed, geoContext, 'count', { min: 0 });
+      const violated = applyGeoValue(row.violated, geoContext, 'count', { min: 0 });
+      const serious = applyGeoValue(row.serious, geoContext, 'count', { min: 0 });
+      const total = passed + violated + serious;
+      const passRate = total > 0 ? parseFloat(((passed / total) * 100).toFixed(1)) : 0;
+      return { ...row, total, passed, violated, serious, passRate };
+    });
+  }, [geoContext]);
+
+  const inspectionByIndustry = useMemo(() => {
+    return INSPECTION_BY_INDUSTRY.map((row) => {
+      const passed = applyGeoValue(row.passed, geoContext, 'count', { min: 0 });
+      const violated = applyGeoValue(row.violated, geoContext, 'count', { min: 0 });
+      const serious = applyGeoValue(row.serious, geoContext, 'count', { min: 0 });
+      const total = passed + violated + serious;
+      const rate = total > 0 ? parseFloat(((passed / total) * 100).toFixed(1)) : 0;
+      return { ...row, total, passed, violated, serious, rate };
+    });
+  }, [geoContext]);
+
+  const inspectionByType = useMemo(() => {
+    return INSPECTION_BY_TYPE.map((row) => {
+      const passed = applyGeoValue(row.passed, geoContext, 'count', { min: 0 });
+      const violated = applyGeoValue(row.violated, geoContext, 'count', { min: 0 });
+      const serious = applyGeoValue(row.serious, geoContext, 'count', { min: 0 });
+      const total = passed + violated + serious;
+      const rate = total > 0 ? parseFloat(((passed / total) * 100).toFixed(1)) : 0;
+      return { ...row, total, passed, violated, serious, rate };
+    });
+  }, [geoContext]);
+
+  const violationByType = useMemo(() => {
+    return VIOLATION_BY_TYPE.map((row) => {
+      const count = applyGeoValue(row.count, geoContext, 'count', { min: 0 });
+      const handledRaw = applyGeoValue(row.handled, geoContext, 'count', { min: 0 });
+      const handled = Math.min(count, handledRaw);
+      const handledRate = count > 0 ? parseFloat(((handled / count) * 100).toFixed(1)) : 0;
+      const avgFine = applyGeoValue(row.avgFine, geoContext, 'amount', { decimals: 1, min: 0 });
+      return { ...row, count, handled, handledRate, avgFine };
+    });
+  }, [geoContext]);
+
+  const penaltyDistribution = useMemo(() => {
+    const scaled = PENALTY_DISTRIBUTION.map((row) => ({
+      ...row,
+      count: applyGeoValue(row.count, geoContext, 'count', { min: 0 }),
+    }));
+    const total = scaled.reduce((sum, row) => sum + row.count, 0);
+    return scaled.map((row) => ({
+      ...row,
+      percentage: total > 0 ? parseFloat(((row.count / total) * 100).toFixed(1)) : 0,
+    }));
+  }, [geoContext]);
+
+  const pendingByPhase = useMemo(() => {
+    return PENDING_BY_PHASE.map((row) => {
+      const count = applyGeoValue(row.count, geoContext, 'count', { min: 0 });
+      const overdueRaw = applyGeoValue(row.overdue, geoContext, 'count', { min: 0 });
+      const overdue = Math.min(count, overdueRaw);
+      const avgDays = applyGeoValue(row.avgDays, geoContext, 'duration', { decimals: 1, min: 1 });
+      return { ...row, count, overdue, avgDays };
+    });
+  }, [geoContext]);
+
+  const reoffenderStats = useMemo(() => {
+    const byFrequency = REOFFENDER_STATS.byFrequency.map((row) => ({
+      ...row,
+      count: applyGeoValue(row.count, geoContext, 'count', { min: 0 }),
+    }));
+    const total = byFrequency.reduce((sum, row) => sum + row.count, 0);
+    const firstBucket = byFrequency.find((row) => row.frequency === '1 lần');
+    const reoffenders = Math.max(0, total - (firstBucket ? firstBucket.count : 0));
+    const rate = total > 0 ? parseFloat(((reoffenders / total) * 100).toFixed(1)) : 0;
+    const withRates = byFrequency.map((row) => ({
+      ...row,
+      rate: total > 0 ? parseFloat(((row.count / total) * 100).toFixed(1)) : 0,
+    }));
+    return {
+      total,
+      reoffenders,
+      rate,
+      byFrequency: withRates,
+    };
+  }, [geoContext]);
+
   // Calculate overall KPIs
-  const totalInspections = INSPECTION_BY_DISTRICT.reduce((sum, d) => sum + d.total, 0);
-  const passedInspections = INSPECTION_BY_DISTRICT.reduce((sum, d) => sum + d.passed, 0);
-  const violatedInspections = INSPECTION_BY_DISTRICT.reduce((sum, d) => sum + d.violated + d.serious, 0);
-  const passRate = ((passedInspections / totalInspections) * 100).toFixed(1);
+  const totalInspections = inspectionByDistrict.reduce((sum, d) => sum + d.total, 0);
+  const passedInspections = inspectionByDistrict.reduce((sum, d) => sum + d.passed, 0);
+  const violatedInspections = inspectionByDistrict.reduce((sum, d) => sum + d.violated + d.serious, 0);
+  const passRate = totalInspections > 0
+    ? ((passedInspections / totalInspections) * 100).toFixed(1)
+    : '0.0';
   
-  const totalViolations = VIOLATION_BY_TYPE.reduce((sum, v) => sum + v.count, 0);
-  const totalPending = PENDING_BY_PHASE.reduce((sum, p) => sum + p.count, 0);
-  const overdueCount = PENDING_BY_PHASE.reduce((sum, p) => sum + p.overdue, 0);
+  const totalViolations = violationByType.reduce((sum, v) => sum + v.count, 0);
+  const totalPending = pendingByPhase.reduce((sum, p) => sum + p.count, 0);
+  const overdueCount = pendingByPhase.reduce((sum, p) => sum + p.overdue, 0);
 
   // Select data based on filter
   const getOverviewData = () => {
     switch(overviewBy) {
       case 'team':
-        return INSPECTION_BY_TEAM.map(t => ({ 
+        return inspectionByTeam.map(t => ({ 
           name: t.team, 
           total: t.total, 
           passed: t.passed, 
@@ -171,7 +273,7 @@ export default function InspectionDashboard({ timeRange }: InspectionDashboardPr
           rate: t.passRate 
         }));
       case 'industry':
-        return INSPECTION_BY_INDUSTRY.map(i => ({ 
+        return inspectionByIndustry.map(i => ({ 
           name: i.industry, 
           total: i.total, 
           passed: i.passed, 
@@ -180,7 +282,7 @@ export default function InspectionDashboard({ timeRange }: InspectionDashboardPr
           rate: i.rate 
         }));
       default:
-        return INSPECTION_BY_DISTRICT.map(d => ({ 
+        return inspectionByDistrict.map(d => ({ 
           name: d.district, 
           total: d.total, 
           passed: d.passed, 
@@ -383,7 +485,7 @@ export default function InspectionDashboard({ timeRange }: InspectionDashboardPr
           </p>
           
           <ResponsiveContainer width="100%" height={350}>
-            <BarChart data={REOFFENDER_STATS.byFrequency}>
+            <BarChart data={reoffenderStats.byFrequency}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="frequency" stroke="var(--muted-foreground)" />
               <YAxis stroke="var(--muted-foreground)" />
@@ -396,7 +498,7 @@ export default function InspectionDashboard({ timeRange }: InspectionDashboardPr
               />
               <Legend />
               <Bar dataKey="count" name="Số merchant" radius={[8, 8, 0, 0]}>
-                {REOFFENDER_STATS.byFrequency.map((entry, index) => (
+                {reoffenderStats.byFrequency.map((entry, index) => (
                   <Cell 
                     key={`cell-${index}`}
                     fill={index === 0 ? '#0fc87a' : index === 1 ? '#f7a23b' : '#f94144'}
@@ -414,7 +516,7 @@ export default function InspectionDashboard({ timeRange }: InspectionDashboardPr
                   Tổng merchant vi phạm
                 </div>
                 <div style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--primary)' }}>
-                  {REOFFENDER_STATS.total}
+                  {reoffenderStats.total}
                 </div>
               </div>
               <div>
@@ -422,7 +524,7 @@ export default function InspectionDashboard({ timeRange }: InspectionDashboardPr
                   Merchant tái phạm
                 </div>
                 <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#f94144' }}>
-                  {REOFFENDER_STATS.reoffenders}
+                  {reoffenderStats.reoffenders}
                 </div>
               </div>
               <div>
@@ -430,13 +532,13 @@ export default function InspectionDashboard({ timeRange }: InspectionDashboardPr
                   Tỷ lệ tái phạm
                 </div>
                 <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#f7a23b' }}>
-                  {REOFFENDER_STATS.rate}%
+                  {reoffenderStats.rate}%
                 </div>
               </div>
             </div>
             
             <div style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: 'var(--muted)', borderRadius: 'var(--radius)', fontSize: '0.875rem' }}>
-              <strong>⚠️ Cảnh báo:</strong> {REOFFENDER_STATS.byFrequency[2].count + REOFFENDER_STATS.byFrequency[3].count} merchant vi phạm ≥ 3 lần cần giám sát chặt chẽ và xử lý nghiêm khắc hơn.
+              <strong>⚠️ Cảnh báo:</strong> {reoffenderStats.byFrequency[2].count + reoffenderStats.byFrequency[3].count} merchant vi phạm ≥ 3 lần cần giám sát chặt chẽ và xử lý nghiêm khắc hơn.
             </div>
           </div>
         </div>
@@ -452,7 +554,7 @@ export default function InspectionDashboard({ timeRange }: InspectionDashboardPr
           </p>
           
           <ResponsiveContainer width="100%" height={350}>
-            <ComposedChart data={VIOLATION_BY_TYPE}>
+            <ComposedChart data={violationByType}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="type" stroke="var(--muted-foreground)" />
               <YAxis yAxisId="left" stroke="var(--muted-foreground)" label={{ value: 'Số vụ', angle: -90, position: 'insideLeft' }} />
@@ -488,7 +590,7 @@ export default function InspectionDashboard({ timeRange }: InspectionDashboardPr
           </p>
           
           <ResponsiveContainer width="100%" height={350}>
-            <ComposedChart data={INSPECTION_BY_TYPE}>
+            <ComposedChart data={inspectionByType}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="type" stroke="var(--muted-foreground)" />
               <YAxis yAxisId="left" stroke="var(--muted-foreground)" />
@@ -527,7 +629,7 @@ export default function InspectionDashboard({ timeRange }: InspectionDashboardPr
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
-                data={PENALTY_DISTRIBUTION}
+                data={penaltyDistribution}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
@@ -536,7 +638,7 @@ export default function InspectionDashboard({ timeRange }: InspectionDashboardPr
                 fill="#8884d8"
                 dataKey="count"
               >
-                {PENALTY_DISTRIBUTION.map((entry, index) => (
+                {penaltyDistribution.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
@@ -552,7 +654,7 @@ export default function InspectionDashboard({ timeRange }: InspectionDashboardPr
                   Tổng số vụ xử lý
                 </div>
                 <div style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--primary)' }}>
-                  {PENALTY_DISTRIBUTION.reduce((sum, p) => sum + p.count, 0)}
+                  {penaltyDistribution.reduce((sum, p) => sum + p.count, 0)}
                 </div>
               </div>
               <div>
@@ -560,7 +662,7 @@ export default function InspectionDashboard({ timeRange }: InspectionDashboardPr
                   Tỷ lệ xử lý nghiêm
                 </div>
                 <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#f94144' }}>
-                  {(PENALTY_DISTRIBUTION[2].percentage + PENALTY_DISTRIBUTION[3].percentage).toFixed(1)}%
+                  {(penaltyDistribution[2].percentage + penaltyDistribution[3].percentage).toFixed(1)}%
                 </div>
               </div>
             </div>
@@ -575,7 +677,7 @@ export default function InspectionDashboard({ timeRange }: InspectionDashboardPr
           </p>
           
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={PENDING_BY_PHASE}>
+            <BarChart data={pendingByPhase}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="phase" stroke="var(--muted-foreground)" />
               <YAxis stroke="var(--muted-foreground)" />

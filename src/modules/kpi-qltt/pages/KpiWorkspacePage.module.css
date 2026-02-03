@@ -1,0 +1,140 @@
+.page {
+  padding: var(--spacing-2xl);
+  background: var(--background);
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.subtitle {
+  color: var(--muted-foreground);
+  font-size: var(--text-sm);
+}
+
+.actionGroup {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tabsWrapper {
+  margin-top: 16px;
+}
+
+.kpiGrid {
+  margin-bottom: 16px;
+}
+
+.criteriaCard {
+  margin-bottom: 16px;
+}
+
+.criteriaLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.criteriaLink {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--secondary);
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.criteriaLink:hover {
+  color: #1677ff;
+  border-color: #1677ff;
+  background: rgba(22, 119, 255, 0.08);
+}
+
+.kpiCard {
+  height: 100%;
+}
+
+.kpiHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kpiTitle {
+  font-size: 13px;
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+
+.sectionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.sectionCard {
+  height: 100%;
+}
+
+.breakdownList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.breakdownRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.breakdownHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.insightList {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted-foreground);
+}
+
+.insightList li {
+  margin-bottom: 6px;
+}
+
+@media (max-width: 1024px) {
+  .sectionGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: var(--spacing-lg);
+  }
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
