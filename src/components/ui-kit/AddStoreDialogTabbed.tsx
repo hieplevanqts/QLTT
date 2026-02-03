@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import {
   Building2,
   Upload,
@@ -10,8 +10,6 @@ import {
   AlertCircle,
   CheckCircle2,
   XCircle,
-  Check,
-  ChevronsUpDown,
 } from 'lucide-react';
 import {
   Dialog,
@@ -31,19 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { AsyncSearchableSelect } from './AsyncSearchableSelect';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Tooltip,
@@ -52,12 +38,11 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { fetchProvinces, fetchWardsByProvince, type ProvinceApiData, type WardApiData } from '@/utils/api/locationsApi';
-import { INDUSTRIES } from '@/utils/data/industries';
+import { searchCategories } from '@/utils/api/categoriesApi';
 import { extractDocumentData } from '@/utils/api/ocrApi';
 import { useAddressAutoMapper } from '@/hooks/useAddressAutoMapper';
 import { toast } from 'sonner';
 import styles from './AddStoreDialogTabbed.module.css';
-import comboboxStyles from './IndustryCombobox.module.css';
 import { MapLocationPicker } from './MapLocationPicker';
 
 interface AddStoreDialogTabbedProps {
@@ -139,6 +124,14 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
 
   // Validation errors
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  const searchIndustryOptions = useCallback(async (searchTerm: string, limit: number = 20) => {
+    const categories = await searchCategories(searchTerm, limit);
+    return (categories || []).map((cat) => ({
+      value: cat.name,
+      label: cat.name,
+    }));
+  }, []);
 
   // API Data
   const [apiProvinces, setApiProvinces] = useState<ProvinceApiData[]>([]);
@@ -265,7 +258,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
           ownerIdNumber: ocrData.ownerIdCard,
           ownerBirthYear: ocrData.ownerDob ? ocrData.ownerDob.split('/').pop() : undefined,
           registeredAddress: ocrData.address,
-          // Note: industryName mapping might need more logic if we want to match INDUSTRIES list
+          // Note: industryName mapping might need more logic to match categories API
           industryName: ocrData.businessScope,
         };
 
@@ -738,7 +731,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                 />
               )}
 
-              {/* Industry Name - Searchable Select (Combobox) - Select2 Style */}
+              {/* Industry Name - Async Searchable Select */}
               <div className="space-y-2">
                 <Label htmlFor="industryName" className="flex items-center gap-2">
                   Tên ngành kinh doanh
@@ -759,57 +752,15 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                     </TooltipProvider>
                   )}
                 </Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button
-                      id="industryName"
-                      type="button"
-                      role="combobox"
-                      className={comboboxStyles.comboboxTrigger}
-                      data-placeholder={!formData.industryName}
-                      data-error={!!errors.industryName}
-                    >
-                      <span>{formData.industryName || 'Chọn ngành kinh doanh...'}</span>
-                      <ChevronsUpDown className={comboboxStyles.comboboxIcon} />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className={comboboxStyles.popoverContent} align="start">
-                    <Command>
-                      <div className={comboboxStyles.commandInput}>
-                        <svg className={comboboxStyles.searchIcon} viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                        </svg>
-                        <CommandInput placeholder="Tìm kiếm ngành kinh doanh..." />
-                      </div>
-                      <CommandList className={comboboxStyles.commandList}>
-                        <CommandEmpty className={comboboxStyles.commandEmpty}>
-                          Không tìm thấy ngành kinh doanh
-                        </CommandEmpty>
-                        <CommandGroup>
-                          {INDUSTRIES.map((industry) => (
-                            <CommandItem
-                              key={industry.id}
-                              value={industry.name}
-                              onSelect={() => {
-                                handleFieldChange('industryName', industry.name === formData.industryName ? '' : industry.name);
-                              }}
-                              className={comboboxStyles.commandItem}
-                              data-selected={formData.industryName === industry.name}
-                            >
-                              <div className={comboboxStyles.industryContent}>
-                                <span className={comboboxStyles.industryName}>{industry.name}</span>
-                                {industry.category && (
-                                  <span className={comboboxStyles.industryCategory}>{industry.category}</span>
-                                )}
-                              </div>
-                              <Check className={comboboxStyles.checkIcon} />
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <AsyncSearchableSelect
+                  value={formData.industryName || ''}
+                  onValueChange={(val) => handleFieldChange('industryName', val)}
+                  searchFunction={searchIndustryOptions}
+                  placeholder="Chọn ngành kinh doanh..."
+                  noResultsText="Không tìm thấy ngành kinh doanh"
+                  limit={20}
+                  width="100%"
+                />
                 {errors.industryName && (
                   <p className="text-sm text-red-500 flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
@@ -859,8 +810,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                     placeholder="Nhập số điện thoại"
                     className={errors.businessPhone ? 'border-red-500' : ''}
                   />
-                </>,
-                true
+                </>
               )}
 
               <div className="space-y-2 col-span-2">
@@ -888,8 +838,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                   className={`placeholder:text-gray-500 ${errors.ownerName ? 'border-red-500' : ''}`}
                   onChange={(e) => handleFieldChange('ownerName', e.target.value)}
                   placeholder="Nhập tên chủ hộ"
-                />,
-                true
+                />
               )}
               {renderFieldWithIndicator(
                 'ownerPhone',
@@ -903,8 +852,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                     onChange={(e) => handleFieldChange('ownerPhone', e.target.value)}
                     placeholder="Nhập số điện thoại"
                   />
-                </>,
-                true
+                </>
               )}
               {renderFieldWithIndicator(
                 'ownerBirthYear',
@@ -1029,8 +977,7 @@ export function AddStoreDialogTabbed({ open, onOpenChange, onSubmit }: AddStoreD
                     className={`placeholder:text-gray-500 ${errors.registeredAddress ? 'border-red-500' : ''}`}
                     onChange={(e) => handleFieldChange('registeredAddress', e.target.value)}
                     placeholder="Nhập địa chỉ đăng ký kinh doanh"
-                  />,
-                  true
+                  />
                 )}
 
                 <div className="space-y-2 col-span-2">

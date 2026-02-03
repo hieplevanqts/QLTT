@@ -29,8 +29,8 @@ import { ImportDialog } from '@/components/ui-kit/ImportDialog';
 import { AddStoreDialog, NewStoreData } from '@/components/ui-kit/AddStoreDialog';
 import DataTable, { Column } from '@/components/ui-kit/DataTable';
 import { SearchInput } from '@/components/ui-kit/SearchInput';
-import { SearchableSelect } from '@/components/ui-kit/SearchableSelect';
-import { BUSINESS_TYPES } from '@/constants/businessTypes';
+import { AsyncSearchableSelect } from '@/components/ui-kit/AsyncSearchableSelect';
+import { searchCategories } from '@/utils/api/categoriesApi';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -95,6 +95,14 @@ export default function StoresListPage() {
   const [currentPage, setCurrentPage] = useState(parseInt(getParam('page', '1'), 10));
   const [pageSize, setPageSize] = useState(parseInt(getParam('size', '20'), 10));
   const [totalRecords, setTotalRecords] = useState(0);
+
+  const searchBusinessTypeOptions = useCallback(async (searchTerm: string, limit: number = 20) => {
+    const categories = await searchCategories(searchTerm, limit);
+    return (categories || []).map((cat) => ({
+      value: cat.name,
+      label: cat.name,
+    }));
+  }, []);
 
   // Sync state to URL
   useEffect(() => {
@@ -1392,11 +1400,14 @@ export default function StoresListPage() {
 
           {/* 3.1 Loại hình kinh doanh (moved out of advanced filter) */}
           <div style={{ width: '200px', flexShrink: 0 }}>
-            <SearchableSelect
+            <AsyncSearchableSelect
               value={businessTypeFilter}
               onValueChange={(val) => { setBusinessTypeFilter(val || 'all'); setCurrentPage(1); }}
-              options={[{ value: 'all', label: 'Tất cả ngành nghề' }, ...BUSINESS_TYPES.map(bt => ({ value: bt.value, label: bt.label }))]}
+              searchFunction={searchBusinessTypeOptions}
+              staticOptions={[{ value: 'all', label: 'Tất cả ngành nghề' }]}
               placeholder="Chọn loại hình kinh doanh"
+              noResultsText="Không tìm thấy ngành nghề"
+              limit={20}
               width="200px"
             />
           </div>
