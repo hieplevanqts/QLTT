@@ -3,6 +3,7 @@
 
 import { Store } from '../../data/mockStores';
 import { SUPABASE_REST_URL, getHeaders } from './config';
+import { fetchDepartmentById } from './departmentsApi';
 
 /**
  * Map risk level from API (number) to Store interface (string)
@@ -49,6 +50,7 @@ function mapStatus(status: string | null | undefined) {
  * @param limit - Maximum number of records to fetch
  * @param offset - Pagination offset
  * @param filters - Optional filters (status, province_id, district, businessType, etc.)
+ * @param department_id - Optional user's department_id to fetch and use for filtering
  * @returns Array of stores mapped from merchants data
  */
 export async function fetchStores(
@@ -64,10 +66,23 @@ export async function fetchStores(
     riskLevel?: string;
     search?: string;
   },
-  department_path?: string,
+  department_id?: string,
   deleted_at?: string
 ): Promise<{ data: Store[]; total: number }> {
   try {
+    // Fetch division path from department_id if provided
+    let divisionPath: string | null = null;
+    if (department_id) {
+      try {
+        const division = await fetchDepartmentById(department_id);
+        if (division) {
+          divisionPath = division.path;
+        }
+      } catch (error) {
+        console.error('Error fetching division path:', error);
+      }
+    }
+
     // Build base URL with pagination (supports unlimited records)
     // Join with wards table to get ward name
     // let url = `${SUPABASE_REST_URL}/merchants?limit=${limit}&offset=${offset}&order=created_at.desc&select=*,wards(_id,name)`;
@@ -76,7 +91,7 @@ export async function fetchStores(
   `&limit=${limit}` +
   `&offset=${offset}` +
   `&order=created_at.desc` +
-  `&department_path=like.${department_path}*` +
+  `&department_path=like.${divisionPath}*` +
   `&deleted_at=is.null`;
 
     // Apply filters if provided
@@ -215,8 +230,8 @@ export async function fetchStores(
 
 /**
  * 📊 Fetch store statistics
- * @param filters - Optional filters (status, province_id, businessType, search, department_path)
- * @param department_path - Department path for filtering
+ * @param filters - Optional filters (status, province_id, businessType, search, department_id)
+ * @param department_id - Optional user's department_id to fetch and use for filtering
  * @returns Statistics object with counts by status
  */
 export async function fetchStoresStats(filters?: {
@@ -225,9 +240,8 @@ export async function fetchStoresStats(filters?: {
   district?: string;
   businessType?: string;
   search?: string;
- 
-  department_path?: string;
-}, department_path?: string): Promise<{
+  department_id?: string;
+}, department_id?: string): Promise<{
   total: number;
   active: number;
   pending: number;
@@ -237,13 +251,26 @@ export async function fetchStoresStats(filters?: {
   rejected: number;
 }> {
   try {
+    // Fetch division path from department_id if provided
+    let divisionPath: string | null = null;
+    if (department_id) {
+      try {
+        const division = await fetchDepartmentById(department_id);
+        if (division) {
+          divisionPath = division.path;
+        }
+      } catch (error) {
+        console.error('Error fetching division path:', error);
+      }
+    }
+
     // Helper function to build query string with filters
     const buildCountUrl = (additionalStatus?: string) => {
       let url = `${SUPABASE_REST_URL}/merchant_filter_view_ext?select=status&deleted_at=is.null`;
 
-      // Department path filter - MUST be first to match fetchStores logic
-      if (department_path) {
-        url += `&department_path=like.${encodeURIComponent(department_path)}*`;
+      // Department path filter - use fetched divisionPath
+      if (divisionPath) {
+        url += `&department_path=like.${encodeURIComponent(divisionPath)}*`;
       }
 
       // Apply all filters to ensure stats match the list view
