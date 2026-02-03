@@ -21,7 +21,7 @@ import { RootState } from '@/store/rootReducer';
 export default function OverviewPage() {
   // Get user from Redux instead of AuthContext
   const { user } = useAppSelector((state: RootState) => state.auth);
-  
+
   // Get department name and address from user.departmentInfo
   const departmentName = user?.departmentInfo?.name || '';
   const departmentAddress = user?.departmentInfo?.address || '';
@@ -126,7 +126,7 @@ export default function OverviewPage() {
         }
       />
 
-      <div className="px-6 py-4 space-y-4">
+      <div className="px-6 space-y-4">
         {/* Department Info Display */}
         {departmentName && (
           <div style={{
@@ -177,7 +177,7 @@ export default function OverviewPage() {
           {statsCards.map((stat, index) => {
             const Icon = stat.icon;
             const TrendIcon = stat.trend === 'up' ? TrendingUp : TrendingDown;
-            
+
             return (
               <Card key={index}>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -190,9 +190,8 @@ export default function OverviewPage() {
                   <div className="flex items-baseline gap-2">
                     <div className="text-3xl font-semibold">{stat.value}</div>
                     <div
-                      className={`flex items-center gap-1 text-sm ${
-                        stat.trend === 'up' ? 'text-chart-4' : 'text-chart-1'
-                      }`}
+                      className={`flex items-center gap-1 text-sm ${stat.trend === 'up' ? 'text-chart-4' : 'text-chart-1'
+                        }`}
                     >
                       <TrendIcon className="h-4 w-4" />
                       <span>{stat.change}</span>
@@ -228,15 +227,15 @@ export default function OverviewPage() {
                             activity.status === 'new'
                               ? 'default'
                               : activity.status === 'completed'
-                              ? 'secondary'
-                              : 'outline'
+                                ? 'secondary'
+                                : 'outline'
                           }
                         >
                           {activity.status === 'new'
                             ? 'Mới'
                             : activity.status === 'completed'
-                            ? 'Hoàn thành'
-                            : 'Đang xử lý'}
+                              ? 'Hoàn thành'
+                              : 'Đang xử lý'}
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground mt-1">

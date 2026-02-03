@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Bot,
   Sparkles,
@@ -51,9 +51,10 @@ interface AILead {
 export default function LeadInboxAIDemo() {
   const navigate = useNavigate();
   const [selectedLead, setSelectedLead] = useState<AILead | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'category' | 'location'>('overview');
 
   // Mock AI Leads Data
-  const [aiLeads] = useState<AILead[]>([
+  const [aiLeads, setAiLeads] = useState<AILead[]>([
     {
       id: "1",
       code: "LD-2025-001",
@@ -175,6 +176,71 @@ export default function LeadInboxAIDemo() {
       },
     },
   ]);
+
+  // Generators for random data
+  const getRandomElement = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+
+  const generateRandomLead = (): AILead => {
+    const categories = ['Hàng giả', 'Gian lận giá', 'ATTP', 'Hàng không nguồn gốc', 'Quảng cáo'];
+    const locations = ['Quận Cầu Giấy, Hà Nội', 'Quận Hoàn Kiếm, Hà Nội', 'Quận Đống Đa, Hà Nội', 'Quận Ba Đình, Hà Nội', 'Online'];
+    const reporters = ['Nguyễn Văn F', 'Lê Thị G', 'Phạm Văn H', 'Tran Thi K', 'Anonymous'];
+    const titles = [
+      'Phát hiện kho hàng lậu lớn',
+      'Nghi vấn bán hàng giả trên Facebook',
+      'Cửa hàng thực phẩm bẩn',
+      'Quảng cáo sai sự thật về thuốc',
+      'Tăng giá bất hợp lý dịp Tết'
+    ];
+
+    const category = getRandomElement(categories);
+    const location = getRandomElement(locations);
+    const priority = getRandomElement(['high', 'medium', 'low'] as const);
+
+    let verdict: AILead['ai']['verdict'] = 'review';
+    let confidence = 50 + Math.floor(Math.random() * 40);
+
+    if (priority === 'high') {
+      verdict = 'worthy';
+      confidence = 80 + Math.floor(Math.random() * 15);
+    } else if (priority === 'low') {
+      verdict = 'unworthy';
+      confidence = 85 + Math.floor(Math.random() * 10);
+    }
+
+    const id = Math.random().toString(36).substr(2, 9);
+
+    return {
+      id,
+      code: `LD-2025-${Math.floor(Math.random() * 1000)}`,
+      title: getRandomElement(titles),
+      reporter: getRandomElement(reporters),
+      reportDate: new Date().toLocaleDateString('vi-VN'),
+      location,
+      category,
+      timestamp: new Date(),
+      priority,
+      isRead: false,
+      ai: {
+        verdict,
+        confidence,
+        summary: `AI phân tích tự động: ${category} tại ${location}.`,
+        recommendation: "Cần xác minh thêm thông tin.",
+        violations: [`Nghi vấn ${category}`],
+        severity: priority === 'high' ? 'Cao' : (priority === 'medium' ? 'Trung bình' : 'Thấp'),
+        evidenceQuality: "Trung bình",
+        similarCases: Math.floor(Math.random() * 5),
+      }
+    };
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const newLead = generateRandomLead();
+      setAiLeads(prev => [newLead, ...prev]);
+    }, 3000); // Add new lead every 3 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   const getVerdictConfig = (verdict: AILead['ai']['verdict']) => {
     const configs = {
@@ -307,7 +373,9 @@ export default function LeadInboxAIDemo() {
           <div className={styles.columnHeader}>
             <h2 className={styles.columnTitle}>
               <Activity size={18} />
-              Nguồn tin ({aiLeads.length})
+              <Activity size={18} />
+              Live Feed
+              <span className={styles.liveIndicator}></span>
             </h2>
             <div style={{ display: 'flex', gap: 4 }}>
               <span className={styles.badge} style={{ background: 'var(--muted)', color: 'var(--foreground)' }}>{aiLeads.filter(l => l.isRead).length} đã xem</span>
@@ -468,41 +536,120 @@ export default function LeadInboxAIDemo() {
                 <p className={styles.dashboardSubtitle}>Cập nhật thời gian thực từ các nguồn tin</p>
               </div>
 
-              <div className={styles.statsGrid}>
-                <div className={styles.statCard}>
-                  <span className={styles.statLabel}>Tổng tin hôm nay</span>
-                  <span className={styles.statValue}>{aiLeads.length}</span>
-                  <TrendingUp size={16} className="text-green-500" />
-                </div>
-                <div className={styles.statCard}>
-                  <span className={styles.statLabel}>Rủi ro cao</span>
-                  <span className={styles.statValue} style={{ color: 'rgb(239, 68, 68)' }}>{aiLeads.filter(l => l.priority === 'high').length}</span>
-                  <AlertTriangle size={16} className="text-red-500" />
-                </div>
-                <div className={styles.statCard}>
-                  <span className={styles.statLabel}>Đã xử lý</span>
-                  <span className={styles.statValue} style={{ color: 'rgb(34, 197, 94)' }}>{aiLeads.filter(l => l.isRead).length}</span>
-                  <CheckCircle size={16} className="text-blue-500" />
-                </div>
+              {/* Tabs Header */}
+              <div className={styles.tabHeader}>
+                <button
+                  className={`${styles.tabButton} ${activeTab === 'overview' ? styles.tabButtonActive : ''}`}
+                  onClick={() => setActiveTab('overview')}
+                >
+                  Tổng quan
+                </button>
+                <button
+                  className={`${styles.tabButton} ${activeTab === 'category' ? styles.tabButtonActive : ''}`}
+                  onClick={() => setActiveTab('category')}
+                >
+                  Phân loại nguồn tin
+                </button>
+                <button
+                  className={`${styles.tabButton} ${activeTab === 'location' ? styles.tabButtonActive : ''}`}
+                  onClick={() => setActiveTab('location')}
+                >
+                  Địa bàn
+                </button>
               </div>
 
-              <div className={styles.filterSection}>
-                <div className={styles.filterTitle}>
-                  <Activity size={16} />
-                  Lọc theo ngành hàng / Danh mục
-                </div>
-                <div className={styles.filterTags}>
-                  {["Tất cả", "ATTP", "Hàng giả", "Gian lận giá", "Quảng cáo", "Dược phẩm", "Mỹ phẩm", "Điện tử"].map(tag => (
-                    <button key={tag} className={styles.filterTag}>
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <div className={styles.tabContent}>
+                {activeTab === 'overview' && (
+                  <>
+                    <div className={styles.statsGrid}>
+                      <div className={styles.statCard}>
+                        <span className={styles.statLabel}>Tổng tin hôm nay</span>
+                        <span className={styles.statValue}>{aiLeads.length}</span>
+                        <TrendingUp size={16} className="text-green-500" />
+                      </div>
+                      <div className={styles.statCard}>
+                        <span className={styles.statLabel}>Rủi ro cao</span>
+                        <span className={styles.statValue} style={{ color: 'rgb(239, 68, 68)' }}>{aiLeads.filter(l => l.priority === 'high').length}</span>
+                        <AlertTriangle size={16} className="text-red-500" />
+                      </div>
+                      <div className={styles.statCard}>
+                        <span className={styles.statLabel}>Đã xử lý</span>
+                        <span className={styles.statValue} style={{ color: 'rgb(34, 197, 94)' }}>{aiLeads.filter(l => l.isRead).length}</span>
+                        <CheckCircle size={16} className="text-blue-500" />
+                      </div>
+                    </div>
 
-              {/* Placeholder for a chart or map */}
-              <div style={{ height: 200, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted-foreground)' }}>
-                [Biểu đồ xu hướng vi phạm theo khu vực]
+                    <div className={styles.filterSection}>
+                      <div className={styles.filterTitle}>
+                        <Activity size={16} />
+                        Lọc theo ngành hàng / Danh mục
+                      </div>
+                      <div className={styles.filterTags}>
+                        {["Tất cả", "ATTP", "Hàng giả", "Gian lận giá", "Quảng cáo", "Dược phẩm", "Mỹ phẩm", "Điện tử"].map(tag => (
+                          <button key={tag} className={styles.filterTag}>
+                            {tag}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Placeholder for a chart or map */}
+                    <div style={{ height: 200, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted-foreground)' }}>
+                      [Biểu đồ xu hướng vi phạm theo khu vực]
+                    </div>
+                  </>
+                )}
+
+                {activeTab === 'category' && (
+                  <div className={styles.detailsSection}>
+                    <h3 className={styles.detailsSectionTitle}>Phân bố theo danh mục</h3>
+                    <div className={styles.metricsGrid}>
+                      {Object.entries(
+                        aiLeads.reduce((acc, lead) => {
+                          acc[lead.category] = (acc[lead.category] || 0) + 1;
+                          return acc;
+                        }, {} as Record<string, number>)
+                      ).map(([category, count]) => (
+                        <div key={category} className={styles.metricCard} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div>
+                            <div className={styles.metricLabel}>{category}</div>
+                            <div className={styles.metricValue} style={{ fontSize: 'var(--text-base)' }}>{count} tin</div>
+                          </div>
+                          <div style={{ width: '100px', height: '8px', background: 'var(--secondary)', borderRadius: '4px', overflow: 'hidden' }}>
+                            <div style={{ width: `${(count / aiLeads.length) * 100}%`, height: '100%', background: 'var(--primary)' }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'location' && (
+                  <div className={styles.detailsSection}>
+                    <h3 className={styles.detailsSectionTitle}>Phân bố theo địa bàn</h3>
+                    <div className={styles.metricsGrid}>
+                      {Object.entries(
+                        aiLeads.reduce((acc, lead) => {
+                          acc[lead.location] = (acc[lead.location] || 0) + 1;
+                          return acc;
+                        }, {} as Record<string, number>)
+                      ).map(([location, count]) => (
+                        <div key={location} className={styles.metricCard} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <MapPin size={16} className="text-muted-foreground" />
+                            <div>
+                              <div className={styles.metricLabel} style={{ marginBottom: 0 }}>{location}</div>
+                            </div>
+                          </div>
+                          <div className={styles.metricValue} style={{ fontSize: 'var(--text-base)' }}>{count}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ marginTop: '20px', height: 200, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted-foreground)' }}>
+                      [Bản đồ nhiệt cảnh báo rủi ro]
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
