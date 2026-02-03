@@ -4,6 +4,37 @@
   margin: 0 auto;
 }
 
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--muted-foreground);
+  margin-bottom: var(--spacing-xl);
+  line-height: 1.5;
+}
+
+.breadcrumbLink {
+  color: var(--muted-foreground);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.breadcrumbLink:hover {
+  color: var(--primary);
+}
+
+.breadcrumbSeparator {
+  color: var(--border);
+}
+
+.breadcrumbCurrent {
+  color: var(--foreground);
+  font-weight: var(--font-weight-medium);
+}
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -90,6 +121,14 @@
   margin: 0 0 16px 0;
 }
 
+.infoDescription {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  line-height: 1.6;
+  margin: 0 0 20px 0;
+}
+
 .highlightList {
   list-style: none;
   padding: 0;
@@ -137,4 +176,54 @@
 
 .recommendList li + li {
   border-top: 1px solid var(--border);
+}
+
+/* Tabs Wrapper */
+.tabsWrapper {
+  margin-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.tabsList {
+  display: flex;
+  gap: var(--spacing-md);
+  background: transparent;
+  padding: 0;
+  border: none;
+  min-width: max-content;
+  flex-wrap: nowrap;
+}
+
+.tabsTrigger {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.tabsTrigger:hover {
+  color: var(--foreground);
+  background: var(--muted);
+}
+
+.tabsTrigger[data-state="active"] {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  background: transparent;
+}
+
+.tabContent {
+  margin-top: var(--spacing-lg);
 }

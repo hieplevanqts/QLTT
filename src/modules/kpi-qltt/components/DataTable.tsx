@@ -2,12 +2,12 @@
  * DataTable - Bảng dữ liệu với pagination
  */
 
-import React from 'react';
+import React, { useState } from 'react';
+import styles from './DataTable.module.css';
 import { ChevronLeft, ChevronRight, Eye, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Report } from '../data/mock';
 import { PaginatedResult } from '../services/reportService';
-import styles from './DataTable.module.css';
 
 interface DataTableProps {
   result: PaginatedResult<Report>;

@@ -1,10 +1,10 @@
 /**
- * ReportBuilderPage - Trang tạo báo cáo mới
+ * Xây dựng báo cáo - Report Builder Page
  */
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Eye } from 'lucide-react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
+import { ArrowLeft, Save, Eye, ChevronRight } from 'lucide-react';
 import { reportService } from '../services/reportService';
 import { ReportTemplate, provinces, topics, mockReportTemplates } from '../data/mock';
 import styles from './ReportBuilderPage.module.css';
@@ -71,6 +71,25 @@ export const ReportBuilderPage: React.FC = () => {
 
   return (
     <div className={styles.builderPage}>
+      {/* Breadcrumb */}
+      <div className={styles.breadcrumbs} style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '8px',
+        marginBottom: '20px',
+        fontSize: '14px',
+        color: '#666',
+        padding: '12px 0'
+      }}>
+        <Link to="/" className={styles.breadcrumbLink} style={{ color: '#666', textDecoration: 'none' }}>Trang chủ</Link>
+        <ChevronRight style={{ width: '16px', height: '16px', color: '#ccc', flexShrink: 0 }} />
+        <Link to="/kpi" className={styles.breadcrumbLink} style={{ color: '#666', textDecoration: 'none' }}>Báo cáo & KPI</Link>
+        <ChevronRight style={{ width: '16px', height: '16px', color: '#ccc', flexShrink: 0 }} />
+        <Link to="/kpi/list" className={styles.breadcrumbLink} style={{ color: '#666', textDecoration: 'none' }}>Danh sách báo cáo</Link>
+        <ChevronRight style={{ width: '16px', height: '16px', color: '#ccc', flexShrink: 0 }} />
+        <span style={{ color: '#101828', fontWeight: '500' }}>Tạo báo cáo mới</span>
+      </div>
+
       <div className={styles.header}>
         <button onClick={handleBack} className={styles.backButton}>
           <ArrowLeft size={18} />

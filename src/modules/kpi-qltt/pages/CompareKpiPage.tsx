@@ -1,9 +1,10 @@
 /**
- * CompareKpiPage - Màn hình so sánh KPI
+ * So sánh KPI - Compare KPI Page
  */
 
 import React, { useState, useEffect } from 'react';
-import { Download } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Download, ChevronRight } from 'lucide-react';
 import { CompareFilters, CompareRow } from '../types';
 import { reportService } from '../services/reportService';
 import { CompareKpiFilterBar } from '../components/CompareKpiFilterBar';
@@ -68,6 +69,23 @@ export function CompareKpiPage() {
 
   return (
     <div className={styles.page}>
+      {/* Breadcrumb */}
+      <div className={styles.breadcrumbs} style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '8px',
+        marginBottom: '20px',
+        fontSize: '14px',
+        color: '#666',
+        padding: '12px 0'
+      }}>
+        <Link to="/" className={styles.breadcrumbLink} style={{ color: '#666', textDecoration: 'none' }}>Trang chủ</Link>
+        <ChevronRight style={{ width: '16px', height: '16px', color: '#ccc', flexShrink: 0 }} />
+        <span style={{ color: '#101828', fontWeight: '500' }}>Báo cáo & KPI</span>
+        <ChevronRight style={{ width: '16px', height: '16px', color: '#ccc', flexShrink: 0 }} />
+        <span style={{ color: '#101828', fontWeight: '500' }}>So sánh KPI</span>
+      </div>
+
       {/* Header */}
       <div className={styles.header}>
         <div>

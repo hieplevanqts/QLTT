@@ -4,6 +4,7 @@
 
 import React from 'react';
 import { CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { ValidationResult } from '../types';
 import styles from './ValidationResults.module.css';
 
@@ -26,6 +27,17 @@ export function ValidationResults({ results, showSummary = true }: ValidationRes
       case 'warning':
         return <AlertTriangle className="h-5 w-5" />;
     }
+  };
+
+  const downloadManifest = (manifest: unknown, fileName = 'module.json') => {
+    const content = JSON.stringify(manifest, null, 2);
+    const blob = new Blob([content], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -65,6 +77,22 @@ export function ValidationResults({ results, showSummary = true }: ValidationRes
             <div className={styles.resultMessage}>{result.message}</div>
             {result.details && (
               <div className={styles.resultDetails}>{result.details}</div>
+            )}
+            {result.suggestedManifest && (
+              <div className={styles.resultSuggest}>
+                <div className={styles.resultActions}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => downloadManifest(result.suggestedManifest)}
+                  >
+                    Tải module.json mẫu
+                  </Button>
+                </div>
+                <pre className={styles.resultCode}>
+                  {JSON.stringify(result.suggestedManifest, null, 2)}
+                </pre>
+              </div>
             )}
           </div>
         </div>

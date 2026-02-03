@@ -1,0 +1,36 @@
+.chartContainer {
+  position: relative;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.percentageLabels {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.percentageItem {
+  position: absolute;
+  right: 10px;
+  transform: translateY(-50%);
+}
+
+.percentageValue {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--muted);
+}
+
+.percentageValue[data-positive="true"] {
+  color: var(--color-success);
+}
+
+.percentageValue[data-positive="false"] {
+  color: var(--color-danger);
+}

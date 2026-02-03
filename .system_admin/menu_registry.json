@@ -1,13 +1,5 @@
 [
   {
-    "id": "menu_overview",
-    "label": "Tong quan",
-    "path": "/overview",
-    "icon": "LayoutDashboard",
-    "order": 10,
-    "isEnabled": true
-  },
-  {
     "id": "menu_map",
     "label": "Ban do dieu hanh",
     "path": "/map",

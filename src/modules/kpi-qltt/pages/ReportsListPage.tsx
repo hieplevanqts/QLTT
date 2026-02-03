@@ -1,10 +1,10 @@
 /**
- * ReportsListPage - Trang danh sách báo cáo
+ * Danh sách báo cáo - Reports List Page
  */
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Plus, ChevronRight } from 'lucide-react';
 import { FilterBar, FilterValues } from '../components/FilterBar';
 import { DataTable } from '../components/DataTable';
 import { reportService, PaginatedResult } from '../services/reportService';
@@ -86,6 +86,23 @@ export const ReportsListPage: React.FC = () => {
 
   return (
     <div className={styles.reportsListPage}>
+      {/* Breadcrumb */}
+      <div className={styles.breadcrumbs} style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '8px',
+        marginBottom: '20px',
+        fontSize: '14px',
+        color: '#666',
+        padding: '12px 0'
+      }}>
+        <Link to="/" className={styles.breadcrumbLink} style={{ color: '#666', textDecoration: 'none' }}>Trang chủ</Link>
+        <ChevronRight style={{ width: '16px', height: '16px', color: '#ccc', flexShrink: 0 }} />
+        <span style={{ color: '#101828', fontWeight: '500' }}>Báo cáo & KPI</span>
+        <ChevronRight style={{ width: '16px', height: '16px', color: '#ccc', flexShrink: 0 }} />
+        <span style={{ color: '#101828', fontWeight: '500' }}>Danh sách báo cáo</span>
+      </div>
+
       <div className={styles.header}>
         <div>
           <h1 className={styles.title}>Danh sách báo cáo</h1>

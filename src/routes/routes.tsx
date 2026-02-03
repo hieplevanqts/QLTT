@@ -27,12 +27,7 @@ const FullEditRegistryPage = React.lazy(() => import('@/modules/registry/pages/F
 const EvidenceRoutes = React.lazy(() => import('./EvidenceRoutes'));
 const ReportsPage = React.lazy(() => import('@/modules/reports/pages/ReportsPage'));
 const DashboardPage = React.lazy(() => import('@/modules/overview/pages/DashboardPage'));
-// Account pages are statically imported via barrel above.
-const UserList = React.lazy(() => import('@/modules/system-admin/pages/legacy-system/UserList'));
-const RoleList = React.lazy(() => import('@/modules/system-admin/pages/legacy-system/RoleList'));
-const SystemSettings = React.lazy(() => import('@/modules/system-admin/pages/legacy-system/SystemSettings'));
 const Error404 = React.lazy(() => import('@/modules/system-admin/pages/legacy-system/Error404'));
-
 const PlansList = React.lazy(() =>
   import('@/modules/plans/pages/PlansList').then((module) => ({ default: module.PlansList })),
 );
@@ -306,32 +301,7 @@ export const router = createBrowserRouter([
           {
             path: 'account/change-password',
             element: <ChangePassword />,
-          },
-          // System pages
-          {
-            path: 'system/users',
-            element: (
-              <PermissionProtectedRoute>
-                <UserList />
-              </PermissionProtectedRoute>
-            ),
-          },
-          {
-            path: 'system/roles',
-            element: (
-              <PermissionProtectedRoute>
-                <RoleList />
-              </PermissionProtectedRoute>
-            ),
-          },
-          {
-            path: 'system/settings',
-            element: (
-              <PermissionProtectedRoute>
-                <SystemSettings />
-              </PermissionProtectedRoute>
-            ),
-          },
+          },         
           // Registry routes
           {
             path: 'registry',

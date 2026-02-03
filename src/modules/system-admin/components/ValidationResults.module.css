@@ -59,6 +59,28 @@
   margin-top: var(--spacing-2);
 }
 
+.resultSuggest {
+  margin-top: var(--spacing-3);
+}
+
+.resultActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-2);
+}
+
+.resultCode {
+  margin: 0;
+  padding: var(--spacing-3);
+  background: var(--muted);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  color: var(--foreground);
+  overflow-x: auto;
+  white-space: pre;
+}
+
 .summary {
   display: flex;
   align-items: center;

@@ -14,6 +14,7 @@ export type ValidationResult = {
   type: ValidationResultType;
   message: string;
   details?: string;
+  suggestedManifest?: ModuleInfo;
 };
 
 export type ImportJobTimelineEntry = {

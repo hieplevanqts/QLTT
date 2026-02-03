@@ -34,11 +34,31 @@ export function ScopeSelector() {
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [selectedArea, setSelectedArea] = useState<string>('');
 
+const [departmentDetail, setDepartmentDetail] = useState(null);
+
+useEffect(() => {
+  const getDeptData = async () => {
+    if (user?.department_id) {
+      try {
+        const data = await fetchDepartmentById(user?.department_id);
+        setDepartmentDetail(data);
+        deptInfoRef.current = data;
+        setSelectedTeam(data?._id);
+        console.log('data',data);
+        
+      } catch (error) {
+      }
+    }
+  };
+
+  getDeptData();
+}, [user?.department_id]); 
+
   const userDivision = useMemo(() => {
     const id =
-      (authUser as any)?.app_metadata?.department?.id
-      || (authUser as any)?.departmentInfo?.id
-      || (authUser as any)?.department_id
+      (authUser as any)?.departmentInfo?.id
+      // || (authUser as any)?.departmentInfo?.id
+      || (authUser as any)?.department
       || null;
     if (!id) return null;
     const name =
@@ -236,7 +256,12 @@ export function ScopeSelector() {
   const isDivisionDisabled = isLoading || locks.division;
   const isTeamDisabled = isLoading || locks.team || !scope.divisionId;
   const isAreaDisabled = isLoading || locks.team || !scope.teamId;
-  
+  console.log('selectedDivision', selectedDivision);
+  console.log('selectedTeam', selectedTeam);
+  console.log('availableTeams', availableTeams);
+  console.log('divisionOptions', divisionOptions);
+  let disabled_division = selectedDivision ? true : false;
+  let disabled_team = selectedTeam ? true : false;
 
   return (
     <div 
@@ -251,32 +276,38 @@ export function ScopeSelector() {
           value={selectedDivision || ''}
           onChange={handleDivisionChange}
           className={styles.select}
-          disabled={isDivisionDisabled}
+          disabled={disabled_division}
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
         >
-          <option value="">Tất cả chi cục</option>
-          {divisionOptions.map((division, index) => (
-            <option key={`${division.id || 'div'}-${index}`} value={division.id}>
+          {/* <option value="">Tất cả chi cục</option> */}
+          {divisionOptions.map((division, index) => {
+            let selected = selectedDivision === division.id ? true : false;
+            return (
+            <option key={`${division.id || 'div'}-${index}`} value={division.id} selected={selected}>
               {division.name}
             </option>
-          ))}
+          )
+          })}
         </select>
         
         <select
           value={selectedTeam || ''}
           onChange={handleTeamChange}
           className={styles.select}
-          disabled={isTeamDisabled}
+          disabled={disabled_team}
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
         >
           <option value="">Tất cả đội</option>
-          {availableTeams.map((team, index) => (
-            <option key={`${team.id || 'team'}-${index}`} value={team.id}>
+          {availableTeams.map((team, index) => {
+            let selectedTeam = team.id ? true : false;
+            return (
+            <option key={`${team.id || 'team'}-${index}`} value={team.id} selected={selectedTeam}>
               {team.name}
             </option>
-          ))}
+          )
+          })}
         </select>
 
         {/* <select

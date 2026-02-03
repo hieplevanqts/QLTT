@@ -1,10 +1,10 @@
 /**
- * ReportDetailPage - Trang chi tiết báo cáo
+ * Chi tiết báo cáo - Report Detail Page
  */
 
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Calendar, User, MapPin, FileText } from 'lucide-react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { ArrowLeft, Download, Calendar, User, MapPin, FileText, ChevronRight } from 'lucide-react';
 import { reportService } from '../services/reportService';
 import { Report } from '../data/mock';
 import { ExportCsvButton } from '../components/ExportCsvButton';
@@ -82,6 +82,25 @@ export const ReportDetailPage: React.FC = () => {
 
   return (
     <div className={styles.reportDetailPage}>
+      {/* Breadcrumb */}
+      <div className={styles.breadcrumbs} style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '8px',
+        marginBottom: '20px',
+        fontSize: '14px',
+        color: '#666',
+        padding: '12px 0'
+      }}>
+        <Link to="/" className={styles.breadcrumbLink} style={{ color: '#666', textDecoration: 'none' }}>Trang chủ</Link>
+        <ChevronRight style={{ width: '16px', height: '16px', color: '#ccc', flexShrink: 0 }} />
+        <Link to="/kpi" className={styles.breadcrumbLink} style={{ color: '#666', textDecoration: 'none' }}>Báo cáo & KPI</Link>
+        <ChevronRight style={{ width: '16px', height: '16px', color: '#ccc', flexShrink: 0 }} />
+        <Link to="/kpi/list" className={styles.breadcrumbLink} style={{ color: '#666', textDecoration: 'none' }}>Danh sách báo cáo</Link>
+        <ChevronRight style={{ width: '16px', height: '16px', color: '#ccc', flexShrink: 0 }} />
+        <span style={{ color: '#101828', fontWeight: '500' }}>Chi tiết báo cáo</span>
+      </div>
+
       <div className={styles.header}>
         <button onClick={handleBack} className={styles.backButton}>
           <ArrowLeft size={18} />

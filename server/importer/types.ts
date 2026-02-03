@@ -14,6 +14,7 @@ export interface ValidationResult {
   type: ValidationResultType;
   message: string;
   details?: string;
+  suggestedManifest?: ModuleManifest;
 }
 
 export interface ImportJobTimelineEntry {

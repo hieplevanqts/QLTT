@@ -4,6 +4,37 @@
   min-height: 100%;
 }
 
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--muted-foreground);
+  margin-bottom: var(--spacing-xl);
+  line-height: 1.5;
+}
+
+.breadcrumbLink {
+  color: var(--muted-foreground);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.breadcrumbLink:hover {
+  color: var(--primary);
+}
+
+.breadcrumbSeparator {
+  color: var(--border);
+}
+
+.breadcrumbCurrent {
+  color: var(--foreground);
+  font-weight: var(--font-weight-medium);
+}
+
 .header {
   display: flex;
   justify-content: space-between;

@@ -100,7 +100,14 @@ const stripMissingColumn = (
   message?: string,
 ) => {
   if (!message) return payload;
-  const match = message.match(/column \"([^\"]+)\"/i);
+  const patterns = [
+    /column\s+["']([^"']+)["']/i,
+    /the\s+["']([^"']+)["']\s+column/i,
+  ];
+  const match = patterns.reduce<RegExpMatchArray | null>(
+    (found, pattern) => found ?? message.match(pattern),
+    null,
+  );
   if (!match) return payload;
   const missing = match[1];
   if (missing in payload) {

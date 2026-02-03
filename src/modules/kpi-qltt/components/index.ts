@@ -2,10 +2,13 @@
  * Components exports
  */
 
-export { KpiLayout } from './KpiLayout';
-export { KpiCards } from './KpiCards';
-export { MiniTrend } from './MiniTrend';
-export { FilterBar } from './FilterBar';
-export { DataTable } from './DataTable';
-export { ExportCsvButton } from './ExportCsvButton';
-export type { FilterValues } from './FilterBar';
+export * from './KpiCards';
+export * from './ActivityTrendChart';
+export * from './MiniTrend';
+export * from './FilterBar';
+export * from './DataTable';
+export * from './CompareKpiFilterBar';
+export * from './CompareKpiTable';
+export * from './CompareMiniBars';
+export * from './ExportCsvButton';
+export * from './KpiLayout';

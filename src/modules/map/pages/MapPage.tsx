@@ -69,7 +69,9 @@ export default function MapPage() {
   const dispatch = useAppDispatch();
   const { hasPermission } = usePermissions();
 
-  const { user,department } = useAppSelector((state: RootState) => state.auth);
+  const { user } = useAppSelector((state: RootState) => state.auth);
+ 
+  
   // 🔥 Redux Auth Check
   const canEditMap = hasPermission('map.page.edit') || hasPermission('ADMIN_VIEW');
   const canViewMap = hasPermission('map.page.read') || hasPermission('ADMIN_VIEW');
