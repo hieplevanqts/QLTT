@@ -29,7 +29,7 @@ export async function fetchMerchants(
   wardId?: string,
   targetDepartmentPath?: string,
   businessTypeFiltersArray?: string[],
-  searchQuery?: string,
+  searchQuery?: any,
 ): Promise<Restaurant[]> {
 console.log('targetDepartmentPath', targetDepartmentPath);
 if(targetDepartmentPath === undefined || targetDepartmentPath === null || targetDepartmentPath === '' || targetDepartmentPath === 'undefined' || targetDepartmentPath === 'null' || targetDepartmentPath === ' ' ){
@@ -43,6 +43,11 @@ try {
     params.append('order', '_id.desc');
     const pathFilter = targetDepartmentPath ? `${targetDepartmentPath}*` : 'QT*';
     params.append('department_path', `like.${pathFilter}`);
+    
+    if (departmentIds && departmentIds.length > 0) {
+       params.append('department_id', `in.(${departmentIds.join(',')})`);
+    }
+
     if (statusCodes && statusCodes.length > 0) {
       params.append('status', `in.(${statusCodes.join(',')})`);
     }

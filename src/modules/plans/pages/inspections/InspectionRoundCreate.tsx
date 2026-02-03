@@ -21,6 +21,7 @@ import { useSupabaseInspectionRounds } from '@/hooks/useSupabaseInspectionRounds
 import type { InspectionRound } from '@/types/inspections';
 import type { Plan } from '@/types/plans';
 import { fetchPlansApi } from '@/utils/api/plansApi';
+import { fetchDepartmentById } from '@/utils/api/departmentsApi';
 import { fetchMerchants } from '@/utils/api/merchantsApi';
 import type { Restaurant } from '@/utils/data/restaurantData';
 import { supabase } from '@/api/supabaseClient';
@@ -241,7 +242,25 @@ export default function InspectionRoundCreate() {
     async function loadMerchants() {
       try {
         setLoadingMerchants(true);
-        const merchants = await fetchMerchants(undefined, undefined, undefined, formData.provinceId || undefined, formData.wardId || undefined);
+        
+        let targetPath = undefined;
+        if (formData.leadUnitId) {
+          try {
+            const dept = await fetchDepartmentById(formData.leadUnitId);
+            if (dept) targetPath = dept.path;
+          } catch (e) {
+            console.error('Error fetching department info:', e);
+          }
+        }
+
+        const merchants = await fetchMerchants(
+          undefined, 
+          undefined, 
+          formData.leadUnitId ? [formData.leadUnitId] : undefined, 
+          formData.provinceId || undefined, 
+          formData.wardId || undefined,
+          targetPath
+        );
         setRealMerchants(merchants || []);
       } catch (err) {
         console.error('Error fetching merchants:', err);
@@ -250,7 +269,7 @@ export default function InspectionRoundCreate() {
       }
     }
     loadMerchants();
-  }, [formData.provinceId, formData.wardId]);
+  }, [formData.provinceId, formData.wardId, formData.leadUnitId]);
 
   useEffect(() => {
     async function loadData() {
