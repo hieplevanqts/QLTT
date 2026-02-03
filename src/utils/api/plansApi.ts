@@ -400,6 +400,8 @@ export async function updatePlanApi(id: string, updates: Partial<Plan>): Promise
                         updates.priority === 'medium' ? 2 : 1;
     }
     if (updates.attachments) payload.attachments = updates.attachments;
+    if ((updates as any).provinceId) payload.province_id = (updates as any).provinceId;
+    if ((updates as any).wardId) payload.ward_id = (updates as any).wardId;
     
     const response = await fetch(url, {
       method: 'PATCH',

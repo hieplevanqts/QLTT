@@ -96,6 +96,7 @@ export function PlanCreate() {
   const [showM03Modal, setShowM03Modal] = useState(false);
 
   const [managingUnits, setManagingUnits] = useState<{id: string, name: string}[]>([]);
+  const [isSingleUnit, setIsSingleUnit] = useState(false);
 
   // Helper functions
   const getPlanTypeLabel = (type: PlanTypeTab): string => {
@@ -107,60 +108,60 @@ export function PlanCreate() {
     }
   };
 
-  // Fetch departments based on scope
+  // Fetch departments based on user department
   useEffect(() => {
     async function fetchManagingUnits() {
-      // Use scope.divisionId directly instead of localStorage
-      const divisionId = scope.divisionId;
-      if (!divisionId) {
-          setManagingUnits([]); // Clear if no division selected
+      // Prioritize user's department_id
+      const departmentId = (user as any)?.department_id; // Cast because property might be missing in type def
+      
+      if (!departmentId) {
+          // Fallback to scope or existing logic if needed, but user request specific logic
+          setManagingUnits([]); 
           return;
       }
 
       try {
-        // 🔥 FIX: Validate UUID format and resolve department name to UUID if needed
-        const isValidUUID = (str: string): boolean => {
-          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-          return uuidRegex.test(str);
-        };
-        
-        let actualDivisionId = divisionId;
-        
-        // Check if divisionId is a valid UUID
-        if (!isValidUUID(divisionId)) {
-          console.log(`⚠️ PlanCreate: divisionId is not a UUID, searching by name:`, divisionId);
-          
-          // Try to find department by name
-          const { data: deptByName, error: searchError } = await supabase
-            .from('departments')
-            .select('_id')
-            .eq('name', divisionId)
-            .is('deleted_at', null)
-            .single();
-          
-          if (searchError || !deptByName) {
-            console.error(`❌ PlanCreate: Department not found by name "${divisionId}":`, searchError);
-            setManagingUnits([]);
-            return;
-          }
-          
-          actualDivisionId = deptByName._id;
-          console.log(`✅ PlanCreate: Found department UUID:`, actualDivisionId);
-        }
-        
-        const { data, error } = await supabase
+        // 1. Check for child departments (sub-levels)
+        const { data: children, error: childError } = await supabase
           .from('departments')
           .select('_id, name')
-          .eq('parent_id', actualDivisionId);
+          .eq('parent_id', departmentId)
+          .is('deleted_at', null);
 
-        if (error) {
-          console.error('Error fetching managing units:', error);
+        if (childError) {
+          console.error('Error fetching child departments:', childError);
           return;
         }
 
-        if (data) {
-          // Map _id to id for consistency
-          setManagingUnits(data.map((u: any) => ({ id: u._id, name: u.name })));
+        if (children && children.length > 0) {
+          // Has sub-levels: Show list
+          setManagingUnits(children.map((u: any) => ({ id: u._id, name: u.name })));
+          setIsSingleUnit(false);
+        } else {
+          // No sub-levels: Fetch current department info and set as default
+          const { data: currentDept, error: currError } = await supabase
+            .from('departments')
+            .select('_id, name')
+            .eq('_id', departmentId)
+            .single();
+            
+          if (currError) {
+             console.error('Error fetching current department:', currError);
+             return;
+          }
+          
+          if (currentDept) {
+            const unit = { id: currentDept._id, name: currentDept.name };
+            setManagingUnits([unit]);
+            setIsSingleUnit(true);
+            
+            // Auto-select this unit
+             setFormData(prev => ({
+                ...prev,
+                responsibleUnit: unit.name,
+                responsibleUnitId: unit.id
+              }));
+          }
         }
       } catch (err) {
         console.error('Error fetching managing units:', err);
@@ -168,7 +169,8 @@ export function PlanCreate() {
     }
 
     fetchManagingUnits();
-  }, [scope.divisionId]); // Re-run when division changes
+    // Depend on user.department_id instead of scope.divisionId
+  }, [(user as any)?.department_id]);
 
   // Fetch provinces
   useEffect(() => {
@@ -389,6 +391,9 @@ export function PlanCreate() {
         startDate: formData.startDate,
         endDate: formData.endDate || formData.startDate,
         priority: formData.priority,
+        // Pass IDs to update payload (important!)
+        provinceId: formData.provinceId,
+        wardId: formData.wardId,
         attachments: uploadedAttachments.length > 0 ? uploadedAttachments : undefined,
       };
 
@@ -711,6 +716,7 @@ export function PlanCreate() {
                         });
                       }
                     }}
+                    disabled={isSingleUnit}
                   >
                     <option value="">Chọn đơn vị...</option>
                     {managingUnits.length > 0 ? (
