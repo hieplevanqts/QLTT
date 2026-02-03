@@ -22,6 +22,7 @@ interface SupabaseLead {
   risk_scope: string;
   location: any; // JSONB - flexible
   store_name?: string;
+  merchant_id?: string; // Added merchant_id field
   store_address?: string;
   reporter_name?: string;
   reporter_phone?: string;
@@ -76,14 +77,15 @@ function transformSupabaseLead(dbLead: SupabaseLead): Lead {
   };
 
   return {
-    _id: dbLead._id || dbLead.id || `temp-${dbLead.code}`, // Map to _id to match Lead interface
+    _id: dbLead._id || dbLead.id || `temp-${dbLead.code}`,
+    id: dbLead._id || dbLead.id || `temp-${dbLead.code}`,
     code: dbLead.code,
     title: dbLead.title,
     description: dbLead.description,
     status: dbLead.status,
     urgency: (dbLead.severity as any) || mapConfidenceToUrgency(dbLead.confidence || 'medium'),
     severity: (dbLead.severity as any) || mapConfidenceToUrgency(dbLead.confidence || 'medium'),
-    confidence: dbLead.confidence,
+    confidence: dbLead.confidence || 'medium',
     source: dbLead.source || dbLead.title || 'app',
     category: dbLead.category,
     riskScope: (dbLead.risk_scope as 'point' | 'store' | 'zone' | 'topic') || 'point',
