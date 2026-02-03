@@ -20,6 +20,8 @@ import {
   Calendar,
   FileText,
   Zap,
+  X,
+  Image,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AIBulkActionBar } from "@/components/lead-risk/AIBulkActionBar";
@@ -38,6 +40,7 @@ interface AILead {
   timestamp: Date;
   priority: 'high' | 'medium' | 'low';
   isRead: boolean;
+  evidences: string[]; // Added evidences field
   ai: {
     verdict: "worthy" | "unworthy" | "review";
     confidence: number;
@@ -68,6 +71,10 @@ export default function LeadInboxAIDemo() {
       timestamp: new Date(Date.now() - 5 * 60000), // 5 phút trước
       priority: 'high',
       isRead: false,
+      evidences: [
+        "https://images.unsplash.com/photo-1596462502278-27bfdd403cc2?w=400&h=300&fit=crop",
+        "https://images.unsplash.com/photo-1612817288484-6f8ccace713d?w=400&h=300&fit=crop"
+      ],
       ai: {
         verdict: "worthy",
         confidence: 95,
@@ -94,6 +101,9 @@ export default function LeadInboxAIDemo() {
       timestamp: new Date(Date.now() - 15 * 60000), // 15 phút trước
       priority: 'medium',
       isRead: false,
+      evidences: [
+        "https://images.unsplash.com/photo-1554469384-e58fac16e23a?w=400&h=300&fit=crop"
+      ],
       ai: {
         verdict: "review",
         confidence: 68,
@@ -116,6 +126,7 @@ export default function LeadInboxAIDemo() {
       timestamp: new Date(Date.now() - 30 * 60000), // 30 phút trước
       priority: 'low',
       isRead: true,
+      evidences: [],
       ai: {
         verdict: "unworthy",
         confidence: 92,
@@ -138,6 +149,11 @@ export default function LeadInboxAIDemo() {
       timestamp: new Date(Date.now() - 60 * 60000), // 1 giờ trước
       priority: 'high',
       isRead: false,
+      evidences: [
+        "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop",
+        "https://images.unsplash.com/photo-1550966871-3ed3c47e2ce2?w=400&h=300&fit=crop",
+        "https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?w=400&h=300&fit=crop"
+      ],
       ai: {
         verdict: "worthy",
         confidence: 88,
@@ -163,6 +179,9 @@ export default function LeadInboxAIDemo() {
       timestamp: new Date(Date.now() - 120 * 60000), // 2 giờ trước
       priority: 'medium',
       isRead: true,
+      evidences: [
+        "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=300&fit=crop"
+      ],
       ai: {
         verdict: "review",
         confidence: 72,
@@ -193,6 +212,13 @@ export default function LeadInboxAIDemo() {
       'Quảng cáo sai sự thật về thuốc',
       'Tăng giá bất hợp lý dịp Tết'
     ];
+    const evidenceImages = [
+      "https://images.unsplash.com/photo-1596462502278-27bfdd403cc2?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1612817288484-6f8ccace713d?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1554469384-e58fac16e23a?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1550966871-3ed3c47e2ce2?w=400&h=300&fit=crop"
+    ];
 
     const category = getRandomElement(categories);
     const location = getRandomElement(locations);
@@ -210,6 +236,12 @@ export default function LeadInboxAIDemo() {
     }
 
     const id = Math.random().toString(36).substr(2, 9);
+    const hasEvidence = Math.random() > 0.3;
+    const numEvidence = hasEvidence ? Math.floor(Math.random() * 3) + 1 : 0;
+    const evidences = [];
+    for (let i = 0; i < numEvidence; i++) {
+      evidences.push(getRandomElement(evidenceImages));
+    }
 
     return {
       id,
@@ -222,6 +254,7 @@ export default function LeadInboxAIDemo() {
       timestamp: new Date(),
       priority,
       isRead: false,
+      evidences,
       ai: {
         verdict,
         confidence,
@@ -598,6 +631,13 @@ export default function LeadInboxAIDemo() {
                   </div>
                 </div>
                 {/* Close button is automatically added by DialogContent usually, but we can add secondary actions if needed */}
+                <button
+                  onClick={() => setSelectedLead(null)}
+                  className="p-2 hover:bg-muted rounded-full transition-colors"
+                  aria-label="Close"
+                >
+                  <X size={20} className="text-muted-foreground" />
+                </button>
               </div>
 
               {/* Modal Body - Scrollable */}
@@ -648,6 +688,27 @@ export default function LeadInboxAIDemo() {
                         <Sparkles size={16} style={{ color: 'var(--primary)', marginTop: 4 }} />
                         <p style={{ margin: 0 }}>{selectedLead.ai.summary}</p>
                       </div>
+                    </div>
+
+                    {/* Evidence Section */}
+                    <div className={styles.detailsSection}>
+                      <h3 className={styles.detailsSectionTitle}>
+                        <Image size={18} />
+                        Hình ảnh bằng chứng
+                      </h3>
+                      {selectedLead.evidences && selectedLead.evidences.length > 0 ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '8px' }}>
+                          {selectedLead.evidences.map((img, idx) => (
+                            <div key={idx} style={{ aspectRatio: '4/3', overflow: 'hidden', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                              <img src={img} alt={`Evidence ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div style={{ padding: '20px', textAlign: 'center', background: 'var(--muted)', borderRadius: '8px', color: 'var(--muted-foreground)', fontSize: '13px' }}>
+                          Không có hình ảnh đính kèm
+                        </div>
+                      )}
                     </div>
 
                     {/* Violations */}
