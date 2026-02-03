@@ -22,9 +22,13 @@ export const registryRoutes: RouteObject[] = [
   {
     path: 'registry',
     children: [
+      // {
+      //   index: true,
+      //   element: <RegistryHomePage />,
+      // },
       {
         index: true,
-        element: <RegistryHomePage />,
+        element: <RegistryStoreListPage />,
       },
       {
         path: 'stores',
