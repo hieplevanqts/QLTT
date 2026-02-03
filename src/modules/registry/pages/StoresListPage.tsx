@@ -73,8 +73,6 @@ export default function StoresListPage() {
   const { user, department } = useAppSelector((state: RootState) => state.auth);
   console.log('User:', user);
   const departmentId = user?.department_id;
-const departmentPath = user?.app_metadata?.department?.path ;
-    console.log('Department Path:', departmentPath);
     
   // Router & Search Params
   const navigate = useNavigate();
@@ -259,11 +257,11 @@ const departmentPath = user?.app_metadata?.department?.path ;
         filters.riskLevel = advancedFilter.riskLevel;
       }
 
-      const data = await fetchStoresStats(filters, departmentPath);
+      const data = await fetchStoresStats(filters, departmentId);
       setStats(data);
     } catch (error) {
     }
-  }, [statusFilter, jurisdictionFilter, debouncedSearchValue, businessTypeFilter, advancedFilter, departmentPath]);
+  }, [statusFilter, jurisdictionFilter, debouncedSearchValue, businessTypeFilter, advancedFilter, departmentId]);
 
   useEffect(() => {
     loadStats();
@@ -289,13 +287,6 @@ const departmentPath = user?.app_metadata?.department?.path ;
       if (debouncedSearchValue) {
         filters.search = debouncedSearchValue;
       }
-      // If user has a department path (e.g. "QT.QT01"), filter by its root code like "QT*"
-      if (departmentPath) {
-        const root = String(departmentPath).split('.')[0];
-        if (root) {
-          filters.department_path = `like.${root}*`;
-        }
-      }
       if (businessTypeFilter && businessTypeFilter !== 'all') {
         filters.businessType = businessTypeFilter;
       }
@@ -309,7 +300,7 @@ const departmentPath = user?.app_metadata?.department?.path ;
         filters.riskLevel = advancedFilter.riskLevel;
       }
 
-      const { data, total } = await fetchStores(pageSize, offset, filters, departmentPath);
+      const { data, total } = await fetchStores(pageSize, offset, filters, departmentId);
 
       setStores(data);
       setTotalRecords(total);
@@ -335,7 +326,7 @@ const departmentPath = user?.app_metadata?.department?.path ;
     } finally {
       setIsLoadingStores(false);
     }
-  }, [currentPage, pageSize, statusFilter, jurisdictionFilter, debouncedSearchValue, businessTypeFilter, advancedFilter, departmentPath]);
+  }, [currentPage, pageSize, statusFilter, jurisdictionFilter, debouncedSearchValue, businessTypeFilter, advancedFilter, departmentId]);
 
   // Load stores from API when pagination or filters change
   useEffect(() => {
