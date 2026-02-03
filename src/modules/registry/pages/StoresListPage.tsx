@@ -29,6 +29,7 @@ import { ImportDialog } from '@/components/ui-kit/ImportDialog';
 import { AddStoreDialog, NewStoreData } from '@/components/ui-kit/AddStoreDialog';
 import DataTable, { Column } from '@/components/ui-kit/DataTable';
 import { SearchInput } from '@/components/ui-kit/SearchInput';
+import { SearchableSelect } from '@/components/ui-kit/SearchableSelect';
 import { AsyncSearchableSelect } from '@/components/ui-kit/AsyncSearchableSelect';
 import { searchCategories } from '@/utils/api/categoriesApi';
 import { Button } from '@/components/ui/button';
