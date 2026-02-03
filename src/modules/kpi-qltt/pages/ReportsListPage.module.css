@@ -1,7 +1,38 @@
 .reportsListPage {
   padding: 24px;
-  max-width: 1600px;
+  max-width: 1400px;
   margin: 0 auto;
+}
+
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--muted-foreground);
+  margin-bottom: var(--spacing-xl);
+  line-height: 1.5;
+}
+
+.breadcrumbLink {
+  color: var(--muted-foreground);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.breadcrumbLink:hover {
+  color: var(--primary);
+}
+
+.breadcrumbSeparator {
+  color: var(--border);
+}
+
+.breadcrumbCurrent {
+  color: var(--foreground);
+  font-weight: var(--font-weight-medium);
 }
 
 .header {

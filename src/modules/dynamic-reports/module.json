@@ -1,0 +1,14 @@
+{
+  "id": "dynamic-reports",
+  "name": "Dynamic Reports",
+  "version": "0.1.0",
+  "basePath": "/bao-cao-dong",
+  "entry": "src/modules/dynamic-reports/index.ts",
+  "routes": "src/modules/dynamic-reports/routes.tsx",
+  "routeExport": "dynamicReportsRoute",
+  "permissions": [],
+  "ui": {
+    "menuLabel": "Dynamic Reports",
+    "menuPath": "/bao-cao-dong"
+  }
+}

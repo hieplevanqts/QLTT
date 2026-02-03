@@ -1,7 +1,7 @@
 {
   "id": "kpi-qltt",
   "name": "KPI & Thống kê QLTT",
-  "version": "0.2.1",
+  "version": "0.2.3",
   "basePath": "/kpi",
   "entry": "src/modules/kpi-qltt/index.ts",
   "routes": "src/modules/kpi-qltt/routes.tsx",

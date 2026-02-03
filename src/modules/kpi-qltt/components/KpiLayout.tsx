@@ -1,5 +1,5 @@
 /**
- * KpiLayout - Layout wrapper cho module KPI
+ * KPI QLTT Module Layout
  */
 
 import React from 'react';

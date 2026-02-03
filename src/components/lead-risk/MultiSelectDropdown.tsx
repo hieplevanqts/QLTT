@@ -14,6 +14,7 @@ interface MultiSelectDropdownProps {
   selectedValues: string[];
   onChange: (values: string[]) => void;
   placeholder?: string;
+  showLabel?: boolean;
 }
 
 export default function MultiSelectDropdown({
@@ -21,7 +22,8 @@ export default function MultiSelectDropdown({
   options,
   selectedValues,
   onChange,
-  placeholder = 'Chọn...'
+  placeholder = 'Chọn...',
+  showLabel = true,
 }: MultiSelectDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -73,7 +75,7 @@ export default function MultiSelectDropdown({
         onClick={() => setIsOpen(!isOpen)}
       >
         <div className={styles.triggerContent}>
-          <span className={styles.label}>{label}:</span>
+          {showLabel ? <span className={styles.label}>{label}:</span> : null}
           {selectedValues.length > 0 ? (
             <div className={styles.selectedBadges}>
               {selectedValues.length === 1 ? (

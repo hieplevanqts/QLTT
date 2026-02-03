@@ -51,8 +51,8 @@ const parseModuleManifest = (buffer: Buffer) => {
   return JSON.parse(json) as ModuleManifest;
 };
 
-const toTitleLabel = (value: string) => {
-  return value
+const toTitleLabel = (value: string) =>
+  value
     .split(/[-_]/g)
     .filter(Boolean)
     .map((segment) => {
@@ -66,6 +66,16 @@ const toTitleLabel = (value: string) => {
     })
     .filter(Boolean)
     .join(' ');
+
+const toSlugId = (value: string) => {
+  const ascii = value
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '');
+  return ascii
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
 };
 
 const toRouteExport = (moduleId: string) => {
@@ -167,15 +177,22 @@ const buildSuggestedManifest = (
     }
   });
 
+  const zipBaseName = ctx.originalFileName ? path.parse(ctx.originalFileName).name.trim() : '';
+  const preferredId = zipBaseName ? toSlugId(zipBaseName) : '';
+  const preferredRoot =
+    preferredId && candidates.get(preferredId)
+      ? preferredId
+      : preferredId && candidates.get(`src/modules/${preferredId}`)
+        ? `src/modules/${preferredId}`
+        : null;
+
   let best = [...candidates.values()].sort((a, b) => {
     if (a.count !== b.count) return b.count - a.count;
     if (a.priority !== b.priority) return b.priority - a.priority;
     return a.root.localeCompare(b.root);
   })[0];
 
-  const fallbackId = ctx.originalFileName
-    ? path.parse(ctx.originalFileName).name
-    : 'new-module';
+  const fallbackId = preferredId || 'new-module';
 
   if (!best) {
     const hasRootFiles = normalizedFiles.some((entry) => !entry.includes('/'));
@@ -187,7 +204,13 @@ const buildSuggestedManifest = (
     };
   }
 
-  const moduleId = best.id || fallbackId;
+  if (preferredRoot) {
+    const preferredCandidate = candidates.get(preferredRoot);
+    if (preferredCandidate) best = preferredCandidate;
+  }
+
+  const rootId = best.id || fallbackId;
+  const moduleId = preferredId || rootId;
   const moduleRoot = best.root;
   const moduleRootPrefix = moduleRoot ? `${moduleRoot}/` : '';
   const relativePaths = normalizedFiles
@@ -216,7 +239,8 @@ const buildSuggestedManifest = (
   const entryPath = entryRel ? `${srcPrefix}/${entryRel}` : `${srcPrefix}/index.ts`;
   const routesPath = routesRel ? `${srcPrefix}/${routesRel}` : `${srcPrefix}/routes.tsx`;
 
-  const name = toTitleLabel(moduleId) || moduleId;
+  const labelSource = zipBaseName || moduleId;
+  const name = toTitleLabel(labelSource) || moduleId;
   const menuLabel = name;
 
   const manifest: ModuleManifest = {
@@ -234,12 +258,17 @@ const buildSuggestedManifest = (
     },
   };
 
-  const details = [
-    moduleRoot ? `Root: ${moduleRoot}` : 'Root: (goc zip)',
-    `Entry: ${manifest.entry}`,
-    `Routes: ${manifest.routes}`,
-    basePathFromRoutes ? `BasePath: ${basePath} (tu routes)` : `BasePath: ${basePath}`,
-  ].join(' | ');
+  const rootMismatch = rootId && moduleId && rootId !== moduleId;
+  const detailsParts = [
+    zipBaseName ? `Tên ZIP: ${zipBaseName}` : undefined,
+    `ID mô-đun: ${moduleId}`,
+    moduleRoot ? `Thư mục gốc: ${moduleRoot}` : 'Thư mục gốc: (gốc zip)',
+    `Tệp entry: ${manifest.entry}`,
+    `Tệp routes: ${manifest.routes}`,
+    basePathFromRoutes ? `Đường dẫn gốc: ${basePath} (từ routes)` : `Đường dẫn gốc: ${basePath}`,
+    rootMismatch ? `Lưu ý: đổi tên thư mục trong ZIP thành "${moduleId}"` : undefined,
+  ].filter(Boolean) as string[];
+  const details = detailsParts.join(' | ');
 
   return { manifest, details };
 };
@@ -489,10 +518,10 @@ export function validateZipEntries(entries: ZipEntryInfo[], ctx: ValidationConte
       'MODULE_JSON_MISSING',
       'Missing module.json',
       [
-        buildValidationResult('error', 'Thieu module.json o root module folder'),
+        buildValidationResult('error', 'Thiếu module.json ở thư mục gốc mô-đun'),
         buildValidationResult(
           'warning',
-          'Goi y module.json mau',
+          'Gợi ý module.json mẫu',
           suggestion.details,
           { suggestedManifest: suggestion.manifest },
         ),
