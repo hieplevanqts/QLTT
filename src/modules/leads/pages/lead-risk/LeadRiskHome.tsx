@@ -408,42 +408,44 @@ export default function LeadRiskHome() {
       </div>
 
       {/* Stats Bar */}
-      <div className={styles.statsBar}>
-        <div className={styles.statItem}>
-          <Calendar size={18} className={styles.statIcon} />
-          <div className={styles.statContent}>
-            <span className={styles.statLabel}>SLA tuân thủ</span>
-            <span className={styles.statValue}>92%</span>
+      <div className='pb-4'>
+        <div className={styles.statsBar}>
+          <div className={styles.statItem}>
+            <Calendar size={18} className={styles.statIcon} />
+            <div className={styles.statContent}>
+              <span className={styles.statLabel}>SLA tuân thủ</span>
+              <span className={styles.statValue}>92%</span>
+            </div>
           </div>
-        </div>
 
-        <div className={styles.statDivider}></div>
+          <div className={styles.statDivider}></div>
 
-        <div className={styles.statItem}>
-          <Users size={18} className={styles.statIcon} />
-          <div className={styles.statContent}>
-            <span className={styles.statLabel}>Thanh tra viên hoạt động</span>
-            <span className={styles.statValue}>48 người</span>
+          <div className={styles.statItem}>
+            <Users size={18} className={styles.statIcon} />
+            <div className={styles.statContent}>
+              <span className={styles.statLabel}>Thanh tra viên hoạt động</span>
+              <span className={styles.statValue}>48 người</span>
+            </div>
           </div>
-        </div>
 
-        <div className={styles.statDivider}></div>
+          <div className={styles.statDivider}></div>
 
-        <div className={styles.statItem}>
-          <MapPin size={18} className={styles.statIcon} />
-          <div className={styles.statContent}>
-            <span className={styles.statLabel}>Điểm nóng đang giám sát</span>
-            <span className={styles.statValue}>12 khu vực</span>
+          <div className={styles.statItem}>
+            <MapPin size={18} className={styles.statIcon} />
+            <div className={styles.statContent}>
+              <span className={styles.statLabel}>Điểm nóng đang giám sát</span>
+              <span className={styles.statValue}>12 khu vực</span>
+            </div>
           </div>
-        </div>
 
-        <div className={styles.statDivider}></div>
+          <div className={styles.statDivider}></div>
 
-        <div className={styles.statItem}>
-          <Filter size={18} className={styles.statIcon} />
-          <div className={styles.statContent}>
-            <span className={styles.statLabel}>Tỷ lệ lead hợp lệ</span>
-            <span className={styles.statValue}>87%</span>
+          <div className={styles.statItem}>
+            <Filter size={18} className={styles.statIcon} />
+            <div className={styles.statContent}>
+              <span className={styles.statLabel}>Tỷ lệ lead hợp lệ</span>
+              <span className={styles.statValue}>87%</span>
+            </div>
           </div>
         </div>
       </div>

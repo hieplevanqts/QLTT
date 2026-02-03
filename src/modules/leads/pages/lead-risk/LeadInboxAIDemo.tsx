@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   Clock,
   CheckCircle,
+  Check,
   XCircle,
   Info,
   Bell,
@@ -23,6 +24,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { AIBulkActionBar } from "@/components/lead-risk/AIBulkActionBar";
 import { Breadcrumb } from "@/components/Breadcrumb";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import styles from "./LeadInboxAIDemo.module.css";
 
 interface AILead {
@@ -373,8 +375,7 @@ export default function LeadInboxAIDemo() {
           <div className={styles.columnHeader}>
             <h2 className={styles.columnTitle}>
               <Activity size={18} />
-              <Activity size={18} />
-              Live Feed
+              Nguồn tin trực tiếp
               <span className={styles.liveIndicator}></span>
             </h2>
             <div style={{ display: 'flex', gap: 4 }}>
@@ -433,306 +434,324 @@ export default function LeadInboxAIDemo() {
           </div>
         </div>
 
-        {/* Center Column (6 parts) - Dashboard or Detail */}
+        {/* Center Column (6 parts) - Dashboard (ALWAYS SHOW DASHBOARD) */}
         <div className={styles.centerColumn}>
-          {selectedLead ? (
-            // Lead Detail View
-            <div className={styles.detailViewContainer}>
-              {/* Header */}
-              <div className={styles.detailsHeader}>
-                <div className={styles.detailsVerdictLarge} style={{
-                  backgroundColor: getVerdictConfig(selectedLead.ai.verdict).bgColor,
-                  color: getVerdictConfig(selectedLead.ai.verdict).color
-                }}>
-                  {(() => {
-                    const config = getVerdictConfig(selectedLead.ai.verdict);
-                    const IconComponent = config.icon;
-                    return <IconComponent size={20} />;
-                  })()}
-                  <span>{getVerdictConfig(selectedLead.ai.verdict).text}</span>
-                </div>
+          <div className={styles.dashboardContainer}>
+            <div className={styles.dashboardHeader}>
+              <h2 className={styles.dashboardTitle}>Tổng quan rủi ro</h2>
+              <p className={styles.dashboardSubtitle}>Cập nhật thời gian thực từ các nguồn tin</p>
+            </div>
 
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                  <span className={styles.detailsTime}>{formatTimestamp(selectedLead.timestamp)}</span>
-                  <button onClick={() => setSelectedLead(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--muted-foreground)' }}>
-                    <XCircle size={20} />
-                  </button>
-                </div>
-              </div>
+            {/* Tabs Header */}
+            <div className={styles.tabHeader}>
+              <button
+                className={`${styles.tabButton} ${activeTab === 'overview' ? styles.tabButtonActive : ''}`}
+                onClick={() => setActiveTab('overview')}
+              >
+                Tổng quan
+              </button>
+              <button
+                className={`${styles.tabButton} ${activeTab === 'category' ? styles.tabButtonActive : ''}`}
+                onClick={() => setActiveTab('category')}
+              >
+                Phân loại nguồn tin
+              </button>
+              <button
+                className={`${styles.tabButton} ${activeTab === 'location' ? styles.tabButtonActive : ''}`}
+                onClick={() => setActiveTab('location')}
+              >
+                Địa bàn
+              </button>
+            </div>
 
-              <div className={styles.detailsCode}>{selectedLead.code}</div>
-              <h2 className={styles.detailsTitle}>{selectedLead.title}</h2>
-
-              {/* Basic Info */}
-              <div className={styles.detailsInfoGrid}>
-                <div className={styles.infoItem}>
-                  <div className={styles.infoLabel}>
-                    <User size={14} />
-                    Người phản ánh
+            <div className={styles.tabContent}>
+              {activeTab === 'overview' && (
+                <>
+                  <div className={styles.statsGrid}>
+                    <div className={styles.statCard}>
+                      <span className={styles.statLabel}>Tổng tin hôm nay</span>
+                      <span className={styles.statValue}>{aiLeads.length}</span>
+                      <TrendingUp size={16} className="text-green-500" />
+                    </div>
+                    <div className={styles.statCard}>
+                      <span className={styles.statLabel}>Rủi ro cao</span>
+                      <span className={styles.statValue} style={{ color: 'rgb(239, 68, 68)' }}>{aiLeads.filter(l => l.priority === 'high').length}</span>
+                      <AlertTriangle size={16} className="text-red-500" />
+                    </div>
+                    <div className={styles.statCard}>
+                      <span className={styles.statLabel}>Đã xử lý</span>
+                      <span className={styles.statValue} style={{ color: 'rgb(34, 197, 94)' }}>{aiLeads.filter(l => l.isRead).length}</span>
+                      <CheckCircle size={16} className="text-blue-500" />
+                    </div>
                   </div>
-                  <div className={styles.infoValue}>{selectedLead.reporter}</div>
-                </div>
-                <div className={styles.infoItem}>
-                  <div className={styles.infoLabel}>
-                    <Calendar size={14} />
-                    Ngày tiếp nhận
-                  </div>
-                  <div className={styles.infoValue}>{selectedLead.reportDate}</div>
-                </div>
-                <div className={styles.infoItem}>
-                  <div className={styles.infoLabel}>
-                    <MapPin size={14} />
-                    Địa điểm
-                  </div>
-                  <div className={styles.infoValue}>{selectedLead.location}</div>
-                </div>
-                <div className={styles.infoItem}>
-                  <div className={styles.infoLabel}>
-                    <FileText size={14} />
-                    Danh mục
-                  </div>
-                  <div className={styles.infoValue}>{selectedLead.category}</div>
-                </div>
-              </div>
 
-              {/* AI Analysis */}
-              <div className={styles.detailsSection}>
-                <h3 className={styles.detailsSectionTitle}>
-                  <Sparkles size={18} />
-                  Phân tích AI
-                </h3>
-                <div className={styles.leadAISummary} style={{ fontSize: 'var(--text-md)', padding: 'var(--spacing-4)' }}>
-                  <Sparkles size={16} style={{ color: 'var(--primary)', marginTop: 4 }} />
-                  <p style={{ margin: 0 }}>{selectedLead.ai.summary}</p>
-                </div>
-              </div>
+                  <div className={styles.filterSection}>
+                    <div className={styles.filterTitle}>
+                      <Activity size={16} />
+                      Lọc theo ngành hàng / Danh mục
+                    </div>
+                    <div className={styles.filterTags}>
+                      {["Tất cả", "ATTP", "Hàng giả", "Gian lận giá", "Quảng cáo", "Dược phẩm", "Mỹ phẩm", "Điện tử"].map(tag => (
+                        <button key={tag} className={styles.filterTag}>
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-              {/* Violations */}
-              {selectedLead.ai.violations.length > 0 && (
+                  {/* Placeholder for a chart or map */}
+                  <div style={{ height: 200, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted-foreground)' }}>
+                    [Biểu đồ xu hướng vi phạm theo khu vực]
+                  </div>
+                </>
+              )}
+
+              {activeTab === 'category' && (
                 <div className={styles.detailsSection}>
-                  <h3 className={styles.detailsSectionTitle}>Hành vi vi phạm phát hiện</h3>
-                  <ul className={styles.violationsList}>
-                    {selectedLead.ai.violations.map((violation, idx) => (
-                      <li key={idx}>• {violation}</li>
+                  <h3 className={styles.detailsSectionTitle}>Phân bố theo danh mục</h3>
+                  <div className={styles.metricsGrid}>
+                    {Object.entries(
+                      aiLeads.reduce((acc, lead) => {
+                        acc[lead.category] = (acc[lead.category] || 0) + 1;
+                        return acc;
+                      }, {} as Record<string, number>)
+                    ).map(([category, count]) => (
+                      <div key={category} className={styles.metricCard} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div>
+                          <div className={styles.metricLabel}>{category}</div>
+                          <div className={styles.metricValue} style={{ fontSize: 'var(--text-base)' }}>{count} tin</div>
+                        </div>
+                        <div style={{ width: '100px', height: '8px', background: 'var(--secondary)', borderRadius: '4px', overflow: 'hidden' }}>
+                          <div style={{ width: `${(count / aiLeads.length) * 100}%`, height: '100%', background: 'var(--primary)' }} />
+                        </div>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               )}
 
-              {/* AI Recommendation */}
-              <div className={styles.detailsSection}>
-                <h3 className={styles.detailsSectionTitle}>Đề xuất của AI</h3>
-                <div className={styles.recommendation}>
-                  <Bell size={16} style={{ flexShrink: 0, marginTop: 2 }} />
-                  <p className={styles.detailsText}>{selectedLead.ai.recommendation}</p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            // Default Dashboard View
-            <div className={styles.dashboardContainer}>
-              <div className={styles.dashboardHeader}>
-                <h2 className={styles.dashboardTitle}>Tổng quan rủi ro</h2>
-                <p className={styles.dashboardSubtitle}>Cập nhật thời gian thực từ các nguồn tin</p>
-              </div>
-
-              {/* Tabs Header */}
-              <div className={styles.tabHeader}>
-                <button
-                  className={`${styles.tabButton} ${activeTab === 'overview' ? styles.tabButtonActive : ''}`}
-                  onClick={() => setActiveTab('overview')}
-                >
-                  Tổng quan
-                </button>
-                <button
-                  className={`${styles.tabButton} ${activeTab === 'category' ? styles.tabButtonActive : ''}`}
-                  onClick={() => setActiveTab('category')}
-                >
-                  Phân loại nguồn tin
-                </button>
-                <button
-                  className={`${styles.tabButton} ${activeTab === 'location' ? styles.tabButtonActive : ''}`}
-                  onClick={() => setActiveTab('location')}
-                >
-                  Địa bàn
-                </button>
-              </div>
-
-              <div className={styles.tabContent}>
-                {activeTab === 'overview' && (
-                  <>
-                    <div className={styles.statsGrid}>
-                      <div className={styles.statCard}>
-                        <span className={styles.statLabel}>Tổng tin hôm nay</span>
-                        <span className={styles.statValue}>{aiLeads.length}</span>
-                        <TrendingUp size={16} className="text-green-500" />
-                      </div>
-                      <div className={styles.statCard}>
-                        <span className={styles.statLabel}>Rủi ro cao</span>
-                        <span className={styles.statValue} style={{ color: 'rgb(239, 68, 68)' }}>{aiLeads.filter(l => l.priority === 'high').length}</span>
-                        <AlertTriangle size={16} className="text-red-500" />
-                      </div>
-                      <div className={styles.statCard}>
-                        <span className={styles.statLabel}>Đã xử lý</span>
-                        <span className={styles.statValue} style={{ color: 'rgb(34, 197, 94)' }}>{aiLeads.filter(l => l.isRead).length}</span>
-                        <CheckCircle size={16} className="text-blue-500" />
-                      </div>
-                    </div>
-
-                    <div className={styles.filterSection}>
-                      <div className={styles.filterTitle}>
-                        <Activity size={16} />
-                        Lọc theo ngành hàng / Danh mục
-                      </div>
-                      <div className={styles.filterTags}>
-                        {["Tất cả", "ATTP", "Hàng giả", "Gian lận giá", "Quảng cáo", "Dược phẩm", "Mỹ phẩm", "Điện tử"].map(tag => (
-                          <button key={tag} className={styles.filterTag}>
-                            {tag}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Placeholder for a chart or map */}
-                    <div style={{ height: 200, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted-foreground)' }}>
-                      [Biểu đồ xu hướng vi phạm theo khu vực]
-                    </div>
-                  </>
-                )}
-
-                {activeTab === 'category' && (
-                  <div className={styles.detailsSection}>
-                    <h3 className={styles.detailsSectionTitle}>Phân bố theo danh mục</h3>
-                    <div className={styles.metricsGrid}>
-                      {Object.entries(
-                        aiLeads.reduce((acc, lead) => {
-                          acc[lead.category] = (acc[lead.category] || 0) + 1;
-                          return acc;
-                        }, {} as Record<string, number>)
-                      ).map(([category, count]) => (
-                        <div key={category} className={styles.metricCard} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              {activeTab === 'location' && (
+                <div className={styles.detailsSection}>
+                  <h3 className={styles.detailsSectionTitle}>Phân bố theo địa bàn</h3>
+                  <div className={styles.metricsGrid}>
+                    {Object.entries(
+                      aiLeads.reduce((acc, lead) => {
+                        acc[lead.location] = (acc[lead.location] || 0) + 1;
+                        return acc;
+                      }, {} as Record<string, number>)
+                    ).map(([location, count]) => (
+                      <div key={location} className={styles.metricCard} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <MapPin size={16} className="text-muted-foreground" />
                           <div>
-                            <div className={styles.metricLabel}>{category}</div>
-                            <div className={styles.metricValue} style={{ fontSize: 'var(--text-base)' }}>{count} tin</div>
-                          </div>
-                          <div style={{ width: '100px', height: '8px', background: 'var(--secondary)', borderRadius: '4px', overflow: 'hidden' }}>
-                            <div style={{ width: `${(count / aiLeads.length) * 100}%`, height: '100%', background: 'var(--primary)' }} />
+                            <div className={styles.metricLabel} style={{ marginBottom: 0 }}>{location}</div>
                           </div>
                         </div>
-                      ))}
-                    </div>
+                        <div className={styles.metricValue} style={{ fontSize: 'var(--text-base)' }}>{count}</div>
+                      </div>
+                    ))}
                   </div>
-                )}
-
-                {activeTab === 'location' && (
-                  <div className={styles.detailsSection}>
-                    <h3 className={styles.detailsSectionTitle}>Phân bố theo địa bàn</h3>
-                    <div className={styles.metricsGrid}>
-                      {Object.entries(
-                        aiLeads.reduce((acc, lead) => {
-                          acc[lead.location] = (acc[lead.location] || 0) + 1;
-                          return acc;
-                        }, {} as Record<string, number>)
-                      ).map(([location, count]) => (
-                        <div key={location} className={styles.metricCard} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <MapPin size={16} className="text-muted-foreground" />
-                            <div>
-                              <div className={styles.metricLabel} style={{ marginBottom: 0 }}>{location}</div>
-                            </div>
-                          </div>
-                          <div className={styles.metricValue} style={{ fontSize: 'var(--text-base)' }}>{count}</div>
-                        </div>
-                      ))}
-                    </div>
-                    <div style={{ marginTop: '20px', height: 200, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted-foreground)' }}>
-                      [Bản đồ nhiệt cảnh báo rủi ro]
-                    </div>
+                  <div style={{ marginTop: '20px', height: 200, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted-foreground)' }}>
+                    [Bản đồ nhiệt cảnh báo rủi ro]
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
-        {/* Right Column (3 parts) - Actions */}
+        {/* Right Column (3 parts) - EMPTY or DEFAULT */}
         <div className={styles.rightColumn}>
-          {selectedLead ? (
+          <div style={{ color: 'var(--muted-foreground)', textAlign: 'center', marginTop: 'var(--spacing-12)' }}>
+            <Info size={32} style={{ marginBottom: 8, opacity: 0.5 }} />
+            <p style={{ fontSize: 'var(--text-sm)' }}>Chọn một nguồn tin để xem chi tiết và xử lý.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* LEAD DETAIL POPUP MODAL */}
+      <Dialog open={!!selectedLead} onOpenChange={(open) => !open && setSelectedLead(null)}>
+        <DialogContent className="max-w-5xl h-[80vh] overflow-hidden flex flex-col p-0 gap-0">
+          {selectedLead && (
             <>
-              <div className={styles.actionPanelTitle}>
-                Hành động xử lý
-              </div>
-
-              <div className={styles.actionButtonStack}>
-                {selectedLead.ai.verdict === "worthy" && (
-                  <>
-                    <button className={`${styles.actionButton} ${styles.btnApprove}`} onClick={handleApproveAI}>
-                      <ThumbsUp size={18} />
-                      Chấp nhận đề xuất
-                    </button>
-                    <button className={`${styles.actionButton} ${styles.btnSecondary}`} onClick={() => navigate("/lead-risk/lead-detail-ai-demo")}>
-                      <Eye size={18} />
-                      Xem chi tiết
-                    </button>
-                  </>
-                )}
-
-                {selectedLead.ai.verdict === "unworthy" && (
-                  <>
-                    <button className={`${styles.actionButton} ${styles.btnReject}`} onClick={handleRejectLead}>
-                      <ThumbsDown size={18} />
-                      Từ chối tin
-                    </button>
-                    <button className={`${styles.actionButton} ${styles.btnSecondary}`} onClick={() => navigate("/lead-risk/lead-detail-ai-demo")}>
-                      <Eye size={18} />
-                      Xem chi tiết
-                    </button>
-                  </>
-                )}
-
-                {selectedLead.ai.verdict === "review" && (
-                  <>
-                    <button className={`${styles.actionButton} ${styles.btnReview}`} onClick={handleRequestMore}>
-                      <AlertTriangle size={18} />
-                      Yêu cầu bổ sung
-                    </button>
-                    <button className={`${styles.actionButton} ${styles.btnSecondary}`} onClick={() => navigate("/lead-risk/lead-detail-ai-demo")}>
-                      <Eye size={18} />
-                      Xem chi tiết
-                    </button>
-                  </>
-                )}
-              </div>
-
-              <div className={styles.actionPanelTitle} style={{ marginTop: 'var(--spacing-8)' }}>
-                Số liệu phân tích
-              </div>
-              <div className={styles.metricsGrid} style={{ gridTemplateColumns: '1fr', gap: 'var(--spacing-3)' }}>
-                <div className={styles.metricCard}>
-                  <div className={styles.metricLabel}>Độ tin cậy AI</div>
-                  <div className={styles.metricValue}>{selectedLead.ai.confidence}%</div>
-                  <div style={{ height: 4, background: '#eee', marginTop: 8, borderRadius: 2 }}>
-                    <div style={{ height: '100%', width: `${selectedLead.ai.confidence}%`, background: 'var(--primary)', borderRadius: 2 }}></div>
+              {/* Modal Header */}
+              <div className="p-6 border-b flex items-center justify-between bg-card">
+                <div className="flex items-center gap-4">
+                  <div className={styles.detailsVerdictLarge} style={{
+                    backgroundColor: getVerdictConfig(selectedLead.ai.verdict).bgColor,
+                    color: getVerdictConfig(selectedLead.ai.verdict).color
+                  }}>
+                    {(() => {
+                      const config = getVerdictConfig(selectedLead.ai.verdict);
+                      const IconComponent = config.icon;
+                      return <IconComponent size={20} />;
+                    })()}
+                    <span>{getVerdictConfig(selectedLead.ai.verdict).text}</span>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold m-0">{selectedLead.title}</h2>
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                      <span className="font-mono text-primary font-bold">{selectedLead.code}</span>
+                      <span>•</span>
+                      <span>{formatTimestamp(selectedLead.timestamp)}</span>
+                    </div>
                   </div>
                 </div>
-                <div className={styles.metricCard}>
-                  <div className={styles.metricLabel}>Độ nghiêm trọng</div>
-                  <div className={styles.metricValue}>{selectedLead.ai.severity}</div>
-                </div>
-                <div className={styles.metricCard}>
-                  <div className={styles.metricLabel}>Tương tự</div>
-                  <div className={styles.metricValue}>{selectedLead.ai.similarCases} cases</div>
+                {/* Close button is automatically added by DialogContent usually, but we can add secondary actions if needed */}
+              </div>
+
+              {/* Modal Body - Scrollable */}
+              <div className="flex-1 overflow-y-auto p-6 bg-background">
+                <div className="grid grid-cols-3 gap-6 h-full">
+
+                  {/* Left Side: Information & Analysis (2/3) */}
+                  <div className="col-span-2 space-y-6">
+                    {/* Basic Info */}
+                    <div className={styles.detailsInfoGrid}>
+                      <div className={styles.infoItem}>
+                        <div className={styles.infoLabel}>
+                          <User size={14} />
+                          Người phản ánh
+                        </div>
+                        <div className={styles.infoValue}>{selectedLead.reporter}</div>
+                      </div>
+                      <div className={styles.infoItem}>
+                        <div className={styles.infoLabel}>
+                          <Calendar size={14} />
+                          Ngày tiếp nhận
+                        </div>
+                        <div className={styles.infoValue}>{selectedLead.reportDate}</div>
+                      </div>
+                      <div className={styles.infoItem}>
+                        <div className={styles.infoLabel}>
+                          <MapPin size={14} />
+                          Địa điểm
+                        </div>
+                        <div className={styles.infoValue}>{selectedLead.location}</div>
+                      </div>
+                      <div className={styles.infoItem}>
+                        <div className={styles.infoLabel}>
+                          <FileText size={14} />
+                          Danh mục
+                        </div>
+                        <div className={styles.infoValue}>{selectedLead.category}</div>
+                      </div>
+                    </div>
+
+                    {/* AI Analysis */}
+                    <div className={styles.detailsSection}>
+                      <h3 className={styles.detailsSectionTitle}>
+                        <Sparkles size={18} />
+                        Phân tích AI
+                      </h3>
+                      <div className={styles.leadAISummary} style={{ fontSize: 'var(--text-md)', padding: 'var(--spacing-4)' }}>
+                        <Sparkles size={16} style={{ color: 'var(--primary)', marginTop: 4 }} />
+                        <p style={{ margin: 0 }}>{selectedLead.ai.summary}</p>
+                      </div>
+                    </div>
+
+                    {/* Violations */}
+                    {selectedLead.ai.violations.length > 0 && (
+                      <div className={styles.detailsSection}>
+                        <h3 className={styles.detailsSectionTitle}>Hành vi vi phạm phát hiện</h3>
+                        <ul className={styles.violationsList}>
+                          {selectedLead.ai.violations.map((violation, idx) => (
+                            <li key={idx}>• {violation}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* AI Recommendation */}
+                    <div className={styles.detailsSection}>
+                      <h3 className={styles.detailsSectionTitle}>Đề xuất của AI</h3>
+                      <div className={styles.recommendation}>
+                        <Bell size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+                        <p className={styles.detailsText}>{selectedLead.ai.recommendation}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Side: Actions & Metrics (1/3) */}
+                  <div className="col-span-1 border-l pl-6 space-y-8">
+                    {/* Actions */}
+                    <div>
+                      <div className={styles.actionPanelTitle}>
+                        Hành động xử lý
+                      </div>
+
+                      <div className={styles.actionButtonStack}>
+                        {selectedLead.ai.verdict === "worthy" && (
+                          <>
+                            <button className={`${styles.actionButton} ${styles.btnApprove}`} onClick={handleApproveAI}>
+                              <ThumbsUp size={18} />
+                              Chấp nhận đề xuất
+                            </button>
+                            <button className={`${styles.actionButton} ${styles.btnSecondary}`} onClick={() => navigate("/lead-risk/lead-detail-ai-demo")}>
+                              <Eye size={18} />
+                              Xem chi tiết
+                            </button>
+                          </>
+                        )}
+
+                        {selectedLead.ai.verdict === "unworthy" && (
+                          <>
+                            <button className={`${styles.actionButton} ${styles.btnReject}`} onClick={handleRejectLead}>
+                              <ThumbsDown size={18} />
+                              Từ chối tin
+                            </button>
+                            <button className={`${styles.actionButton} ${styles.btnSecondary}`} onClick={() => navigate("/lead-risk/lead-detail-ai-demo")}>
+                              <Eye size={18} />
+                              Xem chi tiết
+                            </button>
+                          </>
+                        )}
+
+                        {selectedLead.ai.verdict === "review" && (
+                          <>
+                            <button className={`${styles.actionButton} ${styles.btnReview}`} onClick={handleRequestMore}>
+                              <AlertTriangle size={18} />
+                              Yêu cầu bổ sung
+                            </button>
+                            <button className={`${styles.actionButton} ${styles.btnSecondary}`} onClick={() => navigate("/lead-risk/lead-detail-ai-demo")}>
+                              <Eye size={18} />
+                              Xem chi tiết
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Metrics */}
+                    <div>
+                      <div className={styles.actionPanelTitle}>
+                        Số liệu phân tích
+                      </div>
+                      <div className={styles.metricsGrid} style={{ gridTemplateColumns: '1fr', gap: 'var(--spacing-3)' }}>
+                        <div className={styles.metricCard}>
+                          <div className={styles.metricLabel}>Độ tin cậy AI</div>
+                          <div className={styles.metricValue}>{selectedLead.ai.confidence}%</div>
+                          <div style={{ height: 4, background: '#eee', marginTop: 8, borderRadius: 2 }}>
+                            <div style={{ height: '100%', width: `${selectedLead.ai.confidence}%`, background: 'var(--primary)', borderRadius: 2 }}></div>
+                          </div>
+                        </div>
+                        <div className={styles.metricCard}>
+                          <div className={styles.metricLabel}>Độ nghiêm trọng</div>
+                          <div className={styles.metricValue}>{selectedLead.ai.severity}</div>
+                        </div>
+                        <div className={styles.metricCard}>
+                          <div className={styles.metricLabel}>Tương tự</div>
+                          <div className={styles.metricValue}>{selectedLead.ai.similarCases} cases</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </>
-          ) : (
-            <div style={{ color: 'var(--muted-foreground)', textAlign: 'center', marginTop: 'var(--spacing-12)' }}>
-              <Info size={32} style={{ marginBottom: 8, opacity: 0.5 }} />
-              <p style={{ fontSize: 'var(--text-sm)' }}>Chọn một nguồn tin để xem các hành động khả dụng.</p>
-            </div>
           )}
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

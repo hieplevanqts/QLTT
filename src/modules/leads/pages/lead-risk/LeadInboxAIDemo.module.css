@@ -300,7 +300,7 @@
 }
 
 .badge {
-  padding: var(--spacing-0-5) var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
   background: var(--primary);
   color: var(--primary-foreground);
   border-radius: var(--radius-full);
