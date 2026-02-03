@@ -571,12 +571,12 @@ export default function StoreDetailPage() {
         data.fields,
         store.merchantId,
         fileUrl,
-        '' // fileUrl_2 is empty for single docs
+        '', // fileUrl_2 is empty for single docs
+        editingDocument?.id  // Pass existing ID if editing
       );
 
-      // Add p_id if editing
+      // Add approval_status reset if editing
       if (editingDocument) {
-        rpcPayload.p_id = editingDocument.id;
         rpcPayload.p_approval_status = 0;
       }
 
@@ -658,18 +658,17 @@ export default function StoreDetailPage() {
       }
 
       // 3. Call RPC to update database
-      // 3. Call RPC to update database
       const rpcPayload = buildLicensePayload(
         'CCCD', // Always CCCD for this handler
         data.fields,
         store.merchantId,
         frontUrl,
-        backUrl
+        backUrl,
+        editingDocument?.id  // Pass existing ID if editing
       );
 
-      // Add p_id if editing
+      // Add approval_status reset if editing
       if (editingDocument) {
-        rpcPayload.p_id = editingDocument.id;
         rpcPayload.p_approval_status = 0;
       }
 
