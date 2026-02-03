@@ -1,7 +1,7 @@
 /* Table Wrapper - Enable horizontal scroll */
 .tableWrapper {
   width: 100%;
-  overflow-x: auto;
+  overflow-x: visible; /* Changed from auto to visible to allow sticky header to work relative to window */
   overflow-y: visible;
   border-radius: var(--radius-lg);
   /* Remove position: relative to allow sticky to work properly */

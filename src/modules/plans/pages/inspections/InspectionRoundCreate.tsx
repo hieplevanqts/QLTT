@@ -465,10 +465,12 @@ export default function InspectionRoundCreate() {
                     <label className={styles.label}>Người chủ trì</label>
                     {userRole === 'ward' ? <div className={styles.readOnlyField}>{userWard}</div> : (
                       <select className={cn(styles.select, errors.leadUnit && styles.inputError)} value={formData.leadUnit} onChange={e => handleChange('leadUnit', e.target.value)}>
-                        <option value="">Chọn đơn vị...</option>
-                        <option value="Phường Bến Nghé">Phường Bến Nghé</option>
-                        <option value="Phường Bến Thành">Phường Bến Thành</option>
-                        <option value="Phường Đa Kao">Phường Đa Kao</option>
+                        <option value="">Chọn người chủ trì...</option>
+                        <option value="Nguyễn Minh Tuấn">Nguyễn Minh Tuấn</option>
+                        <option value="Phạm Thị Hương">Phạm Thị Hương</option>
+                        <option value="Lê Văn Hùng">Lê Văn Hùng</option>
+                        <option value="Trần Thu Hà">Trần Thu Hà</option>
+                        <option value="Hoàng Văn Nam">Hoàng Văn Nam</option>
                       </select>
                     )}
                     {errors.leadUnit && <div className={styles.errorMessage}><AlertCircle size={14} />{errors.leadUnit}</div>}
