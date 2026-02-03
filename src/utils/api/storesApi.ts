@@ -162,6 +162,7 @@ export async function fetchStores(
         // Basic info
         id: numericId,
         merchantId: merchant._id, // UUID from database
+        departmentId: merchant.department_id || undefined, // Department ID from database
         name: merchant.business_name || 'Unnamed Store',
         address: merchant.address || '',
         type: merchant.business_type || 'Chưa xác định',

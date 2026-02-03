@@ -4,6 +4,7 @@ import { LegalDocument } from '@/components/ui-kit/LegalDocumentItem';
 export interface Store {
   id: number;
   merchantId?: string; // UUID from Supabase merchants table
+  departmentId?: string; // Department ID that owns this store
   name: string;
   address: string;
   type: string;
