@@ -68,7 +68,9 @@ export default function ModuleRegistryPage() {
       const data = await moduleAdminService.getModules();
       setModules(mergeModules(data, localManifestModules));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể tải danh sách mô-đun.");
+      const message =
+        err instanceof Error ? err.message : "Không thể tải danh sách mô-đun.";
+      setError(message);
       setModules(localManifestModules);
     } finally {
       setLoading(false);
@@ -156,6 +158,17 @@ export default function ModuleRegistryPage() {
       />
 
       <div className="px-6 pb-8 space-y-6">
+        {error ? (
+          <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="font-medium">Không thể tải dữ liệu từ server quản trị module.</div>
+            <div className="mt-1">{error}</div>
+            <div className="mt-2">
+              <Button variant="outline" onClick={() => void loadModules()}>
+                Thử lại
+              </Button>
+            </div>
+          </div>
+        ) : null}
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader>

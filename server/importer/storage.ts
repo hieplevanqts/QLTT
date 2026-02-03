@@ -240,6 +240,20 @@ export const writeInstalledModules = async (registry: ModuleRegistryEntry[]) => 
 
   const content = `/* AUTO-GENERATED FILE. DO NOT EDIT. */\n${importLines.join('\n')}\n\n${exportLines.join('\n')}\n\nexport const installedRoutes = [\n  ${routeLines.join(',\n  ')}\n];\n`;
 
+  let existing: string | null = null;
+  try {
+    existing = await fs.readFile(installedPath, 'utf8');
+  } catch (error: any) {
+    if (error?.code !== 'ENOENT') {
+      throw error;
+    }
+  }
+
+  // Avoid touching the file if nothing changed (prevents Vite reload loops)
+  if (existing === content) {
+    return;
+  }
+
   await ensureDir(path.dirname(installedPath));
   await fs.writeFile(installedPath, content, 'utf8');
 };

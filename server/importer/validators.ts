@@ -51,6 +51,199 @@ const parseModuleManifest = (buffer: Buffer) => {
   return JSON.parse(json) as ModuleManifest;
 };
 
+const toTitleLabel = (value: string) => {
+  return value
+    .split(/[-_]/g)
+    .filter(Boolean)
+    .map((segment) => {
+      const trimmed = segment.trim();
+      if (!trimmed) return '';
+      const isShort = trimmed.length <= 4 && /^[a-z0-9]+$/i.test(trimmed);
+      if (isShort) {
+        return trimmed.toUpperCase();
+      }
+      return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+    })
+    .filter(Boolean)
+    .join(' ');
+};
+
+const toRouteExport = (moduleId: string) => {
+  const parts = moduleId.split(/[-_]/g).filter(Boolean);
+  const camel = parts
+    .map((part, index) => {
+      if (index === 0) return part.toLowerCase();
+      return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+    })
+    .join('');
+  return `${camel || 'module'}Route`;
+};
+
+const normalizeBasePath = (value: string) => {
+  if (!value) return '';
+  let next = value.trim();
+  if (!next.startsWith('/')) next = `/${next}`;
+  next = next.replace(/\/+$/, '');
+  next = next.replace(/\*+$/, '');
+  if (next === '') return '/';
+  return next;
+};
+
+const normalizePathForMatch = (value: string) =>
+  value.replace(/\\/g, '/').replace(/^(\.\/)+/, '').replace(/^\/+/, '');
+
+const extractBasePathFromRoutes = (
+  entries: ZipEntryInfo[],
+  moduleRootPrefix: string,
+  routesRel?: string | null,
+) => {
+  if (!routesRel) return null;
+  const targetName = moduleRootPrefix ? `${moduleRootPrefix}${routesRel}` : routesRel;
+  const entry = entries.find((item) => normalizePathForMatch(item.entryName) === targetName);
+  if (!entry) return null;
+  const content = entry.getData().toString('utf8');
+  const matches: string[] = [];
+  const regex = /path\s*:\s*['"]([^'"]+)['"]/g;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(content)) !== null) {
+    const value = match[1];
+    if (!value || !value.startsWith('/')) continue;
+    matches.push(value);
+  }
+  if (matches.length === 0) return null;
+  const normalized = matches
+    .map((value) => value.replace(/\/:\w+.*$/, '').replace(/\/\*+$/, '').trim())
+    .map((value) => (value.length === 0 ? '/' : value));
+  normalized.sort((a, b) => {
+    const aDepth = a.split('/').filter(Boolean).length;
+    const bDepth = b.split('/').filter(Boolean).length;
+    if (aDepth !== bDepth) return aDepth - bDepth;
+    return a.length - b.length;
+  });
+  return normalizeBasePath(normalized[0]);
+};
+
+const pickCandidateFile = (paths: string[], preferred: string[]) => {
+  const matches = paths.filter((item) =>
+    preferred.some((name) => item === name || item.endsWith(`/${name}`)),
+  );
+  if (matches.length === 0) return null;
+  matches.sort((a, b) => {
+    const aDepth = a.split('/').filter(Boolean).length;
+    const bDepth = b.split('/').filter(Boolean).length;
+    if (aDepth !== bDepth) return aDepth - bDepth;
+    return a.length - b.length;
+  });
+  return matches[0];
+};
+
+const buildSuggestedManifest = (
+  entries: ZipEntryInfo[],
+  ctx: ValidationContext,
+) => {
+  const fileEntries = entries.filter((entry) => !entry.isDirectory);
+  const normalizedFiles = fileEntries
+    .map((entry) => normalizePathForMatch(entry.entryName))
+    .filter((entry) => entry.length > 0 && !entry.startsWith('__MACOSX/'));
+
+  const candidates = new Map<string, { root: string; id: string; count: number; priority: number }>();
+
+  normalizedFiles.forEach((entry) => {
+    const segments = entry.split('/').filter(Boolean);
+    if (segments.length === 0) return;
+    if (segments[0] === 'src' && segments[1] === 'modules' && segments[2]) {
+      const moduleId = segments[2];
+      const root = `src/modules/${moduleId}`;
+      const current = candidates.get(root) ?? { root, id: moduleId, count: 0, priority: 2 };
+      current.count += 1;
+      candidates.set(root, current);
+      return;
+    }
+    if (segments.length >= 2) {
+      const root = segments[0];
+      const current = candidates.get(root) ?? { root, id: root, count: 0, priority: 1 };
+      current.count += 1;
+      candidates.set(root, current);
+    }
+  });
+
+  let best = [...candidates.values()].sort((a, b) => {
+    if (a.count !== b.count) return b.count - a.count;
+    if (a.priority !== b.priority) return b.priority - a.priority;
+    return a.root.localeCompare(b.root);
+  })[0];
+
+  const fallbackId = ctx.originalFileName
+    ? path.parse(ctx.originalFileName).name
+    : 'new-module';
+
+  if (!best) {
+    const hasRootFiles = normalizedFiles.some((entry) => !entry.includes('/'));
+    best = {
+      root: hasRootFiles ? '' : fallbackId,
+      id: fallbackId,
+      count: normalizedFiles.length,
+      priority: 0,
+    };
+  }
+
+  const moduleId = best.id || fallbackId;
+  const moduleRoot = best.root;
+  const moduleRootPrefix = moduleRoot ? `${moduleRoot}/` : '';
+  const relativePaths = normalizedFiles
+    .filter((entry) => (moduleRootPrefix ? entry.startsWith(moduleRootPrefix) : true))
+    .map((entry) => (moduleRootPrefix ? entry.slice(moduleRootPrefix.length) : entry))
+    .filter(Boolean);
+
+  const entryRel = pickCandidateFile(relativePaths, [
+    'index.tsx',
+    'index.ts',
+    'main.tsx',
+    'main.ts',
+    'entry.tsx',
+    'entry.ts',
+  ]);
+
+  const routesRel =
+    pickCandidateFile(relativePaths, ['routes.tsx', 'routes.ts', 'route.tsx', 'route.ts']) ??
+    relativePaths.find((item) => /routes?(\.|\/)/i.test(item) && /\.(ts|tsx)$/.test(item)) ??
+    null;
+
+  const basePathFromRoutes = extractBasePathFromRoutes(entries, moduleRootPrefix, routesRel);
+  const basePath = normalizeBasePath(basePathFromRoutes || `/${moduleId}`);
+
+  const srcPrefix = `src/modules/${moduleId}`;
+  const entryPath = entryRel ? `${srcPrefix}/${entryRel}` : `${srcPrefix}/index.ts`;
+  const routesPath = routesRel ? `${srcPrefix}/${routesRel}` : `${srcPrefix}/routes.tsx`;
+
+  const name = toTitleLabel(moduleId) || moduleId;
+  const menuLabel = name;
+
+  const manifest: ModuleManifest = {
+    id: moduleId,
+    name,
+    version: '0.1.0',
+    basePath,
+    entry: entryPath.replace(/\\/g, '/'),
+    routes: routesPath.replace(/\\/g, '/'),
+    routeExport: toRouteExport(moduleId),
+    permissions: [],
+    ui: {
+      menuLabel,
+      menuPath: basePath,
+    },
+  };
+
+  const details = [
+    moduleRoot ? `Root: ${moduleRoot}` : 'Root: (goc zip)',
+    `Entry: ${manifest.entry}`,
+    `Routes: ${manifest.routes}`,
+    basePathFromRoutes ? `BasePath: ${basePath} (tu routes)` : `BasePath: ${basePath}`,
+  ].join(' | ');
+
+  return { manifest, details };
+};
+
 const applyManifestOverrides = (manifest: ModuleManifest, overrides?: Partial<ModuleManifest>) => {
   if (!overrides) return manifest;
   if (overrides.id && overrides.id !== manifest.id) {
@@ -134,10 +327,16 @@ const isValidReleaseType = (value?: string): value is ReleaseType => {
   return value === 'patch' || value === 'minor' || value === 'major';
 };
 
-const buildValidationResult = (type: 'success' | 'warning' | 'error', message: string, details?: string): ValidationResult => ({
+const buildValidationResult = (
+  type: 'success' | 'warning' | 'error',
+  message: string,
+  details?: string,
+  extra?: Partial<ValidationResult>,
+): ValidationResult => ({
   type,
   message,
   details,
+  ...extra,
 });
 
 const loadProjectDependencies = () => {
@@ -285,10 +484,19 @@ export function validateZipEntries(entries: ZipEntryInfo[], ctx: ValidationConte
   });
 
   if (moduleJsonCandidates.length === 0) {
+    const suggestion = buildSuggestedManifest(entries, ctx);
     throw new ValidationError(
       'MODULE_JSON_MISSING',
       'Missing module.json',
-      [buildValidationResult('error', 'Thieu module.json o root module folder')],
+      [
+        buildValidationResult('error', 'Thieu module.json o root module folder'),
+        buildValidationResult(
+          'warning',
+          'Goi y module.json mau',
+          suggestion.details,
+          { suggestedManifest: suggestion.manifest },
+        ),
+      ],
     );
   }
 

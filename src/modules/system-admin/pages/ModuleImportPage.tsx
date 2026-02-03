@@ -128,12 +128,35 @@ export default function ModuleImportPage() {
   };
 
   const validationResults = useMemo(() => job?.validationResults ?? [], [job]);
+  const suggestedManifest = useMemo(
+    () => validationResults.find((item) => item.suggestedManifest)?.suggestedManifest ?? null,
+    [validationResults],
+  );
   const timelineEvents = useMemo(() => job?.timeline ?? [], [job]);
   const isBusy = step === "uploading" || step === "processing";
   const moduleJsonErrors = useMemo(
     () => validationResults.filter((item) => item.type === "error" && /module\\.json/i.test(item.message)),
     [validationResults],
   );
+
+  useEffect(() => {
+    if (!suggestedManifest) return;
+    setOverrideForm((prev) => {
+      const hasInput = Object.values(prev).some((value) => value.trim().length > 0);
+      if (hasInput) return prev;
+      return {
+        name: suggestedManifest.name ?? "",
+        version: suggestedManifest.version ?? "",
+        basePath: suggestedManifest.basePath ?? "",
+        entry: suggestedManifest.entry ?? "",
+        routes: suggestedManifest.routes ?? "",
+        routeExport: suggestedManifest.routeExport ?? "",
+        permissions: suggestedManifest.permissions?.join(", ") ?? "",
+        menuLabel: suggestedManifest.ui?.menuLabel ?? "",
+        menuPath: suggestedManifest.ui?.menuPath ?? "",
+      };
+    });
+  }, [suggestedManifest]);
 
   const updateOverrideField = (key: keyof typeof overrideForm, value: string) => {
     setOverrideForm((prev) => ({ ...prev, [key]: value }));

@@ -8,16 +8,42 @@ import type {
   ReleaseType,
 } from "../types";
 
-const API_BASE = import.meta.env.VITE_SYSTEM_ADMIN_API ?? import.meta.env.VITE_PUBLIC_URL ?? "http://localhost:7788";
+const API_BASE =
+  import.meta.env.VITE_SYSTEM_ADMIN_API ??
+  import.meta.env.VITE_PUBLIC_URL ??
+  "http://localhost:7788";
+const REQUEST_TIMEOUT_MS = 12000;
 
 const request = async <T>(path: string, options?: RequestInit): Promise<T> => {
-  const response = await fetch(`${API_BASE}${path}`, options);
-  if (!response.ok) {
-    const payload = await response.json().catch(() => ({}));
-    const message = payload?.message || `Request failed: ${response.status}`;
+  const url = `${API_BASE}${path}`;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      const message =
+        payload?.message ||
+        payload?.error ||
+        `Request failed: ${response.status}`;
+      console.error("[modules] request failed", {
+        url,
+        status: response.status,
+        payload,
+      });
+      throw new Error(message);
+    }
+    return (await response.json()) as T;
+  } catch (error: any) {
+    const isAbort = error?.name === "AbortError";
+    const message = isAbort
+      ? `Timeout sau ${REQUEST_TIMEOUT_MS / 1000}s khi gọi ${url}`
+      : error?.message || "Không thể kết nối đến server quản trị module.";
+    console.error("[modules] request error", { url, error });
     throw new Error(message);
+  } finally {
+    clearTimeout(timeoutId);
   }
-  return (await response.json()) as T;
 };
 
 export const moduleAdminService = {

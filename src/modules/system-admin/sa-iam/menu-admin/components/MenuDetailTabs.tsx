@@ -356,9 +356,50 @@ export const MenuDetailTabs: React.FC<MenuDetailTabsProps> = ({
 
       if (data?._id) {
         const isPage = String(data.category ?? "").toUpperCase() === "PAGE";
-        const isActive = Number(data.status) === 1;
+        const statusValue =
+          data.status === null || data.status === undefined ? null : Number(data.status);
+        const isActive = statusValue === 1;
         if (!isPage || !isActive) {
-          message.error("Permission tìm thấy nhưng không hợp lệ (category/status).");
+          const currentCategory = String(data.category ?? "").toUpperCase() || "trống";
+          const currentStatus =
+            statusValue === null || Number.isNaN(statusValue) ? "trống" : statusValue;
+          Modal.confirm({
+            title: "Permission đã tồn tại nhưng chưa hợp lệ",
+            content: (
+              <div className="space-y-1">
+                <div>Category hiện tại: {currentCategory}</div>
+                <div>Status hiện tại: {currentStatus}</div>
+                <div>Cập nhật sang PAGE + status=1 và gán cho menu này?</div>
+              </div>
+            ),
+            okText: "Cập nhật & gán",
+            cancelText: "Hủy",
+            onOk: async () => {
+              try {
+                const patch: Record<string, unknown> = {
+                  category: "PAGE",
+                  status: 1,
+                  action: "READ",
+                  permission_type: "READ",
+                  resource,
+                  module_id: menu.module_id ?? null,
+                  module: moduleKey ?? null,
+                };
+                const { error: updateError } = await supabase
+                  .from("permissions")
+                  .update(patch)
+                  .eq("_id", data._id);
+                if (updateError) throw updateError;
+                await Promise.resolve(onAssignSelected?.([data._id]));
+                message.success("Đã cập nhật permission và gán.");
+              } catch (err) {
+                message.error(
+                  err instanceof Error ? err.message : "Không thể cập nhật permission.",
+                );
+                throw err;
+              }
+            },
+          });
           return;
         }
         await Promise.resolve(onAssignSelected?.([data._id]));
