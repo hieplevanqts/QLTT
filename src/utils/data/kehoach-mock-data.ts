@@ -28,6 +28,8 @@ export interface Plan {
   createdBy: string;
   createdById?: string;
   createdAt: string;
+  provinceId?: string;
+  wardId?: string;
   // M03 - Quyết định giao quyền từ INS
   insDecisionM03?: {
     id: string;
