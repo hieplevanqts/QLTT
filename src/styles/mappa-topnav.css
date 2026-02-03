@@ -1,0 +1,129 @@
+/* =========================
+   MAPPA TOPNAV OVERRIDES
+   Hover: text white
+   Active: bg yellow + text black
+   Transition: 150ms
+   ========================= */
+
+.mappa-topnav .ant-menu-horizontal > .ant-menu-item,
+.mappa-topnav .ant-menu-horizontal > .ant-menu-submenu,
+.mappa-topnav .ant-segmented-item,
+.mappa-topnav .ant-btn,
+.mappa-topnav [data-nav-item="true"] {
+  transition: color .15s ease, background-color .15s ease, border-color .15s ease;
+}
+
+/* ---------- AntD Menu horizontal ---------- */
+.mappa-topnav .ant-menu-horizontal > .ant-menu-item,
+.mappa-topnav .ant-menu-horizontal > .ant-menu-submenu {
+  border-radius: 10px;
+  margin-inline: 6px;
+}
+
+/* Hover (NOT selected) => text white */
+.mappa-topnav .ant-menu-horizontal > .ant-menu-item:not(.ant-menu-item-selected):hover,
+.mappa-topnav .ant-menu-horizontal > .ant-menu-submenu:not(.ant-menu-submenu-selected):hover {
+  background: rgba(0,0,0,0.35) !important;
+}
+.mappa-topnav .ant-menu-horizontal > .ant-menu-item:not(.ant-menu-item-selected):hover,
+.mappa-topnav .ant-menu-horizontal > .ant-menu-submenu:not(.ant-menu-submenu-selected):hover,
+.mappa-topnav .ant-menu-horizontal > .ant-menu-item:not(.ant-menu-item-selected):hover .ant-menu-title-content,
+.mappa-topnav .ant-menu-horizontal > .ant-menu-submenu:not(.ant-menu-submenu-selected):hover .ant-menu-title-content {
+  color: #fff !important;
+}
+
+/* Selected/Active => bg yellow + text black */
+.mappa-topnav .ant-menu-horizontal > .ant-menu-item.ant-menu-item-selected,
+.mappa-topnav .ant-menu-horizontal > .ant-menu-submenu.ant-menu-submenu-selected {
+  background: #FADB14 !important;
+}
+.mappa-topnav .ant-menu-horizontal > .ant-menu-item.ant-menu-item-selected,
+.mappa-topnav .ant-menu-horizontal > .ant-menu-submenu.ant-menu-submenu-selected,
+.mappa-topnav .ant-menu-horizontal > .ant-menu-item.ant-menu-item-selected .ant-menu-title-content,
+.mappa-topnav .ant-menu-horizontal > .ant-menu-submenu.ant-menu-submenu-selected .ant-menu-title-content {
+  color: #111 !important;
+}
+
+/* Remove default selected underline (if any) */
+.mappa-topnav .ant-menu-horizontal > .ant-menu-item::after,
+.mappa-topnav .ant-menu-horizontal > .ant-menu-submenu::after {
+  border-bottom: none !important;
+}
+
+/* ---------- AntD Segmented (nếu dùng) ---------- */
+.mappa-topnav .ant-segmented {
+  border-radius: 10px;
+}
+
+/* Hover (NOT selected) => text white */
+.mappa-topnav .ant-segmented-item:not(.ant-segmented-item-selected):hover {
+  background: rgba(0,0,0,0.35) !important;
+}
+.mappa-topnav .ant-segmented-item:not(.ant-segmented-item-selected):hover .ant-segmented-item-label {
+  color: #fff !important;
+}
+
+/* Selected => bg yellow + text black */
+.mappa-topnav .ant-segmented-item-selected {
+  background: #FADB14 !important;
+}
+.mappa-topnav .ant-segmented-item-selected .ant-segmented-item-label {
+  color: #111 !important;
+}
+
+/* ---------- Button “tab” group (custom active state) ---------- */
+/* Hover (NOT active, NOT primary) => text white */
+.mappa-topnav .ant-btn:not(.ant-btn-primary):not(.is-active):not([data-active="true"]):hover {
+  color: #fff !important;
+  background: rgba(0,0,0,0.35) !important;
+  border-color: rgba(255,255,255,0.25) !important;
+}
+
+/* Active => bg yellow + text black (dùng class hoặc data attribute) */
+.mappa-topnav .ant-btn.is-active,
+.mappa-topnav .ant-btn[data-active="true"] {
+  background: #FADB14 !important;
+  color: #111 !important;
+  border-color: #FADB14 !important;
+}
+
+/* Nếu active mà button đang là primary vẫn ép về vàng/đen */
+.mappa-topnav .ant-btn-primary.is-active,
+.mappa-topnav .ant-btn-primary[data-active="true"] {
+  background: #FADB14 !important;
+  color: #111 !important;
+  border-color: #FADB14 !important;
+  box-shadow: none !important;
+}
+
+/* Hover lên active button: giữ vàng/đen, không đổi sang primary hover */
+.mappa-topnav .ant-btn.is-active:hover,
+.mappa-topnav .ant-btn[data-active="true"]:hover {
+  background: #FADB14 !important;
+  color: #111 !important;
+  border-color: #FADB14 !important;
+}
+
+/* ---------- Custom nav buttons (non-AntD) ---------- */
+.mappa-topnav [data-nav-item="true"] {
+  border-radius: 10px;
+  margin-inline: 6px;
+}
+
+.mappa-topnav [data-nav-item="true"][data-active="true"] {
+  background: #FADB14 !important;
+  color: #111 !important;
+}
+
+.mappa-topnav [data-nav-item="true"][data-active="true"] svg {
+  color: #111 !important;
+}
+
+.mappa-topnav [data-nav-item="true"]:not([data-active="true"]):hover {
+  color: #fff !important;
+  background: rgba(0,0,0,0.35) !important;
+}
+
+.mappa-topnav [data-nav-item="true"]:not([data-active="true"]):hover svg {
+  color: #fff !important;
+}

@@ -3,6 +3,7 @@ import { AuthProvider } from '../contexts/AuthContext';
 import { IamAuthProvider } from '../contexts/auth/AuthProvider';
 import { LayoutProvider } from '../contexts/LayoutContext';
 import { QLTTScopeProvider } from '../contexts/QLTTScopeContext';
+import { AssistantProvider } from '@/ai/assistantStore';
 
 export default function RootLayout() {
   return (
@@ -11,7 +12,9 @@ export default function RootLayout() {
       <IamAuthProvider>
         <QLTTScopeProvider>
           <LayoutProvider>
-            <Outlet />
+            <AssistantProvider>
+              <Outlet />
+            </AssistantProvider>
           </LayoutProvider>
         </QLTTScopeProvider>
       </IamAuthProvider>
