@@ -131,11 +131,26 @@ function mapRowToRound(row: InspectionRoundResponse): InspectionRound {
 // --- API Functions ---
 
 import { store } from '@/store/store';
+import { fetchDepartmentById } from '@/utils/api/departmentsApi';
 
 export async function fetchInspectionRoundsApi(planId?: string): Promise<InspectionRound[]> {
   try {
     const state = store.getState();
-    const path = state.auth.user?.app_metadata?.department?.path || '';
+    const user = state.auth.user;
+    
+    let path = user?.app_metadata?.department?.path || '';
+
+    // Fetch dynamic path from division if department_id exists
+    if ((user as any)?.department_id) {
+      try {
+        const division = await fetchDepartmentById((user as any).department_id);
+        if (division) {
+          path = division.path;  
+        }
+      } catch (error) {
+        console.error('Error fetching division path:', error);
+      }
+    }
 
     // Switch to v_campaigns_by_department
     // Explicitly use the foreign key to resolve ambiguous relationship

@@ -111,10 +111,26 @@ function mapRowToSession(row: InspectionSessionResponse): InspectionSession {
 
 import { store } from '@/store/store';
 
+import { fetchDepartmentById } from '@/utils/api/departmentsApi';
+
 export async function fetchInspectionSessionsApi(campaignId?: string, search?: string): Promise<InspectionSession[]> {
   try {
     const state = store.getState();
-    const path = state.auth.user?.app_metadata?.department?.path || '';
+    const user = state.auth.user;
+    
+    let path = user?.app_metadata?.department?.path || '';
+
+    // Fetch dynamic path from division if department_id exists
+    if ((user as any)?.department_id) {
+      try {
+        const division = await fetchDepartmentById((user as any).department_id);
+        if (division) {
+          path = division.path;  
+        }
+      } catch (error) {
+        console.error('Error fetching division path:', error);
+      }
+    }
 
     let url = `${SUPABASE_REST_URL}/v_sessions_by_department?select=*,users(full_name),merchants!fk_inspection_merchant(business_name,address),map_inspection_campaigns(campaign_name)&order=created_at.desc`;
     if (campaignId) {
@@ -216,6 +232,18 @@ export async function createInspectionSessionApi(session: Partial<InspectionSess
     return mapRowToSession(data[0]);
   } catch (error) {
     console.error('createInspectionSessionApi Error:', error);
+    throw error;
+  }
+}
+
+export async function deleteInspectionSessionApi(id: string): Promise<boolean> {
+  try {
+    const url = `${SUPABASE_REST_URL}/map_inspection_sessions?_id=eq.${id}`;
+    const response = await fetch(url, { method: 'DELETE', headers: getHeaders() });
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    return true;
+  } catch (error) {
+    console.error('deleteInspectionSessionApi Error:', error);
     throw error;
   }
 }

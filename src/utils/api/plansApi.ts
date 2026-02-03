@@ -141,12 +141,26 @@ function mapRowToPlan(row: PlanResponse): Plan | null {
 // --- API Functions ---
 
 import { store } from '@/store/store';
+import { fetchDepartmentById } from '@/utils/api/departmentsApi';
 
 export async function fetchPlansApi(): Promise<Plan[]> {
   try {
     const state = store.getState();
-    // User requested to use app_metadata.path instead of department_code
-    const path = state.auth.user?.app_metadata?.department?.path || '';
+    const user = state.auth.user;
+    
+    let path = user?.app_metadata?.department?.path || '';
+
+    // Fetch dynamic path from division if department_id exists
+    if ((user as any)?.department_id) {
+      try {
+        const division = await fetchDepartmentById((user as any).department_id);
+        if (division) {
+          path = division.path;  
+        }
+      } catch (error) {
+        console.error('Error fetching division path:', error);
+      }
+    }
     
     // Switch to v_plans_by_department and filter by department_path
     // We remove departments(name) embedding as it likely won't work on a view unless manually defined.
@@ -186,9 +200,11 @@ export async function fetchPlansApi(): Promise<Plan[]> {
     // Manual Province/Ward fetch
     const provinceIds = [...new Set(data.map(item => item.province_id).filter(Boolean))];
     const wardIds = [...new Set(data.map(item => item.ward_id).filter(Boolean))];
+    const departmentIds = [...new Set(data.map(item => item.department_id).filter(Boolean))];
     
     let provinceMap: Record<string, string> = {};
     let wardMap: Record<string, string> = {};
+    let departmentMap: Record<string, string> = {};
 
     if (provinceIds.length > 0) {
       try {
@@ -210,11 +226,22 @@ export async function fetchPlansApi(): Promise<Plan[]> {
       } catch (err) {}
     }
 
+    if (departmentIds.length > 0) {
+      try {
+        const dRes = await fetch(`${SUPABASE_REST_URL}/departments?_id=in.(${departmentIds.join(',')})&select=_id,name`, { headers: getHeaders() });
+        if (dRes.ok) {
+           const dData = await dRes.json();
+           departmentMap = dData.reduce((acc: any, d: any) => ({ ...acc, [d._id]: d.name }), {});
+        }
+      } catch (err) {}
+    }
+
     return data.map(item => {
       const itemWithNames = {
         ...item,
         provinces: item.province_id && provinceMap[item.province_id] ? { name: provinceMap[item.province_id] } : null,
-        wards: item.ward_id && wardMap[item.ward_id] ? { name: wardMap[item.ward_id] } : null
+        wards: item.ward_id && wardMap[item.ward_id] ? { name: wardMap[item.ward_id] } : null,
+        departments: item.department_id && departmentMap[item.department_id] ? { name: departmentMap[item.department_id] } : null
       };
 
       const plan = mapRowToPlan(itemWithNames);

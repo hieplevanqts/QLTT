@@ -16,7 +16,8 @@ import {
   Table,
   BookOpen,
   Eye,
-  CheckCircle
+  CheckCircle,
+  Trash2
 } from 'lucide-react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -30,7 +31,7 @@ import { Button } from '@/components/ui/button';
   import { type InspectionTask, type TaskStatus } from '@/utils/data/inspection-tasks-mock-data';
 import { useSupabasePlans } from '@/hooks/useSupabasePlans';
 import { useSupabaseInspectionRounds } from '@/hooks/useSupabaseInspectionRounds';
-import { fetchInspectionSessionsApi, updateInspectionSessionApi, createInspectionSessionApi } from '@/utils/api/inspectionSessionsApi';
+import { fetchInspectionSessionsApi, updateInspectionSessionApi, createInspectionSessionApi, deleteInspectionSessionApi } from '@/utils/api/inspectionSessionsApi';
 import { TaskCard } from '@/components/tasks/TaskCard';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { getStatusProps } from '@/utils/status-badge-helper';
@@ -809,6 +810,19 @@ export function TaskBoard() {
     setIsEditModalOpen(true);
   };
 
+  const handleDeleteTask = async (task: InspectionTask) => {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa phiên làm việc "${task.title}" không? Hành động này không thể hoàn tác.`)) {
+      try {
+        await deleteInspectionSessionApi(task.id);
+        toast.success(`Đã xóa phiên làm việc "${task.title}"`);
+        loadSessions(); // Refresh list
+      } catch (error) {
+        console.error('Error deleting task:', error);
+        toast.error('Không thể xóa phiên làm việc này');
+      }
+    }
+  };
+
   // Generate actions for task based on status (like InspectionRoundsList)
   const getTaskActions = (task: InspectionTask): Action[] => {
     const actions: Action[] = [];
@@ -847,6 +861,14 @@ export function TaskBoard() {
             icon: <Play size={16} />,
             onClick: () => handleStartTask(task),
             priority: 8,
+          },
+          {
+            label: 'Xóa',
+            icon: <Trash2 size={16} className="text-destructive" />,
+            onClick: () => handleDeleteTask(task),
+            priority: 0,
+            variant: 'destructive',
+            separator: true
           }
         );
         addCancelAction();
@@ -884,6 +906,14 @@ export function TaskBoard() {
             icon: <CheckCircle size={16} />,
             onClick: () => handleCompleteTask(task),
             priority: 10,
+          },
+          {
+             label: 'Xóa',
+             icon: <Trash2 size={16} className="text-destructive" />,
+             onClick: () => handleDeleteTask(task),
+             priority: 0, // Lowest priority to show last or in dropdown
+             variant: 'destructive',
+             separator: true
           }
         );
         addCancelAction();
@@ -963,6 +993,17 @@ export function TaskBoard() {
             priority: 9,
           }
         );
+
+        if (task.status === 'cancelled') {
+             actions.push({
+               label: 'Xóa',
+               icon: <Trash2 size={16} className="text-destructive" />,
+               onClick: () => handleDeleteTask(task),
+               priority: 0,
+               variant: 'destructive',
+               separator: true
+             });
+        }
          if (task.status === 'closed') {
              actions.push(
                {

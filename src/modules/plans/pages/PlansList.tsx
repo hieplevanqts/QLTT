@@ -414,12 +414,22 @@ export function PlansList() {
       key: 'name',
       label: 'Tiêu đề kế hoạch',
       sortable: true,
-      width: '300px',
-      render: (plan) => (
-        <div>
-          <div className={styles.planName}>{plan.name || '--'}</div>
-        </div>
-      ),
+      width: '350px',
+      render: (plan) => {
+        let timeStr = 'Chưa xác định';
+        if (plan.startDate && plan.endDate) {
+           const startDate = new Date(plan.startDate);
+           const endDate = new Date(plan.endDate);
+           timeStr = `${startDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })} - ${endDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+        }
+
+        return (
+          <div>
+            <div className={styles.planName}>{plan.name || '--'}</div>
+            <div className={styles.planTopic}>Thời gian: {timeStr}</div>
+          </div>
+        );
+      },
     },
     {
       key: 'scope',
@@ -434,28 +444,10 @@ export function PlansList() {
       key: 'leadUnit',
       label: 'Đơn vị thực hiện',
       sortable: true,
-      width: '180px',
+      width: '200px',
       render: (plan) => (
         <span className={styles.planLeadUnit}>{plan.responsibleUnit || '--'}</span>
       ),
-    },
-    {
-      key: 'time',
-      label: 'Thời gian thực hiện',
-      sortable: true,
-      width: '180px',
-      render: (plan) => {
-        if (!plan.startDate || !plan.endDate) return <span className={styles.timeRange}>--</span>;
-        const startDate = new Date(plan.startDate);
-        const endDate = new Date(plan.endDate);
-        return (
-          <span className={styles.timeRange}>
-            {startDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-            {' - '}
-            {endDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-          </span>
-        );
-      },
     },
     {
       key: 'priority',
