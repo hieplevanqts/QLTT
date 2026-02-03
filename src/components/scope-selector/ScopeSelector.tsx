@@ -38,6 +38,7 @@ export function ScopeSelector() {
     const id =
       (authUser as any)?.app_metadata?.department?.id
       || (authUser as any)?.departmentInfo?.id
+      || (authUser as any)?.department_id
       || null;
     if (!id) return null;
     const name =
