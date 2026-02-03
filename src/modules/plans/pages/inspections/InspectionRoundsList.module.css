@@ -33,7 +33,7 @@
 
 /* Table Cell Styles - Two-line layout */
 .roundCodeBadgeRow {
-  margin-bottom: 4px;
+  margin-bottom: 0;
 }
 
 .roundCode {
@@ -41,7 +41,7 @@
   font-size: var(--text-sm);
   font-weight: var(--font-weight-semibold);
   color: var(--foreground);
-  line-height: 1.5;
+  line-height: 1.3;
 }
 
 .roundName {
@@ -49,7 +49,7 @@
   font-size: var(--text-sm);
   font-weight: var(--font-weight-medium);
   color: var(--foreground);
-  line-height: 1.5;
+  line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -59,14 +59,14 @@
   font-family: 'Inter', sans-serif;
   font-size: var(--text-xs);
   color: var(--muted-foreground);
-  line-height: 1.5;
-  margin-top: 2px;
+  line-height: 1.2;
+  margin-top: 0;
 }
 
 .planInfo {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
 }
 
 .planName {
@@ -74,7 +74,7 @@
   font-size: var(--text-sm);
   font-weight: var(--font-weight-medium);
   color: var(--foreground);
-  line-height: 1.5;
+  line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -84,14 +84,14 @@
   font-family: 'Inter', sans-serif;
   font-size: var(--text-xs);
   color: var(--muted-foreground);
-  line-height: 1.5;
+  line-height: 1.2;
 }
 
 .timeRange {
   font-family: 'Inter', sans-serif;
   font-size: var(--text-sm);
   color: var(--foreground);
-  line-height: 1.5;
+  line-height: 1.3;
   white-space: nowrap;
 }
 
@@ -99,7 +99,7 @@
   font-family: 'Inter', sans-serif;
   font-size: var(--text-sm);
   color: var(--foreground);
-  line-height: 1.5;
+  line-height: 1.3;
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -110,13 +110,13 @@
   font-family: 'Inter', sans-serif;
   font-size: var(--text-sm);
   color: var(--foreground);
-  line-height: 1.5;
+  line-height: 1.3;
 }
 
 .targetsInfo {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
 }
 
 .targetsCount {
@@ -124,21 +124,21 @@
   font-size: var(--text-sm);
   font-weight: var(--font-weight-semibold);
   color: var(--foreground);
-  line-height: 1.5;
+  line-height: 1.3;
 }
 
 .targetsProgress {
   font-family: 'Inter', sans-serif;
   font-size: var(--text-xs);
   color: var(--muted-foreground);
-  line-height: 1.5;
+  line-height: 1.2;
 }
 
 .creator {
   font-family: 'Inter', sans-serif;
   font-size: var(--text-sm);
   color: var(--foreground);
-  line-height: 1.5;
+  line-height: 1.3;
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -175,5 +175,29 @@
 
   .roundPlan {
     font-size: 10px;
+  }
+}
+
+/* Optimization for 1366px screens - Enable Horizontal Scroll */
+@media (max-width: 1440px) {
+  .tableContainer {
+    padding: 0 16px 16px 16px;
+    overflow-x: hidden; /* Main container hide */
+  }
+
+  .tableCard {
+    overflow-x: auto; /* Enable scroll on the card content */
+  }
+  
+  /* Reset font sizes to be readable, rely on scroll */
+  .roundName, 
+  .planName, 
+  .leadUnit, 
+  .creator {
+     font-size: 14px; 
+  }
+  
+  .targetsCount {
+    font-size: 14px;
   }
 }

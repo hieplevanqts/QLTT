@@ -546,7 +546,7 @@ export function InspectionRoundsList() {
     {
       key: 'stt',
       label: 'STT',
-      width: '60px',
+      width: '60px', // Already set by user
       className: 'text-center',
       render: (_, index) => (
         <div className="text-center">{(currentPage - 1) * pageSize + index + 1}</div>
@@ -556,7 +556,7 @@ export function InspectionRoundsList() {
       key: 'code',
       label: 'Mã đợt',
       sortable: true,
-      width: '200px',
+      width: '200px', // Restored
       render: (round) => (
         <div className={styles.roundCode}>{round.campaign_code || '--'}</div>
       ),
@@ -565,6 +565,7 @@ export function InspectionRoundsList() {
       key: 'name',
       label: 'Đợt kiểm tra',
       sortable: true,
+      width: '250px', // Increased minWidth
       render: (round) => {
         const startDate = round.startDate ? new Date(round.startDate) : null;
         const endDate = round.endDate ? new Date(round.endDate) : null;
@@ -586,7 +587,7 @@ export function InspectionRoundsList() {
       key: 'plan',
       label: 'Kế hoạch',
       sortable: true,
-      width: '250px',
+      width: '250px', // Restored
       render: (round) => (
         <div className={styles.planInfo}>
           <div className={styles.planName}>{round.planName || '--'}</div>
@@ -598,7 +599,7 @@ export function InspectionRoundsList() {
       key: 'leadUnit',
       label: 'Người chủ trì',
       sortable: true,
-      width: '250px',
+      width: '250px', // Restored
       truncate: true,
       render: (round) => (
         <span className={styles.leadUnit}>{round.leadUnit || '--'}</span>
@@ -608,7 +609,7 @@ export function InspectionRoundsList() {
       key: 'targets',
       label: 'Số cơ sở',
       sortable: true,
-      width: '100px',
+      width: '100px', // Restored
       render: (round) => (
         <div className={styles.targetsInfo}>
           <div className={styles.targetsCount}>
@@ -626,7 +627,7 @@ export function InspectionRoundsList() {
       key: 'priority',
       label: 'Ưu tiên',
       sortable: true,
-      width: '120px',
+      width: '120px', // Restored
       render: (round) => (
         <StatusBadge 
           {...getStatusProps('priority', round.priority || 'medium')} 
@@ -637,14 +638,14 @@ export function InspectionRoundsList() {
     {
       key: 'status',
       label: 'Trạng thái',
-      width: '140px',
+      width: '140px', // Restored
       render: (round) => <StatusBadge {...getStatusProps('round', round.status)} size="sm" />,
     },
     {
       key: 'creator',
       label: 'Người tạo',
       sortable: true,
-      width: '180px',
+      width: '180px', // Restored
       truncate: true,
       render: (round) => <span className={styles.creator}>{round.createdBy || '--'}</span>,
     },
@@ -652,7 +653,7 @@ export function InspectionRoundsList() {
       key: 'actions',
       label: 'Thao tác',
       sticky: 'right',
-      width: '180px',
+      width: '180px', // Restored
       render: (round) => (
         <ActionColumn actions={getRoundActions(round)} />
       ),
@@ -710,7 +711,7 @@ export function InspectionRoundsList() {
       <div className={styles.summaryContainer}>
         <div className={styles.summaryGrid}>
           <ModernSummaryCard
-            label="Tổng s đợt"
+            label="Tổng số đợt"
             value={stats.total.toString()}
             icon={ClipboardCheck}
             variant="primary"

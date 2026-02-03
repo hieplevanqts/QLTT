@@ -252,7 +252,6 @@ export async function updateInspectionRoundApi(id: string, updates: Partial<Insp
     if (updates.leadUnitId) payload.department_id = updates.leadUnitId;
     if (updates.leadUnit) {
       payload.owner_dept = updates.leadUnit;
-      payload.lead_unit = updates.leadUnit;
     }
     
     if (updates.provinceId) payload.province_id = updates.provinceId;
