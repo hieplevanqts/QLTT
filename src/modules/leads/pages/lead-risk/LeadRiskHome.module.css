@@ -51,6 +51,7 @@
 }
 
 .timeFilter {
+  height: 40px;
   padding: var(--spacing-2) var(--spacing-3);
   background: var(--card);
   border: 1px solid var(--border);
@@ -75,7 +76,8 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
-  padding: var(--spacing-3) var(--spacing-4);
+  height: 40px;
+  padding: 0 var(--spacing-4);
   background: var(--primary);
   color: var(--primary-foreground);
   border: none;
@@ -84,6 +86,28 @@
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.assistantButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  height: 40px;
+  padding: 0 var(--spacing-4);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--foreground);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  box-shadow: none;
+  white-space: nowrap;
+}
+
+.assistantButton:hover,
+.assistantButton:focus {
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .createButton:hover {
