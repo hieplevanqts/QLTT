@@ -18,7 +18,7 @@ import {
   ChevronRight,
   Star
 } from 'lucide-react';
-import AiWorkAssistantButton from "@/components/ai/AiWorkAssistantButton";
+import AiWorkAssistantNavButton from "@/components/ai/AiWorkAssistantNavButton";
 import styles from './LeadRiskHome.module.css';
 
 interface KPICard {
@@ -276,7 +276,7 @@ export default function LeadRiskHome() {
             <option value="month">Tháng này</option>
           </select>
 
-          <AiWorkAssistantButton className={styles.assistantButton} />
+          <AiWorkAssistantNavButton className={styles.assistantButton} />
 
           <button className={styles.createButton} onClick={() => navigate('/lead-risk/create-lead-quick')}>
             <Plus size={18} />

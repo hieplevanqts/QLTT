@@ -133,6 +133,7 @@ function reducer(state: AssistantState, action: Action): AssistantState {
 
 type AssistantContextValue = AssistantState & {
   createThread: (scope: ChatThread["scope"], title: string, context?: ThreadContext) => string;
+  getOrCreateThread: (scope: ChatThread["scope"], title: string, context?: ThreadContext) => string;
   setActiveThread: (id: string | null) => void;
   setDrawerOpen: (open: boolean) => void;
   appendMessage: (threadId: string, message: ChatMessage) => void;
@@ -167,6 +168,15 @@ export function AssistantProvider({ children }: { children: React.ReactNode }) {
     return {
       ...state,
       createThread,
+      getOrCreateThread: (scope, title, context) => {
+        const existing = state.threads.find(
+          (thread) => thread.scope === scope && thread.title === title
+        );
+        if (existing?.id) {
+          return existing.id;
+        }
+        return createThread(scope, title, context);
+      },
       setActiveThread: (id) => dispatch({ type: "setActiveThread", payload: { id } }),
       setDrawerOpen: (open) => dispatch({ type: "setDrawerOpen", payload: { open } }),
       appendMessage: (threadId, message) =>
