@@ -266,45 +266,6 @@ export default function LeadInboxAIDemo() {
     setWizardStartStep(0);
   };
 
-  const handleWizardSelectionChange = useCallback(
-    (ids: string[], leads: LeadMock[]) => {
-      setWizardSelectedIds(ids);
-      if (wizardTag) {
-        setFocusTag(wizardTag);
-        setFocusLeadId(null);
-        syncLeadRiskContext({
-          page: "/lead-risk/inbox-ai-demo",
-          focus: { kind: "tag", tag: wizardTag },
-          selectedTag: wizardTag,
-          selectedLeadIds: ids,
-          selectedLeads: leads.slice(0, 30).map(toLeadMeta),
-        });
-      } else if (ids.length === 1) {
-        setFocusLeadId(ids[0]);
-        setFocusTag(null);
-        const lead = leads[0];
-        if (lead) {
-          syncLeadRiskContext({
-            page: "/lead-risk/inbox-ai-demo",
-            focus: { kind: "lead", leadId: lead.id },
-            selectedLeadIds: [lead.id],
-            selectedTag: lead.categoryLabel || lead.category,
-            selectedLeads: [toLeadMeta(lead)],
-          });
-        }
-      } else if (ids.length > 0) {
-        setFocusLeadId(null);
-        syncLeadRiskContext({
-          page: "/lead-risk/inbox-ai-demo",
-          focus: { kind: null },
-          selectedLeadIds: ids,
-          selectedLeads: leads.slice(0, 30).map(toLeadMeta),
-        });
-      }
-    },
-    [wizardTag, syncLeadRiskContext, toLeadMeta]
-  );
-
   const getLeadRiskThreadId = useCallback(() => {
     const existing = threads.find(
       (thread) => thread.scope === "lead-risk" && thread.title === "Lead-risk: Inbox AI Demo"
@@ -391,6 +352,45 @@ export default function LeadInboxAIDemo() {
     window.addEventListener("mappa:open-lead-wizard", handler as EventListener);
     return () => window.removeEventListener("mappa:open-lead-wizard", handler as EventListener);
   }, [aiLeads, syncLeadRiskContext, toLeadMeta]);
+
+  const handleWizardSelectionChange = useCallback(
+    (ids: string[], leads: LeadMock[]) => {
+      setWizardSelectedIds(ids);
+      if (wizardTag) {
+        setFocusTag(wizardTag);
+        setFocusLeadId(null);
+        syncLeadRiskContext({
+          page: "/lead-risk/inbox-ai-demo",
+          focus: { kind: "tag", tag: wizardTag },
+          selectedTag: wizardTag,
+          selectedLeadIds: ids,
+          selectedLeads: leads.slice(0, 30).map(toLeadMeta),
+        });
+      } else if (ids.length === 1) {
+        setFocusLeadId(ids[0]);
+        setFocusTag(null);
+        const lead = leads[0];
+        if (lead) {
+          syncLeadRiskContext({
+            page: "/lead-risk/inbox-ai-demo",
+            focus: { kind: "lead", leadId: lead.id },
+            selectedLeadIds: [lead.id],
+            selectedTag: lead.categoryLabel || lead.category,
+            selectedLeads: [toLeadMeta(lead)],
+          });
+        }
+      } else if (ids.length > 0) {
+        setFocusLeadId(null);
+        syncLeadRiskContext({
+          page: "/lead-risk/inbox-ai-demo",
+          focus: { kind: null },
+          selectedLeadIds: ids,
+          selectedLeads: leads.slice(0, 30).map(toLeadMeta),
+        });
+      }
+    },
+    [wizardTag, syncLeadRiskContext, toLeadMeta]
+  );
 
   const handleLeadClick = (lead: LeadMock) => {
     setSelectedLead(lead);

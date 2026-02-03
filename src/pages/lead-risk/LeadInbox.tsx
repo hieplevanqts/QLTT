@@ -1148,7 +1148,7 @@ export default function LeadInbox() {
             }}
           >
             <span style={{ fontSize: "18px" }}>🤖</span>
-            <span>Trợ lý ảo của bạn</span>
+            <span>Trợ lý công việc MPA</span>
           </button>
           <button
             className={styles.duplicateButton}
