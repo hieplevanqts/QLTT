@@ -5,8 +5,6 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const DEV_SERVER_HOST = process.env.VITE_DEV_SERVER_HOST
-const HMR_HOST = process.env.VITE_HMR_HOST ?? DEV_SERVER_HOST
 
 export default defineConfig({
   plugins: [
@@ -75,12 +73,6 @@ export default defineConfig({
   server: {
     host: '0.0.0.0', // Allow external connections (required for Docker)
     port: 5173,
-    hmr: HMR_HOST
-      ? {
-          host: HMR_HOST,
-          clientPort: 5173,
-        }
-      : undefined,
     headers: {
       'Cache-Control': 'no-store',
     },
