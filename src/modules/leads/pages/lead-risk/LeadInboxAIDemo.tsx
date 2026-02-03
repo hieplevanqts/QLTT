@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AIBulkActionBar } from "@/components/lead-risk/AIBulkActionBar";
+import RiskByWardMockChart from "@/components/lead-risk/RiskByWardMockChart";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import styles from "./LeadInboxAIDemo.module.css";
@@ -519,10 +520,7 @@ export default function LeadInboxAIDemo() {
                     </div>
                   </div>
 
-                  {/* Placeholder for a chart or map */}
-                  <div style={{ height: 200, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted-foreground)' }}>
-                    [Biểu đồ xu hướng vi phạm theo khu vực]
-                  </div>
+                  <RiskByWardMockChart />
                 </>
               )}
 

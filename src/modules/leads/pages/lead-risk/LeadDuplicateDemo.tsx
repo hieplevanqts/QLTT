@@ -121,258 +121,260 @@ export default function LeadDuplicateDemo() {
         ]}
       />
 
-      {/* Header */}
-      <div className={styles.header}>
-        <button className={styles.backButton} onClick={() => navigate(-1)}>
-          <ArrowLeft size={20} />
-          <span>Quay lại</span>
-        </button>
-        <div className={styles.headerInfo}>
-          <h1 className={styles.title}>
-            {currentLead.code}: {currentLead.title}
-          </h1>
-          <p className={styles.subtitle}>AI tự động phát hiện nguồn tin trùng lặp</p>
-        </div>
-      </div>
-
-      {/* AI Duplicate Alert */}
-      <AIDuplicateAlert
-        duplicateCount={similarLeads.length}
-        highestSimilarity={similarLeads[0]?.similarity || 0}
-        onViewDetails={() => {
-          const element = document.getElementById('similar-leads-list');
-          element?.scrollIntoView({ behavior: 'smooth' });
-        }}
-        onDismiss={() => {
-          console.log('Alert dismissed');
-        }}
-      />
-
-      {/* Main Content */}
-      <div className={styles.mainContent}>
-        {/* Left: Current Lead Info */}
-        <div className={styles.currentLeadSection}>
-          <h2 className={styles.sectionTitle}>📄 Nguồn tin hiện tại</h2>
-
-          <div className={styles.infoCard}>
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Mã nguồn tin:</span>
-              <span className={styles.infoValue}>{currentLead.code}</span>
-            </div>
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Tiêu đề:</span>
-              <span className={styles.infoValue}>{currentLead.title}</span>
-            </div>
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Người báo:</span>
-              <span className={styles.infoValue}>{currentLead.reporter}</span>
-            </div>
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Điện thoại:</span>
-              <span className={styles.infoValue}>{currentLead.phone}</span>
-            </div>
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Địa chỉ vi phạm:</span>
-              <span className={styles.infoValue}>{currentLead.address}</span>
-            </div>
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Thời gian:</span>
-              <span className={styles.infoValue}>{currentLead.createdAt}</span>
-            </div>
-          </div>
-
-          <div className={styles.contentCard}>
-            <h3 className={styles.contentTitle}>Nội dung phản ánh:</h3>
-            <p className={styles.contentText}>{currentLead.content}</p>
+      <div className={styles.content}>
+        {/* Header */}
+        <div className={styles.header}>
+          <button className={styles.backButton} onClick={() => navigate(-1)}>
+            <ArrowLeft size={20} />
+            <span>Quay lại</span>
+          </button>
+          <div className={styles.headerInfo}>
+            <h1 className={styles.title}>
+              {currentLead.code}: {currentLead.title}
+            </h1>
+            <p className={styles.subtitle}>AI tự động phát hiện nguồn tin trùng lặp</p>
           </div>
         </div>
 
-        {/* Right: Similar Leads */}
-        <div className={styles.similarLeadsSection} id="similar-leads-list">
-          <AISimilarLeadsList
-            leads={similarLeads}
-            onViewDetail={handleViewDetail}
-            onCompare={handleCompare}
-            onMerge={handleMerge}
-            onLink={handleLink}
-            onMarkNotDuplicate={handleMarkNotDuplicate}
-          />
-        </div>
-      </div>
+        {/* AI Duplicate Alert */}
+        <AIDuplicateAlert
+          duplicateCount={similarLeads.length}
+          highestSimilarity={similarLeads[0]?.similarity || 0}
+          onViewDetails={() => {
+            const element = document.getElementById('similar-leads-list');
+            element?.scrollIntoView({ behavior: 'smooth' });
+          }}
+          onDismiss={() => {
+            console.log('Alert dismissed');
+          }}
+        />
 
-      {/* Comparison Modal */}
-      {showComparison && selectedLead && (
-        <div className={styles.modal} onClick={() => setShowComparison(false)}>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>⚖️ So sánh nguồn tin</h2>
-              <button
-                className={styles.modalClose}
-                onClick={() => setShowComparison(false)}
-              >
-                <X size={24} />
-              </button>
+        {/* Main Content */}
+        <div className={styles.mainContent}>
+          {/* Left: Current Lead Info */}
+          <div className={styles.currentLeadSection}>
+            <h2 className={styles.sectionTitle}>📄 Nguồn tin hiện tại</h2>
+
+            <div className={styles.infoCard}>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>Mã nguồn tin:</span>
+                <span className={styles.infoValue}>{currentLead.code}</span>
+              </div>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>Tiêu đề:</span>
+                <span className={styles.infoValue}>{currentLead.title}</span>
+              </div>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>Người báo:</span>
+                <span className={styles.infoValue}>{currentLead.reporter}</span>
+              </div>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>Điện thoại:</span>
+                <span className={styles.infoValue}>{currentLead.phone}</span>
+              </div>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>Địa chỉ vi phạm:</span>
+                <span className={styles.infoValue}>{currentLead.address}</span>
+              </div>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>Thời gian:</span>
+                <span className={styles.infoValue}>{currentLead.createdAt}</span>
+              </div>
             </div>
 
-            <div className={styles.comparisonGrid}>
-              {/* Left: Current Lead */}
-              <div className={styles.comparisonColumn}>
-                <div className={styles.comparisonHeader}>
-                  <h3>Nguồn tin hiện tại</h3>
-                  <span className={styles.comparisonCode}>{currentLead.code}</span>
+            <div className={styles.contentCard}>
+              <h3 className={styles.contentTitle}>Nội dung phản ánh:</h3>
+              <p className={styles.contentText}>{currentLead.content}</p>
+            </div>
+          </div>
+
+          {/* Right: Similar Leads */}
+          <div className={styles.similarLeadsSection} id="similar-leads-list">
+            <AISimilarLeadsList
+              leads={similarLeads}
+              onViewDetail={handleViewDetail}
+              onCompare={handleCompare}
+              onMerge={handleMerge}
+              onLink={handleLink}
+              onMarkNotDuplicate={handleMarkNotDuplicate}
+            />
+          </div>
+        </div>
+
+        {/* Comparison Modal */}
+        {showComparison && selectedLead && (
+          <div className={styles.modal} onClick={() => setShowComparison(false)}>
+            <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h2 className={styles.modalTitle}>⚖️ So sánh nguồn tin</h2>
+                <button
+                  className={styles.modalClose}
+                  onClick={() => setShowComparison(false)}
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className={styles.comparisonGrid}>
+                {/* Left: Current Lead */}
+                <div className={styles.comparisonColumn}>
+                  <div className={styles.comparisonHeader}>
+                    <h3>Nguồn tin hiện tại</h3>
+                    <span className={styles.comparisonCode}>{currentLead.code}</span>
+                  </div>
+                  <div className={styles.comparisonContent}>
+                    <div className={styles.comparisonRow}>
+                      <strong>Tiêu đề:</strong>
+                      <p>{currentLead.title}</p>
+                    </div>
+                    <div className={styles.comparisonRow}>
+                      <strong>Địa chỉ:</strong>
+                      <p>{currentLead.address}</p>
+                    </div>
+                    <div className={styles.comparisonRow}>
+                      <strong>Người báo:</strong>
+                      <p>{currentLead.reporter}</p>
+                    </div>
+                    <div className={styles.comparisonRow}>
+                      <strong>Thời gian:</strong>
+                      <p>{currentLead.createdAt}</p>
+                    </div>
+                    <div className={styles.comparisonRow}>
+                      <strong>Nội dung:</strong>
+                      <p>{currentLead.content}</p>
+                    </div>
+                  </div>
                 </div>
-                <div className={styles.comparisonContent}>
-                  <div className={styles.comparisonRow}>
-                    <strong>Tiêu đề:</strong>
-                    <p>{currentLead.title}</p>
+
+                {/* Middle: Similarity Info */}
+                <div className={styles.similarityInfo}>
+                  <div className={styles.similarityCircle}>
+                    <span className={styles.similarityNumber}>
+                      {selectedLead.similarity}%
+                    </span>
+                    <span className={styles.similarityText}>Tương đồng</span>
                   </div>
-                  <div className={styles.comparisonRow}>
-                    <strong>Địa chỉ:</strong>
-                    <p>{currentLead.address}</p>
+                  <div className={styles.similarityReasons}>
+                    <strong>Lý do AI phát hiện:</strong>
+                    <ul>
+                      {selectedLead.reasons.map((reason, idx) => (
+                        <li key={idx}>{reason}</li>
+                      ))}
+                    </ul>
                   </div>
-                  <div className={styles.comparisonRow}>
-                    <strong>Người báo:</strong>
-                    <p>{currentLead.reporter}</p>
+                </div>
+
+                {/* Right: Selected Lead */}
+                <div className={styles.comparisonColumn}>
+                  <div className={styles.comparisonHeader}>
+                    <h3>Nguồn tin tương tự</h3>
+                    <span className={styles.comparisonCode}>{selectedLead.code}</span>
                   </div>
-                  <div className={styles.comparisonRow}>
-                    <strong>Thời gian:</strong>
-                    <p>{currentLead.createdAt}</p>
-                  </div>
-                  <div className={styles.comparisonRow}>
-                    <strong>Nội dung:</strong>
-                    <p>{currentLead.content}</p>
+                  <div className={styles.comparisonContent}>
+                    <div className={styles.comparisonRow}>
+                      <strong>Tiêu đề:</strong>
+                      <p>{selectedLead.title}</p>
+                    </div>
+                    <div className={styles.comparisonRow}>
+                      <strong>Địa chỉ:</strong>
+                      <p>
+                        {selectedLead.id === '1'
+                          ? '45 Phố Hàng Gai, Hoàn Kiếm'
+                          : selectedLead.id === '2'
+                          ? '47 Phố Hàng Gai, Hoàn Kiếm'
+                          : 'Phố Hàng Bạc, Hoàn Kiếm'}
+                      </p>
+                    </div>
+                    <div className={styles.comparisonRow}>
+                      <strong>Người báo:</strong>
+                      <p>{selectedLead.reporter}</p>
+                    </div>
+                    <div className={styles.comparisonRow}>
+                      <strong>Thời gian:</strong>
+                      <p>{selectedLead.createdAt}</p>
+                    </div>
+                    <div className={styles.comparisonRow}>
+                      <strong>Nội dung:</strong>
+                      <p>{selectedLead.content}</p>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Middle: Similarity Info */}
-              <div className={styles.similarityInfo}>
-                <div className={styles.similarityCircle}>
-                  <span className={styles.similarityNumber}>
-                    {selectedLead.similarity}%
-                  </span>
-                  <span className={styles.similarityText}>Tương đồng</span>
-                </div>
-                <div className={styles.similarityReasons}>
-                  <strong>Lý do AI phát hiện:</strong>
-                  <ul>
-                    {selectedLead.reasons.map((reason, idx) => (
-                      <li key={idx}>{reason}</li>
-                    ))}
-                  </ul>
-                </div>
+              <div className={styles.modalActions}>
+                <button
+                  className={styles.modalActionBtn}
+                  style={{
+                    backgroundColor: 'var(--primary)',
+                    color: 'var(--primary-foreground)',
+                  }}
+                  onClick={() => {
+                    handleMerge(selectedLead.id);
+                    setShowComparison(false);
+                  }}
+                >
+                  Gộp nguồn tin
+                </button>
+                <button
+                  className={styles.modalActionBtn}
+                  style={{
+                    backgroundColor: 'var(--secondary)',
+                    color: 'var(--foreground)',
+                    border: '1px solid var(--border)',
+                  }}
+                  onClick={() => {
+                    handleLink(selectedLead.id);
+                    setShowComparison(false);
+                  }}
+                >
+                  Liên kết tham chiếu
+                </button>
+                <button
+                  className={styles.modalActionBtn}
+                  style={{
+                    backgroundColor: 'transparent',
+                    color: 'var(--muted-foreground)',
+                    border: '1px solid var(--border)',
+                  }}
+                  onClick={() => setShowComparison(false)}
+                >
+                  Đóng
+                </button>
               </div>
-
-              {/* Right: Selected Lead */}
-              <div className={styles.comparisonColumn}>
-                <div className={styles.comparisonHeader}>
-                  <h3>Nguồn tin tương tự</h3>
-                  <span className={styles.comparisonCode}>{selectedLead.code}</span>
-                </div>
-                <div className={styles.comparisonContent}>
-                  <div className={styles.comparisonRow}>
-                    <strong>Tiêu đề:</strong>
-                    <p>{selectedLead.title}</p>
-                  </div>
-                  <div className={styles.comparisonRow}>
-                    <strong>Địa chỉ:</strong>
-                    <p>
-                      {selectedLead.id === '1'
-                        ? '45 Phố Hàng Gai, Hoàn Kiếm'
-                        : selectedLead.id === '2'
-                        ? '47 Phố Hàng Gai, Hoàn Kiếm'
-                        : 'Phố Hàng Bạc, Hoàn Kiếm'}
-                    </p>
-                  </div>
-                  <div className={styles.comparisonRow}>
-                    <strong>Người báo:</strong>
-                    <p>{selectedLead.reporter}</p>
-                  </div>
-                  <div className={styles.comparisonRow}>
-                    <strong>Thời gian:</strong>
-                    <p>{selectedLead.createdAt}</p>
-                  </div>
-                  <div className={styles.comparisonRow}>
-                    <strong>Nội dung:</strong>
-                    <p>{selectedLead.content}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.modalActions}>
-              <button
-                className={styles.modalActionBtn}
-                style={{
-                  backgroundColor: 'var(--primary)',
-                  color: 'var(--primary-foreground)',
-                }}
-                onClick={() => {
-                  handleMerge(selectedLead.id);
-                  setShowComparison(false);
-                }}
-              >
-                Gộp nguồn tin
-              </button>
-              <button
-                className={styles.modalActionBtn}
-                style={{
-                  backgroundColor: 'var(--secondary)',
-                  color: 'var(--foreground)',
-                  border: '1px solid var(--border)',
-                }}
-                onClick={() => {
-                  handleLink(selectedLead.id);
-                  setShowComparison(false);
-                }}
-              >
-                Liên kết tham chiếu
-              </button>
-              <button
-                className={styles.modalActionBtn}
-                style={{
-                  backgroundColor: 'transparent',
-                  color: 'var(--muted-foreground)',
-                  border: '1px solid var(--border)',
-                }}
-                onClick={() => setShowComparison(false)}
-              >
-                Đóng
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Design Notes */}
-      <div className={styles.designNotes}>
-        <h3>✨ Nguyên tắc thiết kế AI Hỗ trợ phát hiện tin báo trùng</h3>
-        <ul>
-          <li>
-            <strong>🔍 AI hoạt động nền:</strong> Tự động so sánh nguồn tin mới với dữ
-            liệu hiện có, không cần user kích hoạt
-          </li>
-          <li>
-            <strong>⚠️ Cảnh báo thông minh:</strong> Chỉ hiển thị khi mức độ tương đồng
-            {'>'}70%, tránh làm phiền user
-          </li>
-          <li>
-            <strong>📊 So sánh nhanh:</strong> User quét nhanh % tương đồng + lý do →
-            Quyết định ngay
-          </li>
-          <li>
-            <strong>⚖️ Side-by-side comparison:</strong> So sánh trực quan 2 nguồn tin,
-            không cần đọc lại toàn bộ
-          </li>
-          <li>
-            <strong>✅ 3 hành động rõ ràng:</strong> Gộp / Liên kết / Đánh dấu không
-            trùng - User quyết định cuối cùng
-          </li>
-          <li>
-            <strong>🎯 Không tự động:</strong> AI chỉ đề xuất, không tự gộp hay thay đổi
-            trạng thái
-          </li>
-        </ul>
+        {/* Design Notes */}
+        <div className={styles.designNotes}>
+          <h3>✨ Nguyên tắc thiết kế AI Hỗ trợ phát hiện tin báo trùng</h3>
+          <ul>
+            <li>
+              <strong>🔍 AI hoạt động nền:</strong> Tự động so sánh nguồn tin mới với dữ
+              liệu hiện có, không cần user kích hoạt
+            </li>
+            <li>
+              <strong>⚠️ Cảnh báo thông minh:</strong> Chỉ hiển thị khi mức độ tương đồng
+              {'>'}70%, tránh làm phiền user
+            </li>
+            <li>
+              <strong>📊 So sánh nhanh:</strong> User quét nhanh % tương đồng + lý do →
+              Quyết định ngay
+            </li>
+            <li>
+              <strong>⚖️ Side-by-side comparison:</strong> So sánh trực quan 2 nguồn tin,
+              không cần đọc lại toàn bộ
+            </li>
+            <li>
+              <strong>✅ 3 hành động rõ ràng:</strong> Gộp / Liên kết / Đánh dấu không
+              trùng - User quyết định cuối cùng
+            </li>
+            <li>
+              <strong>🎯 Không tự động:</strong> AI chỉ đề xuất, không tự gộp hay thay đổi
+              trạng thái
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   );
