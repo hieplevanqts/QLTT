@@ -1,15 +1,13 @@
 // This component is a duplicate of AddStoreDialogTabbed but pre-fills data from existing store
 // Based on AddStoreDialogTabbed.tsx - same structure but for editing
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Building2,
   FileText,
   Users,
   MapPin,
   XCircle,
-  Check,
-  ChevronsUpDown,
 } from 'lucide-react';
 import {
   Dialog,
@@ -29,25 +27,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { AsyncSearchableSelect } from './AsyncSearchableSelect';
 import { Textarea } from '@/components/ui/textarea';
 import { fetchProvinces, fetchWardsByProvince, type ProvinceApiData, type WardApiData } from '@/utils/api/locationsApi';
-import { INDUSTRIES } from '@/utils/data/industries';
+import { searchCategories } from '@/utils/api/categoriesApi';
 import { toast } from 'sonner';
 import styles from './AddStoreDialogTabbed.module.css';
-import comboboxStyles from './IndustryCombobox.module.css';
 import { MapLocationPicker } from './MapLocationPicker';
 
 interface Store {
@@ -109,6 +94,14 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
 
   // Validation errors
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  const searchIndustryOptions = useCallback(async (searchTerm: string, limit: number = 20) => {
+    const categories = await searchCategories(searchTerm, limit);
+    return (categories || []).map((cat) => ({
+      value: cat.name,
+      label: cat.name,
+    }));
+  }, []);
 
   // API Data
   const [apiProvinces, setApiProvinces] = useState<ProvinceApiData[]>([]);
@@ -386,60 +379,18 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
                 )}
               </div>
 
-              {/* Industry Name - Searchable Select (Combobox) */}
+              {/* Industry Name - Async Searchable Select */}
               <div className="space-y-2">
                 <Label htmlFor="industryName">Tên ngành kinh doanh <span className="text-red-500">*</span></Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button
-                      id="industryName"
-                      type="button"
-                      role="combobox"
-                      className={comboboxStyles.comboboxTrigger}
-                      data-placeholder={!formData.industryName}
-                      data-error={!!errors.industryName}
-                    >
-                      <span>{formData.industryName || 'Chọn ngành kinh doanh...'}</span>
-                      <ChevronsUpDown className={comboboxStyles.comboboxIcon} />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className={comboboxStyles.popoverContent} align="start">
-                    <Command>
-                      <div className={comboboxStyles.commandInput}>
-                        <svg className={comboboxStyles.searchIcon} viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                        </svg>
-                        <CommandInput placeholder="Tìm kiếm ngành kinh doanh..." />
-                      </div>
-                      <CommandList className={comboboxStyles.commandList}>
-                        <CommandEmpty className={comboboxStyles.commandEmpty}>
-                          Không tìm thấy ngành kinh doanh
-                        </CommandEmpty>
-                        <CommandGroup>
-                          {INDUSTRIES.map((industry) => (
-                            <CommandItem
-                              key={industry.id}
-                              value={industry.name}
-                              onSelect={() => {
-                                setFormData({ ...formData, industryName: industry.name });
-                              }}
-                              className={comboboxStyles.commandItem}
-                              data-selected={formData.industryName === industry.name}
-                            >
-                              <div className={comboboxStyles.industryContent}>
-                                <span className={comboboxStyles.industryName}>{industry.name}</span>
-                                {industry.category && (
-                                  <span className={comboboxStyles.industryCategory}>{industry.category}</span>
-                                )}
-                              </div>
-                              <Check className={comboboxStyles.checkIcon} />
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <AsyncSearchableSelect
+                  value={formData.industryName || ''}
+                  onValueChange={(val) => setFormData({ ...formData, industryName: val })}
+                  searchFunction={searchIndustryOptions}
+                  placeholder="Chọn ngành kinh doanh..."
+                  noResultsText="Không tìm thấy ngành kinh doanh"
+                  limit={20}
+                  width="100%"
+                />
                 {errors.industryName && (
                   <p className="text-sm text-red-500">{errors.industryName}</p>
                 )}

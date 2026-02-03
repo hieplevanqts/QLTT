@@ -4,6 +4,13 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { getDocumentTypeById } from '@/utils/data/documentTypes';
 import { extractDocumentData } from '@/utils/api/ocrApi';
+import { 
+  validateRequiredFields, 
+  validateFieldTypes, 
+  sanitizeLicenseData,
+  getFieldLabel,
+  DOCUMENT_TYPE_TO_KEY
+} from '@/utils/licenseHelper';
 import styles from './DocumentUploadDialog.module.css';
 
 export interface DocumentField {
@@ -264,29 +271,37 @@ export function DocumentUploadDialog({
   };
 
   const handleSave = () => {
-    // Validate required fields
-    const newErrors: Record<string, string> = {};
-    documentType?.fields.forEach((field) => {
-      if (field.required && !formData[field.key]) {
-        newErrors[field.key] = `${field.label} là bắt buộc`;
-      }
-    });
-
-    if (Object.keys(newErrors).length > 0) {
+    // Determine the license type key for validation
+    const typeKey = DOCUMENT_TYPE_TO_KEY[documentType?.id || ''];
+    
+    // 1. Validate required fields using type-specific validation
+    const missingFields = validateRequiredFields(typeKey, formData);
+    if (missingFields.length > 0) {
+      const missingLabels = missingFields.map(field => getFieldLabel(field));
+      toast.error(`Thiếu thông tin bắt buộc: ${missingLabels.join(', ')}`);
+      
+      // Set field errors for UI highlighting
+      const newErrors: Record<string, string> = {};
+      documentType?.fields.forEach((field) => {
+        if (!formData[field.key]) {
+          newErrors[field.key] = `${field.label} là bắt buộc`;
+        }
+      });
       setFieldErrors(newErrors);
-      toast.error(`Vui lòng điền đầy đủ thông tin bắt buộc`);
       return;
     }
 
-    // Sanitize date fields - convert empty strings to null to avoid PostgreSQL date parsing errors
-    const sanitizedData = { ...formData };
-    documentType?.fields.forEach((field) => {
-      if (field.type === 'date' && sanitizedData[field.key] === '') {
-        sanitizedData[field.key] = null;
-      }
-    });
+    // 2. Validate field data types (dates, numbers)
+    const typeValidation = validateFieldTypes(typeKey, formData);
+    if (!typeValidation.isValid && typeValidation.errors) {
+      toast.error(`Lỗi định dạng: ${typeValidation.errors.join('; ')}`);
+      return;
+    }
 
-    onSave({ file, fields: sanitizedData });
+    // 3. Sanitize data before sending
+    const sanitizedFormData = sanitizeLicenseData(typeKey, formData);
+
+    onSave({ file, fields: sanitizedFormData });
     onOpenChange(false);
   };
 
