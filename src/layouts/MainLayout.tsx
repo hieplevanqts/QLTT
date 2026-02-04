@@ -5,6 +5,8 @@ import TopUtilityBar from './TopUtilityBar';
 import HorizontalNavBar from './HorizontalNavBar';
 import VerticalSidebar from './VerticalSidebar';
 import { cn } from '@/components/ui/utils';
+import AppFooter from '@/components/layout/AppFooter';
+import GlobalChatDrawer from '@/ai/GlobalChatDrawer';
 
 // Inline page loader for route transitions
 function InlinePageLoader() {
@@ -49,7 +51,7 @@ export default function MainLayout() {
     <div className="min-h-screen bg-background">
       {layoutMode === 'horizontal' ? (
         // Horizontal Layout
-        <>
+        <div className="min-h-screen flex flex-col">
           <TopUtilityBar onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} />
           <HorizontalNavBar
             mobileMenuOpen={mobileMenuOpen}
@@ -60,7 +62,8 @@ export default function MainLayout() {
               <Outlet />
             </Suspense>
           </main>
-        </>
+          <AppFooter />
+        </div>
       ) : (
         // Vertical Layout
         <>
@@ -70,7 +73,7 @@ export default function MainLayout() {
           />
           <div
             className={cn(
-              'transition-all duration-300',
+              'transition-all duration-300 min-h-screen flex flex-col',
               sidebarCollapsed ? 'ml-16' : 'ml-64'
             )}
           >
@@ -80,9 +83,11 @@ export default function MainLayout() {
                 <Outlet />
               </Suspense>
             </main>
+            <AppFooter />
           </div>
         </>
       )}
+      <GlobalChatDrawer />
     </div>
   );
 }

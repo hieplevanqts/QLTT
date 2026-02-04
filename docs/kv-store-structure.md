@@ -59,7 +59,7 @@ restaurant:{id}
 | `businessType` | string | ✅ | Alias của type | "Nhà hàng" |
 | `category` | string | ✅ | Phân loại trạng thái | "certified", "hotspot", "scheduled", "inspected" |
 | `province` | string | ✅ | Tỉnh/Thành phố | "Hà Nội" |
-| `district` | string | ✅ | Quận/Huyện | "Hoàn Kiếm", "Ba Đình" |
+| `district` | string | ✅ | Phường/Xã | "Hoàn Kiếm", "Ba Đình" |
 | `ward` | string | ✅ | Phường/Xã | "Phường Hàng Bạc" |
 | `nearbyPopulation` | number | ❌ | Số dân xung quanh (500m) | 15420 |
 | `citizenReports` | array | ❌ | Phản ánh của người dân | [...] (chỉ có khi category = "hotspot") |

@@ -53,7 +53,7 @@ export default function EvidenceDetailPage() {
   const [linkedEntities, setLinkedEntities] = useState([
     { type: 'lead' as const, id: 'LEAD-2026-048', name: 'Tố giác vi phạm ATTP từ người dân' },
     { type: 'task' as const, id: 'TASK-2026-091', name: 'Nguy cơ ngộ độc thực phẩm cao' },
-    { type: 'plan' as const, id: 'PLAN-2026-015', name: 'Thanh tra cơ sở kinh doanh thực phẩm - Quận 1' },
+    { type: 'plan' as const, id: 'PLAN-2026-015', name: 'Thanh tra cơ sở kinh doanh thực phẩm - Phường 1' },
     { type: 'store' as const, id: 'STORE-2026-234', name: 'Nhà hàng Phố Việt - 123 Nguyễn Huệ' }
   ]);
 
@@ -105,7 +105,7 @@ export default function EvidenceDetailPage() {
     hash_computed_at: '10/01/2026 09:30:20',
     computed_by: 'System',
     integrityStatus: 'verified' as const,
-    location: 'Quận 1, TP.HCM',
+    location: 'Phường 1, Hà Nội',
     capturedAt: '10/01/2026 09:00',
     uploadedAt: '10/01/2026 09:30',
     submitter: 'Nguyễn Văn A',
@@ -867,7 +867,7 @@ export default function EvidenceDetailPage() {
                     type="text"
                     value={newLink.name}
                     onChange={(e) => setNewLink({ ...newLink, name: e.target.value })}
-                    placeholder="VD: Vi phạm ATTP tại Quận 1"
+                    placeholder="VD: Vi phạm ATTP tại Phường 1"
                     style={{
                       width: '100%',
                       padding: '10px 12px 10px 40px',

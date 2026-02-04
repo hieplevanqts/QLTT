@@ -83,8 +83,8 @@ __addressParserTests.namesMatch("parsed name", "db name")
 
 2. **Name format different than expected**
    ```javascript
-   // Example: Database has "Quận 5" not "District 5"
-   __addressParserTests.namesMatch("Quận 5", "Quận 5")  // Should be true
+   // Example: Database has "Phường 5" not "District 5"
+   __addressParserTests.namesMatch("Phường 5", "Phường 5")  // Should be true
    ```
    - Review `parseVietnameseAddress()` for expected format
    - Check OCR output against database names
@@ -148,7 +148,7 @@ if (result.error) {
 
 ### ❌ "User selection is being overridden by auto-mapping"
 
-**Problem:** User selected Province = "Hà Nội", then uploaded a TP.HCM address, but form changed to TP.HCM
+**Problem:** User selected Province = "Hà Nội", then uploaded a Hà Nội address, but form changed to Hà Nội
 
 **Root cause:** `skipAddressMapping` flag not set to true
 

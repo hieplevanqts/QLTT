@@ -14,7 +14,7 @@ export interface Officer {
   teamName: string; // Tên đội
   isTeamLeader: boolean; // true nếu là đội trưởng
   ward?: string; // Phường/xã chính phụ trách (optional)
-  district?: string; // Quận/huyện (optional)
+  district?: string; // Phường/Xã (optional)
   // Tiêu chí ngành
   criteria: {
     totalInspections: number;

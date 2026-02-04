@@ -41,11 +41,11 @@ export default function DashboardPage() {
         return {
           scope: 'Đơn vị / Khu vực',
           icon: Users,
-          description: 'Phạm vi: Quận 1, 3, 5',
+          description: 'Phạm vi: Phường 1, 3, 5',
         };
       case 'field-team':
         return {
-          scope: 'Đội 01 - Quận 1',
+          scope: 'Đội 01 - Phường 1',
           icon: Target,
           description: 'Phạm vi: Nhiệm vụ của đội',
         };
@@ -66,11 +66,11 @@ export default function DashboardPage() {
   ];
 
   const hotspotData = [
-    { name: 'Quận 1', value: 234, status: 'high' },
-    { name: 'Quận 3', value: 189, status: 'medium' },
-    { name: 'Quận 5', value: 156, status: 'medium' },
-    { name: 'Quận 7', value: 145, status: 'low' },
-    { name: 'Quận 10', value: 98, status: 'low' },
+    { name: 'Phường 1', value: 234, status: 'high' },
+    { name: 'Phường 3', value: 189, status: 'medium' },
+    { name: 'Phường 5', value: 156, status: 'medium' },
+    { name: 'Phường 7', value: 145, status: 'low' },
+    { name: 'Phường 10', value: 98, status: 'low' },
   ];
 
   const dataQualityMetrics = [

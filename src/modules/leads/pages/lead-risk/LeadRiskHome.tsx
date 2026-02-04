@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Star
 } from 'lucide-react';
+import AiWorkAssistantNavButton from "@/components/ai/AiWorkAssistantNavButton";
 import styles from './LeadRiskHome.module.css';
 
 interface KPICard {
@@ -198,29 +199,29 @@ export default function LeadRiskHome() {
     {
       id: 'L-2024-1523',
       title: 'Phát hiện chuỗi cửa hàng vi phạm quy mô lớn',
-      from: 'Đội 3 - Quận 1',
-      to: 'Chi cục TP.HCM',
+      from: 'Đội 3 - Phường 1',
+      to: 'Chi cục Hà Nội',
       priority: 'critical',
       timestamp: '15 phút trước',
-      area: 'Quận 1, TP.HCM',
+      area: 'Phường 1, Hà Nội',
     },
     {
       id: 'L-2024-1518',
       title: 'Nguồn tin về hàng giả nhãn mác nổi tiếng',
       from: 'Thanh tra viên Nguyễn Văn A',
-      to: 'Đội 2 - Quận 3',
+      to: 'Đội 2 - Phường 3',
       priority: 'high',
       timestamp: '1 giờ trước',
-      area: 'Quận 3, TP.HCM',
+      area: 'Phường 3, Hà Nội',
     },
     {
       id: 'L-2024-1512',
       title: 'Khiếu nại từ người tiêu dùng về chất lượng',
       from: 'Hotline 1800',
-      to: 'Đội 1 - Quận 7',
+      to: 'Đội 1 - Phường 7',
       priority: 'medium',
       timestamp: '2 giờ trước',
-      area: 'Quận 7, TP.HCM',
+      area: 'Phường 7, Hà Nội',
     },
   ];
 
@@ -274,6 +275,8 @@ export default function LeadRiskHome() {
             <option value="week">Tuần này</option>
             <option value="month">Tháng này</option>
           </select>
+
+          <AiWorkAssistantNavButton className={styles.assistantButton} />
 
           <button className={styles.createButton} onClick={() => navigate('/lead-risk/create-lead-quick')}>
             <Plus size={18} />

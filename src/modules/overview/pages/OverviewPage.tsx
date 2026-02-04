@@ -86,7 +86,7 @@ export default function OverviewPage() {
   const recentActivities = [
     {
       title: 'Nguồn tin mới được thêm',
-      description: 'Cơ sở ATTP tại quận 1 - Nguy cơ cao',
+      description: 'Cơ sở ATTP tại Phường 1 - Nguy cơ cao',
       time: '5 phút trước',
       status: 'new',
     },

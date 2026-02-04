@@ -22,7 +22,7 @@
     "businessType": "string - Alias của type",
     "category": "string - certified/hotspot/scheduled/inspected",
     "province": "string - Tỉnh/Thành phố (Hà Nội)",
-    "district": "string - Quận/Huyện",
+    "district": "string - Phường/Xã",
     "ward": "string - Phường/Xã",
     "nearbyPopulation": "number - Dân số trong bán kính 500m",
     "citizenReports": "array - Phản ánh từ người dân (chỉ cho hotspot)",

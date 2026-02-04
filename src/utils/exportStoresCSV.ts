@@ -100,7 +100,7 @@ export function exportStoresToCSV(stores: Store[], filename: string = 'danh-sach
     // Extract province from address
     let province = store.province || '';
     if (!province && store.address) {
-      // Try to extract from address (e.g., "123 Street, District, TP.HCM")
+      // Try to extract from address (e.g., "123 Street, District, Hà Nội")
       const addressParts = store.address.split(',');
       if (addressParts.length >= 3) {
         province = addressParts[addressParts.length - 1].trim();
@@ -204,18 +204,18 @@ export function exportReferenceDataCSV(filename: string = 'danh-muc-tham-chieu.c
   ];
 
   const managementUnitList = [
-    'Chi cục QLTT Quận 1',
-    'Chi cục QLTT Quận 2',
-    'Chi cục QLTT Quận 3',
-    'Chi cục QLTT Quận 4',
-    'Chi cục QLTT Quận 5',
-    'Chi cục QLTT Quận 6',
-    'Chi cục QLTT Quận 7',
-    'Chi cục QLTT Quận 8',
-    'Chi cục QLTT Quận 9',
-    'Chi cục QLTT Quận 10',
-    'Chi cục QLTT Quận 11',
-    'Chi cục QLTT Quận 12',
+    'Chi cục QLTT Phường 1',
+    'Chi cục QLTT Phường 2',
+    'Chi cục QLTT Phường 3',
+    'Chi cục QLTT Phường 4',
+    'Chi cục QLTT Phường 5',
+    'Chi cục QLTT Phường 6',
+    'Chi cục QLTT Phường 7',
+    'Chi cục QLTT Phường 8',
+    'Chi cục QLTT Phường 9',
+    'Chi cục QLTT Phường 10',
+    'Chi cục QLTT Phường 11',
+    'Chi cục QLTT Phường 12',
     'Chi cục QLTT Thủ Đức',
     'Chi cục QLTT Bình Thạnh',
     'Chi cục QLTT Tân Bình',

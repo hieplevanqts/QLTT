@@ -55,7 +55,7 @@ export default function EvidencePackageBuilderPage() {
       type: 'image',
       status: 'approved',
       capturedAt: '10/01/2026 09:00',
-      location: 'Quận 1, TP.HCM'
+      location: 'Phường 1, Hà Nội'
     },
     {
       id: 'EVD-2026-1249',
@@ -63,7 +63,7 @@ export default function EvidencePackageBuilderPage() {
       type: 'video',
       status: 'approved',
       capturedAt: '10/01/2026 08:00',
-      location: 'Quận 3, TP.HCM'
+      location: 'Phường 3, Hà Nội'
     },
     {
       id: 'EVD-2026-1248',
@@ -71,7 +71,7 @@ export default function EvidencePackageBuilderPage() {
       type: 'document',
       status: 'sealed',
       capturedAt: '09/01/2026 15:00',
-      location: 'Quận 5, TP.HCM'
+      location: 'Phường 5, Hà Nội'
     },
     {
       id: 'EVD-2026-1245',
@@ -79,7 +79,7 @@ export default function EvidencePackageBuilderPage() {
       type: 'document',
       status: 'approved',
       capturedAt: '08/01/2026 11:00',
-      location: 'Quận 7, TP.HCM'
+      location: 'Phường 7, Hà Nội'
     }
   ];
 
@@ -177,7 +177,7 @@ export default function EvidencePackageBuilderPage() {
                   className={styles.select}
                 >
                   <option value="">Chọn vụ việc...</option>
-                  <option value="CASE-2026-048">CASE-2026-048 - Vi phạm ATTP tại Quận 1</option>
+                  <option value="CASE-2026-048">CASE-2026-048 - Vi phạm ATTP tại Phường 1</option>
                   <option value="CASE-2026-042">CASE-2026-042 - Kiểm tra an toàn thực phẩm</option>
                   <option value="TASK-2026-091">TASK-2026-091 - Thanh tra cơ sở kinh doanh</option>
                 </select>

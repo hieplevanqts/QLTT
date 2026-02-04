@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useMemo } from 'react';
 import { 
   MessageSquare,
   Phone,
@@ -28,6 +29,7 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import { cn } from '@/components/ui/utils';
+import { applyGeoValue, type GeoMockContext } from '@/modules/kpi/mocks/kpiDashboard.mock';
 
 type TimeRange = '7' | '30' | '90';
 
@@ -111,33 +113,79 @@ const FEEDBACK_TREND = [
   { month: 'T1/25', total: 688, correct: 577, rate: 83.9 }
 ];
 
-// Channel effectiveness comparison
-const CHANNEL_EFFECTIVENESS = FEEDBACK_CHANNELS.map(ch => ({
-  channel: ch.channel,
-  correctRate: ch.correctnessRate,
-  verifySpeed: parseFloat((24 / ch.avgVerificationTime).toFixed(1)), // normalized score
-  totalVolume: ch.total
-}));
-
 interface FeedbackDashboardProps {
   timeRange: TimeRange;
+  geoContext: GeoMockContext;
 }
 
-export default function FeedbackDashboard({ timeRange }: FeedbackDashboardProps) {
+export default function FeedbackDashboard({ timeRange, geoContext }: FeedbackDashboardProps) {
+  const scaledChannels = useMemo(() => {
+    return FEEDBACK_CHANNELS.map((channel) => {
+      const total = applyGeoValue(channel.total, geoContext, 'count', { min: 0 });
+      const verifiedRaw = applyGeoValue(channel.verified, geoContext, 'count', { min: 0 });
+      const verified = Math.min(total, verifiedRaw);
+      const correctRaw = applyGeoValue(channel.correct, geoContext, 'count', { min: 0 });
+      const correct = Math.min(verified, correctRaw);
+      const incorrect = Math.max(0, verified - correct);
+      const avgVerificationTime = applyGeoValue(channel.avgVerificationTime, geoContext, 'duration', { decimals: 1, min: 0.3, max: 24 });
+      const correctnessRate = verified > 0 ? parseFloat(((correct / verified) * 100).toFixed(1)) : 0;
+
+      return {
+        ...channel,
+        total,
+        verified,
+        correct,
+        incorrect,
+        avgVerificationTime,
+        correctnessRate,
+      };
+    });
+  }, [geoContext]);
+
+  const slaMetrics = useMemo(() => {
+    return SLA_METRICS.map((metric) => ({
+      ...metric,
+      actual: applyGeoValue(metric.actual, geoContext, 'duration', { decimals: 1, min: 0.5 }),
+      onTimeRate: applyGeoValue(metric.onTimeRate, geoContext, 'rate', { decimals: 1, min: 60, max: 100 }),
+    }));
+  }, [geoContext]);
+
+  const feedbackTrend = useMemo(() => {
+    return FEEDBACK_TREND.map((row) => {
+      const total = applyGeoValue(row.total, geoContext, 'count', { min: 0 });
+      const correctRaw = applyGeoValue(row.correct, geoContext, 'count', { min: 0 });
+      const correct = Math.min(total, correctRaw);
+      const rate = total > 0 ? parseFloat(((correct / total) * 100).toFixed(1)) : 0;
+      return { ...row, total, correct, rate };
+    });
+  }, [geoContext]);
+
+  const channelEffectiveness = useMemo(() => {
+    return scaledChannels.map((ch) => ({
+      channel: ch.channel,
+      correctRate: ch.correctnessRate,
+      verifySpeed: parseFloat((24 / ch.avgVerificationTime).toFixed(1)),
+      totalVolume: ch.total,
+    }));
+  }, [scaledChannels]);
+
+  const avgTotalProcessHours = applyGeoValue(130.4, geoContext, 'duration', { decimals: 1, min: 24 });
   
-  const totalFeedback = FEEDBACK_CHANNELS.reduce((sum, ch) => sum + ch.total, 0);
-  const totalVerified = FEEDBACK_CHANNELS.reduce((sum, ch) => sum + ch.verified, 0);
-  const totalCorrect = FEEDBACK_CHANNELS.reduce((sum, ch) => sum + ch.correct, 0);
-  const avgCorrectRate = ((totalCorrect / totalVerified) * 100).toFixed(1);
-  const avgVerificationTime = (
-    FEEDBACK_CHANNELS.reduce((sum, ch) => sum + ch.avgVerificationTime * ch.total, 0) / totalFeedback
-  ).toFixed(1);
+  const totalFeedback = scaledChannels.reduce((sum, ch) => sum + ch.total, 0);
+  const totalVerified = scaledChannels.reduce((sum, ch) => sum + ch.verified, 0);
+  const totalCorrect = scaledChannels.reduce((sum, ch) => sum + ch.correct, 0);
+  const avgCorrectRate = totalVerified > 0 ? ((totalCorrect / totalVerified) * 100).toFixed(1) : '0.0';
+  const avgVerificationTime = totalFeedback > 0
+    ? (
+      scaledChannels.reduce((sum, ch) => sum + ch.avgVerificationTime * ch.total, 0) / totalFeedback
+    ).toFixed(1)
+    : '0.0';
   const overallSLARate = (
-    SLA_METRICS.reduce((sum, m) => sum + m.onTimeRate, 0) / SLA_METRICS.length
+    slaMetrics.reduce((sum, m) => sum + m.onTimeRate, 0) / slaMetrics.length
   ).toFixed(1);
 
   // Channel distribution for pie chart
-  const channelDistribution = FEEDBACK_CHANNELS.map((ch, index) => ({
+  const channelDistribution = scaledChannels.map((ch, index) => ({
     name: ch.channel,
     value: ch.total,
     color: ['#695cfb', '#0fc87a', '#f7a23b', '#4ecdc4'][index]
@@ -245,7 +293,7 @@ export default function FeedbackDashboard({ timeRange }: FeedbackDashboardProps)
               </tr>
             </thead>
             <tbody>
-              {FEEDBACK_CHANNELS.map((channel, index) => (
+              {scaledChannels.map((channel, index) => (
                 <tr key={index}>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -327,7 +375,7 @@ export default function FeedbackDashboard({ timeRange }: FeedbackDashboardProps)
             Biến động số lượng và chất lượng nguồn tin theo thời gian
           </p>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={FEEDBACK_TREND}>
+            <LineChart data={feedbackTrend}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="month" stroke="var(--muted-foreground)" />
               <YAxis yAxisId="left" stroke="var(--muted-foreground)" />
@@ -373,7 +421,7 @@ export default function FeedbackDashboard({ timeRange }: FeedbackDashboardProps)
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
           {/* Bar Chart */}
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={SLA_METRICS}>
+            <BarChart data={slaMetrics}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="stage" stroke="var(--muted-foreground)" />
               <YAxis stroke="var(--muted-foreground)" />
@@ -402,7 +450,7 @@ export default function FeedbackDashboard({ timeRange }: FeedbackDashboardProps)
                 </tr>
               </thead>
               <tbody>
-                {SLA_METRICS.map((metric, index) => (
+                {slaMetrics.map((metric, index) => (
                   <tr key={index}>
                     <td className={styles.teamName} style={{ fontSize: '0.875rem' }}>
                       {metric.stage}
@@ -435,7 +483,7 @@ export default function FeedbackDashboard({ timeRange }: FeedbackDashboardProps)
                 TG xử lý toàn trình TB
               </div>
               <div style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--primary)' }}>
-                130.4 giờ
+                {avgTotalProcessHours} giờ
               </div>
             </div>
             <div>
@@ -465,7 +513,7 @@ export default function FeedbackDashboard({ timeRange }: FeedbackDashboardProps)
           Đánh giá tổng hợp độ chính xác và tốc độ xác minh
         </p>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={CHANNEL_EFFECTIVENESS}>
+          <BarChart data={channelEffectiveness}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
             <XAxis dataKey="channel" stroke="var(--muted-foreground)" />
             <YAxis stroke="var(--muted-foreground)" />

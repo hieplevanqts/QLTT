@@ -969,7 +969,7 @@ class EvidenceService {
       location: {
         lat: 10.7769,
         lng: 106.7009,
-        addressText: 'Quận 1, TP.HCM',
+        addressText: 'Phường 1, Hà Nội',
         precision: 10,
         confidence: 0.95
       },

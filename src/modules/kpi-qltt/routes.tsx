@@ -4,12 +4,13 @@
 
 import { RouteObject } from 'react-router-dom';
 import { KpiLayout } from './components/KpiLayout';
-import { DashboardPage } from './pages/DashboardPage';
+import KpiWorkspacePage from './pages/KpiWorkspacePage';
 import KpiQlttDashboardNew from './pages/KpiQlttDashboard_new';
 import { ReportsListPage } from './pages/ReportsListPage';
 import { ReportBuilderPage } from './pages/ReportBuilderPage';
 import { ReportDetailPage } from './pages/ReportDetailPage';
 import { CompareKpiPage } from './pages/CompareKpiPage';
+import KpiCriteriaDetailPage from './pages/KpiCriteriaDetailPage';
 
 export const kpiQlttRoute: RouteObject = {
   path: 'kpi',
@@ -17,7 +18,7 @@ export const kpiQlttRoute: RouteObject = {
   children: [
     {
       index: true,
-      element: <DashboardPage />
+      element: <KpiWorkspacePage />
     },
     {
       path: 'dashboard-new',
@@ -34,6 +35,10 @@ export const kpiQlttRoute: RouteObject = {
     {
       path: 'compare',
       element: <CompareKpiPage />
+    },
+    {
+      path: 'criteria/:catalogKey',
+      element: <KpiCriteriaDetailPage />
     },
     {
       path: ':id',

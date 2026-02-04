@@ -320,7 +320,7 @@ export default function PermissionDemoPage() {
                   Cấp Đội
                 </div>
                 <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-                  Xem quận/huyện, upload, chỉnh sửa
+                  Xem Phường/Xã, upload, chỉnh sửa
                 </div>
               </div>
             </div>

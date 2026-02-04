@@ -1343,7 +1343,7 @@ export default function InspectionRoundDetail() {
           issuer: {
             name: 'Nguyễn Văn Long',
             position: 'Chi cục trưởng',
-            unit: 'Chi cục Quản lý thị trường Quận 1',
+            unit: 'Chi cục Quản lý thị trường Phường 1',
           },
           content: {},
         } : null}

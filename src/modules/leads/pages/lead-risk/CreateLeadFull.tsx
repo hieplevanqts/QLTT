@@ -142,7 +142,7 @@ export default function CreateLeadFull() {
     }
 
     if (step === 3) {
-      if (!formData.district) newErrors.district = 'Vui lòng chọn quận/huyện';
+      if (!formData.district) newErrors.district = 'Vui lòng chọn Phường/Xã';
     }
 
     setErrors(newErrors);
@@ -456,15 +456,15 @@ export default function CreateLeadFull() {
             <div className={styles.inputRow}>
               <div className={styles.inputGroup}>
                 <label>
-                  Quận/Huyện <span className={styles.required}>*</span>
+                  Phường/Xã <span className={styles.required}>*</span>
                 </label>
                 <select
                   value={formData.district}
                   onChange={(e) => setFormData({ ...formData, district: e.target.value })}
                   className={`${styles.select} ${errors.district ? styles.inputError : ''}`}
                 >
-                  <option value="">Chọn quận/huyện</option>
-                  {['Quận 1', 'Quận 2', 'Quận 3', 'Quận 7'].map((d) => (
+                  <option value="">Chọn Phường/Xã</option>
+                  {['Phường 1', 'Phường 2', 'Phường 3', 'Phường 7'].map((d) => (
                     <option key={d} value={d}>
                       {d}
                     </option>

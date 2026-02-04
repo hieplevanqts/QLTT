@@ -309,8 +309,8 @@ const geocodeSuggestions = [
     distance: '~100m',
   },
   {
-    name: 'Trung tâm quận',
-    address: 'Khu vực quận/huyện',
+    name: 'Trung tâm Phường',
+    address: 'Khu vực Phường/Xã',
     lat: 10.763000,
     lng: 106.660500,
     precision: 'District',
@@ -414,7 +414,7 @@ export function AddStoreDialog({ open, onOpenChange, onSubmit }: AddStoreDialogP
       industryName: 'Kinh doanh thực phẩm',
       establishedDate: '2020-01-15',
       businessPhone: '0287654321',
-      registeredAddress: '123 Nguyễn Huệ, Quận 1, TP.HCM',
+      registeredAddress: '123 Nguyễn Huệ, Phường 1, Hà Nội',
     };
   };
 
@@ -881,14 +881,14 @@ export function AddStoreDialog({ open, onOpenChange, onSubmit }: AddStoreDialogP
         name: 'Cửa hàng thực phẩm ABC', 
         phone: '0901234567',
         businessLicense: 'GPKD-001-2020',
-        jurisdiction: '79'  // Quận 1, HCM
+        jurisdiction: '79'  // Phường 1, HCM
       },
       { 
         id: 'CS002',
         name: 'Nhà hàng XYZ', 
         phone: '0912345678',
         businessLicense: 'GPKD-002-2021',
-        jurisdiction: '79'  // Quận 1, HCM
+        jurisdiction: '79'  // Phường 1, HCM
       },
     ];
     
@@ -1596,10 +1596,10 @@ export function AddStoreDialog({ open, onOpenChange, onSubmit }: AddStoreDialogP
                   )}
                 </div>
 
-                {/* Quận/Huyện */}
+                {/* Phường/Xã */}
                 <div className={styles.formGroup}>
                   <Label htmlFor="district">
-                    Quận/Huyện <span className={styles.required}>*</span>
+                    Phường/Xã <span className={styles.required}>*</span>
                   </Label>
                   <Select
                     value={formData.jurisdiction}
@@ -1613,7 +1613,7 @@ export function AddStoreDialog({ open, onOpenChange, onSubmit }: AddStoreDialogP
                     disabled={!formData.province}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={formData.province ? "Chọn quận/huyện" : "Chọn tỉnh/thành trước"} />
+                      <SelectValue placeholder={formData.province ? "Chọn Phường/Xã" : "Chọn tỉnh/thành trước"} />
                     </SelectTrigger>
                     <SelectContent>
                       {districts.map(district => (
@@ -1624,11 +1624,11 @@ export function AddStoreDialog({ open, onOpenChange, onSubmit }: AddStoreDialogP
                     </SelectContent>
                   </Select>
                   {formData.province && !formData.jurisdiction && formData.ward && (
-                    <span className={styles.fieldError}>Vui lòng chọn quận/huyện</span>
+                    <span className={styles.fieldError}>Vui lòng chọn Phường/Xã</span>
                   )}
                   {!formData.province && (
                     <span className={styles.fieldHelper}>
-                      Chọn tỉnh/thành phố trước để hiển thị danh sách quận/huyện
+                      Chọn tỉnh/thành phố trước để hiển thị danh sách Phường/Xã
                     </span>
                   )}
                 </div>
@@ -1644,7 +1644,7 @@ export function AddStoreDialog({ open, onOpenChange, onSubmit }: AddStoreDialogP
                     disabled={!formData.jurisdiction}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={formData.jurisdiction ? "Chọn phường/xã" : "Chọn quận/huyện trước"} />
+                      <SelectValue placeholder={formData.jurisdiction ? "Chọn phường/xã" : "Chọn Phường/Xã trước"} />
                     </SelectTrigger>
                     <SelectContent>
                       {wards.map(ward => (
@@ -1659,7 +1659,7 @@ export function AddStoreDialog({ open, onOpenChange, onSubmit }: AddStoreDialogP
                   )}
                   {!formData.jurisdiction && (
                     <span className={styles.fieldHelper}>
-                      Chọn quận/huyện trước để hiển thị danh sách phường/xã
+                      Chọn Phường/Xã trước để hiển thị danh sách phường/xã
                     </span>
                   )}
                 </div>
@@ -1678,11 +1678,11 @@ export function AddStoreDialog({ open, onOpenChange, onSubmit }: AddStoreDialogP
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="qltt-hcm">Chi cục QLTT TP. Hồ Chí Minh</SelectItem>
-                      <SelectItem value="qltt-q1">Chi cục QLTT Quận 1</SelectItem>
-                      <SelectItem value="qltt-q3">Chi cục QLTT Quận 3</SelectItem>
-                      <SelectItem value="qltt-q5">Chi cục QLTT Quận 5</SelectItem>
-                      <SelectItem value="qltt-pn">Chi cục QLTT Quận Phú Nhuận</SelectItem>
-                      <SelectItem value="qltt-tb">Chi cục QLTT Quận Tân Bình</SelectItem>
+                      <SelectItem value="qltt-q1">Chi cục QLTT Phường 1</SelectItem>
+                      <SelectItem value="qltt-q3">Chi cục QLTT Phường 3</SelectItem>
+                      <SelectItem value="qltt-q5">Chi cục QLTT Phường 5</SelectItem>
+                      <SelectItem value="qltt-pn">Chi cục QLTT Phường Phú Nhuận</SelectItem>
+                      <SelectItem value="qltt-tb">Chi cục QLTT Phường Tân Bình</SelectItem>
                     </SelectContent>
                   </Select>
                   {!formData.managementUnit && (
@@ -1785,7 +1785,7 @@ export function AddStoreDialog({ open, onOpenChange, onSubmit }: AddStoreDialogP
                       Vui lòng điền đầy đủ các thông tin:
                       <ul style={{ marginTop: 'var(--spacing-2)', paddingLeft: 'var(--spacing-5)' }}>
                         {!formData.province && <li>Tỉnh/Thành phố</li>}
-                        {!formData.jurisdiction && <li>Quận/Huyện</li>}
+                        {!formData.jurisdiction && <li>Phường/Xã</li>}
                         {!formData.ward && <li>Phường/Xã</li>}
                         {!formData.address.split(',')[0]?.trim() && <li>Số nhà</li>}
                         {!formData.address.split(',')[1]?.trim() && <li>Tên đường</li>}
@@ -1806,7 +1806,7 @@ export function AddStoreDialog({ open, onOpenChange, onSubmit }: AddStoreDialogP
                     <Label htmlFor="registered-address">Địa chỉ đăng ký kinh doanh</Label>
                     <Input
                       id="registered-address"
-                      placeholder="VD: 456 Lê Lợi, Quận 1, TP.HCM"
+                      placeholder="VD: 456 Lê Lợi, Phường 1, Hà Nội"
                       value={formData.registeredAddress}
                       onChange={(e) => setFormData(prev => ({ ...prev, registeredAddress: e.target.value }))}
                     />
@@ -1820,7 +1820,7 @@ export function AddStoreDialog({ open, onOpenChange, onSubmit }: AddStoreDialogP
                     <Label htmlFor="headquarter-address">Địa chỉ trụ sở chính</Label>
                     <Input
                       id="headquarter-address"
-                      placeholder="VD: 789 Hai Bà Trưng, Quận 3, TP.HCM"
+                      placeholder="VD: 789 Hai Bà Trưng, Phường 3, Hà Nội"
                       value={formData.headquarterAddress}
                       onChange={(e) => setFormData(prev => ({ ...prev, headquarterAddress: e.target.value }))}
                     />
@@ -1834,7 +1834,7 @@ export function AddStoreDialog({ open, onOpenChange, onSubmit }: AddStoreDialogP
                     <Label htmlFor="production-address">Địa chỉ sản xuất</Label>
                     <Input
                       id="production-address"
-                      placeholder="VD: KCN Tân Bình, TP.HCM"
+                      placeholder="VD: KCN Tân Bình, Hà Nội"
                       value={formData.productionAddress}
                       onChange={(e) => setFormData(prev => ({ ...prev, productionAddress: e.target.value }))}
                     />

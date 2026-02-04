@@ -174,11 +174,11 @@ export async function fetchStores(
         // Location
         province: merchant.province || 'TP. Hồ Chí Minh',
         provinceCode: merchant.province_id || '',
-        jurisdiction: merchant.district || 'Quận 1',
+        jurisdiction: merchant.district || 'Phường 1',
         jurisdictionCode: merchant.province_id || '',
         ward: merchant.wards?.name || '',  // Get ward name from joined wards table
         wardCode: merchant.ward_id || '',
-        managementUnit: `Chi cục QLTT ${merchant.district || 'Quận 1'}`,
+        managementUnit: `Chi cục QLTT ${merchant.district || 'Phường 1'}`,
 
         // GPS
         latitude,
@@ -379,7 +379,7 @@ export async function fetchStoreById(storeId: string | number): Promise<Store | 
       jurisdictionCode: merchant.province_id || '',
       ward: merchant.ward || '',
       wardCode: merchant.ward_id || '',
-      managementUnit: `Chi cục QLTT ${merchant.district || 'Quận 1'}`,
+      managementUnit: `Chi cục QLTT ${merchant.district || 'Phường 1'}`,
       latitude,
       longitude,
       gpsCoordinates: latitude && longitude ? `${latitude.toFixed(6)}, ${longitude.toFixed(6)}` : undefined,
@@ -725,53 +725,83 @@ export async function fetchMerchantChangeLogs(merchantId: string): Promise<Merch
 }
 /**
  * 📝 Upsert a merchant license via RPC
+ * Targets the overload: public.upsert_merchant_license(p_id => uuid, p_merchant_id => uuid, ...)
+ * with ALL parameters to avoid PGRST203 function overload resolution error
  * @param data - License data matching upsert_merchant_license RPC parameters
  * @returns Result from API
  */
 export async function upsertMerchantLicense(data: {
+  p_id?: string | null;
   p_merchant_id: string;
   p_license_type: string;
   p_license_number: string;
-  p_issued_date?: string;
-  p_expiry_date?: string;
+  p_issued_date?: string | null;
+  p_expiry_date?: string | null;
   p_approval_status: number;
   p_status: string;
-  p_issued_by?: string;
-  p_issued_by_name?: string;
-  p_file_url?: string;
-  p_file_url_2?: string;
-  p_notes?: string;
-  p_holder_name?: string;
-  p_permanent_address?: string;
-  p_business_field?: string;
-  p_activity_scope?: string;
-  p_lessor_name?: string;
-  p_lessee_name?: string;
-  p_rent_price_monthly?: number;
-  p_rent_start_date?: string;
-  p_rent_end_date?: string;
-  p_property_address?: string;
-  p_inspection_result?: string;
-  p_validity_status?: number;
+  p_issued_by?: string | null;
+  p_issued_by_name?: string | null;
+  p_file_url?: string | null;
+  p_file_url_2?: string | null;
+  p_notes?: string | null;
+  p_holder_name?: string | null;
+  p_permanent_address?: string | null;
+  p_business_field?: string | null;
+  p_activity_scope?: string | null;
+  p_inspection_result?: string | null;
+  p_owner_name?: string | null;
+  p_business_name?: string | null;
+  p_lessor_name?: string | null;
+  p_lessee_name?: string | null;
+  p_rent_price_monthly?: number | null;
+  p_rent_start_date?: string | null;
+  p_rent_end_date?: string | null;
+  p_property_address?: string | null;
+  p_validity_status?: number | null;
 }): Promise<any> {
   try {
     const url = `${SUPABASE_REST_URL}/rpc/upsert_merchant_license`;
 
-    // Sanitize date fields - convert empty strings to undefined to avoid PostgreSQL date parsing errors
-    const sanitizedData = { ...data };
-    const dateFields: (keyof typeof data)[] = ['p_issued_date', 'p_expiry_date', 'p_rent_start_date', 'p_rent_end_date'];
-    dateFields.forEach(field => {
-      if (sanitizedData[field] === '') {
-        sanitizedData[field] = undefined;
-      }
-    });
+    // Sanitize date fields - convert empty strings to null
+    const sanitizeDate = (val: string | null | undefined): string | null => {
+      if (val === '' || val === undefined) return null;
+      return val;
+    };
 
-    // Ensure required fields have default values
-    if (!sanitizedData.p_issued_by) {
-      sanitizedData.p_issued_by = ''; // Database requires non-null value
-    }
+    // Build payload with EXACT parameter set to match one specific overload
+    // Target: public.upsert_merchant_license(p_id => uuid, p_merchant_id => uuid, ...)
+    // Must include ALL 26 parameters to avoid ambiguity
+    const payload: Record<string, unknown> = {
+      p_id: data.p_id || null,
+      p_merchant_id: data.p_merchant_id,
+      p_license_type: data.p_license_type,
+      p_license_number: data.p_license_number,
+      p_issued_date: sanitizeDate(data.p_issued_date),
+      p_expiry_date: sanitizeDate(data.p_expiry_date),
+      p_status: data.p_status,
+      p_issued_by: data.p_issued_by ?? '',
+      p_issued_by_name: data.p_issued_by_name ?? null,
+      p_file_url: data.p_file_url ?? null,
+      p_file_url_2: data.p_file_url_2 ?? null,
+      p_approval_status: data.p_approval_status,
+      p_validity_status: data.p_validity_status ?? null,
+      p_notes: data.p_notes ?? null,
+      p_holder_name: data.p_holder_name ?? null,
+      p_business_field: data.p_business_field ?? null,
+      p_permanent_address: data.p_permanent_address ?? null,
+      p_activity_scope: data.p_activity_scope ?? null,
+      p_inspection_result: data.p_inspection_result ?? null,
+      p_owner_name: data.p_owner_name ?? null,
+      p_business_name: data.p_business_name ?? null,
+      p_rent_price_monthly: data.p_rent_price_monthly ?? null,
+      p_rent_start_date: sanitizeDate(data.p_rent_start_date),
+      p_rent_end_date: sanitizeDate(data.p_rent_end_date),
+      p_property_address: data.p_property_address ?? null,
+      p_lessor_name: data.p_lessor_name ?? null,
+      p_lessee_name: data.p_lessee_name ?? null,
+    };
 
-    const body = JSON.stringify(sanitizedData);
+    const body = JSON.stringify(payload);
     console.log('📦 [upsertMerchantLicense] Request body:', body);
 
     const response = await fetch(url, {

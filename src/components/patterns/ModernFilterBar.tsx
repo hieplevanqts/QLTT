@@ -96,10 +96,10 @@ export default function ModernFilterBar({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tất cả địa bàn</SelectItem>
-                    <SelectItem value="q1">Quận 1</SelectItem>
-                    <SelectItem value="q3">Quận 3</SelectItem>
-                    <SelectItem value="q5">Quận 5</SelectItem>
-                    <SelectItem value="q10">Quận 10</SelectItem>
+                    <SelectItem value="q1">Phường 1</SelectItem>
+                    <SelectItem value="q3">Phường 3</SelectItem>
+                    <SelectItem value="q5">Phường 5</SelectItem>
+                    <SelectItem value="q10">Phường 10</SelectItem>
                     <SelectItem value="binhthanh">Bình Thạnh</SelectItem>
                   </SelectContent>
                 </Select>

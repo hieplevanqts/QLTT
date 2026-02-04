@@ -161,7 +161,7 @@ export function OfficerInfoModal({ isOpen, onClose, officer, wardName }: Officer
                 gap: 'var(--spacing-1)',
               }}>
                 <MapPin size={12} />
-                {wardName} • Quận {officer.district} • {officer.yearsOfService} năm kinh nghiệm
+                {wardName} • Phường {officer.district} • {officer.yearsOfService} năm kinh nghiệm
               </div>
             </div>
 

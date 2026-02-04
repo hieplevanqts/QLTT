@@ -36,7 +36,7 @@ export function Form12Modal({ open, onOpenChange }: Form12ModalProps) {
   const [startDate, setStartDate] = useState('01/01/' + new Date().getFullYear());
   const [endDate, setEndDate] = useState('31/12/' + new Date().getFullYear());
   const [volumeNumber, setVolumeNumber] = useState('01');
-  const [organization, setOrganization] = useState('Sở Công Thương TP.HCM');
+  const [organization, setOrganization] = useState('Sở Công Thương TP. Hà Nội');
   const [department, setDepartment] = useState('Thanh tra Sở');
 
   const [showPreview, setShowPreview] = useState(false);
@@ -285,7 +285,7 @@ export function Form12Modal({ open, onOpenChange }: Form12ModalProps) {
                   className={styles.input}
                   value={organization}
                   onChange={(e) => setOrganization(e.target.value)}
-                  placeholder="VD: Sở Công Thương TP.HCM"
+                  placeholder="VD: Sở Công Thương TP. Hà Nội"
                 />
               </div>
 

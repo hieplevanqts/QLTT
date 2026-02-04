@@ -27,7 +27,7 @@ export function Form10Modal({ open, onOpenChange, task }: Form10ModalProps) {
   const [issueDate, setIssueDate] = useState(new Date().toLocaleDateString('vi-VN'));
   const [issuePlace, setIssuePlace] = useState('TP. Hồ Chí Minh');
   const [relatedForm06, setRelatedForm06] = useState(`${task.code}/BB-KT`);
-  const [organization, setOrganization] = useState('Sở Công Thương TP.HCM');
+  const [organization, setOrganization] = useState('Sở Công Thương TP. Hà Nội');
   const [teamLeader, setTeamLeader] = useState(task.assignee.name);
   const [facilityName, setFacilityName] = useState(task.targetName);
   const [facilityAddress, setFacilityAddress] = useState(task.targetAddress);
@@ -372,7 +372,7 @@ export function Form10Modal({ open, onOpenChange, task }: Form10ModalProps) {
                   className={styles.input}
                   value={organization}
                   onChange={(e) => setOrganization(e.target.value)}
-                  placeholder="VD: Sở Công Thương TP.HCM"
+                  placeholder="VD: Sở Công Thương TP. Hà Nội"
                 />
               </div>
             </div>

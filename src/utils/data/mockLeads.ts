@@ -56,9 +56,9 @@ export const mockTeams: Team[] = [
   },
   {
     id: 'team-24',
-    name: 'Đội 24 - TP.HCM số 4',
-    organization: 'Chi cục TP.HCM',
-    area: 'TP.HCM',
+    name: 'Đội 24 - Hà Nội số 4',
+    organization: 'Chi cục Hà Nội',
+    area: 'Hà Nội',
     members: ['inspector-019', 'inspector-020', 'inspector-021', 'inspector-022', 'inspector-023', 'inspector-024', 'inspector-025', 'inspector-026'],
     activeLeads: 18,
     completedLeads: 203,
@@ -190,15 +190,15 @@ export const mockLeads: Lead[] = [
     location: {
       address: 'Quầy 45, Chợ Bến Thành',
       ward: 'Phường Bến Thành',
-      district: 'Quận 1',
-      city: 'TP.HCM',
+      district: 'Phường 1',
+      city: 'Hà Nội',
       coordinates: { lat: 10.7729, lng: 106.6980 },
     },
     businessName: 'Gian hàng Thịt Tươi Ngon',
     createdAt: hoursAgo(1),
     updatedAt: hoursAgo(1),
     createdBy: 'Hotline System',
-    organization: 'Chi cục TP.HCM',
+    organization: 'Chi cục Hà Nội',
     assigneeType: 'team',
   },
 
@@ -244,8 +244,8 @@ export const mockLeads: Lead[] = [
     location: {
       address: 'Số 156 Lê Lợi',
       ward: 'Phường Bến Thành',
-      district: 'Quận 1',
-      city: 'TP.HCM',
+      district: 'Phường 1',
+      city: 'Hà Nội',
       coordinates: { lat: 10.7756, lng: 106.7019 },
     },
     businessName: 'Cửa hàng Giày Dép Thời Trang',
@@ -253,7 +253,7 @@ export const mockLeads: Lead[] = [
     createdAt: hoursAgo(3),
     updatedAt: hoursAgo(2),
     createdBy: 'Web System',
-    organization: 'Chi cục TP.HCM',
+    organization: 'Chi cục Hà Nội',
     assigneeType: 'team',
   },
 
@@ -297,7 +297,7 @@ export const mockLeads: Lead[] = [
     evidences: [],
     location: {
       address: 'Gần hồ Tây (chưa rõ số nhà)',
-      district: 'Quận Tây Hồ',
+      district: 'Phường Tây Hồ',
       city: 'Hà Nội',
     },
     createdAt: daysAgo(2),
@@ -310,7 +310,7 @@ export const mockLeads: Lead[] = [
   // ========== 4. ASSIGNED - CRITICAL - OVERDUE ==========
   {
     id: 'LEAD-2025-0198',
-    title: 'Nhà hàng sử dụng thực phẩm bẩn - Quận Hoàn Kiếm',
+    title: 'Nhà hàng sử dụng thực phẩm bẩn - Phường Hoàn Kiếm',
     description: 'Nhà hàng buffet ABC sử dụng thực phẩm không rõ nguồn gốc, rau không rửa sạch, có ruồi muỗi. Nhiều thực khách bị ngộ độc.',
     status: 'assigned',
     statusHistory: [
@@ -357,7 +357,7 @@ export const mockLeads: Lead[] = [
     location: {
       address: 'Số 25 Hàng Bạc',
       ward: 'Phường Hàng Bạc',
-      district: 'Quận Hoàn Kiếm',
+      district: 'Phường Hoàn Kiếm',
       city: 'Hà Nội',
       coordinates: { lat: 21.0285, lng: 105.8542 },
     },
@@ -438,8 +438,8 @@ export const mockLeads: Lead[] = [
     location: {
       address: 'Số 156 Nguyễn Huệ',
       ward: 'Phường Bến Nghé',
-      district: 'Quận 1',
-      city: 'TP.HCM',
+      district: 'Phường 1',
+      city: 'Hà Nội',
       coordinates: { lat: 10.7756, lng: 106.7050 },
     },
     businessName: 'Cửa hàng Mỹ Phẩm Hoa Lan',
@@ -449,13 +449,13 @@ export const mockLeads: Lead[] = [
     createdAt: hoursAgo(20),
     updatedAt: hoursAgo(2),
     createdBy: 'inspector-020',
-    organization: 'Chi cục TP.HCM',
+    organization: 'Chi cục Hà Nội',
   },
 
   // ========== 6. IN VERIFICATION - MEDIUM - LAB TEST ==========
   {
     id: 'LEAD-2025-0196',
-    title: 'Siêu thị bán mì gói hết hạn - Quận Đống Đa',
+    title: 'Siêu thị bán mì gói hết hạn - Phường Đống Đa',
     description: 'Siêu thị Mini Mart ABC bán mì gói hết hạn sử dụng, đã lấy mẫu gửi lab kiểm định.',
     status: 'inVerification',
     statusHistory: [
@@ -536,7 +536,7 @@ export const mockLeads: Lead[] = [
     location: {
       address: 'Số 78 Tôn Đức Thắng',
       ward: 'Phường Khương Thượng',
-      district: 'Quận Đống Đa',
+      district: 'Phường Đống Đa',
       city: 'Hà Nội',
       coordinates: { lat: 21.0122, lng: 105.8256 },
     },
@@ -553,7 +553,7 @@ export const mockLeads: Lead[] = [
   // ========== 7. RESOLVED - HIGH - ADMIN FINE ==========
   {
     id: 'LEAD-2025-0195',
-    title: 'Cửa hàng không niêm yết giá - Quận 3',
+    title: 'Cửa hàng không niêm yết giá - Phường 3',
     description: 'Cửa hàng điện thoại XYZ không niêm yết giá, báo giá khác nhau cho từng khách.',
     status: 'resolved',
     statusHistory: [
@@ -652,8 +652,8 @@ export const mockLeads: Lead[] = [
     location: {
       address: 'Số 234 Võ Văn Tần',
       ward: 'Phường 5',
-      district: 'Quận 3',
-      city: 'TP.HCM',
+      district: 'Phường 3',
+      city: 'Hà Nội',
       coordinates: { lat: 10.7880, lng: 106.7050 },
     },
     businessName: 'Cửa hàng Điện Thoại XYZ',
@@ -664,7 +664,7 @@ export const mockLeads: Lead[] = [
     updatedAt: daysAgo(7),
     resolvedAt: daysAgo(7),
     createdBy: 'Social Media Monitor',
-    organization: 'Chi cục TP.HCM',
+    organization: 'Chi cục Hà Nội',
   },
 
   // ========== 8. CLOSED - LOW - NO VIOLATION ==========
@@ -763,7 +763,7 @@ export const mockLeads: Lead[] = [
     location: {
       address: 'Số 45 Nguyễn Thái Học',
       ward: 'Phường Điện Biên',
-      district: 'Quận Ba Đình',
+      district: 'Phường Ba Đình',
       city: 'Hà Nội',
       coordinates: { lat: 21.0245, lng: 105.8412 },
     },
@@ -813,13 +813,13 @@ export const mockLeads: Lead[] = [
     duplicateOf: 'LEAD-2025-0200',
     location: {
       address: 'Số 156 Lê Lợi',
-      district: 'Quận 1',
-      city: 'TP.HCM',
+      district: 'Phường 1',
+      city: 'Hà Nội',
     },
     createdAt: hoursAgo(2),
     updatedAt: hoursAgo(1),
     createdBy: 'Mobile App System',
-    organization: 'Chi cục TP.HCM',
+    organization: 'Chi cục Hà Nội',
     assigneeType: 'team',
   },
 
@@ -862,7 +862,7 @@ export const mockLeads: Lead[] = [
     evidences: [],
     location: {
       address: 'Chưa rõ',
-      district: 'Quận Hai Bà Trưng',
+      district: 'Phường Hai Bà Trưng',
       city: 'Hà Nội',
     },
     createdAt: daysAgo(3),
@@ -875,7 +875,7 @@ export const mockLeads: Lead[] = [
   // ========== 11. ESCALATED - CRITICAL - PROHIBITED GOODS ==========
   {
     id: 'LEAD-2025-0191',
-    title: 'Kho chứa pháo nổ lậu quy mô lớn - Quận 12',
+    title: 'Kho chứa pháo nổ lậu quy mô lớn - Phường 12',
     description: 'Phát hiện kho chứa pháo nổ lậu với số lượng lớn, nguy hiểm cao, đã báo cáo Bộ Công an.',
     status: 'escalated',
     statusHistory: [
@@ -945,15 +945,15 @@ export const mockLeads: Lead[] = [
     location: {
       address: 'Kho số 12, Đường Tân Thới Nhì',
       ward: 'Phường Tân Thới Nhì',
-      district: 'Quận 12',
-      city: 'TP.HCM',
+      district: 'Phường 12',
+      city: 'Hà Nội',
       coordinates: { lat: 10.8556, lng: 106.6353 },
     },
     businessName: 'Kho vật liệu xây dựng (ngụy trang)',
     createdAt: hoursAgo(8),
     updatedAt: hoursAgo(6),
     createdBy: 'inspector-020',
-    organization: 'Chi cục TP.HCM',
+    organization: 'Chi cục Hà Nội',
     tags: ['nguy-hiểm', 'liên-ngành', 'ưu-tiên-cao'],
   },
 
@@ -1030,7 +1030,7 @@ export const mockLeads: Lead[] = [
         action: 'sampleTaken',
         performedBy: 'inspector-020',
         performedAt: daysAgo(17),
-        notes: 'Đã lấy 10 mẫu nước, gửi Viện Pasteur TP.HCM',
+        notes: 'Đã lấy 10 mẫu nước, gửi Viện Pasteur Hà Nội',
       },
     ],
     evidences: [
@@ -1053,7 +1053,7 @@ export const mockLeads: Lead[] = [
     createdAt: daysAgo(20),
     updatedAt: daysAgo(15),
     createdBy: 'Inter-Agency System',
-    organization: 'Chi cục TP.HCM',
+    organization: 'Chi cục Hà Nội',
     tags: ['chờ-lab', 'liên-tỉnh'],
   },
 
@@ -1118,7 +1118,7 @@ export const mockLeads: Lead[] = [
   // CONSUMER RIGHTS VIOLATION
   {
     id: 'LEAD-2025-0188',
-    title: 'Cửa hàng điện máy từ chối bảo hành - Quận Tân Bình',
+    title: 'Cửa hàng điện máy từ chối bảo hành - Phường Tân Bình',
     description: 'Cửa hàng điện máy XYZ từ chối bảo hành tivi còn trong thời hạn, đổ lỗi cho khách hàng.',
     status: 'resolved',
     statusHistory: [
@@ -1163,8 +1163,8 @@ export const mockLeads: Lead[] = [
     location: {
       address: 'Số 123 Cộng Hòa',
       ward: 'Phường 12',
-      district: 'Quận Tân Bình',
-      city: 'TP.HCM',
+      district: 'Phường Tân Bình',
+      city: 'Hà Nội',
       coordinates: { lat: 10.7993, lng: 106.6415 },
     },
     businessName: 'Điện máy XYZ',
@@ -1174,7 +1174,7 @@ export const mockLeads: Lead[] = [
     updatedAt: daysAgo(4),
     resolvedAt: daysAgo(4),
     createdBy: 'Walk-in System',
-    organization: 'Chi cục TP.HCM',
+    organization: 'Chi cục Hà Nội',
   },
 
   // CHAIN VIOLATION
@@ -1222,7 +1222,7 @@ export const mockLeads: Lead[] = [
     assignedAt: daysAgo(6),
     location: {
       address: '5 chi nhánh tại Hà Nội',
-      district: 'Nhiều quận',
+      district: 'Nhiều Phường',
       city: 'Hà Nội',
     },
     businessName: 'Chuỗi Nhà Thuốc ABC',
@@ -1252,7 +1252,7 @@ export const mockLeads: Lead[] = [
     confidence: 'medium',
     confidenceScore: 65,
     riskScope: 'route',
-    riskScopeDetails: 'Tuyến đường Nguyễn Trãi, đoạn 100-300, Quận 1',
+    riskScopeDetails: 'Tuyến đường Nguyễn Trãi, đoạn 100-300, Phường 1',
     estimatedAffectedPeople: 500,
     sourceType: 'inspector',
     sourceReference: 'INSP-24-PATROL-20250110-002',
@@ -1271,14 +1271,14 @@ export const mockLeads: Lead[] = [
     location: {
       address: 'Đường Nguyễn Trãi, đoạn số 100-300',
       ward: 'Phường Phạm Ngũ Lão',
-      district: 'Quận 1',
-      city: 'TP.HCM',
+      district: 'Phường 1',
+      city: 'Hà Nội',
       coordinates: { lat: 10.7650, lng: 106.6891 },
     },
     createdAt: hoursAgo(15),
     updatedAt: hoursAgo(13),
     createdBy: 'inspector-020',
-    organization: 'Chi cục TP.HCM',
+    organization: 'Chi cục Hà Nội',
     tags: ['tuần-tra', 'đa-điểm'],
   },
 
@@ -1322,7 +1322,7 @@ export const mockLeads: Lead[] = [
     location: {
       address: 'Chợ Đồng Xuân, Tầng 2',
       ward: 'Phường Đồng Xuân',
-      district: 'Quận Hoàn Kiếm',
+      district: 'Phường Hoàn Kiếm',
       city: 'Hà Nội',
       coordinates: { lat: 21.0371, lng: 105.8495 },
     },
@@ -1382,15 +1382,15 @@ export const mockLeads: Lead[] = [
     location: {
       address: 'Hội chợ Tết, Công viên Tao Đàn',
       ward: 'Phường Bến Thành',
-      district: 'Quận 1',
-      city: 'TP.HCM',
+      district: 'Phường 1',
+      city: 'Hà Nội',
       coordinates: { lat: 10.7823, lng: 106.6937 },
     },
     createdAt: daysAgo(3),
     updatedAt: daysAgo(1),
     resolvedAt: daysAgo(1),
     createdBy: 'inspector-020',
-    organization: 'Chi cục TP.HCM',
+    organization: 'Chi cục Hà Nội',
     tags: ['sự-kiện', 'khẩn-cấp'],
   },
 
@@ -1449,7 +1449,7 @@ export const mockLeads: Lead[] = [
     location: {
       address: 'Số 56 Phố Huế',
       ward: 'Phường Minh Khai',
-      district: 'Quận Hai Bà Trưng',
+      district: 'Phường Hai Bà Trưng',
       city: 'Hà Nội',
       coordinates: { lat: 21.0089, lng: 105.8521 },
     },
@@ -1509,14 +1509,14 @@ export const mockLeads: Lead[] = [
       createEvidence('document', 'Hồ sơ chuyển công an', 'inspector-020'),
     ],
     resolutionType: 'criminalReferral',
-    resolutionDetails: 'Đã chuyển hồ sơ sang Công an TP.HCM để xử lý hình sự. Chủ xưởng bị bắt giam, xưởng bị phong tỏa.',
+    resolutionDetails: 'Đã chuyển hồ sơ sang Công an Hà Nội để xử lý hình sự. Chủ xưởng bị bắt giam, xưởng bị phong tỏa.',
     assigneeType: 'jointForce',
     assignedTo: ['team-24', 'police-hcm', 'health-dept'],
     assignedAt: daysAgo(29),
     location: {
       address: 'Ấp 3, Xã Bà Điểm',
-      district: 'Huyện Hóc Môn',
-      city: 'TP.HCM',
+      district: 'Xã Hóc Môn',
+      city: 'Hà Nội',
       coordinates: { lat: 10.8824, lng: 106.5921 },
     },
     businessName: 'Xưởng rượu bất hợp pháp',
@@ -1525,7 +1525,7 @@ export const mockLeads: Lead[] = [
     resolvedAt: daysAgo(20),
     closedAt: daysAgo(19),
     createdBy: 'Whistleblower System',
-    organization: 'Chi cục TP.HCM',
+    organization: 'Chi cục Hà Nội',
     tags: ['hình-sự', 'nguy-hiểm-cao', 'liên-ngành'],
   },
 
@@ -1533,7 +1533,7 @@ export const mockLeads: Lead[] = [
   {
     id: 'LEAD-2025-0181',
     title: 'Cửa hàng bán hàng giả - Thuộc thẩm quyền Đà Nẵng',
-    description: 'Nguồn tin từ TP.HCM nhưng cửa hàng thực tế ở Đà Nẵng, đã chuyển cho Chi cục Đà Nẵng.',
+    description: 'Nguồn tin từ Hà Nội nhưng cửa hàng thực tế ở Đà Nẵng, đã chuyển cho Chi cục Đà Nẵng.',
     status: 'closed',
     statusHistory: [
       { status: 'new', changedBy: 'system', changedAt: daysAgo(5) },
@@ -1560,7 +1560,7 @@ export const mockLeads: Lead[] = [
     assignedTo: 'chi-cuc-da-nang',
     location: {
       address: 'Số 123 Đường 2/9',
-      district: 'Quận Hải Châu',
+      district: 'Phường Hải Châu',
       city: 'Đà Nẵng',
     },
     createdAt: daysAgo(5),
@@ -1568,7 +1568,7 @@ export const mockLeads: Lead[] = [
     resolvedAt: daysAgo(4),
     closedAt: daysAgo(4),
     createdBy: 'Hotline System',
-    organization: 'Chi cục TP.HCM',
+    organization: 'Chi cục Hà Nội',
     tags: ['chuyển-đơn-vị'],
   },
 
@@ -1615,8 +1615,8 @@ export const mockLeads: Lead[] = [
     location: {
       address: 'Siêu thị BigC, 97 Võ Văn Tần',
       ward: 'Phường 6',
-      district: 'Quận 3',
-      city: 'TP.HCM',
+      district: 'Phường 3',
+      city: 'Hà Nội',
       coordinates: { lat: 10.7880, lng: 106.6920 },
     },
     businessName: 'Siêu thị BigC',
@@ -1625,7 +1625,7 @@ export const mockLeads: Lead[] = [
     updatedAt: daysAgo(3),
     resolvedAt: daysAgo(3),
     createdBy: 'inspector-020',
-    organization: 'Chi cục TP.HCM',
+    organization: 'Chi cục Hà Nội',
     tags: ['cảnh-cáo', 'theo-dõi'],
   },
 ];

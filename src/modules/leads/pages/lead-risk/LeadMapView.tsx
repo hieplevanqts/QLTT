@@ -45,7 +45,7 @@ export default function LeadMapView() {
     lng: 106.660172 + (Math.random() - 0.5) * 0.1,
     priority: (['critical', 'high', 'medium', 'low'] as const)[i % 4],
     status: (['new', 'in_progress', 'resolved'] as const)[i % 3],
-    area: ['Quận 1', 'Quận 3', 'Quận 7', 'Quận 10'][i % 4],
+    area: ['Phường 1', 'Phường 3', 'Phường 7', 'Phường 10'][i % 4],
     timestamp: new Date(Date.now() - i * 86400000).toISOString(),
   }));
 

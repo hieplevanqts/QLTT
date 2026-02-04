@@ -22,7 +22,7 @@ export function Form11Modal({ open, onOpenChange, task }: Form11ModalProps) {
   if (!open) return null;
 
   // Form state
-  const [organization, setOrganization] = useState('Sở Công Thương TP.HCM');
+  const [organization, setOrganization] = useState('Sở Công Thương TP. Hà Nội');
   const [department, setDepartment] = useState('Thanh tra Sở');
   const [appendixNumber, setAppendixNumber] = useState('01/PL');
   const [attachedToDocNumber, setAttachedToDocNumber] = useState(task?.code || '');
@@ -224,7 +224,7 @@ export function Form11Modal({ open, onOpenChange, task }: Form11ModalProps) {
                   className={styles.input}
                   value={organization}
                   onChange={(e) => setOrganization(e.target.value)}
-                  placeholder="VD: Sở Công Thương TP.HCM"
+                  placeholder="VD: Sở Công Thương TP. Hà Nội"
                 />
               </div>
 

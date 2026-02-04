@@ -50,7 +50,7 @@ const COLUMN_DEFINITIONS: Record<string, ColumnDef[]> = {
     { id: 'area', name: 'Diện tích (m²)', group: 'Thông tin chung', type: 'number' },
     { id: 'revenue', name: 'Doanh thu khai báo', group: 'Thông tin chung', type: 'number' },
     { id: 'ward', name: 'Phường/Xã', group: 'Địa bàn', type: 'text' },
-    { id: 'district', name: 'Quận/Huyện', group: 'Địa bàn', type: 'text' },
+    { id: 'district', name: 'Phường/Xã', group: 'Địa bàn', type: 'text' },
     { id: 'city', name: 'Tỉnh/Thành phố', group: 'Địa bàn', type: 'text' },
     { id: 'created_date', name: 'Ngày tạo', group: 'Thời gian', type: 'date' },
     { id: 'approved_date', name: 'Ngày phê duyệt', group: 'Thời gian', type: 'date' },
@@ -69,7 +69,7 @@ const COLUMN_DEFINITIONS: Record<string, ColumnDef[]> = {
     { id: 'reporter_phone', name: 'SĐT người phản ánh', group: 'Người liên quan', type: 'text' },
     { id: 'assignee', name: 'Người xử lý', group: 'Người liên quan', type: 'text' },
     { id: 'ward', name: 'Phường/Xã', group: 'Địa bàn', type: 'text' },
-    { id: 'district', name: 'Quận/Huyện', group: 'Địa bàn', type: 'text' },
+    { id: 'district', name: 'Phường/Xã', group: 'Địa bàn', type: 'text' },
     { id: 'created_date', name: 'Ngày tiếp nhận', group: 'Thời gian', type: 'date' },
     { id: 'resolved_date', name: 'Ngày xử l xong', group: 'Thời gian', type: 'date' },
   ],
@@ -170,18 +170,18 @@ const MOCK_RESULTS: any[] = [
 // Mock data by dataset
 const MOCK_DATA_BY_DATASET: Record<string, any[]> = {
   facility: [
-    { id: 1, name: 'Cửa hàng thực phẩm ABC', address: '123 Nguyễn Huệ, Q1', business_type: 'Cửa hàng', industry: 'Thực phẩm', status: 'Đang hoạt động', area: 45, created_date: '2024-01-15', ward: 'Phường Bến Nghé', district: 'Quận 1', owner_name: 'Nguyễn Văn A', owner_phone: '0901234567' },
-    { id: 2, name: 'Siêu thị Mini Mart', address: '456 Lê Lợi, Q1', business_type: 'Siêu thị', industry: 'Bán lẻ', status: 'Đang hoạt động', area: 120, created_date: '2024-01-18', ward: 'Phường Bến Thành', district: 'Quận 1', owner_name: 'Trần Thị B', owner_phone: '0912345678' },
-    { id: 3, name: 'Cửa hàng điện tử XYZ', address: '789 Trần Hưng Đạo, Q5', business_type: 'Cửa hàng', industry: 'Điện tử', status: 'Tạm ngừng', area: 60, created_date: '2024-01-20', ward: 'Phường 2', district: 'Quận 5', owner_name: 'Lê Văn C', owner_phone: '0923456789' },
-    { id: 4, name: 'Nhà thuốc Sức Khỏe', address: '321 Hai Bà Trưng, Q3', business_type: 'Nhà thuốc', industry: 'Y tế', status: 'Đang hoạt động', area: 38, created_date: '2024-01-22', ward: 'Phường Võ Thị Sáu', district: 'Quận 3', owner_name: 'Phạm Thị D', owner_phone: '0934567890' },
-    { id: 5, name: 'Cửa hàng thời trang Fashion', address: '654 Nam Kỳ Khởi Nghĩa, Q1', business_type: 'Cửa hàng', industry: 'Thời trang', status: 'Đang hoạt động', area: 55, created_date: '2024-01-25', ward: 'Phường Bến Nghé', district: 'Quận 1', owner_name: 'Hoàng Văn E', owner_phone: '0945678901' },
+    { id: 1, name: 'Cửa hàng thực phẩm ABC', address: '123 Nguyễn Huệ, Q1', business_type: 'Cửa hàng', industry: 'Thực phẩm', status: 'Đang hoạt động', area: 45, created_date: '2024-01-15', ward: 'Phường Bến Nghé', district: 'Phường 1', owner_name: 'Nguyễn Văn A', owner_phone: '0901234567' },
+    { id: 2, name: 'Siêu thị Mini Mart', address: '456 Lê Lợi, Q1', business_type: 'Siêu thị', industry: 'Bán lẻ', status: 'Đang hoạt động', area: 120, created_date: '2024-01-18', ward: 'Phường Bến Thành', district: 'Phường 1', owner_name: 'Trần Thị B', owner_phone: '0912345678' },
+    { id: 3, name: 'Cửa hàng điện tử XYZ', address: '789 Trần Hưng Đạo, Q5', business_type: 'Cửa hàng', industry: 'Điện tử', status: 'Tạm ngừng', area: 60, created_date: '2024-01-20', ward: 'Phường 2', district: 'Phường 5', owner_name: 'Lê Văn C', owner_phone: '0923456789' },
+    { id: 4, name: 'Nhà thuốc Sức Khỏe', address: '321 Hai Bà Trưng, Q3', business_type: 'Nhà thuốc', industry: 'Y tế', status: 'Đang hoạt động', area: 38, created_date: '2024-01-22', ward: 'Phường Võ Thị Sáu', district: 'Phường 3', owner_name: 'Phạm Thị D', owner_phone: '0934567890' },
+    { id: 5, name: 'Cửa hàng thời trang Fashion', address: '654 Nam Kỳ Khởi Nghĩa, Q1', business_type: 'Cửa hàng', industry: 'Thời trang', status: 'Đang hoạt động', area: 55, created_date: '2024-01-25', ward: 'Phường Bến Nghé', district: 'Phường 1', owner_name: 'Hoàng Văn E', owner_phone: '0945678901' },
   ],
   leads: [
-    { id: 1, title: 'Phản ánh về VSATTP tại cửa hàng ABC', description: 'Phát hiện thực phẩm không rõ nguồn gốc', source: 'Hotline 1900', category: 'VSATTP', priority: 'Cao', status: 'Đang xử lý', facility_name: 'Cửa hàng ABC', reporter_name: 'Nguyễn Thị X', reporter_phone: '0901111111', assignee: 'Thanh tra viên A', ward: 'Phường 1', district: 'Quận 1', created_date: '2024-01-20', resolved_date: null },
-    { id: 2, title: 'Khiếu nại về giá cả', description: 'Bán hàng cao hơn giá niêm yết', source: 'Email', category: 'Giá cả', priority: 'Trung bình', status: 'Đã giải quyết', facility_name: 'Siêu thị XYZ', reporter_name: 'Trần Văn Y', reporter_phone: '0902222222', assignee: 'Thanh tra viên B', ward: 'Phường 2', district: 'Quận 2', created_date: '2024-01-18', resolved_date: '2024-01-25' },
-    { id: 3, title: 'Vi phạm quy định kinh doanh', description: 'Kinh doanh không đúng ngành nghề đăng ký', source: 'Thanh tra định kỳ', category: 'Giấy phép', priority: 'Cao', status: 'Đang xử lý', facility_name: 'Cửa hàng 123', reporter_name: null, reporter_phone: null, assignee: 'Thanh tra viên C', ward: 'Phường 3', district: 'Quận 3', created_date: '2024-01-22', resolved_date: null },
-    { id: 4, title: 'Phản ánh gây ô nhiễm môi trường', description: 'Xả nước thải ra đường', source: 'Cổng thông tin', category: 'Môi trường', priority: 'Cao', status: 'Chờ phê duyệt', facility_name: 'Nhà máy ABC', reporter_name: 'Lê Thị Z', reporter_phone: '0903333333', assignee: null, ward: 'Phường 4', district: 'Quận 4', created_date: '2024-01-24', resolved_date: null },
-    { id: 5, title: 'Khiếu nại chất lượng sản phẩm', description: 'Sản phẩm kém chất lượng, không đúng mô tả', source: 'Hotline 1900', category: 'Chất lượng', priority: 'Trung bình', status: 'Đã giải quyết', facility_name: 'Cửa hàng XYZ', reporter_name: 'Phạm Văn K', reporter_phone: '0904444444', assignee: 'Thanh tra viên D', ward: 'Phường 5', district: 'Quận 5', created_date: '2024-01-26', resolved_date: '2024-01-30' },
+    { id: 1, title: 'Phản ánh về VSATTP tại cửa hàng ABC', description: 'Phát hiện thực phẩm không rõ nguồn gốc', source: 'Hotline 1900', category: 'VSATTP', priority: 'Cao', status: 'Đang xử lý', facility_name: 'Cửa hàng ABC', reporter_name: 'Nguyễn Thị X', reporter_phone: '0901111111', assignee: 'Thanh tra viên A', ward: 'Phường 1', district: 'Phường 1', created_date: '2024-01-20', resolved_date: null },
+    { id: 2, title: 'Khiếu nại về giá cả', description: 'Bán hàng cao hơn giá niêm yết', source: 'Email', category: 'Giá cả', priority: 'Trung bình', status: 'Đã giải quyết', facility_name: 'Siêu thị XYZ', reporter_name: 'Trần Văn Y', reporter_phone: '0902222222', assignee: 'Thanh tra viên B', ward: 'Phường 2', district: 'Phường 2', created_date: '2024-01-18', resolved_date: '2024-01-25' },
+    { id: 3, title: 'Vi phạm quy định kinh doanh', description: 'Kinh doanh không đúng ngành nghề đăng ký', source: 'Thanh tra định kỳ', category: 'Giấy phép', priority: 'Cao', status: 'Đang xử lý', facility_name: 'Cửa hàng 123', reporter_name: null, reporter_phone: null, assignee: 'Thanh tra viên C', ward: 'Phường 3', district: 'Phường 3', created_date: '2024-01-22', resolved_date: null },
+    { id: 4, title: 'Phản ánh gây ô nhiễm môi trường', description: 'Xả nước thải ra đường', source: 'Cổng thông tin', category: 'Môi trường', priority: 'Cao', status: 'Chờ phê duyệt', facility_name: 'Nhà máy ABC', reporter_name: 'Lê Thị Z', reporter_phone: '0903333333', assignee: null, ward: 'Phường 4', district: 'Phường 4', created_date: '2024-01-24', resolved_date: null },
+    { id: 5, title: 'Khiếu nại chất lượng sản phẩm', description: 'Sản phẩm kém chất lượng, không đúng mô tả', source: 'Hotline 1900', category: 'Chất lượng', priority: 'Trung bình', status: 'Đã giải quyết', facility_name: 'Cửa hàng XYZ', reporter_name: 'Phạm Văn K', reporter_phone: '0904444444', assignee: 'Thanh tra viên D', ward: 'Phường 5', district: 'Phường 5', created_date: '2024-01-26', resolved_date: '2024-01-30' },
   ],
 };
 

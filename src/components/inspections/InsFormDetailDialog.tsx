@@ -30,7 +30,7 @@ export function InsFormDetailDialog({ isOpen, onClose, formData }: InsFormDetail
           <div className={styles.formHeader}>
             <div className={styles.formHeaderUnit}>
               <div className={styles.unitName}>UBND THÀNH PHỐ HỒ CHÍ MINH</div>
-              <div className={styles.unitSubname}>CHI CỤC QUẢN LÝ THỊ TRƯỜNG QUẬN 1</div>
+              <div className={styles.unitSubname}>CHI CỤC QUẢN LÝ THỊ TRƯỜNG Phường 1</div>
             </div>
             <div className={styles.formHeaderInfo}>
               <div>Số: {formData.code}</div>
@@ -58,14 +58,14 @@ export function InsFormDetailDialog({ isOpen, onClose, formData }: InsFormDetail
                 <li>Luật Thương mại ngày 14/06/2005;</li>
                 <li>Luật Bảo vệ quyền lợi người tiêu dùng ngày 17/11/2010;</li>
                 <li>Nghị định số 98/2020/NĐ-CP ngày 26/08/2020 của Chính phủ;</li>
-                <li>Quyết định số 4550/QĐ-UBND ngày 15/12/2025 của UBND TP.HCM về việc phê duyệt kế hoạch kiểm tra năm 2026.</li>
+                <li>Quyết định số 4550/QĐ-UBND ngày 15/12/2025 của UBND Hà Nội về việc phê duyệt kế hoạch kiểm tra năm 2026.</li>
               </ul>
             </div>
 
             <div className={styles.decisionSection}>
               <strong>QUYẾT ĐỊNH:</strong>
               <div className={styles.article}>
-                <strong>Điều 1.</strong> Thành lập Đoàn kiểm tra điều kiện kinh doanh tại khu vực Quận 1, TP. Hồ Chí Minh:
+                <strong>Điều 1.</strong> Thành lập Đoàn kiểm tra điều kiện kinh doanh tại khu vực Phường 1, TP. Hồ Chí Minh:
               </div>
 
               <div className={styles.teamInfo}>
@@ -83,7 +83,7 @@ export function InsFormDetailDialog({ isOpen, onClose, formData }: InsFormDetail
 
                 <strong>2. Phạm vi kiểm tra:</strong>
                 <ul>
-                  <li><strong>Địa điểm:</strong> Các cơ sở kinh doanh tại {formData.content?.scope || '10 phường thuộc Quận 1'}</li>
+                  <li><strong>Địa điểm:</strong> Các cơ sở kinh doanh tại {formData.content?.scope || '10 phường thuộc Phường 1'}</li>
                   <li><strong>Đối tượng:</strong> Cửa hàng thực phẩm, siêu thị, chợ truyền thống</li>
                   <li><strong>Nội dung:</strong> Kiểm tra điều kiện vệ sinh an toàn thực phẩm, phòng cháy chữa cháy, quản lý giá</li>
                 </ul>
@@ -122,7 +122,7 @@ export function InsFormDetailDialog({ isOpen, onClose, formData }: InsFormDetail
           <div className={styles.formHeader}>
             <div className={styles.formHeaderUnit}>
               <div className={styles.unitName}>UBND THÀNH PHỐ HỒ CHÍ MINH</div>
-              <div className={styles.unitSubname}>CHI CỤC QUẢN LÝ THỊ TRƯỜNG QUẬN 1</div>
+              <div className={styles.unitSubname}>CHI CỤC QUẢN LÝ THỊ TRƯỜNG Phường 1</div>
             </div>
             <div className={styles.formHeaderInfo}>
               <div>Số: {formData.code}</div>
@@ -217,7 +217,7 @@ export function InsFormDetailDialog({ isOpen, onClose, formData }: InsFormDetail
           <div className={styles.formHeader}>
             <div className={styles.formHeaderUnit}>
               <div className={styles.unitName}>UBND THÀNH PHỐ HỒ CHÍ MINH</div>
-              <div className={styles.unitSubname}>CHI CỤC QUẢN LÝ THỊ TRƯỜNG QUẬN 1</div>
+              <div className={styles.unitSubname}>CHI CỤC QUẢN LÝ THỊ TRƯỜNG Phường 1</div>
             </div>
             <div className={styles.formHeaderInfo}>
               <div>Số: {formData.code}</div>
@@ -236,13 +236,13 @@ export function InsFormDetailDialog({ isOpen, onClose, formData }: InsFormDetail
           <div className={styles.formBody}>
             <div className={styles.recipient}>
               <div><strong>Kính gửi:</strong> {formData.content?.storeName || 'Cửa hàng Thực phẩm An Khang'}</div>
-              <div><strong>Địa chỉ:</strong> {formData.content?.address || '123 Lê Lợi, Phường Bến Nghé, Quận 1, TP.HCM'}</div>
+              <div><strong>Địa chỉ:</strong> {formData.content?.address || '123 Lê Lợi, Phường Bến Nghé, Phường 1, Hà Nội'}</div>
             </div>
 
             <div className={styles.notificationBody}>
-              <p>Căn cứ Quyết định số {formData.content?.baseDecision || '01/QĐ-KT'} ngày {formData.issueDate} của Chi cục trưởng Chi cục Quản lý thị trường Quận 1 về việc kiểm tra điều kiện kinh doanh.</p>
+              <p>Căn cứ Quyết định số {formData.content?.baseDecision || '01/QĐ-KT'} ngày {formData.issueDate} của Chi cục trưởng Chi cục Quản lý thị trường Phường 1 về việc kiểm tra điều kiện kinh doanh.</p>
               
-              <p><strong>Chi cục Quản lý thị trường Quận 1 thông báo:</strong></p>
+              <p><strong>Chi cục Quản lý thị trường Phường 1 thông báo:</strong></p>
 
               <div className={styles.notificationInfo}>
                 <strong>1. Thời gian kiểm tra:</strong>
@@ -254,7 +254,7 @@ export function InsFormDetailDialog({ isOpen, onClose, formData }: InsFormDetail
                 <strong>2. Địa điểm kiểm tra:</strong>
                 <ul>
                   <li>{formData.content?.storeName || 'Cửa hàng Thực phẩm An Khang'}</li>
-                  <li>Địa chỉ: {formData.content?.address || '123 Lê Lợi, Phường Bến Nghé, Quận 1, TP.HCM'}</li>
+                  <li>Địa chỉ: {formData.content?.address || '123 Lê Lợi, Phường Bến Nghé, Phường 1, Hà Nội'}</li>
                 </ul>
 
                 <strong>3. Nội dung kiểm tra:</strong>
@@ -285,7 +285,7 @@ export function InsFormDetailDialog({ isOpen, onClose, formData }: InsFormDetail
                 <li>Email: {formData.content?.email || 'qltt.q1@tphcm.gov.vn'}</li>
               </ul>
 
-              <p>Chi cục Quản lý thị trường Quận 1 trân trọng thông báo để Quý cơ sở kinh doanh được biết và phối hợp thực hiện.</p>
+              <p>Chi cục Quản lý thị trường Phường 1 trân trọng thông báo để Quý cơ sở kinh doanh được biết và phối hợp thực hiện.</p>
             </div>
 
             <div className={styles.signature}>
@@ -306,7 +306,7 @@ export function InsFormDetailDialog({ isOpen, onClose, formData }: InsFormDetail
           <div className={styles.formHeader}>
             <div className={styles.formHeaderUnit}>
               <div className={styles.unitName}>UBND THÀNH PHỐ HỒ CHÍ MINH</div>
-              <div className={styles.unitSubname}>CHI CỤC QUẢN LÝ THỊ TRƯỜNG QUẬN 1</div>
+              <div className={styles.unitSubname}>CHI CỤC QUẢN LÝ THỊ TRƯỜNG Phường 1</div>
             </div>
             <div className={styles.formHeaderInfo}>
               <div>Số: {formData.code}</div>
@@ -346,7 +346,7 @@ export function InsFormDetailDialog({ isOpen, onClose, formData }: InsFormDetail
                 <strong>2. Đại diện cơ sở được kiểm tra:</strong>
                 <ul>
                   <li><strong>Tên cơ sở:</strong> {formData.content?.storeName || 'Cửa hàng Thực phẩm An Khang'}</li>
-                  <li><strong>Địa chỉ:</strong> {formData.content?.address || '123 Lê Lợi, Phường Bến Nghé, Quận 1, TP.HCM'}</li>
+                  <li><strong>Địa chỉ:</strong> {formData.content?.address || '123 Lê Lợi, Phường Bến Nghé, Phường 1, Hà Nội'}</li>
                   <li><strong>Người đại diện:</strong> {formData.content?.representative || 'Nguyễn Thị E'}</li>
                   <li><strong>Chức vụ:</strong> {formData.content?.position || 'Chủ cửa hàng'}</li>
                   <li><strong>Số CMND/CCCD:</strong> {formData.content?.idNumber || '079123456789'}</li>
@@ -360,7 +360,7 @@ export function InsFormDetailDialog({ isOpen, onClose, formData }: InsFormDetail
               <ul>
                 <li><strong>Thời gian bắt đầu:</strong> {formData.content?.startTime || '09:00 ngày 15/01/2026'}</li>
                 <li><strong>Thời gian kết thúc:</strong> {formData.content?.endTime || '10:30 ngày 15/01/2026'}</li>
-                <li><strong>Địa điểm:</strong> {formData.content?.address || '123 Lê Lợi, Phường Bến Nghé, Quận 1, TP.HCM'}</li>
+                <li><strong>Địa điểm:</strong> {formData.content?.address || '123 Lê Lợi, Phường Bến Nghé, Phường 1, Hà Nội'}</li>
               </ul>
             </div>
 
@@ -371,7 +371,7 @@ export function InsFormDetailDialog({ isOpen, onClose, formData }: InsFormDetail
                 <strong>1. Về giấy phép kinh doanh:</strong>
                 <ul>
                   <li>✓ Đã được cấp Giấy chứng nhận đăng ký kinh doanh số: 0123456789</li>
-                  <li>✓ Ngày cấp: 15/06/2024, tại Sở Kế hoạch và Đầu tư TP.HCM</li>
+                  <li>✓ Ngày cấp: 15/06/2024, tại Sở Kế hoạch và Đầu tư Hà Nội</li>
                 </ul>
               </div>
 
@@ -434,7 +434,7 @@ export function InsFormDetailDialog({ isOpen, onClose, formData }: InsFormDetail
           <div className={styles.formHeader}>
             <div className={styles.formHeaderUnit}>
               <div className={styles.unitName}>UBND THÀNH PHỐ HỒ CHÍ MINH</div>
-              <div className={styles.unitSubname}>CHI CỤC QUẢN LÝ THỊ TRƯỜNG QUẬN 1</div>
+              <div className={styles.unitSubname}>CHI CỤC QUẢN LÝ THỊ TRƯỜNG Phường 1</div>
             </div>
             <div className={styles.formHeaderInfo}>
               <div>Số: {formData.code}</div>
@@ -466,7 +466,7 @@ export function InsFormDetailDialog({ isOpen, onClose, formData }: InsFormDetail
                 <ul>
                   <li><strong>Họ và tên:</strong> Nguyễn Văn A</li>
                   <li><strong>Chức vụ:</strong> Trưởng phòng Nghiệp vụ</li>
-                  <li><strong>Đơn vị:</strong> Chi cục Quản lý thị trường Quận 1</li>
+                  <li><strong>Đơn vị:</strong> Chi cục Quản lý thị trường Phường 1</li>
                 </ul>
               </div>
 
@@ -474,7 +474,7 @@ export function InsFormDetailDialog({ isOpen, onClose, formData }: InsFormDetail
                 <strong>2. Người vi phạm:</strong>
                 <ul>
                   <li><strong>Tên cơ sở:</strong> {formData.content?.storeName || 'Cửa hàng Thực phẩm An Khang'}</li>
-                  <li><strong>Địa chỉ:</strong> {formData.content?.address || '123 Lê Lợi, Phường Bến Nghé, Quận 1, TP.HCM'}</li>
+                  <li><strong>Địa chỉ:</strong> {formData.content?.address || '123 Lê Lợi, Phường Bến Nghé, Phường 1, Hà Nội'}</li>
                   <li><strong>Người đại diện:</strong> {formData.content?.representative || 'Nguyễn Thị E'}</li>
                   <li><strong>Số CMND/CCCD:</strong> {formData.content?.idNumber || '079123456789'}</li>
                 </ul>
@@ -485,7 +485,7 @@ export function InsFormDetailDialog({ isOpen, onClose, formData }: InsFormDetail
               <strong>II. THỜI GIAN, ĐỊA ĐIỂM VI PHẠM</strong>
               <ul>
                 <li><strong>Thời gian:</strong> {formData.content?.violationTime || '09:30 ngày 15/01/2026'}</li>
-                <li><strong>Địa điểm:</strong> {formData.content?.address || '123 Lê Lợi, Phường Bến Nghé, Quận 1, TP.HCM'}</li>
+                <li><strong>Địa điểm:</strong> {formData.content?.address || '123 Lê Lợi, Phường Bến Nghé, Phường 1, Hà Nội'}</li>
               </ul>
             </div>
 

@@ -56,19 +56,19 @@ export function filterByScope<T extends ScopedEntity>(
  * Hàm này chỉ dùng tạm cho mock data, production sẽ có provinceCode từ database
  */
 export function jurisdictionToProvinceCode(jurisdiction: string): string | null {
-  // Map các quận của TP.HCM
+  // Map các Phường của Hà Nội
   const hcmDistricts = [
-    'Quận 1', 'Quận 2', 'Quận 3', 'Quận 4', 'Quận 5',
-    'Quận 6', 'Quận 7', 'Quận 8', 'Quận 9', 'Quận 10',
-    'Quận 11', 'Quận 12', 'Thủ Đức', 'Bình Thạnh',
+    'Phường 1', 'Phường 2', 'Phường 3', 'Phường 4', 'Phường 5',
+    'Phường 6', 'Phường 7', 'Phường 8', 'Phường 9', 'Phường 10',
+    'Phường 11', 'Phường 12', 'Thủ Đức', 'Bình Thạnh',
     'Tân Bình', 'Tân Phú', 'Phú Nhuận', 'Gò Vấp', 'Bình Tân'
   ];
 
   if (hcmDistricts.includes(jurisdiction)) {
-    return '79'; // Mã tỉnh TP.HCM
+    return '79'; // Mã tỉnh Hà Nội
   }
 
-  // Map các quận của Hà Nội
+  // Map các Phường của Hà Nội
   const hanoiDistricts = [
     'Ba Đình', 'Hoàn Kiếm', 'Tây Hồ', 'Long Biên',
     'Cầu Giấy', 'Đống Đa', 'Hai Bà Trưng', 'Hoàng Mai',

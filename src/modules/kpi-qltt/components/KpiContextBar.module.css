@@ -1,0 +1,54 @@
+.contextBar {
+  position: sticky;
+  top: 72px;
+  z-index: 10;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+  margin: 16px 0 20px 0;
+  box-shadow: var(--elevation-sm);
+}
+
+.contextRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.contextGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.contextLabel {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.contextDivider {
+  width: 1px;
+  height: 32px;
+  background: var(--border);
+  margin: 0 4px;
+}
+
+@media (max-width: 1024px) {
+  .contextBar {
+    top: 64px;
+  }
+}
+
+@media (max-width: 768px) {
+  .contextBar {
+    top: 56px;
+  }
+  .contextDivider {
+    display: none;
+  }
+}

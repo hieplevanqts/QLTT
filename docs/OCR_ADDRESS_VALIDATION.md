@@ -108,7 +108,7 @@ export const VALIDATION_CHECKLIST = {
   
   // Integration Tests
   'Form Integration': {
-    test: 'Upload a Giấy Phép Kinh Doanh with address "110A Ngô Quyền, Phường 8, Quận 5, TP.HCM"',
+    test: 'Upload a Giấy Phép Kinh Doanh with address "110A Ngô Quyền, Phường 8, Phường 5, Hà Nội"',
     expected: 'Form auto-fills: province="Thành phố Hồ Chí Minh", ward="Phường 8", address="110A Ngô Quyền"',
     passes: false,
   },
@@ -154,7 +154,7 @@ STEP 2: Test Form Integration
   1. Navigate to "Add New Store" dialog
   2. Click on "Upload Giấy Phép Kinh Doanh" section
   3. Upload a sample document with address:
-     "110A Ngô Quyền, Phường 8, Quận 5, Thành phố Hồ Chí Minh, Việt Nam"
+     "110A Ngô Quyền, Phường 8, Phường 5, Thành phố Hồ Chí Minh, Việt Nam"
   4. Verify:
      ✓ Tỉnh/Thành phố field shows "Thành phố Hồ Chí Minh"
      ✓ Phường/Xã field shows "Phường 8"
@@ -172,9 +172,9 @@ STEP 3: Test Fallback Behavior
 
 STEP 4: Test User Edit Protection
   1. In a fresh form, manually select Province = "Hà Nội"
-  2. Upload any document with a TP.HCM address
+  2. Upload any document with a Hà Nội address
   3. Verify:
-     ✓ Province remains "Hà Nội" (not changed to TP.HCM)
+     ✓ Province remains "Hà Nội" (not changed to Hà Nội)
      ✓ Ward dropdown remains empty
 
 STEP 5: Test Repeated Upload
@@ -208,7 +208,7 @@ EXPECTED OUTCOMES:
 export const TEST_CASES = [
   {
     name: 'Standard HCM Address',
-    input: '110A Ngô Quyền, Phường 8, Quận 5, Thành phố Hồ Chí Minh, Việt Nam',
+    input: '110A Ngô Quyền, Phường 8, Phường 5, Thành phố Hồ Chí Minh, Việt Nam',
     expectedProvince: 'Thành phố Hồ Chí Minh',
     expectedWard: 'Phường 8',
     expectedAddress: '110A Ngô Quyền',
@@ -216,7 +216,7 @@ export const TEST_CASES = [
   },
   {
     name: 'Hanoi Address',
-    input: '45 Cầu Giấy, Phường Cầu Giấy, Quận Cầu Giấy, Hà Nội, Việt Nam',
+    input: '45 Cầu Giấy, Phường Cầu Giấy, Phường Cầu Giấy, Hà Nội, Việt Nam',
     expectedProvince: 'Hà Nội',
     expectedWard: 'Hoàn Kiếm', // Or whatever actual ward name is in DB
     expectedAddress: '45 Cầu Giấy',
@@ -232,7 +232,7 @@ export const TEST_CASES = [
   },
   {
     name: 'Ward Number Variation (05 vs 5)',
-    input: '50 Trần Hưng Đạo, Phường 05, Quận 1, Thành phố Hồ Chí Minh, Việt Nam',
+    input: '50 Trần Hưng Đạo, Phường 05, Phường 1, Thành phố Hồ Chí Minh, Việt Nam',
     expectedProvince: 'Thành phố Hồ Chí Minh',
     expectedWard: 'Phường 5', // Database has "Phường 5" not "Phường 05"
     expectedAddress: '50 Trần Hưng Đạo',

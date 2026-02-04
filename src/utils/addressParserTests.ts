@@ -49,7 +49,7 @@ export function testAddressParsing() {
   console.log('=== Address Parsing Tests ===\n');
 
   // Test case 1: Standard HCM address
-  const test1 = "110A Ngô Quyền, Phường 8, Quận 5, Thành phố Hồ Chí Minh, Việt Nam";
+  const test1 = "110A Ngô Quyền, Phường 8, Phường 5, Thành phố Hồ Chí Minh, Việt Nam";
   console.log('Test 1 - Standard HCM address:');
   console.log('Input:', test1);
   const parsed1 = parseVietnameseAddress(test1);
@@ -59,7 +59,7 @@ export function testAddressParsing() {
   console.log('');
 
   // Test case 2: Hanoi address
-  const test2 = "45 Cầu Giấy, Phường Cầu Giấy, Quận Cầu Giấy, Hà Nội, Việt Nam";
+  const test2 = "45 Cầu Giấy, Phường Cầu Giấy, Phường Cầu Giấy, Hà Nội, Việt Nam";
   console.log('Test 2 - Hanoi address:');
   console.log('Input:', test2);
   const parsed2 = parseVietnameseAddress(test2);
@@ -79,7 +79,7 @@ export function testAddressParsing() {
   console.log('');
 
   // Test case 4: Ward with number variation
-  const test4 = "50 Trần Hưng Đạo, Phường 05, Quận 1, Thành phố Hồ Chí Minh, Việt Nam";
+  const test4 = "50 Trần Hưng Đạo, Phường 05, Phường 1, Thành phố Hồ Chí Minh, Việt Nam";
   console.log('Test 4 - Ward number variation (05 vs 5):');
   console.log('Input:', test4);
   const parsed4 = parseVietnameseAddress(test4);
@@ -99,11 +99,11 @@ export function testNameMatching() {
     // [name1, name2, expected]
     ['Phường 08', 'Phường 8', true],
     ['Phường Tám', 'Phường 8', false], // Different - one has text, one has number
-    ['Hoàn Kiếm', 'Quận Hoàn Kiếm', true], // Should match after removing prefix
+    ['Hoàn Kiếm', 'Phường Hoàn Kiếm', true], // Should match after removing prefix
     ['Thành phố Hồ Chí Minh', 'TP Hồ Chí Minh', false], // Too different
     ['Thành phố Hồ Chí Minh', 'Hồ Chí Minh', true], // Should match after normalization
-    ['Ba Đình', 'Quận Ba Đình', true],
-    ['Sơn Trà', 'Quận Sơn Trà', true],
+    ['Ba Đình', 'Phường Ba Đình', true],
+    ['Sơn Trà', 'Phường Sơn Trà', true],
   ];
 
   testCases.forEach(([name1, name2, expected]) => {
@@ -123,8 +123,8 @@ export function testNormalization() {
   const testCases = [
     'Phường 08',
     'Xã 01',
-    'Quận 5',
-    'Huyện Bắc Từ Liêm',
+    'Phường 5',
+    'Xã Bắc Từ Liêm',
     'Thành phố Hồ Chí Minh',
     'Tỉnh Hà Giang',
   ];
@@ -143,7 +143,7 @@ export function testFullIntegration() {
   console.log('=== Full Integration Test ===\n');
 
   const realWorldAddresses = [
-    "110A Ngô Quyền, Phường 8, Quận 5, Thành phố Hồ Chí Minh, Việt Nam",
+    "110A Ngô Quyền, Phường 8, Phường 5, Thành phố Hồ Chí Minh, Việt Nam",
     "35 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội, Việt Nam",
     "28 Bạch Đằng, Sơn Trà, Đà Nẵng, Việt Nam",
   ];

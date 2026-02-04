@@ -301,7 +301,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
   };
 
   return (
-    <>
+    <div className="mappa-topnav">
       {/* Desktop Navigation */}
       <nav className="hidden md:flex h-14 bg-card border-b border-border items-center px-6 gap-1">
         {/* Main MAPPA Modules */}
@@ -352,8 +352,10 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
+                      data-nav-item="true"
+                      data-active={isActive ? "true" : "false"}
                       className={cn(
-                        "gap-2 h-9 text-sm font-medium cursor-pointer",
+                        "gap-2 h-9 text-sm font-medium cursor-pointer hover:text-white hover:bg-primary/90",
                         isActive ? "text-primary bg-primary/10" : "text-foreground"
                       )}
                       style={{ cursor: 'pointer' }}
@@ -396,8 +398,10 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
+                      data-nav-item="true"
+                      data-active={isActive ? "true" : "false"}
                       className={cn(
-                        "gap-2 h-9 text-sm font-medium cursor-pointer",
+                        "gap-2 h-9 text-sm font-medium cursor-pointer hover:text-white hover:bg-primary/90",
                         isActive ? "text-primary bg-primary/10" : "text-foreground"
                       )}
                     >
@@ -430,7 +434,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                             to={item.path}
                             className={cn(
                               isAdminMenu
-                                ? "flex items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
+                                ? "flex items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-primary/90 hover:text-white"
                                 : "cursor-pointer",
                               isItemActive &&
                               (isAdminMenu ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary")
@@ -452,8 +456,10 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
               <Link key={module.path} to={module.path}>
                 <Button
                   variant="ghost"
+                  data-nav-item="true"
+                  data-active={isActive ? "true" : "false"}
                   className={cn(
-                    "gap-2 h-9 text-sm font-medium cursor-pointer",
+                    "gap-2 h-9 text-sm font-medium cursor-pointer hover:text-white hover:bg-primary/90",
                     isActive ? "text-primary bg-primary/10" : "text-foreground"
                   )}
                 >
@@ -618,7 +624,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                             'flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors mb-1 cursor-pointer',
                             isModuleActive
                               ? 'text-primary bg-muted'
-                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                              : 'text-muted-foreground hover:text-white hover:bg-primary/90'
                           )}
                         >
                           <div className="flex items-center gap-3">
@@ -642,7 +648,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                                 'flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition-colors cursor-pointer',
                                 location.pathname === '/plans/list' || location.pathname.startsWith('/plans/KH-') || location.pathname.startsWith('/plans/create-new')
                                   ? 'text-primary bg-primary/10 font-medium'
-                                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                                  : 'text-muted-foreground hover:text-white hover:bg-primary/90'
                               )}
                             >
                               <ListChecks className="h-4 w-4" />
@@ -656,7 +662,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                                 'flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition-colors cursor-pointer',
                                 location.pathname === '/plans/inspection-rounds' || location.pathname.startsWith('/plans/inspection-rounds/')
                                   ? 'text-primary bg-primary/10 font-medium'
-                                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                                  : 'text-muted-foreground hover:text-white hover:bg-primary/90'
                               )}
                             >
                               <ClipboardCheck className="h-4 w-4" />
@@ -670,7 +676,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                                 'flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition-colors cursor-pointer',
                                 location.pathname === '/plans/inspection-session'
                                   ? 'text-primary bg-primary/10 font-medium'
-                                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                                  : 'text-muted-foreground hover:text-white hover:bg-primary/90'
                               )}
                             >
                               <KanbanSquare className="h-4 w-4" />
@@ -694,7 +700,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                             'flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors mb-1 cursor-pointer',
                             isModuleActive
                               ? 'text-primary bg-muted'
-                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                              : 'text-muted-foreground hover:text-white hover:bg-primary/90'
                           )}
                         >
                           <div className="flex items-center gap-3">
@@ -739,7 +745,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                                       : 'flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition-colors cursor-pointer',
                                     isItemActive
                                       ? (isAdminMenu ? 'bg-primary text-primary-foreground' : 'text-primary bg-primary/10 font-medium')
-                                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                                      : 'text-muted-foreground hover:text-white hover:bg-primary/90'
                                   )}
                                 >
                                   {ItemIcon && <ItemIcon className="h-4 w-4" />}
@@ -763,7 +769,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                         'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors mb-1 cursor-pointer',
                         isModuleActive
                           ? 'text-primary bg-muted'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                          : 'text-muted-foreground hover:text-white hover:bg-primary/90'
                       )}
                     >
                       <Icon className="h-5 w-5" />
@@ -780,43 +786,43 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
                 </div>
                 <div className="space-y-1">
                   {userPermissions.canCreateFacility && (
-                    <a href="/stores/create" className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 w-full text-left cursor-pointer">
+                    <a href="/stores/create" className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-white hover:bg-primary/90 w-full text-left cursor-pointer">
                       Thêm cơ sở
                     </a>
                   )}
 
                   {userPermissions.canImportFacilityData && (
-                    <a href="/stores/import" className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 w-full text-left cursor-pointer">
+                    <a href="/stores/import" className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-white hover:bg-primary/90 w-full text-left cursor-pointer">
                       Nhập dữ liệu cơ sở
                     </a>
                   )}
 
                   {userPermissions.canCreateRisk && (
-                    <a href="/leads/create-risk" className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 w-full text-left cursor-pointer">
+                    <a href="/leads/create-risk" className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-white hover:bg-primary/90 w-full text-left cursor-pointer">
                       Tạo rủi ro
                     </a>
                   )}
 
                   {userPermissions.canCreateFeedback && (
-                    <a href="/leads/create-feedback" className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 w-full text-left cursor-pointer">
+                    <a href="/leads/create-feedback" className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-white hover:bg-primary/90 w-full text-left cursor-pointer">
                       Tạo phản ánh
                     </a>
                   )}
 
                   {userPermissions.canCreateInspectionPlan && (
-                    <a href="/plans/create-new" className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 w-full text-left cursor-pointer">
+                    <a href="/plans/create-new" className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-white hover:bg-primary/90 w-full text-left cursor-pointer">
                       Tạo kế hoạch kiểm tra
                     </a>
                   )}
 
                   {userPermissions.canCreateInspectionRound && (
-                    <a href="/plans/create-round" className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 w-full text-left cursor-pointer">
+                    <a href="/plans/create-round" className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-white hover:bg-primary/90 w-full text-left cursor-pointer">
                       Tạo đợt kiểm tra
                     </a>
                   )}
 
                   {userPermissions.canCreateInspectionSession && (
-                    <a href="/tasks/create" className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 w-full text-left cursor-pointer">
+                    <a href="/tasks/create" className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-white hover:bg-primary/90 w-full text-left cursor-pointer">
                       Tạo phiên kiểm tra
                     </a>
                   )}
@@ -826,6 +832,7 @@ export default function HorizontalNavBar({ mobileMenuOpen, onClose }: Horizontal
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
+

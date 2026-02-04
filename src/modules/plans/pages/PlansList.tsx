@@ -31,6 +31,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CloudSyncOutlined } from '@ant-design/icons';
 
 import ModernSummaryCard from '@/components/patterns/ModernSummaryCard';
 import BulkActionBar, { BulkAction } from '@/components/patterns/BulkActionBar';
@@ -61,6 +62,7 @@ import DateRangePicker, { DateRange } from '@/components/ui-kit/DateRangePicker'
 import { useSupabasePlans } from '@/hooks/useSupabasePlans';
 import { updatePlanApi, deletePlanApi } from '@/utils/api/plansApi';
 import PlanCalendarView from '@/components/plans/PlanCalendarView';
+import InsSyncModal from '@/modules/plans/components/InsSyncModal';
 
 export function PlansList() {
   const navigate = useNavigate();
@@ -95,6 +97,7 @@ export function PlansList() {
   const [m09ModalOpen, setM09ModalOpen] = useState(false);
   const [m08ModalOpen, setM08ModalOpen] = useState(false);
   const [selectedPlanForDocument, setSelectedPlanForDocument] = useState<Plan | null>(null);
+  const [openIns, setOpenIns] = useState(false);
 
   const closeModal = () => setModalState({ type: null, plan: null });
   const openModal = (type: typeof modalState.type, plan: Plan) => setModalState({ type, plan });
@@ -626,9 +629,15 @@ export function PlansList() {
               <Download size={16} />
               Xuất dữ liệu
             </Button>
+            <Button variant="outline" size="sm" onClick={() => setOpenIns(true)}>
+              <CloudSyncOutlined className="mr-2" />
+              Kết nối INS
+            </Button>
           </div>
         }
       />
+
+      <InsSyncModal open={openIns} onClose={() => setOpenIns(false)} />
 
       {/* Summary Cards */}
       <div className={styles.summaryContainer}>

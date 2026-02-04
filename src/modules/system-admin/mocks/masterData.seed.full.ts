@@ -105,7 +105,7 @@ export const seedCatalogs: Catalog[] = [
   {
     key: 'geo-level',
     name: 'Cấp địa lý',
-    description: 'Cấp địa lý trong hệ thống hành chính (Tỉnh/Quận/Phường)',
+    description: 'Cấp địa lý trong hệ thống hành chính (Tỉnh/Phường/Phường)',
     group: 'COMMON',
     itemCount: 4,
     hasSchema: false,
@@ -1342,7 +1342,7 @@ export const seedCatalogItems: CatalogItem[] = [
     id: 'item-geo-3',
     catalogKey: 'geo-level',
     code: 'DISTRICT',
-    name: 'Quận/Huyện',
+    name: 'Phường/Xã',
     value: 'district',
     order: 3,
     parentId: null,

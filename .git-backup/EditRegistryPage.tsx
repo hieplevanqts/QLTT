@@ -145,7 +145,7 @@ export default function EditRegistryPage() {
     if (formData.jurisdiction !== store.jurisdiction) {
       detected.push({
         field: 'jurisdiction',
-        label: 'Quận/Huyện',
+        label: 'Phường/Xã',
         oldValue: store.jurisdiction,
         newValue: formData.jurisdiction,
         isSensitive: true,
@@ -225,7 +225,7 @@ export default function EditRegistryPage() {
       newErrors.province = 'Vui lòng chọn tỉnh/thành phố';
     }
     if (!formData.jurisdiction) {
-      newErrors.jurisdiction = 'Vui lòng chọn quận/huyện';
+      newErrors.jurisdiction = 'Vui lòng chọn Phường/Xã';
     }
     if (!formData.ward) {
       newErrors.ward = 'Vui lòng chọn phường/xã';
@@ -474,7 +474,7 @@ export default function EditRegistryPage() {
 
                 <div className={styles.formField}>
                   <Label htmlFor="jurisdiction">
-                    Quận/Huyện <span className={styles.required}>*</span>
+                    Phường/Xã <span className={styles.required}>*</span>
                     <span className={styles.sensitiveMark}>(Nhạy cảm)</span>
                   </Label>
                   <Select
@@ -489,7 +489,7 @@ export default function EditRegistryPage() {
                     disabled={!formData.province}
                   >
                     <SelectTrigger id="jurisdiction">
-                      <SelectValue placeholder="Chọn quận/huyện" />
+                      <SelectValue placeholder="Chọn Phường/Xã" />
                     </SelectTrigger>
                     <SelectContent>
                       {availableDistricts.map((district) => (

@@ -62,7 +62,7 @@ export default function EvidenceAuditLogPage() {
       action: 'Download chứng cứ từ Package PKG-2026-042',
       ipAddress: '14.231.xxx.xxx',
       device: 'Chrome - Windows 11',
-      location: 'Quận 1, TP.HCM',
+      location: 'Phường 1, Hà Nội',
       details: 'Download via Export Center - Job EXP-2026-156'
     },
     {
@@ -75,7 +75,7 @@ export default function EvidenceAuditLogPage() {
       action: 'Niêm phong chứng cứ sau khi phê duyệt',
       ipAddress: '113.161.xxx.xxx',
       device: 'Chrome - Windows 11',
-      location: 'Quận 3, TP.HCM',
+      location: 'Phường 3, Hà Nội',
       details: 'Reason: Chứng cứ quan trọng cho vụ án, cần bảo toàn tính toàn vẹn'
     },
     {
@@ -88,7 +88,7 @@ export default function EvidenceAuditLogPage() {
       action: 'Phê duyệt chứng cứ',
       ipAddress: '14.231.xxx.xxx',
       device: 'Chrome - Windows 11',
-      location: 'Quận 5, TP.HCM',
+      location: 'Phường 5, Hà Nội',
       details: 'Comment: Tài liệu hợp lệ, đầy đủ thông tin'
     },
     {
@@ -101,7 +101,7 @@ export default function EvidenceAuditLogPage() {
       action: 'Từ chối chứng cứ',
       ipAddress: '14.231.xxx.xxx',
       device: 'Chrome - Windows 11',
-      location: 'Quận 7, TP.HCM',
+      location: 'Phường 7, Hà Nội',
       details: 'Reason: Hình ảnh không rõ ràng, không đủ điều kiện làm chứng cứ'
     },
     {
@@ -114,7 +114,7 @@ export default function EvidenceAuditLogPage() {
       action: 'Tải lên chứng cứ từ Mobile App',
       ipAddress: '113.161.xxx.xxx',
       device: 'iPhone 14 Pro - iOS 17.2',
-      location: 'Quận 1, TP.HCM',
+      location: 'Phường 1, Hà Nội',
       details: 'Hash: sha256:a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6'
     },
     {
@@ -127,7 +127,7 @@ export default function EvidenceAuditLogPage() {
       action: 'Cập nhật metadata - Thêm nhãn bảo mật: Confidential',
       ipAddress: '14.231.xxx.xxx',
       device: 'Chrome - Windows 11',
-      location: 'Quận 10, TP.HCM',
+      location: 'Phường 10, Hà Nội',
       details: 'Reason code: Nội dung chứa thông tin nhạy cảm về cơ sở vi phạm'
     },
     {
@@ -140,8 +140,8 @@ export default function EvidenceAuditLogPage() {
       action: 'Thêm vào gói chứng cứ PKG-2026-042',
       ipAddress: '14.231.xxx.xxx',
       device: 'Chrome - Windows 11',
-      location: 'Quận 1, TP.HCM',
-      details: 'Package: Gói chứng cứ vụ vi phạm ATTP Quận 1'
+      location: 'Phường 1, Hà Nội',
+      details: 'Package: Gói chứng cứ vụ vi phạm ATTP Phường 1'
     },
     {
       id: 'AUD-2026-9869',
@@ -153,7 +153,7 @@ export default function EvidenceAuditLogPage() {
       action: 'Xem chi tiết chứng cứ',
       ipAddress: '113.161.xxx.xxx',
       device: 'Chrome - Windows 11',
-      location: 'Quận 1, TP.HCM'
+      location: 'Phường 1, Hà Nội'
     },
     {
       id: 'AUD-2026-9868',
@@ -165,7 +165,7 @@ export default function EvidenceAuditLogPage() {
       action: 'Xuất khẩu ZIP Full Package',
       ipAddress: '14.231.xxx.xxx',
       device: 'Chrome - Windows 11',
-      location: 'Quận 3, TP.HCM',
+      location: 'Phường 3, Hà Nội',
       details: 'Export Job: EXP-2026-154'
     }
   ];

@@ -32,7 +32,7 @@ const mockInsDecisions: InsDecision[] = [
     issueDate: '2026-01-05',
     signer: 'Nguyễn Văn A',
     signerPosition: 'Cục trưởng',
-    summary: 'Giao quyền cho Chi cục QLTT các quận/huyện ban hành quyết định kiểm tra',
+    summary: 'Giao quyền cho Chi cục QLTT các Phường/Xã ban hành quyết định kiểm tra',
   },
   {
     id: 'INS-M03-002',

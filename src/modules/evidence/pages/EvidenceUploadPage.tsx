@@ -239,7 +239,7 @@ export default function EvidenceUploadPage() {
               <label className={styles.label}>Vụ việc liên quan</label>
               <select className={styles.select}>
                 <option>Chọn vụ việc...</option>
-                <option>CASE-2026-045 - Vi phạm ATTP tại Quận 1</option>
+                <option>CASE-2026-045 - Vi phạm ATTP tại Phường 1</option>
                 <option>CASE-2026-044 - Kiểm tra an toàn thực phẩm</option>
               </select>
             </div>

@@ -72,7 +72,7 @@ interface Props {
 const mockTeams: Team[] = [
   {
     id: 'team-24',
-    name: 'Đội 24 - TP.HCM số 4',
+    name: 'Đội 24 - Hà Nội số 4',
     position: { top: '78%', left: '52%' },
     compliance: 71.1,
     total: 45,
@@ -80,9 +80,9 @@ const mockTeams: Team[] = [
     atRisk: 8,
     breached: 5,
     activeMembers: 8,
-    address: 'Quận 1, TP.HCM',
-    organization: 'Chi cục TP.HCM',
-    area: 'TP.HCM',
+    address: 'Phường 1, Hà Nội',
+    organization: 'Chi cục Hà Nội',
+    area: 'Hà Nội',
   },
   {
     id: 'team-01',
@@ -145,7 +145,7 @@ const mockTeams: Team[] = [
 const mockLeads: Lead[] = [
   {
     id: 'LEAD-2025-0156',
-    title: 'Cửa hàng bán hàng giả - Quận 1',
+    title: 'Cửa hàng bán hàng giả - Phường 1',
     position: { top: '77%', left: '53%' },
     urgency: 'critical',
     slaStatus: 'overdue',
@@ -153,8 +153,8 @@ const mockLeads: Lead[] = [
     deadline: '2h trước',
     status: 'assigned',
     topic: 'Hàng giả',
-    area: 'TP.HCM',
-    organization: 'Chi cục TP.HCM',
+    area: 'Hà Nội',
+    organization: 'Chi cục Hà Nội',
   },
   {
     id: 'LEAD-2025-0157',
@@ -166,12 +166,12 @@ const mockLeads: Lead[] = [
     deadline: '2h',
     status: 'inVerification',
     topic: 'Kinh doanh không phép',
-    area: 'TP.HCM',
-    organization: 'Chi cục TP.HCM',
+    area: 'Hà Nội',
+    organization: 'Chi cục Hà Nội',
   },
   {
     id: 'LEAD-2025-0158',
-    title: 'An toàn thực phẩm - Quận 3',
+    title: 'An toàn thực phẩm - Phường 3',
     position: { top: '76%', left: '54%' },
     urgency: 'medium',
     slaStatus: 'onTrack',
@@ -179,8 +179,8 @@ const mockLeads: Lead[] = [
     deadline: '18h',
     status: 'assigned',
     topic: 'An toàn thực phẩm',
-    area: 'TP.HCM',
-    organization: 'Chi cục TP.HCM',
+    area: 'Hà Nội',
+    organization: 'Chi cục Hà Nội',
   },
   {
     id: 'LEAD-2025-0142',
@@ -569,10 +569,10 @@ export default function SLAOperationMap({ isOpen = true, onClose = () => {} }: P
                   <label className={styles.filterCheckbox}>
                     <input
                       type="checkbox"
-                      checked={filters.organizations.includes('Chi cục TP.HCM')}
-                      onChange={() => toggleFilter('organizations', 'Chi cục TP.HCM')}
+                      checked={filters.organizations.includes('Chi cục Hà Nội')}
+                      onChange={() => toggleFilter('organizations', 'Chi cục Hà Nội')}
                     />
-                    <span>Chi cục TP.HCM</span>
+                    <span>Chi cục Hà Nội</span>
                   </label>
                   <label className={styles.filterCheckbox}>
                     <input
@@ -612,8 +612,8 @@ export default function SLAOperationMap({ isOpen = true, onClose = () => {} }: P
                   <label className={styles.filterCheckbox}>
                     <input
                       type="checkbox"
-                      checked={filters.areas.includes('TP.HCM')}
-                      onChange={() => toggleFilter('areas', 'TP.HCM')}
+                      checked={filters.areas.includes('Hà Nội')}
+                      onChange={() => toggleFilter('areas', 'Hà Nội')}
                     />
                     <span>TP. Hồ Chí Minh</span>
                   </label>

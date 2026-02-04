@@ -173,7 +173,7 @@ export default function Profile() {
         email: '',
         fullName: 'Nguyễn Văn A',
         roleDisplay: 'Thanh tra viên',
-        department: 'Chi cục QLTT Quận 1',
+        department: 'Chi cục QLTT Phường 1',
         departmentLevel: null,
         departmentCode: null,
         managementLevel: null,

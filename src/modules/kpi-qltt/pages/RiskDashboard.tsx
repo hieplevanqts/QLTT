@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   ShieldAlert, 
   AlertTriangle, 
@@ -13,6 +13,7 @@ import styles from './KpiQlttDashboard.module.css';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import { cn } from '@/components/ui/utils';
 import MultiSelectDropdown from '@/components/lead-risk/MultiSelectDropdown';
+import { applyGeoValue, type GeoMockContext } from '@/modules/kpi/mocks/kpiDashboard.mock';
 
 type TimeRange = '7' | '30' | '90';
 
@@ -162,21 +163,68 @@ const REOFFEND_ANALYSIS = [
 
 interface RiskDashboardProps {
   timeRange: TimeRange;
+  geoContext: GeoMockContext;
 }
 
-export default function RiskDashboard({ timeRange }: RiskDashboardProps) {
+export default function RiskDashboard({ timeRange, geoContext }: RiskDashboardProps) {
   const [filters, setFilters] = useState<RiskFilters>({
     violationCategories: [],
     riskStatuses: [],
     businessTypes: [],
     industries: [],
   });
+
+  const scaledMerchants = useMemo(() => {
+    return RISK_MERCHANTS.map((merchant) => {
+      const riskScore = applyGeoValue(merchant.riskScore, geoContext, 'rate', { decimals: 1, min: 40, max: 100 });
+      const violations = applyGeoValue(merchant.violations, geoContext, 'count', { min: 0 });
+      const reoffendCount = applyGeoValue(merchant.reoffendCount, geoContext, 'count', { min: 0 });
+      const riskLevel = riskScore >= 80 ? 'Cao' : riskScore >= 60 ? 'Trung bình' : 'Thấp';
+      return {
+        ...merchant,
+        riskScore,
+        violations,
+        reoffendCount,
+        riskLevel,
+      };
+    });
+  }, [geoContext]);
+
+  const violationTrend = useMemo(() => {
+    return VIOLATION_TREND.map((row) => ({
+      ...row,
+      count: applyGeoValue(row.count, geoContext, 'count', { min: 0 }),
+    }));
+  }, [geoContext]);
+
+  const hotspotData = useMemo(() => {
+    const jitter = geoContext.seed - 0.5;
+    const scaleSigned = (value: number) => Math.round(value * geoContext.factor * (1 + jitter * 0.05));
+    return HOTSPOT_DATA.map((row) => {
+      const trend = scaleSigned(row.trend);
+      const status = trend > 10 ? 'Tăng mạnh' : trend > 5 ? 'Tăng' : trend >= 0 ? 'Ổn định' : 'Giảm';
+      return {
+        ...row,
+        violations: applyGeoValue(row.violations, geoContext, 'count', { min: 0 }),
+        trend,
+        status,
+      };
+    });
+  }, [geoContext]);
+
+  const reoffendAnalysis = useMemo(() => {
+    return REOFFEND_ANALYSIS.map((row) => ({
+      ...row,
+      count: applyGeoValue(row.count, geoContext, 'count', { min: 0 }),
+      rate: applyGeoValue(row.rate, geoContext, 'rate', { decimals: 1, min: 0, max: 100 }),
+    }));
+  }, [geoContext]);
   
   // KPI calculations
-  const highRiskMerchants = RISK_MERCHANTS.filter(m => m.riskLevel === 'Cao').length;
-  const avgRiskScore = (RISK_MERCHANTS.reduce((sum, m) => sum + m.riskScore, 0) / RISK_MERCHANTS.length).toFixed(1);
-  const totalReoffenders = RISK_MERCHANTS.filter(m => m.reoffendCount > 1).length;
-  const reoffendRate = ((totalReoffenders / RISK_MERCHANTS.length) * 100).toFixed(1);
+  const highRiskMerchants = scaledMerchants.filter(m => m.riskLevel === 'Cao').length;
+  const avgRiskScore = (scaledMerchants.reduce((sum, m) => sum + m.riskScore, 0) / scaledMerchants.length).toFixed(1);
+  const totalReoffenders = scaledMerchants.filter(m => m.reoffendCount > 1).length;
+  const reoffendRate = ((totalReoffenders / scaledMerchants.length) * 100).toFixed(1);
 
   return (
     <div className={styles.tabContent}>
@@ -312,7 +360,7 @@ export default function RiskDashboard({ timeRange }: RiskDashboardProps) {
 
       {/* Top High Risk Merchants */}
       <div className={styles.chartCard}>
-        <h3 className={styles.chartTitle}>Top Merchant rủi ro cao (Top {RISK_MERCHANTS.length})</h3>
+        <h3 className={styles.chartTitle}>Top Merchant rủi ro cao (Top {scaledMerchants.length})</h3>
         <p className={styles.chartSubtitle}>
           Danh sách các merchant có điểm rủi ro cao cần giám sát đặc biệt
         </p>
@@ -332,7 +380,7 @@ export default function RiskDashboard({ timeRange }: RiskDashboardProps) {
               </tr>
             </thead>
             <tbody>
-              {RISK_MERCHANTS.map((merchant, index) => (
+              {scaledMerchants.map((merchant, index) => (
                 <tr key={merchant.id}>
                   <td>{index + 1}</td>
                   <td className={styles.teamName}>{merchant.name}</td>
@@ -389,7 +437,7 @@ export default function RiskDashboard({ timeRange }: RiskDashboardProps) {
             Biến động số lượng vi phạm qua các tháng
           </p>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={VIOLATION_TREND}>
+            <LineChart data={violationTrend}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="month" stroke="var(--muted-foreground)" />
               <YAxis stroke="var(--muted-foreground)" />
@@ -420,7 +468,7 @@ export default function RiskDashboard({ timeRange }: RiskDashboardProps) {
             Các địa bàn có xu hướng tăng vi phạm đột biến
           </p>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={HOTSPOT_DATA}>
+            <BarChart data={hotspotData}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="district" stroke="var(--muted-foreground)" />
               <YAxis stroke="var(--muted-foreground)" />
@@ -433,7 +481,7 @@ export default function RiskDashboard({ timeRange }: RiskDashboardProps) {
               />
               <Legend />
               <Bar dataKey="violations" name="Số vi phạm" radius={[8, 8, 0, 0]}>
-                {HOTSPOT_DATA.map((entry, index) => (
+                {hotspotData.map((entry, index) => (
                   <Cell 
                     key={`cell-${index}`} 
                     fill={entry.trend > 10 ? '#f94144' : entry.trend > 5 ? '#f7a23b' : '#695cfb'} 
@@ -445,7 +493,7 @@ export default function RiskDashboard({ timeRange }: RiskDashboardProps) {
 
           {/* Legend for hotspot status */}
           <div style={{ marginTop: '1rem', display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-            {HOTSPOT_DATA.map((item, index) => (
+            {hotspotData.map((item, index) => (
               <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <MapPin 
                   className="w-4 h-4" 
@@ -469,7 +517,7 @@ export default function RiskDashboard({ timeRange }: RiskDashboardProps) {
           Thời gian giữa các lần vi phạm và hiệu quả hậu kiểm
         </p>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={REOFFEND_ANALYSIS}>
+          <BarChart data={reoffendAnalysis}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
             <XAxis dataKey="interval" stroke="var(--muted-foreground)" />
             <YAxis yAxisId="left" stroke="var(--muted-foreground)" />

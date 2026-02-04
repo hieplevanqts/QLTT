@@ -15,7 +15,7 @@ MAPPA Portal là hệ thống quản lý thông tin thị trường toàn diện
 
 - **📊 Tổng quan** - Dashboard với thống kê và KPI
 - **🗺️ Bản đồ điều hành** - Bản đồ tương tác với Leaflet, hiển thị cơ sở và điểm nóng
-- **🏢 Cơ sở quản lý** - Quản lý CRUD đầy đủ cho cơ sở, quận/huyện, phường/xã
+- **🏢 Cơ sở quản lý** - Quản lý CRUD đầy đủ cho cơ sở, Phường/Xã, phường/xã
 - **⚠️ Nguồn tin / Risk** - Hệ thống quản lý nguồn tin và đánh giá rủi ro với 25+ trang chức năng
   - Xử lý nguồn tin hằng ngày
   - Tổng quan rủi ro

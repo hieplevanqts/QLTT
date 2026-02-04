@@ -87,7 +87,7 @@ API merchants table → Store interface:
 | `owner_phone` | `ownerPhone` | SĐT chủ hộ |
 | `tax_code` | `taxCode` | Mã số thuế |
 | `address` | `address` | Địa chỉ |
-| `district` | `jurisdiction` | Địa bàn (Quận/Huyện) |
+| `district` | `jurisdiction` | Địa bàn (Phường/Xã) |
 | `province` | `province` | Tỉnh/Thành phố |
 | `ward` | `ward` | Phường/Xã |
 | `business_type` | `businessType` | Loại hình kinh doanh |
@@ -126,7 +126,7 @@ API hỗ trợ các filters:
 ```typescript
 fetchStores(100, 0, {
   status: 'active',
-  district: 'Quận 1',
+  district: 'Phường 1',
   businessType: 'electronics',
   riskLevel: 'high'
 })

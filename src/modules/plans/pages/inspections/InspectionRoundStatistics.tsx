@@ -30,7 +30,7 @@ const mockStatisticsData = {
     type: 'routine' as const,
     startDate: '2026-01-01',
     endDate: '2026-01-31',
-    leadUnit: 'Chi cục QLTT Quận 1',
+    leadUnit: 'Chi cục QLTT Phường 1',
   },
   overview: {
     totalSessions: 48,

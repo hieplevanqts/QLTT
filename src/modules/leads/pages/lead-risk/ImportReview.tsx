@@ -43,7 +43,7 @@ export default function ImportReview() {
       row: 25,
       column: 'district',
       originalValue: 'Q1',
-      error: 'Quận không tồn tại. Gợi ý: Quận 1',
+      error: 'Phường không tồn tại. Gợi ý: Phường 1',
       severity: 'error',
       isFixed: false,
     },

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Search,
@@ -38,6 +38,7 @@ import { RejectLeadModal } from "@/components/lead-risk/RejectLeadModal";
 import { EvidenceDocumentModal } from "@/components/lead-risk/EvidenceDocumentModal";
 import AssignLeadModal from "@/components/lead-risk/AssignLeadModal";
 import QuickActionsSidebar from "@/components/lead-risk/QuickActionsSidebar";
+import AiWorkAssistantNavButton from "@/components/ai/AiWorkAssistantNavButton";
 import {
   LeadActionMenu,
   type LeadAction,
@@ -1114,9 +1115,8 @@ export default function LeadInbox() {
           </p>
         </div>
         <div className={styles.headerRight}>
-          <button
+          <AiWorkAssistantNavButton
             className={styles.aiDemoButton}
-            onClick={() => navigate("/lead-risk/inbox-ai-demo")}
             style={{
               marginRight: "var(--spacing-3)",
               height: "44px",
@@ -1146,10 +1146,7 @@ export default function LeadInbox() {
                 "linear-gradient(135deg, rgba(0, 92, 182, 0.1) 0%, rgba(0, 92, 182, 0.05) 100%)";
               e.currentTarget.style.color = "var(--primary)";
             }}
-          >
-            <span style={{ fontSize: "18px" }}>🤖</span>
-            <span>Trợ lý ảo của bạn</span>
-          </button>
+          />
           <button
             className={styles.duplicateButton}
             onClick={() =>

@@ -85,12 +85,12 @@ export default function EscalationForm() {
 
   const recipients = {
     branch: [
-      { id: 'u1', name: 'Nguyễn Văn A', position: 'Phó Chi cục trưởng', unit: 'Chi cục QLTT TP.HCM' },
-      { id: 'u2', name: 'Trần Thị B', position: 'Trưởng phòng Thanh tra', unit: 'Chi cục QLTT TP.HCM' },
+      { id: 'u1', name: 'Nguyễn Văn A', position: 'Phó Chi cục trưởng', unit: 'Chi cục QLTT Hà Nội' },
+      { id: 'u2', name: 'Trần Thị B', position: 'Trưởng phòng Thanh tra', unit: 'Chi cục QLTT Hà Nội' },
     ],
     department: [
-      { id: 'u3', name: 'Lê Văn C', position: 'Phó Cục trưởng', unit: 'Cục QLTT TP.HCM' },
-      { id: 'u4', name: 'Phạm Thị D', position: 'Vụ trưởng', unit: 'Cục QLTT TP.HCM' },
+      { id: 'u3', name: 'Lê Văn C', position: 'Phó Cục trưởng', unit: 'Cục QLTT Hà Nội' },
+      { id: 'u4', name: 'Phạm Thị D', position: 'Vụ trưởng', unit: 'Cục QLTT Hà Nội' },
     ],
     headquarters: [
       { id: 'u5', name: 'Hoàng Văn E', position: 'Vụ trưởng', unit: 'Bộ Công Thương' },

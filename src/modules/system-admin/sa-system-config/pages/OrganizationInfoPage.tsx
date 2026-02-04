@@ -83,7 +83,7 @@ export default function OrganizationInfoPage() {
                   <span className={styles.value}>{org.address}</span>
                 </div>
                 <div className={styles.infoRow}>
-                  <span className={styles.label}>Quận/Huyện:</span>
+                  <span className={styles.label}>Phường/Xã:</span>
                   <span className={styles.value}>{org.district}</span>
                 </div>
                 <div className={styles.infoRow}>

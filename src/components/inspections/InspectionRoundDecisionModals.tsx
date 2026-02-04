@@ -216,7 +216,7 @@ const mockInspectionDecisions: InsDecision[] = [
     issueDate: '2026-01-10',
     signer: 'Nguyễn Văn A',
     signerPosition: 'Chi cục trưởng',
-    summary: 'Kiểm tra 50 cơ sở kinh doanh thực phẩm tại Quận 1',
+    summary: 'Kiểm tra 50 cơ sở kinh doanh thực phẩm tại Phường 1',
   },
   {
     id: 'INS-M01-002',

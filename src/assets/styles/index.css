@@ -64,3 +64,21 @@ html, body {
   margin: 0;
   padding: 0;
 }
+
+/* Top nav menu: hover text white + active background yellow */
+#root > div > nav [data-nav-item="true"]:hover {
+  color: #ffffff !important;
+  background-color: var(--primary) !important;
+}
+
+#root > div > nav [data-nav-item="true"]:hover * {
+  color: #ffffff !important;
+}
+
+#root > div > nav [data-nav-item="true"][data-active="true"] {
+  background-color: #facc15 !important;
+}
+
+#root > div > nav [data-nav-item="true"][data-active="true"]:hover {
+  background-color: #facc15 !important;
+}

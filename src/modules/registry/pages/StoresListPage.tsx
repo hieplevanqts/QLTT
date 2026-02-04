@@ -30,7 +30,8 @@ import { AddStoreDialog, NewStoreData } from '@/components/ui-kit/AddStoreDialog
 import DataTable, { Column } from '@/components/ui-kit/DataTable';
 import { SearchInput } from '@/components/ui-kit/SearchInput';
 import { SearchableSelect } from '@/components/ui-kit/SearchableSelect';
-import { BUSINESS_TYPES } from '@/constants/businessTypes';
+import { AsyncSearchableSelect } from '@/components/ui-kit/AsyncSearchableSelect';
+import { searchCategories } from '@/utils/api/categoriesApi';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -95,6 +96,14 @@ export default function StoresListPage() {
   const [currentPage, setCurrentPage] = useState(parseInt(getParam('page', '1'), 10));
   const [pageSize, setPageSize] = useState(parseInt(getParam('size', '20'), 10));
   const [totalRecords, setTotalRecords] = useState(0);
+
+  const searchBusinessTypeOptions = useCallback(async (searchTerm: string, limit: number = 20) => {
+    const categories = await searchCategories(searchTerm, limit);
+    return (categories || []).map((cat) => ({
+      value: cat.name,
+      label: cat.name,
+    }));
+  }, []);
 
   // Sync state to URL
   useEffect(() => {
@@ -216,6 +225,16 @@ export default function StoresListPage() {
   const [storeError, setStoreError] = useState<string | null>(null);
   const [provinces, setProvinces] = useState<ProvinceRecord[]>([]);
   const [isLoadingProvinces, setIsLoadingProvinces] = useState(true);
+  const provinceOptions = useMemo(
+    () => [
+      { value: 'all', label: 'Tất cả địa bàn' },
+      ...provinces.map((province) => ({
+        value: province.id,
+        label: province.name,
+      })),
+    ],
+    [provinces]
+  );
 
   // Stats state
   const [stats, setStats] = useState({
@@ -345,10 +364,10 @@ export default function StoresListPage() {
       } catch (error: any) {
         // Fallback to hardcoded list if API fails
         setProvinces([
-          { id: '1', code: 'HCM', name: 'Quận 1' },
-          { id: '2', code: 'HCM', name: 'Quận 3' },
-          { id: '3', code: 'HCM', name: 'Quận 5' },
-          { id: '4', code: 'HCM', name: 'Quận 10' },
+          { id: '1', code: 'HCM', name: 'Phường 1' },
+          { id: '2', code: 'HCM', name: 'Phường 3' },
+          { id: '3', code: 'HCM', name: 'Phường 5' },
+          { id: '4', code: 'HCM', name: 'Phường 10' },
         ]);
       } finally {
         setIsLoadingProvinces(false);
@@ -1348,26 +1367,21 @@ export default function StoresListPage() {
           />
 
           {/* 2. Địa bàn */}
-          <Select
-            value={jurisdictionFilter}
-            onValueChange={(val) => {
-              setJurisdictionFilter(val);
-              setCurrentPage(1);
-            }}
-            disabled={isLoadingProvinces}
-          >
-            <SelectTrigger style={{ width: '200px', border: '1px solid #e5e7eb' }}>
-              <SelectValue placeholder={isLoadingProvinces ? 'Đang tải...' : 'Chọn địa bàn'} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả địa bàn</SelectItem>
-              {provinces.map((province) => (
-                <SelectItem key={province.id} value={province.id}>
-                  {province.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div style={{ width: '200px', flexShrink: 0 }}>
+            <SearchableSelect
+              value={jurisdictionFilter}
+              onValueChange={(val) => {
+                setJurisdictionFilter(val || 'all');
+                setCurrentPage(1);
+              }}
+              options={provinceOptions}
+              placeholder={isLoadingProvinces ? 'Đang tải...' : 'Tất cả địa bàn'}
+              searchPlaceholder="Tìm địa bàn..."
+              emptyText="Không có địa bàn"
+              width="200px"
+              disabled={isLoadingProvinces}
+            />
+          </div>
 
           {/* 3. Trạng thái */}
           <Select
@@ -1392,11 +1406,14 @@ export default function StoresListPage() {
 
           {/* 3.1 Loại hình kinh doanh (moved out of advanced filter) */}
           <div style={{ width: '200px', flexShrink: 0 }}>
-            <SearchableSelect
+            <AsyncSearchableSelect
               value={businessTypeFilter}
               onValueChange={(val) => { setBusinessTypeFilter(val || 'all'); setCurrentPage(1); }}
-              options={[{ value: 'all', label: 'Tất cả ngành nghề' }, ...BUSINESS_TYPES.map(bt => ({ value: bt.value, label: bt.label }))]}
+              searchFunction={searchBusinessTypeOptions}
+              staticOptions={[{ value: 'all', label: 'Tất cả ngành nghề' }]}
               placeholder="Chọn loại hình kinh doanh"
+              noResultsText="Không tìm thấy ngành nghề"
+              limit={20}
               width="200px"
             />
           </div>

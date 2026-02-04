@@ -131,7 +131,7 @@ export function generateFakeData(departmentId: string): FakeData {
     contact: {
       phone: `024${Math.floor(3000000 + (seed % 1000000))}`,
       email: `dept${seed % 100}@qltt.hanoi.gov.vn`,
-      address: `Số ${10 + (seed % 90)}, Phố ${['Hàng', 'Lý Thường Kiệt', 'Trần Phú', 'Nguyễn Trãi', 'Lê Duẩn'][seed % 5]}, Quận ${['Hoàn Kiếm', 'Ba Đình', 'Đống Đa', 'Hai Bà Trưng', 'Cầu Giấy'][seed % 5]}, Hà Nội`,
+      address: `Số ${10 + (seed % 90)}, Phố ${['Hàng', 'Lý Thường Kiệt', 'Trần Phú', 'Nguyễn Trãi', 'Lê Duẩn'][seed % 5]}, Phường ${['Hoàn Kiếm', 'Ba Đình', 'Đống Đa', 'Hai Bà Trưng', 'Cầu Giấy'][seed % 5]}, Hà Nội`,
     },
   };
 }

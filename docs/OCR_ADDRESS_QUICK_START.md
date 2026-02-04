@@ -37,11 +37,11 @@ A smart system that automatically parses Vietnamese addresses from OCR documents
 ```
 User uploads Giấy Phép Kinh Doanh
               ↓
-OCR API extracts address: "110A Ngô Quyền, Phường 8, Quận 5, TP.HCM, Việt Nam"
+OCR API extracts address: "110A Ngô Quyền, Phường 8, Phường 5, Hà Nội, Việt Nam"
               ↓
 Auto-mapper detects new address in registeredAddress field
               ↓
-Parser breaks down into: street="110A Ngô Quyền", ward="Phường 8", province="TP.HCM"
+Parser breaks down into: street="110A Ngô Quyền", ward="Phường 8", province="Hà Nội"
               ↓
 Matcher searches database for province/ward by name
               ↓
@@ -87,7 +87,7 @@ __addressParserTests.runAllTests()
 
 // Test specific address
 const parsed = __addressParserTests.parseVietnameseAddress(
-  "110A Ngô Quyền, Phường 8, Quận 5, TP.HCM, Việt Nam"
+  "110A Ngô Quyền, Phường 8, Phường 5, Hà Nội, Việt Nam"
 )
 console.log(parsed)
 
@@ -101,7 +101,7 @@ console.log(result)
 
 // Test name matching
 __addressParserTests.namesMatch("Phường 08", "Phường 8")  // → true
-__addressParserTests.namesMatch("TP.HCM", "Hồ Chí Minh")  // → true
+__addressParserTests.namesMatch("Hà Nội", "Hồ Chí Minh")  // → true
 ```
 
 ## Configuration Points

@@ -60,10 +60,10 @@ export default function AlertFeed() {
       type: 'critical',
       category: 'lead',
       title: 'Lead mới từ hotline - Vi phạm nghiêm trọng',
-      description: 'Phát hiện cửa hàng bán hàng giả quy mô lớn tại 123 Nguyễn Huệ, Quận 1',
+      description: 'Phát hiện cửa hàng bán hàng giả quy mô lớn tại 123 Nguyễn Huệ, Phường 1',
       location: {
         address: '123 Nguyễn Huệ',
-        district: 'Quận 1',
+        district: 'Phường 1',
         coordinates: { lat: 10.7769, lng: 106.7009 },
       },
       timestamp: '2025-01-09T08:30:00',
@@ -79,10 +79,10 @@ export default function AlertFeed() {
       type: 'high',
       category: 'risk',
       title: 'Điểm rủi ro tăng đột biến',
-      description: 'Khu vực Quận 1 - Nguyễn Huệ có điểm rủi ro tăng từ 65 lên 85 trong 7 ngày',
+      description: 'Khu vực Phường 1 - Nguyễn Huệ có điểm rủi ro tăng từ 65 lên 85 trong 7 ngày',
       location: {
         address: 'Khu vực Nguyễn Huệ',
-        district: 'Quận 1',
+        district: 'Phường 1',
         coordinates: { lat: 10.7769, lng: 106.7009 },
       },
       timestamp: '2025-01-09T07:15:00',
@@ -103,7 +103,7 @@ export default function AlertFeed() {
       description: 'Cửa hàng ABC đã có 5 vi phạm trong 30 ngày (ngưỡng: 3)',
       location: {
         address: '123 Nguyễn Huệ',
-        district: 'Quận 1',
+        district: 'Phường 1',
       },
       timestamp: '2025-01-08T16:20:00',
       isAcknowledged: true,
@@ -120,10 +120,10 @@ export default function AlertFeed() {
       type: 'high',
       category: 'anomaly',
       title: 'Phát hiện bất thường - Tăng đột biến khiếu nại',
-      description: 'Số lượng khiếu nại tại Quận 3 tăng 300% so với tuần trước',
+      description: 'Số lượng khiếu nại tại Phường 3 tăng 300% so với tuần trước',
       location: {
-        address: 'Toàn Quận 3',
-        district: 'Quận 3',
+        address: 'Toàn Phường 3',
+        district: 'Phường 3',
       },
       timestamp: '2025-01-08T14:00:00',
       isAcknowledged: false,
@@ -138,10 +138,10 @@ export default function AlertFeed() {
       type: 'medium',
       category: 'lead',
       title: 'Lead từ Mobile App - Yêu cầu kiểm tra',
-      description: 'Khách hàng phản ánh cửa hàng bán hàng không tem tại Quận 5',
+      description: 'Khách hàng phản ánh cửa hàng bán hàng không tem tại Phường 5',
       location: {
         address: '456 Trần Hưng Đạo',
-        district: 'Quận 5',
+        district: 'Phường 5',
       },
       timestamp: '2025-01-08T10:30:00',
       isAcknowledged: true,
@@ -161,7 +161,7 @@ export default function AlertFeed() {
       description: 'Hệ thống đã đồng bộ thành công 150 lead mới từ các nguồn',
       location: {
         address: 'Toàn thành phố',
-        district: 'TP.HCM',
+        district: 'Hà Nội',
       },
       timestamp: '2025-01-08T09:00:00',
       isAcknowledged: true,
@@ -175,7 +175,7 @@ export default function AlertFeed() {
     },
   ];
 
-  const districts = ['Quận 1', 'Quận 3', 'Quận 5', 'Quận 7', 'Quận 10'];
+  const districts = ['Phường 1', 'Phường 3', 'Phường 5', 'Phường 7', 'Phường 10'];
 
   // Filter alerts
   const filteredAlerts = alerts.filter((alert) => {
