@@ -746,7 +746,7 @@ export function PlansList() {
           }
           searchInput={
             <SearchInput
-              placeholder="Tìm theo mã hoặc tên kế hoạch"
+              placeholder="Mã, tiêu đề kế hoạch"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
               style={{ width: '400px' }}

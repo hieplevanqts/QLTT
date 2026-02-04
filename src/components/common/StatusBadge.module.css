@@ -65,8 +65,8 @@
 }
 
 .cancelled {
-  background: rgba(102, 112, 133, 0.15);
-  color: rgba(71, 85, 105, 1);
+  background: rgba(220, 38, 38, 0.1);
+  color: rgba(220, 38, 38, 1);
 }
 
 /* Inspection Round Specific Statuses */
