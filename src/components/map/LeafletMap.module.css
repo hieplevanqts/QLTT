@@ -293,6 +293,13 @@
   transform: scale(0.95);
 }
 
+:global(.bien-dao-overlay),
+:global(.bien-dao-overlay) {
+  -webkit-mask-image: radial-gradient(closest-side, #000 75%, transparent 100%);
+  mask-image: radial-gradient(closest-side, #000 75%, transparent 100%);
+  filter: blur(0.8px);
+}
+
 @media (max-width: 768px) {
   .fullscreenButton {
     bottom: 10px;

@@ -329,6 +329,8 @@ export const MerchantsLayer: React.FC<MerchantsLayerProps> = ({
           onPointClick(restaurant);
         });
       }
+     
+
 
       markersRef.current.push(marker);
 

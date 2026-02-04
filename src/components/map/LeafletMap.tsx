@@ -14,6 +14,7 @@ import { transformDepartmentAreasToMapData, calculateAverageCenter, getValidCent
 import { useAppSelector } from '@/hooks/useAppStore';
 // Import layers
 import { DepartmentMarkersLayer } from './layers/DepartmentMarkersLayer';
+import bienDaoImg from '@/assets/images/hoang-sa.png';
 
 type CategoryFilter = {
   [key: string]: boolean;  // Dynamic keys from point_status table
@@ -56,12 +57,12 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
   const previousShowMerchantsRef = useRef<boolean>(false); // Track previous showMerchants state
   const previousSelectedProvinceRef = useRef<string | undefined>(undefined); // Track previous selected province
   const previousSelectedWardRef = useRef<string | undefined>(undefined); // Track previous selected ward
-  
+
   // 🔥 Get divisionId and teamId from Redux store for department areas
   const reduxQLTTScope = useAppSelector((state) => state.qlttScope);
   const divisionId = reduxQLTTScope?.scope?.divisionId;
   const teamId = reduxQLTTScope?.scope?.teamId;
-  
+
   // 🔥 Fetch department areas from API (priority: selectedTeamId > teamId > divisionId)
   // 🔥 FIX: Always fetch when we have divisionId/teamId, not just when showWardBoundaries is true
   // This ensures data is available when user switches to officers layer
@@ -71,7 +72,7 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
     targetDepartmentId || null,
     true // Always enabled - fetch data whenever we have a department ID or when no divisionId (to fetch all)
   );
-  
+
   // 🔥 Transform department areas data to map-friendly format
   const departmentMapData = useMemo(() => {
     // 🔥 NEW: Allow rendering even when no targetDepartmentId (if we fetched all departments)
@@ -79,22 +80,22 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
     if (isLoadingDepartmentAreas && !departmentAreas) {
       return null;
     }
-    
+
     if (isLoadingDepartmentAreas) {
       return null;
     }
-    
+
     if (departmentAreasError) {
       return null;
     }
-    
+
     if (!departmentAreas) {
       return null;
     }
-    
+
     // 🔥 NEW: Extract departments info from data if available
     const departments = (departmentAreas as any)?.departments || null;
-    
+
     const transformed = transformDepartmentAreasToMapData(departmentAreas, targetDepartmentId || 'all', departments);
     return transformed;
   }, [departmentAreas, targetDepartmentId, currentDepartmentId, isLoadingDepartmentAreas, departmentAreasError]);
@@ -105,11 +106,11 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
   // MapPage handles ALL filtering (status, business type, location, search)
   // LeafletMap just renders the markers for whatever restaurants it receives
   const filteredRestaurants = useMemo(() => {
-    
+
     if (!restaurants || restaurants.length === 0) {
       return [];
     }
-    
+
     // Just return what we received - filtering is done in MapPage
     return restaurants;
   }, [restaurants]);
@@ -150,7 +151,7 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       // Department markers should ONLY appear when showWardBoundaries = true AND showMerchants = false
       return;
     }
-    
+
     // 🔥 FIX: Only render merchant markers when showMerchants is true
     // This ensures department markers don't appear on merchants layer
     if (!showMerchants) {
@@ -161,14 +162,14 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       }
       return; // Exit early - don't render restaurant markers
     }
-    
+
     // 🔥 FIX: When switching to merchant layer, remove department markers first
     if (showMerchants && !showWardBoundaries) {
       departmentMarkersRef.current.forEach(marker => marker.remove());
       departmentMarkersRef.current = [];
     }
-    
-   
+
+
     // Add new markers
     // 🔥 FIX: Only filter out NaN, null, undefined - allow 0,0 coordinates
     let validCount = 0;
@@ -182,10 +183,10 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
         return;
       }
       validCount++;
-      
+
       // Generate marker icon HTML using utility function
       const iconHtml = generateMarkerIconHtml(restaurant, markerSize, iconSize);
-      
+
       const customIcon = L.divIcon({
         html: iconHtml,
         className: hasAlertStyling(restaurant) ? 'custom-marker-icon has-citizen-reports' : 'custom-marker-icon',
@@ -202,7 +203,7 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
         });
 
       markersRef.current.push(marker);
-      
+
       // Store reference if this is the selected restaurant
       if (selectedRestaurant && restaurant.id === selectedRestaurant.id) {
         selectedMarkerRef.current = marker;
@@ -219,16 +220,16 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
   const handleAutoZoom = useCallback(() => {
     if (!mapInstanceRef.current || !leafletRef.current) return;
     if (userInteractedRef.current) return; // Don't auto-zoom if user has manually interacted
-    
+
     const L = leafletRef.current;
-    
+
     // Check if search query changed
     const searchQueryChanged = previousSearchQueryRef.current !== searchQuery;
-    
+
     // Check if selected restaurant changed
     const selectedRestaurantId = selectedRestaurant?.id || null;
     const selectedRestaurantChanged = previousSelectedRestaurantIdRef.current !== selectedRestaurantId;
-    
+
     // Handle selected restaurant (from autocomplete)
     if (selectedRestaurantChanged && selectedRestaurant && selectedMarkerRef.current) {
       // Zoom to selected restaurant
@@ -237,27 +238,27 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
         16,
         { animate: true, duration: 0.6 }
       );
-      
+
       // Open popup after a short delay
       setTimeout(() => {
         if (selectedMarkerRef.current) {
           selectedMarkerRef.current.openPopup();
         }
       }, 700);
-      
+
       previousSelectedRestaurantIdRef.current = selectedRestaurantId;
       // Reset user interaction flag when programmatic zoom happens
       userInteractedRef.current = false;
       return;
     }
-    
+
     // Handle search query change
     if (searchQueryChanged) {
       if (searchQuery.trim() && filteredRestaurants.length > 0) {
         if (filteredRestaurants.length === 1) {
           // Zoom to single marker
           mapInstanceRef.current.setView(
-            [filteredRestaurants[0].lat, filteredRestaurants[0].lng], 
+            [filteredRestaurants[0].lat, filteredRestaurants[0].lng],
             15,
             { animate: true, duration: 0.5 }
           );
@@ -266,7 +267,7 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
           const bounds = L.latLngBounds(
             filteredRestaurants.map(r => [r.lat, r.lng] as [number, number])
           );
-          mapInstanceRef.current.fitBounds(bounds, { 
+          mapInstanceRef.current.fitBounds(bounds, {
             padding: [50, 50],
             animate: true,
             duration: 0.5
@@ -275,12 +276,12 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       } else if (previousSearchQueryRef.current && !searchQuery.trim()) {
         // User cleared the search - reset to default view
         mapInstanceRef.current.setView(
-          [21.0285, 105.8542], 
+          [21.0285, 105.8542],
           12,
           { animate: true, duration: 0.5 }
         );
       }
-      
+
       previousSearchQueryRef.current = searchQuery;
       // Reset user interaction flag when search changes
       userInteractedRef.current = false;
@@ -308,7 +309,7 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       // Double-check after async import
       if (mapInstanceRef.current) return;
       if ((mapRef.current as any)?._leaflet_id) return;
-      
+
       // 🔥 CRITICAL: Check if mapRef still exists after async import
       if (!mapRef.current) {
         return;
@@ -327,13 +328,41 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
 
       // Create map instance
       const map = L.map(mapRef.current!).setView([21.0285, 105.8542], 15);
-      
+
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        // attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(map);
 
+
+      // Hoang Sa
+
+      const bounds: [[number, number], [number, number]] = [
+        [15.8, 111.2],
+        [17.2, 112.8],
+      ];
+
+      L.imageOverlay(
+        bienDaoImg,
+        bounds,
+        { opacity: 0.85, className: 'bien-dao-overlay' }
+      ).addTo(map);
+      // map.fitBounds(bounds);
+
+
+      // Quần đảo Trường Sa (Spratly Islands) – bounds xấp xỉ
+      const truongSaBounds: [[number, number], [number, number]] = [
+        [10.0, 113.0], // góc trên trái
+        [8.0, 115.0],  // góc dưới phải
+      ];
+
+      L.imageOverlay(
+        bienDaoImg,
+        truongSaBounds,
+        { opacity: 0.85, className: 'bien-dao-overlay' }
+      ).addTo(map);
+
       mapInstanceRef.current = map;
-      
+
       // Listen to user interactions (manual zoom/pan)
       map.on('zoomstart', (e: any) => {
         // Check if zoom was triggered by user (not programmatic)
@@ -341,19 +370,19 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
           userInteractedRef.current = true;
         }
       });
-      
+
       map.on('movestart', (e: any) => {
         // Check if move was triggered by user (not programmatic)
         if (!e.sourceTarget._animatingZoom) {
           userInteractedRef.current = true;
         }
       });
-      
+
       map.on('dragstart', () => {
         // User is dragging the map
         userInteractedRef.current = true;
       });
-      
+
       // Listen to zoom events to rescale markers
       map.on('zoomend', () => {
         const newZoom = map.getZoom();
@@ -367,7 +396,7 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
         } else {
         }
       });
-      
+
       // Wait for map to be fully loaded, then add markers
       map.whenReady(() => {
         // Small delay to ensure everything is ready
@@ -410,13 +439,13 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
   useEffect(() => {
     if (!mapInstanceRef.current || !leafletRef.current || !showWardBoundaries) return;
     if (!departmentMapData || departmentMapData.areas.length === 0) return;
-    
+
     const validCenters = getValidCenters(departmentMapData);
     if (validCenters.length === 0) return;
-    
+
     const departmentCenter = calculateAverageCenter(validCenters);
     if (!departmentCenter) return;
-    
+
     // Zoom to department center
     setTimeout(() => {
       if (mapInstanceRef.current) {
@@ -431,26 +460,26 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
   // Handle district boundary highlighting and zoom
   useEffect(() => {
     if (!mapInstanceRef.current || !leafletRef.current) return;
-    
+
     const L = leafletRef.current;
-    
-    
+
+
     // 🔥 FIX: Reset user interaction flag when location selection changes
     // This ensures auto-zoom works even after user has manually interacted with map
     userInteractedRef.current = false;
-    
+
     // Remove old boundary layer if exists
     if (boundaryHighlightRef.current) {
       mapInstanceRef.current.removeLayer(boundaryHighlightRef.current);
       boundaryHighlightRef.current = null;
     }
-    
+
     // Priority: Ward > District > Province
     // CASE 1: Ward is selected - show ward boundary
     if (selectedWard && selectedWard.trim()) {
       const wardBoundary = getWardByName(selectedWard);
-      
-      
+
+
       if (wardBoundary) {
         // Create polygon as non-interactive filled region (vùng tô màu, không bắt chuột)
         const polygon = L.polygon(wardBoundary.polygon, {
@@ -462,11 +491,11 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
           smoothFactor: 1.0,
           interactive: false, // 🔥 Disable all mouse events - polygon won't capture pointer
         }).addTo(mapInstanceRef.current);
-        
+
         // 🔥 REMOVED: tooltip - polygon is now non-interactive
-        
+
         boundaryHighlightRef.current = polygon;
-        
+
         // Zoom to ward boundary only if ward changed
         const wardChanged = previousWardRef.current !== selectedWard;
         if (wardChanged && !userInteractedRef.current) {
@@ -477,25 +506,25 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
             duration: 0.8,
             maxZoom: 16 // Closer zoom for ward level
           });
-          
+
           previousWardRef.current = selectedWard;
           previousDistrictRef.current = selectedDistrict || '';
-          
+
         }
         return; // Don't process district if ward is selected
       } else {
-        
+
         // 🔥 FALLBACK: If ward has no boundary data, show district boundary instead
         // (Only 31/168 wards have polygon data currently)
         // Will continue to CASE 2 below to handle district boundary + zoom
       }
     }
-    
+
     // CASE 2: District is selected - show district boundary
     // Also handles ward selections that don't have boundary data (fallback)
     if (selectedDistrict && districtBoundaries[selectedDistrict]) {
       const boundary = districtBoundaries[selectedDistrict];
-      
+
       // Create polygon as filled region without border (vùng tô màu)
       const polygon = L.polygon(boundary.polygon, {
         color: '#005cb6', // Border color (will be transparent)
@@ -506,16 +535,16 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
         smoothFactor: 1.0,
         interactive: false, // 🔥 Disable all mouse events - polygon won't capture pointer
       }).addTo(mapInstanceRef.current);
-      
+
       // 🔥 REMOVED: tooltip - polygon is now non-interactive
-      
+
       boundaryHighlightRef.current = polygon;
-      
+
       // 🔥 UPDATED: Zoom logic for both district-only selection AND ward fallback
       const districtChanged = previousDistrictRef.current !== selectedDistrict;
       const wardChanged = previousWardRef.current !== selectedWard;
-      
-      
+
+
       // Check if we should zoom
       if (!userInteractedRef.current) {
         if (selectedWard) {
@@ -543,7 +572,7 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
         }
       } else {
       }
-      
+
       // Update previous refs AFTER zoom decision
       previousDistrictRef.current = selectedDistrict;
       previousWardRef.current = selectedWard || '';
@@ -553,22 +582,22 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
   // 🔥 NEW: Handle zoom to Hà Nội when merchants layer is activated
   useEffect(() => {
     if (!mapInstanceRef.current || !leafletRef.current) return;
-    
+
     // Check if showMerchants changed from false to true
     if (showMerchants && !previousShowMerchantsRef.current) {
-      
+
       // Hà Nội coordinates: 21.0285, 105.8542
       // Zoom level 15 for a closer view of Hà Nội
       mapInstanceRef.current.setView(
-        [21.0285, 105.8542], 
+        [21.0285, 105.8542],
         15,
         { animate: true, duration: 0.8 }
       );
-      
+
       // Reset user interaction flag to allow auto-zoom
       userInteractedRef.current = false;
     }
-    
+
     // Update previous state
     previousShowMerchantsRef.current = showMerchants;
   }, [showMerchants]);
@@ -580,184 +609,184 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
       if (!mapInstanceRef.current || !leafletRef.current) {
         return;
       }
-      
+
       // Check if province or ward changed
       const provinceChanged = selectedProvince !== previousSelectedProvinceRef.current;
       const wardChanged = selectedWard !== previousSelectedWardRef.current;
-      
+
       if (!provinceChanged && !wardChanged) {
         return;
       }
-      
-    // Priority: ward > province
-    // 🔥 NOTE: ward_coordinates API is called for map zooming (getting boundaries), NOT for filtering merchants
-    // Merchants are already filtered by ward_id in fetchMerchants API
-    // We can optimize by using merchants' coordinates first, only call API if needed for accurate boundaries
-    if (selectedWard && wardChanged) {
-      // 🔥 OPTIMIZATION: Try using merchants' coordinates first (if available) before calling API
-      const merchantsToUse = restaurants.length > 0 ? restaurants : filteredRestaurants;
-      const validMerchants = merchantsToUse.filter(m => m.lat && m.lng && m.lat !== 0 && m.lng !== 0);
-      
-      if (validMerchants.length > 0) {
-        // Use merchants' coordinates directly (skip API call)
-        const avgLat = validMerchants.reduce((sum, m) => sum + (m.lat || 0), 0) / validMerchants.length;
-        const avgLng = validMerchants.reduce((sum, m) => sum + (m.lng || 0), 0) / validMerchants.length;
-        const center: [number, number] = [avgLat, avgLng];
-        
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.setView(center, 15, {
-            animate: true,
-            duration: 0.8
-          });
-        }
-        return; // Skip API call
-      }
-      
-      // Only call API if we don't have merchants (for accurate boundaries)
-      fetchWardCoordinates(selectedWard).then((coords) => {
-        let center: [number, number] | null = null;
-        let bounds: any = null;
-        
-        // Try to get coordinates from database first
-        if (coords && coords.center_lat && coords.center_lng) {
-          center = [coords.center_lat, coords.center_lng];
-          if (coords.bounds && Array.isArray(coords.bounds) && coords.bounds.length === 2) {
-            const [[south, west], [north, east]] = coords.bounds;
-            bounds = leafletRef.current.latLngBounds([south, west], [north, east]);
-          }
-        } else {
-          // Fallback: Calculate center from merchants that are already filtered by ward_id
-          // Use restaurants prop directly as it's already filtered by MapPage
-          const merchantsToUse = restaurants.length > 0 ? restaurants : filteredRestaurants;
-          
-          if (merchantsToUse.length > 0) {
-            const validMerchants = merchantsToUse.filter(m => m.lat && m.lng && m.lat !== 0 && m.lng !== 0);
-            
-            if (validMerchants.length > 0) {
-              const avgLat = validMerchants.reduce((sum, m) => sum + (m.lat || 0), 0) / validMerchants.length;
-              const avgLng = validMerchants.reduce((sum, m) => sum + (m.lng || 0), 0) / validMerchants.length;
-              center = [avgLat, avgLng];
-            }
-          }
-        }
-        
-        if (center && mapInstanceRef.current) {
-          if (bounds) {
-            mapInstanceRef.current.fitBounds(bounds, {
-              padding: [50, 50],
-              animate: true,
-              duration: 0.8
-            });
-          } else {
+
+      // Priority: ward > province
+      // 🔥 NOTE: ward_coordinates API is called for map zooming (getting boundaries), NOT for filtering merchants
+      // Merchants are already filtered by ward_id in fetchMerchants API
+      // We can optimize by using merchants' coordinates first, only call API if needed for accurate boundaries
+      if (selectedWard && wardChanged) {
+        // 🔥 OPTIMIZATION: Try using merchants' coordinates first (if available) before calling API
+        const merchantsToUse = restaurants.length > 0 ? restaurants : filteredRestaurants;
+        const validMerchants = merchantsToUse.filter(m => m.lat && m.lng && m.lat !== 0 && m.lng !== 0);
+
+        if (validMerchants.length > 0) {
+          // Use merchants' coordinates directly (skip API call)
+          const avgLat = validMerchants.reduce((sum, m) => sum + (m.lat || 0), 0) / validMerchants.length;
+          const avgLng = validMerchants.reduce((sum, m) => sum + (m.lng || 0), 0) / validMerchants.length;
+          const center: [number, number] = [avgLat, avgLng];
+
+          if (mapInstanceRef.current) {
             mapInstanceRef.current.setView(center, 15, {
               animate: true,
               duration: 0.8
             });
           }
+          return; // Skip API call
         }
-      }).catch((error) => {
-        // Fallback: use merchants that are already filtered by ward_id
-        const merchantsToUse = restaurants.length > 0 ? restaurants : filteredRestaurants;
-        if (merchantsToUse.length > 0 && mapInstanceRef.current) {
-          const validMerchants = merchantsToUse.filter(m => m.lat && m.lng && m.lat !== 0 && m.lng !== 0);
-          if (validMerchants.length > 0) {
-            const avgLat = validMerchants.reduce((sum, m) => sum + (m.lat || 0), 0) / validMerchants.length;
-            const avgLng = validMerchants.reduce((sum, m) => sum + (m.lng || 0), 0) / validMerchants.length;
-            mapInstanceRef.current.setView([avgLat, avgLng], 15, {
-              animate: true,
-              duration: 0.8
-            });
+
+        // Only call API if we don't have merchants (for accurate boundaries)
+        fetchWardCoordinates(selectedWard).then((coords) => {
+          let center: [number, number] | null = null;
+          let bounds: any = null;
+
+          // Try to get coordinates from database first
+          if (coords && coords.center_lat && coords.center_lng) {
+            center = [coords.center_lat, coords.center_lng];
+            if (coords.bounds && Array.isArray(coords.bounds) && coords.bounds.length === 2) {
+              const [[south, west], [north, east]] = coords.bounds;
+              bounds = leafletRef.current.latLngBounds([south, west], [north, east]);
+            }
+          } else {
+            // Fallback: Calculate center from merchants that are already filtered by ward_id
+            // Use restaurants prop directly as it's already filtered by MapPage
+            const merchantsToUse = restaurants.length > 0 ? restaurants : filteredRestaurants;
+
+            if (merchantsToUse.length > 0) {
+              const validMerchants = merchantsToUse.filter(m => m.lat && m.lng && m.lat !== 0 && m.lng !== 0);
+
+              if (validMerchants.length > 0) {
+                const avgLat = validMerchants.reduce((sum, m) => sum + (m.lat || 0), 0) / validMerchants.length;
+                const avgLng = validMerchants.reduce((sum, m) => sum + (m.lng || 0), 0) / validMerchants.length;
+                center = [avgLat, avgLng];
+              }
+            }
           }
-        }
-      });
-    } else if (selectedProvince && provinceChanged && !selectedWard) {
-      // 🔥 NOTE: province_coordinates API is called for map zooming (getting boundaries), NOT for filtering merchants
-      // Merchants are already filtered by province_id in fetchMerchants API
-      // We can optimize by using merchants' coordinates first, only call API if needed for accurate boundaries
-      
-      // 🔥 OPTIMIZATION: Try using merchants' coordinates first (if available) before calling API
-      const merchantsToUse = restaurants.length > 0 ? restaurants : filteredRestaurants;
-      const validMerchants = merchantsToUse.filter(m => m.lat && m.lng && m.lat !== 0 && m.lng !== 0);
-      
-      if (validMerchants.length > 0) {
-        // Use merchants' coordinates directly (skip API call)
-        const avgLat = validMerchants.reduce((sum, m) => sum + (m.lat || 0), 0) / validMerchants.length;
-        const avgLng = validMerchants.reduce((sum, m) => sum + (m.lng || 0), 0) / validMerchants.length;
-        const center: [number, number] = [avgLat, avgLng];
-        
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.setView(center, 12, {
-            animate: true,
-            duration: 0.8
-          });
-        }
-        return; // Skip API call
-      }
-      
-      // Only call API if we don't have merchants (for accurate boundaries)
-      fetchProvinceCoordinates(selectedProvince).then((coords) => {
-        let center: [number, number] | null = null;
-        let bounds: any = null;
-        
-        // Try to get coordinates from database first
-        if (coords && coords.center_lat && coords.center_lng) {
-          center = [coords.center_lat, coords.center_lng];
-          if (coords.bounds && Array.isArray(coords.bounds) && coords.bounds.length === 2) {
-            const [[south, west], [north, east]] = coords.bounds;
-            bounds = leafletRef.current.latLngBounds([south, west], [north, east]);
+
+          if (center && mapInstanceRef.current) {
+            if (bounds) {
+              mapInstanceRef.current.fitBounds(bounds, {
+                padding: [50, 50],
+                animate: true,
+                duration: 0.8
+              });
+            } else {
+              mapInstanceRef.current.setView(center, 15, {
+                animate: true,
+                duration: 0.8
+              });
+            }
           }
-        } else {
-          // Fallback: Calculate center from merchants that are already filtered by province_id
-          // Use restaurants prop directly as it's already filtered by MapPage
+        }).catch((error) => {
+          // Fallback: use merchants that are already filtered by ward_id
           const merchantsToUse = restaurants.length > 0 ? restaurants : filteredRestaurants;
-          
-          if (merchantsToUse.length > 0) {
+          if (merchantsToUse.length > 0 && mapInstanceRef.current) {
             const validMerchants = merchantsToUse.filter(m => m.lat && m.lng && m.lat !== 0 && m.lng !== 0);
-            
             if (validMerchants.length > 0) {
               const avgLat = validMerchants.reduce((sum, m) => sum + (m.lat || 0), 0) / validMerchants.length;
               const avgLng = validMerchants.reduce((sum, m) => sum + (m.lng || 0), 0) / validMerchants.length;
-              center = [avgLat, avgLng];
+              mapInstanceRef.current.setView([avgLat, avgLng], 15, {
+                animate: true,
+                duration: 0.8
+              });
             }
           }
-        }
-        
-        if (center && mapInstanceRef.current) {
-          if (bounds) {
-            mapInstanceRef.current.fitBounds(bounds, {
-              padding: [50, 50],
-              animate: true,
-              duration: 0.8
-            });
-          } else {
-            mapInstanceRef.current.setView(center, 11, {
-              animate: true,
-              duration: 0.8
-            });
-          }
-        }
-      }).catch((error) => {
-        // Fallback: use merchants that are already filtered by province_id
+        });
+      } else if (selectedProvince && provinceChanged && !selectedWard) {
+        // 🔥 NOTE: province_coordinates API is called for map zooming (getting boundaries), NOT for filtering merchants
+        // Merchants are already filtered by province_id in fetchMerchants API
+        // We can optimize by using merchants' coordinates first, only call API if needed for accurate boundaries
+
+        // 🔥 OPTIMIZATION: Try using merchants' coordinates first (if available) before calling API
         const merchantsToUse = restaurants.length > 0 ? restaurants : filteredRestaurants;
-        if (merchantsToUse.length > 0 && mapInstanceRef.current) {
-          const validMerchants = merchantsToUse.filter(m => m.lat && m.lng && m.lat !== 0 && m.lng !== 0);
-          if (validMerchants.length > 0) {
-            const avgLat = validMerchants.reduce((sum, m) => sum + (m.lat || 0), 0) / validMerchants.length;
-            const avgLng = validMerchants.reduce((sum, m) => sum + (m.lng || 0), 0) / validMerchants.length;
-            mapInstanceRef.current.setView([avgLat, avgLng], 11, {
+        const validMerchants = merchantsToUse.filter(m => m.lat && m.lng && m.lat !== 0 && m.lng !== 0);
+
+        if (validMerchants.length > 0) {
+          // Use merchants' coordinates directly (skip API call)
+          const avgLat = validMerchants.reduce((sum, m) => sum + (m.lat || 0), 0) / validMerchants.length;
+          const avgLng = validMerchants.reduce((sum, m) => sum + (m.lng || 0), 0) / validMerchants.length;
+          const center: [number, number] = [avgLat, avgLng];
+
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.setView(center, 12, {
               animate: true,
               duration: 0.8
             });
           }
+          return; // Skip API call
         }
-      });
+
+        // Only call API if we don't have merchants (for accurate boundaries)
+        fetchProvinceCoordinates(selectedProvince).then((coords) => {
+          let center: [number, number] | null = null;
+          let bounds: any = null;
+
+          // Try to get coordinates from database first
+          if (coords && coords.center_lat && coords.center_lng) {
+            center = [coords.center_lat, coords.center_lng];
+            if (coords.bounds && Array.isArray(coords.bounds) && coords.bounds.length === 2) {
+              const [[south, west], [north, east]] = coords.bounds;
+              bounds = leafletRef.current.latLngBounds([south, west], [north, east]);
+            }
+          } else {
+            // Fallback: Calculate center from merchants that are already filtered by province_id
+            // Use restaurants prop directly as it's already filtered by MapPage
+            const merchantsToUse = restaurants.length > 0 ? restaurants : filteredRestaurants;
+
+            if (merchantsToUse.length > 0) {
+              const validMerchants = merchantsToUse.filter(m => m.lat && m.lng && m.lat !== 0 && m.lng !== 0);
+
+              if (validMerchants.length > 0) {
+                const avgLat = validMerchants.reduce((sum, m) => sum + (m.lat || 0), 0) / validMerchants.length;
+                const avgLng = validMerchants.reduce((sum, m) => sum + (m.lng || 0), 0) / validMerchants.length;
+                center = [avgLat, avgLng];
+              }
+            }
+          }
+
+          if (center && mapInstanceRef.current) {
+            if (bounds) {
+              mapInstanceRef.current.fitBounds(bounds, {
+                padding: [50, 50],
+                animate: true,
+                duration: 0.8
+              });
+            } else {
+              mapInstanceRef.current.setView(center, 11, {
+                animate: true,
+                duration: 0.8
+              });
+            }
+          }
+        }).catch((error) => {
+          // Fallback: use merchants that are already filtered by province_id
+          const merchantsToUse = restaurants.length > 0 ? restaurants : filteredRestaurants;
+          if (merchantsToUse.length > 0 && mapInstanceRef.current) {
+            const validMerchants = merchantsToUse.filter(m => m.lat && m.lng && m.lat !== 0 && m.lng !== 0);
+            if (validMerchants.length > 0) {
+              const avgLat = validMerchants.reduce((sum, m) => sum + (m.lat || 0), 0) / validMerchants.length;
+              const avgLng = validMerchants.reduce((sum, m) => sum + (m.lng || 0), 0) / validMerchants.length;
+              mapInstanceRef.current.setView([avgLat, avgLng], 11, {
+                animate: true,
+                duration: 0.8
+              });
+            }
+          }
+        });
       }
-      
+
       // Update previous refs
       previousSelectedProvinceRef.current = selectedProvince;
       previousSelectedWardRef.current = selectedWard;
     }, 300); // Small delay to ensure map is ready
-    
+
     return () => clearTimeout(timeoutId);
   }, [selectedProvince, selectedWard, restaurants.length, filteredRestaurants.length]); // Add restaurants.length to trigger when merchants are loaded
 
@@ -777,7 +806,7 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
         />
       )}
       {onFullscreenClick && (
-        <button 
+        <button
           onClick={onFullscreenClick}
           className={styles.fullscreenButton}
           aria-label="Fullscreen"
