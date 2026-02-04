@@ -21,6 +21,7 @@ import axios from 'axios';
  * @param businessTypeFiltersArray
  * @returns Array of merchants mapped to Restaurant interface (already filtered)
  */
+
 export async function fetchMerchants(
   statusCodes?: string[],
   businessTypes?: string[],
@@ -30,29 +31,29 @@ export async function fetchMerchants(
   targetDepartmentPath?: string,
   businessTypeFiltersArray?: string[],
   searchQuery?: any,
-): Promise<Restaurant[]> {
-console.log('targetDepartmentPath', targetDepartmentPath);
-if(targetDepartmentPath === undefined || targetDepartmentPath === null || targetDepartmentPath === '' || targetDepartmentPath === 'undefined' || targetDepartmentPath === 'null' || targetDepartmentPath === ' ' ){
-  return [];
-}
-try {
+): Promise<Restaurant[] | null> { 
+  if (!targetDepartmentPath || targetDepartmentPath.trim() === '') {
+    console.log('⏳ Skip fetchMerchants: targetDepartmentPath not ready');
+    return null; 
+  }
+  try {
     const baseUrl = `${SUPABASE_REST_URL}/merchant_filter_view`;
     const params = new URLSearchParams();
-    params.append('select', '_id,business_name,address,business_type,latitude,longitude,status,category_ids,tax_code');
-    params.append('limit', searchQuery?.limit ? String(searchQuery?.limit) : '100');
+    params.append(
+      'select',
+      '_id,business_name,address,business_type,latitude,longitude,status,category_ids,tax_code'
+    );
+    params.append('limit', searchQuery?.limit ? String(searchQuery.limit) : '100');
     params.append('order', '_id.desc');
-    const pathFilter = targetDepartmentPath ? `${targetDepartmentPath}*` : 'QT*';
+    const pathFilter = `${targetDepartmentPath}*`;
     params.append('department_path', `like.${pathFilter}`);
-    
-    if (departmentIds && departmentIds.length > 0) {
-       params.append('department_id', `in.(${departmentIds.join(',')})`);
-    }
-
-    if (statusCodes && statusCodes.length > 0) {
+    // if (departmentIds?.length) {
+    //   params.append('department_id', `in.(${departmentIds.join(',')})`);
+    // }
+    if (statusCodes?.length) {
       params.append('status', `in.(${statusCodes.join(',')})`);
     }
-
-    if (businessTypes && businessTypes.length > 0) {
+    if (businessTypes?.length) {
       params.append('category_ids', `cs.{${businessTypes.join(',')}}`);
     }
     const finalUrl = `${baseUrl}?${params.toString()}`;
@@ -60,6 +61,7 @@ try {
       headers: getHeaders()
     });
     const data = response.data;
+    if (!Array.isArray(data)) return [];
     return data.map((m: any) => ({
       id: m._id,
       name: m.business_name,
@@ -68,19 +70,17 @@ try {
       lat: m.latitude,
       lng: m.longitude,
       category: mapMerchantStatusToCategory(m.status),
-      merchant_staff: m.merchant_staff, 
-      merchant_law_docs: m.merchant_law_docs, 
+      merchant_staff: m.merchant_staff,
+      merchant_law_docs: m.merchant_law_docs,
       status: m.status,
       taxCode: m.tax_code
     }));
 
   } catch (error) {
-    console.error('Error in fetchMerchantsMinimal:', error);
     throw error;
   }
-
-
 }
+
 
 /**
  * Map merchant status to category for color coding

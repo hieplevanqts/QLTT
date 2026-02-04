@@ -448,80 +448,6 @@ export default function MapPage() {
       return; // Skip if filters haven't changed and we've already fetched
     }
 
-    // async function loadMerchants() {
-    //   if (!hasFetchedMerchantsRef.current) {
-    //     setIsLoadingData(true);
-    //   }
-    //   setDataError(null);
-
-    //   try {
-    //     // Map point_status codes to merchant status codes
-    //     const activeFilterCodes = Object.keys(filters).filter(key => filters[key] === true);
-    //     const merchantStatusCodes = mapStatusCodesToMerchantStatus(activeFilterCodes);
-
-    //     // Calculate business types filter
-    //     const activeBusinessTypes = Object.keys(businessTypeFilters).filter(key => businessTypeFilters[key] === true);
-    //     const businessTypes = calculateBusinessTypes(activeBusinessTypes, categories);
-
-    //     // Calculate department IDs to filter
-    //     const departmentIdsToFilter = calculateDepartmentIdsToFilter(
-    //       departmentFilters,
-    //       departments,
-    //       teamId,
-    //       divisionId
-    //     );
-
-    //     // Calculate business type filters array for category_merchants join
-    //     const businessTypeFiltersArray = calculateBusinessTypeFiltersArray(businessTypeFilters, categories);
-
-    //     // Fetch division path if divisionId exists
-    //     let divisionPath: string | null
-    //     if (user?.department_id) {
-    //       try {
-    //         const division = await fetchDepartmentById(user?.department_id);
-    //         if (division) {
-    //           divisionPath = division.path;  
-    //         }
-    //       } catch (error) {
-    //         console.error('Error fetching division path:', error);
-    //       }
-    //     }
-
-    //     const merchants = await fetchMerchants(
-    //       merchantStatusCodes.length > 0 ? merchantStatusCodes : undefined,
-    //       businessTypes,
-    //       departmentIdsToFilter,
-    //       teamId,
-    //       divisionId || '',
-    //       divisionPath,
-    //       businessTypeFiltersArray,
-    //       {
-    //         statusCodes: merchantStatusCodes.length > 0 ? merchantStatusCodes : undefined, // 🔥 FIX: Pass statusCodes to options
-    //         businessTypes: businessTypes,
-    //         departmentIds: departmentIdsToFilter,
-    //         categoryIds: businessTypeFiltersArray && businessTypeFiltersArray.length > 0 ? businessTypeFiltersArray : undefined, // 🔥 NEW: Pass category IDs to options
-    //         province: selectedProvince || undefined,
-    //         ward: selectedWard || undefined,
-    //         limit:limit,
-    //         targetDepartmentPath: divisionPath
-    //       }
-    //     );
-
-    //     setRestaurants(merchants);
-    //     setIsLoadingData(false);
-    //     hasFetchedMerchantsRef.current = true;  // 🔥 FIX: Use ref instead of state to prevent infinite loop
-    //     setHasInitialDataLoaded(true);  // 🔥 Keep for other UI checks
-    //     lastFiltersKeyRef.current = filtersKey; // 🔥 FIX: Update last filters key after successful fetch
-    //   } catch (error: any) {
-    //     console.error('❌ MapPage: Failed to load merchants:', error);
-    //     setDataError(error.message || 'Không thể tải dữ liệu merchants');
-    //     setIsLoadingData(false);
-    //     // Don't set hasFetchedMerchantsRef on error - will retry
-    //   }
-    // }
-
-    // Don't update lastFiltersKeyRef here - only update after successful API call
-
     async function loadMerchants() {
       if (!hasFetchedMerchantsRef.current) {
         setIsLoadingData(true);
@@ -529,12 +455,8 @@ export default function MapPage() {
       setDataError(null);
 
       try {
-        // 1. Xác định ID phòng ban ưu tiên (Từ Store/Context trước, sau đó mới tới User)
-        // teamId và divisionId lấy từ useQLTTScope() hoặc Redux Store bạn đã bind ở ScopeSelector
         const effectiveDivisionId = divisionId || user?.department_id;
         const effectiveTeamId = teamId || null;
-
-        // 2. Tính toán các bộ lọc
         const activeFilterCodes = Object.keys(filters).filter(key => filters[key] === true);
         const merchantStatusCodes = mapStatusCodesToMerchantStatus(activeFilterCodes);
 
@@ -547,10 +469,7 @@ export default function MapPage() {
           effectiveTeamId,
           effectiveDivisionId
         );
-
         const businessTypeFiltersArray = calculateBusinessTypeFiltersArray(businessTypeFilters, categories);
-
-        // 3. Lấy path của phòng ban (Dùng fetchDepartmentById để lấy path phục vụ server-side filter)
         let divisionPath: string | null = null;
         const targetIdForPath = effectiveTeamId || effectiveDivisionId; // Ưu tiên team nếu có
 
@@ -564,8 +483,6 @@ export default function MapPage() {
             console.error('Error fetching department path:', error);
           }
         }
-
-        // 4. Gọi API fetch merchants với các thông tin đã tính toán
         const merchants = await fetchMerchants(
           merchantStatusCodes.length > 0 ? merchantStatusCodes : undefined,
           businessTypes,
@@ -585,8 +502,6 @@ export default function MapPage() {
             targetDepartmentPath: divisionPath
           }
         );
-
-        // 5. Cập nhật state UI
         setRestaurants(merchants);
         setIsLoadingData(false);
         hasFetchedMerchantsRef.current = true;
@@ -602,60 +517,38 @@ export default function MapPage() {
 
     loadMerchants();
   }, [filtersKey, pointStatuses.length, showMerchants, showMapPoints, departments.length, isScopeLoading, isScopeInitialized, divisionId, teamId, filters, businessTypeFilters, departmentFilters, categories.length, selectedProvince, selectedWard]); // 🔥 Include all filter dependencies
-
-  // 🔥 NEW: Clear restaurants when Officers layer is selected (ward boundaries don't need points)
-  // Only clear if Officers layer is active AND merchants/mappoints layers are not active
   useEffect(() => {
     if (showOfficers && !showMerchants && !showMapPoints) {
       setRestaurants([]);
       setIsLoadingData(false);
     }
   }, [showOfficers, showMerchants, showMapPoints]);
-
-  // 🔥 FIX: Track previous layer state to detect actual layer changes
   const previousShowOfficersRef = useRef<boolean>(false);
   const previousShowMerchantsRef = useRef<boolean>(true);
-
-  // 🔥 FIX: Reset UI states when switching between layers (only on actual change, not initial load)
   useEffect(() => {
     const officersChanged = previousShowOfficersRef.current !== showOfficers;
     const merchantsChanged = previousShowMerchantsRef.current !== showMerchants;
-
-    // Only reset if there was an actual layer change
     if (officersChanged || merchantsChanged) {
       if (showOfficers && !showMerchants) {
-        // When switching TO Officers layer (and Merchants is off), hide merchants layer UI components
         setIsLegendVisible(false);
         setIsStatsCardVisible(false);
         dispatch(setFilterPanelOpen(false)); // Close filter panel when switching layers
       } else if (showMerchants && !showOfficers) {
-        // When switching TO Merchants layer (and Officers is off), hide officers layer UI components
         setIsOfficerStatsVisible(false);
         dispatch(setFilterPanelOpen(false)); // Close filter panel when switching layers
       }
-
-      // Update refs
       previousShowOfficersRef.current = showOfficers;
       previousShowMerchantsRef.current = showMerchants;
     }
   }, [showOfficers, showMerchants, dispatch]);
-
-  // Setup global function for popup button click
   useEffect(() => {
     (window as any).openPointDetail = (pointId: string, event?: Event) => {
-      // 🔥 FIX: Stop event propagation to prevent bubble-up click from closing modal
       if (event) {
         event.stopPropagation();
         event.preventDefault();
       }
-
-
-      // Search in restaurants (from fetchMerchants)
       const point = restaurants.find(r => r.id === pointId);
-
       if (point) {
-        // 🔥 FIX: Use setTimeout with delay to ensure modal opens after all click events complete
-        // This prevents the click event from bubble-up popup close from closing the modal
         setTimeout(() => {
           setDetailModalPoint(point);
           setIsDetailModalOpen(true);
@@ -663,12 +556,8 @@ export default function MapPage() {
       } else {
       }
     };
-
     (window as any).openPointReview = (pointId: string) => {
-
-      // Search in restaurants (from fetchMerchants)
       const point = restaurants.find(r => r.id === pointId);
-
       if (point) {
         setReviewModalPoint(point);
         setIsReviewModalOpen(true);
