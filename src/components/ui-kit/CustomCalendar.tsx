@@ -15,7 +15,7 @@ interface CustomCalendarProps {
 }
 
 const MONTHS = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
-const WEEKDAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+const WEEKDAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 
 export default function CustomCalendar({ value, onChange, onApply, mode = 'range' }: CustomCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
@@ -27,7 +27,10 @@ export default function CustomCalendar({ value, onChange, onApply, mode = 'range
   };
 
   const getFirstDayOfMonth = (month: number, year: number) => {
-    return new Date(year, month, 1).getDay();
+    // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    const day = new Date(year, month, 1).getDay();
+    // Convert to 0 = Monday, ..., 6 = Sunday
+    return (day === 0 ? 6 : day - 1);
   };
 
   const generateCalendarDays = (month: number, year: number) => {
@@ -41,6 +44,7 @@ export default function CustomCalendar({ value, onChange, onApply, mode = 'range
     for (let i = firstDay - 1; i >= 0; i--) {
       const day = prevMonthDays - i;
       const prevMonth = month === 0 ? 11 : month - 1;
+
       const prevYear = month === 0 ? year - 1 : year;
       days.push({
         date: day,

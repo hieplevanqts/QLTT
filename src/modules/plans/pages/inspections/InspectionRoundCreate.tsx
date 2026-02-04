@@ -460,14 +460,14 @@ export default function InspectionRoundCreate() {
 
                 <div className={styles.formField}>
                   <label className={styles.label}>Tên đợt kiểm tra <span className={styles.required}>*</span></label>
-                  <input className={cn(styles.input, errors.name && styles.inputError)} value={formData.name} onChange={e => handleChange('name', e.target.value)} placeholder="Nhập tên đợt kiểm tra..." />
+                  <input className={cn(styles.input, errors.name && styles.inputError)} value={formData.name} onChange={e => handleChange('name', e.target.value)} placeholder="Nhập tên đợt kiểm tra" />
                   {errors.name && <div className={styles.errorMessage}><AlertCircle size={14} />{errors.name}</div>}
                 </div>
 
                 <div className={styles.formField}>
                   <label className={styles.label}>Kế hoạch liên quan <span className={styles.required}>*</span></label>
                   <select className={cn(styles.select, errors.relatedPlanId && styles.inputError)} value={formData.relatedPlanId} onChange={e => handleChange('relatedPlanId', e.target.value)} disabled={!!planIdFromUrl}>
-                    <option value="">Chọn kế hoạch...</option>
+                    <option value="">Chọn kế hoạch</option>
                     {approvedPlans.map(p => <option key={p.id} value={p.id}>{p.id} - {p.name}</option>)}
                   </select>
                   {errors.relatedPlanId && <div className={styles.errorMessage}><AlertCircle size={14} />{errors.relatedPlanId}</div>}
@@ -484,7 +484,7 @@ export default function InspectionRoundCreate() {
                     <label className={styles.label}>Người chủ trì</label>
                     {userRole === 'ward' ? <div className={styles.readOnlyField}>{userWard}</div> : (
                       <select className={cn(styles.select, errors.leadUnit && styles.inputError)} value={formData.leadUnit} onChange={e => handleChange('leadUnit', e.target.value)}>
-                        <option value="">Chọn người chủ trì...</option>
+                        <option value="">Chọn người chủ trì</option>
                         <option value="Nguyễn Minh Tuấn">Nguyễn Minh Tuấn</option>
                         <option value="Phạm Thị Hương">Phạm Thị Hương</option>
                         <option value="Lê Văn Hùng">Lê Văn Hùng</option>
@@ -581,7 +581,7 @@ export default function InspectionRoundCreate() {
                   <h3 className={styles.sectionTitle}><Store size={20} /> Danh sách cửa hàng</h3>
                   <span className={styles.selectedCount}>{formData.selectedStores.length} đơn vị</span>
                 </div>
-                <div className={styles.searchBox}><Search size={18} /><input className={cn(styles.input, styles.searchInput)} placeholder="Tìm kiếm..." value={storeSearchQuery} onChange={e => setStoreSearchQuery(e.target.value)} /></div>
+                <div className={styles.searchBox}><Search size={18} /><input className={cn(styles.input, styles.searchInput)} placeholder="Tìm kiếm" value={storeSearchQuery} onChange={e => setStoreSearchQuery(e.target.value)} /></div>
                 {loadingMerchants ? <div className={styles.spinner} /> : (
                   <div className={styles.storesGridContainer}>
                     {filteredStores.map(s => (

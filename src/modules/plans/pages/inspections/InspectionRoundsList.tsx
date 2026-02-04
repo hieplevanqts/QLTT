@@ -444,16 +444,7 @@ export function InspectionRoundsList() {
           {
             label: 'Phiên làm việc',
             icon: <Calendar size={16} />,
-            onClick: () => {
-              setCreateSessionDialog({
-                open: true,
-                roundId: round.id,
-                roundName: round.name,
-                leadUnitId: round.leadUnitId,
-                provinceId: round.provinceId,
-                wardId: round.wardId,
-              });
-            },
+            onClick: () => navigate(`/plans/inspection-session?campaignId=${encodeURIComponent(round.id)}&inspectionRound=${encodeURIComponent(round.id)}`),
             priority: 9,
           },
           {
