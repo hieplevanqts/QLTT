@@ -30,7 +30,7 @@ export function LibraryUsageTable() {
     const lastRequestRef = useRef(0);
 
     useEffect(() => {
-        fetch("http://localhost:7788/dependency-manager/libraries")
+        fetch(window.location.origin+"/dependency-manager/libraries")
             .then((res) => res.json())
             .then((data) => {
                 setLibraries(data || []);
@@ -71,7 +71,7 @@ export function LibraryUsageTable() {
 
         try {
             const res = await fetch(
-                `http://localhost:7788/dependency-manager/library/${encodeURIComponent(
+                `${window.location.origin}/dependency-manager/library/${encodeURIComponent(
                     libName
                 )}`
             );

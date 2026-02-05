@@ -5,7 +5,7 @@ export function SummaryCards() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch("http://localhost:7788/dependency-manager/report")
+        fetch(window.location.origin + "/dependency-manager/report")
             .then((res) => res.json())
             .then((data) => {
                 setReport(data);

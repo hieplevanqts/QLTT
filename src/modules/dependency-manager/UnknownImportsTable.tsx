@@ -10,7 +10,7 @@ export function UnknownImportsTable() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch("http://localhost:7788/dependency-manager/dependencies")
+        fetch(window.location.origin + "/dependency-manager/dependencies")
             .then((res) => res.json())
             .then((data) => {
                 setUnknowns(data?.unknownImports || []);

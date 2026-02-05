@@ -14,7 +14,7 @@ export const ModuleDependencyManager = () => {
     const [report, setReport] = useState<Report | null>(null);
 
     useEffect(() => {
-        fetch("http://localhost:7788/dependency-manager/report")
+        fetch(window.location.origin + "/dependency-manager/report")
             .then((res) => res.json())
             .then(setReport)
             .catch(console.error);
