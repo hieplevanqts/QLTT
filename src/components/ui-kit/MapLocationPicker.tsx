@@ -334,7 +334,7 @@ export function MapLocationPicker({
           onClick={handleGetCurrentLocation}
           disabled={disabled || isLoadingAddress}
           type="button"
-          className={styles.currentLocationButton}
+          className={`${styles.currentLocationButton} hover:!text-white `}
         >
           <Locate size={16} />
           {isLoadingAddress ? 'Đang xác định...' : 'Vị trí hiện tại'}

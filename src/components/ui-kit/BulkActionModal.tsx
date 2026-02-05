@@ -331,7 +331,7 @@ export function BulkActionModal({
                 placeholder={`Nhập lý do ${config.title.toLowerCase()}...`}
                 rows={4}
                 disabled={loading}
-                className={styles.reasonTextarea}
+                className={`${styles.reasonTextarea} border-2 border-gray-300 focus:border-blue-500 focus:ring-0`}
               />
               <div className={styles.reasonHint}>
                 Lý do này sẽ được ghi vào lịch sử thay đổi của từng cơ sở.
@@ -346,6 +346,7 @@ export function BulkActionModal({
             variant="outline"
             onClick={handleClose}
             disabled={loading}
+            className='hover:!bg-red-700 hover:!text-white'
           >
             Hủy
           </Button>

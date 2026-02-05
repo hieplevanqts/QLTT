@@ -193,10 +193,10 @@ export default function ActionColumn({ actions, variant = 'default', className, 
                       action.onClick();
                     }}
                     disabled={action.disabled}
-                    className={action.variant === 'destructive' ? styles.destructiveAction : ''}
+                    className={`${action.variant === 'destructive' ? styles.destructiveAction : ''} hover:!text-white vhv-text-activee`}
                   >
                     {action.icon}
-                    <span className={styles.actionLabel}>{action.label}</span>
+                    <span className={`${styles.actionLabel} hover:!text-white`}>{action.label}</span>
                   </DropdownMenuItem>
                 </div>
               ));

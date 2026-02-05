@@ -616,6 +616,7 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
               <div className="space-y-2 col-span-2">
                 <Label>Vị trí trên bản đồ</Label>
                 <MapLocationPicker
+                  z-index={1}
                   address={fullAddressForMap}
                   latitude={formData.latitude}
                   longitude={formData.longitude}
@@ -669,10 +670,10 @@ export function EditStoreDialogTabbed({ open, onOpenChange, store, onSubmit }: E
         </div>
 
         <DialogFooter style={{ gap: '12px' }}>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} className='hover:!bg-red-700 hover:!text-white'>
             Hủy
           </Button>
-          <Button onClick={handleSubmit}>
+          <Button onClick={handleSubmit} className='!text-white'>
             Cập nhật
           </Button>
         </DialogFooter>

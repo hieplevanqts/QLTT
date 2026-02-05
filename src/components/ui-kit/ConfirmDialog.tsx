@@ -87,15 +87,15 @@ export function ConfirmDialog({
             </div>
           </div>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleCancel}>
+        <AlertDialogFooter className='flex gap-2'>
+          <AlertDialogCancel onClick={handleCancel} className='hover:!bg-red-700 hover:!text-white'>
             {cancelLabel}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
             className={
               variant === 'danger'
-                ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                ? 'bg-destructive !text-destructive-foreground hover:bg-destructive/90'
                 : variant === 'warning'
                   ? 'bg-yellow-600 text-white hover:bg-yellow-700'
                   : ''
