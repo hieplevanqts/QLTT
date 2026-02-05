@@ -198,7 +198,7 @@ export function ImageGallery({
           <div className={styles.emptyText}>
             Hình ảnh phục vụ nghiệp vụ kiểm tra và quản lý cơ sở sẽ được hiển thị tại đây.
           </div>
-          <Button onClick={() => setIsUploadDialogOpen(true)} className={styles.emptyButton}>
+          <Button onClick={() => setIsUploadDialogOpen(true)} className={`${styles.emptyButton} hover:!bg-blue-700 !text-white`}>
             <Upload size={20} />
             Tải ảnh lên
           </Button>
@@ -226,7 +226,7 @@ export function ImageGallery({
               Hình ảnh phục vụ kiểm tra, giám sát và quản lý cửa hàng
             </p>
           </div>
-          <Button onClick={() => setIsUploadDialogOpen(true)} className={styles.uploadButton}>
+          <Button onClick={() => setIsUploadDialogOpen(true)} className={styles.uploadButton} className='!text-white'>
             <Upload size={20} />
             Tải ảnh lên
           </Button>
@@ -331,9 +331,9 @@ export function ImageGallery({
               Bạn có chắc chắn muốn xóa hình ảnh này? Hành động này không thể hoàn tác.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteImageId(null)}>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Xóa</AlertDialogAction>
+          <AlertDialogFooter className='flex gap-3'>
+            <AlertDialogCancel className='hover:!border-red-300 hover:!text-red-700 hover:!bg-transparent' onClick={() => setDeleteImageId(null)}>Hủy</AlertDialogCancel>
+            <AlertDialogAction className='bg-red-800 !text-white hover:bg-red-600' onClick={confirmDelete}>Xóa</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -365,9 +365,9 @@ export function ImageGallery({
               </SelectContent>
             </Select>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditImage(null)}>Hủy</Button>
-            <Button onClick={confirmEditCategory}>Cập nhật</Button>
+          <DialogFooter className='flex gap-3'>
+            <Button variant="outline" onClick={() => setEditImage(null)} className='hover:!text-white hover:!bg-red-700'>Hủy</Button>
+            <Button className='!text-white' onClick={confirmEditCategory}>Cập nhật</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

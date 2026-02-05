@@ -897,7 +897,7 @@ export default function StoreDetailPage() {
             variant="ghost"
             size="sm"
             onClick={() => navigate(-1)}
-            className={styles.backButton}
+            className={` ${styles.backButton} hover:!text-white hover:!bg-red-700 transition-transform`}
           >
             <ArrowLeft size={16} />
             Quay lại
@@ -911,7 +911,7 @@ export default function StoreDetailPage() {
               variant="outline"
               size="sm"
               onClick={() => navigate(`/registry/full-edit/${store.id}`)}
-              className={styles.editButton}
+              className={` ${styles.editButton} hover:!text-white transition-transform`}
             >
               <Edit size={16} />
               Chỉnh sửa

@@ -156,10 +156,10 @@ export function RiskDialog({
         </div>
 
         <DialogFooter className="gap-3">
-          <Button variant="outline" onClick={handleCancel}>
+          <Button variant="outline" onClick={handleCancel} className='hover:!text-white hover:!bg-red-700'>
             Hủy
           </Button>
-          <Button onClick={handleConfirm} disabled={!reason.trim()}>
+          <Button onClick={handleConfirm} disabled={!reason.trim()} className='!text-white'>
             Xác nhận
           </Button>
         </DialogFooter>

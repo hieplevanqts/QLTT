@@ -359,11 +359,11 @@ export function DocumentUploadDialog({
                       <p className={styles.fileName}>{file?.name}</p>
                     </div>
                   )}
-                  <div className={styles.previewActions}>
+                  <div className={ `${styles.previewActions} flex gap-2 mt-4 items-center` }>
                     <Button
                       variant="outline"
                       size="sm"
-                      className={styles.changeFileButton}
+                      className={`${styles.changeFileButton} !mt-0 hover:!bg-gray-100`}
                       onClick={(e) => {
                         e.stopPropagation();
                         fileInputRef.current?.click();
@@ -374,7 +374,7 @@ export function DocumentUploadDialog({
                     <Button
                       variant="default" // Primary style
                       size="sm"
-                      className={styles.extractButton}
+                      className= { `${styles.extractButton} !text-white`}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleExtractData(file);
@@ -442,7 +442,7 @@ export function DocumentUploadDialog({
                 >
                   <label className={styles.label}>
                     {field.label}
-                    {field.required && <span className={styles.required}>*</span>}
+                    {field.required && <span className={`${styles.required} !text-red-500`}>*</span>}
                   </label>
                   {field.type === 'textarea' ? (
                     <>
@@ -479,10 +479,10 @@ export function DocumentUploadDialog({
 
         {/* Footer */}
         <div className={styles.footer}>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} className='hover:!bg-red-700 hover:!text-white'>
             Hủy
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
+          <Button onClick={handleSave} disabled={isSaving} className='!text-white'>
             {isSaving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

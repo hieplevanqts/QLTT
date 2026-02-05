@@ -159,10 +159,10 @@ export function ChangeReasonDialog({
         </div>
 
         <DialogFooter className='gap-2'>
-          <Button variant="outline" onClick={handleCancel} disabled={isSubmitting}>
+          <Button variant="outline" onClick={handleCancel} disabled={isSubmitting} className='hover:!text-white hover:!bg-red-700'>
             Hủy
           </Button>
-          <Button className='' onClick={handleSubmit} disabled={isSubmitting || reason.length < 20}>
+          <Button className='!text-white' onClick={handleSubmit} disabled={isSubmitting || reason.length < 20}>
             {isSubmitting ? (
               <>
                 <span className="mr-2">Đang xử lý...</span>

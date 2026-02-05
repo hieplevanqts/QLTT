@@ -164,7 +164,7 @@ export function RejectDialog({
               placeholder="Nhập lý do từ chối phê duyệt (tối thiểu 10 ký tự)..."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className={styles.textarea}
+              className={`${styles.textarea} border-`}
               rows={4}
             />
             <div className={styles.helperText}>
@@ -178,6 +178,7 @@ export function RejectDialog({
             variant="outline"
             onClick={handleClose}
             disabled={isSubmitting}
+            className='hover:!text-white hover:!bg-red-700'
           >
             Hủy
           </Button>
@@ -185,7 +186,7 @@ export function RejectDialog({
             variant="destructive"
             onClick={handleSubmit}
             disabled={!canSubmit || isSubmitting}
-            className={styles.rejectButton}
+            className={`${styles.rejectButton} !text-white`}
           >
             {isSubmitting ? 'Đang xử lý...' : 'Xác nhận từ chối'}
           </Button>

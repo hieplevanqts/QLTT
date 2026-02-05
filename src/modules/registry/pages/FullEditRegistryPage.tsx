@@ -613,7 +613,7 @@ export default function FullEditRegistryPage() {
         ]}
         title="Chỉnh sửa"
         actions={
-          <Button variant="outline" onClick={handleCancel}>
+          <Button variant="outline" onClick={handleCancel} className='hover:!text-white hover:!bg-red-700'>
             <ArrowLeft size={16} />
             Quay lại
           </Button>
@@ -641,7 +641,7 @@ export default function FullEditRegistryPage() {
                   Nhấn "Xem trước thay đổi" để rà soát trước khi lưu
                 </p>
               </div>
-              <Button size="sm" onClick={handleShowDiffPreview}>
+              <Button size="sm" onClick={handleShowDiffPreview} className='!text-white'>
                 Xem trước thay đổi
               </Button>
             </div>
@@ -1028,7 +1028,7 @@ export default function FullEditRegistryPage() {
                   <X size={16} />
                   Hủy
                 </Button>
-                <Button onClick={handleShowDiffPreview} disabled={changes.length === 0}>
+                <Button onClick={handleShowDiffPreview} disabled={changes.length === 0} className='!text-white'>
                   <Save size={16} />
                   Xem trước thay đổi
                 </Button>
@@ -1056,11 +1056,11 @@ export default function FullEditRegistryPage() {
                 Vui lòng rà soát kỹ các thay đổi trước khi xác nhận
               </div>
               <div className="flex gap-3">
-                <Button variant="outline" onClick={() => setStep('form')}>
+                <Button variant="outline" onClick={() => setStep('form')} className='hover:!text-white hover:!bg-red-800'>
                   <ArrowLeft size={16} />
                   Quay lại chỉnh sửa
                 </Button>
-                <Button onClick={handleConfirmDiff}>
+                <Button onClick={handleConfirmDiff} className='!text-white'>
                   <CheckCircle size={16} />
                   Xác nhận và tiếp tục
                 </Button>

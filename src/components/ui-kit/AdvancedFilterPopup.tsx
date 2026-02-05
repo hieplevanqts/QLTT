@@ -232,7 +232,7 @@ export function AdvancedFilterPopup({
               variant="outline"
               size="sm"
               onClick={handleClearLocal}
-              className={styles.clearButton}
+              className={`${styles.clearButton} hover:!text-white hover:!bg-red-700`}
             >
               Xóa tất cả
             </Button>
