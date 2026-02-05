@@ -3,6 +3,7 @@ import type { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import { AlertTriangle, MapPin, Clipboard } from 'lucide-react';
 import { useTvData } from '@/contexts/TvDataContext';
 import { LOCATION_BOUNDS } from '@/constants/locationBounds';
+import bienDaoImg from '@/assets/images/hoang-sa.png';
 
 type LeafletModule = typeof import('leaflet');
 
@@ -73,8 +74,37 @@ export default function LiveMapPanel({ scene }: LiveMapPanelProps) {
     });
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      // attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
+
+
+     // Hoang Sa
+    
+          const bounds: [[number, number], [number, number]] = [
+            [15.8, 111.2],
+            [17.2, 112.8],
+          ];
+    
+          L.imageOverlay(
+            bienDaoImg,
+            bounds,
+            { opacity: 0.85, className: 'bien-dao-overlay' }
+          ).addTo(map);
+          // map.fitBounds(bounds);
+    
+    
+          // Quần đảo Trường Sa (Spratly Islands) – bounds xấp xỉ
+          const truongSaBounds: [[number, number], [number, number]] = [
+            [10.0, 113.0], // góc trên trái
+            [8.0, 115.0],  // góc dưới phải
+          ];
+    
+          L.imageOverlay(
+            bienDaoImg,
+            truongSaBounds,
+            { opacity: 0.85, className: 'bien-dao-overlay' }
+          ).addTo(map);
+
 
     mapRef.current = map;
 
