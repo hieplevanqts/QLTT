@@ -1,0 +1,7287 @@
+{
+  "generatedAt": "2026-02-05T03:53:44.980Z",
+  "project": "VHV-QLTT",
+  "summary": {
+    "totalLibraries": 107,
+    "totalSourceFilesScanned": 910,
+    "totalImportUsages": 1455
+  },
+  "usages": [
+    {
+      "library": "react-dom",
+      "file": "src\\main.tsx",
+      "line": 2
+    },
+    {
+      "library": "antd",
+      "file": "src\\main.tsx",
+      "line": 3
+    },
+    {
+      "library": "antd",
+      "file": "src\\main.tsx",
+      "line": 4
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\App.tsx",
+      "line": 1
+    },
+    {
+      "library": "sonner",
+      "file": "src\\App.tsx",
+      "line": 2
+    },
+    {
+      "library": "react-redux",
+      "file": "src\\App.tsx",
+      "line": 4
+    },
+    {
+      "library": "@supabase/supabase-js",
+      "file": "src\\utils\\supabaseClient.ts",
+      "line": 6
+    },
+    {
+      "library": "react",
+      "file": "src\\utils\\renderIcon.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\utils\\renderIcon.tsx",
+      "line": 2
+    },
+    {
+      "library": "xlsx",
+      "file": "src\\utils\\importTemplate.ts",
+      "line": 6
+    },
+    {
+      "library": "jspdf",
+      "file": "src\\utils\\generatePlanReportPDF.ts",
+      "line": 1
+    },
+    {
+      "library": "jspdf-autotable",
+      "file": "src\\utils\\generatePlanReportPDF.ts",
+      "line": 2
+    },
+    {
+      "library": "jspdf",
+      "file": "src\\utils\\generateForm06PDF.ts",
+      "line": 1
+    },
+    {
+      "library": "jspdf-autotable",
+      "file": "src\\utils\\generateForm06PDF.ts",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\utils\\fileUtils.ts",
+      "line": 1
+    },
+    {
+      "library": "xlsx",
+      "file": "src\\utils\\excelExport.ts",
+      "line": 1
+    },
+    {
+      "library": "jszip",
+      "file": "src\\utils\\downloadUtils.ts",
+      "line": 1
+    },
+    {
+      "library": "docx",
+      "file": "src\\utils\\docx-generator.ts",
+      "line": 1
+    },
+    {
+      "library": "file-saver",
+      "file": "src\\utils\\docx-generator.ts",
+      "line": 2
+    },
+    {
+      "library": "xlsx",
+      "file": "src\\utils\\data\\notificationRulesExcel.ts",
+      "line": 7
+    },
+    {
+      "library": "xlsx",
+      "file": "src\\utils\\data\\exportJobsExcelTemplate.ts",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\utils\\data\\DEMO_USAGE.tsx",
+      "line": 8
+    },
+    {
+      "library": "axios",
+      "file": "src\\utils\\api\\officerFilterApi.ts",
+      "line": 5
+    },
+    {
+      "library": "axios",
+      "file": "src\\utils\\api\\merchantsApi.ts",
+      "line": 6
+    },
+    {
+      "library": "axios",
+      "file": "src\\utils\\api\\locationsApi.ts",
+      "line": 5
+    },
+    {
+      "library": "axios",
+      "file": "src\\utils\\api\\departmentUsersApi.ts",
+      "line": 5
+    },
+    {
+      "library": "axios",
+      "file": "src\\utils\\api\\departmentAreasApi.ts",
+      "line": 5
+    },
+    {
+      "library": "axios",
+      "file": "src\\utils\\api\\axiosInstance.ts",
+      "line": 6
+    },
+    {
+      "library": "axios",
+      "file": "src\\utils\\api\\authApi.ts",
+      "line": 6
+    },
+    {
+      "library": "@reduxjs/toolkit",
+      "file": "src\\store\\store.ts",
+      "line": 1
+    },
+    {
+      "library": "redux-saga",
+      "file": "src\\store\\store.ts",
+      "line": 2
+    },
+    {
+      "library": "@reduxjs/toolkit",
+      "file": "src\\store\\rootReducer.ts",
+      "line": 1
+    },
+    {
+      "library": "@reduxjs/toolkit",
+      "file": "src\\store\\slices\\reviewSlice.ts",
+      "line": 1
+    },
+    {
+      "library": "@reduxjs/toolkit",
+      "file": "src\\store\\slices\\qlttScopeSlice.ts",
+      "line": 1
+    },
+    {
+      "library": "@reduxjs/toolkit",
+      "file": "src\\store\\slices\\officerFilterSlice.ts",
+      "line": 1
+    },
+    {
+      "library": "@reduxjs/toolkit",
+      "file": "src\\store\\slices\\merchantSlice.ts",
+      "line": 1
+    },
+    {
+      "library": "@reduxjs/toolkit",
+      "file": "src\\store\\slices\\mapFiltersSlice.ts",
+      "line": 1
+    },
+    {
+      "library": "@reduxjs/toolkit",
+      "file": "src\\store\\slices\\departmentAreasSlice.ts",
+      "line": 1
+    },
+    {
+      "library": "@reduxjs/toolkit",
+      "file": "src\\store\\slices\\authSlice.ts",
+      "line": 1
+    },
+    {
+      "library": "redux-saga",
+      "file": "src\\store\\sagas\\rootSaga.ts",
+      "line": 1
+    },
+    {
+      "library": "redux-saga",
+      "file": "src\\store\\sagas\\reviewsSaga.ts",
+      "line": 1
+    },
+    {
+      "library": "redux-saga",
+      "file": "src\\store\\sagas\\qlttScopeSaga.ts",
+      "line": 1
+    },
+    {
+      "library": "redux-saga",
+      "file": "src\\store\\sagas\\merchantSaga.ts",
+      "line": 1
+    },
+    {
+      "library": "@reduxjs/toolkit",
+      "file": "src\\store\\sagas\\merchantSaga.ts",
+      "line": 2
+    },
+    {
+      "library": "redux-saga",
+      "file": "src\\store\\sagas\\authSaga.ts",
+      "line": 1
+    },
+    {
+      "library": "@reduxjs/toolkit",
+      "file": "src\\store\\sagas\\authSaga.ts",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\shared\\menu\\useRuntimeMenu.ts",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\shared\\iam\\useIamIdentity.ts",
+      "line": 1
+    },
+    {
+      "library": "axios",
+      "file": "src\\services\\apiClient.ts",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\routes\\routes.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\routes\\routes.tsx",
+      "line": 2
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\routes\\registryRoutes.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\routes\\mainRoutes.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\routes\\leadRiskRoutes.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\routes\\EvidenceRoutes.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\routes\\EvidenceRoutes.tsx",
+      "line": 2
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\routes\\authRoutes.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\routes\\accountRoutes.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\pages\\lead-risk\\LeadInbox.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\pages\\lead-risk\\LeadInbox.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\pages\\lead-risk\\LeadInbox.tsx",
+      "line": 3
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\pages\\lead-risk\\LeadInbox.tsx",
+      "line": 4
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\_registry\\types.ts",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\_registry\\index.ts",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\tv\\pages\\TvWallboardPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\tv\\pages\\TvWallboardPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\tasks\\pages\\TaskBoard.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\tasks\\pages\\TaskBoard.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\tasks\\pages\\TaskBoard.tsx",
+      "line": 3
+    },
+    {
+      "library": "react-dnd",
+      "file": "src\\modules\\tasks\\pages\\TaskBoard.tsx",
+      "line": 22
+    },
+    {
+      "library": "react-dnd-html5-backend",
+      "file": "src\\modules\\tasks\\pages\\TaskBoard.tsx",
+      "line": 23
+    },
+    {
+      "library": "react-dnd",
+      "file": "src\\modules\\tasks\\pages\\TaskBoard.tsx",
+      "line": 24
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\tasks\\pages\\TaskBoard.tsx",
+      "line": 42
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\routes.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\routes.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\_shared\\PermissionGate.tsx",
+      "line": 6
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\_shared\\PermissionGate.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\_shared\\ModuleShell.tsx",
+      "line": 6
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\_shared\\LoadingState.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\_shared\\LoadingState.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\_shared\\ErrorState.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\_shared\\ErrorState.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\_shared\\EmptyState.tsx",
+      "line": 6
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\_shared\\components\\StatusBadge.tsx",
+      "line": 6
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\_shared\\components\\FormDrawer.tsx",
+      "line": 6
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\_shared\\components\\DataToolbar.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\_shared\\components\\DataToolbar.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\_shared\\components\\DataTable.tsx",
+      "line": 6
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\_shared\\components\\ConfirmDialog.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\_shared\\components\\ConfirmDialog.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-system-config\\routes.tsx",
+      "line": 6
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-system-config\\routes.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-system-config\\pages\\SecurityPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\sa-system-config\\pages\\SecurityPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-system-config\\pages\\ParametersPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\sa-system-config\\pages\\ParametersPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-system-config\\pages\\OrganizationInfoPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\sa-system-config\\pages\\OrganizationInfoPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-system-config\\pages\\OperationsPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\sa-system-config\\pages\\OperationsPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-system-config\\pages\\NotificationsPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\sa-system-config\\pages\\NotificationsPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-system-config\\pages\\DatabaseLogsPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\sa-system-config\\pages\\DatabaseLogsPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-system-config\\pages\\DatabaseBackupsPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\sa-system-config\\pages\\DatabaseBackupsPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-master-data\\routes.tsx",
+      "line": 6
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-master-data\\routes.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\SystemCatalogsPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\OrgUnitsPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\OrgUnitsPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\OrgUnitsPage.tsx",
+      "line": 27
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\OrgUnitsPage.tsx",
+      "line": 28
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\OrgUnitsPage.tsx",
+      "line": 29
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\JurisdictionsPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\JurisdictionsPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\JurisdictionsPage.tsx",
+      "line": 8
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\JurisdictionMapPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\JurisdictionMapPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\JurisdictionMapPage.tsx",
+      "line": 8
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\DmsCatalogsPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\DepartmentsPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\DepartmentsPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\DepartmentsPage.tsx",
+      "line": 18
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\DepartmentsPage.tsx",
+      "line": 19
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CommonCatalogsPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CommonCatalogsPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CommonCatalogsPage.tsx",
+      "line": 22
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CommonCatalogsPage.tsx",
+      "line": 31
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CommonCatalogDetailPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CommonCatalogDetailPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CommonCatalogDetailPage.tsx",
+      "line": 20
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CommonCatalogDetailPage.tsx",
+      "line": 21
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CommonCatalogDetailPage.tsx",
+      "line": 22
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CatalogsPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CatalogsPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CatalogsPage.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CatalogsPage.tsx",
+      "line": 9
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CatalogsPage.enhanced.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CatalogsPage.enhanced.tsx",
+      "line": 7
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CatalogsPage.enhanced.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CatalogsPage.enhanced.tsx",
+      "line": 9
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CatalogSchemaPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CatalogSchemaPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CatalogSchemaPage.tsx",
+      "line": 8
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CatalogItemsPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CatalogItemsPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CatalogItemsPage.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\CatalogItemsPage.tsx",
+      "line": 9
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\AdminAreasPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\AdminAreasPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\AdminAreasPage.tsx",
+      "line": 22
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\system-admin\\sa-master-data\\pages\\AdminAreasPage.tsx",
+      "line": 23
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-master-data\\components\\TreeTable.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\sa-master-data\\components\\TreeTable.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\routes.tsx",
+      "line": 6
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-iam\\routes.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\UsersPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\UsersPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\UsersPage.tsx",
+      "line": 8
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\UsersPage.tsx",
+      "line": 29
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\UserDetailPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\UserDetailPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\UserDetailPage.tsx",
+      "line": 8
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\UserDetailPage.tsx",
+      "line": 9
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\UserAssignmentsPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\UserAssignmentsPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\UserAssignmentsPage.tsx",
+      "line": 8
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RoleUsersModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RoleUsersModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RoleUsersModal.tsx",
+      "line": 3
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RoleUsersModal.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RoleUserAssignmentModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RoleUserAssignmentModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RoleUserAssignmentModal.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RolesPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RolesPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RolesPage.tsx",
+      "line": 24
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RolesPage.tsx",
+      "line": 37
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RolePermissionsV2Page.tsx",
+      "line": 6
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RolePermissionsV2Page.tsx",
+      "line": 7
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RolePermissionsV2Page.tsx",
+      "line": 8
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RolePermissionsPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RolePermissionsPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RolePermissionsPage.tsx",
+      "line": 21
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RolePermissionsPage.tsx",
+      "line": 29
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RolePermissionsMatrixPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RolePermissionsMatrixPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RolePermissionsMatrixPage.tsx",
+      "line": 22
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RolePermissionsMatrixPage.tsx",
+      "line": 34
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RolePermissionsMatrixPage.tsx",
+      "line": 35
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RoleAssignmentsPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RoleAssignmentsPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\RoleAssignmentsPage.tsx",
+      "line": 8
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\PermissionsPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\PermissionsPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\PermissionsPage.tsx",
+      "line": 23
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\PermissionRolesModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\PermissionRolesModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\PermissionRolesModal.tsx",
+      "line": 3
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\PermissionRolesModal.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\ModulesPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\ModulesPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\ModulesPage.tsx",
+      "line": 19
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\ModulesPage.tsx",
+      "line": 20
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\ModulesPage.tsx",
+      "line": 21
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\MenusPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\MenusPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\MenusPage.tsx",
+      "line": 27
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\MenusPage.tsx",
+      "line": 28
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\AssignmentsPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\AssignmentsPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-iam\\pages\\AssignmentsPage.tsx",
+      "line": 8
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\pages\\MenuAdminPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\pages\\MenuAdminPage.tsx",
+      "line": 18
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\pages\\MenuAdminPage.tsx",
+      "line": 19
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\pages\\MenuAdminPage.tsx",
+      "line": 20
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\hooks\\usePermissionPicker.ts",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\hooks\\useMenuVersion.ts",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\hooks\\useMenuTree.ts",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\hooks\\useMenuDetail.ts",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\components\\RolePreviewTree.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\components\\RolePreviewTree.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\components\\RolePreviewTree.tsx",
+      "line": 3
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\components\\RolePreviewPanel.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\components\\RolePreviewPanel.tsx",
+      "line": 15
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\components\\RolePreviewPanel.tsx",
+      "line": 16
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\components\\PermissionPickerTable.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\components\\PermissionPickerTable.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\components\\PermissionPickerTable.tsx",
+      "line": 3
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\components\\MenuTree.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\components\\MenuTree.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\components\\MenuTree.tsx",
+      "line": 3
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\components\\MenuHistoryTable.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\components\\MenuHistoryTable.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\components\\MenuHistoryTable.tsx",
+      "line": 3
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\components\\MenuDetailTabs.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\components\\MenuDetailTabs.tsx",
+      "line": 15
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\components\\AssignedPermissionsTable.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\components\\AssignedPermissionsTable.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\components\\AssignedPermissionsTable.tsx",
+      "line": 3
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu-admin\\components\\AssignedPermissionsTable.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu\\PermissionPickerPanel.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu\\PermissionPickerPanel.tsx",
+      "line": 2
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\system-admin\\sa-iam\\menu\\PermissionPickerPanel.tsx",
+      "line": 14
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\hooks\\usePermissionsList.ts",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\components\\RolePermissionMatrixV2.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\components\\RolePermissionMatrixV2.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\sa-iam\\components\\RolePermissionMatrixV2.tsx",
+      "line": 15
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\components\\ModulePermissionsOverviewModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\components\\ModulePermissionsOverviewModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\sa-iam\\components\\ModulePermissionsOverviewModal.tsx",
+      "line": 14
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\sa-iam\\components\\iconRegistry.ts",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\sa-iam\\components\\iconRegistry.ts",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\components\\IconPickerModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\components\\IconPickerModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\system-admin\\sa-iam\\components\\IconPickerModal.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\components\\modules\\ModulesTable.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\components\\modules\\ModulesTable.tsx",
+      "line": 2
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\components\\modules\\ModulesTable.tsx",
+      "line": 10
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\components\\modules\\ModulesTable.tsx",
+      "line": 11
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\system-admin\\sa-iam\\components\\modules\\ModulesTable.tsx",
+      "line": 12
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\components\\modules\\ModuleFormModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\components\\modules\\ModuleFormModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\sa-iam\\components\\modules\\GeneratePermissionsModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\system-admin\\sa-iam\\components\\modules\\GeneratePermissionsModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\system-admin\\sa-iam\\components\\modules\\GeneratePermissionsModal.tsx",
+      "line": 18
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\sa-iam\\components\\modules\\GeneratePermissionsModal.tsx",
+      "line": 19
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\pages\\SystemAdminDashboardPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\pages\\SystemAdminDashboardPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\pages\\ModuleUpdatePage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\pages\\ModuleUpdatePage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\pages\\ModuleUpdatePage.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\pages\\ModuleRegistryPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\pages\\ModuleRegistryPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\pages\\ModuleRegistryPage.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\pages\\ModuleImportPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\pages\\ModuleImportPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\pages\\ModuleImportPage.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\pages\\ModuleImportHistoryPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\pages\\ModuleImportHistoryPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\pages\\ModuleImportHistoryPage.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\pages\\ModuleDetailPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\pages\\ModuleDetailPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\pages\\ModuleDetailPage.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\pages\\MenuRegistryPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\pages\\MenuRegistryPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\pages\\legacy-system\\Maintenance.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\pages\\legacy-system\\Maintenance.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\pages\\legacy-system\\Error500.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\pages\\legacy-system\\Error500.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\pages\\legacy-system\\Error500.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\pages\\legacy-system\\Error404.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\pages\\legacy-system\\Error404.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\pages\\legacy-system\\Error404.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\pages\\legacy-system\\Error403.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\pages\\legacy-system\\Error403.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\pages\\legacy-system\\Error403.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\components\\ZipUploadBox.tsx",
+      "line": 5
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\components\\ZipUploadBox.tsx",
+      "line": 6
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\components\\ValidationResults.tsx",
+      "line": 5
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\components\\ValidationResults.tsx",
+      "line": 6
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\components\\ModuleRollbackDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\components\\ModuleRollbackDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\components\\ModuleRegistryTable.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\components\\ModuleRegistryTable.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\components\\ModulePreviewDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\components\\ModulePreviewDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\components\\ModuleManifestDrawer.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\components\\ModuleManifestDrawer.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\components\\MenuPreviewModal.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\components\\MenuPreviewModal.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\components\\ManifestValidationPanel.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\components\\ManifestValidationPanel.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\components\\InstalledModulesTable.tsx",
+      "line": 5
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\system-admin\\components\\InstalledModulesTable.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\system-admin\\components\\InstalledModulesTable.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\system-admin\\components\\ImportJobTimeline.tsx",
+      "line": 5
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\reports\\pages\\ReportsPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\reports\\pages\\ReportsPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\reports\\pages\\ReportsPage.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\reports\\pages\\ExportLogTab.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\reports\\pages\\ExportLogTab.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\reports\\pages\\ExportLogTab.tsx",
+      "line": 32
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\reports\\pages\\ExportCenterTab.tsx",
+      "line": 8
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\reports\\pages\\ExportCenterTab.tsx",
+      "line": 9
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\reports\\pages\\ExportCenterTab.tsx",
+      "line": 28
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\reports\\pages\\DataExportPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\registry\\pages\\StoresListPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\registry\\pages\\StoresListPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\registry\\pages\\StoresListPage.tsx",
+      "line": 5
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\registry\\pages\\StoresListPage.tsx",
+      "line": 25
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\registry\\pages\\StoreDetailPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\registry\\pages\\StoreDetailPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\registry\\pages\\StoreDetailPage.tsx",
+      "line": 5
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\registry\\pages\\StoreDetailPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\registry\\pages\\RegistryVerificationQueuePage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\registry\\pages\\RegistryVerificationDetailPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\registry\\pages\\RegistryVerificationDetailPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\registry\\pages\\RegistryImportReviewPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\registry\\pages\\RegistryImportReviewPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\registry\\pages\\RegistryImportReviewPage.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\registry\\pages\\RegistryImportReviewPage.tsx",
+      "line": 11
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\registry\\pages\\RegistryImportPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\registry\\pages\\RegistryHomePage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\registry\\pages\\RegistryHomePage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\registry\\pages\\RegistryHomePage.tsx",
+      "line": 5
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\registry\\pages\\RegistryDedupWorkbenchPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\registry\\pages\\RegistryAuditLogPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\registry\\pages\\RegistryApprovalQueuePage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\registry\\pages\\RegistryApprovalDetailPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\registry\\pages\\RegistryApprovalDetailPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\registry\\pages\\FullEditRegistryPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\registry\\pages\\FullEditRegistryPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\registry\\pages\\FullEditRegistryPage.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\registry\\pages\\FullEditRegistryPage.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\registry\\pages\\EditRegistryPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\registry\\pages\\EditRegistryPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\registry\\pages\\EditRegistryPage.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\registry\\pages\\placeholder\\RegistryPlaceholderPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\registry\\pages\\placeholder\\RegistryPlaceholderPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\registry\\pages\\placeholder\\RegistryPlaceholderPage.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\registry\\components\\IDCardUploadDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\registry\\components\\IDCardUploadDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\registry\\components\\IDCardUploadDialog.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\plans\\pages\\PlansList.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\plans\\pages\\PlansList.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\plans\\pages\\PlansList.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\plans\\pages\\PlansList.tsx",
+      "line": 25
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\plans\\pages\\PlansList.tsx",
+      "line": 34
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\plans\\pages\\PlanDetail.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\plans\\pages\\PlanDetail.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\plans\\pages\\PlanDetail.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\plans\\pages\\PlanDetail.tsx",
+      "line": 58
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\plans\\pages\\PlanCreate.tsx",
+      "line": 2
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\plans\\pages\\PlanCreate.tsx",
+      "line": 3
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\plans\\pages\\PlanCreate.tsx",
+      "line": 4
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\plans\\pages\\PlanCreate.tsx",
+      "line": 5
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\plans\\pages\\inspections\\InspectionRoundStatistics.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\plans\\pages\\inspections\\InspectionRoundStatistics.tsx",
+      "line": 2
+    },
+    {
+      "library": "recharts",
+      "file": "src\\modules\\plans\\pages\\inspections\\InspectionRoundStatistics.tsx",
+      "line": 17
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\plans\\pages\\inspections\\InspectionRoundStatistics.tsx",
+      "line": 21
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\plans\\pages\\inspections\\InspectionRoundsList.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\plans\\pages\\inspections\\InspectionRoundsList.tsx",
+      "line": 3
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\plans\\pages\\inspections\\InspectionRoundsList.tsx",
+      "line": 4
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\plans\\pages\\inspections\\InspectionRoundsList.tsx",
+      "line": 22
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\plans\\pages\\inspections\\InspectionRoundDetail.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\plans\\pages\\inspections\\InspectionRoundDetail.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\plans\\pages\\inspections\\InspectionRoundDetail.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\plans\\pages\\inspections\\InspectionRoundDetail.tsx",
+      "line": 49
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\plans\\pages\\inspections\\InspectionRoundDetail.tsx",
+      "line": 50
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\plans\\pages\\inspections\\InspectionRoundCreate.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\plans\\pages\\inspections\\InspectionRoundCreate.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\plans\\pages\\inspections\\InspectionRoundCreate.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\plans\\pages\\inspections\\InspectionRoundCreate.tsx",
+      "line": 16
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\plans\\components\\InsSyncModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "dayjs",
+      "file": "src\\modules\\plans\\components\\InsSyncModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\plans\\components\\InsSyncModal.tsx",
+      "line": 3
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\plans\\components\\InsSyncModal.tsx",
+      "line": 23
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\plans\\components\\InsSyncModal.tsx",
+      "line": 24
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\overview\\pages\\OverviewPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\overview\\pages\\DashboardPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\overview\\pages\\DashboardPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\overview\\pages\\DashboardPage.tsx",
+      "line": 4
+    },
+    {
+      "library": "recharts",
+      "file": "src\\modules\\overview\\pages\\DashboardPage.tsx",
+      "line": 21
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\map\\pages\\MapPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\map\\pages\\MapPage.tsx",
+      "line": 4
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\map\\pages\\MapPage.tsx",
+      "line": 19
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\map\\hooks\\useMapFilters.ts",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\TestSupabaseConnection.tsx",
+      "line": 6
+    },
+    {
+      "library": "@supabase/supabase-js",
+      "file": "src\\modules\\legacy\\pages\\TestSupabaseConnection.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\TerritoryTabNew.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\TerritoryTabNew.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\legacy\\pages\\TerritoryTabNew.tsx",
+      "line": 25
+    },
+    {
+      "library": "xlsx",
+      "file": "src\\modules\\legacy\\pages\\TerritoryTabNew.tsx",
+      "line": 27
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\SystemMonitorTab.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\SystemMonitorTab.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\legacy\\pages\\SystemMonitorTab.tsx",
+      "line": 31
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\SystemHealthTab.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\SystemHealthTab.tsx",
+      "line": 8
+    },
+    {
+      "library": "recharts",
+      "file": "src\\modules\\legacy\\pages\\SystemHealthTab.tsx",
+      "line": 28
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\legacy\\pages\\SystemHealthTab.tsx",
+      "line": 30
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\SystemAuditLogTab.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\SystemAuditLogTab.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\legacy\\pages\\SystemAuditLogTab.tsx",
+      "line": 28
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\SecurityConfigTab.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\SecurityConfigTab.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\legacy\\pages\\SecurityConfigTab.tsx",
+      "line": 27
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\RolesManagement.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\RolesManagement.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\RBACManagement.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\RBACManagement.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\legacy\\pages\\RBACManagement.tsx",
+      "line": 26
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\QuickSupabaseTest.tsx",
+      "line": 6
+    },
+    {
+      "library": "@supabase/supabase-js",
+      "file": "src\\modules\\legacy\\pages\\QuickSupabaseTest.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\PlansPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\PlaceholderPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\PlaceholderPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\PermissionsMatrixTab.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\PermissionsMatrixTab.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\legacy\\pages\\PermissionsMatrixTab.tsx",
+      "line": 27
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\PermissionsMatrixNew.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\PermissionsMatrixNew.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\PermissionsMatrixModals.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\PermissionsMatrixModals.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\NotificationRulesTab.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\NotificationRulesTab.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\legacy\\pages\\NotificationRulesTab.tsx",
+      "line": 27
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\LocationsTab.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\LocationsTab.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\legacy\\pages\\LocationsTab.tsx",
+      "line": 24
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\IntegrationStatusTab.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\IntegrationStatusTab.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\legacy\\pages\\IntegrationStatusTab.tsx",
+      "line": 30
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\FormTemplatesTab.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\FormTemplatesTab.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\legacy\\pages\\FormTemplatesTab.tsx",
+      "line": 27
+    },
+    {
+      "library": "xlsx",
+      "file": "src\\modules\\legacy\\pages\\FormTemplatesTab.tsx",
+      "line": 32
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\EvidencePage.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\EvidencePage.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\DepartmentsTab.tsx",
+      "line": 8
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\DepartmentsTab.tsx",
+      "line": 9
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\legacy\\pages\\DepartmentsTab.tsx",
+      "line": 28
+    },
+    {
+      "library": "xlsx",
+      "file": "src\\modules\\legacy\\pages\\DepartmentsTab.tsx",
+      "line": 30
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\DataChangesTab.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\DataChangesTab.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\legacy\\pages\\DataChangesTab.tsx",
+      "line": 25
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\CategoriesTab.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\CategoriesTab.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\legacy\\pages\\CategoriesTab.tsx",
+      "line": 21
+    },
+    {
+      "library": "xlsx",
+      "file": "src\\modules\\legacy\\pages\\CategoriesTab.tsx",
+      "line": 25
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\BanksTab.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\BanksTab.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\legacy\\pages\\BanksTab.tsx",
+      "line": 23
+    },
+    {
+      "library": "xlsx",
+      "file": "src\\modules\\legacy\\pages\\BanksTab.tsx",
+      "line": 28
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\AuditLogTab.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\AuditLogTab.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\legacy\\pages\\AuditLogTab.tsx",
+      "line": 28
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\AdminAuditMonitoring.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\AdminAuditMonitoring.tsx",
+      "line": 8
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\auth\\VerifyOTP.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\legacy\\pages\\auth\\VerifyOTP.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\auth\\SelectJurisdiction.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\legacy\\pages\\auth\\SelectJurisdiction.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\auth\\SelectJurisdiction.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\auth\\ResetPassword.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\legacy\\pages\\auth\\ResetPassword.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\auth\\Login.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\legacy\\pages\\auth\\Login.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\auth\\Login.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\legacy\\pages\\auth\\ForgotPassword.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\legacy\\pages\\auth\\ForgotPassword.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\legacy\\pages\\auth\\ForgotPassword.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\LeadsPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\LeadsPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\ZoomableMapView.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\ZoomableMapView.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\WorkloadDashboard.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\WorkloadDashboard.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\Watchlist.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\Watchlist.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\VerificationOutcome.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\VerificationOutcome.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\VerificationOutcome.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\VerificationOutcome.tsx",
+      "line": 16
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\SLAOperationMap.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\SLAOperationMap.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\SLADashboard.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\SLADashboard.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\RiskIndicators.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\RiskIndicators.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\RiskIndicators.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\RiskIndicators.tsx",
+      "line": 17
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\RiskDetail.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\RiskDetail.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\RiskDetail.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\RiskDashboard.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\RiskDashboard.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\RiskDashboard.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\QualityMetrics.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\QualityMetrics.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\PermissionMatrix.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\PermissionMatrix.tsx",
+      "line": 2
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\PermissionMatrix.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadRiskHome.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadRiskHome.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadRiskHome.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadMapView.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadMapView.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadMapView.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadList.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadList.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadList.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadInboxAIDemo.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadInboxAIDemo.tsx",
+      "line": 2
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadInboxAIDemo.tsx",
+      "line": 20
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadInboxAIDemo.tsx",
+      "line": 21
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadInboxAIDemo.tsx",
+      "line": 22
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadInbox.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadInbox.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadInbox.tsx",
+      "line": 3
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadInbox.tsx",
+      "line": 4
+    },
+    {
+      "library": "xlsx",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadInbox.tsx",
+      "line": 26
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadDuplicateDemo.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadDuplicateDemo.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadDuplicateDemo.tsx",
+      "line": 3
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadDetailAIDemo.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadDetail.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadDetail.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadDetail.tsx",
+      "line": 3
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\LeadDetail.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\ImportReview.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\ImportReview.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\ImportReview.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\ImportReview.tsx",
+      "line": 14
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\ImportLeads.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\ImportLeads.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\ImportLeads.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\ImportLeads.tsx",
+      "line": 15
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\HotspotExplorer.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\HotspotExplorer.tsx",
+      "line": 2
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\HotspotExplorer.tsx",
+      "line": 15
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\EscalationForm.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\EscalationForm.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\EscalationForm.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\EscalationForm.tsx",
+      "line": 18
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\EntityRiskProfile.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\EntityRiskProfile.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\EntityRiskProfile.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\DuplicateDetector.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\DuplicateDetector.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\DuplicateDetector.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\DuplicateDetector.tsx",
+      "line": 20
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\CreateLeadSource.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\CreateLeadSource.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\CreateLeadSource.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\CreateLeadSource.tsx",
+      "line": 18
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\CreateLeadQuick.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\CreateLeadQuick.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\CreateLeadQuick.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\CreateLeadQuick.tsx",
+      "line": 15
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\CreateLeadFull.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\CreateLeadFull.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\CreateLeadFull.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\CreateLeadFull.tsx",
+      "line": 21
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\CaseDetail.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\CaseDetail.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\CaseDetail.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\AssignmentDispatch.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\AssignmentDispatch.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\AssignmentDispatch.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\AssignmentDispatch.tsx",
+      "line": 22
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\AlertFeed.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\AlertFeed.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\AlertFeed.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\AlertFeed.tsx",
+      "line": 21
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\AlertAcknowledgement.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\AlertAcknowledgement.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\AlertAcknowledgement.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\leads\\pages\\lead-risk\\AlertAcknowledgement.tsx",
+      "line": 19
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\lead-risk\\components\\CategoryLeadsWizardModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\lead-risk\\components\\CategoryLeadsWizardModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\lead-risk\\components\\CategoryLeadsWizardModal.tsx",
+      "line": 17
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\lead-risk\\components\\CategoryLeadsWizardModal.tsx",
+      "line": 18
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\lead-risk\\components\\AiQuickAssistPanel.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\lead-risk\\components\\AiQuickAssistPanel.tsx",
+      "line": 2
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\lead-risk\\components\\AiQuickAssistPanel.tsx",
+      "line": 3
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\kpi-qltt\\routes.tsx",
+      "line": 5
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\pages\\RiskDashboard.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\kpi-qltt\\pages\\RiskDashboard.tsx",
+      "line": 2
+    },
+    {
+      "library": "recharts",
+      "file": "src\\modules\\kpi-qltt\\pages\\RiskDashboard.tsx",
+      "line": 13
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\pages\\ReportsListPage.tsx",
+      "line": 5
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\kpi-qltt\\pages\\ReportsListPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\kpi-qltt\\pages\\ReportsListPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\pages\\ReportDetailPage.tsx",
+      "line": 5
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\kpi-qltt\\pages\\ReportDetailPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\kpi-qltt\\pages\\ReportDetailPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\pages\\ReportBuilderPage.tsx",
+      "line": 5
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\kpi-qltt\\pages\\ReportBuilderPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\kpi-qltt\\pages\\ReportBuilderPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\pages\\KpiWorkspacePage.tsx",
+      "line": 1
+    },
+    {
+      "library": "dayjs",
+      "file": "src\\modules\\kpi-qltt\\pages\\KpiWorkspacePage.tsx",
+      "line": 2
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\kpi-qltt\\pages\\KpiWorkspacePage.tsx",
+      "line": 3
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\kpi-qltt\\pages\\KpiWorkspacePage.tsx",
+      "line": 4
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\kpi-qltt\\pages\\KpiWorkspacePage.tsx",
+      "line": 17
+    },
+    {
+      "library": "recharts",
+      "file": "src\\modules\\kpi-qltt\\pages\\KpiWorkspacePage.tsx",
+      "line": 18
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\pages\\KpiQlttDashboard_new.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\kpi-qltt\\pages\\KpiQlttDashboard_new.tsx",
+      "line": 2
+    },
+    {
+      "library": "recharts",
+      "file": "src\\modules\\kpi-qltt\\pages\\KpiQlttDashboard_new.tsx",
+      "line": 24
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\pages\\KpiCriteriaDetailPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "dayjs",
+      "file": "src\\modules\\kpi-qltt\\pages\\KpiCriteriaDetailPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\kpi-qltt\\pages\\KpiCriteriaDetailPage.tsx",
+      "line": 3
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\kpi-qltt\\pages\\KpiCriteriaDetailPage.tsx",
+      "line": 4
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\modules\\kpi-qltt\\pages\\KpiCriteriaDetailPage.tsx",
+      "line": 17
+    },
+    {
+      "library": "recharts",
+      "file": "src\\modules\\kpi-qltt\\pages\\KpiCriteriaDetailPage.tsx",
+      "line": 18
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\pages\\InspectionDashboard.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\kpi-qltt\\pages\\InspectionDashboard.tsx",
+      "line": 2
+    },
+    {
+      "library": "recharts",
+      "file": "src\\modules\\kpi-qltt\\pages\\InspectionDashboard.tsx",
+      "line": 16
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\pages\\FeedbackDashboard.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\pages\\FeedbackDashboard.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\kpi-qltt\\pages\\FeedbackDashboard.tsx",
+      "line": 3
+    },
+    {
+      "library": "recharts",
+      "file": "src\\modules\\kpi-qltt\\pages\\FeedbackDashboard.tsx",
+      "line": 16
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\pages\\DashboardPage.tsx",
+      "line": 5
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\kpi-qltt\\pages\\DashboardPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\kpi-qltt\\pages\\DashboardPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\pages\\CompareKpiPage.tsx",
+      "line": 5
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\kpi-qltt\\pages\\CompareKpiPage.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\kpi-qltt\\pages\\CompareKpiPage.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\components\\MiniTrend.tsx",
+      "line": 5
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\components\\MarketAnalysisSections.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\components\\KpiLayout.tsx",
+      "line": 5
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\kpi-qltt\\components\\KpiLayout.tsx",
+      "line": 6
+    },
+    {
+      "library": "dayjs",
+      "file": "src\\modules\\kpi-qltt\\components\\KpiContextBar.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\kpi-qltt\\components\\KpiContextBar.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\components\\KpiCards.tsx",
+      "line": 5
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\kpi-qltt\\components\\KpiCards.tsx",
+      "line": 6
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\components\\FilterBar.tsx",
+      "line": 5
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\kpi-qltt\\components\\FilterBar.tsx",
+      "line": 6
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\components\\ExportCsvButton.tsx",
+      "line": 5
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\kpi-qltt\\components\\ExportCsvButton.tsx",
+      "line": 6
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\components\\DataTable.tsx",
+      "line": 5
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\kpi-qltt\\components\\DataTable.tsx",
+      "line": 7
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\kpi-qltt\\components\\DataTable.tsx",
+      "line": 8
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\components\\DashboardFilterPopups.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\kpi-qltt\\components\\DashboardFilterPopups.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\components\\CompareMiniBars.tsx",
+      "line": 5
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\components\\CompareKpiTable.tsx",
+      "line": 5
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\kpi-qltt\\components\\CompareKpiTable.tsx",
+      "line": 8
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\components\\CompareKpiFilterBar.tsx",
+      "line": 5
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi-qltt\\components\\ActivityTrendChart.tsx",
+      "line": 5
+    },
+    {
+      "library": "recharts",
+      "file": "src\\modules\\kpi-qltt\\components\\ActivityTrendChart.tsx",
+      "line": 6
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\kpi\\components\\GeoUnitTreeSelect.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\kpi\\components\\GeoUnitTreeSelect.tsx",
+      "line": 2
+    },
+    {
+      "library": "antd",
+      "file": "src\\modules\\kpi\\components\\GeoUnitTreeSelect.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\i-todolist\\routes.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\i-todolist\\routes.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\i-todolist\\pages\\TaskListPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\i-todolist\\pages\\TaskListPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\i-todolist\\pages\\TaskListPage.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\i-todolist\\pages\\TaskFormPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\i-todolist\\pages\\TaskFormPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\i-todolist\\pages\\TaskFormPage.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\i-todolist\\pages\\TaskDetailPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\i-todolist\\pages\\TaskDetailPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\i-todolist\\pages\\TaskDetailPage.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\i-todolist\\pages\\CalendarPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\i-todolist\\pages\\CalendarPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\i-todolist\\pages\\CalendarPage.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\i-todolist\\hooks\\useNotifications.ts",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\i-todolist\\components\\TopicsPanel.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\i-todolist\\components\\Toast.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\i-todolist\\components\\Toast.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\i-todolist\\components\\TaskHistoryTimeline.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\i-todolist\\components\\TaskHistoryTimeline.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\i-todolist\\components\\TaskCalendar.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\i-todolist\\components\\TaskCalendar.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\i-todolist\\components\\NotificationBanner.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\i-todolist\\components\\DropdownMenu.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\i-todolist\\components\\CommentSection.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\i-todolist\\components\\CommentSection.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\i-todolist\\components\\Button.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\evidence\\pages\\ScopeFilteringDemoPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\evidence\\pages\\ScopeFilteringDemoPage.tsx",
+      "line": 9
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\evidence\\pages\\PermissionDemoPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\evidence\\pages\\PermissionDemoPage.tsx",
+      "line": 8
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\evidence\\pages\\EvidenceUploadPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\evidence\\pages\\EvidenceUploadPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\evidence\\pages\\EvidenceUploadPage.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\evidence\\pages\\EvidenceUploadPage.tsx",
+      "line": 25
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\evidence\\pages\\EvidenceReviewQueuePage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\evidence\\pages\\EvidenceReviewQueuePage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\evidence\\pages\\EvidenceReviewQueuePage.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\evidence\\pages\\EvidenceReviewDetailPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\evidence\\pages\\EvidenceReviewDetailPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\evidence\\pages\\EvidenceReviewDetailPage.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\evidence\\pages\\EvidenceReviewDetailPage.tsx",
+      "line": 29
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\evidence\\pages\\EvidencePackageListPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\evidence\\pages\\EvidencePackageListPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\evidence\\pages\\EvidencePackageListPage.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\evidence\\pages\\EvidencePackageDetailPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\evidence\\pages\\EvidencePackageDetailPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\evidence\\pages\\EvidencePackageDetailPage.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\evidence\\pages\\EvidencePackageDetailPage.tsx",
+      "line": 28
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\evidence\\pages\\EvidencePackageBuilderPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\evidence\\pages\\EvidencePackageBuilderPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\evidence\\pages\\EvidencePackageBuilderPage.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\evidence\\pages\\EvidencePackageBuilderPage.tsx",
+      "line": 24
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\evidence\\pages\\EvidenceListPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\evidence\\pages\\EvidenceListPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\evidence\\pages\\EvidenceListPage.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\evidence\\pages\\EvidenceListPage.tsx",
+      "line": 26
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\evidence\\pages\\EvidenceIntakeInboxPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\evidence\\pages\\EvidenceIntakeInboxPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\evidence\\pages\\EvidenceIntakeInboxPage.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\evidence\\pages\\EvidenceIntakeInboxPage.tsx",
+      "line": 26
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\evidence\\pages\\EvidenceExportCenterPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\evidence\\pages\\EvidenceExportCenterPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\evidence\\pages\\EvidenceExportCenterPage.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\evidence\\pages\\EvidenceExportCenterPage.tsx",
+      "line": 24
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\evidence\\pages\\EvidenceDetailPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\evidence\\pages\\EvidenceDetailPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\evidence\\pages\\EvidenceDetailPage.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\evidence\\pages\\EvidenceDetailPage.tsx",
+      "line": 34
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\evidence\\pages\\EvidenceAuditLogPage.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\evidence\\pages\\EvidenceAuditLogPage.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\evidence\\pages\\EvidenceAuditLogPage.tsx",
+      "line": 26
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\dynamic-reports\\routes.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\dynamic-reports\\pages\\ReportResult.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\dynamic-reports\\pages\\ReportResult.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\dynamic-reports\\pages\\ReportResult.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\dynamic-reports\\pages\\ReportBuilder.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\dynamic-reports\\pages\\ReportBuilder.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\dynamic-reports\\pages\\ReportBuilder.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\dynamic-reports\\pages\\ReportBuilder.tsx",
+      "line": 18
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\dynamic-reports\\pages\\DynamicReportsLanding.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\dynamic-reports\\pages\\DynamicReportsLanding.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\dynamic-reports\\pages\\DynamicReportsLanding.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\dynamic-reports\\pages\\DynamicReportsLanding.tsx",
+      "line": 24
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\dynamic-reports\\components\\ShareTemplateModal.tsx",
+      "line": 5
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\dynamic-reports\\components\\ShareTemplateModal.tsx",
+      "line": 6
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\dynamic-reports\\components\\SaveTemplateModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\dynamic-reports\\components\\SaveTemplateModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\dynamic-reports\\components\\SaveTemplateModal.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\dynamic-reports\\components\\ExportReportModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\dynamic-reports\\components\\ExportReportModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\dynamic-reports\\components\\ExportReportModal.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\auth\\pages\\Profile.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\auth\\pages\\Profile.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\auth\\pages\\Profile.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\auth\\pages\\Preferences.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\auth\\pages\\Preferences.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\auth\\pages\\Login.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\modules\\auth\\pages\\Login.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\auth\\pages\\Login.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\auth\\pages\\ChangePassword.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\auth\\pages\\ChangePassword.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\modules\\auth\\pages\\ChangePassword.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\modules\\auth\\pages\\ActivityLog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\modules\\auth\\pages\\ActivityLog.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\layouts\\VerticalSidebar.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\layouts\\VerticalSidebar.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\layouts\\VerticalSidebar.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\layouts\\TopUtilityBar.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\layouts\\TopUtilityBar.tsx",
+      "line": 2
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\layouts\\TopUtilityBar.tsx",
+      "line": 22
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\layouts\\RootLayout.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\layouts\\PageHeader.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\layouts\\PageHeader.tsx",
+      "line": 2
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\layouts\\PageHeader.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\layouts\\MainLayout.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\layouts\\MainLayout.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\layouts\\HorizontalNavBar.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\layouts\\HorizontalNavBar.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\layouts\\HorizontalNavBar.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\layouts\\HorizontalLayout.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\layouts\\HorizontalLayout.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\hooks\\useTokenRefresh.ts",
+      "line": 5
+    },
+    {
+      "library": "react",
+      "file": "src\\hooks\\useSupabasePlans.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\hooks\\useSupabaseLeads.ts",
+      "line": 6
+    },
+    {
+      "library": "react",
+      "file": "src\\hooks\\useSupabaseInspectionRounds.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\hooks\\useSupabaseInspectionRound.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\hooks\\useSupabase.ts",
+      "line": 8
+    },
+    {
+      "library": "react",
+      "file": "src\\hooks\\useRecordModal.ts",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\hooks\\useMenuRegistry.ts",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\hooks\\useLocalStorage.ts",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\hooks\\useLeadsData.ts",
+      "line": 6
+    },
+    {
+      "library": "react",
+      "file": "src\\hooks\\useDocumentChecklist.ts",
+      "line": 1
+    },
+    {
+      "library": "react-redux",
+      "file": "src\\hooks\\useAppStore.ts",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\hooks\\useAddressAutoMapper.ts",
+      "line": 14
+    },
+    {
+      "library": "react",
+      "file": "src\\contexts\\TvDataContext.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\contexts\\QLTTScopeContext.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\contexts\\PlansContext.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\contexts\\LayoutContext.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\contexts\\InspectionRoundsContext.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\contexts\\AuthContext.tsx",
+      "line": 1
+    },
+    {
+      "library": "@supabase/supabase-js",
+      "file": "src\\contexts\\AuthContext.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\contexts\\auth\\AuthProvider.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\WardModal.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\WardModal.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\WardModal.tsx",
+      "line": 10
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\UserModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\UserModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\UserModal.tsx",
+      "line": 4
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\TrendIndicator.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\SupabaseStatus.tsx",
+      "line": 8
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\StoreRiskProfile.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\StoreRiskProfile.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\SkeletonLoader.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\RPCSetupHelper.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\RoleModal.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\RoleModal.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\RoleModal.tsx",
+      "line": 19
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ProvinceModal.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ProvinceModal.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\ProvinceModal.tsx",
+      "line": 10
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\Pagination.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\Pagination.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\OutcomeModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\OutcomeModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\NotificationRuleModal.tsx",
+      "line": 8
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\NotificationRuleModal.tsx",
+      "line": 9
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\LocalityModal.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\LocalityModal.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\LocalityModal.tsx",
+      "line": 17
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\FormTemplateModal.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\FormTemplateModal.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\FormTemplateModal.tsx",
+      "line": 18
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\FormCriteriaModal.tsx",
+      "line": 9
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\FormCriteriaModal.tsx",
+      "line": 10
+    },
+    {
+      "library": "xlsx",
+      "file": "src\\components\\FormCriteriaModal.tsx",
+      "line": 12
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\FormCriteriaModal.tsx",
+      "line": 13
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ExportJobModal.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ExportJobModal.tsx",
+      "line": 8
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ExportJobDrawer.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ExportJobDrawer.tsx",
+      "line": 8
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\EscalationPanel.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\EscalationPanel.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ErrorBoundary.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\DepartmentTreeSelect.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\DepartmentTreeSelect.tsx",
+      "line": 8
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\DatePicker.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\components\\DatePicker.tsx",
+      "line": 2
+    },
+    {
+      "library": "dayjs",
+      "file": "src\\components\\DatePicker.tsx",
+      "line": 3
+    },
+    {
+      "library": "dayjs",
+      "file": "src\\components\\DatePicker.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\DataExportPanel.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\DataExportPanel.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\DatabaseErrorAlert.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\DatabaseErrorAlert.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ChangePasswordModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ChangePasswordModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\ChangePasswordModal.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\CategoryModal.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\CategoryModal.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\CategoryModal.tsx",
+      "line": 9
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\Breadcrumb.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\components\\Breadcrumb.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\BankModal.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\BankModal.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\BankModal.tsx",
+      "line": 10
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\BackButton.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\components\\BackButton.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\AuditTrail.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\AuditTrail.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\AreaModal.tsx",
+      "line": 7
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\AreaModal.tsx",
+      "line": 8
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\AreaModal.tsx",
+      "line": 11
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ActionModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ActionModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\ViolationsTable.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\ViolationsTable.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\UploadPhotosDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\UploadPhotosDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\TableFooter.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\StoreImportDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\StoreImportDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\ui-kit\\StoreImportDialog.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\Step5Confirmation.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\Step5Confirmation.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\Step4MapGeocoding.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\Step4MapGeocoding.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\ui-kit\\Step4MapGeocoding.tsx",
+      "line": 27
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\Step4AddressMap.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\Step4AddressMap.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\ui-kit\\Step4AddressMap.tsx",
+      "line": 29
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\Step3OwnerInfo.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\Step3OwnerInfo.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\ui-kit\\Step3OwnerInfo.tsx",
+      "line": 5
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\StatusBadge.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\SensitiveFieldWarning.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\SensitiveFieldWarning.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\SearchInput.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\SearchInput.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\SearchableSelect.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\SearchableSelect.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\RiskDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\RiskDialog.tsx",
+      "line": 20
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\RiskAssessment.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\RiskAssessment.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\RichTextEditor.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\RichTextEditor.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\QuickEditDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\QuickEditDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\ui-kit\\QuickEditDialog.tsx",
+      "line": 18
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\PendingUpdatesDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\PendingUpdatesDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\ui-kit\\PendingUpdatesDialog.tsx",
+      "line": 13
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\PendingUpdateDetailDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\PendingUpdateDetailDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\PendingApprovalBadge.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\PendingApprovalBadge.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\NativeSelect.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\NativeSelect.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\MiniMapEmbed.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\MiniMapDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\MiniMapDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\MapLocationPicker.tsx",
+      "line": 1
+    },
+    {
+      "library": "leaflet",
+      "file": "src\\components\\ui-kit\\MapLocationPicker.tsx",
+      "line": 2
+    },
+    {
+      "library": "react-leaflet",
+      "file": "src\\components\\ui-kit\\MapLocationPicker.tsx",
+      "line": 3
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\MapLocationPicker.tsx",
+      "line": 4
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\LegalDocumentItem.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\LegalDocumentDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\LegalDocumentDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\InspectionTimeline.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\InspectionTimeline.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\InfiniteScrollSelect.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-dom",
+      "file": "src\\components\\ui-kit\\InfiniteScrollSelect.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\InfiniteScrollSelect.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\ImportDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\ImportDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\ImageGallery.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\ImageGallery.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\ui-kit\\ImageGallery.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\ImageDetailModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\ImageDetailModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\IDCardUploadDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\IDCardUploadDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\ui-kit\\IDCardUploadDialog.tsx",
+      "line": 6
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\FacilityStatusBadge.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\FacilityStatusBadge.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\ExportDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\ExportDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\EvidencePackageExport.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\EvidencePackageExport.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\ui-kit\\EvidencePackageExport.tsx",
+      "line": 56
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\EvidenceKanbanBoard.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-dnd",
+      "file": "src\\components\\ui-kit\\EvidenceKanbanBoard.tsx",
+      "line": 2
+    },
+    {
+      "library": "react-dnd-html5-backend",
+      "file": "src\\components\\ui-kit\\EvidenceKanbanBoard.tsx",
+      "line": 3
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\EvidenceKanbanBoard.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\EvidenceIntakeLibrary.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\EvidenceIntakeLibrary.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\ui-kit\\EvidenceIntakeLibrary.tsx",
+      "line": 48
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\EvidenceAnalysisViewer.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\EvidenceAnalysisViewer.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\ui-kit\\EvidenceAnalysisViewer.tsx",
+      "line": 39
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\EvidenceAdminSystem.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\EvidenceAdminSystem.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\ui-kit\\EvidenceAdminSystem.tsx",
+      "line": 59
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\EmptyState.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\EmptyState.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\EditStoreDialogTabbed.tsx",
+      "line": 4
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\EditStoreDialogTabbed.tsx",
+      "line": 5
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\ui-kit\\EditStoreDialogTabbed.tsx",
+      "line": 34
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\EditStoreDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\EditStoreDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\DocumentViewDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\DocumentUploadDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\DocumentUploadDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\ui-kit\\DocumentUploadDialog.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\DiffPreviewSection.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\DiffPreviewSection.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\DateRangePicker.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-dom",
+      "file": "src\\components\\ui-kit\\DateRangePicker.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\DateRangePicker.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\DataTable.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\DataTable.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\CustomCalendar.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\CustomCalendar.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\ConfirmDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\ConfirmDialog.tsx",
+      "line": 12
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\ComplaintsTable.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\ComplaintsTable.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\ChangeReasonDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\ChangeReasonDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\BulkActionModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\BulkActionModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\AsyncSearchableSelect.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\AsyncSearchableSelect.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\ApprovalDialogs.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\ApprovalDialogs.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\AdvancedFilterPopup.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\AdvancedFilterPopup.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\AdvancedFilterModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\AdvancedFilterModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\AdvancedFilterInline.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\AdvancedFilterInline.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\AddStoreDialogTabbed.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\AddStoreDialogTabbed.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\ui-kit\\AddStoreDialogTabbed.tsx",
+      "line": 44
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\AddStoreDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\AddStoreDialog.tsx",
+      "line": 5
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\ui-kit\\AddStoreDialog.tsx",
+      "line": 68
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\AddEvidenceDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\AddEvidenceDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\ui-kit\\AddEvidenceDialog.tsx",
+      "line": 18
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\PasswordInput\\PasswordInput.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui-kit\\PasswordInput\\PasswordInput.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\Input\\Input.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui-kit\\Card\\Card.tsx",
+      "line": 1
+    },
+    {
+      "library": "clsx",
+      "file": "src\\components\\ui\\utils.ts",
+      "line": 1
+    },
+    {
+      "library": "tailwind-merge",
+      "file": "src\\components\\ui\\utils.ts",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\use-mobile.ts",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\tooltip.tsx",
+      "line": 3
+    },
+    {
+      "library": "@radix-ui/react-tooltip",
+      "file": "src\\components\\ui\\tooltip.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\toggle.tsx",
+      "line": 3
+    },
+    {
+      "library": "@radix-ui/react-toggle",
+      "file": "src\\components\\ui\\toggle.tsx",
+      "line": 4
+    },
+    {
+      "library": "class-variance-authority",
+      "file": "src\\components\\ui\\toggle.tsx",
+      "line": 5
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\toggle-group.tsx",
+      "line": 3
+    },
+    {
+      "library": "@radix-ui/react-toggle-group",
+      "file": "src\\components\\ui\\toggle-group.tsx",
+      "line": 4
+    },
+    {
+      "library": "class-variance-authority",
+      "file": "src\\components\\ui\\toggle-group.tsx",
+      "line": 5
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\textarea.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\tabs.tsx",
+      "line": 3
+    },
+    {
+      "library": "@radix-ui/react-tabs",
+      "file": "src\\components\\ui\\tabs.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\table.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\switch.tsx",
+      "line": 3
+    },
+    {
+      "library": "@radix-ui/react-switch",
+      "file": "src\\components\\ui\\switch.tsx",
+      "line": 4
+    },
+    {
+      "library": "next-themes",
+      "file": "src\\components\\ui\\sonner.tsx",
+      "line": 3
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\ui\\sonner.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\slider.tsx",
+      "line": 3
+    },
+    {
+      "library": "@radix-ui/react-slider",
+      "file": "src\\components\\ui\\slider.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\sidebar.tsx",
+      "line": 3
+    },
+    {
+      "library": "@radix-ui/react-slot",
+      "file": "src\\components\\ui\\sidebar.tsx",
+      "line": 4
+    },
+    {
+      "library": "class-variance-authority",
+      "file": "src\\components\\ui\\sidebar.tsx",
+      "line": 5
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui\\sidebar.tsx",
+      "line": 6
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\sheet.tsx",
+      "line": 3
+    },
+    {
+      "library": "@radix-ui/react-dialog",
+      "file": "src\\components\\ui\\sheet.tsx",
+      "line": 4
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui\\sheet.tsx",
+      "line": 5
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\separator.tsx",
+      "line": 3
+    },
+    {
+      "library": "@radix-ui/react-separator",
+      "file": "src\\components\\ui\\separator.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\select.tsx",
+      "line": 3
+    },
+    {
+      "library": "@radix-ui/react-select",
+      "file": "src\\components\\ui\\select.tsx",
+      "line": 4
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui\\select.tsx",
+      "line": 5
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\scroll-area.tsx",
+      "line": 3
+    },
+    {
+      "library": "@radix-ui/react-scroll-area",
+      "file": "src\\components\\ui\\scroll-area.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\resizable.tsx",
+      "line": 3
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui\\resizable.tsx",
+      "line": 4
+    },
+    {
+      "library": "react-resizable-panels",
+      "file": "src\\components\\ui\\resizable.tsx",
+      "line": 5
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\radio-group.tsx",
+      "line": 3
+    },
+    {
+      "library": "@radix-ui/react-radio-group",
+      "file": "src\\components\\ui\\radio-group.tsx",
+      "line": 4
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui\\radio-group.tsx",
+      "line": 5
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\progress.tsx",
+      "line": 3
+    },
+    {
+      "library": "@radix-ui/react-progress",
+      "file": "src\\components\\ui\\progress.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\popover.tsx",
+      "line": 3
+    },
+    {
+      "library": "@radix-ui/react-popover",
+      "file": "src\\components\\ui\\popover.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\pagination.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui\\pagination.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\navigation-menu.tsx",
+      "line": 1
+    },
+    {
+      "library": "@radix-ui/react-navigation-menu",
+      "file": "src\\components\\ui\\navigation-menu.tsx",
+      "line": 2
+    },
+    {
+      "library": "class-variance-authority",
+      "file": "src\\components\\ui\\navigation-menu.tsx",
+      "line": 3
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui\\navigation-menu.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\multi-select.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\menubar.tsx",
+      "line": 3
+    },
+    {
+      "library": "@radix-ui/react-menubar",
+      "file": "src\\components\\ui\\menubar.tsx",
+      "line": 4
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui\\menubar.tsx",
+      "line": 5
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\label.tsx",
+      "line": 3
+    },
+    {
+      "library": "@radix-ui/react-label",
+      "file": "src\\components\\ui\\label.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\input.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\input-otp.tsx",
+      "line": 3
+    },
+    {
+      "library": "input-otp",
+      "file": "src\\components\\ui\\input-otp.tsx",
+      "line": 4
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui\\input-otp.tsx",
+      "line": 5
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\hover-card.tsx",
+      "line": 3
+    },
+    {
+      "library": "@radix-ui/react-hover-card",
+      "file": "src\\components\\ui\\hover-card.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\form.tsx",
+      "line": 3
+    },
+    {
+      "library": "@radix-ui/react-label",
+      "file": "src\\components\\ui\\form.tsx",
+      "line": 4
+    },
+    {
+      "library": "@radix-ui/react-slot",
+      "file": "src\\components\\ui\\form.tsx",
+      "line": 5
+    },
+    {
+      "library": "react-hook-form",
+      "file": "src\\components\\ui\\form.tsx",
+      "line": 6
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\dropdown-menu.tsx",
+      "line": 3
+    },
+    {
+      "library": "@radix-ui/react-dropdown-menu",
+      "file": "src\\components\\ui\\dropdown-menu.tsx",
+      "line": 4
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui\\dropdown-menu.tsx",
+      "line": 5
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\drawer.tsx",
+      "line": 3
+    },
+    {
+      "library": "vaul",
+      "file": "src\\components\\ui\\drawer.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\dialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "@radix-ui/react-dialog",
+      "file": "src\\components\\ui\\dialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui\\dialog.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\context-menu.tsx",
+      "line": 3
+    },
+    {
+      "library": "@radix-ui/react-context-menu",
+      "file": "src\\components\\ui\\context-menu.tsx",
+      "line": 4
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui\\context-menu.tsx",
+      "line": 5
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\command.tsx",
+      "line": 3
+    },
+    {
+      "library": "cmdk",
+      "file": "src\\components\\ui\\command.tsx",
+      "line": 4
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui\\command.tsx",
+      "line": 5
+    },
+    {
+      "library": "@radix-ui/react-collapsible",
+      "file": "src\\components\\ui\\collapsible.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\checkbox.tsx",
+      "line": 3
+    },
+    {
+      "library": "@radix-ui/react-checkbox",
+      "file": "src\\components\\ui\\checkbox.tsx",
+      "line": 4
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui\\checkbox.tsx",
+      "line": 5
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\chart.tsx",
+      "line": 3
+    },
+    {
+      "library": "recharts",
+      "file": "src\\components\\ui\\chart.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\carousel.tsx",
+      "line": 3
+    },
+    {
+      "library": "embla-carousel-react",
+      "file": "src\\components\\ui\\carousel.tsx",
+      "line": 4
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui\\carousel.tsx",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\card.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\calendar.tsx",
+      "line": 3
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui\\calendar.tsx",
+      "line": 4
+    },
+    {
+      "library": "react-day-picker",
+      "file": "src\\components\\ui\\calendar.tsx",
+      "line": 5
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\button.tsx",
+      "line": 1
+    },
+    {
+      "library": "@radix-ui/react-slot",
+      "file": "src\\components\\ui\\button.tsx",
+      "line": 2
+    },
+    {
+      "library": "class-variance-authority",
+      "file": "src\\components\\ui\\button.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\breadcrumb.tsx",
+      "line": 1
+    },
+    {
+      "library": "@radix-ui/react-slot",
+      "file": "src\\components\\ui\\breadcrumb.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui\\breadcrumb.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\badge.tsx",
+      "line": 1
+    },
+    {
+      "library": "@radix-ui/react-slot",
+      "file": "src\\components\\ui\\badge.tsx",
+      "line": 2
+    },
+    {
+      "library": "class-variance-authority",
+      "file": "src\\components\\ui\\badge.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\avatar.tsx",
+      "line": 3
+    },
+    {
+      "library": "@radix-ui/react-avatar",
+      "file": "src\\components\\ui\\avatar.tsx",
+      "line": 4
+    },
+    {
+      "library": "@radix-ui/react-aspect-ratio",
+      "file": "src\\components\\ui\\aspect-ratio.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\alert.tsx",
+      "line": 1
+    },
+    {
+      "library": "class-variance-authority",
+      "file": "src\\components\\ui\\alert.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\alert-dialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "@radix-ui/react-alert-dialog",
+      "file": "src\\components\\ui\\alert-dialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ui\\accordion.tsx",
+      "line": 3
+    },
+    {
+      "library": "@radix-ui/react-accordion",
+      "file": "src\\components\\ui\\accordion.tsx",
+      "line": 4
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\ui\\accordion.tsx",
+      "line": 5
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tv\\TvSettingsDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tv\\TvSettingsDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tv\\TvLocationSelector.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tv\\TvLocationSelector.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tv\\TvHeaderBar.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tv\\TvHeaderBar.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tv\\TvFiltersBar.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tv\\TvFiltersBar.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tv\\TopTabsTable.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tv\\TopTabsTable.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tv\\LocationRotationControl.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tv\\LocationRotationControl.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tv\\LiveMapPanel.tsx",
+      "line": 1
+    },
+    {
+      "library": "leaflet",
+      "file": "src\\components\\tv\\LiveMapPanel.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tv\\LiveMapPanel.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tv\\KpiGrid6.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tv\\KpiGrid6.tsx",
+      "line": 2
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\components\\tv\\KpiGrid6.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tv\\EvidenceCarousel.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tv\\EvidenceCarousel.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tv\\EmergencyAlertBanner.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tv\\EmergencyAlertBanner.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tv\\CitizenReportsGallery.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tv\\CitizenReportsGallery.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tv\\AlertTicker.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tv\\AlertTicker.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tasks\\ViolationDetailModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tasks\\ViolationDetailModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\tasks\\ViolationDetailModal.tsx",
+      "line": 16
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tasks\\TaskDetailModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tasks\\TaskDetailModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\tasks\\TaskDetailModal.tsx",
+      "line": 20
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tasks\\TaskCard.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tasks\\TaskActionModals.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tasks\\TaskActionModals.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tasks\\StatCard.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tasks\\StatCard.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tasks\\ReopenTaskModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tasks\\ReopenTaskModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tasks\\InspectionConclusionModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tasks\\InspectionConclusionModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\tasks\\InspectionConclusionModal.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tasks\\Form12Modal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tasks\\Form12Modal.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\tasks\\Form12Modal.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tasks\\Form11Modal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tasks\\Form11Modal.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\tasks\\Form11Modal.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tasks\\Form10Modal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tasks\\Form10Modal.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\tasks\\Form10Modal.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tasks\\Form06Modal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tasks\\Form06Modal.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\tasks\\Form06Modal.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tasks\\EnterResultsModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tasks\\EnterResultsModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tasks\\CreateTaskModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tasks\\CreateTaskModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tasks\\ChecklistItemModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tasks\\ChecklistItemModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\tasks\\ChecklistItemModal.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\tasks\\AttachEvidenceModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\tasks\\AttachEvidenceModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\sessions\\InspectionResultModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\sessions\\InspectionResultModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\sessions\\InspectionResultModal.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\scope-selector\\ScopeSelector.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\scope-selector\\ScopeSelector.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\scope-selector\\ScopeBanner.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\scope-selector\\ScopeBanner.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\reports\\ToastNotification.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\reports\\ToastNotification.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\reports\\ExportSuccessToast.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\reports\\ExportSuccessToast.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\reports\\ExportHistoryDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\reports\\ExportHistoryDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\reports\\ExportDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\reports\\ExportDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\reports\\ExcelExportDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\reports\\ExcelExportDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\plans\\SelectInsDecisionModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\plans\\SelectInsDecisionModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\plans\\SelectInsDecisionModal.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\plans\\PlanCalendarView.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\components\\plans\\PlanCalendarView.tsx",
+      "line": 2
+    },
+    {
+      "library": "dayjs",
+      "file": "src\\components\\plans\\PlanCalendarView.tsx",
+      "line": 3
+    },
+    {
+      "library": "dayjs",
+      "file": "src\\components\\plans\\PlanCalendarView.tsx",
+      "line": 4
+    },
+    {
+      "library": "dayjs",
+      "file": "src\\components\\plans\\PlanCalendarView.tsx",
+      "line": 5
+    },
+    {
+      "library": "dayjs",
+      "file": "src\\components\\plans\\PlanCalendarView.tsx",
+      "line": 6
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\components\\plans\\PlanCalendarView.tsx",
+      "line": 9
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\plans\\PlanCalendarView.tsx",
+      "line": 10
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\plans\\PlanActionModals.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\plans\\PlanActionModals.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\plans\\M09ProposalModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\plans\\M09ProposalModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\plans\\M09ProposalModal.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\plans\\M08ReportModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\plans\\M08ReportModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\plans\\M08ReportModal.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\patterns\\SummaryCard.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\patterns\\SummaryCard.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\patterns\\QuickActions.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\patterns\\OperationalContext.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\patterns\\OperationalContext.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\patterns\\ModernSummaryCard.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\patterns\\ModernSummaryCard.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\patterns\\ModernFilterBar.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\patterns\\ModernFilterBar.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\patterns\\FilterBar.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\patterns\\FilterBar.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\patterns\\FilterActionBar.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\patterns\\EntityDrawer.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\patterns\\BulkActionBar.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\patterns\\AdvancedFilterBar.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\patterns\\AdvancedFilterBar.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\patterns\\ActionColumn.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\patterns\\ActionColumn.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\overlays\\EnterpriseModalHeader.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\components\\overlays\\EnterpriseModalHeader.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\overlays\\CenteredModalShell.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\components\\overlays\\CenteredModalShell.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\UploadExcelModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\UploadExcelModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\map\\UploadExcelModal.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\ReviewModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\ReviewModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\ReviewImageGallery.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\PointDetailModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\PointDetailModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\map\\PointDetailModal.tsx",
+      "line": 9
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\OfficerStatsOverlay.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\OfficerStatsOverlay.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\OfficerInfoModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\OfficerInfoModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\OfficerFilterPanel.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\OfficerFilterPanel.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\MapLegend.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\MapLegend.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\MapFilterPanel.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\MapFilterPanel.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\MapFilterPanel-backup.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\MapFilterPanel-backup.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\LocationStatsCard.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\LocationStatsCard.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\LocationFilterSection.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\LocationFilterSection.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\LeafletMap.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\ImageLightbox.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-dom",
+      "file": "src\\components\\map\\ImageLightbox.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\ImageLightbox.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\FullscreenOfficerMapModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\FullscreenOfficerMapModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\FullscreenMapModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\FullscreenMapModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\DepartmentDetailModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\DepartmentDetailModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\DateRangePicker.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\DateRangePicker.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\CategoryFilterSection.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\CategoryFilterSection.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\BusinessTypeFilterSection.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\BusinessTypeFilterSection.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\layers\\MerchantsLayer.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\layers\\DepartmentMarkersLayer.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\hooks\\useOfficerDepartments.ts",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\hooks\\useMapZoom.ts",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\hooks\\useDepartmentAreas.ts",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\components\\SearchInput.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\components\\DepartmentOfficersList.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\components\\DepartmentOfficersList.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\components\\DepartmentOfficerItem.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\components\\DepartmentOfficerItem.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\map\\components\\DepartmentMetricCard.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\components\\DepartmentMetricCard.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\components\\DepartmentItem.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\map\\components\\AllDepartmentsOption.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\lead-risk\\WatchlistPanel.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\WatchlistPanel.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\UrgencyBadge.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\lead-risk\\UpdateSLAModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\UpdateSLAModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\SLATimer.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\lead-risk\\SingleSelectDropdown.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\SingleSelectDropdown.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\lead-risk\\RiskFormModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\RiskFormModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\lead-risk\\RiskByWardMockChart.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\components\\lead-risk\\RiskByWardMockChart.tsx",
+      "line": 2
+    },
+    {
+      "library": "recharts",
+      "file": "src\\components\\lead-risk\\RiskByWardMockChart.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\lead-risk\\RejectLeadModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\RejectLeadModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\QuickActionsSidebar.tsx",
+      "line": 6
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\lead-risk\\MultiSelectDropdown.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\MultiSelectDropdown.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\LeadPreviewPanel.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\lead-risk\\LeadFormModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\LeadFormModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\lead-risk\\LeadActionMenu.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-dom",
+      "file": "src\\components\\lead-risk\\LeadActionMenu.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\LeadActionMenu.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\lead-risk\\EvidenceViewer.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\components\\lead-risk\\EvidenceViewer.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\lead-risk\\EvidenceDocumentModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\EvidenceDocumentModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "docx",
+      "file": "src\\components\\lead-risk\\EvidenceDocumentModal.tsx",
+      "line": 3
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\DeleteConfirmModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\lead-risk\\CreateLeadSourceModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\CreateLeadSourceModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\lead-risk\\CreateLeadSourceModal.tsx",
+      "line": 32
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\ConfirmationDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\lead-risk\\AssignLeadSidebar.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\AssignLeadSidebar.tsx",
+      "line": 7
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\lead-risk\\AssignLeadSidebar.tsx",
+      "line": 23
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\lead-risk\\AssignLeadModal.tsx",
+      "line": 6
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\AssignLeadModal.tsx",
+      "line": 7
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\lead-risk\\AssignLeadModal.tsx",
+      "line": 15
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\lead-risk\\AIVoiceAnalysis.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\AIVoiceAnalysis.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\AIStatusBadge.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\lead-risk\\AISimilarLeadsList.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\AISimilarLeadsList.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\AIInsightPanel.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\lead-risk\\AIImageAnalysis.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\AIImageAnalysis.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\AIDuplicateAlert.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\lead-risk\\AIDuplicateAlert.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\AIBulkActionBar.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\lead-risk\\AddNoteModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\lead-risk\\AddNoteModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\components\\layout\\RootLayout.tsx",
+      "line": 1
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\layout\\RootLayout.tsx",
+      "line": 2
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\components\\layout\\ProtectedLayout.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\layout\\AppFooter.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\components\\layout\\AppFooter.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\inspections\\InspectionRoundDecisionModals.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\inspections\\InspectionRoundDecisionModals.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\inspections\\InspectionRoundDecisionModals.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\inspections\\InspectionRoundActionModals.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\inspections\\InspectionRoundActionModals.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\inspections\\InsFormDetailDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\inspections\\InsFormDetailDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\inspections\\CreateSessionDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\inspections\\CreateSessionDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\inspections\\CreateSessionDialog.tsx",
+      "line": 20
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\header\\UserRolesPanel.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\header\\UserRolesPanel.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\header\\NotificationPanel.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\header\\NotificationPanel.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\header\\HelpPanel.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\header\\HelpPanel.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\header\\GlobalSearch.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\header\\GlobalSearch.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\header\\FeedbackModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\header\\FeedbackModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\header\\FeedbackDialog.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\header\\FeedbackDialog.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\figma\\ImageWithFallback.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\evidence\\SecurityDashboard.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\evidence\\SecurityDashboard.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\evidence\\EvidenceOverviewTab.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\evidence\\EvidenceOverviewTab.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\evidence\\EvidenceOverviewTab.tsx",
+      "line": 23
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\evidence\\EvidenceFileViewerTab.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\evidence\\EvidenceFileViewerTab.tsx",
+      "line": 2
+    },
+    {
+      "library": "sonner",
+      "file": "src\\components\\evidence\\EvidenceFileViewerTab.tsx",
+      "line": 15
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\evidence\\EvidenceFileViewer.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\evidence\\EvidenceFileViewer.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\error-states\\NoDataHotspot.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\error-states\\Error403.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\components\\error-states\\Error403.tsx",
+      "line": 2
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\error-states\\EmptyInbox.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\documents\\SelectFromInsModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\documents\\SelectFromInsModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\documents\\PlanDocumentDrawer.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\documents\\PlanDocumentDrawer.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\documents\\InsSyncLogDrawer.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\documents\\InsSyncLogDrawer.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\documents\\InspectionRoundDocumentDrawer.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\documents\\InspectionRoundDocumentDrawer.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\documents\\FormDocumentChecklist.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\documents\\FormDocumentChecklist.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\documents\\DocumentFormModal.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\documents\\DocumentFormModal.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\dev\\SupabaseConnectionTest.tsx",
+      "line": 6
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\dev\\DataSeeder.tsx",
+      "line": 1
+    },
+    {
+      "library": "lucide-react",
+      "file": "src\\components\\dev\\DataSeeder.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\data-table\\columnSearch.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\components\\data-table\\columnSearch.tsx",
+      "line": 2
+    },
+    {
+      "library": "antd",
+      "file": "src\\components\\data-table\\columnSearch.tsx",
+      "line": 3
+    },
+    {
+      "library": "antd",
+      "file": "src\\components\\data-table\\columnSearch.tsx",
+      "line": 4
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\components\\data-table\\columnSearch.tsx",
+      "line": 5
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\data-table\\AppTable.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\components\\data-table\\AppTable.tsx",
+      "line": 2
+    },
+    {
+      "library": "antd",
+      "file": "src\\components\\data-table\\AppTable.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\common\\StatusBadge.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\components\\auth\\ProtectedRoute.tsx",
+      "line": 1
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\auth\\ProtectedRoute.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\auth\\PermissionProtectedRoute.tsx",
+      "line": 1
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\components\\auth\\PermissionProtectedRoute.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ai\\AiWorkAssistantNavButton.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\components\\ai\\AiWorkAssistantNavButton.tsx",
+      "line": 2
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\components\\ai\\AiWorkAssistantNavButton.tsx",
+      "line": 3
+    },
+    {
+      "library": "react-router-dom",
+      "file": "src\\components\\ai\\AiWorkAssistantNavButton.tsx",
+      "line": 4
+    },
+    {
+      "library": "react",
+      "file": "src\\components\\ai\\AiWorkAssistantButton.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\components\\ai\\AiWorkAssistantButton.tsx",
+      "line": 2
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\components\\ai\\AiWorkAssistantButton.tsx",
+      "line": 3
+    },
+    {
+      "library": "@supabase/supabase-js",
+      "file": "src\\api\\supabaseClient.ts",
+      "line": 8
+    },
+    {
+      "library": "@supabase/supabase-js",
+      "file": "src\\api\\supabase.service.ts",
+      "line": 7
+    },
+    {
+      "library": "react",
+      "file": "src\\ai\\renderMessage.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\ai\\renderMessage.tsx",
+      "line": 2
+    },
+    {
+      "library": "react",
+      "file": "src\\ai\\GlobalChatDrawer.tsx",
+      "line": 1
+    },
+    {
+      "library": "antd",
+      "file": "src\\ai\\GlobalChatDrawer.tsx",
+      "line": 2
+    },
+    {
+      "library": "@ant-design/icons",
+      "file": "src\\ai\\GlobalChatDrawer.tsx",
+      "line": 3
+    },
+    {
+      "library": "react",
+      "file": "src\\ai\\assistantStore.tsx",
+      "line": 1
+    }
+  ],
+  "unknownImports": []
+}

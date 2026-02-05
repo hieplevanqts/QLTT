@@ -82,6 +82,8 @@ const RiskIndicators = React.lazy(() => import('@/modules/leads/pages/lead-risk/
 const ImportLeads = React.lazy(() => import('@/modules/leads/pages/lead-risk/ImportLeads'));
 const ImportReview = React.lazy(() => import('@/modules/leads/pages/lead-risk/ImportReview'));
 const AssignmentDispatch = React.lazy(() => import('@/modules/leads/pages/lead-risk/AssignmentDispatch'));
+import { ModuleDependencyManager } from "@/modules/dependency-manager";
+
 
 // Wrapper component for protected routes
 function ProtectedLayout() {
@@ -275,6 +277,14 @@ export const router = createBrowserRouter([
           {
             path: 'dashboard',
             element: <DashboardPage />,
+          },
+          {
+            path: 'dependency-manager',
+            element: (
+                <PermissionProtectedRoute permission="SYSTEM_ADMIN">
+                  <ModuleDependencyManager />
+                </PermissionProtectedRoute>
+            ),
           },
           {
             path: 'reports',

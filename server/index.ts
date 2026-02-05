@@ -22,6 +22,8 @@ import {
 } from './importer/storage';
 import { deleteStoredZip, importModuleZip, inspectModuleUpdate, rollbackModule, rollbackModuleFromZip, updateModuleZip } from './importer/moduleImporter';
 import type { MenuItem, ModuleManifest, ReleaseType } from './importer/types';
+import dependencyRoutes from "./routes/dependency.routes";
+
 
 const loadEnvFile = () => {
   try {
@@ -77,7 +79,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-
+app.use("/dependency-manager", dependencyRoutes);
 const swaggerSpec = swaggerJsdoc({
   definition: {
     openapi: '3.0.0',
@@ -981,6 +983,10 @@ app.put('/system-admin/admin/users/:id', async (req, res) => {
     res.status(500).json({ code: 'ADMIN_USER_UPDATE_FAILED', message: error.message });
   }
 });
+
+
+
+
 
 ensureSystemAdminDirs().then(() => {
   app.listen(PORT, () => {
