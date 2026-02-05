@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 export function SummaryCards() {
     const [report, setReport] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-
+    const baseUrl = import.meta.env.VITE_PUBLIC_URL || "https://mappa.couppa.com";
     useEffect(() => {
-        fetch(window.location.origin + "/dependency-manager/report")
+        fetch(`${baseUrl}/dependency-manager/report`)
             .then((res) => res.json())
             .then((data) => {
                 setReport(data);

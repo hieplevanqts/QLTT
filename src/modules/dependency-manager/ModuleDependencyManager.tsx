@@ -12,9 +12,9 @@ interface Report {
 
 export const ModuleDependencyManager = () => {
     const [report, setReport] = useState<Report | null>(null);
-
+    const baseUrl = import.meta.env.VITE_PUBLIC_URL || "https://mappa.couppa.com";
     useEffect(() => {
-        fetch(window.location.origin + "/dependency-manager/report")
+        fetch(`${baseUrl}/dependency-manager/report`)
             .then((res) => res.json())
             .then(setReport)
             .catch(console.error);

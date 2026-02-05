@@ -8,9 +8,9 @@ type UnknownImport = {
 export function UnknownImportsTable() {
     const [unknowns, setUnknowns] = useState<UnknownImport[]>([]);
     const [loading, setLoading] = useState(true);
-
+    const baseUrl = import.meta.env.VITE_PUBLIC_URL || "https://mappa.couppa.com";
     useEffect(() => {
-        fetch(window.location.origin + "/dependency-manager/dependencies")
+        fetch(`${baseUrl}http://localhost:7788/dependency-manager/dependencies`)
             .then((res) => res.json())
             .then((data) => {
                 setUnknowns(data?.unknownImports || []);

@@ -28,9 +28,9 @@ export function LibraryUsageTable() {
     const [modalLoading, setModalLoading] = useState(false);
 
     const lastRequestRef = useRef(0);
-
+    const baseUrl = import.meta.env.VITE_PUBLIC_URL || "https://mappa.couppa.com";
     useEffect(() => {
-        fetch(window.location.origin+"/dependency-manager/libraries")
+        fetch(`${baseUrl}/dependency-manager/libraries`)
             .then((res) => res.json())
             .then((data) => {
                 setLibraries(data || []);
@@ -71,7 +71,7 @@ export function LibraryUsageTable() {
 
         try {
             const res = await fetch(
-                `${window.location.origin}/dependency-manager/library/${encodeURIComponent(
+                `${baseUrl}/dependency-manager/library/${encodeURIComponent(
                     libName
                 )}`
             );
