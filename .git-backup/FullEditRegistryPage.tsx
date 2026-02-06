@@ -840,7 +840,7 @@ export default function FullEditRegistryPage() {
                   <X size={16} />
                   Hủy
                 </Button>
-                <Button onClick={handleShowDiffPreview} disabled={changes.length === 0}>
+                <Button onClick={handleShowDiffPreview} disabled={changes.length === 0} className="!text-white">
                   <Save size={16} />
                   Xem trước thay đổi
                 </Button>

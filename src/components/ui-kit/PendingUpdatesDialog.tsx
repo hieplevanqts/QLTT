@@ -232,7 +232,7 @@ export function PendingUpdatesDialog({ open, onClose }: PendingUpdatesDialogProp
             <p className={styles.footerInfo}>
               Tổng số: <strong>{pendingCount}</strong> yêu cầu chờ phê duyệt
             </p>
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" onClick={onClose} className='hover:!text-white hover:!bg-red-700'>
               Đóng
             </Button>
           </div>

@@ -365,7 +365,7 @@ export function IDCardUploadDialog({
             {/* Front Side */}
             <div className={styles.uploadColumn}>
               <label className={styles.uploadLabel}>
-                Mặt trước <span className={styles.required}>*</span>
+                Mặt trước <span className={`${styles.required} !text-red-500`}>*</span>
               </label>
               <div
                 className={`${styles.uploadArea} ${frontDragging ? styles.dragging : ''} ${errors.front ? styles.error : ''
@@ -431,7 +431,7 @@ export function IDCardUploadDialog({
             {/* Back Side */}
             <div className={styles.uploadColumn}>
               <label className={styles.uploadLabel}>
-                Mặt sau <span className={styles.required}>*</span>
+                Mặt sau <span className={`${`${styles.required} !text-red-500`} !text-red-500`}>*</span>
               </label>
               <div
                 className={`${styles.uploadArea} ${backDragging ? styles.dragging : ''} ${errors.back ? styles.error : ''
@@ -527,7 +527,7 @@ export function IDCardUploadDialog({
                 >
                   <label className={styles.label}>
                     {field.label}
-                    {field.required && <span className={styles.required}>*</span>}
+                    {field.required && <span className={`${styles.required} !text-red-500`}>*</span>}
                   </label>
                   {field.type === 'textarea' ? (
                     <textarea
@@ -554,11 +554,12 @@ export function IDCardUploadDialog({
 
         {/* Footer */}
         <div className={styles.footer}>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} className='hover:!bg-red-700 hover:!text-white'>
             Hủy
           </Button>
           <Button
             onClick={handleSave}
+            className='!text-white'
             disabled={
               (!frontFile && !frontFilePreview) ||
               (!backFile && !backFilePreview) ||

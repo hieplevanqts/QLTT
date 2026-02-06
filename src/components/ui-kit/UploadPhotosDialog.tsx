@@ -194,7 +194,7 @@ export function UploadPhotosDialog({
                     variant="outline"
                     size="sm"
                     onClick={() => handleBulkUpdateCategory(defaultCategory)}
-                    className={styles.applyButton}
+                    className={`${styles.applyButton} hover:!text-white`}
                   >
                     <Check size={16} />
                     Áp dụng cho tất cả ({uploadedFiles.length})
@@ -267,12 +267,13 @@ export function UploadPhotosDialog({
         </div>
 
         <DialogFooter className={styles.footer}>
-          <Button variant="outline" onClick={handleClose} disabled={loading}>
+          <Button variant="outline" onClick={handleClose} disabled={loading} className='hover:!bg-red-800 hover:!text-white'>
             Hủy
           </Button>
           <Button
             onClick={handleUpload}
             disabled={uploadedFiles.length === 0 || loading}
+            className='!text-white'
           >
             {loading ? 'Đang tải lên...' : `Tải lên ${uploadedFiles.length} ảnh`}
           </Button>

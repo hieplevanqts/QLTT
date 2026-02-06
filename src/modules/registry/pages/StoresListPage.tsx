@@ -1245,7 +1245,7 @@ export default function StoresListPage() {
                 {getTotalPendingCount()}
               </Badge>
             </Button>
-            <Button size="sm" onClick={() => setAddDialogOpen(true)}>
+            <Button size="sm" onClick={() => setAddDialogOpen(true)} className='!text-white'>
               <Plus size={16} />
               Thêm mới
             </Button>

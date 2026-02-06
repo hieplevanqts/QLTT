@@ -353,7 +353,7 @@ export default function EditRegistryPage() {
         {showDiffPreview && hasChanges && (
           <Card className={styles.diffCard}>
             <CardHeader>
-              <CardTitle className={styles.diffTitle}>
+              <CardTitle className={`${styles.diffTitle} !text-white`} >
                 <FileText size={20} />
                 Xem trước thay đổi
               </CardTitle>

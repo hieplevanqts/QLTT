@@ -543,7 +543,7 @@ export function IDCardUploadDialog({
 
         {/* Footer */}
         <div className={styles.footer}>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} className='hover:!bg-red-700 hover:!text-white'>
             Hủy
           </Button>
           <Button
