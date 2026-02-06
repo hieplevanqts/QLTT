@@ -36,6 +36,8 @@ import { useSupabaseInspectionRounds, type InspectionRound } from '@/hooks/useSu
 import styles from './InspectionRoundsList.module.css';
 import { DateRange } from '@/components/ui-kit/DateRangePicker';
 import DateRangePicker from '@/components/ui-kit/DateRangePicker';
+import SearchableSelect from '@/components/ui-kit/SearchableSelect';
+import { useSupabasePlans } from '@/hooks/useSupabasePlans';
 import {
   Select,
   SelectContent,
@@ -63,6 +65,7 @@ import { CreateSessionDialog } from '@/components/inspections/CreateSessionDialo
 export function InspectionRoundsList() {
   const navigate = useNavigate();
   const { rounds, loading, error, refetch, updateRoundStatus, deleteRound } = useSupabaseInspectionRounds();
+  const { plans: plansList } = useSupabasePlans();
   
   // State management
   const [searchValue, setSearchValue] = useState('');
@@ -326,7 +329,8 @@ export function InspectionRoundsList() {
                            round.code.toLowerCase().includes(searchValue.toLowerCase());
       const matchesPlan = planFilter === 'all' || 
                          (planFilter === 'with_plan' && round.planId) ||
-                         (planFilter === 'no_plan' && !round.planId);
+                         (planFilter === 'no_plan' && !round.planId) ||
+                         (round.planId === planFilter);
       const matchesActiveFilter = activeFilter === null || 
                                  (activeFilter === 'active' 
                                    ? (round.status === 'active' || round.status === 'in_progress')
@@ -755,16 +759,18 @@ export function InspectionRoundsList() {
         <FilterActionBar
           filters={
             <>
-              <Select value={planFilter} onValueChange={setPlanFilter}>
-                <SelectTrigger style={{ width: '200px' }}>
-                  <SelectValue placeholder="Kế hoạch" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả kế hoạch</SelectItem>
-                  <SelectItem value="with_plan">Thuộc kế hoạch</SelectItem>
-                  <SelectItem value="no_plan">Không thuộc KH</SelectItem>
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={planFilter}
+                onValueChange={setPlanFilter}
+                options={[
+                  { value: 'all', label: 'Tất cả kế hoạch' },
+                  { value: 'no_plan', label: 'Không thuộc KH' },
+                  ...plansList.map(p => ({ value: p.id, label: p.name }))
+                ]}
+                placeholder="Kế hoạch"
+                searchPlaceholder="Tìm kiếm kế hoạch..."
+                width="240px"
+              />
 
               <Select value={activeFilter || 'all'} onValueChange={(val) => setActiveFilter(val === 'all' ? null : val)}>
                 <SelectTrigger style={{ width: '180px' }}>

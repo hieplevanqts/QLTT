@@ -144,7 +144,19 @@
 }
 
 .input,
-.select,
+.select {
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--spacing-3);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  font-family: 'Inter', sans-serif;
+  font-size: var(--font-size-sm);
+  color: var(--foreground);
+  background: white;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .textarea {
   width: 100%;
   padding: var(--spacing-3);

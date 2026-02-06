@@ -195,7 +195,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, task, taskId, defau
         wardId,
         targetPath
       );
-      setMerchants(data);
+      setMerchants(data || []);
     } catch (error) {
       console.error('Error fetching merchants:', error);
       setMerchants([]);
@@ -568,21 +568,18 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, task, taskId, defau
               <div className={styles.formRow} style={{ marginTop: '16px' }}>
                 <div className={styles.formGroup}>
                   <label className={styles.label}>Mức độ ưu tiên</label>
-                  <div className={styles.priorityGrid}>
+                  <select
+                    id="priority"
+                    value={formData.priority}
+                    onChange={(e) => handleChange('priority', e.target.value as any)}
+                    className={styles.select}
+                  >
                     {PRIORITY_OPTIONS.map(priority => (
-                      <button
-                        key={priority.value}
-                        type="button"
-                        className={cn(
-                          styles.priorityButton,
-                          formData.priority === priority.value && styles.priorityActive
-                        )}
-                        onClick={() => handleChange('priority', priority.value as any)}
-                      >
+                      <option key={priority.value} value={priority.value}>
                         {priority.label}
-                      </button>
+                      </option>
                     ))}
-                  </div>
+                  </select>
                 </div>
 
                 <div className={styles.formGroup}>

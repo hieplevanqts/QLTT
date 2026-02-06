@@ -9,9 +9,9 @@
   align-items: center;
   gap: var(--spacing-2);
   width: 100%;
-  height: 44px;
+  height: 36px;
   padding: 0 var(--spacing-4);
-  background: #f9fafb;
+  background: white;
   border: 1px solid #d1d5db;
   border-radius: 6px;
   font-family: 'Inter', sans-serif;
@@ -125,15 +125,17 @@
 .dateInput {
   height: 36px;
   padding: 0 var(--spacing-3);
-  background: var(--input-background);
-  border: var(--border-width) solid var(--border);
+  background: white;
+  border: 1px solid #D1D5DB;
   border-radius: var(--radius-md);
-  font-family: 'Inter', sans-serif;
   font-size: var(--font-size-sm);
-  color: var(--foreground);
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-normal);
+  line-height: 1.5;
+  color: var(--color-text);
   cursor: pointer;
   transition: all 0.15s ease;
-  outline: none;
+  text-align: left;
 }
 
 .dateInput:hover {
