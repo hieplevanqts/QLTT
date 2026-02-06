@@ -17,8 +17,10 @@ import {
   BookOpen,
   Eye,
   CheckCircle,
-  Trash2
+  Trash2,
+  Info
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useDrag, useDrop } from 'react-dnd';
@@ -52,7 +54,7 @@ import { Form06Modal } from '@/components/tasks/Form06Modal';
 import { Form10Modal } from '@/components/tasks/Form10Modal';
 import { Form12Modal } from '@/components/tasks/Form12Modal';
 import { Form11Modal } from '@/components/tasks/Form11Modal';
-import { DeployTaskModal, CompleteTaskModal, CancelTaskModal, CloseTaskModal } from '@/components/tasks/TaskActionModals';
+import { DeployTaskModal, CompleteTaskModal, CancelTaskModal, CloseTaskModal, DeleteTaskModal } from '@/components/tasks/TaskActionModals';
 
 type ViewMode = 'kanban' | 'list';
 
@@ -251,6 +253,7 @@ export function TaskBoard() {
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
   const [cancelTask, setCancelTask] = useState<InspectionTask | null>(null);
   const [closeTask, setCloseTask] = useState<InspectionTask | null>(null);
+  const [deleteTask, setDeleteTask] = useState<InspectionTask | null>(null);
 
   // Filters
   const [searchValue, setSearchValue] = useState('');
@@ -333,7 +336,8 @@ export function TaskBoard() {
                   session.status === 'in_progress' ? 50 : 0,
         checklistTotal: 0,
         checklistCompleted: 0,
-        createdAt: session.createdAt
+        createdAt: session.createdAt,
+        reopenReason: session.reopenReason
       }));
       
       setTasks(mappedTasks);
@@ -499,12 +503,12 @@ export function TaskBoard() {
     toast.success('Đang xuất dữ liệu...');
   };
 
-  const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
+  const handleStatusChange = async (taskId: string, newStatus: TaskStatus, additionalData: any = {}) => {
     // Optimistic update
     setTasks(prevTasks => 
       prevTasks.map(task => 
         task.id === taskId 
-          ? { ...task, status: newStatus }
+          ? { ...task, status: newStatus, ...additionalData } // Flatten additionalData locally if needed, e.g. reopenReason
           : task
       )
     );
@@ -512,7 +516,7 @@ export function TaskBoard() {
     // Update selected task to trigger re-render in modal
     setSelectedTask(prevTask => 
       prevTask && prevTask.id === taskId 
-        ? { ...prevTask, status: newStatus }
+        ? { ...prevTask, status: newStatus, ...additionalData }
         : prevTask
     );
 
@@ -529,7 +533,7 @@ export function TaskBoard() {
 
       const numericStatus = statusMap[newStatus] || 1;
       
-      await updateInspectionSessionApi(taskId, { status: numericStatus });
+      await updateInspectionSessionApi(taskId, { status: numericStatus, ...additionalData });
       toast.success(`Đã cập nhật trạng thái phiên làm việc thành công`);
     } catch (error) {
       console.error('Error updating task status:', error);
@@ -817,16 +821,21 @@ export function TaskBoard() {
     setIsEditModalOpen(true);
   };
 
-  const handleDeleteTask = async (task: InspectionTask) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa phiên làm việc "${task.title}" không? Hành động này không thể hoàn tác.`)) {
-      try {
-        await deleteInspectionSessionApi(task.id);
-        toast.success(`Đã xóa phiên làm việc "${task.title}"`);
-        loadSessions(); // Refresh list
-      } catch (error) {
-        console.error('Error deleting task:', error);
-        toast.error('Không thể xóa phiên làm việc này');
-      }
+  const handleDeleteTask = (task: InspectionTask) => {
+    setDeleteTask(task);
+  };
+
+  const handleConfirmDeleteTask = async () => {
+    if (!deleteTask) return;
+    
+    try {
+      await deleteInspectionSessionApi(deleteTask.id);
+      toast.success(`Đã xóa phiên làm việc "${deleteTask.title}"`);
+      loadSessions(); // Refresh list
+      setDeleteTask(null);
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast.error('Không thể xóa phiên làm việc này');
     }
   };
 
@@ -1134,7 +1143,24 @@ export function TaskBoard() {
       key: 'status',
       label: 'Trạng thái',
       sortable: true,
-      render: (task) => task?.status ? <StatusBadge {...getStatusProps('task', task.status)} size="sm" /> : <span>-</span>,
+      render: (task) => (
+        <div className="flex items-center gap-2">
+          {task?.status ? <StatusBadge {...getStatusProps('task', task.status)} size="sm" /> : <span>-</span>}
+          {task.status === 'reopened' && task.reopenReason && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info size={16} className="text-blue-500 cursor-pointer" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[300px] bg-white text-black text-sm p-3 shadow-lg border rounded-md">
+                   <p className="font-semibold mb-1">Lý do mở lại:</p>
+                   <p>{task.reopenReason}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
+      ),
     },
     {
       key: 'type',
@@ -1210,6 +1236,8 @@ export function TaskBoard() {
                 variant={viewMode === 'list' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setViewMode('list')}
+                className={viewMode === 'list' ? 'text-white' : ''}
+                style={viewMode === 'list' ? { color: 'white' } : {}}
               >
                 <List className="h-4 w-4" />
               </Button>
@@ -1217,6 +1245,8 @@ export function TaskBoard() {
                 variant={viewMode === 'kanban' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setViewMode('kanban')}
+                className={viewMode === 'kanban' ? 'text-white' : ''}
+                style={viewMode === 'kanban' ? { color: 'white' } : {}}
               >
                 <LayoutGrid className="h-4 w-4" />
               </Button>
@@ -1485,15 +1515,16 @@ export function TaskBoard() {
         onClose={() => setIsReopenModalOpen(false)}
         taskTitle={actionTask?.title || ''}
         taskId={actionTask?.id || ''}
-        onReopen={() => {
+        onReopen={(reason: string) => {
           if (actionTask) {
             const updatedTask = {
               ...actionTask,
               reopenedAt: new Date().toISOString(),
               reopenedBy: { id: 'current-user', name: 'Người dùng hiện tại' },
+              reopenReason: reason
             };
             setTasks(prev => prev.map(t => t.id === actionTask.id ? updatedTask as InspectionTask : t));
-            handleStatusChange(actionTask.id, 'reopened');
+            handleStatusChange(actionTask.id, 'reopened', { reopen_reason: reason });
             toast.success('Đã mở lại phiên làm việc');
           }
         }}
@@ -1524,6 +1555,13 @@ export function TaskBoard() {
                 setCloseTask(null);
             }
         }}
+      />
+
+      <DeleteTaskModal
+        isOpen={!!deleteTask}
+        onClose={() => setDeleteTask(null)}
+        task={deleteTask}
+        onConfirm={handleConfirmDeleteTask}
       />
 
       <AttachEvidenceModal

@@ -775,6 +775,8 @@ export function PlansList() {
             onClick={() => {
               navigate(`/plans/create-new?type=${planTypeFilter}`);
             }}
+            className="text-white"
+            style={{ color: 'white' }}
           >
             <Plus size={16} />
             Thêm {planTypeFilter === 'periodic' ? 'định kỳ' : planTypeFilter === 'thematic' ? 'chuyên đề' : 'đột xuất'}
