@@ -822,7 +822,7 @@ export function InspectionRoundsList() {
                 <Download size={16} />
                 Xuất dữ liệu
               </Button>
-              <Button size="sm" onClick={() => navigate('/plans/inspection-rounds/create-new')}>
+              <Button size="sm" onClick={() => navigate('/plans/inspection-rounds/create-new')} className="text-white" style={{ color: 'white' }}>
                 <Plus size={16} />
                 Thêm mới
               </Button>

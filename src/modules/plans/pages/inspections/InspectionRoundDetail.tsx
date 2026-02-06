@@ -487,8 +487,8 @@ export default function InspectionRoundDetail() {
   const loadSessions = async () => {
       if (!roundId) return;
       try {
-        const data = await fetchInspectionSessionsApi(roundId);
-        const mapped = data.map(s => {
+        const sessionsData = await fetchInspectionSessionsApi(roundId);
+        const mapped = sessionsData.map(s => {
           return {
             id: s.id,
             code: s.id,
@@ -1208,10 +1208,6 @@ export default function InspectionRoundDetail() {
               <div>
                 <h2 className={styles.sectionTitle}>Nhân sự tham gia</h2>
               </div>
-              <button className={styles.primaryButton}>
-                <Users size={18} />
-                Phân công
-              </button>
             </div>
 
             {/* Team Members List */}
@@ -1367,9 +1363,9 @@ export default function InspectionRoundDetail() {
             isOpen={taskModalState.type === 'deploy'}
             onClose={() => setTaskModalState({ type: null, task: null })}
             task={taskModalState.task}
-            onConfirm={(date) => {
+            onConfirm={() => {
                // Update status to in_progress (2)
-               updateInspectionSessionApi(taskModalState.task.id, { status: 2, start_time: date })
+               updateInspectionSessionApi(taskModalState.task.id, { status: 2, start_time: new Date().toISOString() })
                  .then(() => {
                    toast.success('Đã bắt đầu phiên kiểm tra');
                    handleRefreshList();
@@ -1421,7 +1417,7 @@ export default function InspectionRoundDetail() {
             taskId={actionTask.id}
             onReopen={(reason) => {
                // Call API to reopen (5)
-               updateInspectionSessionApi(actionTask.id, { status: 5, note: reason })
+               updateInspectionSessionApi(actionTask.id, { status: 5, reopen_reason: reason })
                  .then(() => {
                    toast.success(`Đã mở lại phiên làm việc "${actionTask.title}"`);
                    handleRefreshList();

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, PlayCircle, CheckCircle, XCircle } from 'lucide-react';
+import { X, PlayCircle, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import styles from './TaskActionModals.module.css';
 import type { InspectionTask } from '../../data/inspection-tasks-mock-data';
 
@@ -230,6 +230,59 @@ export function CloseTaskModal({ isOpen, onClose, task, onConfirm }: CloseTaskMo
         >
           <CheckCircle size={18} />
           Xác nhận đóng
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+// Delete Task Modal
+interface DeleteTaskModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  task: InspectionTask | null;
+  onConfirm: () => void;
+}
+
+export function DeleteTaskModal({ isOpen, onClose, task, onConfirm }: DeleteTaskModalProps) {
+  if (!task) return null;
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <div className={styles.modalHeader}>
+        <div className={styles.modalIconWrapper} style={{ background: '#DC2626' }}>
+          <Trash2 size={24} color="white" />
+        </div>
+        <div className={styles.modalHeaderContent}>
+          <h3 className={styles.modalTitle}>Xóa phiên làm việc</h3>
+          <p className={styles.modalSubtitle}>Phiên: {task.title}</p>
+        </div>
+        <button className={styles.closeButton} onClick={onClose}>
+          <X size={20} />
+        </button>
+      </div>
+
+      <div className={styles.modalBody}>
+        <div className={styles.infoBox} style={{ background: '#DC262615', borderColor: '#DC2626', color: '#DC2626' }}>
+          <p>Hành động này <strong>không thể hoàn tác</strong>. Dữ liệu của phiên làm việc sẽ bị xóa vĩnh viễn khỏi hệ thống.</p>
+        </div>
+        <p className="mt-4 text-sm text-balance text-muted-foreground">Bạn có chắc chắn muốn xóa phiên làm việc này không?</p>
+      </div>
+
+      <div className={styles.modalFooter}>
+        <button className={styles.cancelButton} onClick={onClose}>
+          Hủy
+        </button>
+        <button 
+          className={styles.primaryButton} 
+          onClick={() => {
+            onConfirm();
+            onClose();
+          }}
+          style={{ background: '#DC2626' }}
+        >
+          <Trash2 size={18} />
+          Xóa vĩnh viễn
         </button>
       </div>
     </Modal>

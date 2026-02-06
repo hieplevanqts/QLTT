@@ -495,7 +495,7 @@ export default function InspectionRoundCreate() {
                     {errors.leadUnit && <div className={styles.errorMessage}><AlertCircle size={14} />{errors.leadUnit}</div>}
                   </div>
                   <div className={styles.formField}>
-                    <label className={styles.label}>Khu vực</label>
+                    <label className={styles.label}>Khu vực kiểm tra</label>
                     <div className={styles.readOnlyField}>{provinces.find(p => p._id === formData.provinceId)?.name || 'N/A'} - {wards.find(w => w._id === formData.wardId)?.name || 'N/A'}</div>
                   </div>
                 </div>

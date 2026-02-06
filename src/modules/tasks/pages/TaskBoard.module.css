@@ -404,6 +404,35 @@
   align-items: center;
 }
 
+.toggleBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toggleBtn:hover {
+  background: var(--secondary);
+  color: var(--foreground);
+}
+
+.toggleBtn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.toggleBtn.active svg {
+  color: white;
+}
+
 /* Responsive - QLTT Standard */
 @media (min-width: 1441px) {
   /* Larger screens - scale up and allow flex growth */

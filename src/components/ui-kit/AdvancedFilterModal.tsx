@@ -217,16 +217,7 @@ export default function AdvancedFilterModal({
         </div>
 
         <div className={styles.footer}>
-          <div className={styles.footerLeft}>
-            <button 
-              className={styles.clearButton} 
-              onClick={handleClear}
-              type="button"
-            >
-              <X size={16} />
-              Xóa tất cả
-            </button>
-          </div>
+          <div className={styles.footerLeft}></div>
           <div className={styles.footerRight}>
             <button className={styles.cancelButton} onClick={handleCancel} type="button">
               Hủy

@@ -52,6 +52,7 @@ export interface InspectionSession {
   departmentId: string | null;
   note: string;
   createdAt: string;
+  reopenReason: string | null;
 }
 
 function mapSessionStatus(status: number): InspectionSession['status'] {
@@ -113,6 +114,7 @@ function mapRowToSession(row: InspectionSessionResponse, campaignData?: any): In
     departmentId: row.department_id,
     note: row.note,
     createdAt: row.created_at,
+    reopenReason: row.reopen_reason,
   };
 }
 
