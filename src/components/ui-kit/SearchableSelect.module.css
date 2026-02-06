@@ -7,7 +7,7 @@
   justify-content: space-between;
   gap: 8px;
   padding: 8px 12px;
-  background: var(--color-background);
+  background: white;
   border: 1px solid #D1D5DB;
   border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
