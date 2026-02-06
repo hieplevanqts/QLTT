@@ -86,6 +86,16 @@ export default function CategoryLeadsWizardModal({
   onClose,
   onApply,
 }: Props) {
+  const presetKey = useMemo(
+    () =>
+      JSON.stringify({
+        tag,
+        presetAction,
+        presetSelectedIds: presetSelectedIds ?? [],
+        startStep,
+      }),
+    [tag, presetAction, presetSelectedIds, startStep],
+  );
   const [step, setStep] = useState<0 | 1>(0);
   const [action, setAction] = useState<WizardAction | null>(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
@@ -98,26 +108,25 @@ export default function CategoryLeadsWizardModal({
   const [reporterNote, setReporterNote] = useState("");
 
   useEffect(() => {
-    if (open) {
-      const initialKeys = presetSelectedIds ?? [];
-      const initialAction = presetAction ?? null;
-      setStep(initialKeys.length && initialAction ? 1 : startStep ?? 0);
-      setAction(initialAction);
-      setSelectedRowKeys(initialKeys);
-      setSearchText("");
-      setDepartmentId(undefined);
-      setTeamId(undefined);
-      setNote("");
-      setRating(4);
-      setAssessment(undefined);
-      setReporterNote("");
+    if (!open) return;
+    const initialKeys = presetSelectedIds ?? [];
+    const initialAction = presetAction ?? null;
+    setStep(initialKeys.length && initialAction ? 1 : startStep ?? 0);
+    setAction(initialAction);
+    setSelectedRowKeys(initialKeys);
+    setSearchText("");
+    setDepartmentId(undefined);
+    setTeamId(undefined);
+    setNote("");
+    setRating(4);
+    setAssessment(undefined);
+    setReporterNote("");
 
-      if (initialKeys.length && onSelectionChange) {
-        const selected = leads.filter((lead) => initialKeys.includes(lead.id));
-        onSelectionChange(initialKeys, selected);
-      }
+    if (initialKeys.length && onSelectionChange) {
+      const selected = leads.filter((lead) => initialKeys.includes(lead.id));
+      onSelectionChange(initialKeys, selected);
     }
-  }, [open, tag, presetSelectedIds, presetAction, startStep, onSelectionChange, leads]);
+  }, [open, presetKey]);
 
   const filtered = useMemo(() => {
     if (!tag) return [];
@@ -213,6 +222,9 @@ export default function CategoryLeadsWizardModal({
   const firstReporter = selectedLeads[0];
 
   const actionDisabled = selectedRowKeys.length === 0;
+
+  const getPopupContainer = (trigger: HTMLElement) =>
+    trigger.parentElement ?? document.body;
 
   const handleConfirm = () => {
     if (!action) return;
@@ -362,6 +374,7 @@ export default function CategoryLeadsWizardModal({
                     setTeamId(undefined);
                   }}
                   options={departments.map((dept) => ({ label: dept.name, value: dept.id }))}
+                  getPopupContainer={getPopupContainer}
                 />
               </Form.Item>
               <Form.Item label="Đội/nhóm" required>
@@ -375,6 +388,7 @@ export default function CategoryLeadsWizardModal({
                       .map((team) => ({ label: team, value: team })) || []
                   }
                   disabled={!departmentId}
+                  getPopupContainer={getPopupContainer}
                 />
               </Form.Item>
               <Form.Item label="Ghi chú chuyển xử lý">
@@ -437,6 +451,7 @@ export default function CategoryLeadsWizardModal({
                 value={assessment}
                 onChange={setAssessment}
                 options={assessmentOptions.map((item) => ({ label: item, value: item }))}
+                getPopupContainer={getPopupContainer}
               />
             </Form.Item>
             <Form.Item label="Ghi chú nội bộ">

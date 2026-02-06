@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"name": "MAPPA_V2",
+			"path": "."
+		}
+	],
+	"settings": {
+		"chat.mcp.serverSampling": {
+			"MAPPA_V2/.vscode/mcp.json: supabase": {
+				"allowedModels": []
+			}
+		}
+	}
+}

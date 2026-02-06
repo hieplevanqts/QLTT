@@ -135,13 +135,14 @@ export default function LeadInboxAIDemo() {
   };
 
   useEffect(() => {
+    if (wizardOpen) return;
     const interval = setInterval(() => {
       const newLead = generateRandomLead();
       setAiLeads(prev => [newLead, ...prev]);
     }, 3000); // Add new lead every 3 seconds
 
     return () => clearInterval(interval);
-  }, []);
+  }, [wizardOpen]);
 
   const getVerdictConfig = (lead: LeadMock) => {
     const status = lead.status;
