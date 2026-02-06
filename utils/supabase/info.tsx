@@ -33,7 +33,6 @@ const envUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const envPublicAnonKey = import.meta.env.VITE_SUPABASE_PUBLIC_ANON_KEY || '';
 // @ts-ignore
 const envAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-
 // Xác định projectId (ưu tiên VITE_SUPABASE_PROJECT_ID, sau đó extract từ URL)
 export const projectId = envProjectId || extractProjectIdFromUrl(envUrl);
 

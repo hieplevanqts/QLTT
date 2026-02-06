@@ -447,43 +447,44 @@ export default function MapPage() {
     if (lastFiltersKeyRef.current === filtersKey && hasFetchedMerchantsRef.current) {
       return; // Skip if filters haven't changed and we've already fetched
     }
+    loadMerchants();
+  }, [filtersKey, pointStatuses.length, showMerchants, showMapPoints, departments.length, isScopeLoading, isScopeInitialized, divisionId, teamId, filters, businessTypeFilters, departmentFilters, categories.length, selectedProvince, selectedWard]); // 🔥 Include all filter dependencies
+  async function loadMerchants() {
+    if (!hasFetchedMerchantsRef.current) {
+      setIsLoadingData(true);
+    }
+    setDataError(null);
 
-    async function loadMerchants() {
-      if (!hasFetchedMerchantsRef.current) {
-        setIsLoadingData(true);
-      }
-      setDataError(null);
+    try {
+      const effectiveDivisionId = divisionId || user?.department_id;
+      const effectiveTeamId = teamId || null;
+      const activeFilterCodes = Object.keys(filters).filter(key => filters[key] === true);
+      const merchantStatusCodes = mapStatusCodesToMerchantStatus(activeFilterCodes);
 
-      try {
-        const effectiveDivisionId = divisionId || user?.department_id;
-        const effectiveTeamId = teamId || null;
-        const activeFilterCodes = Object.keys(filters).filter(key => filters[key] === true);
-        const merchantStatusCodes = mapStatusCodesToMerchantStatus(activeFilterCodes);
+      const activeBusinessTypes = Object.keys(businessTypeFilters).filter(key => businessTypeFilters[key] === true);
+      const businessTypes = calculateBusinessTypes(activeBusinessTypes, categories);
 
-        const activeBusinessTypes = Object.keys(businessTypeFilters).filter(key => businessTypeFilters[key] === true);
-        const businessTypes = calculateBusinessTypes(activeBusinessTypes, categories);
-
-        const departmentIdsToFilter = calculateDepartmentIdsToFilter(
+      const departmentIdsToFilter = calculateDepartmentIdsToFilter(
           departmentFilters,
           departments,
           effectiveTeamId,
           effectiveDivisionId
-        );
-        const businessTypeFiltersArray = calculateBusinessTypeFiltersArray(businessTypeFilters, categories);
-        let divisionPath: string | null = null;
-        const targetIdForPath = effectiveTeamId || effectiveDivisionId; // Ưu tiên team nếu có
+      );
+      const businessTypeFiltersArray = calculateBusinessTypeFiltersArray(businessTypeFilters, categories);
+      let divisionPath: string | null = null;
+      const targetIdForPath = effectiveTeamId || effectiveDivisionId; // Ưu tiên team nếu có
 
-        if (targetIdForPath) {
-          try {
-            const deptInfo = await fetchDepartmentById(targetIdForPath);
-            if (deptInfo) {
-              divisionPath = deptInfo.path;
-            }
-          } catch (error) {
-            console.error('Error fetching department path:', error);
+      if (targetIdForPath) {
+        try {
+          const deptInfo = await fetchDepartmentById(targetIdForPath);
+          if (deptInfo) {
+            divisionPath = deptInfo.path;
           }
+        } catch (error) {
+          console.error('Error fetching department path:', error);
         }
-        const merchants = await fetchMerchants(
+      }
+      const merchants = await fetchMerchants(
           merchantStatusCodes.length > 0 ? merchantStatusCodes : undefined,
           businessTypes,
           departmentIdsToFilter,
@@ -501,22 +502,20 @@ export default function MapPage() {
             limit: limit,
             targetDepartmentPath: divisionPath
           }
-        );
-        setRestaurants(merchants);
-        setIsLoadingData(false);
-        hasFetchedMerchantsRef.current = true;
-        setHasInitialDataLoaded(true);
-        lastFiltersKeyRef.current = filtersKey;
+      );
+      setRestaurants(merchants);
+      setIsLoadingData(false);
+      hasFetchedMerchantsRef.current = true;
+      setHasInitialDataLoaded(true);
+      lastFiltersKeyRef.current = filtersKey;
 
-      } catch (error: any) {
-        console.error('❌ MapPage: Failed to load merchants:', error);
-        setDataError(error.message || 'Không thể tải dữ liệu merchants');
-        setIsLoadingData(false);
-      }
+    } catch (error: any) {
+      console.error('❌ MapPage: Failed to load merchants:', error);
+      setDataError(error.message || 'Không thể tải dữ liệu merchants');
+      setIsLoadingData(false);
     }
+  }
 
-    loadMerchants();
-  }, [filtersKey, pointStatuses.length, showMerchants, showMapPoints, departments.length, isScopeLoading, isScopeInitialized, divisionId, teamId, filters, businessTypeFilters, departmentFilters, categories.length, selectedProvince, selectedWard]); // 🔥 Include all filter dependencies
   useEffect(() => {
     if (showOfficers && !showMerchants && !showMapPoints) {
       setRestaurants([]);
@@ -933,6 +932,7 @@ export default function MapPage() {
                     setShowMerchants(false);
                     setShowOfficers(true);
                     setSelectedTeamId(''); // Reset team selection when switching to officers layer
+                    loadMerchants();
                   }
                 }}
               >
