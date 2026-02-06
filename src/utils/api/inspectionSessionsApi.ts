@@ -24,7 +24,7 @@ export interface InspectionSessionResponse {
   // Joins - Supabase might return these as object or array of objects depending on relationship config
   users?: { full_name: string } | { full_name: string }[] | null;
   merchants?: { business_name: string; address: string } | { business_name: string; address: string }[] | null;
-  map_inspection_campaigns?: { campaign_name: string } | { campaign_name: string }[] | null;
+  map_inspection_campaigns?: { campaign_name: string; plan_id?: string; map_inspection_plans?: { plan_name: string } } | { campaign_name: string; plan_id?: string; map_inspection_plans?: { plan_name: string } }[] | null;
   [key: string]: any;
 }
 
@@ -32,6 +32,8 @@ export interface InspectionSession {
   id: string;
   campaignId: string | null;
   campaignName?: string;
+  planId?: string;
+  planName?: string;
   status: 'not_started' | 'in_progress' | 'completed' | 'closed' | 'cancelled' | 'reopened';
   startTime: string | null;
   endTime: string | null;
@@ -76,18 +78,23 @@ function mapPriority(p: any): number {
   return map[String(p).toLowerCase()] || 2;
 }
 
-function mapRowToSession(row: InspectionSessionResponse): InspectionSession {
+// Update mapRowToSession signature to accept additional data
+function mapRowToSession(row: InspectionSessionResponse, campaignData?: any): InspectionSession {
   // Helper to safely get first item or object
   const getJoinedData = (data: any) => Array.isArray(data) ? data[0] : data;
 
-  const campaign = getJoinedData(row.map_inspection_campaigns);
   const user = getJoinedData(row.users);
   const merchant = getJoinedData(row.merchants);
+  
+  // Use passed campaignData if available, otherwise fallback to row data (if any)
+  const campaign = campaignData || getJoinedData(row.map_inspection_campaigns);
 
   return {
     id: row._id,
     campaignId: row.campaign_id,
-    campaignName: campaign?.campaign_name || '--',
+    campaignName: campaign?.campaign_name || row.campaign_name || '--',
+    planId: campaign?.plan_id, 
+    planName: campaign?.map_inspection_plans?.plan_name || '--',
     status: mapSessionStatus(row.status),
     startTime: row.start_time,
     endTime: row.end_time,
@@ -132,7 +139,8 @@ export async function fetchInspectionSessionsApi(campaignId?: string, search?: s
       }
     }
 
-    let url = `${SUPABASE_REST_URL}/v_sessions_by_department?select=*,users(full_name),merchants!fk_inspection_merchant(business_name,address),map_inspection_campaigns(campaign_name)&order=created_at.desc`;
+    // Remove direct join map_inspection_campaigns from URL to avoid ambiguous N-N array returns
+    let url = `${SUPABASE_REST_URL}/v_sessions_by_department?select=*,users(full_name),merchants!fk_inspection_merchant(business_name,address)&order=created_at.desc`;
     if (campaignId) {
       url += `&campaign_id=eq.${campaignId}`;
     }
@@ -149,7 +157,30 @@ export async function fetchInspectionSessionsApi(campaignId?: string, search?: s
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     
     const data: InspectionSessionResponse[] = await response.json();
-    return data.map(mapRowToSession);
+    
+    // Manual Join: Fetch Campaigns by ID
+    const campaignIds = [...new Set(data.map(item => item.campaign_id).filter(Boolean))];
+    let campaignMap: Record<string, any> = {};
+
+    if (campaignIds.length > 0) {
+      try {
+        // Fetch only necessary fields: name, plan info
+        const cUrl = `${SUPABASE_REST_URL}/map_inspection_campaigns?_id=in.(${campaignIds.join(',')})&select=_id,campaign_name,plan_id,map_inspection_plans(plan_name)`;
+        const cRes = await fetch(cUrl, { method: 'GET', headers: getHeaders() });
+        if (cRes.ok) {
+          const cData = await cRes.json();
+          // Create lookup map
+          cData.forEach((c: any) => {
+            campaignMap[c._id] = c;
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching related campaigns:', err);
+      }
+    }
+
+    // Map using the fetched campaign data
+    return data.map(row => mapRowToSession(row, row.campaign_id ? campaignMap[row.campaign_id] : null));
   } catch (error) {
     console.error('fetchInspectionSessionsApi Error:', error);
     throw error;

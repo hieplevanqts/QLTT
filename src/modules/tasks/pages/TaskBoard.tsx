@@ -52,7 +52,7 @@ import { Form06Modal } from '@/components/tasks/Form06Modal';
 import { Form10Modal } from '@/components/tasks/Form10Modal';
 import { Form12Modal } from '@/components/tasks/Form12Modal';
 import { Form11Modal } from '@/components/tasks/Form11Modal';
-import { DeployTaskModal, CompleteTaskModal, CancelTaskModal } from '@/components/tasks/TaskActionModals';
+import { DeployTaskModal, CompleteTaskModal, CancelTaskModal, CloseTaskModal } from '@/components/tasks/TaskActionModals';
 
 type ViewMode = 'kanban' | 'list';
 
@@ -250,6 +250,7 @@ export function TaskBoard() {
   const [isDeployModalOpen, setIsDeployModalOpen] = useState(false);
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
   const [cancelTask, setCancelTask] = useState<InspectionTask | null>(null);
+  const [closeTask, setCloseTask] = useState<InspectionTask | null>(null);
 
   // Filters
   const [searchValue, setSearchValue] = useState('');
@@ -313,8 +314,8 @@ export function TaskBoard() {
         code: session.id.substring(0, 8).toUpperCase(),
         roundId: session.campaignId,
         roundName: session.campaignName || '--',
-        planId: session.departmentId, // Using dept id as fallback if needed
-        planName: '--',
+        planId: session.planId, // Use proper planId from API
+        planName: session.planName || '--',
         type: session.type, // Use type directly from API
         title: session.name,
         description: session.description || '',
@@ -801,8 +802,7 @@ export function TaskBoard() {
   };
 
   const handleCloseTask = (task: InspectionTask) => {
-    handleStatusChange(task.id, 'closed');
-    toast.success(`Đã đóng phiên làm việc \"${task.title}\"`);
+    setCloseTask(task);
   };
 
   const handleCompleteTask = (task: InspectionTask) => {
@@ -984,8 +984,7 @@ export function TaskBoard() {
         break;
 
       case 'closed':
-      case 'cancelled':
-        // Đã đóng/Hủy: Xem chi tiết, Mở lại
+        // Đã đóng: Xem chi tiết, Các biểu mẫu
         actions.push(
           {
             label: 'Xem chi tiết',
@@ -994,54 +993,54 @@ export function TaskBoard() {
             priority: 10,
           },
           {
-            label: 'Mở lại',
-            icon: <RotateCcw size={16} />,
-            onClick: () => handleReopen(task),
-            priority: 9,
+            label: 'Biên bản kiểm tra',
+            icon: <FileText size={16} />,
+            onClick: () => {
+              setActionTask(task);
+              setIsForm06ModalOpen(true);
+            },
+            priority: 8,
+          },
+
+          {
+            label: 'Bảng kê',
+            icon: <Table size={16} />,
+            onClick: () => {
+              setActionTask(task);
+              setIsForm10ModalOpen(true);
+            },
+            priority: 7,
+          },
+          {
+            label: 'Phụ lục',
+            icon: <FileText size={16} />,
+            onClick: () => {
+              setActionTask(task);
+              setIsForm11ModalOpen(true);
+            },
+            priority: 6,
           }
         );
+        break;
 
-        if (task.status === 'cancelled') {
-             actions.push({
-               label: 'Xóa',
-               icon: <Trash2 size={16} className="text-destructive" />,
-               onClick: () => handleDeleteTask(task),
-               priority: 0,
-               variant: 'destructive',
-               separator: true
-             });
-        }
-         if (task.status === 'closed') {
-             actions.push(
-               {
-                 label: 'Biên bản kiểm tra',
-                 icon: <FileText size={16} />,
-                 onClick: () => {
-                   setActionTask(task);
-                   setIsForm06ModalOpen(true);
-                 },
-                 priority: 8,
-               },
-               {
-                 label: 'Bảng kê',
-                 icon: <Table size={16} />,
-                 onClick: () => {
-                   setActionTask(task);
-                   setIsForm10ModalOpen(true);
-                 },
-                 priority: 7,
-               },
-               {
-                 label: 'Phụ lục',
-                 icon: <FileText size={16} />,
-                 onClick: () => {
-                   setActionTask(task);
-                   setIsForm11ModalOpen(true);
-                 },
-                 priority: 6,
-               }
-             );
-         }
+      case 'cancelled':
+        // Đã hủy: Xem chi tiết, Xóa
+        actions.push(
+          {
+            label: 'Xem chi tiết',
+            icon: <Eye size={16} />,
+            onClick: () => handleTaskClick(task),
+            priority: 10,
+          },
+          {
+            label: 'Xóa',
+            icon: <Trash2 size={16} className="text-destructive" />,
+            onClick: () => handleDeleteTask(task),
+            priority: 0,
+            variant: 'destructive',
+            separator: true
+          }
+        );
         break;
 
       case 'reopened':
@@ -1512,6 +1511,18 @@ export function TaskBoard() {
               setIsDetailModalOpen(false);
             }
           }
+        }}
+      />
+
+      <CloseTaskModal
+        isOpen={!!closeTask}
+        onClose={() => setCloseTask(null)}
+        task={closeTask}
+        onConfirm={() => {
+            if (closeTask) {
+                handleStatusChange(closeTask.id, 'closed');
+                setCloseTask(null);
+            }
         }}
       />
 
