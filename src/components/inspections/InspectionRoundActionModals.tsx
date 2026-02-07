@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, Send, CheckCircle2, XCircle, PlayCircle, AlertTriangle, Trash2, PauseCircle } from 'lucide-react';
 import styles from './InspectionRoundActionModals.module.css';
-import type { InspectionRound } from '../../data/inspection-rounds-mock-data';
+import type { InspectionRound } from '@/utils/data/inspection-rounds-mock-data';
 
 // Modal Wrapper Component
 interface ModalProps {
@@ -64,7 +64,6 @@ export function SendForApprovalModal({ isOpen, onClose, round, onConfirm }: Send
           Hủy
         </button>
         <button className={styles.primaryButton} onClick={handleSubmit}>
-          <Send size={18} />
           Gửi duyệt
         </button>
       </div>
@@ -92,7 +91,7 @@ export function StartInspectionModal({ isOpen, onClose, round, onConfirm }: Star
     : 'Xác nhận bắt đầu đợt kiểm tra này? Lực lượng kiểm tra sẽ được thông báo và có thể bắt đầu thực hiện phiên làm việc.';
   const buttonText = isApprovalAction ? 'Phê duyệt' : 'Bắt đầu kiểm tra';
   const iconComponent = isApprovalAction ? <CheckCircle2 size={24} color="white" /> : <PlayCircle size={24} color="white" />;
-  const buttonIcon = isApprovalAction ? <CheckCircle2 size={18} /> : <PlayCircle size={18} />;
+
 
   const handleSubmit = () => {
     onConfirm();
@@ -130,7 +129,6 @@ export function StartInspectionModal({ isOpen, onClose, round, onConfirm }: Star
           Hủy
         </button>
         <button className={styles.successButton} onClick={handleSubmit}>
-          {buttonIcon}
           {buttonText}
         </button>
       </div>
@@ -188,7 +186,6 @@ export function CompleteInspectionModal({ isOpen, onClose, round, onConfirm }: C
           className={styles.successButton} 
           onClick={handleSubmit}
         >
-          <CheckCircle2 size={18} />
           Hoàn thành kiểm tra
         </button>
       </div>
@@ -243,7 +240,6 @@ export function CompleteRoundModal({ isOpen, onClose, round, onConfirm }: Comple
           Hủy
         </button>
         <button className={styles.successButton} onClick={handleSubmit}>
-          <CheckCircle2 size={18} />
           Hoàn thành
         </button>
       </div>
@@ -301,7 +297,6 @@ export function CancelRoundModal({ isOpen, onClose, round, onConfirm }: CancelRo
           className={styles.warningButton} 
           onClick={handleSubmit}
         >
-          <XCircle size={18} />
           Hủy đợt kiểm tra
         </button>
       </div>
@@ -359,7 +354,6 @@ export function RejectRoundModal({ isOpen, onClose, round, onConfirm }: RejectRo
           className={styles.destructiveButton} 
           onClick={handleSubmit}
         >
-          <XCircle size={18} />
           Từ chối duyệt
         </button>
       </div>
@@ -417,7 +411,6 @@ export function DeleteRoundModal({ isOpen, onClose, round, onConfirm }: DeleteRo
           className={styles.destructiveButton} 
           onClick={handleSubmit}
         >
-          <Trash2 size={18} />
           Xóa vĩnh viễn
         </button>
       </div>
@@ -475,7 +468,6 @@ export function PauseRoundModal({ isOpen, onClose, round, onConfirm }: PauseRoun
           className={styles.warningButton} 
           onClick={handleSubmit}
         >
-          <PauseCircle size={18} />
           Tạm dừng
         </button>
       </div>
@@ -533,7 +525,6 @@ export function ResumeRoundModal({ isOpen, onClose, round, onConfirm }: ResumeRo
           className={styles.successButton} 
           onClick={handleSubmit}
         >
-          <PlayCircle size={18} />
           Tiếp tục
         </button>
       </div>
@@ -591,7 +582,6 @@ export function DeployRoundModal({ isOpen, onClose, round, onConfirm }: DeployRo
           className={styles.primaryButton} 
           onClick={handleSubmit}
         >
-          <PlayCircle size={18} />
           Triển khai
         </button>
       </div>

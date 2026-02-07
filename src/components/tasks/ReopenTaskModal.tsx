@@ -14,7 +14,6 @@ export function ReopenTaskModal({
   isOpen, 
   onClose, 
   taskTitle, 
-  taskId,
   onReopen 
 }: ReopenTaskModalProps) {
   const [reason, setReason] = useState('');
@@ -130,7 +129,6 @@ export function ReopenTaskModal({
               type="submit"
               className={styles.submitButton}
             >
-              <RotateCcw size={16} />
               Xác nhận mở lại
             </button>
           </div>
