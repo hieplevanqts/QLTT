@@ -41,11 +41,12 @@ const resolveDevServerPort = async (host: string, startPort: number) => {
   return startPort
 }
 
-export default defineConfig(async () => {
+export default defineConfig(async ({ mode }) => {
   const resolvedDevPort = await resolveDevServerPort(
     DEV_SERVER_HOST,
     DEV_SERVER_PORT
   )
+  const isProd = mode === 'production'
 
   return {
   plugins: [
@@ -81,6 +82,7 @@ export default defineConfig(async () => {
     assetsDir: 'assets',
     sourcemap: false,
     minify: true, // Use esbuild minify (default, faster and no extra dependency needed)
+    esbuild: isProd ? { drop: ['console', 'debugger'] } : undefined,
     chunkSizeWarningLimit: 2000,
     commonjsOptions: {
       include: [/jspdf/, /docx/, /node_modules/],

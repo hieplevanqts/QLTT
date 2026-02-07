@@ -4,6 +4,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
+      args:
+        VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID}
+        VITE_SUPABASE_PUBLIC_ANON_KEY: ${VITE_SUPABASE_PUBLIC_ANON_KEY}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
     container_name: mappa-portal-dev
     ports:
       - "5173:5173"
@@ -69,6 +74,18 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID}
+        VITE_SUPABASE_PUBLIC_ANON_KEY: ${VITE_SUPABASE_PUBLIC_ANON_KEY}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+        PUBLIC_URL: ${PUBLIC_URL}
+        SUPABASE_URL: ${SUPABASE_URL}
+        SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+        VITE_SYSTEM_ADMIN_API: ${VITE_SYSTEM_ADMIN_API}
+        VITE_GOOGLE_MAPS_API_KEY: ${VITE_GOOGLE_MAPS_API_KEY}
+        VITE_GEOCODER_PROVIDER: ${VITE_GEOCODER_PROVIDER}
+        VITE_NOMINATIM_EMAIL: ${VITE_NOMINATIM_EMAIL}
     container_name: mappa-portal
     ports:
       - "80:80"
