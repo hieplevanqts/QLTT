@@ -397,6 +397,30 @@
   color: var(--foreground);
 }
 
+.formItemRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.viewDetailButton {
+  background: none;
+  border: none;
+  color: var(--muted-foreground);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 8px;
+  transition: color 0.2s;
+}
+
+.viewDetailButton:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
 .attachmentBadge {
   display: flex;
   align-items: center;

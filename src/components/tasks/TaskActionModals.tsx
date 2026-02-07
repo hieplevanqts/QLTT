@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { X, PlayCircle, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import styles from './TaskActionModals.module.css';
-import type { InspectionTask } from '../../data/inspection-tasks-mock-data';
+import type { InspectionTask } from '@/utils/data/inspection-tasks-mock-data';
 
 // Modal Wrapper Component
 interface ModalProps {
@@ -69,7 +69,6 @@ export function DeployTaskModal({ isOpen, onClose, task, onConfirm }: DeployTask
           onClick={handleSubmit}
           style={{ background: '#10B981' }}
         >
-          <PlayCircle size={18} />
           Triển khai
         </button>
       </div>
@@ -107,7 +106,7 @@ export function CompleteTaskModal({ isOpen, onClose, task, onConfirm }: Complete
         <div className={styles.infoBox} style={{ background: '#005cb615', borderColor: '#005cb6', color: '#005cb6' }}>
           <p>Phiên làm việc sẽ được chuyển sang trạng thái <strong>"Đã hoàn thành"</strong>. Bạn sẽ có thể xuất biên bản kiểm tra và báo cáo tổng hợp.</p>
         </div>
-        <p className="mt-4 text-sm text-balance text-muted-foreground">Bạn có chắc chắn muốn hoàn thành phiên làm việc này? Mọi thông tin sau khi hoàn thành sẽ được lưu trữ hồ sơ.</p>
+        <p className="mt-4 text-sm text-balance text-muted-foreground" style={{ marginTop: '12px' }}>Bạn có chắc chắn muốn hoàn thành phiên làm việc này? Mọi thông tin sau khi hoàn thành sẽ được lưu trữ hồ sơ.</p>
       </div>
 
       <div className={styles.modalFooter}>
@@ -122,7 +121,6 @@ export function CompleteTaskModal({ isOpen, onClose, task, onConfirm }: Complete
           }}
           style={{ background: '#005cb6' }}
         >
-          <CheckCircle size={18} />
           Hoàn thành
         </button>
       </div>
@@ -160,7 +158,7 @@ export function CancelTaskModal({ isOpen, onClose, task, onConfirm }: CancelTask
         <div className={styles.infoBox} style={{ background: '#DC262615', borderColor: '#DC2626', color: '#DC2626' }}>
           <p>Phiên làm việc sẽ được chuyển sang trạng thái <strong>"Đã hủy"</strong>.</p>
         </div>
-        <p className="mt-4 text-sm text-balance text-muted-foreground">Bạn có chắc chắn muốn hủy phiên làm việc này không?</p>
+        <p className="mt-4 text-sm text-balance text-muted-foreground" style={{ marginTop: '12px' }}>Bạn có chắc chắn muốn hủy phiên làm việc này không?</p>
       </div>
 
       <div className={styles.modalFooter}>
@@ -175,7 +173,6 @@ export function CancelTaskModal({ isOpen, onClose, task, onConfirm }: CancelTask
           }}
           style={{ background: '#DC2626' }}
         >
-          <XCircle size={18} />
           Xác nhận hủy
         </button>
       </div>
@@ -228,7 +225,6 @@ export function CloseTaskModal({ isOpen, onClose, task, onConfirm }: CloseTaskMo
           }}
           style={{ background: '#64748B' }}
         >
-          <CheckCircle size={18} />
           Xác nhận đóng
         </button>
       </div>
@@ -281,7 +277,6 @@ export function DeleteTaskModal({ isOpen, onClose, task, onConfirm }: DeleteTask
           }}
           style={{ background: '#DC2626' }}
         >
-          <Trash2 size={18} />
           Xóa vĩnh viễn
         </button>
       </div>

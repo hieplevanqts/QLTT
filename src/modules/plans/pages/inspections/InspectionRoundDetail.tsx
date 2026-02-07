@@ -41,8 +41,13 @@ import { Form06Modal } from '@/components/tasks/Form06Modal';
 import { Form10Modal } from '@/components/tasks/Form10Modal';
 import { Form11Modal } from '@/components/tasks/Form11Modal';
 import DataTable, { type Column } from '@/components/ui-kit/DataTable';
-import ActionColumn, { type Action } from '@/components/patterns/ActionColumn';
+import ActionColumn from '@/components/patterns/ActionColumn';
 import EmptyState from '@/components/ui-kit/EmptyState';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import { fetchInspectionSessionsApi, createInspectionSessionApi, updateInspectionSessionApi } from '@/utils/api/inspectionSessionsApi';
 import { useSupabaseInspectionRound } from '@/hooks/useSupabaseInspectionRound';
@@ -53,10 +58,10 @@ type TabType = 'overview' | 'sessions' | 'team' | 'scope' | 'history';
 
 const TABS = [
   { id: 'overview' as TabType, label: 'Tổng quan' },
-  { id: 'sessions' as TabType, label: 'Phiên kiểm tra', badge: 6 },
-  { id: 'team' as TabType, label: 'Nhân sự', badge: 4 },
+  { id: 'sessions' as TabType, label: 'Phiên kiểm tra' },
+  { id: 'team' as TabType, label: 'Nhân sự' },
   { id: 'scope' as TabType, label: 'Phạm vi' },
-  { id: 'history' as TabType, label: 'Lịch sử cập nhật', badge: 12 },
+  { id: 'history' as TabType, label: 'Lịch sử cập nhật' },
 ];
 
 
@@ -322,6 +327,7 @@ export default function InspectionRoundDetail() {
             assigneeId: s.userId, // Map userId to assigneeId if used, though modal uses userId or assignee.id
             userId: s.userId,
             startDate: s.startTime,
+            reopenReason: s.reopenReason,
           };
         });
         setSessions(mapped);
@@ -410,6 +416,7 @@ export default function InspectionRoundDetail() {
           merchantId: s.merchantId,
           userId: s.userId,
           startDate: s.startTime,
+          reopenReason: s.reopenReason,
         };
       });
       setSessions(mapped);
@@ -509,6 +516,7 @@ export default function InspectionRoundDetail() {
             assigneeId: s.userId, 
             userId: s.userId,
             startDate: s.startTime,
+            reopenReason: s.reopenReason,
             createdAt: s.createdAt, // Needed for date checks if any
           };
         });
@@ -576,6 +584,8 @@ export default function InspectionRoundDetail() {
       key: 'title',
       label: 'Tên phiên làm việc',
       sortable: true,
+      width: '350px',
+      className: 'whitespace-normal',
       render: (task) => (
         <div>
           <div style={{ fontWeight: 500 }}>{task?.title || 'N/A'}</div>
@@ -587,6 +597,8 @@ export default function InspectionRoundDetail() {
       key: 'roundId',
       label: 'Đợt kiểm tra',
       sortable: true,
+      width: '200px',
+      className: 'whitespace-normal',
       render: (task) => (
         <div style={{ fontWeight: 500 }}>{task?.roundName || 'N/A'}</div>
       ),
@@ -595,36 +607,61 @@ export default function InspectionRoundDetail() {
       key: 'targetName',
       label: 'Tên cửa hàng',
       sortable: true,
+      width: '250px',
+      className: 'whitespace-normal',
       render: (task) => task?.targetName || 'N/A',
     },
     {
       key: 'status',
       label: 'Trạng thái',
       sortable: true,
-      render: (task) => task?.status ? <StatusBadge {...getStatusProps('task', task.status)} size="sm" /> : <span>-</span>,
+      width: '150px',
+      render: (task) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {task?.status ? <StatusBadge {...getStatusProps('task', task.status)} size="sm" /> : <span>-</span>}
+          {task?.status === 'reopened' && task?.reopenReason && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div style={{ cursor: 'help', display: 'flex', alignItems: 'center' }}>
+                  <AlertCircle size={16} className="text-blue-500" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-[300px] p-4">
+                <p className="font-semibold mb-1">Lý do mở lại:</p>
+                <p className="text-sm">{task.reopenReason}</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+      ),
     },
     {
       key: 'type',
       label: 'Loại',
       sortable: true,
+      width: '120px',
       render: (task) => task?.type ? <StatusBadge {...getStatusProps('sessionType', task.type)} size="sm" /> : <span>--</span>,
     },
     {
       key: 'priority',
       label: 'Ưu tiên',
       sortable: true,
+      width: '120px',
       render: (task) => task?.priority ? <StatusBadge {...getStatusProps('priority', task.priority)} size="sm" /> : <span>-</span>,
     },
     {
       key: 'assignee',
       label: 'Người thực hiện',
       sortable: true,
+      width: '180px',
+      className: 'whitespace-normal',
       render: (task) => task?.assignee?.name || 'N/A',
     },
     {
       key: 'startDate',
       label: 'Ngày bắt đầu',
       sortable: true,
+      width: '150px',
       render: (task) => {
         if (!task?.startDate) return <span>-</span>;
         return <span>{new Date(task.startDate).toLocaleDateString('vi-VN')}</span>;
@@ -634,6 +671,7 @@ export default function InspectionRoundDetail() {
       key: 'dueDate',
       label: 'Hạn hoàn thành',
       sortable: true,
+      width: '150px',
       render: (task) => {
         if (!task?.dueDate) return <span>-</span>;
         const dueDate = new Date(task.dueDate);
@@ -942,7 +980,6 @@ export default function InspectionRoundDetail() {
             onClick={() => setActiveTab(tab.id)}
           >
             {tab.label}
-            {tab.badge && <span className={styles.tabBadge}>{tab.badge}</span>}
           </button>
         ))}
       </div>
@@ -1176,7 +1213,7 @@ export default function InspectionRoundDetail() {
 
             {/* Sessions Table */}
             {/* Sessions Table using DataTable */}
-            <div className={styles.sessionsTable} style={{ overflow: 'visible' }}>
+            <div className={styles.sessionsTable} style={{ overflowX: 'auto' }}>
               {sessions.length > 0 ? (
                 <DataTable
                   columns={columns}
@@ -1465,17 +1502,17 @@ export default function InspectionRoundDetail() {
           />
           <Form06Modal
             open={isForm06ModalOpen}
-            onClose={() => setIsForm06ModalOpen(false)}
+            onOpenChange={setIsForm06ModalOpen}
             task={actionTask}
           />
           <Form10Modal
             open={isForm10ModalOpen}
-            onClose={() => setIsForm10ModalOpen(false)}
+            onOpenChange={setIsForm10ModalOpen}
             task={actionTask}
           />
           <Form11Modal
             open={isForm11ModalOpen}
-            onClose={() => setIsForm11ModalOpen(false)}
+            onOpenChange={setIsForm11ModalOpen}
             task={actionTask}
           />
         </>

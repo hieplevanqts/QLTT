@@ -112,6 +112,48 @@
   gap: var(--spacing-3);
 }
 
+.statusButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--background);
+  color: var(--muted-foreground);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.statusButton:hover {
+  background: var(--muted);
+  border-color: var(--foreground);
+}
+
+.statusButtonPassed {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: #10B981;
+  color: #10B981;
+}
+
+.statusButtonPassed:hover {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #059669;
+}
+
+.statusButtonFailed {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.statusButtonFailed:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: #dc2626;
+}
+
 .statusDisplay {
   display: flex;
   align-items: center;
