@@ -1,18 +1,53 @@
-name: Docker Image CI
+name: CI/CD Docker Compose (Production)
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
+
+env:
+  IMAGE_NAME: ghcr.io/hieplv/mappa-portal:latest
 
 jobs:
-
-  build:
-
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        run: |
+          echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --build-arg VITE_SUPABASE_PROJECT_ID=${{ secrets.VITE_SUPABASE_PROJECT_ID }} \
+            --build-arg VITE_SUPABASE_PUBLIC_ANON_KEY=${{ secrets.VITE_SUPABASE_PUBLIC_ANON_KEY }} \
+            --build-arg VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }} \
+            --build-arg VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }} \
+            --build-arg PUBLIC_URL=${{ secrets.PUBLIC_URL }} \
+            --build-arg SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
+            --build-arg SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} \
+            --build-arg VITE_SYSTEM_ADMIN_API=${{ secrets.VITE_SYSTEM_ADMIN_API }} \
+            --build-arg VITE_GOOGLE_MAPS_API_KEY=${{ secrets.VITE_GOOGLE_MAPS_API_KEY }} \
+            --build-arg VITE_GEOCODER_PROVIDER=${{ secrets.VITE_GEOCODER_PROVIDER }} \
+            --build-arg VITE_NOMINATIM_EMAIL=${{ secrets.VITE_NOMINATIM_EMAIL }} \
+            -t $IMAGE_NAME .
+
+      - name: Push Docker image
+        run: |
+          docker push $IMAGE_NAME
+
+      - name: Deploy on VPS
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GHCR_TOKEN }}
+            cd /path/to/your/project
+            docker compose pull app
+            docker compose --profile prod up -d app
