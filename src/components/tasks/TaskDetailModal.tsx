@@ -4,17 +4,14 @@ import {
   Info,
   FileText,
   CheckSquare,
-  Edit2,
   AlertTriangle,
   AlertCircle,
   Image as ImageIcon,
   ClipboardList,
   Check,
-  Download,
   Plus,
-  CheckCircle,
 } from 'lucide-react';
-import { type InspectionTask, type TaskStatus } from '../../data/inspection-tasks-mock-data';
+import { type InspectionTask, type TaskStatus } from '@/utils/data/inspection-tasks-mock-data';
 import { StatusBadge } from '../common/StatusBadge';
 import { getStatusProps } from '../../utils/status-badge-helper';
 import { toast } from 'sonner';
@@ -419,12 +416,10 @@ export function TaskDetailModal({ task, isOpen, onClose, onEdit, onCompleteTask 
             </button>
             { (task.status === 'completed' || task.status === 'closed') && (
               <button className={`${styles.footerButton} ${styles.downloadBtn}`} onClick={handleDownloadForm06}>
-                <Download size={18} />
                 Xuất biên bản (PDF)
               </button>
             )}
             <button className={`${styles.footerButton} ${styles.editBtn}`} onClick={handleEdit}>
-              <Edit2 size={18} />
               Cập nhật dữ liệu
             </button>
             { task.status === 'in_progress' && onCompleteTask && (
@@ -435,7 +430,6 @@ export function TaskDetailModal({ task, isOpen, onClose, onEdit, onCompleteTask 
                   onClose();
                 }}
               >
-                <CheckCircle size={18} />
                 Hoàn thành phiên
               </button>
             )}

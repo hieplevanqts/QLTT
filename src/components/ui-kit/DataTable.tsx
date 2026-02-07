@@ -18,6 +18,7 @@ export interface Column<T> {
   sortable?: boolean;
   render?: (item: T, index: number) => ReactNode;
   width?: string; // Fixed width (e.g., '140px', '200px')
+  minWidth?: string; // Minimum width
   sticky?: 'left' | 'right'; // Sticky position
   className?: string; // Additional className
   truncate?: boolean; // Enable text truncation with ellipsis
@@ -81,6 +82,10 @@ export function DataTableComponent<T>({
       style.width = column.width;
       style.minWidth = column.width;
       style.maxWidth = column.width;
+    }
+    
+    if (column.minWidth) {
+      style.minWidth = column.minWidth;
     }
     
     return style;

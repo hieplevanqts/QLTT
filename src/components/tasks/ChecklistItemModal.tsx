@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Camera, Upload, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { X, Camera, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import styles from './ChecklistItemModal.module.css';
 
@@ -160,10 +160,6 @@ export function ChecklistItemModal({ item, isOpen, onClose, onSave, readOnly }: 
               <h3 className={styles.sectionTitle}>Chứng cứ hình ảnh</h3>
               {!readOnly && (
                 <>
-                  <button className={styles.uploadButton} onClick={handleUploadImage}>
-                    <Upload size={16} />
-                    Tải lên
-                  </button>
                   <input
                     type="file"
                     className={styles.fileInput}

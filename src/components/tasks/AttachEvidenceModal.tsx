@@ -14,7 +14,6 @@ interface AttachEvidenceModalProps {
   isOpen: boolean;
   onClose: () => void;
   taskTitle: string;
-  taskId: string;
   onSubmit: (files: AttachedFile[]) => void;
 }
 
@@ -22,7 +21,6 @@ export function AttachEvidenceModal({
   isOpen, 
   onClose, 
   taskTitle,
-  taskId,
   onSubmit 
 }: AttachEvidenceModalProps) {
   const [files, setFiles] = useState<AttachedFile[]>([]);
@@ -202,7 +200,6 @@ export function AttachEvidenceModal({
             onClick={handleSubmit}
             disabled={files.length === 0}
           >
-            <Upload size={16} />
             Đính kèm ({files.length})
           </button>
         </div>
