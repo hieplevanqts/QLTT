@@ -3,7 +3,7 @@ import type { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import { AlertTriangle, MapPin, Clipboard } from 'lucide-react';
 import { useTvData } from '@/contexts/TvDataContext';
 import { LOCATION_BOUNDS } from '@/constants/locationBounds';
-import bienDaoImg from '@/assets/images/hoang-sa.png';
+import hoangSaMaskImage from '@/assets/images/bg-bien.png';
 
 type LeafletModule = typeof import('leaflet');
 
@@ -68,45 +68,104 @@ export default function LiveMapPanel({ scene }: LiveMapPanelProps) {
     const L = leaflet;
 
     const map = L.map(mapContainerRef.current, {
-      center: [16.0, 106.0],
-      zoom: 5,
+      center: [21.0285, 105.8542], // Hà Nội
+      zoom: 12,
       zoomControl: false,
     });
-
+    const northVNBounds: [[number, number], [number, number]] = [
+      [23.5, 102.0], // góc trên trái (Hà Giang – Lào Cai)
+      [19.0, 108.5], // góc dưới phải (Thanh Hóa – ven biển)
+    ];
+    map.fitBounds(northVNBounds);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      // attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
+// L.tileLayer('https://tiles.arcgis.com/tiles/EaQ3hSM51DBnlwMq/arcgis/rest/services/VietnamLabels/MapServer/tile/{z}/{y}/{x}')
 
-     // Hoang Sa
+// L.tileLayer(
+//   'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',
+//   { maxZoom: 19 }
+// ).addTo(map);
+
+
+
+
+     const hoangSaMaskBounds: [[number, number], [number, number]] = [
+            [17.3, 114.6], // góc trên trái
+            [15.6, 110.0], // góc dưới phải
+          ];
     
+          L.imageOverlay(
+            hoangSaMaskImage,  
+            hoangSaMaskBounds,
+            {
+              opacity: 1,
+              className: 'bien-dao-overlay',
+              zIndex: 999,
+              interactive: false,
+            }
+          ).addTo(map);
+    
+          const truongSaMaskBounds: [[number, number], [number, number]] = [
+            [10.8, 113.8], // góc trên trái
+            [8.6, 109.3],  // góc dưới phải
+          ];
+    
+          L.imageOverlay(
+            hoangSaMaskImage,  
+            truongSaMaskBounds,
+            {
+              opacity: 1,
+              zIndex: 999,
+              interactive: false,
+              className: 'bien-dao-overlay'
+            }
+          ).addTo(map);
+    
+    
+          // Hoang Sa
           const bounds: [[number, number], [number, number]] = [
             [15.8, 111.2],
             [17.2, 112.8],
           ];
     
-          L.imageOverlay(
-            bienDaoImg,
-            bounds,
-            { opacity: 0.85, className: 'bien-dao-overlay' }
-          ).addTo(map);
-          // map.fitBounds(bounds);
-    
-    
-          // Quần đảo Trường Sa (Spratly Islands) – bounds xấp xỉ
-          const truongSaBounds: [[number, number], [number, number]] = [
-            [10.0, 113.0], // góc trên trái
-            [8.0, 115.0],  // góc dưới phải
+          const hoangSaCenter: [number, number] = [
+            (bounds[0][0] + bounds[1][0]) / 2,
+            (bounds[0][1] + bounds[1][1]) / 2,
           ];
     
-          L.imageOverlay(
-            bienDaoImg,
-            truongSaBounds,
-            { opacity: 0.85, className: 'bien-dao-overlay' }
-          ).addTo(map);
-
-
-    mapRef.current = map;
+          L.marker(hoangSaCenter, {
+            icon: L.divIcon({
+              className: 'hoang-sa-label',
+              html: '<div style="width: 100px; white-space: nowrap; font-weight: 500; font-size: 10px; color: #555; text-shadow: 0 1px 2px rgba(255,255,255,0.9);text-align: center;">Quần đảo Hoàng Sa <br> Việt Nam</div>',
+              iconSize: [1, 1],
+              iconAnchor: [0, 0],
+            }),
+            interactive: false,
+          }).addTo(map);
+    
+          const truongSaBounds: [[number, number], [number, number]] = [
+            [11.0, 112.0], // góc trên trái: lên bắc + lệch tây rõ hơn
+            [9.0, 114.0],  // góc dưới phải: lên bắc + lệch tây rõ hơn
+          ];
+          const truongSaCenter: [number, number] = [
+            (truongSaBounds[0][0] + truongSaBounds[1][0]) / 2,
+            (truongSaBounds[0][1] + truongSaBounds[1][1]) / 2,
+          ];
+    
+          L.marker(truongSaCenter, {
+            icon: L.divIcon({
+              className: 'hoang-sa-label',
+              html: '<div style="width: 100px; white-space: nowrap; font-weight: 500; font-size: 10px; color: #555; text-shadow: 0 1px 2px rgba(255,255,255,0.9);text-align: center">Quần đảo Trường Sa <br> Việt Nam</div>',
+              iconSize: [1, 1],
+              iconAnchor: [0, 0],
+            }),
+            interactive: false,
+          }).addTo(map);
+          mapRef.current = map;
+    
+    
 
     // Cleanup on unmount
     return () => {
@@ -157,7 +216,7 @@ export default function LiveMapPanel({ scene }: LiveMapPanelProps) {
         }
       }
     }, 120);
-    
+
     return () => clearTimeout(timeoutId);
   }, [filters.province, filteredHotspots, filteredLeads, filteredTasks]);
 
@@ -275,10 +334,9 @@ export default function LiveMapPanel({ scene }: LiveMapPanelProps) {
   };
 
   return (
-    <div 
-      className={`flex-1 bg-card rounded-lg border border-border overflow-hidden transition-all ${
-        isHighlighted ? 'ring-2 ring-primary ring-offset-2' : ''
-      }`}
+    <div
+      className={`flex-1 bg-card rounded-lg border border-border overflow-hidden transition-all ${isHighlighted ? 'ring-2 ring-primary ring-offset-2' : ''
+        }`}
       style={{ display: 'flex', flexDirection: 'column' }}
     >
       <div className="h-12 bg-muted/50 border-b border-border flex items-center justify-between px-4 flex-shrink-0">
@@ -303,9 +361,8 @@ export default function LiveMapPanel({ scene }: LiveMapPanelProps) {
           {stats.map((stat, index) => (
             <div
               key={index}
-              className={`bg-card/95 backdrop-blur-sm rounded-lg border border-border shadow-lg transition-all count-up pointer-events-auto ${ 
-                !stat.active ? 'opacity-50' : ''
-              }`}
+              className={`bg-card/95 backdrop-blur-sm rounded-lg border border-border shadow-lg transition-all count-up pointer-events-auto ${!stat.active ? 'opacity-50' : ''
+                }`}
               style={{ borderLeftColor: stat.color, borderLeftWidth: '3px', padding: '10px 12px' }}
             >
               <div className="flex items-center gap-3">
@@ -334,9 +391,8 @@ export default function LiveMapPanel({ scene }: LiveMapPanelProps) {
           <div className="flex flex-col gap-1.5">
             <button
               onClick={() => toggleLayer('hotspots')}
-              className={`flex items-center gap-2 rounded transition-colors ${
-                layers.hotspots ? 'bg-destructive/10' : 'opacity-50 hover:opacity-75'
-              }`}
+              className={`flex items-center gap-2 rounded transition-colors ${layers.hotspots ? 'bg-destructive/10' : 'opacity-50 hover:opacity-75'
+                }`}
               style={{ padding: '6px 8px' }}
             >
               <div className={`rounded-full ${layers.hotspots ? 'bg-destructive' : 'bg-muted-foreground'}`} style={{ width: '10px', height: '10px' }}></div>
@@ -344,9 +400,8 @@ export default function LiveMapPanel({ scene }: LiveMapPanelProps) {
             </button>
             <button
               onClick={() => toggleLayer('leads')}
-              className={`flex items-center gap-2 rounded transition-colors ${
-                layers.leads ? 'bg-blue-500/10' : 'opacity-50 hover:opacity-75'
-              }`}
+              className={`flex items-center gap-2 rounded transition-colors ${layers.leads ? 'bg-blue-500/10' : 'opacity-50 hover:opacity-75'
+                }`}
               style={{ padding: '6px 8px' }}
             >
               <div className={`rounded-full ${layers.leads ? 'bg-blue-500' : 'bg-muted-foreground'}`} style={{ width: '10px', height: '10px' }}></div>
@@ -354,9 +409,8 @@ export default function LiveMapPanel({ scene }: LiveMapPanelProps) {
             </button>
             <button
               onClick={() => toggleLayer('tasks')}
-              className={`flex items-center gap-2 rounded transition-colors ${
-                layers.tasks ? 'bg-orange-500/10' : 'opacity-50 hover:opacity-75'
-              }`}
+              className={`flex items-center gap-2 rounded transition-colors ${layers.tasks ? 'bg-orange-500/10' : 'opacity-50 hover:opacity-75'
+                }`}
               style={{ padding: '6px 8px' }}
             >
               <div className={`rounded-full ${layers.tasks ? 'bg-orange-500' : 'bg-muted-foreground'}`} style={{ width: '10px', height: '10px' }}></div>
@@ -364,9 +418,8 @@ export default function LiveMapPanel({ scene }: LiveMapPanelProps) {
             </button>
             <button
               onClick={() => toggleLayer('evidences')}
-              className={`flex items-center gap-2 rounded transition-colors ${
-                layers.evidences ? 'bg-purple-500/10' : 'opacity-50 hover:opacity-75'
-              }`}
+              className={`flex items-center gap-2 rounded transition-colors ${layers.evidences ? 'bg-purple-500/10' : 'opacity-50 hover:opacity-75'
+                }`}
               style={{ padding: '6px 8px' }}
             >
               <div className={`rounded-full ${layers.evidences ? 'bg-purple-500' : 'bg-muted-foreground'}`} style={{ width: '10px', height: '10px' }}></div>

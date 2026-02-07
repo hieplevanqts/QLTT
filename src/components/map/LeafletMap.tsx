@@ -14,7 +14,8 @@ import { transformDepartmentAreasToMapData, calculateAverageCenter, getValidCent
 import { useAppSelector } from '@/hooks/useAppStore';
 // Import layers
 import { DepartmentMarkersLayer } from './layers/DepartmentMarkersLayer';
-import bienDaoImg from '@/assets/images/hoang-sa.png';
+import hoangSaMaskImage from '@/assets/images/bg-bien.png';
+
 
 type CategoryFilter = {
   [key: string]: boolean;  // Dynamic keys from point_status table
@@ -333,35 +334,81 @@ export function LeafletMap({ filters, businessTypeFilters, searchQuery, selected
         // attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(map);
 
+      const hoangSaMaskBounds: [[number, number], [number, number]] = [
+        [17.3, 114.6], // góc trên trái
+        [15.6, 110.0], // góc dưới phải
+      ];
+
+      L.imageOverlay(
+        hoangSaMaskImage,  
+        hoangSaMaskBounds,
+        {
+          opacity: 1,
+          className: 'bien-dao-overlay',
+          zIndex: 999,
+          interactive: false,
+        }
+      ).addTo(map);
+
+      const truongSaMaskBounds: [[number, number], [number, number]] = [
+        [10.8, 113.8], // góc trên trái
+        [8.6, 109.3],  // góc dưới phải
+      ];
+
+      L.imageOverlay(
+        hoangSaMaskImage,  
+        truongSaMaskBounds,
+        {
+          opacity: 1,
+          zIndex: 999,
+          interactive: false,
+          className: 'bien-dao-overlay'
+        }
+      ).addTo(map);
+
 
       // Hoang Sa
-
       const bounds: [[number, number], [number, number]] = [
         [15.8, 111.2],
         [17.2, 112.8],
       ];
 
-      L.imageOverlay(
-        bienDaoImg,
-        bounds,
-        { opacity: 0.85, className: 'bien-dao-overlay' }
-      ).addTo(map);
-      // map.fitBounds(bounds);
-
-
-      // Quần đảo Trường Sa (Spratly Islands) – bounds xấp xỉ
-      const truongSaBounds: [[number, number], [number, number]] = [
-        [10.0, 113.0], // góc trên trái
-        [8.0, 115.0],  // góc dưới phải
+      const hoangSaCenter: [number, number] = [
+        (bounds[0][0] + bounds[1][0]) / 2,
+        (bounds[0][1] + bounds[1][1]) / 2,
       ];
 
-      L.imageOverlay(
-        bienDaoImg,
-        truongSaBounds,
-        { opacity: 0.85, className: 'bien-dao-overlay' }
-      ).addTo(map);
+      L.marker(hoangSaCenter, {
+        icon: L.divIcon({
+          className: 'hoang-sa-label',
+          html: '<div style="width: 100px; white-space: nowrap; font-weight: 500; font-size: 10px; color: #555; text-shadow: 0 1px 2px rgba(255,255,255,0.9);text-align: center;">Quần đảo Hoàng Sa <br> Việt Nam</div>',
+          iconSize: [1, 1],
+          iconAnchor: [0, 0],
+        }),
+        interactive: false,
+      }).addTo(map);
 
+      const truongSaBounds: [[number, number], [number, number]] = [
+        [11.0, 112.0], // góc trên trái: lên bắc + lệch tây rõ hơn
+        [9.0, 114.0],  // góc dưới phải: lên bắc + lệch tây rõ hơn
+      ];
+      const truongSaCenter: [number, number] = [
+        (truongSaBounds[0][0] + truongSaBounds[1][0]) / 2,
+        (truongSaBounds[0][1] + truongSaBounds[1][1]) / 2,
+      ];
+
+      L.marker(truongSaCenter, {
+        icon: L.divIcon({
+          className: 'hoang-sa-label',
+          html: '<div style="width: 100px; white-space: nowrap; font-weight: 500; font-size: 10px; color: #555; text-shadow: 0 1px 2px rgba(255,255,255,0.9);text-align: center">Quần đảo Trường Sa <br> Việt Nam</div>',
+          iconSize: [1, 1],
+          iconAnchor: [0, 0],
+        }),
+        interactive: false,
+      }).addTo(map);
       mapInstanceRef.current = map;
+
+
 
       // Listen to user interactions (manual zoom/pan)
       map.on('zoomstart', (e: any) => {
