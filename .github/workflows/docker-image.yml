@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      REGISTRY: ghcr.io
+      REGISTRY: docker.io
       USERNAME: hieplevanqts
-      FRONTEND_IMAGE: ghcr.io/hieplevanqts/frontend
-      BACKEND_IMAGE: ghcr.io/hieplevanqts/backend
+      FRONTEND_IMAGE: docker.io/hieplevanqts/frontend
+      BACKEND_IMAGE: docker.io/hieplevanqts/backend
 
     steps:
       # =====================
@@ -37,7 +37,7 @@ jobs:
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: docker.io
           username: hieplevanqts
           password: ${{ secrets.GITHUB_TOKEN }}
 
